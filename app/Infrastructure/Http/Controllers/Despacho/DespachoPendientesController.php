@@ -14,7 +14,7 @@ class DespachoPendientesController extends Controller
     }
 
     /**
-     * API para obtener pedidos con prendas que se sacan de bodega y NO tienen ning�n proceso
+     * API para obtener pedidos con prendas que se sacan de bodega y NO tienen ningun proceso
      */
     public function obtenerPendientesBodegaSinProcesos(Request $request)
     {

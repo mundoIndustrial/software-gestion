@@ -8,7 +8,7 @@ use App\Infrastructure\Http\Controllers\Despacho\DespachoPendientesController;
 use Illuminate\Support\Facades\Route;
 
 /**
- * Rutas del m�dulo DESPACHO
+ * Rutas del modulo DESPACHO
  *
  * Prefijo: /despacho
  */

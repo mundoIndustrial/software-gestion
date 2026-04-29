@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Recibos Bodega')
 
@@ -12,13 +12,33 @@
                 </button>
             </div>
 
-            <!-- Table Component -->
-            <x-recibos.recibos-costura-table :recibos="$recibos" :totalCantidadGlobal="$totalCantidadGlobal ?? 0" />
+            <div id="recibo-corte-bodega-container">
+                <div class="table-scroll-container">
+                    <table id="recibo-corte-bodega-table" class="table table-striped table-hover modern-table">
+                        <thead class="table-header">
+                            <tr>
+                                <th style="width: 60px; text-align: center;">Acciones</th>
+                                <th style="width: 120px; text-align: center;">N&deg; Recibo</th>
+                                <th>Prenda</th>
+                                <th>Descripción</th>
+                                <th style="width: 120px;">Tallas</th>
+                                <th style="width: 120px;">Cantidad Total</th>
+                                <th style="width: 150px;">Fecha de creación</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recibo-corte-bodega-tbody">
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">Cargando recibos...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<div id="reciboBodegaCreateModal" class="custom-recibo-modal" aria-hidden="true">
+<div id="reciboBodegaCreateModal" class="custom-recibo-modal">
     <div class="custom-recibo-modal__backdrop" data-close-recibo-modal="true"></div>
     <div class="custom-recibo-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="reciboBodegaCreateModalTitle">
         <div class="custom-recibo-modal__header">
@@ -60,19 +80,67 @@
 
                                 <div class="tallas-section">
                                     <label class="form-label-small">Tallas y Cantidades</label>
-                                    <div class="tallas-list">
-                                        <div>
-                                            <input type="text" name="talla[0][]" placeholder="Talla (ej: XS)" required>
-                                            <input type="number" name="cantidad[0][]" placeholder="Cantidad" min="1" required>
-                                            <button type="button" class="eliminar-talla-btn">x</button>
+                                    <datalist id="tallas-sugeridas-list">
+                                        <option value="XS"></option>
+                                        <option value="S"></option>
+                                        <option value="M"></option>
+                                        <option value="L"></option>
+                                        <option value="XL"></option>
+                                        <option value="XXL"></option>
+                                        <option value="XXXL"></option>
+                                        <option value="4"></option>
+                                        <option value="6"></option>
+                                        <option value="8"></option>
+                                        <option value="10"></option>
+                                        <option value="12"></option>
+                                        <option value="14"></option>
+                                        <option value="16"></option>
+                                        <option value="18"></option>
+                                        <option value="20"></option>
+                                        <option value="22"></option>
+                                        <option value="24"></option>
+                                        <option value="26"></option>
+                                        <option value="28"></option>
+                                        <option value="30"></option>
+                                        <option value="32"></option>
+                                        <option value="34"></option>
+                                        <option value="36"></option>
+                                        <option value="38"></option>
+                                        <option value="40"></option>
+                                        <option value="42"></option>
+                                    </datalist>
+                                    <div class="tallas-subsection">
+                                        <label class="form-label-small mb-1">Dama</label>
+                                        <div class="tallas-list tallas-list-dama">
+                                            <div>
+                                                <input type="text" name="talla_dama[0][]" class="talla-input-uppercase" list="tallas-sugeridas-list" placeholder="Talla (ej: XS)">
+                                                <input type="number" name="cantidad_dama[0][]" placeholder="Cantidad" min="1">
+                                                <button type="button" class="eliminar-talla-btn">x</button>
+                                            </div>
                                         </div>
+                                        <button type="button" class="btn-add-talla anadir-talla-dama-btn" data-prenda-index="0">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round"></path>
+                                            </svg>
+                                            Añadir talla dama
+                                        </button>
                                     </div>
-                                    <button type="button" class="btn-add-talla anadir-talla-btn" data-prenda-index="0">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                            <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round"></path>
-                                        </svg>
-                                        Anadir talla
-                                    </button>
+                                    <div class="tallas-subsection mt-2">
+                                        <label class="form-label-small mb-1">Caballero</label>
+                                        <div class="tallas-list tallas-list-caballero">
+                                            <div>
+                                                <input type="text" name="talla_caballero[0][]" class="talla-input-uppercase" list="tallas-sugeridas-list" placeholder="Talla (ej: M)">
+                                                <input type="number" name="cantidad_caballero[0][]" placeholder="Cantidad" min="1">
+                                                <button type="button" class="eliminar-talla-btn">x</button>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn-add-talla anadir-talla-caballero-btn" data-prenda-index="0">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round"></path>
+                                            </svg>
+                                            Añadir talla caballero
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -80,7 +148,7 @@
                 </div>
                 <div class="custom-recibo-modal__footer">
                     <button type="button" class="custom-recibo-btn custom-recibo-btn--secondary" data-close-recibo-modal="true">Cancelar</button>
-                    <button type="submit" class="custom-recibo-btn custom-recibo-btn--primary">Guardar recibo</button>
+                    <button type="submit" class="custom-recibo-btn custom-recibo-btn--primary">Generar recibo</button>
                 </div>
             </form>
         </div>
@@ -143,6 +211,9 @@
 <!-- Modal de Novedades -->
 <x-modals.novedades-edit-modal />
 
+<!-- Modal para ver recibo de corte para bodega -->
+<x-orders-components.recibo-corte-bodega-detail-modal />
+
 @endsection
 
 <!-- Contenedor para Toast Notifications -->
@@ -154,11 +225,38 @@
 <link rel="stylesheet" href="{{ asset('css/dropdowns-recibos.css') }}?v={{ time() }}">
 
 <style>
-/* Recibos Bodega: ocultar columna Cliente */
-#tablaRecibosBody tr td:nth-child(6),
-.modern-table thead tr th:nth-child(6) {
-    display: none !important;
+/* Ajustes exclusivos para tabla Recibo Corte Bodega */
+#recibo-corte-bodega-table {
+    width: 100%;
+    min-width: 860px;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
 }
+
+#recibo-corte-bodega-table th,
+#recibo-corte-bodega-table td {
+    vertical-align: middle;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+}
+
+#recibo-corte-bodega-table th:nth-child(1),
+#recibo-corte-bodega-table td:nth-child(1) { width: 60px; text-align: center; }
+#recibo-corte-bodega-table th:nth-child(2),
+#recibo-corte-bodega-table td:nth-child(2) { width: 120px; text-align: center; white-space: nowrap; }
+#recibo-corte-bodega-table th:nth-child(3),
+#recibo-corte-bodega-table td:nth-child(3) { width: 170px; }
+#recibo-corte-bodega-table th:nth-child(4),
+#recibo-corte-bodega-table td:nth-child(4) { width: 320px; }
+#recibo-corte-bodega-table th:nth-child(5),
+#recibo-corte-bodega-table td:nth-child(5) { width: 120px; text-align: center; }
+#recibo-corte-bodega-table th:nth-child(6),
+#recibo-corte-bodega-table td:nth-child(6) { width: 140px; text-align: center; }
+#recibo-corte-bodega-table th:nth-child(7),
+#recibo-corte-bodega-table td:nth-child(7) { width: 150px; text-align: center; white-space: nowrap; }
 </style>
 
 <!-- Estilos adicionales para el modal de agregar proceso -->
@@ -435,16 +533,21 @@
     inset: 0;
     display: none;
     z-index: 10000100;
+    pointer-events: none;
 }
 
 .custom-recibo-modal.is-open {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
 }
 
 .custom-recibo-modal__backdrop {
-    position: absolute;
+    position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
 }
 
 .custom-recibo-modal__dialog {
@@ -452,7 +555,7 @@
     width: min(920px, 95vw);
     max-height: 90vh;
     overflow: auto;
-    margin: 4vh auto;
+    margin: auto;
     background: #fff;
     border-radius: 16px;
     padding: 0;
@@ -461,11 +564,13 @@
     transform: translateY(10px) scale(0.98);
     opacity: 0;
     transition: opacity .2s ease, transform .2s ease;
+    pointer-events: none;
 }
 
 .custom-recibo-modal.is-open .custom-recibo-modal__dialog {
     transform: translateY(0) scale(1);
     opacity: 1;
+    pointer-events: auto;
 }
 
 .custom-recibo-modal__header {
@@ -592,6 +697,11 @@
     resize: vertical;
 }
 
+#reciboBodegaCreateModal input[type="text"],
+#reciboBodegaCreateModal textarea {
+    text-transform: uppercase;
+}
+
 #reciboBodegaCreateModal .prendas-container {
     display: flex;
     flex-direction: column;
@@ -642,6 +752,16 @@
     grid-template-columns: 1fr 1fr auto;
     gap: 8px;
     align-items: center;
+}
+#reciboBodegaCreateModal .tallas-subsection {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px;
+    background: #fff;
+}
+
+#reciboBodegaCreateModal .talla-input-uppercase {
+    text-transform: uppercase;
 }
 
 #reciboBodegaCreateModal .btn-icon {
@@ -726,50 +846,190 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (!modal || !openBtn || !prendasContainer || !form) return;
 
+    let previousActiveElement = null;
+
     const closeModal = () => {
         modal.classList.remove('is-open');
-        modal.setAttribute('aria-hidden', 'true');
         document.body.style.overflow = '';
+        if (previousActiveElement) {
+            previousActiveElement.focus();
+            previousActiveElement = null;
+        }
     };
 
     const openModal = () => {
+        previousActiveElement = document.activeElement;
         modal.classList.add('is-open');
-        modal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
+        const firstInput = form.querySelector('input, textarea, button[type="submit"]');
+        if (firstInput) setTimeout(() => firstInput.focus(), 100);
     };
 
     openBtn.addEventListener('click', openModal);
 
     modal.addEventListener('click', function (event) {
-        if (event.target.matches('[data-close-recibo-modal=\"true\"]')) closeModal();
+        if (event.target === modal || event.target.closest('[data-close-recibo-modal="true"]')) {
+            closeModal();
+        }
     });
 
     document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') closeModal();
+        if (event.key === 'Escape' && modal.classList.contains('is-open')) {
+            closeModal();
+        }
     });
 
     form.addEventListener('submit', function (event) {
         event.preventDefault();
-        closeModal();
+        console.log('[FORM] Submit iniciado');
+
+        const formData = new FormData(form);
+        const prendas = [];
+
+        const prendaIndices = new Set();
+        for (const [key, value] of formData.entries()) {
+            const match = key.match(/^prenda\[(\d+)\]/);
+            if (match) {
+                prendaIndices.add(parseInt(match[1]));
+            }
+        }
+
+        console.log('[FORM] indices de prendas encontrados:', Array.from(prendaIndices));
+
+        prendaIndices.forEach(index => {
+            const nombre = formData.get(`prenda[${index}]`);
+            const descripcion = formData.get(`descripcion[${index}]`);
+            const tallasDama = formData.getAll(`talla_dama[${index}][]`);
+            const cantidadesDama = formData.getAll(`cantidad_dama[${index}][]`);
+            const tallasCab = formData.getAll(`talla_caballero[${index}][]`);
+            const cantidadesCab = formData.getAll(`cantidad_caballero[${index}][]`);
+
+            const tallasList = [];
+
+            tallasDama.forEach((talla, i) => {
+                const cantidad = parseInt(cantidadesDama[i]) || 0;
+                if ((talla || '').trim() !== '' && cantidad > 0) {
+                    tallasList.push({ talla, cantidad, genero: 'dama' });
+                }
+            });
+
+            tallasCab.forEach((talla, i) => {
+                const cantidad = parseInt(cantidadesCab[i]) || 0;
+                if ((talla || '').trim() !== '' && cantidad > 0) {
+                    tallasList.push({ talla, cantidad, genero: 'caballero' });
+                }
+            });
+
+            console.log(`[FORM] Prenda ${index}:`, { nombre, descripcion, tallasList });
+
+            if (nombre && tallasList.length > 0) {
+                
+                prendas.push({
+                    nombre: nombre,
+                    descripcion: descripcion || null,
+                    tallas: tallasList,
+                });
+            }
+        });
+
+        console.log('[FORM] Prendas procesadas:', prendas);
+
+        if (prendas.length === 0) {
+            alert('Por favor completa al menos una prenda con talla y cantidad');
+            return;
+        }
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        console.log('[FORM] CSRF Token:', csrfToken ? 'Presente' : 'NO ENCONTRADO');
+
+        const payload = { prendas: prendas };
+        console.log('[FORM] Enviando payload:', JSON.stringify(payload));
+
+        fetch('/api/recibo-corte-bodega', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            body: JSON.stringify(payload),
+        })
+        .then(async response => {
+            console.log('[FETCH] Response status:', response.status, response.statusText);
+            const raw = await response.text();
+            let parsed = null;
+
+            try {
+                parsed = raw ? JSON.parse(raw) : null;
+            } catch (_) {
+                parsed = null;
+            }
+
+            if (!response.ok) {
+                const backendMessage = parsed?.message || raw || `HTTP ${response.status}: ${response.statusText}`;
+                throw new Error(backendMessage);
+            }
+
+            return parsed || {};
+        })
+        .then(data => {
+            console.log('[FETCH] Response data:', data);
+            if (data.success) {
+                closeModal();
+                form.reset();
+                alert('Recibo registrado correctamente');
+                loadRecibosCorteForBodega();
+                if (data.prendas && data.prendas.length > 0) {
+                    setTimeout(() => openReciboCorteBodegaModal(data.prendas[0].id), 500);
+                }
+            } else {
+                alert('Error: ' + (data.message || 'No se pudo guardar el recibo'));
+            }
+        })
+        .catch(error => {
+            console.error('[FETCH] Error:', error);
+            alert('Error al guardar el recibo: ' + error.message);
+        });
     });
 
     function bindPrendaActions(prendaCard) {
         const prendaIndex = parseInt(prendaCard.dataset.prendaIndex || '0', 10);
-        const addTallaBtn = prendaCard.querySelector('.anadir-talla-btn');
-        const tallasList = prendaCard.querySelector('.tallas-list');
+        const addDamaBtn = prendaCard.querySelector('.anadir-talla-dama-btn');
+        const addCabBtn = prendaCard.querySelector('.anadir-talla-caballero-btn');
+        const tallasDamaList = prendaCard.querySelector('.tallas-list-dama');
+        const tallasCabList = prendaCard.querySelector('.tallas-list-caballero');
 
-        if (addTallaBtn && tallasList) {
-            addTallaBtn.addEventListener('click', function () {
+        if (addDamaBtn && tallasDamaList) {
+            addDamaBtn.addEventListener('click', function () {
                 const tallaRow = document.createElement('div');
                 tallaRow.innerHTML = `
-                    <input type="text" name="talla[${prendaIndex}][]" placeholder="Talla (ej: XS)" required>
-                    <input type="number" name="cantidad[${prendaIndex}][]" placeholder="Cantidad" min="1" required>
+                    <input type="text" name="talla_dama[${prendaIndex}][]" class="talla-input-uppercase" list="tallas-sugeridas-list" placeholder="Talla (ej: XS)">
+                    <input type="number" name="cantidad_dama[${prendaIndex}][]" placeholder="Cantidad" min="1">
                     <button type="button" class="eliminar-talla-btn">x</button>
                 `;
-                tallasList.appendChild(tallaRow);
+                tallasDamaList.appendChild(tallaRow);
+            });
+        }
+
+        if (addCabBtn && tallasCabList) {
+            addCabBtn.addEventListener('click', function () {
+                const tallaRow = document.createElement('div');
+                tallaRow.innerHTML = `
+                    <input type="text" name="talla_caballero[${prendaIndex}][]" class="talla-input-uppercase" list="tallas-sugeridas-list" placeholder="Talla (ej: M)">
+                    <input type="number" name="cantidad_caballero[${prendaIndex}][]" placeholder="Cantidad" min="1">
+                    <button type="button" class="eliminar-talla-btn">x</button>
+                `;
+                tallasCabList.appendChild(tallaRow);
             });
         }
     }
+
+    prendasContainer.addEventListener('input', function (event) {
+        const target = event.target;
+        const isTextInput = target.matches('input[type="text"]');
+        const isTextarea = target.matches('textarea');
+        if (!isTextInput && !isTextarea) return;
+        target.value = String(target.value || '').toUpperCase();
+    });
 
     prendasContainer.addEventListener('click', function (event) {
         if (!event.target.classList.contains('eliminar-talla-btn')) return;
@@ -781,5 +1041,65 @@ document.addEventListener('DOMContentLoaded', function () {
 
     prendasContainer.querySelectorAll('.prenda-card').forEach(bindPrendaActions);
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadRecibosCorteForBodega();
+});
+
+function loadRecibosCorteForBodega() {
+    fetch('/api/recibo-corte-bodega')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('recibo-corte-bodega-tbody');
+            tbody.innerHTML = '';
+
+            if (data.success && data.data && data.data.length > 0) {
+                data.data.forEach(prenda => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td style="text-align: center;">
+                            <button type="button" class="btn btn-sm btn-primary" onclick="openReciboCorteBodegaModal(${prenda.id})" title="Ver recibo">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                        <td style="text-align: center;"><strong>${prenda.numero_recibo || '-'}</strong></td>
+                        <td><strong>${prenda.nombre}</strong></td>
+                        <td>${prenda.descripcion || '-'}</td>
+                        <td style="text-align: center;">${prenda.cantidad_tallas}</td>
+                        <td style="text-align: center;"><span class="badge bg-success">${prenda.total_cantidad}</span></td>
+                        <td>${prenda.fecha_corta}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } else {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-info-circle"></i> No hay recibos de corte para bodega registrados aún.
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error cargando recibos:', error);
+            const tbody = document.getElementById('recibo-corte-bodega-tbody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-4">
+                        <div class="alert alert-danger mb-0">
+                            Error al cargar los recibos de corte para bodega.
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+}
 </script>
 @endpush
+
+
+
+

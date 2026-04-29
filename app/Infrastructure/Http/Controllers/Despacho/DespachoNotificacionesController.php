@@ -43,7 +43,7 @@ class DespachoNotificacionesController extends Controller
 
             $this->service->marcarTodasComoLeidas($user);
 
-            return response()->json(['success' => true, 'message' => 'Todas marcadas como le�das']);
+            return response()->json(['success' => true, 'message' => 'Todas marcadas como leídas']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Infrastructure\Http\Controllers\RegistroOrdenController;
 use App\Infrastructure\Http\Controllers\RegistroOrdenQueryController;
 use App\Infrastructure\Http\Controllers\Bodega\RegistroBodegaController;
+use App\Infrastructure\Http\Controllers\Bodega\ReciboCorteBodegaController;
 use App\Infrastructure\Http\Controllers\Asesores\ProcesosPedidoController;
 use App\Infrastructure\Http\Controllers\Facturacion\InvoiceController;
 
@@ -70,6 +71,14 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::post('/api/ordenes/{numero_pedido}/novedades/add', [RegistroOrdenController::class, 'addNovedad'])->name('api.ordenes.novedades.add');
     Route::post('/api/bodega/{pedido}/novedades', [RegistroBodegaController::class, 'updateNovedadesBodega'])->name('api.bodega.novedades');
     Route::post('/api/bodega/{pedido}/novedades/add', [RegistroBodegaController::class, 'addNovedadBodega'])->name('api.bodega.novedades.add');
+
+    // ========================================
+    // RECIBO CORTE BODEGA ROUTES
+    // ========================================
+    Route::post('/api/recibo-corte-bodega', [ReciboCorteBodegaController::class, 'store'])->name('api.recibo-corte-bodega.store');
+    Route::get('/api/recibo-corte-bodega', [ReciboCorteBodegaController::class, 'index'])->name('api.recibo-corte-bodega.index');
+    Route::get('/api/recibo-corte-bodega/{id}', [ReciboCorteBodegaController::class, 'show'])->name('api.recibo-corte-bodega.show');
+
     Route::put('/api/procesos/{id}/editar', [ProcesosPedidoController::class, 'editarProceso'])->name('api.procesos.editar');
     Route::delete('/api/procesos/{id}/eliminar', [ProcesosPedidoController::class, 'eliminarProceso'])->name('api.procesos.eliminar');
     
