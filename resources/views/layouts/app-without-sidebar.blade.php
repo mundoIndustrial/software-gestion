@@ -15,7 +15,11 @@
                     <span class="material-symbols-rounded">menu</span>
                 </button>
                 <div class="breadcrumb-section">
-                    <h1 class="page-title">@yield('page-title', 'Dashboard')</h1>
+                    @if(request()->is('recibos-reflectivo'))
+                        <h1 class="page-title">Recibos de Reflectivo</h1>
+                    @else
+                        <h1 class="page-title">@yield('page-title', 'Dashboard')</h1>
+                    @endif
                 </div>
                 
                 <!--  Barra de búsqueda (solo en vista de órdenes, bodega y cotizaciones pendientes) -->
@@ -23,10 +27,11 @@
                     $currentRoute = Route::currentRouteName();
                     $isCotizacionesPendientes = $currentRoute === 'cotizaciones.pendientes';
                     $searchInputId = $isCotizacionesPendientes ? 'searchInput' : 'navSearchInput';
-                    $searchPlaceholder = $isCotizacionesPendientes ? 'Buscar por número, cliente o asesora...' : 'Buscar por número o cliente...';
-                    $searchAriaLabel = $isCotizacionesPendientes ? 'Búsqueda de cotizaciones' : 'Búsqueda de órdenes';
+                    $isRecibosReflectivo = $currentRoute === 'recibos-reflectivo';
+                    $searchPlaceholder = $isCotizacionesPendientes ? 'Buscar por número, cliente o asesora...' : ($isRecibosReflectivo ? 'Buscar recibos por número o cliente...' : 'Buscar por número o cliente...');
+                    $searchAriaLabel = $isCotizacionesPendientes ? 'Búsqueda de cotizaciones' : ($isRecibosReflectivo ? 'Búsqueda de recibos' : 'Búsqueda de órdenes');
                 @endphp
-                @if($currentRoute === 'registros.index' || $currentRoute === 'bodega.index' || $currentRoute === 'cotizaciones.pendientes')
+                @if($currentRoute === 'registros.index' || $currentRoute === 'bodega.index' || $currentRoute === 'cotizaciones.pendientes' || $isRecibosReflectivo)
                 <div class="nav-search-container">
                     <div class="nav-search-wrapper">
                         <span class="material-symbols-rounded search-icon" aria-hidden="true">search</span>

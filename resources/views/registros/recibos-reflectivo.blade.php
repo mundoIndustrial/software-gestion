@@ -38,6 +38,18 @@
 
 <!-- Estilos adicionales para el modal de agregar proceso -->
 <style>
+.recibos-costura-scale-90 {
+    zoom: 0.9;
+}
+
+@supports not (zoom: 1) {
+    .recibos-costura-scale-90 {
+        transform: scale(0.9);
+        transform-origin: top left;
+        width: 111.1111%;
+    }
+}
+
 .add-proceso-modal.show {
     display: flex !important;
     align-items: center !important;
