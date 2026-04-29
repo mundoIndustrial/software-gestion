@@ -574,6 +574,19 @@ function verDetallesRecibo(reciboId) {
         alert('No se encontró el recibo');
         return;
     }
+
+    const botonVer = fila.querySelector('.btn-ver-dropdown');
+    const esParcial = botonVer
+        ? String(botonVer.getAttribute('data-es-parcial') || '').toLowerCase() === 'true'
+        : false;
+    const pedidoParcialId = botonVer ? Number(botonVer.getAttribute('data-pedido-parcial-id') || 0) : 0;
+    const pedidoIdFila = Number(fila.getAttribute('data-pedido-id') || 0);
+    const prendaIdFila = botonVer ? Number(botonVer.getAttribute('data-prenda-id') || 0) : 0;
+
+    if (esParcial && pedidoParcialId > 0 && pedidoIdFila > 0 && prendaIdFila > 0 && typeof window.openOrderDetailModalWithParcial === 'function') {
+        window.openOrderDetailModalWithParcial(pedidoParcialId, prendaIdFila, 'REFLECTIVO', pedidoIdFila, 'REFLECTIVO ANEXO');
+        return;
+    }
     
     const enlacePedido = fila.querySelector('a[href*="/registros/"]');
     let pedidoId = null;
@@ -1074,6 +1087,31 @@ function closeDropdownRecibos() {
     });
 }
 
+function abrirDetallesReciboReflectivo(button) {
+    const pedidoId = Number(button?.getAttribute('data-pedido-id') || 0);
+    const prendaId = Number(button?.getAttribute('data-prenda-id') || 0);
+    const numeroRecibo = String(button?.getAttribute('data-numero-recibo') || '').trim();
+    const esParcial = String(button?.getAttribute('data-es-parcial') || '').toLowerCase() === 'true';
+    const pedidoParcialId = Number(button?.getAttribute('data-pedido-parcial-id') || 0);
+
+    if (!pedidoId || !prendaId) {
+        alert('No se pudo identificar el pedido o la prenda asociados al recibo.');
+        return;
+    }
+
+    if (esParcial && pedidoParcialId > 0 && typeof window.openOrderDetailModalWithParcial === 'function') {
+        window.openOrderDetailModalWithParcial(pedidoParcialId, prendaId, 'REFLECTIVO', pedidoId, 'REFLECTIVO ANEXO');
+        return;
+    }
+
+    if (typeof window.openOrderDetailModalWithProcess === 'function') {
+        window.openOrderDetailModalWithProcess(pedidoId, prendaId, 'REFLECTIVO', null, numeroRecibo || null, pedidoParcialId > 0 ? pedidoParcialId : null);
+        return;
+    }
+
+    alert('Módulo de recibos no disponible. Por favor recargue la página.');
+}
+
 function crearDropdownRecibos(button) {
     const menuId = button.getAttribute('data-menu-id');
     const pedidoId = button.getAttribute('data-pedido-id');
@@ -1102,7 +1140,7 @@ function crearDropdownRecibos(button) {
     `;
 
     dropdown.innerHTML = `
-        <button onclick="openOrderDetailModalWithProcess(${pedidoId}, ${prendaId || 'null'}, 'REFLECTIVO'); closeDropdownRecibos()" style="
+        <button onclick="abrirDetallesReciboReflectivo(this); closeDropdownRecibos()" data-pedido-id="${pedidoId}" data-prenda-id="${prendaId || ''}" data-numero-recibo="${button.getAttribute('data-numero-recibo') || ''}" data-es-parcial="${button.getAttribute('data-es-parcial') || 'false'}" data-pedido-parcial-id="${button.getAttribute('data-pedido-parcial-id') || ''}" style="
             width: 100%;
             text-align: left;
             padding: 0.875rem 1rem;
