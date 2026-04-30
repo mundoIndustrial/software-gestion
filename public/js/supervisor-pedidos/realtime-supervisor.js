@@ -232,6 +232,17 @@ function _rtHasAllPrendasEntregadas(orden) {
     return estado === 'ENTREGADO' || estado === 'FINALIZADA' || estado === 'FINALIZADO';
 }
 
+function _rtGetRowBaseBackground(isSelected, isDelivered) {
+    if (isSelected) {
+        return isDelivered ? '#86efac' : '#d1d5db';
+    }
+    return isDelivered ? '#dcfce7' : 'white';
+}
+
+function _rtGetRowHoverBackground(isDelivered) {
+    return isDelivered ? '#bbf7d0' : '#f9fafb';
+}
+
 function actualizarFilaEnTabla(fila, orden) {
     const celdas = fila.querySelectorAll('[data-field]');
     celdas.forEach(celda => {
@@ -328,6 +339,7 @@ function supervisorPedidosInsertarFilaNuevaAlInicio(orden) {
     const estadoInfo = estadoColors[estado] || { bg: '#e2e3e5', text: '#383d41', label: estado };
     const safeNumero = String(numeroPedido).replace('#', '');
     const canBulkDeliver = !_rtHasAllPrendasEntregadas(orden);
+    const isDelivered = !canBulkDeliver;
 
     const fila = document.createElement('div');
     fila.setAttribute('data-pedido-id', String(orden?.id || ''));
@@ -336,17 +348,20 @@ function supervisorPedidosInsertarFilaNuevaAlInicio(orden) {
         grid-template-columns: ${SUPERVISOR_GRID_TEMPLATE};
         gap: ${SUPERVISOR_GRID_GAP}; padding: 1rem; border-bottom: 1px solid #e5e7eb;
         align-items: center; min-width: max-content;
-        background: #f0f9ff; animation: slideInDown 0.5s ease; transition: background 0.2s ease;
+        background: ${_rtGetRowBaseBackground(false, isDelivered)}; animation: slideInDown 0.5s ease; transition: background 0.2s ease;
     `;
     fila.setAttribute('data-seleccionado', 'false');
+    fila.setAttribute('data-entregado', isDelivered ? 'true' : 'false');
     fila.setAttribute('data-pedido-row', 'true');
     fila.onmouseover = function() {
         if (!this.dataset.seleccionado || this.dataset.seleccionado === 'false') {
-            this.style.background = '#f9fafb';
+            this.style.background = _rtGetRowHoverBackground(isDelivered);
         }
     };
     fila.onmouseout  = function() {
-        this.style.background = this.dataset.seleccionado === 'true' ? '#d1d5db' : 'white';
+        this.style.background = this.dataset.seleccionado === 'true'
+            ? _rtGetRowBaseBackground(true, isDelivered)
+            : _rtGetRowBaseBackground(false, isDelivered);
     };
 
     const fechaCreacion = _formatFechaPedido(orden?.created_at || orden?.fecha_creacion || orden?.fecha);
@@ -364,14 +379,13 @@ function supervisorPedidosInsertarFilaNuevaAlInicio(orden) {
                 <i class="fas fa-eye"></i>
             </button>
 
-            ${canBulkDeliver ? `
-            <button class="btn-accion"
-                onclick="if (typeof marcarTodasPrendasEntregadasPedido === 'function') marcarTodasPrendasEntregadasPedido(${orden?.id || 'null'}, '${safeNumero}')"
-                title="Marcar todas las prendas entregadas"
+            <button class="btn-accion ${canBulkDeliver ? '' : 'btn-accion--disabled'}"
+                onclick="${canBulkDeliver ? `if (typeof marcarTodasPrendasEntregadasPedido === 'function') marcarTodasPrendasEntregadasPedido(${orden?.id || 'null'}, '${safeNumero}')` : 'return false;'}"
+                title="${canBulkDeliver ? 'Marcar todas las prendas entregadas' : 'Todas las prendas ya fueron entregadas'}"
+                ${canBulkDeliver ? '' : 'disabled aria-disabled="true"'}
                 style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%); color: #ffffff;">
                 <i class="fas fa-check-double"></i>
             </button>
-            ` : ''}
 
             <button class="btn-accion btn-accion--ocultar"
                 onclick="if (typeof abrirModalOcultar === 'function') abrirModalOcultar(${orden?.id || 'null'}, '${safeNumero}')"
@@ -409,7 +423,7 @@ function supervisorPedidosInsertarFilaNuevaAlInicio(orden) {
     } else {
         tableContainer.prepend(fila);
     }
-    setTimeout(() => { fila.style.backgroundColor = 'white'; }, 2000);
+    setTimeout(() => { fila.style.backgroundColor = _rtGetRowBaseBackground(false, isDelivered); }, 2000);
 }
 
 // Agregar estilos de animación si no existen

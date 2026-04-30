@@ -14,6 +14,18 @@ if (!window.supervisorPedidos?.isReady) {
 
 const _selService = window.supervisorPedidos.selectionService;
 
+function _selIsDeliveredRow(fila) {
+    return fila?.dataset?.entregado === 'true';
+}
+
+function _selRowBackground(isSelected, fila) {
+    const isDelivered = _selIsDeliveredRow(fila);
+    if (isSelected) {
+        return isDelivered ? '#86efac' : '#d1d5db';
+    }
+    return isDelivered ? '#dcfce7' : 'white';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Nota: La carga inicial de selecciones la dispara index.js
     // después de hidratar la tabla por AJAX. Evitamos doble request aquí.
@@ -30,14 +42,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (e.target.checked) {
                     seleccionarPedido(pedidoId);
                     if (fila) {
-                        fila.style.background = '#d1d5db';
+                        fila.style.background = _selRowBackground(true, fila);
                         fila.style.transition = 'background 0.2s';
                         fila.dataset.seleccionado = 'true';
                     }
                 } else {
                     deseleccionarPedido(pedidoId);
                     if (fila) {
-                        fila.style.background = 'white';
+                        fila.style.background = _selRowBackground(false, fila);
                         fila.style.transition = 'background 0.2s';
                         fila.dataset.seleccionado = 'false';
                     }
@@ -56,14 +68,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.checked) {
             seleccionarPedido(pedidoId);
             if (fila) {
-                fila.style.background = '#d1d5db';
+                fila.style.background = _selRowBackground(true, fila);
                 fila.style.transition = 'background 0.2s';
                 fila.dataset.seleccionado = 'true';
             }
         } else {
             deseleccionarPedido(pedidoId);
             if (fila) {
-                fila.style.background = 'white';
+                fila.style.background = _selRowBackground(false, fila);
                 fila.style.transition = 'background 0.2s';
                 fila.dataset.seleccionado = 'false';
             }
@@ -106,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     checkbox.checked = true;
                     const fila = checkbox.closest('div[style*="grid-template-columns"]');
                     if (fila) {
-                        fila.style.background = '#d1d5db';
+                        fila.style.background = _selRowBackground(true, fila);
                         fila.style.transition = 'background 0.2s';
                         fila.dataset.seleccionado = 'true';
                     }

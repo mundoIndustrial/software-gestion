@@ -104,17 +104,33 @@
             @endif
 
             @foreach($ordenes as $orden)
-                @php $estaSeleccionado = in_array($orden->id, $pedidosSeleccionados); @endphp
+                @php
+                    $estaSeleccionado = in_array($orden->id, $pedidosSeleccionados);
+                    $estadoFila = strtoupper((string) ($orden->estado ?? ''));
+                    $pendientesEntregaFila = is_numeric($orden->prendas_pendientes_entrega_count ?? null)
+                        ? (int) $orden->prendas_pendientes_entrega_count
+                        : null;
+                    $estaEntregadoFila = $pendientesEntregaFila !== null
+                        ? $pendientesEntregaFila <= 0
+                        : in_array($estadoFila, ['ENTREGADO', 'FINALIZADA', 'FINALIZADO'], true);
+                    $rowBg = $estaSeleccionado
+                        ? ($estaEntregadoFila ? '#86efac' : '#d1d5db')
+                        : ($estaEntregadoFila ? '#dcfce7' : 'white');
+                    $rowBgHover = $estaEntregadoFila ? '#bbf7d0' : '#f9fafb';
+                    $rowBgSelected = $estaEntregadoFila ? '#86efac' : '#d1d5db';
+                    $rowBgUnselected = $estaEntregadoFila ? '#dcfce7' : 'white';
+                @endphp
                 <div class="sp-orders-grid" style="
                     padding: 1rem;
                     border-bottom: 1px solid #e5e7eb;
                     align-items: center;
-                    background: {{ $estaSeleccionado ? '#d1d5db' : 'white' }};
+                    background: {{ $rowBg }};
                     transition: background 0.2s ease;
                 "
-                onmouseover="if (!this.dataset.seleccionado || this.dataset.seleccionado === 'false') this.style.background='#f9fafb'"
-                onmouseout="this.style.background = (this.dataset.seleccionado === 'true') ? '#d1d5db' : 'white'"
+                onmouseover="if (!this.dataset.seleccionado || this.dataset.seleccionado === 'false') this.style.background='{{ $rowBgHover }}'"
+                onmouseout="this.style.background = (this.dataset.seleccionado === 'true') ? '{{ $rowBgSelected }}' : '{{ $rowBgUnselected }}'"
                 data-seleccionado="{{ $estaSeleccionado ? 'true' : 'false' }}"
+                data-entregado="{{ $estaEntregadoFila ? 'true' : 'false' }}"
                 data-pedido-row="true"
                 data-pedido-id="{{ $orden->id }}"
                 >
@@ -131,6 +147,12 @@
                             $numeroPedido = $orden->numero_pedido ?? 'sin-numero';
                             $pedidoId = $orden->id;
                             $estado = $orden->estado ?? 'Pendiente';
+                            $pendientesEntrega = is_numeric($orden->prendas_pendientes_entrega_count ?? null)
+                                ? (int) $orden->prendas_pendientes_entrega_count
+                                : null;
+                            $canBulkDeliver = $pendientesEntrega !== null
+                                ? $pendientesEntrega > 0
+                                : !in_array(strtoupper((string) $estado), ['ENTREGADO', 'FINALIZADA', 'FINALIZADO'], true);
                         @endphp
                         <button class="btn-accion btn-accion--ver btn-ver-dropdown"
                             data-menu-id="menu-ver-{{ str_replace('#', '', $numeroPedido) }}"
@@ -163,6 +185,14 @@
                             </button>
                             @endif
                         @endif
+
+                        <button class="btn-accion {{ $canBulkDeliver ? '' : 'btn-accion--disabled' }}"
+                            onclick="{{ $canBulkDeliver ? "marcarTodasPrendasEntregadasPedido({$orden->id}, '" . str_replace('#', '', $numeroPedido) . "')" : 'return false;' }}"
+                            title="{{ $canBulkDeliver ? 'Marcar todas las prendas entregadas' : 'Todas las prendas ya fueron entregadas' }}"
+                            {{ $canBulkDeliver ? '' : 'disabled aria-disabled=true' }}
+                            style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%); color: #ffffff;">
+                            <i class="fas fa-check-double"></i>
+                        </button>
 
                         <!-- Botón Ocultar -->
                         <button class="btn-accion btn-accion--ocultar"

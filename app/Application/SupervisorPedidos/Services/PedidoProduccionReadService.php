@@ -605,7 +605,25 @@ class PedidoProduccionReadService
                 LEFT JOIN prenda_entregas pe ON pe.prenda_pedido_id = pp.id
                 WHERE pp.pedido_produccion_id = pedidos_produccion.id
                   AND pp.deleted_at IS NULL
-                  AND (pe.id IS NULL OR pe.entregado = 0)
+                  AND NOT (
+                    COALESCE(pe.entregado, 0) = 1
+                    OR (
+                        COALESCE((
+                            SELECT SUM(ppt.cantidad)
+                            FROM prenda_pedido_tallas ppt
+                            WHERE ppt.prenda_pedido_id = pp.id
+                        ), 0) > 0
+                        AND COALESCE((
+                            SELECT SUM(pem.cantidad_entregada)
+                            FROM prenda_entrega_movimientos pem
+                            WHERE pem.prenda_pedido_id = pp.id
+                        ), 0) >= COALESCE((
+                            SELECT SUM(ppt.cantidad)
+                            FROM prenda_pedido_tallas ppt
+                            WHERE ppt.prenda_pedido_id = pp.id
+                        ), 0)
+                    )
+                  )
             ) as prendas_pendientes_entrega_count"),
         ]);
     }

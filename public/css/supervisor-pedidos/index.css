@@ -974,3 +974,10 @@ body.dark-theme .action-menu-item:hover {
     box-shadow: 0 4px 8px rgba(139, 92, 246, 0.4);
 }
 
+.btn-accion--disabled,
+.btn-accion:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}

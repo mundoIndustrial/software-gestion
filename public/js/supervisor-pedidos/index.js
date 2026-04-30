@@ -111,6 +111,17 @@ function _spHasAllPrendasEntregadas(orden) {
     return estado === 'ENTREGADO' || estado === 'FINALIZADA' || estado === 'FINALIZADO';
 }
 
+function _spGetRowBaseBackground(isSelected, isDelivered) {
+    if (isSelected) {
+        return isDelivered ? '#86efac' : '#d1d5db';
+    }
+    return isDelivered ? '#dcfce7' : 'white';
+}
+
+function _spGetRowHoverBackground(isDelivered) {
+    return isDelivered ? '#bbf7d0' : '#f9fafb';
+}
+
 async function marcarTodasPrendasEntregadasPedido(pedidoId, numeroPedido = '') {
     if (!pedidoId) {
         _spNotify.error('No se pudo determinar el pedido para entrega masiva.');
@@ -291,14 +302,20 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
             const fecha = _spFormatDateTime(orden?.created_at);
             const canApprove = estado === 'PENDIENTE_SUPERVISOR' && !Boolean(orden?.es_solo_epp);
             const canBulkDeliver = !_spHasAllPrendasEntregadas(orden);
+            const isDelivered = !canBulkDeliver;
             const jsNumero = _spEscapeJsSingle(numeroPedidoNoHash);
             const jsNumeroHash = _spEscapeJsSingle(String(numeroPedido));
+            const rowBaseBackground = _spGetRowBaseBackground(isSelected, isDelivered);
+            const rowHoverBackground = _spGetRowHoverBackground(isDelivered);
+            const rowSelectedBackground = _spGetRowBaseBackground(true, isDelivered);
+            const rowUnselectedBackground = _spGetRowBaseBackground(false, isDelivered);
 
             return `
-                <div class="sp-orders-grid" style="padding: 1rem; border-bottom: 1px solid #e5e7eb; align-items: center; background: ${isSelected ? '#d1d5db' : 'white'}; transition: background 0.2s ease;"
-                    onmouseover="if (!this.dataset.seleccionado || this.dataset.seleccionado === 'false') this.style.background='#f9fafb'"
-                    onmouseout="this.style.background = (this.dataset.seleccionado === 'true') ? '#d1d5db' : 'white'"
+                <div class="sp-orders-grid" style="padding: 1rem; border-bottom: 1px solid #e5e7eb; align-items: center; background: ${rowBaseBackground}; transition: background 0.2s ease;"
+                    onmouseover="if (!this.dataset.seleccionado || this.dataset.seleccionado === 'false') this.style.background='${rowHoverBackground}'"
+                    onmouseout="this.style.background = (this.dataset.seleccionado === 'true') ? '${rowSelectedBackground}' : '${rowUnselectedBackground}'"
                     data-seleccionado="${isSelected ? 'true' : 'false'}"
+                    data-entregado="${isDelivered ? 'true' : 'false'}"
                     data-pedido-row="true"
                     data-pedido-id="${orden.id}">
                     <div style="display: flex; align-items: center; justify-content: center;">
@@ -308,7 +325,13 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                         <button class="btn-accion btn-accion--ver btn-ver-dropdown" data-menu-id="menu-ver-${numeroPedidoNoHash}" data-pedido="${numeroPedidoNoHash}" data-pedido-id="${orden.id}" title="Ver Opciones" style="position:relative;overflow:visible;"><i class="fas fa-eye"></i><span class="btn-ver-bodega-badge" data-bodega-button-badge style="display:none;position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;line-height:18px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.25);">0</span></button>
                         ${canApprove ? `<button class="btn-accion btn-accion--aprobar" onclick="abrirModalAprobacion(${orden.id}, '${jsNumero}')" title="Aprobar Pedido"><i class="fas fa-check"></i></button>` : ''}
                         ${canApprove ? `<button class="btn-accion btn-accion--anular" onclick="abrirModalAnulacion(${orden.id}, '${jsNumeroHash}')" title="Pasar a Revisión"><i class="fas fa-ban"></i></button>` : ''}
-                        ${canBulkDeliver ? `<button class="btn-accion" onclick="marcarTodasPrendasEntregadasPedido(${orden.id}, '${jsNumero}')" title="Marcar todas las prendas entregadas" style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%); color: #ffffff;"><i class="fas fa-check-double"></i></button>` : ''}
+                        <button class="btn-accion ${canBulkDeliver ? '' : 'btn-accion--disabled'}"
+                            onclick="${canBulkDeliver ? `marcarTodasPrendasEntregadasPedido(${orden.id}, '${jsNumero}')` : 'return false;'}"
+                            title="${canBulkDeliver ? 'Marcar todas las prendas entregadas' : 'Todas las prendas ya fueron entregadas'}"
+                            ${canBulkDeliver ? '' : 'disabled aria-disabled="true"'}
+                            style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%); color: #ffffff;">
+                            <i class="fas fa-check-double"></i>
+                        </button>
                         <button class="btn-accion btn-accion--ocultar" onclick="abrirModalOcultar(${orden.id}, '${jsNumero}')" title="Ocultar Pedido"><i class="fas fa-eye-slash"></i></button>
                     </div>
                     <div><span style="font-size: 0.85rem; color: #6b7280;">${fecha}</span></div>
