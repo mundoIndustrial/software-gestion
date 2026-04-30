@@ -178,6 +178,18 @@
 
     <!-- Scripts para Modal de Seguimiento de Pedidos -->
     <script defer src="{{ asset('js/ordersjs/tracking-modal-utils.js') }}"></script>
+    <script defer src="{{ asset('js/ordersjs/tracking/days-selector-handler.js') }}"></script>
+    <script defer src="{{ asset('js/ordersjs/tracking/date-utils.js') }}"></script>
+    <script defer src="{{ asset('js/ordersjs/tracking/modal-manager.js') }}"></script>
+    <script defer src="{{ asset('js/ordersjs/tracking/days-selector.js') }}"></script>
+    <script defer src="{{ asset('js/ordersjs/tracking/data-loader.js') }}"></script>
+    <script defer type="module" src="{{ asset('js/ordersjs/tracking-modal-handler.js') }}"></script>
+    <script defer src="{{ asset('js/ordersjs/tracking/ui-components.js') }}"></script>
+    <script defer src="{{ asset('js/ordersjs/tracking/process-manager.js') }}"></script>
+    <script defer src="{{ asset('js/ordersjs/tracking/area-cards.js') }}"></script>
+    <script defer src="{{ asset('js/ordersjs/tracking/prendas-renderer.js') }}"></script>
+    <script defer src="{{ asset('js/ordersjs/tracking/tracking-main.js') }}"></script>
+    <script defer src="{{ asset('js/supervisor-pedidos/tracking-modal-init.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/tracking-modal-init.js')) }}"></script>
 
     <!-- Novedades, Galería y Toggle Factura -->
     <!-- Limpiar asignaciones y selección de pedidos -->

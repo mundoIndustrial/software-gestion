@@ -23,14 +23,27 @@ window.openOrderTrackingModal = async function(ordenId) {
     }
 
     try {
-        const pedidoData = await _trackingHttp.get(`/api/supervisor-pedidos/ordenes/${ordenId}/datos`);
+        const pedidoResponse = await _trackingHttp.get(`/api/supervisor-pedidos/ordenes/${ordenId}/datos`);
         console.log('[openOrderTrackingModal] Datos del pedido recibidos');
+
+        // Normalizar respuesta: algunos endpoints devuelven { success, data: {...} }
+        const pedidoData = (pedidoResponse && typeof pedidoResponse === 'object' && pedidoResponse.data && typeof pedidoResponse.data === 'object')
+            ? { ...pedidoResponse.data }
+            : { ...(pedidoResponse || {}) };
 
         try {
             pedidoData.procesos = await _trackingHttp.get(`/api/ordenes/${ordenId}/procesos`);
         } catch (procError) {
             console.warn('[openOrderTrackingModal] Error al obtener procesos:', procError);
             pedidoData.procesos = [];
+        }
+
+        // Fallback de identidad para tracking-modal-handler.js
+        if (!pedidoData.id && ordenId) {
+            pedidoData.id = Number(ordenId);
+        }
+        if (!pedidoData.orderId && pedidoData.id) {
+            pedidoData.orderId = Number(pedidoData.id);
         }
 
         mostrarTrackingModal(pedidoData);
