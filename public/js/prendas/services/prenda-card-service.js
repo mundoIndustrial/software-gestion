@@ -113,7 +113,7 @@ class PrendaCardService {
 
                     <!-- Info derecha -->
                     <div class="prenda-card-info">
-                        ${prenda.descripcion ? `<p class="prenda-descripcion">${prenda.descripcion}</p>` : ''}
+                        ${prenda.descripcion ? `<p class="prenda-descripcion" style="white-space: pre-wrap; font-family: Consolas, 'Courier New', monospace;">${prenda.descripcion}</p>` : ''}
                         
                         <!-- Specs: Tela, Color, Referencia -->
                         ${this._generarSpecs(indice, infoTela, fotoTela)}
@@ -227,4 +227,3 @@ class PrendaCardService {
 }
 
 window.PrendaCardService = PrendaCardService;
-

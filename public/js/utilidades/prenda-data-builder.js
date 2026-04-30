@@ -118,7 +118,8 @@ class PrendaDataBuilder {
 
         const nombrePrenda = document.getElementById('nueva-prenda-nombre')?.value?.trim();
         const origen = document.getElementById('nueva-prenda-origen-select')?.value;
-        const descripcion = document.getElementById('nueva-prenda-descripcion')?.value?.trim();
+        // No usar trim(): debemos conservar saltos de linea y espacios del textarea.
+        const descripcion = document.getElementById('nueva-prenda-descripcion')?.value ?? '';
 
 
 

@@ -69,7 +69,7 @@ class PedidoNormalizadorDTO
             return [
                 'uid' => $prenda['uid'] ?? null,
                 'nombre_prenda' => trim($prenda['nombre_prenda'] ?? ''),
-                'descripcion' => trim($prenda['descripcion'] ?? ''),
+                'descripcion' => self::normalizarTextoMultilinea($prenda['descripcion'] ?? ''),
                 'de_bodega' => $itemTransformer->determinardeBodega($prenda),
                 'cantidad_talla' => $cantidadTalla,
                 'variaciones' => $prenda['variaciones'] ?? [],
@@ -80,6 +80,84 @@ class PedidoNormalizadorDTO
                 'flujo' => $prenda['flujo'] ?? 'simple',
             ];
         }, $prendas);
+    }
+
+    /**
+     * Normaliza saltos de línea para almacenamiento consistente en BD:
+     * - Convierte CRLF/CR a LF
+     * - Preserva saltos internos (Enter del usuario)
+     * - Solo recorta espacios al inicio/fin del bloque completo
+     */
+    private static function normalizarTextoMultilinea(mixed $valor): string
+    {
+        $texto = (string) ($valor ?? '');
+        $texto = str_replace(["\r\n", "\r"], "\n", $texto);
+
+        // Si no hay etiquetas HTML, tratar como texto plano.
+        if (!preg_match('/<[^>]+>/', $texto)) {
+            return trim($texto);
+        }
+
+        return trim(self::sanitizarDescripcionHtmlPermitida($texto));
+    }
+
+    /**
+     * Sanitiza HTML de descripción con whitelist estricta:
+     * - Etiquetas permitidas: <span>, <br>
+     * - Atributo permitido en span: style con propiedad color segura
+     */
+    private static function sanitizarDescripcionHtmlPermitida(string $html): string
+    {
+        // 1) Mantener solo span y br
+        $sanitizado = strip_tags($html, '<span><br>');
+
+        // 2) Normalizar variantes de <br> a <br>
+        $sanitizado = preg_replace('/<br\s*\/?>/i', '<br>', $sanitizado) ?? $sanitizado;
+
+        // 3) Reconstruir cada <span ...> para permitir solo color seguro
+        $sanitizado = preg_replace_callback('/<span\b([^>]*)>/i', function ($matches) {
+            $attrs = (string) ($matches[1] ?? '');
+            $color = null;
+
+            if (preg_match('/style\s*=\s*([\'"])(.*?)\1/i', $attrs, $styleMatch)) {
+                $style = $styleMatch[2] ?? '';
+                if (preg_match('/(?:^|;)\s*color\s*:\s*([^;]+)/i', $style, $colorMatch)) {
+                    $candidate = trim((string) ($colorMatch[1] ?? ''));
+                    if (self::esColorSeguro($candidate)) {
+                        $color = $candidate;
+                    }
+                }
+            }
+
+            return $color ? '<span style="color:' . $color . ';">' : '<span>';
+        }, $sanitizado) ?? $sanitizado;
+
+        return $sanitizado;
+    }
+
+    /**
+     * Valida formatos de color permitidos:
+     * - #RGB, #RRGGBB
+     * - rgb(...)
+     * - nombres básicos (letras)
+     */
+    private static function esColorSeguro(string $value): bool
+    {
+        $value = trim($value);
+
+        if (preg_match('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $value)) {
+            return true;
+        }
+
+        if (preg_match('/^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/i', $value)) {
+            return true;
+        }
+
+        if (preg_match('/^[a-zA-Z]+$/', $value)) {
+            return true;
+        }
+
+        return false;
     }
 
     private static function normalizarTelas(array $telas): array

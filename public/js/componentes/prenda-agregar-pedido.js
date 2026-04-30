@@ -164,7 +164,7 @@
 
         // Fallback: recolectar campos manualmente
         const nombre = document.getElementById('nueva-prenda-nombre')?.value?.trim();
-        const descripcion = document.getElementById('nueva-prenda-descripcion')?.value?.trim();
+        const descripcion = document.getElementById('nueva-prenda-descripcion')?.value ?? '';
         const origenSelect = document.getElementById('nueva-prenda-origen-select')?.value || 'bodega';
 
         if (!nombre) {

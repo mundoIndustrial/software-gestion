@@ -108,6 +108,7 @@ class InvoiceRenderer {
      */
     renderizarPrenda(prenda, idx) {
         const imagenesPrenda = this.obtenerImagenesUnicas(prenda.imagenes || []);
+        const descripcionHTML = this.formatearDescripcionParaVista(prenda?.descripcion);
 
         // Renderizar variantes
         const variantesHTML = this.renderizarVariantes(prenda);
@@ -144,7 +145,7 @@ class InvoiceRenderer {
                         </div>
                         <div style="flex: 1; font-size: 11px;">
                             <div style="font-weight: 700; color: #2c3e50; margin-bottom: 3px; line-height: 1.3;">${prenda.nombre}${prenda.de_bodega ? ' <span style="color: #ea580c; font-weight: bold;">- SE SACA DE BODEGA</span>' : ''}</div>
-                            ${prenda.descripcion ? `<div style="color: #666; font-size: 11px; line-height: 1.3;">${prenda.descripcion}</div>` : ''}
+                            ${descripcionHTML ? `<div style="color: #666; font-size: 11px; line-height: 1.3; white-space: pre; overflow-x: auto; font-family: Consolas, 'Courier New', monospace;">${descripcionHTML}</div>` : ''}
                         </div>
                     </div>
 
@@ -175,6 +176,24 @@ class InvoiceRenderer {
                 ` : ''}
             </div>
         `;
+    }
+
+    formatearDescripcionParaVista(descripcion) {
+        if (!descripcion) return '';
+
+        const texto = String(descripcion);
+        const tieneHtml = /<[^>]+>/.test(texto);
+
+        // Caso texto plano: normalizar CR/LF para que los saltos sí se vean en HTML.
+        if (!tieneHtml) {
+            return texto.replace(/\r\n?/g, '\n');
+        }
+
+        // Caso HTML: normalizar solo contenido textual entre tags sin romper el marcado.
+        return texto.replace(/(^|>)([^<]*)(?=<|$)/g, (match, prefix, content) => {
+            const normalizado = content.replace(/\r\n?/g, '\n');
+            return `${prefix}${normalizado}`;
+        });
     }
 
     renderizarVariantes(prenda) {

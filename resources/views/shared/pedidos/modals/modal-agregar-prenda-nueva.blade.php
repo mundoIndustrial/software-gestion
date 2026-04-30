@@ -50,7 +50,13 @@
                             <label for="nueva-prenda-descripcion" class="form-label-primary">
                                 <span class="material-symbols-rounded">description</span>DESCRIPCIÓN
                             </label>
-                            <textarea id="nueva-prenda-descripcion" placeholder="Descripción de la prenda, detalles especiales..." class="form-textarea" onkeyup="convertirAMayusculasConCursor(this);" style="text-transform: uppercase;"></textarea>
+                            <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+                                <label for="selector-color-descripcion" style="font-size: 0.8rem; color: #374151; font-weight: 600;">Color texto:</label>
+                                <input type="color" id="selector-color-descripcion" value="#111827" onchange="aplicarColorDescripcion(this.value);" style="width: 40px; height: 28px; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer;">
+                                <button type="button" onclick="aplicarColorDescripcion('#111827');" style="padding: 0.25rem 0.6rem; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; color: #111827; font-size: 0.75rem; cursor: pointer;">Negro</button>
+                            </div>
+                            <div id="nueva-prenda-descripcion-editor" class="form-textarea" contenteditable="true" style="text-transform: uppercase; white-space: pre-wrap; min-height: 110px; overflow-y: auto;"></div>
+                            <textarea id="nueva-prenda-descripcion" placeholder="Descripción de la prenda, detalles especiales..." class="form-textarea" style="display:none;" aria-hidden="true"></textarea>
                             <small style="display: block; margin-top: 0.5rem; color: #dc3545; font-weight: 500;">
                                 <strong>⚠️ NO OLVIDES:</strong> Agregar en descripción: Manga, Bolsillo, cuellos y puños. Incluir: Tela, Referencia y Código de Puños
                             </small>
@@ -446,6 +452,87 @@ window.convertirAMayusculasConCursor = function(element) {
     element.value = element.value.toUpperCase();
     element.setSelectionRange(start, end);
 };
+
+/**
+ * Fuerza inserción de salto de línea en el textarea de descripción.
+ * Evita que handlers globales de Enter bloqueen el salto.
+ */
+window.preservarEnterEnDescripcion = function(event, element) {
+    if (!event || !element) return;
+    if (event.key !== 'Enter') return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const start = element.selectionStart ?? 0;
+    const end = element.selectionEnd ?? start;
+    const value = String(element.value ?? '');
+    const nextValue = value.slice(0, start) + '\n' + value.slice(end);
+    element.value = nextValue;
+    element.setSelectionRange(start + 1, start + 1);
+};
+
+window.aplicarColorDescripcion = function(colorHex) {
+    const editor = document.getElementById('nueva-prenda-descripcion-editor');
+    if (!editor) return;
+    editor.focus();
+    document.execCommand('styleWithCSS', false, true);
+    document.execCommand('foreColor', false, colorHex || '#111827');
+    sincronizarTextareaDescripcionDesdeEditor();
+};
+
+window.sincronizarTextareaDescripcionDesdeEditor = function() {
+    const editor = document.getElementById('nueva-prenda-descripcion-editor');
+    const textarea = document.getElementById('nueva-prenda-descripcion');
+    if (!editor || !textarea) return;
+    textarea.value = editor.innerHTML;
+};
+
+window.sincronizarEditorDescripcionDesdeTextarea = function() {
+    const editor = document.getElementById('nueva-prenda-descripcion-editor');
+    const textarea = document.getElementById('nueva-prenda-descripcion');
+    if (!editor || !textarea) return;
+
+    const raw = String(textarea.value || '');
+    if (!raw.trim()) {
+        editor.innerHTML = '';
+        return;
+    }
+
+    const pareceHtml = /<\/?[a-z][\s\S]*>/i.test(raw);
+    editor.innerHTML = pareceHtml
+        ? raw
+        : raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\r?\n/g, '<br>');
+};
+
+(function initDescripcionEditorBindings() {
+    const editor = document.getElementById('nueva-prenda-descripcion-editor');
+    const textarea = document.getElementById('nueva-prenda-descripcion');
+    const modal = document.getElementById('modal-agregar-prenda-nueva');
+    if (!editor || !textarea) return;
+
+    editor.addEventListener('input', () => {
+        sincronizarTextareaDescripcionDesdeEditor();
+    });
+
+    editor.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            document.execCommand('insertLineBreak');
+            sincronizarTextareaDescripcionDesdeEditor();
+        }
+    });
+
+    if (modal) {
+        const observer = new MutationObserver(() => {
+            const visible = modal.style.display && modal.style.display !== 'none';
+            if (visible) {
+                sincronizarEditorDescripcionDesdeTextarea();
+            }
+        });
+        observer.observe(modal, { attributes: true, attributeFilter: ['style', 'class'] });
+    }
+})();
 
 /**
  * Asegurar que la fila de inputs de telas sea siempre visible y funcional

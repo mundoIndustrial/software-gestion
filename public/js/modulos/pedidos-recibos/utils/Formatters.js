@@ -124,25 +124,35 @@ export class Formatters {
 
         // 3. Descripción base - pegada a la línea técnica sin título
         if (prenda.descripcion && prenda.descripcion.trim()) {
-            let desc = prenda.descripcion.toUpperCase().trim();
-            
-            // Filtrar líneas de basura: solo texto aleatorio de 5+ letras sin espacios
-            desc = desc.split('\n')
-                .map(linea => linea.trim())
-                .filter(linea => {
-                    if (!linea) return false;
-                    // Si es solo DSFSDFS o similar (5+ letras sin espacios, sin palabras conocidas)
-                    if (linea.match(/^[A-Z]{5,}$/) && !linea.match(/^(PRENDA|TALLA|TELA|COLOR|MANGA|BOLSILLO|BOTÓN|BROCHE|CREMALLERA|DAMA|HOMBRE)/)) {
-                        console.log('[Formatters]  Filtrando línea basura:', linea);
-                        return false;
-                    }
-                    return true;
-                })
-                .join('\n');
-            
-            if (desc.trim()) {
-                lineas.push(desc);
-                console.log('[Formatters]  Descripción agregada (después de limpiar)');
+            const descOriginal = String(prenda.descripcion || '');
+            const contieneHtml = /<\/?[a-z][\s\S]*>/i.test(descOriginal);
+
+            // Si viene con formato enriquecido (span/font/etc), respetarlo tal cual.
+            if (contieneHtml) {
+                lineas.push(descOriginal);
+                console.log('[Formatters]  Descripción HTML enriquecida agregada sin normalizar');
+            } else {
+                let desc = descOriginal.toUpperCase().trim();
+                
+                // Filtrar líneas de basura: solo texto aleatorio de 5+ letras sin espacios
+                desc = desc.split('\n')
+                    .map(linea => linea.trim())
+                    .filter(linea => {
+                        if (!linea) return false;
+                        // Si es solo DSFSDFS o similar (5+ letras sin espacios, sin palabras conocidas)
+                        if (linea.match(/^[A-Z]{5,}$/) && !linea.match(/^(PRENDA|TALLA|TELA|COLOR|MANGA|BOLSILLO|BOTÓN|BROCHE|CREMALLERA|DAMA|HOMBRE)/)) {
+                            console.log('[Formatters]  Filtrando línea basura:', linea);
+                            return false;
+                        }
+                        return true;
+                    })
+                    .join('\n');
+                
+                if (desc.trim()) {
+                    // Convertir saltos de linea y preservar espacios múltiples para mantener alineación visual.
+                    lineas.push(this._formatearTextoMonoespaciadoHTML(desc));
+                    console.log('[Formatters]  Descripción agregada (después de limpiar)');
+                }
             }
         }
 
@@ -420,6 +430,10 @@ export class Formatters {
             });
         }
 
+        return this._finalizarDescripcion(lineas);
+    }
+
+    static _finalizarDescripcion(lineas) {
         const resultado = lineas.join('<br>') || '<em>Sin información</em>';
         console.log('[Formatters.construirDescripcionCostura]  OUTPUT completo:', resultado);
         console.log('[Formatters.construirDescripcionCostura]  Cantidad de líneas:', lineas.length);
@@ -486,7 +500,14 @@ export class Formatters {
 
         // 2.5. Descripción de la prenda (antes de ubicaciones) - pegado a la línea técnica
         if (prenda.descripcion && prenda.descripcion.trim()) {
-            lineas.push(prenda.descripcion);
+            const descOriginal = String(prenda.descripcion || '');
+            const contieneHtml = /<\/?[a-z][\s\S]*>/i.test(descOriginal);
+            if (contieneHtml) {
+                lineas.push(descOriginal);
+            } else {
+                // Conservar saltos y espacios múltiples capturados en la descripción.
+                lineas.push(this._formatearTextoMonoespaciadoHTML(descOriginal));
+            }
         }
 
         // 2.6. Variaciones de prenda (antes de ubicaciones)
@@ -803,6 +824,17 @@ export class Formatters {
         }
 
         return lineas.join('<br>') || '<em>Sin información</em>';
+    }
+
+    /**
+     * Preserva formato de texto libre:
+     * - Saltos de línea -> <br>
+     * - Espacios múltiples -> &nbsp; (mantiene columnas por espacios)
+     */
+    static _formatearTextoMonoespaciadoHTML(texto) {
+        return String(texto ?? '')
+            .replace(/ /g, '&nbsp;')
+            .replace(/\r?\n/g, '<br>');
     }
 
     /**

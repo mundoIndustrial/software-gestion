@@ -61,11 +61,24 @@ class PedidoItemBuilder
         $this->pedidoTipoPrendaService->asegurarTipo($nombrePrenda);
 
         $localId = trim((string) ($itemData['_local_id'] ?? $itemData['local_id'] ?? ''));
+        $descripcionOriginal = $itemData['descripcion'] ?? null;
+        $descripcionNormalizada = $this->normalizarDescripcionMultilinea($descripcionOriginal);
+
+        Log::info('[PedidoItemBuilder] Diagnóstico descripción prenda', [
+            'pedido_id' => $pedido->id,
+            'nombre_prenda' => $nombrePrenda,
+            'descripcion_original' => $descripcionOriginal,
+            'descripcion_original_visible' => $this->representarCaracteresControl($descripcionOriginal),
+            'descripcion_original_hex' => $this->textoAHex($descripcionOriginal),
+            'descripcion_normalizada' => $descripcionNormalizada,
+            'descripcion_normalizada_visible' => $this->representarCaracteresControl($descripcionNormalizada),
+            'descripcion_normalizada_hex' => $this->textoAHex($descripcionNormalizada),
+        ]);
 
         $payload = [
             'pedido_produccion_id' => $pedido->id,
             'nombre_prenda' => $nombrePrenda,
-            'descripcion' => $itemData['descripcion'] ?? null,
+            'descripcion' => $descripcionNormalizada,
             'de_bodega' => $itemData['de_bodega'] ?? 0,
             'local_id' => $localId !== '' ? $localId : null,
         ];
@@ -83,5 +96,45 @@ class PedidoItemBuilder
         ]);
 
         return $prenda;
+    }
+
+    /**
+     * Asegura un formato consistente de saltos de línea en DB:
+     * - CRLF/CR -> LF
+     * - conserva los Enter del usuario
+     * - recorta solo bordes del bloque completo
+     */
+    private function normalizarDescripcionMultilinea(mixed $descripcion): ?string
+    {
+        if ($descripcion === null) {
+            return null;
+        }
+
+        $texto = str_replace(["\r\n", "\r"], "\n", (string) $descripcion);
+        $texto = trim($texto);
+
+        return $texto === '' ? null : $texto;
+    }
+
+    private function representarCaracteresControl(mixed $valor): ?string
+    {
+        if ($valor === null) {
+            return null;
+        }
+
+        $texto = (string) $valor;
+        $texto = str_replace("\r", '\\r', $texto);
+        $texto = str_replace("\n", '\\n', $texto);
+
+        return $texto;
+    }
+
+    private function textoAHex(mixed $valor): ?string
+    {
+        if ($valor === null) {
+            return null;
+        }
+
+        return bin2hex((string) $valor);
     }
 }

@@ -412,7 +412,13 @@
                                         <p class="prendas-label">
                                             <strong>{{ $prenda['nombre_prenda'] }}</strong>
                                             @if($prenda['descripcion'])
-                                                {{ $prenda['descripcion'] }}
+                                                @php
+                                                    $descripcionOperarioRaw = (string) ($prenda['descripcion'] ?? '');
+                                                    $descripcionOperarioNormalizada = preg_replace("/\r\n?/", "\n", $descripcionOperarioRaw);
+                                                    $descripcionOperarioPermitida = strip_tags($descripcionOperarioNormalizada, '<span><br>');
+                                                    $descripcionOperarioRender = nl2br($descripcionOperarioPermitida, false);
+                                                @endphp
+                                                {!! $descripcionOperarioRender !!}
                                             @endif
                                         </p>        
                                     </div>
