@@ -79,9 +79,10 @@
                          data-prenda="{{ strtolower($prenda['nombre_prenda']) }}"
                          data-cliente="{{ strtolower($prenda['cliente']) }}"
                          data-tipo-recibo="{{ strtoupper($tipoRecibo) }}"
+                         data-prenda-id="{{ $prenda['prenda_id'] ?? '' }}"
                          data-es-parcial="{{ $esParcial ? '1' : '0' }}"
                          data-parcial-id="{{ $recibo['parcial_id'] ?? '' }}"
-                         data-numero-recibo="{{ $recibo['id'] ?? '' }}">
+                         data-numero-recibo="{{ $consecutivoActual !== '' ? $consecutivoActual : ($recibo['consecutivo_actual'] ?? '') }}">
 
                         <div class="orden-border {{ $estadoClass }}"></div>
 
@@ -187,11 +188,234 @@
     </div>
 </div>
 
+<div id="modalCompletarTallas" class="cc-modal-overlay" style="display: none;">
+    <div class="cc-modal-card">
+        <div class="cc-modal-header">
+            <h3>Completar recibo por tallas</h3>
+            <button type="button" class="cc-modal-close" onclick="cerrarModalCompletarTallas()">
+                <span class="material-symbols-rounded">close</span>
+            </button>
+        </div>
+        <div class="cc-modal-meta" id="ccModalMeta"></div>
+        <div class="cc-modal-body">
+            <div id="ccModalLoading" class="cc-modal-loading" style="display: none;">Cargando tallas...</div>
+            <div id="ccModalError" class="cc-modal-error" style="display: none;"></div>
+            <div id="ccModalTallasContainer"></div>
+        </div>
+        <div class="cc-modal-footer">
+            <button type="button" class="cc-btn cc-btn-cancel" onclick="cerrarModalCompletarTallas()">Cancelar</button>
+            <button type="button" class="cc-btn cc-btn-confirm" id="ccModalConfirmarBtn">Confirmar</button>
+        </div>
+    </div>
+</div>
+
 <style>
     .operario-dashboard {
         padding: 1.5rem;
         max-width: 1000px;
         margin: 0 auto;
+    }
+
+    .cc-modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: rgba(15, 23, 42, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .cc-modal-card {
+        width: 100%;
+        max-width: 620px;
+        max-height: 85vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        border-radius: 22px;
+        box-shadow: 0 18px 44px rgba(15, 23, 42, 0.26);
+    }
+
+    .cc-modal-header, .cc-modal-footer {
+        padding: 1.05rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .cc-modal-footer {
+        border-top: 1px solid #f1f5f9;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .cc-modal-header h3 {
+        margin: 0;
+        font-size: 1.08rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .cc-modal-close {
+        border: none;
+        background: #f3f4f6;
+        cursor: pointer;
+        color: #6b7280;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+    }
+
+    .cc-modal-meta {
+        padding: 0 1.25rem 0.75rem;
+        color: #475569;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+
+    .cc-modal-body {
+        overflow: auto;
+        padding: 0 1.25rem 1rem;
+    }
+
+    .cc-modal-loading, .cc-modal-error {
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .cc-modal-error {
+        color: #b91c1c;
+    }
+
+    .cc-tallas-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .cc-tallas-table th, .cc-tallas-table td {
+        border-bottom: 1px solid #edf2f7;
+        padding: 0.75rem 0.5rem;
+        text-align: left;
+        font-size: 0.86rem;
+    }
+
+    .cc-genero-row td {
+        background: #fff;
+        color: #94a3b8;
+        font-size: 0.75rem;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+
+    .cc-entrega-input {
+        width: 82px;
+        border: 1px solid #d6d3d1;
+        border-radius: 12px;
+        padding: 0.42rem 0.5rem;
+        text-align: center;
+        font-weight: 600;
+        color: #1f2937;
+        background: #fff;
+    }
+
+    .cc-entrega-wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .cc-disp-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 62px;
+        padding: 0.3rem 0.45rem;
+        border-radius: 10px;
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .cc-talla-check {
+        width: 18px;
+        height: 18px;
+        accent-color: #2b2626;
+    }
+
+    .cc-talla-pill {
+        display: inline-flex;
+        min-width: 38px;
+        justify-content: center;
+        align-items: center;
+        padding: 0.3rem 0.65rem;
+        border-radius: 10px;
+        background: #f3f4f6;
+        font-weight: 700;
+        color: #374151;
+    }
+
+    .cc-btn {
+        border: none;
+        border-radius: 14px;
+        padding: 0.7rem 1.3rem;
+        font-weight: 600;
+        cursor: pointer;
+        min-width: 116px;
+    }
+
+    .cc-btn-cancel {
+        background: #f3f4f6;
+        color: #334155;
+    }
+
+    .cc-btn-confirm {
+        background: #262222;
+        color: #fff;
+    }
+
+    @media (max-width: 640px) {
+        .cc-modal-overlay {
+            padding: 0.5rem;
+        }
+
+        .cc-modal-card {
+            max-width: 100%;
+            max-height: 92vh;
+            border-radius: 16px;
+        }
+
+        .cc-modal-header, .cc-modal-footer {
+            padding: 0.85rem 0.9rem;
+        }
+
+        .cc-modal-meta,
+        .cc-modal-body {
+            padding-left: 0.9rem;
+            padding-right: 0.9rem;
+        }
+
+        .cc-tallas-table th, .cc-tallas-table td {
+            padding: 0.62rem 0.32rem;
+            font-size: 0.81rem;
+        }
+
+        .cc-modal-footer {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .cc-btn {
+            width: 100%;
+            min-width: 0;
+        }
     }
 
     /* Búsqueda */
@@ -1690,6 +1914,7 @@
             card.dataset.prenda = String(orden.nombre_prenda || '').toLowerCase();
             card.dataset.cliente = String(orden.cliente || '').toLowerCase();
             card.dataset.tipoRecibo = tipoRecibo;
+            card.dataset.prendaId = String(prendaId || '');
             card.dataset.esParcial = esParcial ? '1' : '0';
             card.dataset.parcialId = String(parcialId || '');
             card.dataset.numeroRecibo = String(consecutivoActual || recibo.id || orden.id || '');
@@ -1828,6 +2053,340 @@
         window.abrirModalRecibo(pedidoId, prendaId, 'control calidad');
     }
 
+    window._ccCompletarDraft = {
+        reciboId: null,
+        esParcial: false,
+        parcialId: null,
+        numeroPedido: null,
+        prendaId: null,
+        tallas: []
+    };
+
+    window.cerrarModalCompletarTallas = function() {
+        const modal = document.getElementById('modalCompletarTallas');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    };
+
+    async function cargarTallasReciboParaCompletar(btn) {
+        const card = btn.closest('.orden-card-simple');
+        const reciboId = btn.dataset.reciboId;
+        const esParcial = btn.dataset.esParcial === '1';
+        const parcialId = btn.dataset.parcialId || reciboId;
+        const numeroPedido = card?.dataset?.numero || '';
+        const prendaId = card?.dataset?.prendaId || '';
+
+        const modal = document.getElementById('modalCompletarTallas');
+        const meta = document.getElementById('ccModalMeta');
+        const loading = document.getElementById('ccModalLoading');
+        const errorBox = document.getElementById('ccModalError');
+        const container = document.getElementById('ccModalTallasContainer');
+
+        if (!modal || !container || !loading || !errorBox) {
+            return;
+        }
+
+        window._ccCompletarDraft = { reciboId, esParcial, parcialId, numeroPedido, prendaId, tallas: [] };
+
+        const numeroRecibo = String(
+            card?.dataset?.numeroRecibo
+            || card?.querySelector('.orden-numero')?.textContent?.replace('#', '').trim()
+            || ''
+        ).trim();
+            meta.textContent = `# Recibo ${numeroRecibo || '-'}`;
+        errorBox.style.display = 'none';
+        errorBox.textContent = '';
+        container.innerHTML = '';
+        loading.style.display = '';
+        modal.style.display = 'flex';
+
+        try {
+            const params = new URLSearchParams();
+            if (prendaId) params.set('prenda_id', prendaId);
+            if (esParcial) {
+                params.set('tipo_recibo', 'PARCIAL');
+                if (parcialId) params.set('parcial_id', parcialId);
+            }
+
+            const response = await fetch(`/control-calidad/api/pedido/${numeroPedido}?${params.toString()}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+            const prenda = data?.data?.prendas?.[0] || null;
+
+            const normalizarGenero = (valor) => {
+                const g = String(valor || '').trim().toUpperCase();
+                if (!g) return 'SIN GENERO';
+                if (g === 'HOMBRE') return 'CABALLERO';
+                if (g === 'MUJER') return 'DAMA';
+                return g;
+            };
+
+            const normalizarTallas = (source, generoFallback = '') => {
+                if (!source) return [];
+
+                if (Array.isArray(source)) {
+                    const salida = [];
+
+                    source.forEach((item) => {
+                        if (Array.isArray(item?.tallas)) {
+                            const generoGrupo = normalizarGenero(item?.genero ?? item?.nombre_genero ?? generoFallback);
+                            item.tallas.forEach((t) => {
+                                const tallaNombre = String(t?.talla ?? t?.nombre ?? '').trim();
+                                if (!tallaNombre) return;
+                                salida.push({
+                                    genero: generoGrupo,
+                                    talla: tallaNombre.toUpperCase(),
+                                    cantidad: Number(t?.cantidad ?? t?.total ?? 0)
+                                });
+                            });
+                            return;
+                        }
+
+                        const tallaNombre = String(item?.talla ?? item?.nombre ?? '').trim();
+                        const generoFila = normalizarGenero(item?.genero ?? item?.sexo ?? generoFallback);
+                        if (!tallaNombre) return;
+                        salida.push({
+                            genero: generoFila,
+                            talla: tallaNombre.toUpperCase(),
+                            cantidad: Number(item?.cantidad ?? item?.total ?? 0)
+                        });
+                    });
+
+                    return salida;
+                }
+
+                if (typeof source === 'object') {
+                    const salida = [];
+
+                    Object.entries(source).forEach(([key, value]) => {
+                        // Caso COSTURA típico:
+                        // { dama: { S: 2, M: 1 }, caballero: { L: 3 } }
+                        // o { dama: [{ talla:'S', cantidad:2 }] }
+                        if (value && typeof value === 'object') {
+                            const generoObj = normalizarGenero(key);
+
+                            if (Array.isArray(value)) {
+                                value.forEach((item) => {
+                                    const tallaNombre = String(item?.talla ?? item?.nombre ?? '').trim();
+                                    if (!tallaNombre) return;
+                                    salida.push({
+                                        genero: generoObj,
+                                        talla: tallaNombre.toUpperCase(),
+                                        cantidad: Number(item?.cantidad ?? item?.total ?? 0)
+                                    });
+                                });
+                                return;
+                            }
+
+                            Object.entries(value).forEach(([talla, cantidad]) => {
+                                const tallaNombre = String(talla || '').trim();
+                                if (!tallaNombre) return;
+                                salida.push({
+                                    genero: generoObj,
+                                    talla: tallaNombre.toUpperCase(),
+                                    cantidad: Number(cantidad || 0)
+                                });
+                            });
+                            return;
+                        }
+
+                        // Caso plano:
+                        // { S: 2, M: 1 }
+                        const tallaNombre = String(key || '').trim();
+                        if (!tallaNombre) return;
+                        salida.push({
+                            genero: normalizarGenero(generoFallback),
+                            talla: tallaNombre.toUpperCase(),
+                            cantidad: Number(value || 0)
+                        });
+                    });
+
+                    return salida;
+                }
+
+                return [];
+            };
+
+            let tallas = normalizarTallas(prenda?.tallas);
+
+            if (tallas.length === 0) {
+                tallas = normalizarTallas(prenda?.cantidad_talla);
+            }
+
+            if (tallas.length === 0 && Array.isArray(prenda?.procesos)) {
+                const tipoReciboCard = String(card?.dataset?.tipoRecibo || '').trim().toUpperCase();
+                const procesosPreferidos = prenda.procesos.filter((proc) => {
+                    const nombreProc = String(proc?.proceso || proc?.tipo_proceso || proc?.nombre_proceso || '').trim().toUpperCase();
+                    return nombreProc === tipoReciboCard || nombreProc === 'CONTROL DE CALIDAD' || nombreProc === 'CONTROL CALIDAD';
+                });
+                const procesosBase = procesosPreferidos.length > 0 ? procesosPreferidos : prenda.procesos;
+
+                for (const proceso of procesosBase) {
+                    if (Array.isArray(proceso?.tallas_detalle) && proceso.tallas_detalle.length > 0) {
+                        tallas = normalizarTallas(proceso.tallas_detalle);
+                        if (tallas.length > 0) break;
+                    }
+
+                    if (Array.isArray(proceso?.tallas) && proceso.tallas.length > 0) {
+                        tallas = normalizarTallas(proceso.tallas);
+                        if (tallas.length > 0) break;
+                    }
+                }
+            }
+
+            if (tallas.length > 0) {
+                const sumadas = {};
+                tallas.forEach((t) => {
+                    const genero = normalizarGenero(t.genero);
+                    const talla = String(t.talla || '').trim().toUpperCase();
+                    const key = `${genero}||${talla}`;
+                    if (!key) return;
+                    if (!sumadas[key]) {
+                        sumadas[key] = { genero, talla, cantidad: 0 };
+                    }
+                    sumadas[key].cantidad += Number(t.cantidad || 0);
+                });
+                tallas = Object.values(sumadas);
+            }
+
+            window._ccCompletarDraft.tallas = tallas;
+
+            if (tallas.length === 0) {
+                errorBox.textContent = 'Este recibo no tiene tallas disponibles para mostrar.';
+                errorBox.style.display = '';
+                return;
+            }
+
+            const tallasAgrupadas = tallas.reduce((acc, t) => {
+                const genero = normalizarGenero(t.genero);
+                if (!acc[genero]) acc[genero] = [];
+                acc[genero].push(t);
+                return acc;
+            }, {});
+
+            const ordenGeneros = ['DAMA', 'CABALLERO', 'UNISEX', 'SIN GENERO'];
+            const generosRender = Object.keys(tallasAgrupadas)
+                .sort((a, b) => {
+                    const ia = ordenGeneros.indexOf(a);
+                    const ib = ordenGeneros.indexOf(b);
+                    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+                });
+
+            let filaIndex = 0;
+            container.innerHTML = `
+                <table class="cc-tallas-table">
+                    <thead>
+                        <tr>
+                            <th>Seleccionar</th>
+                            <th>Talla</th>
+                            <th>Cantidad recibo</th>
+                            <th>Cantidad entrega</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${generosRender.map((genero) => {
+                            const filas = tallasAgrupadas[genero];
+                            return `
+                                <tr class="cc-genero-row">
+                                    <td colspan="4"><strong>${genero}</strong></td>
+                                </tr>
+                                ${filas.map((t) => {
+                                    const currentIndex = filaIndex++;
+                                    return `
+                                        <tr>
+                                            <td>
+                                                <input type="checkbox" data-index="${currentIndex}" class="cc-talla-check">
+                                            </td>
+                                            <td><span class="cc-talla-pill">${t.talla}</span></td>
+                                            <td>${t.cantidad}</td>
+                                            <td>
+                                                <div class="cc-entrega-wrap">
+                                                    <input type="number" min="0" step="1" class="cc-entrega-input" data-index="${currentIndex}" disabled>
+                                                    <span class="cc-disp-badge" data-disp-index="${currentIndex}">Disp: ${t.cantidad}</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            const tallasPlanas = [];
+            generosRender.forEach((genero) => {
+                tallasAgrupadas[genero].forEach((t) => tallasPlanas.push(t));
+            });
+
+            const refrescarDisponible = (idx) => {
+                const input = container.querySelector(`.cc-entrega-input[data-index="${idx}"]`);
+                const disp = container.querySelector(`.cc-disp-badge[data-disp-index="${idx}"]`);
+                if (!disp) return;
+
+                const total = Number(tallasPlanas[idx]?.cantidad ?? 0);
+                const digitado = Number(input?.value || 0);
+                const restante = Math.max(0, total - digitado);
+                disp.textContent = `Disp: ${restante}`;
+            };
+
+            const ajustarInputMaximo = (idx) => {
+                const input = container.querySelector(`.cc-entrega-input[data-index="${idx}"]`);
+                if (!input) return;
+                const total = Number(tallasPlanas[idx]?.cantidad ?? 0);
+                let valor = Number(input.value || 0);
+                if (!Number.isFinite(valor) || valor < 0) valor = 0;
+                if (valor > total) valor = total;
+                input.value = String(Math.floor(valor));
+                refrescarDisponible(idx);
+            };
+
+            container.querySelectorAll('.cc-talla-check').forEach((check) => {
+                check.addEventListener('change', (e) => {
+                    const idx = Number(e.target.dataset.index);
+                    const input = container.querySelector(`.cc-entrega-input[data-index="${idx}"]`);
+                    if (!input) return;
+
+                    if (e.target.checked) {
+                        input.disabled = false;
+                        input.value = String(tallasPlanas[idx]?.cantidad ?? 0);
+                        refrescarDisponible(idx);
+                    } else {
+                        input.value = '';
+                        input.disabled = true;
+                        const disp = container.querySelector(`.cc-disp-badge[data-disp-index="${idx}"]`);
+                        if (disp) {
+                            disp.textContent = `Disp: ${Number(tallasPlanas[idx]?.cantidad ?? 0)}`;
+                        }
+                    }
+                });
+            });
+
+            container.querySelectorAll('.cc-entrega-input').forEach((input) => {
+                input.addEventListener('input', (e) => {
+                    const idx = Number(e.target.dataset.index);
+                    ajustarInputMaximo(idx);
+                });
+                input.addEventListener('blur', (e) => {
+                    const idx = Number(e.target.dataset.index);
+                    ajustarInputMaximo(idx);
+                });
+            });
+        } catch (error) {
+            errorBox.textContent = 'No se pudieron cargar las tallas del recibo.';
+            errorBox.style.display = '';
+        } finally {
+            loading.style.display = 'none';
+        }
+    }
+
     window.toggleCompletarRecibo = async function(btn) {
         const reciboId = btn.dataset.reciboId;
         if (!reciboId) {
@@ -1840,49 +2399,7 @@
         if (yaCompletado) {
             return;
         }
-
-        try {
-            const response = await fetch(`/control-calidad/api/recibos/${reciboId}/completar`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    es_parcial: esParcial,
-                    parcial_id: esParcial ? parcialId : null,
-                })
-            });
-
-            const data = await response.json();
-            if (!data.success) {
-                return;
-            }
-
-            btn.dataset.completado = '1';
-            btn.setAttribute('data-completado', '1');
-            btn.style.display = 'none';
-
-            const body = btn.closest('.orden-body');
-            if (body) {
-                body.classList.add('recibo-completado-area');
-                const chip = body.querySelector('.recibo-completado-chip');
-                if (chip) {
-                    chip.style.display = '';
-                }
-            }
-            const card = btn.closest('.orden-card-simple');
-            if (card) {
-                card.classList.add('recibo-completado-card');
-            }
-
-            const btnDeshacer = btn.parentElement?.querySelector('.btn-deshacer-recibo');
-            if (btnDeshacer) {
-                btnDeshacer.style.display = '';
-            }
-        } catch (error) {
-            return;
-        }
+        await cargarTallasReciboParaCompletar(btn);
     };
 
     window.deshacerCompletarRecibo = async function(btn) {
