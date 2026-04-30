@@ -23,6 +23,7 @@ use App\Application\Insumos\UseCases\GuardarAnchoMetrajePrendaInsumosUseCase;
 use App\Application\Insumos\UseCases\ObtenerAnchoMetrajePrendaInsumosUseCase;
 use App\Application\Insumos\UseCases\ObtenerColoresPrendaInsumosUseCase;
 use App\Application\Insumos\Services\RecibosQueryService;
+use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -286,8 +287,11 @@ class InsumosController extends Controller
                 'prenda_id' => 'nullable|integer|exists:prendas_pedido,id',
             ]);
 
+            // Buscar el PedidoProduccion por ID para obtener su numero_pedido
+            $pedidoProduccion = PedidoProduccion::findOrFail((int) $ordenId);
+
             $resultado = $this->guardarMaterialesDetalladosUseCase->execute(
-                (string) $ordenId,
+                $pedidoProduccion->numero_pedido,
                 $validated['materiales'] ?? [],
                 $validated['prenda_id'] ?? null
             );
@@ -350,8 +354,11 @@ class InsumosController extends Controller
     public function obtenerMateriales($pedido)
     {
         try {
+            // Buscar el PedidoProduccion por ID para obtener su numero_pedido
+            $pedidoProduccion = PedidoProduccion::findOrFail((int) $pedido);
+            
             $resultado = $this->obtenerMaterialesPedidoUseCase->execute(
-                (string) $pedido,
+                $pedidoProduccion->numero_pedido,
                 request('prenda_id') ? (int) request('prenda_id') : null
             );
 

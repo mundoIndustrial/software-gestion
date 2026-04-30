@@ -113,7 +113,7 @@
                         @elseif($orden->dias_calculados >= 10) dias-10-15
                         @elseif($orden->dias_calculados >= 5) dias-5-9
                         @else dias-0-4 @endif
-                    @endif @if(isset($orden->marcar_plooter) && $orden->marcar_plooter) row-checked @endif" 
+                    @endif @if(isset($orden->marcar_plooter) && $orden->marcar_plooter) row-checked @endif @if(isset($orden->esta_completado) && $orden->esta_completado) row-completado @endif" 
                     data-pedido="{{ strtoupper($orden->numero_pedido ?? '') }}" 
                     data-cliente="{{ strtoupper($orden->cliente ?? '') }}" 
                     data-orden-pedido="{{ $orden->numero_pedido }}"
@@ -236,7 +236,7 @@
                                     $estadoClass = 'bg-yellow-400 text-gray-900';
                                     $estadoDisplay = 'Pendiente Tela';
                                 } elseif ($estadoValor === 'PENDIENTE_PLOTTER' || $estadoValor === 'Pendiente Plotter') {
-                                    $estadoClass = 'bg-yellow-400 text-gray-900';
+                                    $estadoClass = 'bg-gray-400 text-white';
                                     $estadoDisplay = 'Pendiente Plotter';
                                 } elseif ($estadoValor === 'DEVUELTO_ASESOR') {
                                     $estadoClass = 'bg-red-500 text-white';
@@ -281,7 +281,7 @@
                                     </select>
                                 </div>
                             @else
-                                <span class="inline-block px-3 py-2 rounded-lg text-sm font-semibold {{ $estadoClass }} break-words hover:text-white">
+                                <span class="estado-span inline-block px-3 py-2 rounded-lg text-sm font-semibold {{ $estadoClass }} break-words hover:text-white" data-recibo-id="{{ $orden->id }}">
                                     {{ $estadoDisplay }}
                                 </span>
                             @endif

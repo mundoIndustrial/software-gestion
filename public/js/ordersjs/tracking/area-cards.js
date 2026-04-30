@@ -90,15 +90,10 @@ class AreaCards {
     let fechaFinRaw = null;
     if (isInsumos) {
       fechaFinRaw = data.fecha_fin || null;
-    } else if (needsEncargado) {
-      // Para Corte, Costura, Control Calidad: usar fecha_completado
-      fechaFinRaw = data.fecha_completado || null;
     } else {
-      // Para otros procesos (Entrega, Despacho, etc.): usar fecha_fin o determinar dinámicamente
-      fechaFinRaw = data.fecha_fin || null;
-      
-      // Si no hay fecha_fin, podríamos intentar determinarla por el siguiente proceso
-      // Esto requeriría datos adicionales de los otros procesos
+      // Para TODOS los procesos: PRIORIDAD a fecha_completado si existe (de prenda_recibo_completado)
+      // Solo si no existe fecha_completado, usar fecha_fin (llegada del siguiente proceso)
+      fechaFinRaw = data.fecha_completado || data.fecha_fin || null;
     }
     
     const fechaFin = typeof formatDate === 'function' ? formatDate(fechaFinRaw) : (data.esta_activo ? '---' : '---');

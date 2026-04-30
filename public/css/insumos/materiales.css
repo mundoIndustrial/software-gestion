@@ -609,6 +609,23 @@ tr.row-checked:hover td:first-child {
     background-color: #ddd6fe !important;
 }
 
+/* Filas completadas (azul clarito) */
+tr.row-completado {
+    background-color: #dbeafe !important;
+}
+
+tr.row-completado:hover {
+    background-color: #bfdbfe !important;
+}
+
+tr.row-completado td:first-child {
+    background-color: #dbeafe !important;
+}
+
+tr.row-completado:hover td:first-child {
+    background-color: #bfdbfe !important;
+}
+
 /* Optimizar espaciado */
 td:first-child .flex {
     gap: 0.25rem !important;

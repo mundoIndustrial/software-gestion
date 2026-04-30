@@ -247,6 +247,30 @@ if (typeof window.cambioEstadoPendiente === 'undefined') {
 }
 
 /**
+ * Obtener el mapeo de estado a display text y clase CSS
+ */
+function obtenerEstadoInfo(estado) {
+    const mapa = {
+        'No iniciado': { display: 'No iniciado', clase: 'bg-gray-400 text-white' },
+        'En Ejecución': { display: 'En Ejecución', clase: 'bg-blue-100 text-blue-800' },
+        'En Ejecucion': { display: 'En Ejecución', clase: 'bg-blue-100 text-blue-800' },
+        'Anulada': { display: 'Anulada', clase: 'bg-amber-100 text-amber-800' },
+        'PENDIENTE_INSUMOS': { display: 'Pendiente Insumos', clase: 'bg-amber-500 text-white' },
+        'Pendiente_Insumos': { display: 'Pendiente Insumos', clase: 'bg-amber-500 text-white' },
+        'Pendiente Insumos': { display: 'Pendiente Insumos', clase: 'bg-amber-500 text-white' },
+        'PENDIENTE_TELA': { display: 'Pendiente Tela', clase: 'bg-yellow-400 text-gray-900' },
+        'Pendiente Tela': { display: 'Pendiente Tela', clase: 'bg-yellow-400 text-gray-900' },
+        'PENDIENTE_PLOTTER': { display: 'Pendiente Plotter', clase: 'bg-gray-400 text-white' },
+        'Pendiente Plotter': { display: 'Pendiente Plotter', clase: 'bg-gray-400 text-white' },
+        'INSUMOS_PEDIDOS': { display: 'Insumos Pedidos', clase: 'bg-green-500 text-white' },
+        'Insumos Pedidos': { display: 'Insumos Pedidos', clase: 'bg-green-500 text-white' },
+        'DEVUELTO_ASESOR': { display: 'Devuelto Asesor', clase: 'bg-red-500 text-white' },
+        'Devuelto Asesor': { display: 'Devuelto Asesor', clase: 'bg-red-500 text-white' }
+    };
+    return mapa[estado] || { display: estado, clase: 'bg-gray-400 text-white' };
+}
+
+/**
  * Cambiar estado desde el selector dropdown en la tabla
  * @param {HTMLSelectElement} selectElement - El elemento select que disparó el cambio
  */
@@ -363,6 +387,18 @@ async function confirmarCambioEstado() {
                         window.aplicarEstiloEstadoSelect(selectElement);
                     }
                 }, 100);
+                
+                // Actualizar el span de estado si existe (para cuando no es editable)
+                const spanEstado = document.querySelector(`span.estado-span[data-recibo-id="${reciboId}"]`);
+                if (spanEstado) {
+                    const info = obtenerEstadoInfo(estadoGuardado);
+                    // Remover todas las clases de color anteriores
+                    spanEstado.className = 'estado-span inline-block px-3 py-2 rounded-lg text-sm font-semibold break-words';
+                    // Agregar las nuevas clases
+                    spanEstado.className += ' ' + info.clase;
+                    // Actualizar el texto
+                    spanEstado.textContent = info.display;
+                }
             }
             
             // Mostrar toast de éxito
@@ -425,7 +461,7 @@ function actualizarColorSelect(selectElement, estado) {
     } else if (estado === 'Pendiente Tela' || estado === 'PENDIENTE_TELA') {
         selectElement.classList.add('bg-yellow-400', 'text-gray-900');
     } else if (estado === 'Pendiente Plotter' || estado === 'PENDIENTE_PLOTTER') {
-        selectElement.classList.add('bg-yellow-400', 'text-gray-900');
+        selectElement.classList.add('bg-gray-400', 'text-white');
     } else if (estado === 'DEVUELTO_ASESOR') {
         selectElement.classList.add('bg-red-500', 'text-white');
     } else if (estado === 'Insumos Pedidos' || estado === 'INSUMOS_PEDIDOS') {
@@ -528,8 +564,8 @@ function exportStatusActionsInsumos() {
             'Pendiente Insumos': { bg: '#f97316', color: '#ffffff', border: '#ea580c' },
             'Pendiente Tela': { bg: '#f59e0b', color: '#ffffff', border: '#d97706' },
             'PENDIENTE_TELA': { bg: '#f59e0b', color: '#ffffff', border: '#d97706' },
-            'Pendiente Plotter': { bg: '#a855f7', color: '#ffffff', border: '#c084fc' },
-            'PENDIENTE_PLOTTER': { bg: '#a855f7', color: '#ffffff', border: '#c084fc' },
+            'Pendiente Plotter': { bg: '#9ca3af', color: '#ffffff', border: '#6b7280' },
+            'PENDIENTE_PLOTTER': { bg: '#9ca3af', color: '#ffffff', border: '#6b7280' },
             'Insumos Pedidos': { bg: '#10b981', color: '#ffffff', border: '#059669' },
             'INSUMOS_PEDIDOS': { bg: '#10b981', color: '#ffffff', border: '#059669' },
             'DEVUELTO_ASESOR': { bg: '#ef4444', color: '#ffffff', border: '#dc2626' },

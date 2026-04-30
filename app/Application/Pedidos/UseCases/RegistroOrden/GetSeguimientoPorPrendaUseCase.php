@@ -146,11 +146,14 @@ class GetSeguimientoPorPrendaUseCase
         $reciboCosturaId = null;
         $numeroReciboObjetivoNormalizado = trim((string) ($numeroReciboObjetivo ?? ''));
         $tieneNumeroObjetivo = $numeroReciboObjetivoNormalizado !== '' && is_numeric($numeroReciboObjetivoNormalizado);
+        
+        // Determinar el tipo de recibo objetivo (por defecto COSTURA, pero puede ser REFLECTIVO, BORDADO, etc.)
+        $tipoReciboObjetivoNormalizado = strtoupper(trim((string) ($tipoReciboObjetivo ?? 'COSTURA')));
 
         if ($tieneNumeroObjetivo) {
             $numeroObjetivo = (int) $numeroReciboObjetivoNormalizado;
             foreach ($consecutivos as $c) {
-                if (($c->tipo_recibo ?? null) === 'COSTURA' && (int) ($c->consecutivo_actual ?? 0) === $numeroObjetivo) {
+                if (($c->tipo_recibo ?? null) === $tipoReciboObjetivoNormalizado && (int) ($c->consecutivo_actual ?? 0) === $numeroObjetivo) {
                     $numeroReciboCostura = $numeroObjetivo;
                     $reciboCosturaId = $c->id ?? null;
                     break;
@@ -160,7 +163,7 @@ class GetSeguimientoPorPrendaUseCase
 
         if ($numeroReciboCostura === null) {
             foreach ($consecutivos as $c) {
-                if (($c->tipo_recibo ?? null) === 'COSTURA' && !empty($c->consecutivo_actual)) {
+                if (($c->tipo_recibo ?? null) === $tipoReciboObjetivoNormalizado && !empty($c->consecutivo_actual)) {
                     $numeroReciboCostura = (int) $c->consecutivo_actual;
                     $reciboCosturaId = $c->id ?? null;
                     break;
@@ -377,7 +380,7 @@ class GetSeguimientoPorPrendaUseCase
                 'fecha_inicio' => $proceso->fecha_inicio,
                 'fecha_fin' => $proceso->fecha_fin,
                 'fecha_de_asignacion_encargado' => $proceso->fecha_de_asignacion_encargado,
-                'fecha_completado' => null, // se calcula desde completadosPorArea si existe
+                'fecha_completado' => $proceso->fecha_completado, // usar el valor asignado desde completadosPorArea
                 'duraciones' => $proceso->duraciones,
             ];
         }

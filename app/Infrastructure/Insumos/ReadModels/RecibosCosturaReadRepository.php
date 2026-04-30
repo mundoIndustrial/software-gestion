@@ -41,7 +41,8 @@ class RecibosCosturaReadRepository
                 'consecutivos_recibos_pedidos.area as recibo_area',
                 'pedidos_produccion.created_at as pedido_created_at',
                 'pedidos_produccion.dia_de_entrega',
-                'pedidos_produccion.fecha_estimada_de_entrega'
+                'pedidos_produccion.fecha_estimada_de_entrega',
+                DB::raw('(SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM prenda_recibo_completado WHERE id_recibo = consecutivos_recibos_pedidos.id) as esta_completado')
             )
             ->whereNotNull('consecutivos_recibos_pedidos.consecutivo_actual');
 
@@ -80,7 +81,8 @@ class RecibosCosturaReadRepository
                 'consecutivos_recibos_pedidos.area as recibo_area',
                 'pedidos_produccion.created_at as pedido_created_at',
                 'pedidos_produccion.dia_de_entrega',
-                'pedidos_produccion.fecha_estimada_de_entrega'
+                'pedidos_produccion.fecha_estimada_de_entrega',
+                DB::raw('(SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM prenda_recibo_completado WHERE id_recibo = consecutivos_recibos_pedidos.id) as esta_completado')
             )
             ->whereNotNull('consecutivos_recibos_pedidos.consecutivo_actual');
     }

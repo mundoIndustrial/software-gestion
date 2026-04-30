@@ -133,6 +133,7 @@ class RecibosViewTransformer
                 'updated_at' => $recibo->updated_at,
                 'tiene_materiales' => $cantidadMateriales > 0,
                 'cantidad_materiales' => $cantidadMateriales,
+                'esta_completado' => (int) ($recibo->esta_completado ?? 0) === 1,
             ];
         });
     }
