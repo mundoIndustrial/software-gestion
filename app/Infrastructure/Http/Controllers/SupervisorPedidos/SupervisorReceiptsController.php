@@ -583,14 +583,18 @@ class SupervisorReceiptsController extends Controller
             })
             ->count();
 
+        // Si no hay nota pero sí pendiente en Costura, debe seguir mostrándose alerta.
+        $alertCount = max((int) $notesCount, (int) $pendientesCount);
+
         return response()->json([
             'success' => true,
             'pedido_id' => $pedidoId,
             'numero_pedido' => (string) $pedido->numero_pedido,
             'pending_count' => (int) $pendientesCount,
             'has_pending' => $pendientesCount > 0,
-            'notes_count' => (int) $notesCount,
-            'has_notes' => $notesCount > 0,
+            'notes_count' => (int) $alertCount,
+            'has_notes' => $alertCount > 0,
+            'raw_notes_count' => (int) $notesCount,
         ]);
     }
 
@@ -636,15 +640,32 @@ class SupervisorReceiptsController extends Controller
             ->get()
             ->keyBy('pedido_produccion_id');
 
+        $pendientes = DB::table('bodega_detalles_talla as bdt')
+            ->whereNull('bdt.deleted_at')
+            ->whereRaw("LOWER(TRIM(COALESCE(bdt.area, ''))) = 'costura'")
+            ->whereRaw("LOWER(TRIM(COALESCE(bdt.estado_bodega, ''))) = 'pendiente'")
+            ->whereNull('bdt.pedido_epp_id')
+            ->whereNotNull('bdt.prenda_id')
+            ->whereIn('bdt.pedido_produccion_id', $pedidoIds)
+            ->select('bdt.pedido_produccion_id')
+            ->selectRaw('COUNT(*) as pending_count')
+            ->groupBy('bdt.pedido_produccion_id')
+            ->get()
+            ->keyBy('pedido_produccion_id');
+
         $resultado = [];
         foreach ($pedidoIds as $pedidoId) {
             if (!isset($pedidos[$pedidoId])) continue;
 
-            $notesCount = (int) ($notas[$pedidoId]->notes_count ?? 0);
+            $rawNotesCount = (int) ($notas[$pedidoId]->notes_count ?? 0);
+            $pendingCount = (int) ($pendientes[$pedidoId]->pending_count ?? 0);
+            $alertCount = max($rawNotesCount, $pendingCount);
             $resultado[] = [
                 'pedido_id' => $pedidoId,
-                'notes_count' => $notesCount,
-                'has_notes' => $notesCount > 0,
+                'notes_count' => $alertCount,
+                'has_notes' => $alertCount > 0,
+                'raw_notes_count' => $rawNotesCount,
+                'pending_count' => $pendingCount,
             ];
         }
 
@@ -687,13 +708,19 @@ class SupervisorReceiptsController extends Controller
             })
             ->select([
                 DB::raw("LOWER(TRIM(COALESCE(bdt.talla, ''))) as talla_normalizada"),
+                'bdt.talla',
+                DB::raw('COALESCE(NULLIF(TRIM(bdt.genero), ""), "-") as genero'),
                 'bdt.talla_color_id',
                 'bdt.prenda_id',
                 DB::raw('COALESCE(NULLIF(TRIM(bdt.prenda_nombre), ""), NULLIF(TRIM(pp.nombre_prenda), ""), "-") as prenda_nombre'),
                 DB::raw('COALESCE(pp.descripcion, "-") as prenda_descripcion'),
                 DB::raw('COALESCE(bdt.cantidad, 0) as cantidad'),
+                DB::raw('COALESCE(bdt.pendientes, 0) as pendientes'),
                 DB::raw('COALESCE(bdt.asesor, "") as asesor'),
                 DB::raw('COALESCE(bdt.empresa, "") as empresa'),
+                'bdt.fecha_pendiente',
+                'bdt.created_at',
+                'bdt.updated_at',
             ]);
 
         $detallesCosturaParaNotas = (clone $baseDetallesQuery)
@@ -735,7 +762,7 @@ class SupervisorReceiptsController extends Controller
             $clienteHeader = trim((string) ($detallesCosturaParaNotas->first()->empresa ?? ''));
         }
 
-        $novedades = DB::table('bodega_notas as bn')
+        $notas = DB::table('bodega_notas as bn')
             ->where(function ($q) use ($pedidoId, $pedido, $numeroPedidoNormalizado) {
                 $q->where('bn.pedido_produccion_id', $pedidoId)
                     ->orWhere('bn.numero_pedido', (string) $pedido->numero_pedido)
@@ -817,6 +844,10 @@ class SupervisorReceiptsController extends Controller
                 $cantidad = (int) $detallesRelacionados->sum(function ($d) {
                     return (int) ($d->cantidad ?? 0);
                 });
+                $genero = $detallesRelacionados->pluck('genero')->filter(function ($value) {
+                    $val = trim((string) $value);
+                    return $val !== '' && $val !== '-';
+                })->unique()->values()->implode(', ');
 
                 // Si seguimos sin datos útiles desde bodega, usar tallas fallback.
                 $sinPrendaUtil = $prendaNombre === '' || $prendaNombre === '-';
@@ -846,9 +877,64 @@ class SupervisorReceiptsController extends Controller
                 $nota->prenda_nombre = $prendaNombre !== '' ? $prendaNombre : '-';
                 $nota->prenda_descripcion = $prendaDescripcion !== '' ? $prendaDescripcion : '-';
                 $nota->cantidad = $cantidad;
+                $nota->genero = $genero !== '' ? $genero : '-';
 
                 return $nota;
             });
+
+        $tallasConNota = $notas->map(function ($nota) {
+            $tallaColorId = $nota->talla_color_id;
+            if ($tallaColorId !== null) {
+                return 'tc:' . (int) $tallaColorId;
+            }
+
+            $talla = mb_strtolower(trim((string) ($nota->talla ?? '')));
+            return 't:' . $talla;
+        })->unique()->values();
+
+        $pendientesSinNota = $detallesCosturaParaNotas
+            ->filter(function ($d) use ($tallasConNota) {
+                $pendientes = (int) ($d->pendientes ?? 0);
+                if ($pendientes <= 0) {
+                    return false;
+                }
+
+                $tallaColorId = $d->talla_color_id;
+                $key = $tallaColorId !== null
+                    ? 'tc:' . (int) $tallaColorId
+                    : 't:' . mb_strtolower(trim((string) ($d->talla ?? '')));
+
+                return !$tallasConNota->contains($key);
+            })
+            ->map(function ($d) use ($pedidoId, $pedido) {
+                $pendiente = (int) ($d->pendientes ?? 0);
+                $createdAt = $d->fecha_pendiente ?? $d->updated_at ?? $d->created_at ?? now();
+
+                return (object) [
+                    'id' => 'pendiente-' . ($d->talla_color_id ?? md5((string) ($d->talla ?? ''))),
+                    'pedido_produccion_id' => $pedidoId,
+                    'numero_pedido' => (string) $pedido->numero_pedido,
+                    'talla' => (string) ($d->talla ?? ''),
+                    'talla_color_id' => $d->talla_color_id,
+                    'contenido' => 'Pendiente registrado sin nota por parte del bodeguero.',
+                    'usuario_nombre' => 'Sistema',
+                    'usuario_rol' => 'Bodega',
+                    'visto_at' => null,
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
+                    'prenda_nombre' => (string) ($d->prenda_nombre ?? '-'),
+                    'prenda_descripcion' => (string) ($d->prenda_descripcion ?? '-'),
+                    'cantidad' => $pendiente,
+                    'genero' => (string) ($d->genero ?? '-'),
+                ];
+            });
+
+        $novedades = $notas
+            ->concat($pendientesSinNota)
+            ->sortByDesc(function ($item) {
+                return strtotime((string) ($item->created_at ?? '1970-01-01 00:00:00'));
+            })
+            ->values();
 
         \Log::info('[SupervisorPedidos][BodegaNovedades] Resultado de armado de modal', [
             'pedido_id' => $pedidoId,
@@ -856,7 +942,9 @@ class SupervisorReceiptsController extends Controller
             'detalles_costura_encontrados' => $detallesCosturaParaNotas->count(),
             'detalles_source' => $detallesSource,
             'detalles_tallas_fallback_encontrados' => $detallesTallasFallback->count(),
-            'notas_encontradas' => $novedades->count(),
+            'notas_encontradas' => $notas->count(),
+            'pendientes_sin_nota' => $pendientesSinNota->count(),
+            'novedades_totales' => $novedades->count(),
             'notas_sin_prenda' => $novedades->filter(fn ($n) => ($n->prenda_nombre ?? '-') === '-')->count(),
         ]);
 

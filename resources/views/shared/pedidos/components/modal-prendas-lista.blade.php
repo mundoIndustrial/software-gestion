@@ -237,7 +237,7 @@
                     if (!cantidad && item.cantidad) cantidad = item.cantidad;
                     
                     // Serializar item para inyectarlo como dato literal en el onclick
-                    const itemJson = JSON.stringify(item).replace(/"/g, '&quot;').replace(/'/g, "\\'");
+                    const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
                     const cardStyle = bloqueadaInicial
                         ? 'background: #f3f4f6; border: 2px solid #9ca3af; border-radius: 8px; padding: 1rem; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease;'
                         : 'background: white; border: 2px solid #1e40af; border-radius: 8px; padding: 1rem; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease;';

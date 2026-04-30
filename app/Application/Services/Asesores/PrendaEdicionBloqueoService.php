@@ -374,6 +374,13 @@ final class PrendaEdicionBloqueoService
             return null;
         }
 
+        // Si el pedido está en estado DEVUELTO_A_ASESORA, permitir edición de prendas de bodega con procesos
+        $estadoPedido = $this->obtenerEstadoPedido($pedidoId);
+        $estadoNormalizado = $this->normalizarTexto((string) $estadoPedido);
+        if ($estadoNormalizado === 'DEVUELTO_A_ASESORA') {
+            return null;
+        }
+
         $mensaje = "Esta prenda de bodega ya tiene procesos asociados, por ende no se puede editar. Comunicate con el lider de produccion.";
 
         Log::info('[PrendaEdicionBloqueo] BLOQUEADA_POR_BODEGA_TIENE_PROCESOS', [
@@ -389,7 +396,7 @@ final class PrendaEdicionBloqueoService
             'consecutivo' => null,
             'estado' => $procesoAsociado->estado ?? null,
             'area' => null,
-            'estado_pedido' => $this->obtenerEstadoPedido($pedidoId),
+            'estado_pedido' => $estadoPedido,
         ];
     }
 

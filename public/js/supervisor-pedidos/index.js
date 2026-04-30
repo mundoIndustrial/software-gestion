@@ -790,6 +790,7 @@ function _spRenderBodegaNovedadesContent(payload) {
         const prendaDescripcion = _spEscapeHtml(item?.prenda_descripcion || '-');
         const numeroPedido = _spEscapeHtml(item?.numero_pedido || payload?.numero_pedido || '-');
         const talla = _spEscapeHtml(item?.talla || '-');
+        const genero = _spEscapeHtml(item?.genero || '-');
         const cantidad = _spNormalizePendingCount(item?.cantidad);
         const fecha = _spFormatDateTime(item?.created_at);
 
@@ -808,6 +809,8 @@ function _spRenderBodegaNovedadesContent(payload) {
                 <div style="font-size:12px; color:#64748b; margin-bottom:4px; font-weight:700;">--Del Pedido</div>
                 <div style="font-size:13px; color:#475569; margin-bottom:8px;">
                     <strong>Talla:</strong> ${talla}
+                    <span style="margin:0 .4rem; color:#94a3b8;">|</span>
+                    <strong>Género:</strong> ${genero}
                     <span style="margin:0 .4rem; color:#94a3b8;">|</span>
                     <strong>Cantidad:</strong> ${cantidad}
                 </div>
