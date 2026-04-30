@@ -100,20 +100,29 @@
                 
                 if (searchInput) {
                     // Limpiar cualquier evento anterior para evitar duplicación
-                    searchInput.removeEventListener('input', performRecibosSearch);
-                    searchInput.addEventListener('input', function(e) {
+                    if (searchInput.__recibosSearchHandler) {
+                        searchInput.removeEventListener('input', searchInput.__recibosSearchHandler);
+                    }
+                    const inputHandler = function(e) {
                         const searchTerm = e.target.value.toLowerCase().trim();
                         performRecibosSearch(searchTerm);
-                    });
+                    };
+                    searchInput.__recibosSearchHandler = inputHandler;
+                    searchInput.addEventListener('input', inputHandler);
                     
                     // Agregar evento para el botón de limpiar
                     const clearBtn = document.getElementById('navSearchClear');
                     if (clearBtn) {
-                        clearBtn.addEventListener('click', function() {
+                        if (clearBtn.__recibosSearchClearHandler) {
+                            clearBtn.removeEventListener('click', clearBtn.__recibosSearchClearHandler);
+                        }
+                        const clearHandler = function() {
                             searchInput.value = '';
                             performRecibosSearch(''); // Limpiar búsqueda
                             clearBtn.style.display = 'none';
-                        });
+                        };
+                        clearBtn.__recibosSearchClearHandler = clearHandler;
+                        clearBtn.addEventListener('click', clearHandler);
                     }
                     
                     return true;
@@ -122,6 +131,11 @@
             }
             
             function performRecibosSearch(searchTerm) {
+                // Si la vista usa búsqueda AJAX global, evitar el filtrado local por página.
+                if (window.__USE_AJAX_RECIBOS_SEARCH__ === true) {
+                    return;
+                }
+
                 // Solo ejecutar si estamos en la página de recibos o registros
                 if (!window.location.pathname.includes('recibos-costura') && !window.location.pathname.includes('recibos-bodega') && !window.location.pathname.includes('recibos-bordado-estampado') && !window.location.pathname.includes('recibos-reflectivo') && !window.location.pathname.includes('/registros')) {
                     return;
@@ -134,7 +148,8 @@
                 let visibleCount = 0;
                 
                 // Determinar columna de búsqueda según la vista
-                const isRecibosCostura = window.location.pathname.includes('recibos-costura') || window.location.pathname.includes('recibos-bordado-estampado') || window.location.pathname.includes('recibos-reflectivo');
+                const isRecibosCostura = window.location.pathname.includes('recibos-costura') || window.location.pathname.includes('recibos-reflectivo');
+                const isRecibosBordadoEstampado = window.location.pathname.includes('recibos-bordado-estampado');
                 const isRecibosBodega = window.location.pathname.includes('recibos-bodega');
                 // Para registros: Pedido está en columna 5 (después de Área)
                 // Para recibos-costura: N° Recibo está en columna 4
@@ -162,6 +177,22 @@
                             // Columna 5: Cliente
                             if (!match && cells.length > 5) {
                                 const cliente = cells[5].textContent.trim();
+                                if (cliente.toLowerCase().includes(searchTerm.toLowerCase())) {
+                                    match = true;
+                                }
+                            }
+                        } else if (isRecibosBordadoEstampado) {
+                            // Para bordado/estampado: buscar por N° Recibo (columna 2) y Cliente (columna 4)
+                            // Mapeo: 0-Acciones, 1-Área, 2-N Recibo, 3-Tipo, 4-Cliente
+                            if (!match && cells.length > 2) {
+                                const numeroRecibo = cells[2].textContent.trim();
+                                if (numeroRecibo === searchTerm || numeroRecibo.startsWith(searchTerm)) {
+                                    match = true;
+                                }
+                            }
+
+                            if (!match && cells.length > 4) {
+                                const cliente = cells[4].textContent.trim();
                                 if (cliente.toLowerCase().includes(searchTerm.toLowerCase())) {
                                     match = true;
                                 }

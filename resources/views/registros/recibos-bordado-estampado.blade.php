@@ -398,6 +398,11 @@
 })();
 </script>
 
+<script>
+    // En esta vista la búsqueda debe ser global (backend + paginación), no local por página.
+    window.__USE_AJAX_RECIBOS_SEARCH__ = true;
+</script>
+
 <!-- Limpiar datos residuales de costura antes de cargar modulos -->
 <script>
     window.__VISTA_TIPO__ = 'bordado-estampado';
@@ -885,6 +890,9 @@
     initFloatingClear();
 })();
 </script>
+
+<!-- Search Module - Búsqueda AJAX global -->
+<script src="{{ asset('js/recibos-costura/search.js') }}?v={{ time() }}"></script>
 
 
 @endpush
