@@ -44,6 +44,9 @@ class RecibosParcialesController extends Controller
                 'tallas.*.genero' => 'nullable|string',
                 'tallas.*.color_nombre' => 'nullable|string|max:100',
                 'notas' => 'nullable|string|max:1000',
+                'ubicaciones' => 'nullable|array',
+                'ubicaciones.*' => 'nullable|string|max:120',
+                'observaciones' => 'nullable|string|max:4000',
             ]);
 
             Log::info('[RecibosParcialesController@store] Datos recibidos:', $validated);
@@ -95,6 +98,14 @@ class RecibosParcialesController extends Controller
                     'pedido_id' => $validated['pedido_id'],
                 ]);
 
+                // Snapshot para anexos reflectivo: conservar contexto del proceso base.
+                $tiposConDatosProcesoAnexo = ['REFLECTIVO', 'BORDADO', 'ESTAMPADO', 'DTF', 'SUBLIMADO'];
+                $esTipoConDatosProcesoAnexo = in_array($tipoReciboDB, $tiposConDatosProcesoAnexo, true);
+                $snapshotProceso = null;
+                if ($esTipoConDatosProcesoAnexo) {
+                    $snapshotProceso = $this->obtenerSnapshotProcesoByTipo((int) $validated['prenda_id'], $tipoReciboDB);
+                }
+
                 // 2. Crear registro en pedidos_parciales
                 $parcialId = DB::table('pedidos_parciales')->insertGetId([
                     'pedido_produccion_id' => $validated['pedido_id'],
@@ -105,6 +116,15 @@ class RecibosParcialesController extends Controller
                     'consecutivo_inicial' => null,
                     'activo' => 0,
                     'notas' => $validated['notas'] ?? null,
+                    'ubicaciones' => $esTipoConDatosProcesoAnexo
+                        ? json_encode($validated['ubicaciones'] ?? ($snapshotProceso['ubicaciones'] ?? []))
+                        : null,
+                    'observaciones' => $esTipoConDatosProcesoAnexo
+                        ? ($validated['observaciones'] ?? ($snapshotProceso['observaciones'] ?? null))
+                        : null,
+                    'datos_adicionales' => $esTipoConDatosProcesoAnexo && $snapshotProceso
+                        ? json_encode($snapshotProceso['datos_adicionales'])
+                        : null,
                     'created_by' => auth()->id(),
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -206,6 +226,13 @@ class RecibosParcialesController extends Controller
                     'message' => 'Recibo parcial no encontrado',
                 ], 404);
             }
+
+            $parcialArray = (array) $parcial;
+            $parcialArray['ubicaciones'] = $this->decodeJsonField($parcialArray['ubicaciones'] ?? null, []);
+            $parcialArray['datos_adicionales'] = $this->decodeJsonField($parcialArray['datos_adicionales'] ?? null, []);
+            $parcialArray['observaciones'] = isset($parcialArray['observaciones'])
+                ? (string) $parcialArray['observaciones']
+                : null;
 
             $tallas = DB::table('pedidos_parciales_tallas')
                 ->where('pedido_parcial_id', $id)
@@ -351,7 +378,7 @@ class RecibosParcialesController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'parcial' => $parcial,
+                    'parcial' => $parcialArray,
                     'tallas' => $tallas,
                     'tallas_formato' => $tallasFormato, // {CABALLERO: {M: 4, S: 1}} para Formatters
                     'tallas_formato_colores' => $tallasFormatoColores, // {CABALLERO: {M: [{color,cantidad}]}}
@@ -773,6 +800,54 @@ class RecibosParcialesController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    private function obtenerSnapshotProcesoByTipo(int $prendaId, string $tipoRecibo): ?array
+    {
+        $tipoProcesoBuscado = strtoupper(trim($tipoRecibo));
+        $proceso = DB::table('pedidos_procesos_prenda_detalles as ppd')
+            ->join('tipos_procesos as tp', 'tp.id', '=', 'ppd.tipo_proceso_id')
+            ->where('ppd.prenda_pedido_id', $prendaId)
+            ->whereNull('ppd.deleted_at')
+            ->where(function ($q) use ($tipoProcesoBuscado) {
+                $q->whereRaw('UPPER(TRIM(tp.nombre)) = ?', [$tipoProcesoBuscado])
+                  ->orWhereRaw('UPPER(TRIM(tp.slug)) = ?', [$tipoProcesoBuscado]);
+            })
+            ->orderByDesc('ppd.id')
+            ->select([
+                'ppd.ubicaciones',
+                'ppd.observaciones',
+                'ppd.datos_adicionales',
+            ])
+            ->first();
+
+        if (!$proceso) {
+            return null;
+        }
+
+        return [
+            'ubicaciones' => $this->decodeJsonField($proceso->ubicaciones ?? null, []),
+            'observaciones' => isset($proceso->observaciones) ? (string) $proceso->observaciones : null,
+            'datos_adicionales' => $this->decodeJsonField($proceso->datos_adicionales ?? null, []),
+        ];
+    }
+
+    private function decodeJsonField(mixed $value, mixed $default): mixed
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_object($value)) {
+            return (array) $value;
+        }
+
+        if (!is_string($value) || trim($value) === '') {
+            return $default;
+        }
+
+        $decoded = json_decode($value, true);
+        return json_last_error() === JSON_ERROR_NONE ? $decoded : $default;
     }
 
     /**

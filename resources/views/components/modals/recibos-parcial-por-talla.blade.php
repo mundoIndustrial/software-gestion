@@ -66,6 +66,24 @@
             </div>
         </div>
 
+        <!-- Sección de datos del anexo (ubicaciones/observaciones del proceso) -->
+        <div id="parcial-editar-proceso-section" style="display: none; background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+            <button onclick="toggleEditarProcesoSeccion()" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; padding: 0; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 600; color: #1f2937; font-size: 14px;">Editar ubicaciones y observaciones del anexo</span>
+                <span id="parcial-proceso-toggle-icon" style="color: #2563eb; font-size: 18px;">▼</span>
+            </button>
+            <div id="parcial-editar-proceso-contenido" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #93c5fd;">
+                <div style="margin-bottom: 12px;">
+                    <label style="display:block; font-weight:600; color:#374151; margin-bottom:6px; font-size:13px;">Ubicaciones (una por línea)</label>
+                    <textarea id="parcial-editar-ubicaciones" placeholder="Ej: PECHO&#10;ESPALDA&#10;MANGA DERECHA" style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; font-family:inherit; font-size:13px; resize:vertical; min-height:72px; box-sizing:border-box;"></textarea>
+                </div>
+                <div>
+                    <label style="display:block; font-weight:600; color:#374151; margin-bottom:6px; font-size:13px;">Observaciones del proceso</label>
+                    <textarea id="parcial-editar-observaciones-proceso" placeholder="Observaciones para este anexo..." style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; font-family:inherit; font-size:13px; resize:vertical; min-height:72px; box-sizing:border-box;"></textarea>
+                </div>
+            </div>
+        </div>
+
         <!-- Error State -->
         <div id="parcial-error" style="display: none; background: #fee2e2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; color: #991b1b; margin-bottom: 16px;">
             <p style="margin: 0; font-weight: 600;">Error</p>
@@ -148,6 +166,35 @@
         return html || null;
     }
 
+    function setUbicacionesAnexoValue(values) {
+        const el = document.getElementById('parcial-editar-ubicaciones');
+        if (!el) return;
+        const list = Array.isArray(values) ? values : [];
+        el.value = list.map((x) => String(x || '').trim()).filter(Boolean).join('\n');
+    }
+
+    function getUbicacionesAnexoValue() {
+        const el = document.getElementById('parcial-editar-ubicaciones');
+        if (!el) return [];
+        return String(el.value || '')
+            .split('\n')
+            .map((x) => x.trim())
+            .filter(Boolean);
+    }
+
+    function setObservacionesAnexoValue(value) {
+        const el = document.getElementById('parcial-editar-observaciones-proceso');
+        if (!el) return;
+        el.value = String(value || '');
+    }
+
+    function getObservacionesAnexoValue() {
+        const el = document.getElementById('parcial-editar-observaciones-proceso');
+        if (!el) return null;
+        const value = String(el.value || '').trim();
+        return value || null;
+    }
+
     window.aplicarColorDescripcionParcial = function(color) {
         document.execCommand('styleWithCSS', false, true);
         document.execCommand('foreColor', false, color || '#dc2626');
@@ -173,7 +220,9 @@
         tallasCantidad: {},
         pedidoId: null,
         mode: 'crear_recibo',
-        consecutivoReciboId: null
+        consecutivoReciboId: null,
+        ubicacionesAnexo: [],
+        observacionesAnexo: ''
     };
 
     /**
@@ -234,6 +283,8 @@
         window.modalReciboParcialState.tallasCantidad = {};
         window.modalReciboParcialState.mode = options.mode || 'crear_recibo';
         window.modalReciboParcialState.consecutivoReciboId = options.consecutivoReciboId || null;
+        window.modalReciboParcialState.ubicacionesAnexo = [];
+        window.modalReciboParcialState.observacionesAnexo = '';
 
         // Reset visual para evitar que se arrastre selección de un anexo anterior
         const tallasListEl = document.getElementById('parcial-tallas-list');
@@ -288,6 +339,11 @@
         const tipoProcesoLowerEdicion = String(tipoProceso || '').toLowerCase();
         const permiteEdicionPrenda = tipoProcesoLowerEdicion === 'costura' || tipoProcesoLowerEdicion === 'reflectivo';
         const mostrarEditarPrenda = esSupervisorPedidos && !modoEntregaParcial && permiteEdicionPrenda;
+        const editarProcesoSection = document.getElementById('parcial-editar-proceso-section');
+        const tiposConDatosProcesoAnexo = ['reflectivo', 'bordado', 'estampado', 'dtf', 'sublimado'];
+        const mostrarEditarProcesoAnexo = esSupervisorPedidos
+            && !modoEntregaParcial
+            && tiposConDatosProcesoAnexo.includes(tipoProcesoLowerEdicion);
 
         if (editarPrendaSection) {
             editarPrendaSection.style.display = mostrarEditarPrenda ? 'block' : 'none';
@@ -313,6 +369,32 @@
                 if (toggleIcon) {
                     toggleIcon.textContent = '▶';
                 }
+            }
+        }
+
+        if (editarProcesoSection) {
+            editarProcesoSection.style.display = mostrarEditarProcesoAnexo ? 'block' : 'none';
+            const contenidoProc = document.getElementById('parcial-editar-proceso-contenido');
+            const iconProc = document.getElementById('parcial-proceso-toggle-icon');
+            if (contenidoProc) contenidoProc.style.display = 'none';
+            if (iconProc) iconProc.textContent = '▶';
+
+            if (mostrarEditarProcesoAnexo) {
+                const procesoEncontrado = Array.isArray(penda?.procesos)
+                    ? penda.procesos.find((p) => String(p?.tipo_proceso || p?.nombre_proceso || '').toUpperCase() === String(tipoProceso || '').toUpperCase())
+                    : null;
+                const ubicacionesBase = Array.isArray(procesoEncontrado?.ubicaciones_array)
+                    ? procesoEncontrado.ubicaciones_array
+                    : (Array.isArray(procesoEncontrado?.ubicaciones) ? procesoEncontrado.ubicaciones : []);
+                const observacionesBase = String(
+                    procesoEncontrado?.observaciones_generales ||
+                    procesoEncontrado?.observaciones ||
+                    ''
+                );
+                window.modalReciboParcialState.ubicacionesAnexo = ubicacionesBase.filter(Boolean);
+                window.modalReciboParcialState.observacionesAnexo = observacionesBase;
+                setUbicacionesAnexoValue(window.modalReciboParcialState.ubicacionesAnexo);
+                setObservacionesAnexoValue(window.modalReciboParcialState.observacionesAnexo);
             }
         }
 
@@ -638,6 +720,18 @@
         }
     };
 
+    window.toggleEditarProcesoSeccion = function() {
+        const contenido = document.getElementById('parcial-editar-proceso-contenido');
+        const icon = document.getElementById('parcial-proceso-toggle-icon');
+        if (contenido) {
+            const isVisible = contenido.style.display !== 'none';
+            contenido.style.display = isVisible ? 'none' : 'block';
+            if (icon) {
+                icon.textContent = isVisible ? '▶' : '▼';
+            }
+        }
+    };
+
     window.guardarReciboParcial = async function() {
         const tallasCantidad = window.modalReciboParcialState.tallasCantidad;
         const modoEntregaParcial = window.modalReciboParcialState.mode === 'entrega_parcial';
@@ -747,7 +841,9 @@
                     pedido_id: window.modalReciboParcialState.pedidoId,
                     prenda_id: window.modalReciboParcialState.prendaId,
                     tipo_proceso: window.modalReciboParcialState.tipoProceso,
-                    tallas: tallasSeleccionadas
+                    tallas: tallasSeleccionadas,
+                    ubicaciones: getUbicacionesAnexoValue(),
+                    observaciones: getObservacionesAnexoValue()
                 };
 
                 console.log('[Recibo Parcial] Guardando:', payload);
@@ -831,6 +927,14 @@
         if (contenidoEl) contenidoEl.style.display = 'none';
         const toggleIcon = document.getElementById('parcial-editar-toggle-icon');
         if (toggleIcon) toggleIcon.textContent = '▶';
+        const editarProcesoSection = document.getElementById('parcial-editar-proceso-section');
+        if (editarProcesoSection) editarProcesoSection.style.display = 'none';
+        const contenidoProcesoEl = document.getElementById('parcial-editar-proceso-contenido');
+        if (contenidoProcesoEl) contenidoProcesoEl.style.display = 'none';
+        const toggleProcesoIcon = document.getElementById('parcial-proceso-toggle-icon');
+        if (toggleProcesoIcon) toggleProcesoIcon.textContent = '▶';
+        setUbicacionesAnexoValue([]);
+        setObservacionesAnexoValue('');
 
         // Limpiar estado
         window.modalReciboParcialState = {
@@ -841,7 +945,9 @@
             tallasCantidad: {},
             pedidoId: null,
             mode: 'crear_recibo',
-            consecutivoReciboId: null
+            consecutivoReciboId: null,
+            ubicacionesAnexo: [],
+            observacionesAnexo: ''
         };
     };
 

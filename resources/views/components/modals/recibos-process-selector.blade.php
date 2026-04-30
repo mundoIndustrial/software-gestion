@@ -1198,6 +1198,10 @@
                                 <option value="">Generar recibo</option>
                                 <option value="costura">Costura</option>
                                 <option value="reflectivo">Reflectivo</option>
+                                <option value="bordado">Bordado</option>
+                                <option value="estampado">Estampado</option>
+                                <option value="dtf">DTF</option>
+                                <option value="sublimado">Sublimado</option>
                             </select>
                             <span class="recibo-parcial-select-arrow">▼</span>
                         </div>`;

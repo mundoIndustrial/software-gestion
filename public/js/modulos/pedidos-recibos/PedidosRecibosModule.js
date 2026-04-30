@@ -747,6 +747,26 @@ export class PedidosRecibosModule {
             // Inyectar fecha_activacion del parcial (si existe)
             recibo.fecha_activacion = parcialData?.fecha_activacion || null;
 
+            // Inyectar snapshot propio del parcial (reflectivo): ubicaciones/observaciones/datos adicionales.
+            if (parcialData && typeof parcialData === 'object') {
+                const ubicacionesParcial = Array.isArray(parcialData.ubicaciones)
+                    ? parcialData.ubicaciones
+                    : [];
+                if (ubicacionesParcial.length > 0) {
+                    recibo.ubicaciones = ubicacionesParcial;
+                    recibo.ubicaciones_array = ubicacionesParcial;
+                }
+
+                if (typeof parcialData.observaciones === 'string' && parcialData.observaciones.trim() !== '') {
+                    recibo.observaciones = parcialData.observaciones;
+                    recibo.observaciones_generales = parcialData.observaciones;
+                }
+
+                if (parcialData.datos_adicionales && typeof parcialData.datos_adicionales === 'object') {
+                    recibo.datos_adicionales = parcialData.datos_adicionales;
+                }
+            }
+
             // Inyectar detalles por talla (observaciones/ubicaciones) del anexo
             // para que Formatters pinte OBSERVACIONES/UBICACIONES POR TALLA solo de las tallas anexadas.
             if (Array.isArray(tallasDetalleParcial) && tallasDetalleParcial.length > 0) {
