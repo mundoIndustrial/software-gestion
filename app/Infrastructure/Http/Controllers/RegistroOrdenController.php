@@ -422,6 +422,65 @@ class RegistroOrdenController extends Controller
             ]
         );
 
+        $prendaIdsPagina = $procesosConCantidad->getCollection()
+            ->map(fn ($proceso) => (int) ((array) $proceso)['prenda_id'])
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+        $tiposPagina = $procesosConCantidad->getCollection()
+            ->map(fn ($proceso) => strtoupper(trim((string) (((array) $proceso)['tipo_recibo'] ?? ''))))
+            ->filter(fn ($tipo) => $tipo !== '')
+            ->unique()
+            ->values()
+            ->all();
+        $numerosPagina = $procesosConCantidad->getCollection()
+            ->map(fn ($proceso) => (int) (((array) $proceso)['numero_recibo'] ?? 0))
+            ->filter(fn ($numero) => $numero > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        $reciboIdPorKey = [];
+        if (!empty($prendaIdsPagina) && !empty($tiposPagina) && !empty($numerosPagina)) {
+            $rowsConsecutivos = \DB::table('consecutivos_recibos_pedidos')
+                ->select(['id', 'prenda_id', 'tipo_recibo', 'consecutivo_actual'])
+                ->whereIn('prenda_id', $prendaIdsPagina)
+                ->whereIn('tipo_recibo', $tiposPagina)
+                ->whereIn('consecutivo_actual', $numerosPagina)
+                ->orderByDesc('id')
+                ->get();
+
+            foreach ($rowsConsecutivos as $row) {
+                $prendaIdKey = (int) ($row->prenda_id ?? 0);
+                $tipoKey = strtoupper(trim((string) ($row->tipo_recibo ?? '')));
+                $numeroKey = (int) ($row->consecutivo_actual ?? 0);
+                if ($prendaIdKey <= 0 || $tipoKey === '' || $numeroKey <= 0) {
+                    continue;
+                }
+
+                $key = $prendaIdKey . '|' . $tipoKey . '|' . $numeroKey;
+                if (!isset($reciboIdPorKey[$key])) {
+                    $reciboIdPorKey[$key] = (int) ($row->id ?? 0);
+                }
+            }
+        }
+
+        $user = auth()->user();
+        $puedeGestionarCheckLogo = (bool) ($user && $user->hasRole('visualizador_recibos_logo'));
+        $checksActivos = [];
+        if ($puedeGestionarCheckLogo && !empty($reciboIdPorKey)) {
+            $reciboIds = collect($reciboIdPorKey)->filter(fn ($id) => (int) $id > 0)->values()->all();
+            if (!empty($reciboIds)) {
+                $checksActivos = \DB::table('recibos_logo_checks')
+                    ->where('user_id', (int) $user->id)
+                    ->whereIn('consecutivo_recibo_id', $reciboIds)
+                    ->where('checked', true)
+                    ->pluck('checked', 'consecutivo_recibo_id')
+                    ->toArray();
+            }
+        }
+
         $prendaIds = $procesosConCantidad->getCollection()
             ->map(fn ($proceso) => (int) (is_array($proceso) ? ($proceso['prenda_id'] ?? 0) : ($proceso->prenda_id ?? 0)))
             ->filter(fn ($id) => $id > 0)
@@ -516,6 +575,8 @@ class RegistroOrdenController extends Controller
             $tipoReciboUpper = strtoupper(trim($tipoRecibo !== '' ? $tipoRecibo : 'BORDADO'));
             $numeroReciboInt = (int) $numeroRecibo;
             $reciboKey = $prendaId . '|' . $tipoReciboUpper . '|' . $numeroReciboInt;
+            $pedidoParcialId = (int) ($procesoArray['pedido_parcial_id'] ?? 0);
+            $esParcial = !empty($procesoArray['es_parcial']) || $pedidoParcialId > 0;
             $consecutivoReciboId = (int) ($reciboIdPorKey[$reciboKey] ?? 0);
             $fechaCreacionDesdeConsecutivo = $createdPorReciboKey[$reciboKey] ?? null;
             if ($fechaCreacionDesdeConsecutivo) {
@@ -536,6 +597,8 @@ class RegistroOrdenController extends Controller
                 'prenda_id' => $prendaId,
                 'consecutivo_actual' => $numeroRecibo,
                 'tipo_recibo' => $tipoRecibo !== '' ? $tipoRecibo : 'BORDADO',
+                'es_parcial' => $esParcial,
+                'pedido_parcial_id' => $pedidoParcialId > 0 ? $pedidoParcialId : null,
                 'estado' => 'En Ejecución',
                 'area' => $areaNormalizada,
                 'dias_calculados' => 0,
@@ -785,8 +848,66 @@ class RegistroOrdenController extends Controller
             ]
         );
 
+        $prendaIdsPagina = $procesosConCantidad->getCollection()
+            ->map(fn ($proceso) => (int) ((array) $proceso)['prenda_id'])
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+        $tiposPagina = $procesosConCantidad->getCollection()
+            ->map(fn ($proceso) => strtoupper(trim((string) (((array) $proceso)['tipo_recibo'] ?? ''))))
+            ->filter(fn ($tipo) => $tipo !== '')
+            ->unique()
+            ->values()
+            ->all();
+        $numerosPagina = $procesosConCantidad->getCollection()
+            ->map(fn ($proceso) => (int) (((array) $proceso)['numero_recibo'] ?? 0))
+            ->filter(fn ($numero) => $numero > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        $reciboIdPorKey = [];
+        if (!empty($prendaIdsPagina) && !empty($tiposPagina) && !empty($numerosPagina)) {
+            $rowsConsecutivos = \DB::table('consecutivos_recibos_pedidos')
+                ->select(['id', 'prenda_id', 'tipo_recibo', 'consecutivo_actual'])
+                ->whereIn('prenda_id', $prendaIdsPagina)
+                ->whereIn('tipo_recibo', $tiposPagina)
+                ->whereIn('consecutivo_actual', $numerosPagina)
+                ->orderByDesc('id')
+                ->get();
+
+            foreach ($rowsConsecutivos as $row) {
+                $prendaIdKey = (int) ($row->prenda_id ?? 0);
+                $tipoKey = strtoupper(trim((string) ($row->tipo_recibo ?? '')));
+                $numeroKey = (int) ($row->consecutivo_actual ?? 0);
+                if ($prendaIdKey <= 0 || $tipoKey === '' || $numeroKey <= 0) {
+                    continue;
+                }
+                $key = $prendaIdKey . '|' . $tipoKey . '|' . $numeroKey;
+                if (!isset($reciboIdPorKey[$key])) {
+                    $reciboIdPorKey[$key] = (int) ($row->id ?? 0);
+                }
+            }
+        }
+
+        $user = auth()->user();
+        $puedeGestionarCheckLogo = (bool) ($user && $user->hasRole('visualizador_recibos_logo'));
+        $checksActivos = [];
+        if ($puedeGestionarCheckLogo && !empty($reciboIdPorKey)) {
+            $reciboIds = collect($reciboIdPorKey)->filter(fn ($id) => (int) $id > 0)->values()->all();
+            if (!empty($reciboIds)) {
+                $checksActivos = \DB::table('recibos_logo_checks')
+                    ->where('user_id', (int) $user->id)
+                    ->whereIn('consecutivo_recibo_id', $reciboIds)
+                    ->where('checked', true)
+                    ->pluck('checked', 'consecutivo_recibo_id')
+                    ->toArray();
+            }
+        }
+
         // Normalizar datos
-        $recibosNormalizados = $procesosConCantidad->getCollection()->map(function ($proceso, int $index) use ($areasPorPrenda) {
+        $recibosNormalizados = $procesosConCantidad->getCollection()->map(function ($proceso, int $index) use ($areasPorPrenda, $reciboIdPorKey, $checksActivos, $puedeGestionarCheckLogo) {
             $procesoArray = (array) $proceso;
             $numeroRecibo = (string) ($procesoArray['numero_recibo'] ?? '');
             $tipoRecibo = (string) ($procesoArray['tipo_recibo'] ?? '');
@@ -795,6 +916,12 @@ class RegistroOrdenController extends Controller
             $cantidad = (int) ($procesoArray['cantidad_total_prendas'] ?? 0);
             $fechaCreacion = $procesoArray['fecha_creacion'] ?? null;
             $prendaId = (int) ($procesoArray['prenda_id'] ?? 0);
+            $pedidoParcialId = (int) ($procesoArray['pedido_parcial_id'] ?? 0);
+            $esParcial = !empty($procesoArray['es_parcial']) || $pedidoParcialId > 0;
+            $tipoReciboUpper = strtoupper(trim($tipoRecibo !== '' ? $tipoRecibo : 'BORDADO'));
+            $numeroReciboInt = (int) $numeroRecibo;
+            $reciboKey = $prendaId . '|' . $tipoReciboUpper . '|' . $numeroReciboInt;
+            $consecutivoReciboId = (int) ($reciboIdPorKey[$reciboKey] ?? 0);
             $areaRaw = strtoupper((string) ($areasPorPrenda[$prendaId] ?? 'PENDIENTE'));
             $areaNormalizada = match ($areaRaw) {
                 'ESTAMPANDO', 'ESTAMPADO' => 'Estampado',
@@ -810,10 +937,15 @@ class RegistroOrdenController extends Controller
                 'prenda_id' => $prendaId,
                 'consecutivo_actual' => $numeroRecibo,
                 'tipo_recibo' => $tipoRecibo !== '' ? $tipoRecibo : 'BORDADO',
+                'es_parcial' => $esParcial,
+                'pedido_parcial_id' => $pedidoParcialId > 0 ? $pedidoParcialId : null,
                 'area' => $areaNormalizada,
                 'cantidad_total' => $cantidad,
                 'descripcion_detallada' => trim($nombrePrenda) !== '' ? ('PRENDA: ' . $nombrePrenda) : 'PRENDA: SIN DESCRIPCIÓN',
                 'created_at' => $fechaCreacion,
+                'consecutivo_recibo_id' => $consecutivoReciboId,
+                'check_logo_recibo' => (bool) ($checksActivos[$consecutivoReciboId] ?? false),
+                'puede_gestionar_check_logo' => $puedeGestionarCheckLogo,
                 'pedido_info' => [
                     'cliente' => $cliente !== '' ? $cliente : 'N/A',
                     'fecha_creacion_orden' => $fechaCreacion,

@@ -50,6 +50,8 @@
                 @foreach($recibos as $recibo)
                     @php
                         $tipoRecibo = strtoupper((string) ($recibo['tipo_recibo'] ?? 'BORDADO'));
+                        $esParcial = !empty($recibo['es_parcial']) || !empty($recibo['esParcial']);
+                        $pedidoParcialId = $recibo['pedido_parcial_id'] ?? ($recibo['pedidoParcialId'] ?? ($recibo['parcial_id'] ?? ''));
                     @endphp
                     <tr data-orden-id="{{ $recibo['id'] }}"
                         data-pedido-id="{{ $recibo['pedido_produccion_id'] ?? '' }}"
@@ -69,7 +71,8 @@
                                     data-prenda-id="{{ $recibo['prenda_id'] ?? '' }}"
                                     data-numero-recibo="{{ $recibo['consecutivo_actual'] ?? '' }}"
                                     data-tipo-recibo="{{ $tipoRecibo }}"
-                                    data-es-parcial="false"
+                                    data-es-parcial="{{ $esParcial ? 'true' : 'false' }}"
+                                    data-pedido-parcial-id="{{ $pedidoParcialId }}"
                                     data-recibo-id="{{ $recibo['id'] ?? '' }}">
                                     <i class="fas fa-eye"></i>
                                 </button>

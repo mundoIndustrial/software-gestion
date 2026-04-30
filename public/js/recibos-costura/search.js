@@ -294,6 +294,13 @@ document.addEventListener('DOMContentLoaded', function() {
             areaBadge = 'bg-info';
         }
 
+        const puedeGestionarCheckLogo = Boolean(recibo?.puede_gestionar_check_logo);
+        const consecutivoReciboId = Number(recibo?.consecutivo_recibo_id || 0);
+        const checkLogo = Boolean(recibo?.check_logo_recibo);
+        const checkButtonHtml = (puedeGestionarCheckLogo && consecutivoReciboId > 0)
+            ? `<button type="button" class="btn-check-recibo-logo ${checkLogo ? 'is-checked' : ''}" title="Marcar recibido" data-consecutivo-recibo-id="${consecutivoReciboId}" data-checked="${checkLogo ? '1' : '0'}" style="width:30px;height:30px;border-radius:8px;border:1px solid ${checkLogo ? '#16a34a' : '#cbd5e1'};background:${checkLogo ? '#16a34a' : '#ffffff'};color:${checkLogo ? '#ffffff' : '#64748b'};display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s ease;"><i class="fas fa-check"></i></button>`
+            : '';
+
         return `
             <tr data-orden-id="${recibo.id || ''}"
                 data-pedido-id="${recibo.pedido_produccion_id || ''}"
@@ -308,10 +315,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         data-prenda-id="${recibo.prenda_id || ''}"
                         data-numero-recibo="${recibo.consecutivo_actual || ''}"
                         data-tipo-recibo="${tipo}"
-                        data-es-parcial="false"
+                        data-es-parcial="${(recibo.es_parcial || recibo.esParcial) ? 'true' : 'false'}"
+                        data-pedido-parcial-id="${recibo.pedido_parcial_id || recibo.pedidoParcialId || recibo.parcial_id || ''}"
                         data-recibo-id="${recibo.id || ''}">
                         <i class="fas fa-eye"></i>
                     </button>
+                    ${checkButtonHtml}
                 </td>
 
                 <!-- Área -->

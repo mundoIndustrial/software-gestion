@@ -113,6 +113,9 @@
                                                 data-pedido-id="{{ $proceso->pedido_id ?? '' }}"
                                                 data-prenda-id="{{ $proceso->prenda_id ?? '' }}"
                                                 data-tipo-recibo="{{ $proceso->tipo_recibo ?? '' }}"
+                                                data-numero-recibo="{{ $proceso->numero_recibo ?? '' }}"
+                                                data-es-parcial="{{ !empty($proceso->pedido_parcial_id) ? 'true' : 'false' }}"
+                                                data-pedido-parcial-id="{{ $proceso->pedido_parcial_id ?? '' }}"
                                                 onclick="event.stopPropagation(); openReceiptFromLogoPendingRow(this)"
                                                 style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;background:#1d4ed8;color:#fff;border:0;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;"
                                             >
@@ -494,6 +497,9 @@ window.openReceiptFromLogoPendingRow = async function(button) {
     const pedidoId = Number(button?.getAttribute('data-pedido-id') || 0);
     const prendaId = Number(button?.getAttribute('data-prenda-id') || 0);
     const tipoRecibo = String(button?.getAttribute('data-tipo-recibo') || '').trim().toUpperCase();
+    const numeroRecibo = String(button?.getAttribute('data-numero-recibo') || '').trim();
+    const esParcial = String(button?.getAttribute('data-es-parcial') || '').toLowerCase() === 'true';
+    const pedidoParcialId = Number(button?.getAttribute('data-pedido-parcial-id') || 0);
 
     if (!pedidoId || !prendaId || !tipoRecibo) {
         if (typeof mostrarAlerta === 'function') {
@@ -504,7 +510,11 @@ window.openReceiptFromLogoPendingRow = async function(button) {
 
     const moduleReady = await esperarModuloRecibos();
     if (moduleReady) {
-        window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, tipoRecibo);
+        window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, tipoRecibo, null, {
+            targetConsecutivo: numeroRecibo || null,
+            esParcial,
+            pedidoParcialId: pedidoParcialId > 0 ? pedidoParcialId : null
+        });
         return;
     }
 

@@ -79,7 +79,26 @@ export class PedidosRecibosModule {
         try {
             const targetConsecutivoOption = String(options?.targetConsecutivo ?? '').trim();
             const targetReciboIdOption = String(options?.targetReciboId ?? '').trim();
+            const esParcialForzado = Boolean(options?.esParcial);
+            const pedidoParcialIdForzado = Number(options?.pedidoParcialId || 0);
             const esVistaRecibosCostura = window.location.pathname.includes('/recibos-costura');
+            if (esParcialForzado && pedidoParcialIdForzado > 0) {
+                const nombreAnexo = `${String(tipoRecibo || 'PROCESO').toUpperCase()} ANEXO`;
+                console.log('[PedidosRecibosModule.abrirRecibo] Parcial forzado por contexto de origen:', {
+                    pedidoId,
+                    prendaId,
+                    tipoRecibo,
+                    pedidoParcialId: pedidoParcialIdForzado,
+                    targetConsecutivo: targetConsecutivoOption || null
+                });
+                return this.abrirReciboParcial(
+                    Number(pedidoId),
+                    Number(prendaId),
+                    String(tipoRecibo || 'COSTURA'),
+                    pedidoParcialIdForzado,
+                    nombreAnexo
+                );
+            }
             // Resetear cualquier galería previa para evitar que quede pegada entre recibos
             GalleryManager.resetGaleria(this.modalManager);
 
@@ -365,17 +384,55 @@ export class PedidosRecibosModule {
             let pedidoParcialIdDetectado = 0;
 
             if (prendaData.recibos && Array.isArray(prendaData.recibos.parciales)) {
+                const targetConsecutivoNormalizado = String(targetConsecutivo || '').trim();
+                // 1) Prioridad máxima: si tenemos consecutivo objetivo, buscar el parcial exacto.
+                // Esto garantiza cargar tallas/cantidades desde pedidos_parciales_tallas.
+                if (targetConsecutivoNormalizado !== '') {
+                    const parcialPorConsecutivo = prendaData.recibos.parciales.find((p) =>
+                        String(p?.consecutivo_actual ?? p?.numero_recibo ?? '').trim() === targetConsecutivoNormalizado
+                    );
+                    if (parcialPorConsecutivo?.id) {
+                        esParcialDetectado = true;
+                        pedidoParcialIdDetectado = Number(parcialPorConsecutivo.id || 0);
+                        console.log('[PedidosRecibosModule.abrirRecibo] Parcial detectado por consecutivo exacto:', {
+                            targetConsecutivo: targetConsecutivoNormalizado,
+                            parcialId: pedidoParcialIdDetectado,
+                            parcial: parcialPorConsecutivo
+                        });
+                    }
+                }
+
+                // 2) Fallback: detectar por tipo (comportamiento previo)
+                if (!esParcialDetectado) {
                 const parcialMatch = prendaData.recibos.parciales.find(p =>
                     String(p.tipo_recibo || '').toUpperCase() === String(tipoRecibo || '').toUpperCase()
                 );
                 if (parcialMatch && parcialMatch.id) {
-                    esParcialDetectado = true;
-                    pedidoParcialIdDetectado = Number(parcialMatch.id || 0);
-                    console.log('[PedidosRecibosModule.abrirRecibo] Parcial detectado en prendaData.recibos.parciales:', {
-                        tipoRecibo,
-                        parcialId: pedidoParcialIdDetectado,
-                        parcial: parcialMatch
-                    });
+                    const consecutivoParcialDetectado = String(
+                        parcialMatch.consecutivo_actual ?? parcialMatch.numero_recibo ?? ''
+                    ).trim();
+                    const hayConflictoConTarget =
+                        targetConsecutivoNormalizado !== '' &&
+                        consecutivoParcialDetectado !== '' &&
+                        consecutivoParcialDetectado !== targetConsecutivoNormalizado;
+
+                    if (hayConflictoConTarget) {
+                        console.warn('[PedidosRecibosModule.abrirRecibo] Parcial detectado por tipo ignorado por conflicto con targetConsecutivo:', {
+                            tipoRecibo,
+                            parcialDetectadoId: parcialMatch.id,
+                            consecutivoParcialDetectado,
+                            targetConsecutivo: targetConsecutivoNormalizado
+                        });
+                    } else {
+                        esParcialDetectado = true;
+                        pedidoParcialIdDetectado = Number(parcialMatch.id || 0);
+                        console.log('[PedidosRecibosModule.abrirRecibo] Parcial detectado en prendaData.recibos.parciales:', {
+                            tipoRecibo,
+                            parcialId: pedidoParcialIdDetectado,
+                            parcial: parcialMatch
+                        });
+                    }
+                }
                 }
             }
 
@@ -397,8 +454,8 @@ export class PedidosRecibosModule {
             }
 
             // Si el endpoint de pedido trae solo el recibo activo por tipo, forzar la metadata
-            // de la fila seleccionada en /recibos-costura para respetar el consecutivo clickeado.
-            if (esVistaRecibosCostura && reciboIndice !== -1) {
+            // de la fila seleccionada para respetar el consecutivo clickeado (no solo en costura).
+            if (reciboIndice !== -1 && (esVistaRecibosCostura || targetConsecutivo !== '')) {
                 const reciboObjetivo = recibos[reciboIndice];
                 const consecutivoObjetivo = targetConsecutivo || String(targetReciboData?.consecutivo_actual ?? '').trim();
 
@@ -413,7 +470,7 @@ export class PedidosRecibosModule {
                     reciboObjetivo.tipo_recibo = targetReciboData.tipo_recibo;
                 }
 
-                console.log('[PedidosRecibosModule.abrirRecibo] Meta objetivo aplicada para recibos-costura:', {
+                console.log('[PedidosRecibosModule.abrirRecibo] Meta objetivo aplicada para render:', {
                     targetReciboId: targetReciboIdOption || null,
                     targetConsecutivo: consecutivoObjetivo || null,
                     consecutivoRenderizado: reciboObjetivo.consecutivo_actual
@@ -738,6 +795,8 @@ export class PedidosRecibosModule {
 
             // Marcar como parcial para que el renderer sepa limpiar consecutivo
             recibo._esParcial = true;
+            recibo.es_parcial = true;
+            recibo.origen = recibo.origen || 'PARCIAL';
             recibo._nombreAnexo = nombreAnexo || tipoRecibo;
             // Asegurar consecutivo del anexo como fuente de verdad para el renderer
             if (consecutivoAnexo) {
@@ -746,6 +805,9 @@ export class PedidosRecibosModule {
 
             // Inyectar fecha_activacion del parcial (si existe)
             recibo.fecha_activacion = parcialData?.fecha_activacion || null;
+            // Fallback de fecha para anexos antiguos sin fecha_activacion
+            recibo.created_at = parcialData?.created_at || recibo.created_at || null;
+            recibo.fecha_aprobacion = parcialData?.updated_at || recibo.fecha_aprobacion || null;
 
             // Inyectar snapshot propio del parcial (reflectivo): ubicaciones/observaciones/datos adicionales.
             if (parcialData && typeof parcialData === 'object') {

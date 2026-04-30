@@ -293,6 +293,24 @@ export class ReceiptRenderer {
                         year,
                         fecha_activacion: recibo.fecha_activacion
                     });
+                } else if (esReciboParcial && (recibo.created_at || recibo.fecha_aprobacion)) {
+                    // Parciales legacy pueden no tener activo/fecha_activacion.
+                    // En ese caso usar created_at/fecha_aprobacion del parcial.
+                    const fechaAUsar = recibo.fecha_aprobacion || recibo.created_at;
+                    const fecha = Formatters.parsearFecha(fechaAUsar);
+                    const { day, month, year } = Formatters.formatearFecha(fecha);
+
+                    dayBox.textContent = day;
+                    monthBox.textContent = month;
+                    yearBox.textContent = year;
+
+                    console.log('[ReceiptRenderer] Fecha parcial (fallback) establecida:', {
+                        day,
+                        month,
+                        year,
+                        fechaAprobacion: recibo.fecha_aprobacion,
+                        created_at: recibo.created_at
+                    });
                 } else if (recibo.activo === 1 && (recibo.fecha_aprobacion || recibo.created_at)) {
                     // Recibo activo sin fecha_activacion: usar fecha de aprobación SI existe, si no usar fecha de creación del recibo
                     const fechaAUsar = recibo.fecha_aprobacion || recibo.created_at;
