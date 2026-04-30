@@ -810,9 +810,10 @@ function _spRenderBodegaNovedadesContent(payload) {
                 <div style="font-size:13px; color:#475569; margin-bottom:8px;">
                     <strong>Talla:</strong> ${talla}
                     <span style="margin:0 .4rem; color:#94a3b8;">|</span>
-                    <strong>Género:</strong> ${genero}
-                    <span style="margin:0 .4rem; color:#94a3b8;">|</span>
                     <strong>Cantidad:</strong> ${cantidad}
+                </div>
+                <div style="font-size:13px; color:#475569; margin-bottom:8px;">
+                    <strong>Género:</strong> ${genero}
                 </div>
                 <div style="font-size:14px; color:#111827; line-height:1.45; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
                     ${contenido || '<span style="color:#94a3b8;">Sin contenido</span>'}
