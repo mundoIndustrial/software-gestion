@@ -509,9 +509,7 @@ class PrendasRenderer {
   // Renderizar seguimientos por área (procesos)
   renderSeguimientosPorArea(prenda, container) {
     const seguimientosPorArea = prenda.seguimientos_por_area || {};
-    if (Object.keys(seguimientosPorArea).length === 0) {
-      return;
-    }
+    const hasSeguimientos = Object.keys(seguimientosPorArea).length > 0;
 
     let reciboCreatedAt = null;
 
@@ -534,14 +532,36 @@ class PrendasRenderer {
       // Usar datos_activacion_recibo del backend (más confiable)
       const datosActivacion = prenda?.datos_activacion_recibo || {};
       
-      const fechaCreacionOrden = datosActivacion.fecha_creacion_orden || null;
-      const fechaCreacionOrdenFormateada = datosActivacion.fecha_creacion_orden_formateada || null;
+      const fechaCreacionOrden =
+        datosActivacion.fecha_creacion_orden
+        || prenda?.fecha_creacion
+        || globalThis.currentOrderData?.fecha_creacion
+        || globalThis.currentOrderData?.created_at
+        || null;
+      const fechaCreacionOrdenFormateada =
+        datosActivacion.fecha_creacion_orden_formateada
+        || (typeof formatDate === 'function' && fechaCreacionOrden ? formatDate(fechaCreacionOrden) : null);
       
-      const fechaActivacionRecibo = datosActivacion.fecha_activacion_recibo || null;
-      const fechaActivacionReciboFormateada = datosActivacion.fecha_activacion_recibo_formateada || null;
+      const fechaActivacionRecibo =
+        datosActivacion.fecha_activacion_recibo
+        || globalThis.currentConsecutivoCosturaData?.fecha_creacion
+        || null;
+      const fechaActivacionReciboFormateada =
+        datosActivacion.fecha_activacion_recibo_formateada
+        || (typeof formatDate === 'function' && fechaActivacionRecibo ? formatDate(fechaActivacionRecibo) : null);
       
-      const diasTranscurridos = datosActivacion.dias_transcurridos;
+      let diasTranscurridos = datosActivacion.dias_transcurridos;
       const diasTranscurridosTexto = datosActivacion.dias_transcurridos_texto || '-';
+      if ((diasTranscurridos === null || diasTranscurridos === undefined) && fechaCreacionOrden && fechaActivacionRecibo) {
+        const ini = typeof toDateObject === 'function' ? toDateObject(fechaCreacionOrden) : null;
+        const fin = typeof toDateObject === 'function' ? toDateObject(fechaActivacionRecibo) : null;
+        if (ini && fin) {
+          diasTranscurridos = Math.max(0, Math.floor((fin.getTime() - ini.getTime()) / (1000 * 60 * 60 * 24)));
+        }
+      }
+
+      // Fecha base para área virtual de Insumos cuando el backend no la envía.
+      reciboCreatedAt = fechaActivacionRecibo || fechaCreacionOrden || null;
 
       console.log('[prendas-renderer] datosActivacion:', {
         fechaCreacionOrden: fechaCreacionOrdenFormateada,
@@ -694,6 +714,11 @@ class PrendasRenderer {
         areasSection.appendChild(areaCard);
       }
     });
+
+    if (!hasSeguimientos && !mergedAreas['Insumos']) {
+      // No agregar cards vacías; renderNoSeguimiento se encarga del mensaje final.
+      return;
+    }
   }
 
   // Mostrar mensaje si no hay seguimientos

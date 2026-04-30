@@ -267,11 +267,15 @@ class RegistroOrdenQueryController extends Controller
         try {
             $prendaId = $request->query('prenda_id');
             $numeroRecibo = $request->query('numero_recibo');
+            $pedidoParcialId = $request->query('pedido_parcial_id');
+            $tipoRecibo = $request->query('tipo_recibo');
 
             $result = $this->useCasesFacade->getSeguimientoPorPrendaUseCase->execute(
                 $pedido,
                 $prendaId !== null ? (string) $prendaId : null,
-                $numeroRecibo !== null ? (string) $numeroRecibo : null
+                $numeroRecibo !== null ? (string) $numeroRecibo : null,
+                $pedidoParcialId !== null ? (string) $pedidoParcialId : null,
+                $tipoRecibo !== null ? (string) $tipoRecibo : null
             );
             
             if (!$result['success']) {

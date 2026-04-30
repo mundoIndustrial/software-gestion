@@ -788,9 +788,31 @@ function initTrackingModalListeners() {
       });
     })();
 
-    if (!hasStructuredSeguimientos) {
+    const shouldForceTrackingFetch = (() => {
+      const isReflectivoView = window.location.pathname.includes('/recibos-reflectivo');
+      const hasReceiptContext = Boolean(
+        trackingReceiptContext?.numeroRecibo
+        || trackingReceiptContext?.tipoRecibo
+        || trackingReceiptContext?.pedidoParcialId
+      );
+      return isReflectivoView && hasReceiptContext;
+    })();
+
+    if (!hasStructuredSeguimientos || shouldForceTrackingFetch) {
       try {
-        const response = await fetch(`/registros/${pedidoId}/seguimiento-prenda?prenda_id=${encodeURIComponent(String(prendaId))}`);
+        const params = new URLSearchParams({
+          prenda_id: String(prendaId)
+        });
+        if (trackingReceiptContext?.pedidoParcialId) {
+          params.set('pedido_parcial_id', String(trackingReceiptContext.pedidoParcialId));
+        }
+        if (trackingReceiptContext?.numeroRecibo) {
+          params.set('numero_recibo', String(trackingReceiptContext.numeroRecibo));
+        }
+        if (trackingReceiptContext?.tipoRecibo) {
+          params.set('tipo_recibo', String(trackingReceiptContext.tipoRecibo));
+        }
+        const response = await fetch(`/registros/${pedidoId}/seguimiento-prenda?${params.toString()}`);
         console.log('[enrichPrendaForTracking] GET seguimiento-prenda status:', response.status);
         if (response.ok) {
           const trackingData = await response.json();
@@ -810,6 +832,28 @@ function initTrackingModalListeners() {
 
           if (prendaConTracking?.datos_activacion_recibo) {
             enrichedPrenda.datos_activacion_recibo = prendaConTracking.datos_activacion_recibo;
+          }
+
+          // Fallback crítico para reflectivo:
+          // usar pedidos_produccion.created_at (trackingData.pedido.created_at)
+          // como fecha_creacion_orden cuando no venga poblada en datos_activacion_recibo.
+          const pedidoCreatedAt = trackingData?.pedido?.created_at || null;
+          if (pedidoCreatedAt) {
+            enrichedPrenda.datos_activacion_recibo = enrichedPrenda.datos_activacion_recibo || {};
+            if (!enrichedPrenda.datos_activacion_recibo.fecha_creacion_orden) {
+              enrichedPrenda.datos_activacion_recibo.fecha_creacion_orden = pedidoCreatedAt;
+            }
+            if (!enrichedPrenda.datos_activacion_recibo.fecha_creacion_orden_formateada) {
+              const fecha = new Date(pedidoCreatedAt);
+              if (!Number.isNaN(fecha.getTime())) {
+                const dd = String(fecha.getDate()).padStart(2, '0');
+                const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+                const yyyy = fecha.getFullYear();
+                const hh = String(fecha.getHours()).padStart(2, '0');
+                const mi = String(fecha.getMinutes()).padStart(2, '0');
+                enrichedPrenda.datos_activacion_recibo.fecha_creacion_orden_formateada = `${dd}/${mm}/${yyyy} a las ${hh}:${mi}`;
+              }
+            }
           }
         }
       } catch (error) {

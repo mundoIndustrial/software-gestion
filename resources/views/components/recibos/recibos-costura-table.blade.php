@@ -283,7 +283,9 @@
                         
                         <!-- Fecha de creacion -->
                         <td>
-                            @if(!empty($recibo['es_parcial']) && !empty($recibo['created_at']))
+                            @if(request()->is('recibos-reflectivo') && !empty($recibo['es_parcial']) && !empty($recibo['fecha_activacion']))
+                                <span>{{ \Carbon\Carbon::parse($recibo['fecha_activacion'])->format('d/m/Y') }}</span>
+                            @elseif(!empty($recibo['es_parcial']) && !empty($recibo['created_at']))
                                 <span>{{ \Carbon\Carbon::parse($recibo['created_at'])->format('d/m/Y') }}</span>
                             @elseif($recibo['pedido_info'] && isset($recibo['pedido_info']['fecha_creacion_orden']))
                                 <span>{{ \Carbon\Carbon::parse($recibo['pedido_info']['fecha_creacion_orden'])->format('d/m/Y') }}</span>

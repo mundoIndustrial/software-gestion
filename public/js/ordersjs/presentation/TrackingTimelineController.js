@@ -81,11 +81,33 @@ export class TrackingTimelineController {
 
   renderSeguimientosPorArea(prenda, container) {
     const seguimientosPorArea = prenda.seguimientos_por_area || {};
-    if (Object.keys(seguimientosPorArea).length === 0) {
-      return;
-    }
+    const hasSeguimientos = Object.keys(seguimientosPorArea).length > 0;
 
     const datosActivacion = prenda.datos_activacion_recibo || {};
+    const currentOrder = this.orderState.getOrder() || {};
+    const globalOrder = globalThis.currentOrderData || {};
+    const globalOrderData = globalOrder?.data || {};
+    const fechaCreacionOrden =
+      datosActivacion.fecha_creacion_orden
+      || prenda?.fecha_creacion
+      || prenda?.created_at
+      || currentOrder?.fecha_creacion
+      || currentOrder?.created_at
+      || globalOrder?.fecha_creacion
+      || globalOrder?.created_at
+      || globalOrderData?.fecha_creacion
+      || globalOrderData?.created_at
+      || null;
+    const fechaActivacionRecibo =
+      datosActivacion.fecha_activacion_recibo
+      || globalThis.currentConsecutivoCosturaData?.fecha_creacion
+      || null;
+    const fechaCreacionOrdenFormateada =
+      datosActivacion.fecha_creacion_orden_formateada
+      || (fechaCreacionOrden ? this.formatDate(fechaCreacionOrden) : null);
+    const fechaActivacionReciboFormateada =
+      datosActivacion.fecha_activacion_recibo_formateada
+      || (fechaActivacionRecibo ? this.formatDate(fechaActivacionRecibo) : null);
 
     const activationSection = document.createElement('div');
     activationSection.className = 'tracking-section tracking-section-activation';
@@ -116,18 +138,35 @@ export class TrackingTimelineController {
     fechasLeft.className = 'tracking-activation-left';
     fechasLeft.appendChild(createInfoCard(
       'Fecha creación orden',
-      datosActivacion.fecha_creacion_orden_formateada || '-',
+      fechaCreacionOrdenFormateada || '-',
       this.svgIcons.calendar()
     ));
     fechasLeft.appendChild(createInfoCard(
       'Fecha activación recibo',
-      datosActivacion.fecha_activacion_recibo_formateada || '-',
+      fechaActivacionReciboFormateada || '-',
       this.svgIcons.checkCircle()
     ));
     fechasWrapper.appendChild(fechasLeft);
 
     // Lado derecho: badge de total días (estilo simple como en area cards)
-    const diasTranscurridos = datosActivacion.dias_transcurridos;
+    let diasTranscurridos = datosActivacion.dias_transcurridos;
+    if (diasTranscurridos === null || diasTranscurridos === undefined) {
+      const ini = typeof globalThis.toDateObject === 'function'
+        ? globalThis.toDateObject(fechaCreacionOrden)
+        : new Date(fechaCreacionOrden);
+      const fin = typeof globalThis.toDateObject === 'function'
+        ? globalThis.toDateObject(fechaActivacionRecibo)
+        : new Date(fechaActivacionRecibo);
+
+      if (ini && fin && !Number.isNaN(ini.getTime()) && !Number.isNaN(fin.getTime())) {
+        // Misma lógica de costura: días hábiles con festivos y sin contar el día inicial.
+        if (typeof globalThis.calcularDiasHabilesSync === 'function') {
+          diasTranscurridos = globalThis.calcularDiasHabilesSync(ini, fin);
+        } else {
+          diasTranscurridos = Math.max(0, Math.floor((fin.getTime() - ini.getTime()) / (1000 * 60 * 60 * 24)));
+        }
+      }
+    }
     const totalDiasDisplay = diasTranscurridos !== null && diasTranscurridos !== undefined 
       ? (diasTranscurridos === 1 ? '1 día' : `${diasTranscurridos} días`)
       : '-';
@@ -162,7 +201,68 @@ export class TrackingTimelineController {
     areasSection.appendChild(areasHeader);
     container.appendChild(areasSection);
 
-    Object.entries(seguimientosPorArea).forEach(([area, data]) => {
+    const mergedAreas = { ...seguimientosPorArea };
+    const hasInsumos = Object.keys(mergedAreas).some((k) => String(k || '').toLowerCase() === 'insumos');
+    const reciboCreatedAt = fechaActivacionRecibo || fechaCreacionOrden || null;
+    if (!hasInsumos && reciboCreatedAt) {
+      let fechaEnvioProduccion = null;
+      Object.entries(mergedAreas).forEach(([k, v]) => {
+        if (fechaEnvioProduccion) return;
+        if (String(k || '').toLowerCase() === 'insumos') return;
+        if (v?.fecha_inicio) fechaEnvioProduccion = v.fecha_inicio;
+      });
+      const yaEnviadoAProduccion = Boolean(fechaEnvioProduccion);
+      let totalDiasInsumos = null;
+      if (fechaEnvioProduccion) {
+        const iniInsumos = new Date(reciboCreatedAt);
+        const finInsumos = new Date(fechaEnvioProduccion);
+        if (!Number.isNaN(iniInsumos.getTime()) && !Number.isNaN(finInsumos.getTime())) {
+          totalDiasInsumos = typeof globalThis.calcularDiasHabilesSync === 'function'
+            ? globalThis.calcularDiasHabilesSync(iniInsumos, finInsumos)
+            : Math.max(0, Math.floor((finInsumos.getTime() - iniInsumos.getTime()) / (1000 * 60 * 60 * 24)));
+        }
+      } else {
+        const iniInsumos = new Date(reciboCreatedAt);
+        if (!Number.isNaN(iniInsumos.getTime())) {
+          totalDiasInsumos = typeof globalThis.calcularDiasHabilesSync === 'function'
+            ? globalThis.calcularDiasHabilesSync(iniInsumos, new Date())
+            : null;
+        }
+      }
+
+      mergedAreas['Insumos'] = {
+        estado: yaEnviadoAProduccion ? 'Enviado a producción' : 'Llegó a insumos',
+        encargado: '-',
+        fecha_inicio: reciboCreatedAt,
+        fecha_fin: fechaEnvioProduccion,
+        can_edit: false,
+        hide_encargado: true,
+        metadata: { isInsumos: true, shouldHideEncargado: true },
+        duraciones: {
+          estado_display: yaEnviadoAProduccion ? 'Enviado a producción' : 'Llegó a insumos',
+          esta_activo_display: !yaEnviadoAProduccion,
+          total_dias_numero: totalDiasInsumos,
+          total_dias: totalDiasInsumos === null || totalDiasInsumos === undefined
+            ? '---'
+            : `${totalDiasInsumos} día${totalDiasInsumos !== 1 ? 's' : ''}`
+        },
+        fechas_formateadas: {
+          fecha_llegada: this.formatDate(reciboCreatedAt) || '---',
+          fecha_fin: fechaEnvioProduccion ? (this.formatDate(fechaEnvioProduccion) || '---') : '---'
+        }
+      };
+    }
+
+    const orderedEntries = [];
+    if (mergedAreas['Insumos']) {
+      orderedEntries.push(['Insumos', mergedAreas['Insumos']]);
+    }
+    Object.entries(mergedAreas).forEach(([area, data]) => {
+      if (String(area || '').toLowerCase() === 'insumos') return;
+      orderedEntries.push([area, data]);
+    });
+
+    orderedEntries.forEach(([area, data]) => {
       // Validar que data tenga la estructura esperada
       if (!data || typeof data !== 'object') {
         console.warn('[TrackingTimelineController] Datos inválidos para área:', area, data);
@@ -172,6 +272,10 @@ export class TrackingTimelineController {
       const areaCard = this.createAreaCard(area, data, prenda?.readonly || false);
       areasSection.appendChild(areaCard);
     });
+
+    if (!hasSeguimientos && !mergedAreas['Insumos']) {
+      return;
+    }
   }
 
   renderNoSeguimiento(container) {

@@ -662,8 +662,26 @@ function verDetallesRecibo(reciboId) {
         });
 }
 
-function abrirModalSeguimiento(pedidoId, prendaIdTarget) {
+function abrirModalSeguimiento(pedidoId, prendaIdTarget, sourceButton = null) {
     closeDropdownRecibos();
+
+    try {
+        const esParcial = String(sourceButton?.getAttribute('data-es-parcial') || '').toLowerCase() === 'true';
+        const pedidoParcialId = Number(sourceButton?.getAttribute('data-pedido-parcial-id') || 0);
+        const numeroRecibo = sourceButton?.getAttribute('data-numero-recibo') || null;
+        const tipoRecibo = sourceButton?.getAttribute('data-tipo-recibo') || 'REFLECTIVO';
+
+        window.currentTrackingReceiptContext = {
+            pedidoId: Number(pedidoId) || null,
+            prendaId: prendaIdTarget ? Number(prendaIdTarget) : null,
+            numeroRecibo: numeroRecibo,
+            tipoRecibo: tipoRecibo,
+            esParcial: esParcial && pedidoParcialId > 0,
+            pedidoParcialId: pedidoParcialId > 0 ? pedidoParcialId : null
+        };
+    } catch (e) {
+        console.warn('[abrirModalSeguimiento] No se pudo establecer currentTrackingReceiptContext:', e);
+    }
     
     if (typeof openOrderTracking === 'function') {
         openOrderTracking(pedidoId, false).then(() => {
@@ -1170,7 +1188,7 @@ function crearDropdownRecibos(button) {
             <i class="fas fa-eye" style="color: #3b82f6;"></i> Ver Detalles
         </button>
         <div style="height: 1px; background: #e5e7eb;"></div>
-        <button onclick="abrirModalSeguimiento(${pedidoId}, ${prendaId || 'null'}); closeDropdownRecibos()" style="
+        <button onclick="abrirModalSeguimiento(${pedidoId}, ${prendaId || 'null'}, this); closeDropdownRecibos()" data-es-parcial="${button.getAttribute('data-es-parcial') || 'false'}" data-pedido-parcial-id="${button.getAttribute('data-pedido-parcial-id') || ''}" data-numero-recibo="${button.getAttribute('data-numero-recibo') || ''}" data-tipo-recibo="${button.getAttribute('data-tipo-recibo') || 'REFLECTIVO'}" style="
             width: 100%;
             text-align: left;
             padding: 0.875rem 1rem;

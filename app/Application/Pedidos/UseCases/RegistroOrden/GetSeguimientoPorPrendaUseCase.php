@@ -37,7 +37,7 @@ class GetSeguimientoPorPrendaUseCase
      * Ejecutar el use case
      * GET /registros/{pedido}/seguimiento-prenda
      */
-    public function execute(string $pedido, ?string $prendaId = null, ?string $numeroRecibo = null): array
+    public function execute(string $pedido, ?string $prendaId = null, ?string $numeroRecibo = null, ?string $pedidoParcialId = null, ?string $tipoRecibo = null): array
     {
         try {
             \Log::info('[GetSeguimientoPorPrendaUseCase] Iniciando consulta', [
@@ -61,7 +61,7 @@ class GetSeguimientoPorPrendaUseCase
                 'pedido_id' => $pedidoId
             ]);
 
-            $prendas = $this->obtenerPrendasConSeguimiento($pedidoId, $pedidoModel, $prendaId, $numeroRecibo);
+            $prendas = $this->obtenerPrendasConSeguimiento($pedidoId, $pedidoModel, $prendaId, $numeroRecibo, $pedidoParcialId, $tipoRecibo);
 
             return [
                 'success' => true,
@@ -97,7 +97,7 @@ class GetSeguimientoPorPrendaUseCase
     /**
      * Obtener prendas con seguimiento completo
      */
-    private function obtenerPrendasConSeguimiento(int $pedidoId, $pedidoModel, ?string $prendaId = null, ?string $numeroRecibo = null): array
+    private function obtenerPrendasConSeguimiento(int $pedidoId, $pedidoModel, ?string $prendaId = null, ?string $numeroRecibo = null, ?string $pedidoParcialId = null, ?string $tipoRecibo = null): array
     {
         $prendasQuery = PrendaPedido::where('pedido_produccion_id', $pedidoId)
             ->with(['variantes', 'procesos.tipoProceso', 'tallas']);
@@ -111,7 +111,7 @@ class GetSeguimientoPorPrendaUseCase
         $prendasConSeguimiento = [];
 
         foreach ($prendasDB as $prenda) {
-            $seguimiento = $this->construirSeguimientoPrenda($prenda, $pedidoId, $pedidoModel, $numeroRecibo);
+            $seguimiento = $this->construirSeguimientoPrenda($prenda, $pedidoId, $pedidoModel, $numeroRecibo, $pedidoParcialId, $tipoRecibo);
             $prendasConSeguimiento[] = $seguimiento;
         }
 
@@ -121,7 +121,7 @@ class GetSeguimientoPorPrendaUseCase
     /**
      * Construir objeto de seguimiento para una prenda
      */
-    private function construirSeguimientoPrenda($prenda, int $pedidoId, $pedidoModel, ?string $numeroReciboObjetivo = null): array
+    private function construirSeguimientoPrenda($prenda, int $pedidoId, $pedidoModel, ?string $numeroReciboObjetivo = null, ?string $pedidoParcialId = null, ?string $tipoReciboObjetivo = null): array
     {
         $consecutivos = $this->consecutivosRepository->obtenerTodosPorPrenda($prenda->id, $pedidoId);
 
@@ -195,7 +195,7 @@ class GetSeguimientoPorPrendaUseCase
 
         $seguimientosPorArea = $this->inyectarAreaInsumos($seguimientosPorArea, $consecutivos, $fechaPrimerProceso);
 
-        $datosActivacion = $this->calcularDatosActivacionRecibo($consecutivos, $pedidoModel);
+        $datosActivacion = $this->calcularDatosActivacionRecibo($consecutivos, $pedidoModel, $pedidoParcialId, $numeroReciboObjetivo, $tipoReciboObjetivo);
 
         $cantidadTalla = [];
         foreach ($prenda->tallas as $talla) {
@@ -495,22 +495,74 @@ class GetSeguimientoPorPrendaUseCase
      * Calcular datos de activación del recibo
      * Retorna las fechas (creación orden, activación recibo) y tiempo transcurrido
      */
-    private function calcularDatosActivacionRecibo($consecutivos, $pedidoModel): array
+    private function calcularDatosActivacionRecibo($consecutivos, $pedidoModel, ?string $pedidoParcialId = null, ?string $numeroReciboObjetivo = null, ?string $tipoReciboObjetivo = null): array
     {
-        $reciboCostura = null;
-        foreach ($consecutivos as $c) {
-            if (strtoupper(trim($c->tipo_recibo ?? '')) === 'COSTURA' && ($c->activo ?? 0) == 1) {
-                $reciboCostura = $c;
-                break;
+        // Si es recibo parcial: usar fechas de pedidos_parciales.
+        if ($pedidoParcialId !== null && trim($pedidoParcialId) !== '' && is_numeric($pedidoParcialId)) {
+            $parcial = $this->consecutivosRepository->obtenerParcialPorId((int) $pedidoParcialId);
+            if ($parcial) {
+                $fechaCreacionParcial = $parcial->created_at
+                    ? ($parcial->created_at instanceof Carbon ? $parcial->created_at : Carbon::parse($parcial->created_at))
+                    : null;
+                $fechaActivacionParcial = $parcial->fecha_activacion
+                    ? ($parcial->fecha_activacion instanceof Carbon ? $parcial->fecha_activacion : Carbon::parse($parcial->fecha_activacion))
+                    : null;
+
+                $diasHabilesParcial = null;
+                if ($fechaCreacionParcial && $fechaActivacionParcial) {
+                    $diasHabilesParcial = $this->calcularDiasHabilesConAPI($fechaCreacionParcial, $fechaActivacionParcial);
+                }
+
+                return [
+                    'fecha_creacion_orden' => $fechaCreacionParcial,
+                    'fecha_creacion_orden_formateada' => $fechaCreacionParcial ? $fechaCreacionParcial->format('d/m/Y \a \l\a\s H:i') : null,
+                    'fecha_activacion_recibo' => $fechaActivacionParcial,
+                    'fecha_activacion_recibo_formateada' => $fechaActivacionParcial ? $fechaActivacionParcial->format('d/m/Y \a \l\a\s H:i') : null,
+                    'dias_transcurridos' => $diasHabilesParcial,
+                    'dias_transcurridos_texto' => $diasHabilesParcial !== null ? ($diasHabilesParcial === 0 ? '0 días' : "$diasHabilesParcial día" . ($diasHabilesParcial !== 1 ? 's' : '')) : null,
+                ];
             }
         }
 
-        if (!$reciboCostura) {
+        $tipoObjetivo = strtoupper(trim((string) ($tipoReciboObjetivo ?: 'COSTURA')));
+        $numeroObjetivo = (is_string($numeroReciboObjetivo) && trim($numeroReciboObjetivo) !== '' && is_numeric($numeroReciboObjetivo))
+            ? (int) $numeroReciboObjetivo
+            : null;
+
+        $reciboObjetivo = null;
+        if ($numeroObjetivo !== null) {
+            foreach ($consecutivos as $c) {
+                $tipo = strtoupper(trim((string) ($c->tipo_recibo ?? '')));
+                if ($tipo === $tipoObjetivo && (int) ($c->consecutivo_actual ?? 0) === $numeroObjetivo) {
+                    $reciboObjetivo = $c;
+                    break;
+                }
+            }
+        }
+        if (!$reciboObjetivo) {
+            foreach ($consecutivos as $c) {
+                $tipo = strtoupper(trim((string) ($c->tipo_recibo ?? '')));
+                if ($tipo === $tipoObjetivo && (int) ($c->activo ?? 0) === 1) {
+                    $reciboObjetivo = $c;
+                    break;
+                }
+            }
+        }
+        if (!$reciboObjetivo) {
+            foreach ($consecutivos as $c) {
+                if (strtoupper(trim((string) ($c->tipo_recibo ?? ''))) === 'COSTURA' && (int) ($c->activo ?? 0) === 1) {
+                    $reciboObjetivo = $c;
+                    break;
+                }
+            }
+        }
+
+        if (!$reciboObjetivo) {
             return [];
         }
 
         // Convertir a Carbon si es necesario
-        $reciboCreatedAt = $reciboCostura->created_at ? ($reciboCostura->created_at instanceof Carbon ? $reciboCostura->created_at : Carbon::parse($reciboCostura->created_at)) : null;
+        $reciboCreatedAt = $reciboObjetivo->created_at ? ($reciboObjetivo->created_at instanceof Carbon ? $reciboObjetivo->created_at : Carbon::parse($reciboObjetivo->created_at)) : null;
         $fechaCreacionOrden = $pedidoModel->created_at ? ($pedidoModel->created_at instanceof Carbon ? $pedidoModel->created_at : Carbon::parse($pedidoModel->created_at)) : null;
 
         $diasHabiles = null;

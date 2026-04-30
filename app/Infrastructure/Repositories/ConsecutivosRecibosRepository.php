@@ -12,6 +12,17 @@ use Illuminate\Support\Facades\DB;
 class ConsecutivosRecibosRepository
 {
     /**
+     * Obtener parcial por ID (tabla pedidos_parciales)
+     */
+    public function obtenerParcialPorId(int $parcialId)
+    {
+        return DB::table('pedidos_parciales')
+            ->where('id', $parcialId)
+            ->whereNull('deleted_at')
+            ->first();
+    }
+
+    /**
      * Obtener consecutivos por prenda y pedido
      */
     public function obtenerPorPrendaYPedido(int $prendaId, int $pedidoProduccionId)

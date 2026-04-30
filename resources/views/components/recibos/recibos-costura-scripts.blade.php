@@ -1445,6 +1445,7 @@ function createReciboRow(recibo) {
     const tr = document.createElement('tr');
     const esParcial = Boolean(recibo.es_parcial || recibo.esParcial);
     const pedidoParcialId = recibo.pedido_parcial_id || recibo.pedidoParcialId || recibo.parcial_id || '';
+    const esVistaReflectivo = window.location.pathname.includes('/recibos-reflectivo');
     
     // Determinar clases de días
     const dias = recibo.dias_calculados || 0;
@@ -1478,6 +1479,18 @@ function createReciboRow(recibo) {
     if (dias >= 14) diasBadge = 'bg-danger';
     else if (dias >= 5) diasBadge = 'bg-warning';
     else if (dias > 0) diasBadge = 'bg-success';
+
+    const fechaCreacionTexto = (() => {
+        if (esVistaReflectivo && esParcial && recibo.fecha_activacion) {
+            const d = new Date(recibo.fecha_activacion);
+            return Number.isNaN(d.getTime()) ? '-' : d.toLocaleDateString('es-ES');
+        }
+        if (recibo.pedido_info?.fecha_creacion_orden) {
+            const d = new Date(recibo.pedido_info.fecha_creacion_orden);
+            return Number.isNaN(d.getTime()) ? '-' : d.toLocaleDateString('es-ES');
+        }
+        return '-';
+    })();
 
     tr.innerHTML = `
         <td class="acciones-column" style="text-align: center; position: relative;">
@@ -1531,7 +1544,7 @@ function createReciboRow(recibo) {
                 </div>
             </div>
         </td>
-        <td><span>${recibo.pedido_info?.fecha_creacion_orden ? new Date(recibo.pedido_info.fecha_creacion_orden).toLocaleDateString('es-ES') : '-'}</span></td>
+        <td><span>${fechaCreacionTexto}</span></td>
         <td><span class="fecha-estimada-span text-muted">-</span></td>
         <td><span class="text-muted">-</span></td>
     `;
@@ -1835,6 +1848,14 @@ document.addEventListener('click', function(e) {
         const tr = document.createElement('tr');
         const esParcial = Boolean(recibo.es_parcial || recibo.esParcial);
         const pedidoParcialId = recibo.pedido_parcial_id || recibo.pedidoParcialId || recibo.parcial_id || '';
+        const esVistaReflectivo = window.location.pathname.includes('/recibos-reflectivo');
+        const fechaCreacionTexto = (() => {
+            if (esVistaReflectivo && esParcial && recibo.fecha_activacion) {
+                const d = new Date(recibo.fecha_activacion);
+                return Number.isNaN(d.getTime()) ? '-' : d.toLocaleDateString('es-ES');
+            }
+            return recibo.fecha_creacion || '-';
+        })();
         tr.className = diasClase;
         tr.setAttribute('data-orden-id', recibo.id);
         tr.setAttribute('data-pedido-id', recibo.pedido_produccion_id || '');
@@ -1892,7 +1913,7 @@ document.addEventListener('click', function(e) {
                     </div>
                 </div>
             </td>
-            <td><span>${recibo.fecha_creacion || '-'}</span></td>
+            <td><span>${fechaCreacionTexto}</span></td>
             <td><span class="fecha-estimada-span text-muted">-</span></td>
             <td><span class="text-muted">-</span></td>
         `;

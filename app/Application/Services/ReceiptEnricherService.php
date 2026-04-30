@@ -90,15 +90,32 @@ class ReceiptEnricherService
                 (int) ($recibo['consecutivo_actual'] ?? 0)
             );
 
+            $esParcial = (bool) ($metaParcial['es_parcial'] ?? false);
+            $pedidoParcialId = $metaParcial['pedido_parcial_id'] ?? null;
+            $fechaActivacionParcial = $metaParcial['fecha_activacion'] ?? null;
+            $fechaCreacionParcial = $metaParcial['created_at'] ?? null;
+            $tipoRecibo = strtoupper((string) ($recibo['tipo_recibo'] ?? ''));
+
+            // Regla solicitada: en reflectivo parcial, días desde fecha_activacion.
+            $diasCalculados = (int) ($diasPorPedido[$pedidoId] ?? 0);
+            if ($esParcial && $tipoRecibo === 'REFLECTIVO') {
+                $fechaBase = $fechaActivacionParcial ?: $fechaCreacionParcial;
+                if ($fechaBase) {
+                    $diasCalculados = $this->calcularDiasHabiles(Carbon::parse($fechaBase));
+                }
+            }
+
             return array_merge($recibo, [
                 'pedido_info' => $pedido ? $this->extraerInfoPedido($pedido) : null,
                 'descripcion_detallada' => $this->generarDescripcion($pedido, $recibo),
-                'dias_calculados' => (int) ($diasPorPedido[$pedidoId] ?? 0),
+                'dias_calculados' => $diasCalculados,
                 'cantidad_total' => (int) ($cantidadesPorRecibo[$reciboKey] ?? 0),
                 'tiene_parciales' => $totalParciales > 0,
                 'total_parciales' => $totalParciales,
-                'es_parcial' => (bool) ($metaParcial['es_parcial'] ?? false),
-                'pedido_parcial_id' => $metaParcial['pedido_parcial_id'] ?? null,
+                'es_parcial' => $esParcial,
+                'pedido_parcial_id' => $pedidoParcialId,
+                'fecha_activacion' => $fechaActivacionParcial,
+                'created_at_parcial' => $fechaCreacionParcial,
                 'encargado_orden' => $encargadoOrden,
                 'novedades' => $novedadesTexto,
             ]);
@@ -143,6 +160,8 @@ class ReceiptEnricherService
                 'prenda_pedido_id',
                 'tipo_recibo',
                 'consecutivo_actual',
+                'fecha_activacion',
+                'created_at',
             ])
             ->whereNotNull('consecutivo_actual')
             ->whereIn('pedido_produccion_id', array_values($pedidoIds))
@@ -162,6 +181,8 @@ class ReceiptEnricherService
             $map[$key] = [
                 'es_parcial' => true,
                 'pedido_parcial_id' => (int) $row->id,
+                'fecha_activacion' => $row->fecha_activacion,
+                'created_at' => $row->created_at,
             ];
         }
 
