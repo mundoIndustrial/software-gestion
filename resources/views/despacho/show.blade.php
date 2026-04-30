@@ -235,7 +235,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p class="text-sm text-slate-500 mt-1">Pedido {{ $pedido->numero_pedido }}</p>
                 </div>
                 <div class="flex gap-3">
-                    <a href="{{ route('despacho.index') }}" 
+                    <a href="{{ route('despacho.index') }}"
+                       onclick="if (window.history.length > 1) { event.preventDefault(); window.history.back(); }"
                        class="px-3 py-2 text-slate-600 hover:text-slate-900 font-medium">
                         ← Volver
                     </a>

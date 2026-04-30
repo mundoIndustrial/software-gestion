@@ -566,4 +566,3 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <script src="{{ asset('js/despacho-index.js') }}"></script>
 @endsection
-
