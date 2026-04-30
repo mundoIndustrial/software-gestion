@@ -17,7 +17,7 @@ export class ReceiptRenderer {
         }
 
         // Actualizar título
-        this._actualizarTitulo(tipoProceso, recibo, prendaData);
+        this._actualizarTitulo(tipoProceso, recibo, prendaData, recibos);
 
         // Llenar información básica
         this._llenarInformacionBasica(datosPedido, recibo);
@@ -62,7 +62,7 @@ export class ReceiptRenderer {
     /**
      * Actualiza el título del modal
      */
-    static _actualizarTitulo(tipoProceso, recibo, prendaData) {
+    static _actualizarTitulo(tipoProceso, recibo, prendaData, recibos = []) {
         const titleElement = document.querySelector('.receipt-title');
         if (titleElement) {
             const tipoProcesoLower = String(tipoProceso || '').toLowerCase();
@@ -90,9 +90,14 @@ export class ReceiptRenderer {
             let consecutivo = '';
             let tipoReciboKey = '';
 
-            // Caso general: si el proceso/recibo ya trae numero_recibo, usarlo como fuente de verdad
-            if (recibo && (recibo.numero_recibo || recibo.numeroRecibo)) {
-                consecutivo = recibo.numero_recibo || recibo.numeroRecibo;
+            // Caso general: usar consecutivo directo del recibo (incluye base y parciales)
+            if (recibo) {
+                consecutivo =
+                    recibo.numero_recibo ||
+                    recibo.numeroRecibo ||
+                    recibo.consecutivo_actual ||
+                    recibo.consecutivo_parcial ||
+                    '';
             }
             
             // Definir mapa de tipos de recibo
@@ -135,7 +140,49 @@ export class ReceiptRenderer {
                     recibosLength: prendaData?.recibos ? Object.keys(prendaData.recibos).length : 0
                 });
             }
+
+            // Fallback adicional: buscar en prendaData.consecutivos (array u objeto)
+            if (!consecutivo && prendaData?.consecutivos) {
+                const tipoReciboBuscado = tipoReciboMap[tipoProceso.toLowerCase()] || tipoProceso.toUpperCase();
+                const consecutivosArray = Array.isArray(prendaData.consecutivos)
+                    ? prendaData.consecutivos
+                    : Object.values(prendaData.consecutivos || {});
+
+                const encontrado = consecutivosArray.find((c) =>
+                    String(c?.tipo_recibo || '').toUpperCase() === String(tipoReciboBuscado).toUpperCase()
+                );
+
+                if (encontrado) {
+                    consecutivo = encontrado.consecutivo_actual || encontrado.consecutivo_parcial || '';
+                }
+            }
             
+            // Fallback adicional para Costura:
+            // cuando el recibo actual es un anexo no activo puede no traer consecutivo;
+            // en ese caso mostrar el consecutivo del recibo base activo/aprobado.
+            if (!consecutivo && Array.isArray(recibos) && recibos.length > 0) {
+                const tipoActual = String(tipoProceso || '').toLowerCase();
+                const esFlujoCostura = tipoActual === 'costura' || tipoActual === 'costura-bodega';
+
+                if (esFlujoCostura) {
+                    const baseCostura = recibos.find((r) => {
+                        const tipoR = String(r?.tipo || r?.tipo_proceso || r?.tipo_recibo || '').toLowerCase();
+                        const esBaseCostura = tipoR === 'costura' || tipoR === 'costura-bodega';
+                        const estaAprobadoOActivo = Number(r?.activo) === 1 || String(r?.estado || '').toUpperCase() === 'APROBADO';
+                        return esBaseCostura && estaAprobadoOActivo;
+                    });
+
+                    if (baseCostura) {
+                        consecutivo =
+                            baseCostura.numero_recibo ||
+                            baseCostura.numeroRecibo ||
+                            baseCostura.consecutivo_actual ||
+                            baseCostura.consecutivo_parcial ||
+                            '';
+                    }
+                }
+            }
+
             // Si no hay consecutivo, dejar vacío (no usar consecutivos de prueba)
             if (!consecutivo) {
                 console.log(' [ReceiptRenderer] No hay consecutivo, dejando vacío:', {

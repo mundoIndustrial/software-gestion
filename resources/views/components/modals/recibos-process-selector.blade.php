@@ -609,7 +609,7 @@
                 return;
             }
 
-            // Forzar creación de parcial de COSTURA (sin consecutivo). Aplica solo a prendas de bodega.
+            // Permite generar recibos por talla para el tipo seleccionado (costura/reflectivo).
             return window.abrirModalReciboParcial(prendaId, resolvedTipoProceso, resolvedPedidoId);
         } catch (e) {
             console.error('[generarReciboBodega] Error:', e);
@@ -994,8 +994,9 @@
                     // Nuevo formato: objeto con datos completos
                     if (typeof reciboBaseActual === 'object' && reciboBaseActual.activo !== undefined) {
                         const estadoNormalizado = String(reciboBaseActual.estado || '').toUpperCase().trim();
+                        const estaAnulado = estadoNormalizado === 'ANULADO' || estadoNormalizado === 'ANULADA';
                         console.log('[DEBUG RECIBO BASE] estadoNormalizado:', estadoNormalizado, 'activo:', reciboBaseActual.activo);
-                        estadoRecibo = reciboBaseActual.activo === 1 ? 'APROBADO' : (estadoNormalizado === 'ANULADO' ? 'ANULADO' : 'PENDIENTE');
+                        estadoRecibo = estaAnulado ? 'ANULADO' : (reciboBaseActual.activo === 1 ? 'APROBADO' : 'PENDIENTE');
                         console.log('[DEBUG RECIBO BASE] estadoRecibo calculado:', estadoRecibo);
                         numeroRecibo = reciboBaseActual.consecutivo_actual || null;
                         activoValue = reciboBaseActual.activo;
@@ -1028,11 +1029,6 @@
                 // Garantizar que tipo_proceso es STRING
                 const tipoProceso = String(proc.tipo_proceso || proc.nombre_proceso || '');
                 
-                // Filtrar: excluir REFLECTIVO si de_bodega es false
-                if (!prenda.de_bodega && tipoProceso.toLowerCase() === 'reflectivo') {
-                    return; // Skip este proceso
-                }
-                
                 // CONDICIÓN ESPECIAL PARA VISUALIZADOR-LOGO: Solo mostrar procesos específicos
                 const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/pedidos-logo');
                 if (esVistaVisualizadorLogo) {
@@ -1061,20 +1057,26 @@
 
             //  RECIBOS PARCIALES (ANEXOS)
             const parciales = prenda.recibos?.parciales || [];
+            const contadorAnexosPorTipo = {};
             
-            parciales.forEach((parcial, index) => {
+            parciales.forEach((parcial) => {
                 // Determinar el estado del parcial
                 console.log('[DEBUG PARCIAL] parcial:', parcial);
                 const estadoNormalizadoParcial = String(parcial.estado || '').toUpperCase().trim();
+                const parcialAnulado = estadoNormalizadoParcial === 'ANULADO' || estadoNormalizadoParcial === 'ANULADA';
                 console.log('[DEBUG PARCIAL] estadoNormalizadoParcial:', estadoNormalizadoParcial, 'activo:', parcial.activo);
-                const estadoParcial = parcial.activo === 1 ? 'APROBADO' : (estadoNormalizadoParcial || 'PENDIENTE');
+                const estadoParcial = parcialAnulado ? 'ANULADO' : (parcial.activo === 1 ? 'APROBADO' : (estadoNormalizadoParcial || 'PENDIENTE'));
                 console.log('[DEBUG PARCIAL] estadoParcial calculado:', estadoParcial);
                 const tipoParcial = String(parcial.tipo_recibo || '').toUpperCase() === 'COSTURA-BODEGA'
                     ? 'COSTURA'
                     : String(parcial.tipo_recibo || '');
                 
+                const tipoParcialKey = String(tipoParcial || '').toUpperCase();
+                contadorAnexosPorTipo[tipoParcialKey] = (contadorAnexosPorTipo[tipoParcialKey] || 0) + 1;
+                const numeroAnexoPorTipo = contadorAnexosPorTipo[tipoParcialKey];
+
                 // Crear nombre descriptivo para el parcial
-                const nombreParcial = `${tipoParcial} ANEXO ${index + 1}`;
+                const nombreParcial = `${tipoParcial} ANEXO ${numeroAnexoPorTipo}`;
                 
                 recibos.push({
                     tipo: tipoParcial,
@@ -1091,21 +1093,9 @@
                 });
             });
 
-            // FILTRAR: no mostrar recibo base de COSTURA si ya existen anexos de COSTURA
-            const recibosFiltered = recibos.filter((recibo) => {
-                // Si es recibo base de costura/costura-bodega (case-insensitive)
-                const tipoLower = String(recibo.tipo || '').toLowerCase();
-                if (recibo.es_base && (tipoLower === 'costura' || tipoLower === 'costura-bodega')) {
-                    // Verificar si existen anexos de costura (case-insensitive)
-                    const tieneAnexos = recibos.some(r => {
-                        const tipoAnexoLower = String(r.tipo || '').toLowerCase();
-                        return r.es_parcial && (tipoAnexoLower === 'costura' || tipoAnexoLower === 'costura-bodega');
-                    });
-                    // Si tiene anexos, NO mostrar el recibo base
-                    return !tieneAnexos;
-                }
-                return true;
-            });
+            // Mantener visible el recibo base (costura/costura-bodega) aunque existan anexos,
+            // para que no desaparezca del acordeón después de aprobar y siga disponible en UI.
+            const recibosFiltered = recibos;
 
             const idAccordion = `prenda-${prenda.id || prendaIdx}`;
             const totalRecibos = recibosFiltered.length;
@@ -1199,7 +1189,7 @@
                             <span>Ver entregas</span>
                         </button>`;
 
-            const botonGenerarReciboCosturaHtml = (ocultarBotonEntregar || prenda.de_bodega != 1) ? '' : `
+            const botonGenerarReciboCosturaHtml = ocultarBotonEntregar ? '' : `
                         <div class="recibo-parcial-select-wrapper" onclick="event.stopPropagation();" title="Selecciona el tipo de recibo por talla">
                             <i class="fas fa-file-alt recibo-parcial-select-icon"></i>
                             <select class="select-recibo-parcial has-icon"
@@ -2651,4 +2641,3 @@
 
 <!-- Incluir modal de recibos parciales por talla -->
 @include('components.modals.recibos-parcial-por-talla')
-

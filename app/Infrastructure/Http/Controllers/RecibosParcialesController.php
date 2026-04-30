@@ -56,6 +56,31 @@ class RecibosParcialesController extends Controller
                 ], 422);
             }
 
+            // Regla de negocio:
+            // No permitir crear anexos de COSTURA cuando el recibo base de COSTURA
+            // ya está aprobado/activo con consecutivo (hasta que se anule).
+            if ($tipoReciboDB === 'COSTURA') {
+                $reciboBaseCosturaActivo = DB::table('consecutivos_recibos_pedidos')
+                    ->where('pedido_produccion_id', $validated['pedido_id'])
+                    ->where('prenda_id', $validated['prenda_id'])
+                    ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
+                    ->where('origen_recibo', 'BASE')
+                    ->where(function ($q) {
+                        $q->where('activo', 1)
+                          ->orWhereRaw('UPPER(COALESCE(estado, "")) = "APROBADO"');
+                    })
+                    ->whereNotNull('consecutivo_actual')
+                    ->whereRaw('UPPER(COALESCE(estado, "")) <> "ANULADO"')
+                    ->exists();
+
+                if ($reciboBaseCosturaActivo) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No se puede generar anexo de COSTURA porque el recibo base ya está aprobado con consecutivo. Primero debes anular el recibo de COSTURA.',
+                    ], 422);
+                }
+            }
+
             DB::beginTransaction();
 
             try {
@@ -441,6 +466,7 @@ class RecibosParcialesController extends Controller
                         'pedido_produccion_id' => $parcial->pedido_produccion_id,
                         'prenda_id' => $parcial->prenda_pedido_id,
                         'tipo_recibo' => $tipoRecibo,
+                        'origen_recibo' => 'ANEXO',
                         'consecutivo_inicial' => $nuevoConsecutivo,
                         'consecutivo_actual' => $nuevoConsecutivo,
                         'activo' => 1,
@@ -448,6 +474,18 @@ class RecibosParcialesController extends Controller
                         'created_at' => now(),
                         'updated_at' => now()
                     ]);
+                } else {
+                    // Curación defensiva: si había registro legado del anexo marcado como BASE,
+                    // normalizarlo a ANEXO para evitar que contamine el recibo base.
+                    DB::table('consecutivos_recibos_pedidos')
+                        ->where('pedido_produccion_id', $parcial->pedido_produccion_id)
+                        ->where('tipo_recibo', $tipoRecibo)
+                        ->where('prenda_id', $parcial->prenda_pedido_id)
+                        ->where('notas', 'LIKE', '%parcial_id:' . $id . '%')
+                        ->update([
+                            'origen_recibo' => 'ANEXO',
+                            'updated_at' => now(),
+                        ]);
                 }
 
                 $consecutivoGenerado = $nuevoConsecutivo;

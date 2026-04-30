@@ -95,13 +95,14 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
 
     public function getConsecutivosPrenda(int $pedidoId, int $prendaId): Collection
     {
-        $consecutivos = DB::table('consecutivos_recibos_pedidos')
+        $query = DB::table('consecutivos_recibos_pedidos')
             ->where('pedido_produccion_id', $pedidoId)
             ->where(function ($query) use ($prendaId) {
                 $query->where('prenda_id', $prendaId)
                     ->orWhereNull('prenda_id');
-            })
-            ->select([
+            });
+
+        $select = [
                 'id',
                 'tipo_recibo',
                 'consecutivo_actual',
@@ -111,7 +112,17 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
                 'area',
                 'created_at',
                 'updated_at',
-            ])
+            ];
+
+        // Compatibilidad: si existe la columna nueva, traerla para distinguir BASE vs ANEXO.
+        if (Schema::hasColumn('consecutivos_recibos_pedidos', 'origen_recibo')) {
+            $select[] = 'origen_recibo';
+        }
+
+        $consecutivos = $query
+            ->select($select)
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
             ->get();
 
         return $consecutivos;

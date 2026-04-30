@@ -374,7 +374,19 @@ class ObtenerDetalleCompletoUseCase
 
             // Procesar consecutivos
             foreach ($consecutivos as $c) {
-                if (array_key_exists($c->tipo_recibo, $recibos)) {
+                if (!array_key_exists($c->tipo_recibo, $recibos)) {
+                    continue;
+                }
+
+                // Si el registro viene marcado como ANEXO, no debe poblar recibos base por tipo.
+                // Los anexos se representan por separado en $recibos['parciales'].
+                $origen = strtoupper((string) ($c->origen_recibo ?? 'BASE'));
+                if ($origen === 'ANEXO') {
+                    continue;
+                }
+
+                // Conservar el mejor candidato (el primero por orden updated_at desc/id desc).
+                if ($recibos[$c->tipo_recibo] === null) {
                     $recibos[$c->tipo_recibo] = [
                         'id' => $c->id,
                         'tipo_recibo' => $c->tipo_recibo,
@@ -382,6 +394,7 @@ class ObtenerDetalleCompletoUseCase
                         'activo' => $c->activo,
                         'estado' => $c->estado,
                         'area' => $c->area,
+                        'origen_recibo' => $c->origen_recibo ?? 'BASE',
                         // Fecha de activación visible en recibo dinámico
                         // (consecutivos_recibos_pedidos.created_at).
                         'created_at' => $c->created_at,

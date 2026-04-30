@@ -75,6 +75,7 @@ class EloquentReceiptRepository implements ReceiptRepository
             ->where('pedido_produccion_id', $orderId)
             ->where('prenda_id', $prendaId)
             ->where('tipo_recibo', 'COSTURA')
+            ->where('origen_recibo', 'BASE')
             ->where('activo', 1)
             ->orderByDesc('id')
             ->first();

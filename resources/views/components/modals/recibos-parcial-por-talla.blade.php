@@ -39,7 +39,21 @@
             <div id="parcial-editar-contenido" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #86efac;">
                 <div style="margin-bottom: 12px;">
                     <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 6px; font-size: 13px;">Descripción</label>
-                    <textarea id="parcial-editar-descripcion" placeholder="Edita la descripción de la prenda..." style="width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 13px; resize: vertical; min-height: 70px; box-sizing: border-box;"></textarea>
+                    <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+                        <button type="button" onclick="aplicarColorDescripcionParcial('#dc2626')" style="border:1px solid #d1d5db; background:#fff; color:#dc2626; border-radius:6px; padding:4px 8px; font-size:12px; cursor:pointer;">
+                            Color rojo
+                        </button>
+                        <button type="button" onclick="quitarColorDescripcionParcial()" style="border:1px solid #d1d5db; background:#fff; color:#374151; border-radius:6px; padding:4px 8px; font-size:12px; cursor:pointer;">
+                            Quitar color
+                        </button>
+                        <button type="button" onclick="limpiarFormatoDescripcionParcial()" style="border:1px solid #d1d5db; background:#fff; color:#374151; border-radius:6px; padding:4px 8px; font-size:12px; cursor:pointer;">
+                            Limpiar formato
+                        </button>
+                    </div>
+                    <div id="parcial-editar-descripcion"
+                         contenteditable="true"
+                         data-placeholder="Edita la descripción de la prenda..."
+                         style="width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 13px; min-height: 70px; box-sizing: border-box; line-height:1.4; white-space:pre-wrap;"></div>
                 </div>
 
                 <div>
@@ -108,6 +122,46 @@
 </div>
 
 <script>
+    function escapeHtmlParcialDescripcion(text) {
+        return String(text || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function setDescripcionParcialEditorValue(value) {
+        const descripcionEl = document.getElementById('parcial-editar-descripcion');
+        if (!descripcionEl) return;
+        const raw = String(value || '').trim();
+        descripcionEl.innerHTML = raw ? raw : '';
+        descripcionEl.dataset.empty = raw ? 'false' : 'true';
+    }
+
+    function getDescripcionParcialEditorValue() {
+        const descripcionEl = document.getElementById('parcial-editar-descripcion');
+        if (!descripcionEl) return null;
+        const html = String(descripcionEl.innerHTML || '')
+            .replace(/<div><br><\/div>/gi, '')
+            .trim();
+        return html || null;
+    }
+
+    window.aplicarColorDescripcionParcial = function(color) {
+        document.execCommand('styleWithCSS', false, true);
+        document.execCommand('foreColor', false, color || '#dc2626');
+    };
+
+    window.quitarColorDescripcionParcial = function() {
+        document.execCommand('styleWithCSS', false, true);
+        document.execCommand('foreColor', false, '#000000');
+    };
+
+    window.limpiarFormatoDescripcionParcial = function() {
+        document.execCommand('removeFormat', false, null);
+    };
+
     /**
      * Estado global del modal de recibo parcial
      */
@@ -134,6 +188,42 @@
         if (!penda) {
             alert('Prenda no encontrada');
             return;
+        }
+
+        // Regla de negocio:
+        // Si el recibo base de COSTURA ya está aprobado/activo con consecutivo,
+        // no se permite crear anexos de COSTURA hasta anular ese recibo base.
+        const tipoProcesoLower = String(tipoProceso || '').trim().toLowerCase();
+        const esIntentoAnexoCostura = tipoProcesoLower === 'costura' && (options.mode || 'crear_recibo') === 'crear_recibo';
+        if (esIntentoAnexoCostura) {
+            const reciboCosturaBase = penda?.recibos?.COSTURA || penda?.consecutivos?.COSTURA || null;
+            const tieneConsecutivoBase =
+                (typeof reciboCosturaBase === 'object' && reciboCosturaBase)
+                    ? !!(reciboCosturaBase.consecutivo_actual || reciboCosturaBase.numero_recibo || reciboCosturaBase.numeroRecibo)
+                    : !!reciboCosturaBase;
+            const estaBaseAprobadaOActiva =
+                (typeof reciboCosturaBase === 'object' && reciboCosturaBase)
+                    ? (Number(reciboCosturaBase.activo) === 1 || String(reciboCosturaBase.estado || '').toUpperCase() === 'APROBADO')
+                    : tieneConsecutivoBase;
+            const estaBaseAnulada =
+                (typeof reciboCosturaBase === 'object' && reciboCosturaBase)
+                    ? String(reciboCosturaBase.estado || '').toUpperCase() === 'ANULADO'
+                    : false;
+
+            if (tieneConsecutivoBase && estaBaseAprobadaOActiva && !estaBaseAnulada) {
+                const mensajeBloqueo = 'No se puede generar anexo de COSTURA porque el recibo base ya está aprobado con consecutivo. Primero debes anular el recibo de COSTURA.';
+                if (typeof window.mostrarModalConfirmar === 'function') {
+                    window.mostrarModalConfirmar(
+                        'Acción no permitida',
+                        mensajeBloqueo,
+                        '#ef4444',
+                        () => {}
+                    );
+                } else {
+                    alert(mensajeBloqueo);
+                }
+                return;
+            }
         }
 
         window.modalReciboParcialState.prendaId = prendaId;
@@ -191,12 +281,13 @@
                 : '<i class="fas fa-check"></i> Crear Recibo';
         }
 
-        // Mostrar/ocultar sección de edición de prenda (solo para COSTURA, supervisor_pedidos, y no en modo entrega_parcial)
+        // Mostrar/ocultar sección de edición de prenda (COSTURA/REFLECTIVO, supervisor_pedidos, y no en modo entrega_parcial)
         const editarPrendaSection = document.getElementById('parcial-editar-prenda-section');
         // Nota: esSupervisorPedidos viene como string 'true'/'false', comparar con 'true'
         const esSupervisorPedidos = String(window.selectorRecibosState?.esSupervisorPedidos || '') === 'true';
-        const esCostura = String(tipoProceso || '').toLowerCase() === 'costura';
-        const mostrarEditarPrenda = esSupervisorPedidos && !modoEntregaParcial && esCostura;
+        const tipoProcesoLowerEdicion = String(tipoProceso || '').toLowerCase();
+        const permiteEdicionPrenda = tipoProcesoLowerEdicion === 'costura' || tipoProcesoLowerEdicion === 'reflectivo';
+        const mostrarEditarPrenda = esSupervisorPedidos && !modoEntregaParcial && permiteEdicionPrenda;
 
         if (editarPrendaSection) {
             editarPrendaSection.style.display = mostrarEditarPrenda ? 'block' : 'none';
@@ -207,7 +298,7 @@
                 const deBodegaEl = document.getElementById('parcial-editar-de-bodega');
 
                 if (descripcionEl) {
-                    descripcionEl.value = penda.descripcion || '';
+                    setDescripcionParcialEditorValue(penda.descripcion || '');
                 }
                 if (deBodegaEl) {
                     deBodegaEl.value = penda.de_bodega ? '1' : '0';
@@ -589,7 +680,7 @@
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify({
-                            descripcion: descripcionEl ? descripcionEl.value || null : null,
+                            descripcion: descripcionEl ? getDescripcionParcialEditorValue() : null,
                             de_bodega: deBodegaEl ? (deBodegaEl.value === '1') : null,
                             pedido_id: window.modalReciboParcialState.pedidoId,
                             tipo_recibo: window.modalReciboParcialState.tipoProceso,
@@ -731,7 +822,7 @@
 
         // Limpiar campos de edición de prenda
         const descripcionEl = document.getElementById('parcial-editar-descripcion');
-        if (descripcionEl) descripcionEl.value = '';
+        if (descripcionEl) setDescripcionParcialEditorValue('');
         const deBodegaEl = document.getElementById('parcial-editar-de-bodega');
         if (deBodegaEl) deBodegaEl.value = '1';
         const editarPrendaSection = document.getElementById('parcial-editar-prenda-section');
@@ -771,5 +862,16 @@
     @keyframes fadeIn {
         from { opacity: 0; }
         to { opacity: 1; }
+    }
+
+    #parcial-editar-descripcion:empty:before {
+        content: attr(data-placeholder);
+        color: #9ca3af;
+    }
+
+    #parcial-editar-descripcion:focus {
+        outline: none;
+        border-color: #8b5cf6 !important;
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15);
     }
 </style>
