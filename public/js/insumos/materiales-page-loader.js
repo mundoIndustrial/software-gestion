@@ -481,8 +481,16 @@
                         );
                         const pedidoId = btn.getAttribute('data-pedido-id');
                         const prendaId = btn.getAttribute('data-prenda-id');
+                        const numeroRecibo = btn.getAttribute('data-numero-recibo') || null;
+                        const tipoRecibo = btn.getAttribute('data-tipo-recibo') || 'REFLECTIVO';
+                        const esParcial = btn.getAttribute('data-es-parcial') === '1';
+                        const pedidoParcialId = btn.getAttribute('data-pedido-parcial-id') || null;
                         await Promise.resolve(
-                            safeCall('abrirSeguimientoRecibo', [pedidoId, prendaId], 'abrirSeguimientoRecibo no esta disponible')
+                            safeCall(
+                                'abrirSeguimientoRecibo',
+                                [pedidoId, prendaId, numeroRecibo, null, tipoRecibo, esParcial, pedidoParcialId],
+                                'abrirSeguimientoRecibo no esta disponible'
+                            )
                         );
                         safeCall('cerrarDropdownVerRecibo', [], 'cerrarDropdownVerRecibo no esta disponible');
                     } catch (error) {

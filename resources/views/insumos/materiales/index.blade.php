@@ -265,6 +265,8 @@
                                             data-pedido-produccion-id="{{ $pedidoProduccionId }}"
                                             data-prenda-id="{{ $orden->prenda_id ?? '' }}"
                                             data-tipo-recibo="{{ $orden->tipo_recibo ?? 'COSTURA' }}"
+                                            data-numero-recibo="{{ $orden->consecutivo_actual ?? '' }}"
+                                            data-consecutivo="{{ $orden->consecutivo_actual ?? '' }}"
                                             data-es-parcial="{{ !empty($orden->es_parcial) ? '1' : '0' }}"
                                             data-pedido-parcial-id="{{ $orden->pedido_parcial_id ?? '' }}"
                                             data-tooltip="Ver recibo o seguimiento"

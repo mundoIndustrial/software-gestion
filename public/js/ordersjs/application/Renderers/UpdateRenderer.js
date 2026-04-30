@@ -36,7 +36,10 @@ export class UpdateRenderer {
     setText('trackingEstimatedDate', this.formatDate(orderData.fecha_estimada_de_entrega) || '-');
 
     // Recibo principal (pre-computado y enviado por el backend)
-    const reciboPrincipal = orderData.recibo_principal || '-';
+    const reciboCtx = globalThis.currentTrackingReceiptContext?.numeroRecibo;
+    const reciboPrincipal = (reciboCtx !== null && reciboCtx !== undefined && String(reciboCtx).trim() !== '')
+      ? String(reciboCtx).trim()
+      : (orderData.recibo_principal || '-');
     console.log('[UpdateRenderer.updateOrderInfo] trackingOrderRecibo <- recibo_principal:', {
       pedidoId: orderData.id || null,
       reciboPrincipal,
@@ -146,9 +149,16 @@ export class UpdateRenderer {
         .replace(/^Recibo\s*#\s*/i, '')
         .trim();
 
-      const valorFinal = numeroNormalizado && numeroNormalizado !== 'Sin recibo'
+      const reciboCtx = globalThis.currentTrackingReceiptContext?.numeroRecibo;
+      const valorDesdeContexto = (reciboCtx !== null && reciboCtx !== undefined && String(reciboCtx).trim() !== '')
+        ? String(reciboCtx).trim()
+        : null;
+
+      const valorFinal = valorDesdeContexto
+        ? valorDesdeContexto
+        : (numeroNormalizado && numeroNormalizado !== 'Sin recibo'
         ? numeroNormalizado
-        : '-';
+        : '-');
 
       console.log('[UpdateRenderer.updateReciboHeader] trackingOrderRecibo <-', {
         numeroReciboOriginal: numeroRecibo,

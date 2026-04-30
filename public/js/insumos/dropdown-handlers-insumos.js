@@ -73,6 +73,7 @@ function crearDropdownVerRecibo(event, button) {
     const tipoRecibo = button.getAttribute('data-tipo-recibo') || 'COSTURA';
     const esParcial = button.getAttribute('data-es-parcial') === '1';
     const pedidoParcialId = button.getAttribute('data-pedido-parcial-id') || '';
+    const numeroRecibo = button.getAttribute('data-numero-recibo') || button.getAttribute('data-consecutivo') || '';
     const rect = button.getBoundingClientRect();
 
     const dropdown = document.createElement('div');
@@ -110,6 +111,10 @@ function crearDropdownVerRecibo(event, button) {
         <button data-insumos-action="dropdown-ver-seguimiento"
             data-pedido-id="${pedidoId}"
             data-prenda-id="${prendaId ?? ''}"
+            data-numero-recibo="${numeroRecibo}"
+            data-tipo-recibo="${tipoRecibo}"
+            data-es-parcial="${esParcial ? '1' : '0'}"
+            data-pedido-parcial-id="${pedidoParcialId}"
             style="
             width:100%;text-align:left;padding:0.875rem 1rem;border:none;
             background:transparent;cursor:pointer;color:#374151;font-size:0.875rem;
@@ -284,7 +289,7 @@ function cerrarDropdownAcciones() {
 /**
  * Carga los procesos de la prenda y abre el modal de seguimiento (showPrendaTracking).
  */
-async function abrirSeguimientoRecibo(pedidoId, prendaId, consecutivo = null, estado = null, tipoRecibo = null) {
+async function abrirSeguimientoRecibo(pedidoId, prendaId, consecutivo = null, estado = null, tipoRecibo = null, esParcial = false, pedidoParcialId = null) {
     pedidoId = parseInt(pedidoId) || null;
     prendaId = parseInt(prendaId) || null;
 
@@ -294,6 +299,16 @@ async function abrirSeguimientoRecibo(pedidoId, prendaId, consecutivo = null, es
     }
 
     try {
+        // Contexto para tracking-modal-handler (normal/parcial + recibo objetivo)
+        globalThis.currentTrackingReceiptContext = {
+            pedidoId: pedidoId,
+            prendaId: prendaId,
+            numeroRecibo: consecutivo ? String(consecutivo) : null,
+            tipoRecibo: tipoRecibo ? String(tipoRecibo) : 'REFLECTIVO',
+            esParcial: Boolean(esParcial),
+            pedidoParcialId: pedidoParcialId ? Number(pedidoParcialId) : null
+        };
+
         let procesos = [];
 
         if (prendaId) {

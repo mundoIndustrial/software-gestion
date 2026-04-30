@@ -789,7 +789,8 @@ function initTrackingModalListeners() {
     })();
 
     const shouldForceTrackingFetch = (() => {
-      const isReflectivoView = window.location.pathname.includes('/recibos-reflectivo');
+      const isReflectivoView = window.location.pathname.includes('/recibos-reflectivo')
+        || window.location.pathname.includes('/insumos/materiales/reflectivo');
       const hasReceiptContext = Boolean(
         trackingReceiptContext?.numeroRecibo
         || trackingReceiptContext?.tipoRecibo
