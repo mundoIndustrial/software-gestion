@@ -177,7 +177,7 @@
     function renderEmbroideryRow(proceso, escapeHtml, options = {}) {
         const showActions = options.showActions === true;
         const actionHandlerName = String(options.actionHandlerName || 'openReceiptFromLogoPendingRow');
-        const gridTemplate = options.gridTemplate || '170px 110px 200px 150px 140px 130px 160px 130px 100px';
+        const gridTemplate = options.gridTemplate || '160px 110px 200px 150px 140px 130px 170px 130px 100px';
         const fechaCreacion = formatDateTime(proceso?.fecha_creacion);
         const numeroRecibo = proceso?.numero_recibo || 'Sin asignar';
         const cliente = proceso?.cliente || '';
@@ -214,13 +214,13 @@
                 transition: background 0.2s ease;
             " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=this.getAttribute('data-color-guardado') || 'white'">
                 ${actionsCellHtml}
-                <div><span>${escapeHtml(fechaCreacion)}</span></div>
+                <div>${fechaAprobacion ? `<span>${escapeHtml(fechaAprobacion)}</span>` : `<span style="background: #f3f4f6; color: #9ca3af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">--</span>`}</div>
                 <div><span style="font-weight: 600; color: #1e5ba8;">${escapeHtml(String(numeroRecibo))}</span></div>
                 <div><span>${escapeHtml(String(cliente))}</span></div>
                 <div><span style="background: #e8f3ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: normal; overflow-wrap: anywhere; word-break: break-word; line-height: 1.2; border: 1px solid #bfdbfe; display: inline-block; max-width: 100%;">${escapeHtml(String(cantidad))} ${escapeHtml(String(nombrePrenda))}</span></div>
                 <div><span>${escapeHtml(String(asesor))}</span></div>
                 <div>${tipoRecibo}</div>
-                <div>${fechaAprobacion ? `<span>${escapeHtml(fechaAprobacion)}</span>` : `<span style="background: #f3f4f6; color: #9ca3af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">--</span>`}</div>
+                <div><span>${escapeHtml(fechaCreacion)}</span></div>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <div class="color-selector-wrapper" data-recibo-id="${escapeHtml(String(numeroRecibo))}" data-tipo-recibo="${escapeHtml(tipoReciboRaw)}" style="position: relative; display: flex; gap: 0.3rem; align-items: center;">
                         <button type="button" class="color-btn" data-color="#e0f2fe" title="Azul claro" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; background: #e0f2fe; cursor: pointer; transition: all 0.2s; ${colorBordadoEstampado === '#e0f2fe' ? 'box-shadow: 0 0 0 2px #1e40af;' : ''}"></button>

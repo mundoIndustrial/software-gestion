@@ -325,7 +325,16 @@ class SupervisorReceiptsController extends Controller
         );
         $response = $this->getPendingEmbroideryStampingReceiptsUseCase->execute($requestDTO);
 
-        $allProcesses = collect($response->getProcesses());
+        $allProcesses = collect($response->getProcesses())
+            ->sortByDesc(function ($proceso) {
+                $fechaAprobacion = data_get($proceso, 'fecha_aprobacion');
+                if (empty($fechaAprobacion)) {
+                    return 0;
+                }
+
+                return strtotime((string) $fechaAprobacion) ?: 0;
+            })
+            ->values();
         $perPage = (int) $request->query('per_page', 25);
         $perPage = max(10, min($perPage, 100));
         $currentPage = LengthAwarePaginator::resolveCurrentPage();

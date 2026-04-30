@@ -27,7 +27,7 @@
                                 color: white;
                                 padding: 0.75rem 1rem;
                                 display: grid;
-                                grid-template-columns: 110px 170px 110px 200px 150px 140px 130px 160px 130px 100px;
+                                grid-template-columns: 110px 160px 110px 200px 150px 140px 130px 170px 130px 100px;
                                 gap: 0.15rem;
                                 font-weight: 600;
                                 font-size: 0.8rem;
@@ -40,8 +40,8 @@
                                     <span>Actions</span>
                                 </div>
                                 <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <span>Fecha de Creación</span>
-                                    <button type="button" class="btn-filter-column" data-col="fecha_creacion" title="Filtrar Fecha de Creación" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                                    <span>Fecha de aprobación</span>
+                                    <button type="button" class="btn-filter-column" data-col="fecha_aprobacion" title="Filtrar Fecha de aprobación" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                                         <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
                                     </button>
                                 </div>
@@ -76,8 +76,8 @@
                                     </button>
                                 </div>
                                 <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <span>Fecha de aprobación</span>
-                                    <button type="button" class="btn-filter-column" data-col="fecha_aprobacion" title="Filtrar Fecha de aprobación" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                                    <span>Fecha de Creación</span>
+                                    <button type="button" class="btn-filter-column" data-col="fecha_creacion" title="Filtrar Fecha de Creación" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                                         <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
                                     </button>
                                 </div>
@@ -98,7 +98,7 @@
                                         <div data-row="proceso" data-color-guardado="{{ $proceso->color_bordado_estampado ?? '' }}" style="
                                             --row-bg-color: {{ $proceso->color_bordado_estampado ?: 'white' }};
                                             display: grid;
-                                            grid-template-columns: 110px 170px 110px 200px 150px 140px 130px 160px 130px 100px;
+                                            grid-template-columns: 110px 160px 110px 200px 150px 140px 130px 170px 130px 100px;
                                             gap: 0.15rem;
                                             padding: 1rem;
                                             border-bottom: 1px solid #e5e7eb;
@@ -121,7 +121,11 @@
                                         </div>
 
                                         <div>
-                                            <span>{{ \Carbon\Carbon::parse($proceso->fecha_creacion)->format('d/m/Y H:i') }}</span>
+                                            @if($proceso->fecha_aprobacion)
+                                                <span>{{ \Carbon\Carbon::parse($proceso->fecha_aprobacion)->format('d/m/Y H:i') }}</span>
+                                            @else
+                                                <span style="background: #f3f4f6; color: #9ca3af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">--</span>
+                                            @endif
                                         </div>
 
                                         <div>
@@ -172,11 +176,7 @@
                                         </div>
 
                                         <div>
-                                            @if($proceso->fecha_aprobacion)
-                                                <span>{{ \Carbon\Carbon::parse($proceso->fecha_aprobacion)->format('d/m/Y H:i') }}</span>
-                                            @else
-                                                <span style="background: #f3f4f6; color: #9ca3af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">--</span>
-                                            @endif
+                                            <span>{{ \Carbon\Carbon::parse($proceso->fecha_creacion)->format('d/m/Y H:i') }}</span>
                                         </div>
 
                                         <!-- Color Selector -->
@@ -572,8 +572,14 @@ async function recargarTablaPendientes() {
         if (procesos.length === 0) {
             cont.innerHTML = receiptsRenderers.emptyStateHtml();
         } else {
-            cont.innerHTML = procesos.map((proceso) => receiptsRenderers.renderEmbroideryRow(proceso, escapeHtml, {
-                gridTemplate: '110px 170px 110px 200px 150px 140px 130px 160px 130px 100px',
+            const procesosOrdenados = [...procesos].sort((a, b) => {
+                const ta = a?.fecha_aprobacion ? Date.parse(a.fecha_aprobacion) : 0;
+                const tb = b?.fecha_aprobacion ? Date.parse(b.fecha_aprobacion) : 0;
+                return (Number.isNaN(tb) ? 0 : tb) - (Number.isNaN(ta) ? 0 : ta);
+            });
+
+            cont.innerHTML = procesosOrdenados.map((proceso) => receiptsRenderers.renderEmbroideryRow(proceso, escapeHtml, {
+                gridTemplate: '110px 160px 110px 200px 150px 140px 130px 170px 130px 100px',
                 showActions: true,
                 actionHandlerName: 'openReceiptFromLogoPendingRow'
             })).join('');
@@ -891,13 +897,13 @@ function formatDateLabel(yyyyMmDd) {
 
 function leerValorColumnaFila(fila, col) {
     const map = {
-        fecha_creacion: 0,
+        fecha_aprobacion: 0,
         numero_recibo: 1,
         cliente: 2,
         cantidad: 3,
         asesor: 4,
         logo: 5,
-        fecha_aprobacion: 6,
+        fecha_creacion: 6,
         fecha_llegada: 7,
     };
 
