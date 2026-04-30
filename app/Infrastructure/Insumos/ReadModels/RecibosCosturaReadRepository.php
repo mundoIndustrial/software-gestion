@@ -43,7 +43,7 @@ class RecibosCosturaReadRepository
                 'pedidos_produccion.dia_de_entrega',
                 'pedidos_produccion.fecha_estimada_de_entrega'
             )
-            ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR');
+            ->whereNotNull('consecutivos_recibos_pedidos.consecutivo_actual');
 
         // Estas reglas aplican al flujo de materiales de COSTURA.
         // Para REFLECTIVO se evita mezclar reglas de área/estado de costura.
@@ -82,7 +82,7 @@ class RecibosCosturaReadRepository
                 'pedidos_produccion.dia_de_entrega',
                 'pedidos_produccion.fecha_estimada_de_entrega'
             )
-            ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR');
+            ->whereNotNull('consecutivos_recibos_pedidos.consecutivo_actual');
     }
 
     public function applyFilters($query, array $filterColumns = [], array $filterValuesArray = [], array $filterValues = [], string $search = '', string $tipoRecibo = 'COSTURA')
