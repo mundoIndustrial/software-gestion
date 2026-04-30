@@ -182,6 +182,124 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Paginación -->
+                @if(isset($paginacion_info) && $paginacion_info['total_paginas'] > 1)
+                    <div class="border-t border-slate-200 px-6 py-4 flex items-center justify-between">
+                        <div class="text-sm text-slate-600">
+                            Mostrando {{ $paginacion_info['desde'] ?? 1 }} a {{ $paginacion_info['hasta'] ?? $totalPedidos }} de {{ $totalPedidos }} pedidos
+                        </div>
+
+                        <div class="flex items-center gap-1">
+                            @php
+                                $currentPage = $paginacion_info['pagina_actual'] ?? 1;
+                                $totalPages = $paginacion_info['total_paginas'] ?? 1;
+                                $url = request()->url();
+                                $queryParams = request()->query();
+                            @endphp
+
+                            <!-- Botón Primera Página -->
+                            @if($currentPage > 1)
+                                @php
+                                    $queryParams['page'] = 1;
+                                    $firstUrl = $url . '?' . http_build_query($queryParams);
+                                @endphp
+                                <a href="{{ $firstUrl }}" class="px-2 py-2 border border-slate-300 rounded hover:bg-slate-50 transition-colors text-sm font-bold text-slate-700" title="Primera página">
+                                    &lt;&lt;
+                                </a>
+                            @else
+                                <button disabled class="px-2 py-2 border border-slate-200 rounded text-slate-400 cursor-not-allowed text-sm font-bold">
+                                    &lt;&lt;
+                                </button>
+                            @endif
+
+                            <!-- Botón Anterior -->
+                            @if($currentPage > 1)
+                                @php
+                                    $queryParams['page'] = $currentPage - 1;
+                                    $prevUrl = $url . '?' . http_build_query($queryParams);
+                                @endphp
+                                <a href="{{ $prevUrl }}" class="px-2 py-2 border border-slate-300 rounded hover:bg-slate-50 transition-colors text-sm font-bold text-slate-700" title="Página anterior">
+                                    &lt;
+                                </a>
+                            @else
+                                <button disabled class="px-2 py-2 border border-slate-200 rounded text-slate-400 cursor-not-allowed text-sm font-bold">
+                                    &lt;
+                                </button>
+                            @endif
+
+                            <!-- Números de Página -->
+                            @php
+                                $startPage = max(1, $currentPage - 2);
+                                $endPage = min($totalPages, $currentPage + 2);
+                            @endphp
+
+                            @if($startPage > 1)
+                                @php
+                                    $queryParams['page'] = 1;
+                                    $url1 = $url . '?' . http_build_query($queryParams);
+                                @endphp
+                                <a href="{{ $url1 }}" class="px-2 py-2 border border-slate-300 rounded hover:bg-slate-50 transition-colors text-sm font-medium text-slate-700">1</a>
+                                @if($startPage > 2)
+                                    <span class="px-2 py-2 text-slate-400 text-sm">...</span>
+                                @endif
+                            @endif
+
+                            @for($i = $startPage; $i <= $endPage; $i++)
+                                @if($i == $currentPage)
+                                    <button disabled class="px-2 py-2 bg-slate-900 text-white rounded text-sm font-medium cursor-default">{{ $i }}</button>
+                                @else
+                                    @php
+                                        $queryParams['page'] = $i;
+                                        $pageUrl = $url . '?' . http_build_query($queryParams);
+                                    @endphp
+                                    <a href="{{ $pageUrl }}" class="px-2 py-2 border border-slate-300 rounded hover:bg-slate-50 transition-colors text-sm font-medium text-slate-700">{{ $i }}</a>
+                                @endif
+                            @endfor
+
+                            @if($endPage < $totalPages)
+                                @if($endPage < $totalPages - 1)
+                                    <span class="px-2 py-2 text-slate-400 text-sm">...</span>
+                                @endif
+                                @php
+                                    $queryParams['page'] = $totalPages;
+                                    $lastUrl = $url . '?' . http_build_query($queryParams);
+                                @endphp
+                                <a href="{{ $lastUrl }}" class="px-2 py-2 border border-slate-300 rounded hover:bg-slate-50 transition-colors text-sm font-medium text-slate-700">{{ $totalPages }}</a>
+                            @endif
+
+                            <!-- Botón Siguiente -->
+                            @if($currentPage < $totalPages)
+                                @php
+                                    $queryParams['page'] = $currentPage + 1;
+                                    $nextUrl = $url . '?' . http_build_query($queryParams);
+                                @endphp
+                                <a href="{{ $nextUrl }}" class="px-2 py-2 border border-slate-300 rounded hover:bg-slate-50 transition-colors text-sm font-bold text-slate-700" title="Página siguiente">
+                                    &gt;
+                                </a>
+                            @else
+                                <button disabled class="px-2 py-2 border border-slate-200 rounded text-slate-400 cursor-not-allowed text-sm font-bold">
+                                    &gt;
+                                </button>
+                            @endif
+
+                            <!-- Botón Última Página -->
+                            @if($currentPage < $totalPages)
+                                @php
+                                    $queryParams['page'] = $totalPages;
+                                    $lastUrl = $url . '?' . http_build_query($queryParams);
+                                @endphp
+                                <a href="{{ $lastUrl }}" class="px-2 py-2 border border-slate-300 rounded hover:bg-slate-50 transition-colors text-sm font-bold text-slate-700" title="Última página">
+                                    &gt;&gt;
+                                </a>
+                            @else
+                                <button disabled class="px-2 py-2 border border-slate-200 rounded text-slate-400 cursor-not-allowed text-sm font-bold">
+                                    &gt;&gt;
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                @endif
             @else
                 <div class="text-center py-12">
                     <span class="material-symbols-rounded text-slate-300 text-6xl">inventory_2</span>

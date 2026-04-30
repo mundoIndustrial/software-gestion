@@ -62,10 +62,22 @@ class PedidoListadoService
 
     private function construirQueryBase(string $area)
     {
-        return BodegaDetalleTalla::query()
+        $query = BodegaDetalleTalla::query()
             ->porArea($area)
             ->porEstado('Pendiente')
             ->leftJoin('pedidos_produccion as pp', 'pp.numero_pedido', '=', 'bodega_detalles_talla.numero_pedido')
+            ->leftJoin('prenda_entregas as pe', function ($join) {
+                $join->on('pe.prenda_pedido_id', '=', \DB::raw('COALESCE(bodega_detalles_talla.prenda_id, bodega_detalles_talla.recibo_prenda_id)'));
+            })
+            ->leftJoinSub(
+                \DB::table('prenda_entrega_movimientos as pem')
+                    ->selectRaw('pem.prenda_pedido_id, SUM(CASE WHEN pem.estado = ? THEN pem.cantidad_entregada ELSE 0 END) as total_recibido', ['recibido'])
+                    ->groupBy('pem.prenda_pedido_id'),
+                'pem_resumen',
+                function ($join) {
+                    $join->on('pem_resumen.prenda_pedido_id', '=', \DB::raw('COALESCE(bodega_detalles_talla.prenda_id, bodega_detalles_talla.recibo_prenda_id)'));
+                }
+            )
             ->leftJoin('bodega_detalles_visto as bdv', function($join) {
                 $join->on('bdv.bodega_detalle_id', '=', 'bodega_detalles_talla.id')
                      ->where('bdv.user_id', '=', auth()->id());
@@ -108,6 +120,13 @@ class PedidoListadoService
                 \DB::raw('MAX(bdv.created_at) as ultimo_visto_at')
             ])
             ->groupBy('bodega_detalles_talla.numero_pedido');
+
+        if ($area === 'Costura') {
+            $query->whereRaw('COALESCE(pe.entregado, 0) = 0')
+                ->whereRaw('COALESCE(bodega_detalles_talla.cantidad, 0) > COALESCE(pem_resumen.total_recibido, 0)');
+        }
+
+        return $query;
     }
 
     private function aplicarBusqueda($query, Request $request, string $area)
