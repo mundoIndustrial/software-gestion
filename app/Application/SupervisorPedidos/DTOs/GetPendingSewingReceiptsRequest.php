@@ -9,6 +9,7 @@ class GetPendingSewingReceiptsRequest
     private ?string $asesor;
     private ?string $prendas;
     private ?string $fechaCreacion;
+    private ?string $area;
     private ?string $busqueda;
 
     public function __construct(
@@ -17,6 +18,7 @@ class GetPendingSewingReceiptsRequest
         ?string $asesor = null,
         ?string $prendas = null,
         ?string $fechaCreacion = null,
+        ?string $area = null,
         ?string $busqueda = null
     ) {
         $this->numeroRecibo = $numeroRecibo;
@@ -24,6 +26,7 @@ class GetPendingSewingReceiptsRequest
         $this->asesor = $asesor;
         $this->prendas = $prendas;
         $this->fechaCreacion = $fechaCreacion;
+        $this->area = $area;
         $busqueda = trim((string) ($busqueda ?? ''));
         $this->busqueda = $busqueda !== '' ? $busqueda : null;
     }
@@ -51,6 +54,11 @@ class GetPendingSewingReceiptsRequest
     public function getFechaCreacion(): ?string
     {
         return $this->fechaCreacion;
+    }
+
+    public function getArea(): ?string
+    {
+        return $this->area;
     }
 
     public function getBusqueda(): ?string

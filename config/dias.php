@@ -119,7 +119,7 @@ return [
     */
 
     'procesos' => [
-        'Creación Orden' => 'Creación Orden',
+        'Insumos' => 'Insumos',
         'Inventario' => 'Inventario',
         'Insumos y Telas' => 'Insumos y Telas',
         'Corte' => 'Corte',

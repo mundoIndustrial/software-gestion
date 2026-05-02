@@ -34,7 +34,7 @@ class PedidoProduccionTrackingRepository
             return $ultimoProceso->proceso;
         }
 
-        return 'Creación Orden';
+        return 'Insumos';
     }
 
     /**

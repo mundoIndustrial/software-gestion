@@ -688,6 +688,23 @@
       </ul>
     </div>
 
+    <!-- Sección Gestión de Talleres -->
+    @if(auth()->user()->role && in_array(auth()->user()->role->name, ['admin', 'lider_produccion', 'supervisor_produccion']))
+    <div class="menu-section">
+      <span class="menu-section-title">Gestión de Talleres</span>
+      <ul class="menu-list" role="navigation">
+      <li class="menu-item">
+        <a href="{{ route('talleres.index') }}"
+           class="menu-link {{ request()->routeIs('talleres.*') ? 'active' : '' }}"
+           aria-label="Gestionar talleres">
+          <span class="material-symbols-rounded" aria-hidden="true">workshop</span>
+          <span class="menu-label">Talleres</span>
+        </a>
+      </li>
+      </ul>
+    </div>
+    @endif
+
     <!-- Sección Módulos -->
     @if(auth()->user()->role && in_array(auth()->user()->role->name, ['admin', 'lider_produccion', 'supervisor_produccion']))
     <div class="menu-section">

@@ -334,7 +334,7 @@ class EloquentReceiptRepository implements ReceiptRepository
                 'p.id as pedido_id',
                 'u.name as asesor',
                 'crp.color_costura',
-                'p.area',
+                DB::raw("UPPER(COALESCE(NULLIF(TRIM(crp.area), ''), p.area)) as area"),
                 'crp.tipo_recibo',
                 'crp.notas as recibo_notas',
                 DB::raw('CASE WHEN ppar.id IS NULL THEN 0 ELSE 1 END as es_parcial'),
@@ -396,7 +396,7 @@ class EloquentReceiptRepository implements ReceiptRepository
                 'p.id as pedido_id',
                 'u.name as asesor',
                 'crp.color_reflectivo',
-                DB::raw("COALESCE(NULLIF(TRIM(crp.area), ''), p.area) as area"),
+                DB::raw("UPPER(COALESCE(NULLIF(TRIM(crp.area), ''), p.area)) as area"),
                 'crp.tipo_recibo',
                 'crp.notas as recibo_notas',
                 DB::raw('CASE WHEN ppar.id IS NULL THEN 0 ELSE 1 END as es_parcial'),
@@ -529,7 +529,8 @@ class EloquentReceiptRepository implements ReceiptRepository
                 ->toArray(),
             'area' => $this->buildSewingFiltersBaseQuery()
                 ->distinct()
-                ->pluck('p.area')
+                ->select(DB::raw("UPPER(COALESCE(NULLIF(TRIM(crp.area), ''), p.area)) as area"))
+                ->pluck('area')
                 ->filter()
                 ->sort()
                 ->values()
@@ -684,6 +685,16 @@ class EloquentReceiptRepository implements ReceiptRepository
         $fechaCreacion = $filters['fecha_creacion'] ?? null;
         if (!empty($fechaCreacion)) {
             $query->whereDate($fechaCreacionColumn, $fechaCreacion);
+        }
+
+        $area = $filters['area'] ?? [];
+        if (!empty($area)) {
+            $upperArea = array_map('strtoupper', $area);
+            \Log::info('[DEBUG] Aplicando filtro de área', ['area' => $area, 'upperArea' => $upperArea]);
+            $placeholders = implode(',', array_fill(0, count($upperArea), '?'));
+            $query->whereRaw("UPPER(COALESCE(NULLIF(TRIM(crp.area), ''), p.area)) IN ({$placeholders})", $upperArea);
+        } else {
+            \Log::info('[DEBUG] Sin filtro de área', ['area' => $area]);
         }
     }
 

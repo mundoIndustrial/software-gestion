@@ -29,7 +29,9 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 use \App\Application\SupervisorPedidos\DTOs\ApproveReceiptRequest;
+use App\Domain\SupervisorPedidos\Repositories\ReceiptRepository;
 /**
  * SupervisorReceiptsController
  * 
@@ -55,6 +57,7 @@ class SupervisorReceiptsController extends Controller
     private GetPendingReflectiveReceiptsUseCase $getPendingReflectiveReceiptsUseCase;
     private GetPendingQualityControlReceiptsUseCase $getPendingQualityControlReceiptsUseCase;
     private GetPendingEmbroideryStampingReceiptsUseCase $getPendingEmbroideryStampingReceiptsUseCase;
+    private ReceiptRepository $receiptRepository;
 
     public function __construct(
         ActivateSewingReceiptUseCase $activateSewingReceiptUseCase,
@@ -66,7 +69,8 @@ class SupervisorReceiptsController extends Controller
         GetPendingSewingReceiptsUseCase $getPendingSewingReceiptsUseCase,
         GetPendingReflectiveReceiptsUseCase $getPendingReflectiveReceiptsUseCase,
         GetPendingQualityControlReceiptsUseCase $getPendingQualityControlReceiptsUseCase,
-        GetPendingEmbroideryStampingReceiptsUseCase $getPendingEmbroideryStampingReceiptsUseCase
+        GetPendingEmbroideryStampingReceiptsUseCase $getPendingEmbroideryStampingReceiptsUseCase,
+        ReceiptRepository $receiptRepository
     ) {
         $this->activateSewingReceiptUseCase = $activateSewingReceiptUseCase;
         $this->cancelSewingReceiptUseCase = $cancelSewingReceiptUseCase;
@@ -78,6 +82,7 @@ class SupervisorReceiptsController extends Controller
         $this->getPendingReflectiveReceiptsUseCase = $getPendingReflectiveReceiptsUseCase;
         $this->getPendingQualityControlReceiptsUseCase = $getPendingQualityControlReceiptsUseCase;
         $this->getPendingEmbroideryStampingReceiptsUseCase = $getPendingEmbroideryStampingReceiptsUseCase;
+        $this->receiptRepository = $receiptRepository;
     }
 
     /**
@@ -359,12 +364,16 @@ class SupervisorReceiptsController extends Controller
      */
     public function pendientesCostura(Request $request)
     {
+        $areaParam = $request->input('area');
+        \Log::info('[DEBUG] Parámetro area en controlador', ['area' => $areaParam, 'type' => gettype($areaParam)]);
+
         $requestDTO = new GetPendingSewingReceiptsRequest(
-            numeroRecibo: $request->filled('numero_recibo') ? $request->numero_recibo : null,
-            cliente: $request->filled('cliente') ? $request->cliente : null,
-            asesor: $request->filled('asesor') ? $request->asesor : null,
-            prendas: $request->filled('prendas') ? $request->prendas : null,
-            fechaCreacion: $request->filled('fecha_creacion') ? $request->fecha_creacion : null,
+            numeroRecibo: $request->input('numero_recibo'),
+            cliente: $request->input('cliente'),
+            asesor: $request->input('asesor'),
+            prendas: $request->input('prendas'),
+            fechaCreacion: $request->input('fecha_creacion'),
+            area: $areaParam,
             busqueda: $request->input('busqueda')
         );
 
@@ -387,6 +396,54 @@ class SupervisorReceiptsController extends Controller
         );
 
         return view('supervisor-pedidos.pendientes-costura', compact('procesosConCantidad'));
+    }
+
+    /**
+     * Descargar reporte CSV de pendientes de costura, agrupado por area.
+     */
+    public function reportePendientesCostura(Request $request)
+    {
+        $requestDTO = new GetPendingSewingReceiptsRequest(
+            numeroRecibo: $request->input('numero_recibo'),
+            cliente: $request->input('cliente'),
+            asesor: $request->input('asesor'),
+            prendas: $request->input('prendas'),
+            fechaCreacion: $request->input('fecha_creacion'),
+            area: $request->input('area'),
+            busqueda: $request->input('busqueda')
+        );
+
+        $response = $this->getPendingSewingReceiptsUseCase->execute($requestDTO);
+        $receipts = collect($response->getReceipts());
+
+        $grouped = $receipts
+            ->groupBy(function ($item) {
+                $area = trim((string) data_get($item, 'area', ''));
+                return $area !== '' ? $area : 'Sin Area';
+            })
+            ->sortKeys();
+
+        $timestamp = now()->format('Ymd_His');
+        $filename = "reporte_pendientes_costura_por_area_{$timestamp}.pdf";
+        $totalRecibos = $receipts->count();
+        $filtros = $request->only([
+            'numero_recibo',
+            'cliente',
+            'asesor',
+            'prendas',
+            'fecha_creacion',
+            'area',
+            'busqueda',
+        ]);
+
+        $pdf = Pdf::loadView('supervisor-pedidos.reporte-pendientes-costura-pdf', [
+            'grouped' => $grouped,
+            'totalRecibos' => $totalRecibos,
+            'filtros' => $filtros,
+            'fechaGeneracion' => now(),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download($filename);
     }
 
     /**
@@ -1013,10 +1070,25 @@ class SupervisorReceiptsController extends Controller
      */
     private function _obtenerOpcionesFiltroGenerico($campo): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'opciones' => []
-        ]);
+        try {
+            $opciones = $this->receiptRepository->getSewingReceiptFilterOptions($campo);
+
+            return response()->json([
+                'success' => true,
+                'opciones' => $opciones
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener opciones de filtro', [
+                'campo' => $campo,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'opciones' => [],
+                'error' => 'Error al obtener opciones de filtro'
+            ], 500);
+        }
     }
 
     /**

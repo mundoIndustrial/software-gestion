@@ -115,7 +115,7 @@ class PedidoLifecycleService
 
     private function resolverArea(array $datos): string
     {
-        $area = $datos['area'] ?? $datos['estado_area'] ?? 'Creación Orden';
+        $area = $datos['area'] ?? $datos['estado_area'] ?? 'Insumos';
 
         if (!is_string($area)) {
             return 'creacion de pedido';
@@ -123,7 +123,7 @@ class PedidoLifecycleService
 
         $area = trim($area);
 
-        return $area === '' ? 'Creación Orden' : $area;
+        return $area === '' ? 'Insumos' : $area;
     }
 
     private function resolverEstadoInicial(array $datos): string

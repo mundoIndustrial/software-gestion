@@ -255,7 +255,7 @@ class RegistroBodegaController extends Controller
 
             // Insertar datos en la base de datos
             $estado = $request->estado ?? 'No iniciado';
-            $area = $request->area ?? 'Creación Orden';
+            $area = $request->area ?? 'Insumos';
 
             // Calculate total quantity
             $totalCantidad = 0;
@@ -333,7 +333,6 @@ class RegistroBodegaController extends Controller
         return [
             'Insumos' => 'insumos_y_telas',
             'Corte' => 'corte',
-            'Creación Orden' => 'created_at',
             'Bordado' => 'bordado',
             'Estampado' => 'estampado',
             'Costura' => 'costura',

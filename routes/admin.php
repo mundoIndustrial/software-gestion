@@ -57,3 +57,10 @@ Route::middleware(['auth', 'role:admin,supervisor_gerencia'])->prefix('admin/con
     Route::post('/limpiar', [App\Http\Controllers\Admin\SystemErrorController::class, 'limpiar'])->name('limpiar');
     Route::get('/exportar', [App\Http\Controllers\Admin\SystemErrorController::class, 'exportar'])->name('exportar');
 });
+
+// ========================================
+// RUTAS PARA TALLERES (Admin)
+// ========================================
+Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion'])->prefix('talleres')->name('talleres.')->group(function () {
+    Route::get('/', [App\Http\Controllers\Admin\TalleresController::class, 'index'])->name('index');
+});

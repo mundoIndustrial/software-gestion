@@ -42,12 +42,17 @@ class GetPendingSewingReceiptsUseCase
      */
     private function buildFilters(GetPendingSewingReceiptsRequest $request): array
     {
+        $areaRaw = $request->getArea();
+        $areaParsed = $this->parseCsvFilter($areaRaw);
+        \Log::info('[DEBUG] Area en buildFilters', ['raw' => $areaRaw, 'parsed' => $areaParsed]);
+
         return [
             'numero_recibo' => $this->parseCsvFilter($request->getNumeroRecibo()),
             'cliente' => $this->parseCsvFilter($request->getCliente()),
             'asesor' => $this->parseCsvFilter($request->getAsesor()),
             'prendas' => $this->parseCsvFilter($request->getPrendas()),
             'fecha_creacion' => ($fecha = trim((string) $request->getFechaCreacion())) !== '' ? $fecha : null,
+            'area' => $areaParsed,
             'busqueda' => $request->getBusqueda(),
         ];
     }

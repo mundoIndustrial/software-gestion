@@ -210,6 +210,16 @@
         <div class="col-12">
             <div class="supervisor-pedidos-container">
                 <div id="supervisorPendientesCosturaContent">
+                <div style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:0.75rem;">
+                    <a
+                        href="{{ route('supervisor-pedidos.pendientes-costura.reporte', request()->query()) }}"
+                        style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 0.95rem;background:linear-gradient(135deg,#b91c1c 0%,#dc2626 100%);color:#fff;border-radius:8px;font-size:0.85rem;font-weight:600;text-decoration:none;box-shadow:0 4px 10px rgba(185,28,28,.25);"
+                        title="Descargar reporte PDF por area"
+                    >
+                        <i class="fas fa-file-pdf"></i>
+                        Generar reporte PDF por area
+                    </a>
+                </div>
                 <!-- Tabla de Ordenes -->
                 <div class="costura-table-frame" style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
                     <!-- Contenedor con Scroll -->
@@ -474,6 +484,51 @@
     </div>
 </div>
 
+<!-- Botón Flotante para Limpiar Filtros -->
+<div id="btnLimpiarFiltros" style="
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 999;
+    display: none;
+    animation: slideIn 0.3s ease;
+">
+    <button onclick="limpiarTodosFiltros()" style="
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 56px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        transition: all 0.3s ease;
+        padding: 0;
+    "
+    onmouseover="this.style.boxShadow='0 6px 20px rgba(239, 68, 68, 0.6)'; this.style.transform='scale(1.1)';"
+    onmouseout="this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.4)'; this.style.transform='scale(1)';"
+    title="Limpiar todos los filtros">
+        ✕
+    </button>
+</div>
+
+<style>
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
 <!-- Modal detalle recibo (estilo Recibos Costura) -->
 <div id="modal-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none; pointer-events: auto;" onclick="closeModalOverlay()"></div>
 <div id="order-detail-modal-wrapper" style="width: 90%; max-width: 672px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
@@ -639,7 +694,9 @@ inicializarBusquedaGeneralCostura();
 
 function construirUrlApiPendientesCostura(urlString) {
     const source = new URL(urlString, window.location.origin);
-    return `/api/supervisor-pedidos/recibos/pendientes-costura${source.search || ''}`;
+    const apiUrl = `/api/supervisor-pedidos/recibos/pendientes-costura${source.search || ''}`;
+    console.log('[construirUrlApiPendientesCostura] urlString:', urlString, 'apiUrl:', apiUrl);
+    return apiUrl;
 }
 
 async function resolverReciboCosturaContexto(pedidoId, numeroRecibo) {
@@ -784,6 +841,7 @@ window.closeModalOverlay = function() {
 const receiptsRenderers = window.SupervisorReceiptsRenderers;
 
 window.navegarPendientesCostura = async function navegarPendientesCostura(urlString, options = {}) {
+    console.log('[navegarPendientesCostura] urlString:', urlString);
     const { pushState = true } = options;
     const container = document.getElementById('supervisorPendientesCosturaContent');
     const rows = document.getElementById('costurasRows');
@@ -967,6 +1025,59 @@ async function guardarColorCostura(reciboId, color) {
         console.error('Error al guardar color:', error);
     }
 }
+
+// Función para limpiar todos los filtros
+function limpiarTodosFiltros() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('area');
+    url.searchParams.delete('cliente');
+    url.searchParams.delete('asesor');
+    url.searchParams.delete('numero_recibo');
+    url.searchParams.delete('prendas');
+    url.searchParams.delete('fecha_creacion');
+    url.searchParams.delete('busqueda');
+    url.searchParams.delete('page');
+
+    window.navegarPendientesCostura(url.toString());
+}
+
+// Función para mostrar/ocultar botón de limpiar filtros
+function actualizarVisibilidadBotonLimpiar() {
+    const url = new URL(window.location.href);
+    const params = url.searchParams;
+
+    const tieneArea = params.has('area');
+    const tieneCliente = params.has('cliente');
+    const tieneAsesor = params.has('asesor');
+    const tieneNumeroRecibo = params.has('numero_recibo');
+    const tienePrendas = params.has('prendas');
+    const tieneFechaCreacion = params.has('fecha_creacion');
+    const tieneBusqueda = params.has('busqueda');
+
+    const hayFiltros = tieneArea || tieneCliente || tieneAsesor || tieneNumeroRecibo || tienePrendas || tieneFechaCreacion || tieneBusqueda;
+
+    const btnLimpiar = document.getElementById('btnLimpiarFiltros');
+    if (btnLimpiar) {
+        btnLimpiar.style.display = hayFiltros ? 'block' : 'none';
+    }
+}
+
+// Ejecutar al cargar la página
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', actualizarVisibilidadBotonLimpiar);
+} else {
+    actualizarVisibilidadBotonLimpiar();
+}
+
+// Actualizar cuando se navegue
+window.addEventListener('popstate', actualizarVisibilidadBotonLimpiar);
+const originalNavegar = window.navegarPendientesCostura;
+window.navegarPendientesCostura = function(url, options) {
+    if (originalNavegar) {
+        originalNavegar(url, options);
+    }
+    setTimeout(actualizarVisibilidadBotonLimpiar, 100);
+};
 </script>
 @endpush
 

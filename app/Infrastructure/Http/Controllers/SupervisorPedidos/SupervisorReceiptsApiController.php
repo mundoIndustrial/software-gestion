@@ -45,6 +45,7 @@ class SupervisorReceiptsApiController extends Controller
             asesor: $request->filled('asesor') ? $request->input('asesor') : null,
             prendas: $request->filled('prendas') ? $request->input('prendas') : null,
             fechaCreacion: $request->filled('fecha_creacion') ? $request->input('fecha_creacion') : null,
+            area: $request->input('area'),
             busqueda: $request->input('busqueda'),
         );
 
@@ -65,6 +66,7 @@ class SupervisorReceiptsApiController extends Controller
             asesor: $request->filled('asesor') ? $request->input('asesor') : null,
             prendas: $request->filled('prendas') ? $request->input('prendas') : null,
             fechaCreacion: $request->filled('fecha_creacion') ? $request->input('fecha_creacion') : null,
+            area: $request->input('area'),
             busqueda: $request->input('busqueda'),
         );
 
@@ -85,6 +87,7 @@ class SupervisorReceiptsApiController extends Controller
             asesor: $request->filled('asesor') ? $request->input('asesor') : null,
             prendas: $request->filled('prendas') ? $request->input('prendas') : null,
             fechaCreacion: $request->filled('fecha_creacion') ? $request->input('fecha_creacion') : null,
+            area: $request->input('area'),
             busqueda: $request->input('busqueda'),
         );
 

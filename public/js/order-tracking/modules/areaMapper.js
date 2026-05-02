@@ -6,13 +6,6 @@
 
 const AreaMapper = (() => {
     const areaFieldMappings = {
-        'Creación Orden': {
-            dateField: 'created_at',
-            chargeField: 'encargado_orden',
-            daysField: 'dias_orden',
-            icon: 'description',
-            displayName: 'Pedido Recibido'
-        },
         'Insumos': {
             dateField: 'insumos_y_telas',
             chargeField: 'encargados_insumos',
@@ -101,7 +94,6 @@ const AreaMapper = (() => {
     
     const processoIconMap = {
         'Pedido Recibido': 'description',
-        'Creación Orden': 'description',
         'Insumos': 'inventory_2',
         'Insumos y Telas': 'inventory_2',
         'Corte': 'content_cut',
@@ -141,7 +133,7 @@ const AreaMapper = (() => {
      */
     function getAreaOrder() {
         return [
-            'Creación Orden', 'Insumos', 'Corte', 'Bordado', 'Estampado',
+            'Insumos', 'Corte', 'Bordado', 'Estampado',
             'Costura', 'Polos', 'Taller', 'Lavandería', 'Arreglos',
             'Control-Calidad', 'Entrega', 'Despachos'
         ];

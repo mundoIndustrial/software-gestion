@@ -62,9 +62,9 @@ class RegistroOrdenTransformService
         }
 
         // Agregar el área desde procesos_prenda
-        $ordenArray['area'] = $areasMap[$orden->numero_pedido] ?? 'Creación Orden';
+        $ordenArray['area'] = $areasMap[$orden->numero_pedido] ?? 'Insumos';
 
-        // Agregar el encargado de "Creación Orden"
+        // Agregar el encargado de "Insumos"
         $ordenArray['encargado_orden'] = $encargadosMap[$orden->numero_pedido] ?? '';
 
         // Agregar descripción de prendas
