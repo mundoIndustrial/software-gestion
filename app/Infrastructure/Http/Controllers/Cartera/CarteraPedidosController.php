@@ -67,6 +67,7 @@ class CarteraPedidosController extends Controller
                     'numero_pedido' => $pedido->numero_pedido,
                     'cliente_nombre' => $pedido->cliente,
                     'cliente' => $pedido->cliente,
+                    'asesor_nombre' => $pedido->asesora->name ?? null,
                     'estado' => $pedido->estado,
                     'created_at' => $pedido->created_at ?? $pedido->created_at
                 ];
@@ -367,4 +368,3 @@ class CarteraPedidosController extends Controller
         return response()->json($datos);
     }
 }
-

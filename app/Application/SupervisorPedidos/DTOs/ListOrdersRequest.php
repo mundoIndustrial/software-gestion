@@ -14,6 +14,7 @@ class ListOrdersRequest
     private ?string $cliente = null;
     private ?string $forma_pago = null;
     private ?string $estado = null;
+    private ?string $aprobacion_cartera = null;
     private ?string $asesora = null;
     private ?string $fecha = null;
     private ?string $fecha_desde = null;
@@ -33,6 +34,7 @@ class ListOrdersRequest
         $this->cliente = $params['cliente'] ?? null;
         $this->forma_pago = $params['forma_pago'] ?? null;
         $this->estado = $params['estado'] ?? null;
+        $this->aprobacion_cartera = $params['aprobacion_cartera'] ?? null;
         $this->asesora = $params['asesora'] ?? null;
         $this->fecha = $params['fecha'] ?? null;
         $this->fecha_desde = $params['fecha_desde'] ?? null;
@@ -49,6 +51,7 @@ class ListOrdersRequest
     public function getCliente(): ?string { return $this->cliente; }
     public function getFormaPago(): ?string { return $this->forma_pago; }
     public function getEstado(): ?string { return $this->estado; }
+    public function getAprobacionCartera(): ?string { return $this->aprobacion_cartera; }
     public function getAsesora(): ?string { return $this->asesora; }
     public function getFecha(): ?string { return $this->fecha; }
     public function getFechaDesde(): ?string { return $this->fecha_desde; }
@@ -68,6 +71,7 @@ class ListOrdersRequest
             'cliente' => $this->rawParams['cliente'] ?? null,
             'forma_pago' => $this->rawParams['forma_pago'] ?? null,
             'estado' => $this->rawParams['estado'] ?? null,
+            'aprobacion_cartera' => $this->rawParams['aprobacion_cartera'] ?? null,
             'asesora' => $this->rawParams['asesora'] ?? null,
             'fecha' => $this->rawParams['fecha'] ?? null,
             'fecha_desde' => $this->rawParams['fecha_desde'] ?? null,

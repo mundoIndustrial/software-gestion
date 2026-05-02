@@ -20,11 +20,19 @@
             <ul class="menu-list" role="navigation">
                 <li class="menu-item">
                     <a href="{{ route('supervisor-pedidos.index') }}"
-                       class="menu-link {{ request()->routeIs('supervisor-pedidos.index') && request()->query('estado') !== 'Anulada' ? 'active' : '' }}"
+                       class="menu-link {{ request()->routeIs('supervisor-pedidos.index') && request()->query('estado') !== 'Anulada' && request()->query('aprobacion_cartera') !== 'no_aprobado' ? 'active' : '' }}"
                        style="display:flex;align-items:center;gap:0.5rem;">
                         <span class="material-symbols-rounded">pending_actions</span>
                         <span class="menu-label">Pedidos</span>
                         <span class="badge-alert" id="ordenesPendientesCount" style="display: none;">0</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{ route('supervisor-pedidos.index', ['aprobacion_cartera' => 'no_aprobado']) }}"
+                       class="menu-link {{ request()->routeIs('supervisor-pedidos.index') && request()->query('aprobacion_cartera') === 'no_aprobado' ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">account_balance_wallet</span>
+                        <span class="menu-label">Sin Aprob. Cartera</span>
                     </a>
                 </li>
                 @php

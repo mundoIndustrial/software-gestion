@@ -278,7 +278,7 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Estado</span><button type="button" class="btn-filter-column" data-col="estado" title="Filtrar Estado" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Novedades</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Forma Pago</span><button type="button" class="btn-filter-column" data-col="forma_pago" title="Filtrar Forma Pago" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
-                    <div class="th-wrapper" style="display: flex; align-items: center;"><span>Aprob. Cartera</span></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Aprob. Cartera</span><button type="button" class="btn-filter-column" data-col="aprobacion_cartera" title="Filtrar Aprob. Cartera" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center;"><span>Aprob. Supervisor</span></div>
                 </div>
     `;
@@ -506,6 +506,7 @@ function resolveFilterColumn(btn) {
         case 'Filtrar Estado': return 'estado';
         case 'Filtrar Asesora': return 'asesora';
         case 'Filtrar Forma Pago': return 'forma_pago';
+        case 'Filtrar Aprob. Cartera': return 'aprobacion_cartera';
         default: return '';
     }
 }
@@ -1070,6 +1071,32 @@ function abrirModalFiltro(columna) {
                     });
                 });
             }, 0);
+            modal.style.display = 'flex';
+            return;
+        }
+        case 'aprobacion_cartera': {
+            titulo = 'Filtrar por Aprobación Cartera';
+            campoNombre = 'aprobacion_cartera';
+            const opciones = [
+                { label: 'No aprobado por cartera', value: 'no_aprobado' },
+                { label: 'Aprobado por cartera', value: 'aprobado' },
+            ];
+            filtroContenido.innerHTML = `
+                <div class="form-group">
+                    <div id="listaAprobacionCartera">
+                        ${opciones.map((opcion) => `
+                            <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; cursor: pointer; border-radius: 4px;">
+                                <input type="checkbox" name="aprobacion_cartera" value="${opcion.value}" class="filtro-checkbox">
+                                <span>${opcion.label}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            const seleccionados = new Set(getValoresFiltroDesdeURL('aprobacion_cartera'));
+            document.querySelectorAll('#listaAprobacionCartera .filtro-checkbox').forEach(cb => {
+                cb.checked = seleccionados.has(cb.value);
+            });
             modal.style.display = 'flex';
             return;
         }

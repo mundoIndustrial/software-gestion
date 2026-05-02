@@ -45,8 +45,8 @@
                 <span>Acciones</span>
             </div>
             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
-                <span>Fecha</span>
-                <button type="button" class="btn-filter-column" data-col="fecha" title="Filtrar Fecha" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                <span>Aprob. Cartera</span>
+                <button type="button" class="btn-filter-column" data-col="aprobacion_cartera" title="Filtrar Aprob. Cartera" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                     <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
                 </button>
             </div>
@@ -84,10 +84,13 @@
                 </button>
             </div>
             <div class="th-wrapper" style="display: flex; align-items: center;">
-                <span>Aprob. Cartera</span>
-            </div>
-            <div class="th-wrapper" style="display: flex; align-items: center;">
                 <span>Aprob. Supervisor</span>
+            </div>
+            <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+                <span>Fecha</span>
+                <button type="button" class="btn-filter-column" data-col="fecha" title="Filtrar Fecha" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                    <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
+                </button>
             </div>
         </div>
 
@@ -202,9 +205,11 @@
                         </button>
                     </div>
 
-                    <!-- Fecha -->
+                    <!-- Fecha aprobacion cartera -->
                     <div>
-                        <span class="sp-date-cell">{{ \Carbon\Carbon::parse($orden->created_at)->timezone('America/Bogota')->format('d/m/Y h:i A') }}</span>
+                        <span class="sp-date-cell">
+                            {{ $orden->aprobado_por_cartera_en ? \Carbon\Carbon::parse($orden->aprobado_por_cartera_en)->timezone('America/Bogota')->format('d/m/Y h:i A') : '-' }}
+                        </span>
                     </div>
 
                     <!-- Numero -->
@@ -263,18 +268,16 @@
                         <span>{{ $orden->forma_de_pago ?? 'N/A' }}</span>
                     </div>
 
-                    <!-- Fecha aprobacion cartera -->
-                    <div>
-                        <span class="sp-date-cell">
-                            {{ $orden->aprobado_por_cartera_en ? \Carbon\Carbon::parse($orden->aprobado_por_cartera_en)->timezone('America/Bogota')->format('d/m/Y h:i A') : '-' }}
-                        </span>
-                    </div>
-
                     <!-- Fecha aprobacion supervisor -->
                     <div>
                         <span class="sp-date-cell">
                             {{ $orden->aprobado_por_supervisor_en ? \Carbon\Carbon::parse($orden->aprobado_por_supervisor_en)->timezone('America/Bogota')->format('d/m/Y h:i A') : '-' }}
                         </span>
+                    </div>
+
+                    <!-- Fecha -->
+                    <div>
+                        <span class="sp-date-cell">{{ \Carbon\Carbon::parse($orden->created_at)->timezone('America/Bogota')->format('d/m/Y h:i A') }}</span>
                     </div>
                 </div>
             @endforeach

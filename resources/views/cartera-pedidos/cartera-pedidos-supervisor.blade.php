@@ -464,6 +464,54 @@
                 font-size: 0.9rem;
             }
         }
+
+        /* ===== Ajustes finos de layout para evitar solapes ===== */
+        .cartera-container .table-scroll-container {
+            overflow-x: auto !important;
+            overflow-y: auto !important;
+        }
+
+        .cartera-container .modern-table {
+            min-width: 1080px !important;
+            width: max-content !important;
+        }
+
+        .cartera-container .table-head {
+            min-width: 0 !important;
+            overflow: hidden !important;
+        }
+
+        .cartera-container .table-head-track {
+            min-width: 1080px !important;
+            width: max-content !important;
+            will-change: transform;
+            transition: transform 0s;
+        }
+
+        .cartera-container .table-row {
+            min-width: 1080px !important;
+            width: max-content !important;
+            gap: 8px !important;
+            padding: 0 12px !important;
+        }
+
+        .cartera-container .table-cell {
+            min-width: 0 !important;
+            overflow: hidden !important;
+            white-space: nowrap !important;
+        }
+
+        .cartera-container .table-cell span {
+            display: block !important;
+            width: 100% !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+        }
+
+        .cartera-container .table-header-cell {
+            min-width: 0 !important;
+        }
     </style>
 @endpush
 
@@ -476,7 +524,7 @@
     <div class="table-container">
         <div class="modern-table-wrapper">
             <div class="table-head" id="tableHead">
-                <div style="display: flex; align-items: center; width: 100%; gap: 12px; padding: 14px 12px;">
+                <div class="table-head-track" style="display: flex; align-items: center; width: 100%; gap: 12px; padding: 14px 12px;">
                     @php
                         // Si es supervisor_gerencia, ocultar columna de acciones
                         $showAcciones = !auth()->user()->hasRole('supervisor_gerencia');
@@ -484,7 +532,8 @@
                         $columns = [
                             ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 180px', 'justify' => 'flex-start', 'show' => $showAcciones],
                             ['key' => 'cliente', 'label' => 'Cliente', 'flex' => '0 0 310px', 'justify' => 'center'],
-                            ['key' => 'fecha', 'label' => 'Fecha', 'flex' => '0 0 150px', 'justify' => 'center'],
+                            ['key' => 'asesor', 'label' => 'Asesor', 'flex' => '0 0 220px', 'justify' => 'center'],
+                            ['key' => 'fecha', 'label' => 'Fecha', 'flex' => '0 0 220px', 'justify' => 'center'],
                         ];
                     @endphp
 

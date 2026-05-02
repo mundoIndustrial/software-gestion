@@ -38,6 +38,9 @@
     const LAZY_SCRIPTS = [];
 
     const FEATURE_SCRIPTS = {
+        rowCheck: [
+            { src: '/js/insumos/form-handlers-insumos.js' },
+        ],
         tracking: [
             { src: '/js/ordersjs/tracking-modal-utils.js' },
             { src: '/js/ordersjs/tracking-modal-handler.js', type: 'module' },
@@ -414,6 +417,7 @@
             switch (action) {
                 case 'toggle-row-check': {
                     event.preventDefault();
+                    await ensureFeatureScripts('rowCheck');
                     safeCall('toggleRowCheck', [btn, event], 'toggleRowCheck no esta disponible');
                     break;
                 }

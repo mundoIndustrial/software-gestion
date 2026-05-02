@@ -32,7 +32,8 @@ class CarteraPedidosRepository
             ->whereNotIn('estado', $estadosExcluidos)
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '!=', '')
-            ->whereHas('prendas');
+            ->whereHas('prendas')
+            ->with(['asesora:id,name']);
 
         if (!empty($search)) {
             $search = '%' . $search . '%';
@@ -534,4 +535,3 @@ class CarteraPedidosRepository
         });
     }
 }
-

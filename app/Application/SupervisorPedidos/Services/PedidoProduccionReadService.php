@@ -10,7 +10,9 @@ use App\Infrastructure\Repositories\PedidoProduccionTrackingRepository;
 use App\Models\News;
 use App\Models\NewsVisto;
 use App\Models\PedidoProduccion;
+use App\Models\PedidosProcesosPrendaDetalle;
 use App\Models\PedidoVistoSupervisor;
+use App\Models\ProcesoPrenda;
 use App\Models\SeleccionPedido;
 use App\Models\TipoCotizacion;
 use App\Services\CalculadorDiasService;
@@ -50,7 +52,7 @@ class PedidoProduccionReadService
             ])
             ->with(['asesora:id,name']);
 
-        $this->applyStatusFilters($query);
+        $this->applyStatusFilters($query, $request);
         $this->applyHiddenFilter($query, $request);
         $this->applyPendingNumberFilter($query);
         $this->applyEppOnlyFilter($query);
@@ -565,11 +567,75 @@ class PedidoProduccionReadService
             ->implode(', ') ?: '-';
     }
 
-    private function applyStatusFilters($query): void
+    private function applyStatusFilters($query, ListOrdersRequest $request): void
     {
-        $query->whereNotIn('estado', ['pendiente_cartera', 'RECHAZADO_CARTERA', 'Entregado'])
+        $filtrosCartera = array_values(array_filter(array_map('trim', explode(',', (string) ($request->getAprobacionCartera() ?? '')))));
+        $incluyeNoAprobadoCartera = in_array('no_aprobado', $filtrosCartera, true);
+
+        $estadosExcluidos = ['RECHAZADO_CARTERA', 'Entregado'];
+        if (!$incluyeNoAprobadoCartera) {
+            $estadosExcluidos[] = 'pendiente_cartera';
+        }
+
+        $query->whereNotIn('estado', $estadosExcluidos)
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '!=', '');
+
+        if ($incluyeNoAprobadoCartera) {
+            $this->applyCarteraProductionVisibilityFilter($query);
+        }
+    }
+
+    /**
+     * Replica la lógica de Cartera para ocultar pedidos no productivos:
+     * - Excluye pedidos solo EPP (sin prendas)
+     * - Excluye pedidos con solo prendas de bodega sin procesos
+     */
+    private function applyCarteraProductionVisibilityFilter($query): void
+    {
+        $procesosDetalleTable = (new PedidosProcesosPrendaDetalle())->getTable();
+        $procesosLegacyTable = (new ProcesoPrenda())->getTable();
+
+        $query->where(function ($q) use ($procesosDetalleTable, $procesosLegacyTable) {
+            // Tiene al menos una prenda normal (no bodega)
+            $q->whereExists(function ($sub) {
+                $sub->selectRaw('1')
+                    ->from('prendas_pedido as pp')
+                    ->whereColumn('pp.pedido_produccion_id', 'pedidos_produccion.id')
+                    ->whereNull('pp.deleted_at')
+                    ->where(function ($normal) {
+                        $normal->whereNull('pp.de_bodega')
+                            ->orWhere('pp.de_bodega', 0)
+                            ->orWhere('pp.de_bodega', '0')
+                            ->orWhere('pp.de_bodega', false);
+                    });
+            })
+            // O tiene al menos una prenda de bodega CON procesos productivos
+            ->orWhereExists(function ($sub) use ($procesosDetalleTable, $procesosLegacyTable) {
+                $sub->selectRaw('1')
+                    ->from('prendas_pedido as ppb')
+                    ->whereColumn('ppb.pedido_produccion_id', 'pedidos_produccion.id')
+                    ->whereNull('ppb.deleted_at')
+                    ->where(function ($bodega) {
+                        $bodega->where('ppb.de_bodega', 1)
+                            ->orWhere('ppb.de_bodega', '1')
+                            ->orWhere('ppb.de_bodega', true);
+                    })
+                    ->where(function ($procs) use ($procesosDetalleTable, $procesosLegacyTable) {
+                        $procs->whereExists(function ($existsDetalle) use ($procesosDetalleTable) {
+                            $existsDetalle->selectRaw('1')
+                                ->from($procesosDetalleTable . ' as pd')
+                                ->whereColumn('pd.prenda_pedido_id', 'ppb.id')
+                                ->whereNull('pd.deleted_at');
+                        })->orWhereExists(function ($existsLegacy) use ($procesosLegacyTable) {
+                            $existsLegacy->selectRaw('1')
+                                ->from($procesosLegacyTable . ' as pl')
+                                ->whereColumn('pl.prenda_pedido_id', 'ppb.id')
+                                ->whereNull('pl.deleted_at');
+                        });
+                    });
+            });
+        });
     }
 
     private function applyHiddenFilter($query, ListOrdersRequest $request): void
@@ -716,6 +782,21 @@ class PedidoProduccionReadService
             $query->whereHas('asesora', function ($q) use ($asesoras) {
                 $q->whereIn('name', $asesoras);
             });
+        }
+
+        if ($request->getAprobacionCartera()) {
+            $filtrosCartera = array_values(array_filter(array_map('trim', explode(',', (string) $request->getAprobacionCartera()))));
+            if (!empty($filtrosCartera)) {
+                $query->where(function ($q) use ($filtrosCartera) {
+                    foreach ($filtrosCartera as $filtro) {
+                        if ($filtro === 'no_aprobado') {
+                            $q->orWhereNull('aprobado_por_cartera_en');
+                        } elseif ($filtro === 'aprobado') {
+                            $q->orWhereNotNull('aprobado_por_cartera_en');
+                        }
+                    }
+                });
+            }
         }
     }
 

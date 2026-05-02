@@ -88,6 +88,20 @@ function elById(id) {
     return document.getElementById(id);
 }
 
+function inicializarSincronizacionScrollTabla() {
+    const scrollContainer = document.querySelector('.table-scroll-container');
+    const headerTrack = document.querySelector('#tableHead .table-head-track');
+
+    if (!scrollContainer || !headerTrack) return;
+
+    const syncHeader = () => {
+        headerTrack.style.transform = `translateX(${-scrollContainer.scrollLeft}px)`;
+    };
+
+    scrollContainer.addEventListener('scroll', syncHeader, { passive: true });
+    syncHeader();
+}
+
 // ===== FUNCIONES DE CARGA =====
 function mostrarCargando(mensaje = 'Cargando...') {
     let spinner = document.getElementById('loadingSpinner');
@@ -260,6 +274,7 @@ function aplicarFiltroNumero() {
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
+    inicializarSincronizacionScrollTabla();
     // Agregar columna de número de pedido al header
     agregarColumnaNumeroPedidoHeader();
     
@@ -706,6 +721,21 @@ function urlBase64ToUint8Array(base64String) {
     return outputArray;
 }
 
+function formatearFechaHora12h(fechaRaw) {
+    if (!fechaRaw) return 'N/A';
+    const fecha = new Date(fechaRaw);
+    if (Number.isNaN(fecha.getTime())) return 'N/A';
+
+    return fecha.toLocaleString('es-CO', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
+}
+
 // ===== RENDERIZAR TABLA =====
 function renderizarTabla(pedidos) {
     const tablaPedidosBody = elById('tablaPedidosBody');
@@ -715,14 +745,16 @@ function renderizarTabla(pedidos) {
     tablaPedidosBody.innerHTML = '';
     
     pedidos.forEach(pedido => {
+        const asesorNombre = pedido.asesor_nombre || pedido.asesor || 'Sin asesor';
+        const fechaFormato = formatearFechaHora12h(pedido.created_at);
+
         const row = document.createElement('div');
         row.className = 'table-row';
         row.setAttribute('data-orden-id', pedido.id);
         row.setAttribute('data-numero', pedido.numero_pedido || pedido.numero || '');
         row.setAttribute('data-cliente', pedido.cliente_nombre || pedido.cliente || '');
-        row.setAttribute('data-fecha', pedido.created_at ? new Date(pedido.created_at).toLocaleDateString('es-CO') : '');
-        
-        const fechaFormato = new Date(pedido.created_at).toLocaleDateString('es-CO');
+        row.setAttribute('data-asesor', asesorNombre);
+        row.setAttribute('data-fecha', fechaFormato);
         
         // Detectar la página actual para mostrar los botones correctos
         const currentPath = window.location.pathname;
@@ -786,11 +818,16 @@ function renderizarTabla(pedidos) {
 
             <!-- Cliente -->
             <div class="table-cell" style="flex: 0 0 310px;">
-                <span>${pedido.cliente_nombre || 'N/A'}</span>
+                <span>${pedido.cliente_nombre || pedido.cliente || 'N/A'}</span>
+            </div>
+
+            <!-- Asesor -->
+            <div class="table-cell" style="flex: 0 0 220px;">
+                <span>${asesorNombre}</span>
             </div>
 
             <!-- Fecha -->
-            <div class="table-cell" style="flex: 0 0 150px; justify-content: center;">
+            <div class="table-cell" style="flex: 0 0 220px; justify-content: center;">
                 <span>${fechaFormato}</span>
             </div>
         `;
