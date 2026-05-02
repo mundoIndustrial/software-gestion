@@ -6,15 +6,18 @@ class GetPendingOrdersCountResponse
 {
     private int $totalPendientes;
     private int $pendientesLogo;
+    private int $pendientesCarteraNoAprobado;
 
-    public function __construct(int $totalPendientes, int $pendientesLogo)
+    public function __construct(int $totalPendientes, int $pendientesLogo, int $pendientesCarteraNoAprobado = 0)
     {
         $this->totalPendientes = $totalPendientes;
         $this->pendientesLogo = $pendientesLogo;
+        $this->pendientesCarteraNoAprobado = $pendientesCarteraNoAprobado;
     }
 
     public function getTotalPendientes(): int { return $this->totalPendientes; }
     public function getPendientesLogo(): int { return $this->pendientesLogo; }
+    public function getPendientesCarteraNoAprobado(): int { return $this->pendientesCarteraNoAprobado; }
 
     public function toArray(): array
     {
@@ -22,9 +25,10 @@ class GetPendingOrdersCountResponse
             'success' => true,
             'count' => $this->totalPendientes,
             'pendientesLogo' => $this->pendientesLogo,
-            'message' => $this->totalPendientes > 0 
-                ? "Hay {$this->totalPendientes} orden(es) pendiente(s)" 
-                : 'No hay órdenes pendientes'
+            'pendientesCarteraNoAprobado' => $this->pendientesCarteraNoAprobado,
+            'message' => $this->totalPendientes > 0
+                ? "Hay {$this->totalPendientes} orden(es) pendiente(s)"
+                : 'No hay ordenes pendientes'
         ];
     }
 }

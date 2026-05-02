@@ -17,12 +17,13 @@ class GetPendingOrdersCountUseCase
     {
         try {
             $counts = $this->readService->getPendingOrdersCount();
-            $totalPendientes = $counts['total'];
-            $pendientesLogo = $counts['logo'];
+            $totalPendientes = (int) ($counts['total'] ?? 0);
+            $pendientesLogo = (int) ($counts['logo'] ?? 0);
+            $pendientesCarteraNoAprobado = (int) ($counts['cartera_no_aprobado'] ?? 0);
 
-            Log::info('[GetPendingOrdersCountUseCase] Total pendientes: ' . $totalPendientes . ', Logo: ' . $pendientesLogo);
+            Log::info('[GetPendingOrdersCountUseCase] Total pendientes: ' . $totalPendientes . ', Logo: ' . $pendientesLogo . ', Cartera no aprobado: ' . $pendientesCarteraNoAprobado);
 
-            return new GetPendingOrdersCountResponse($totalPendientes, $pendientesLogo);
+            return new GetPendingOrdersCountResponse($totalPendientes, $pendientesLogo, $pendientesCarteraNoAprobado);
         } catch (\Exception $e) {
             Log::error('[GetPendingOrdersCountUseCase] Error: ' . $e->getMessage());
             throw $e;

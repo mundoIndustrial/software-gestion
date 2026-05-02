@@ -197,9 +197,20 @@ class PedidoProduccionReadService
                 ->count();
         }
 
+        $carteraNoAprobadoQuery = PedidoProduccion::query()
+            ->whereNull('ocultado_en')
+            ->whereNotNull('numero_pedido')
+            ->where('numero_pedido', '!=', '')
+            ->whereNotIn('estado', ['RECHAZADO_CARTERA', 'Entregado', 'Anulada'])
+            ->whereNull('aprobado_por_cartera_en');
+
+        $this->applyCarteraProductionVisibilityFilter($carteraNoAprobadoQuery);
+        $pendientesCarteraNoAprobado = (clone $carteraNoAprobadoQuery)->count();
+
         return [
             'total' => (int) $totalPendientes,
             'logo' => (int) $pendientesLogo,
+            'cartera_no_aprobado' => (int) $pendientesCarteraNoAprobado,
         ];
     }
 
@@ -825,6 +836,16 @@ class PedidoProduccionReadService
 
     private function orderAndPaginate($query, ListOrdersRequest $request)
     {
+        $filtrosCartera = array_values(array_filter(array_map('trim', explode(',', (string) ($request->getAprobacionCartera() ?? '')))));
+        $incluyeNoAprobadoCartera = in_array('no_aprobado', $filtrosCartera, true);
+
+        if ($incluyeNoAprobadoCartera) {
+            return $query
+                ->orderBy('pedidos_produccion.updated_at', 'desc')
+                ->orderBy('pedidos_produccion.created_at', 'desc')
+                ->paginate($request->getPerPage(), ['pedidos_produccion.*'], 'page', $request->getPage())
+                ->appends($request->getAppends());
+        }
         // Para búsquedas puntuales evitar ORDER BY correlacionado costoso.
         if ($request->getBusqueda()) {
             return $query

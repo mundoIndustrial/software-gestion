@@ -32,7 +32,8 @@
                        class="menu-link {{ request()->routeIs('supervisor-pedidos.index') && request()->query('aprobacion_cartera') === 'no_aprobado' ? 'active' : '' }}"
                        style="display:flex;align-items:center;gap:0.5rem;">
                         <span class="material-symbols-rounded">account_balance_wallet</span>
-                        <span class="menu-label">Sin Aprob. Cartera</span>
+                        <span class="menu-label">Pendiente Cartera</span>
+                        <span class="badge-alert" id="pendienteCarteraCountMenu" style="display: inline-flex;">0</span>
                     </a>
                 </li>
                 @php

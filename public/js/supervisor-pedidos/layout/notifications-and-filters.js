@@ -361,19 +361,37 @@
             }
         });
 
+        let sidebarCountsPromise = null;
+        let sidebarCountsFetchedAt = 0;
+        const SIDEBAR_COUNTS_TTL_MS = 8000;
+
+        function fetchSidebarOrderCounts() {
+            const now = Date.now();
+            if (sidebarCountsPromise && (now - sidebarCountsFetchedAt) < SIDEBAR_COUNTS_TTL_MS) {
+                return sidebarCountsPromise;
+            }
+
+            sidebarCountsFetchedAt = now;
+            sidebarCountsPromise = fetch('/api/supervisor-pedidos/ordenes-pendientes-count')
+                .then(response => response.json())
+                .catch(() => ({ success: false, data: {} }));
+
+            return sidebarCountsPromise;
+        }
+
         function cargarBadgeSidebarPedidos() {
             const badgePendientes = document.getElementById('ordenesPendientesCount');
             if (!badgePendientes) return;
 
-            fetch('/api/supervisor-pedidos/ordenes-pendientes-count')
-                .then(response => response.json())
+            fetchSidebarOrderCounts()
                 .then(data => {
                     if (!data || !data.success) {
                         badgePendientes.style.display = 'none';
                         return;
                     }
 
-                    const countRegulares = (data.count || 0) - (data.pendientesLogo || 0);
+                    const payload = data?.data || data;
+                    const countRegulares = (payload.count || 0) - (payload.pendientesLogo || 0);
                     if (countRegulares > 0) {
                         badgePendientes.textContent = countRegulares;
                         badgePendientes.style.display = 'inline-flex';
@@ -410,6 +428,23 @@
                 });
         }
 
+        function cargarBadgeSidebarPendienteCartera() {
+            const badgePendienteCartera = document.getElementById('pendienteCarteraCountMenu');
+            if (!badgePendienteCartera) return;
+
+            fetchSidebarOrderCounts()
+                .then(data => {
+                    const payload = data?.data || data;
+                    const total = Number(payload?.pendientesCarteraNoAprobado || 0);
+                    badgePendienteCartera.textContent = String(total);
+                    badgePendienteCartera.style.display = 'inline-flex';
+                })
+                .catch(() => {
+                    badgePendienteCartera.textContent = '0';
+                    badgePendienteCartera.style.display = 'inline-flex';
+                });
+        }
+
         function isSupervisorPedidosIndexView() {
             const path = (window.location.pathname || '').replace(/\/+$/, '');
             const search = window.location.search || '';
@@ -433,6 +468,7 @@
             if (isCarteraRoute()) return;
             cargarBadgeSidebarPedidos();
             cargarBadgeSidebarControlCalidad();
+            cargarBadgeSidebarPendienteCartera();
         }, 300);
 
         function iniciarRealtimeBadgeSidebarPedidos() {
@@ -464,6 +500,7 @@
             runWhenIdle(() => {
                 cargarBadgeSidebarPedidos();
                 cargarBadgeSidebarControlCalidad();
+                cargarBadgeSidebarPendienteCartera();
                 onEchoReady(() => iniciarRealtimeBadgeSidebarPedidos());
             }, 2200);
         });

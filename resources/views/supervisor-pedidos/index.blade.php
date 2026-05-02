@@ -14,7 +14,9 @@
     <link rel="stylesheet" href="{{ asset('css/modales/modal-exito-pedido.css') }}?v={{ filemtime(public_path('css/modales/modal-exito-pedido.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/modulos/epp-modal.css') }}?v={{ filemtime(public_path('css/modulos/epp-modal.css')) }}">
  
+    @if(request()->query('aprobacion_cartera') !== 'no_aprobado')
     <link rel="stylesheet" href="{{ asset('css/tracking-modal.css') }}?v={{ filemtime(public_path('css/tracking-modal.css')) }}">
+    @endif
 
     <!-- 🚨 FIX: Asegurar z-index correcto para modal de prendas en supervisor-pedidos -->
     <style>
@@ -176,6 +178,7 @@
     <!-- Scripts para Recibos/Procesos -->
     <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
 
+    @if(request()->query('aprobacion_cartera') !== 'no_aprobado')
     <!-- Scripts para Modal de Seguimiento de Pedidos -->
     <script defer src="{{ asset('js/ordersjs/tracking-modal-utils.js') }}"></script>
     <script defer src="{{ asset('js/ordersjs/tracking/days-selector-handler.js') }}"></script>
@@ -190,6 +193,7 @@
     <script defer src="{{ asset('js/ordersjs/tracking/prendas-renderer.js') }}"></script>
     <script defer src="{{ asset('js/ordersjs/tracking/tracking-main.js') }}"></script>
     <script defer src="{{ asset('js/supervisor-pedidos/tracking-modal-init.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/tracking-modal-init.js')) }}"></script>
+    @endif
 
     <!-- Novedades, Galería y Toggle Factura -->
     <!-- Limpiar asignaciones y selección de pedidos -->

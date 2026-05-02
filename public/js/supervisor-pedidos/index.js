@@ -629,6 +629,16 @@ async function refreshVerButtonsBodegaBadges() {
     const buttons = Array.from(document.querySelectorAll('.btn-ver-dropdown[data-pedido-id]'));
     if (buttons.length === 0) return;
 
+    try {
+        const currentUrl = new URL(window.location.href);
+        if ((currentUrl.searchParams.get('aprobacion_cartera') || '').trim() === 'no_aprobado') {
+            buttons.forEach((b) => _spRenderBadgeOnVerButton(b, 0));
+            return;
+        }
+    } catch (_) {
+        // noop
+    }
+
     // Optimizacion: en vistas filtradas por busqueda no bloquear con batch de badges.
     // Los badges se pueden resolver al abrir cada menu "Ver".
     try {
