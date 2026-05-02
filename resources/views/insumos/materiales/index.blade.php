@@ -22,7 +22,6 @@
 @if($mostrarSoloVerRecibo)
 <style>
     .btn-check-row,
-    .btn-enviar-produccion,
     .btn-acciones {
         display: none !important;
     }
@@ -122,6 +121,19 @@
                     <thead>
                         <tr class="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
                             <th class="text-center py-4 px-6 font-bold whitespace-nowrap" style="min-width: 200px;">Acciones</th>
+                            <th class="text-center py-4 px-6 font-bold">
+                                <div class="flex items-center justify-center gap-2">
+                                    <span>Área</span>
+                                    <button
+                                        type="button"
+                                        class="filter-btn-insumos p-1 rounded hover:bg-blue-500 transition"
+                                        data-column="area"
+                                        title="Filtrar Área"
+                                    >
+                                        <i class="fas fa-filter text-xs"></i>
+                                    </button>
+                                </div>
+                            </th>
                             <th class="text-left py-4 px-6 font-bold">
                                 <div class="flex items-center justify-between gap-2">
                                     <span>N° Recibo</span>
@@ -170,21 +182,6 @@
                                         class="filter-btn-insumos p-1 rounded hover:bg-blue-500 transition"
                                         data-column="estado"
                                         title="Filtrar Estado"
-                                    >
-                                        <i class="fas fa-filter text-xs"></i>
-                                    </button>
-                                </div>
-                            </th>
-                            @endunless
-                            @unless($esGestionReflectivo)
-                            <th class="text-center py-4 px-6 font-bold">
-                                <div class="flex items-center justify-center gap-2">
-                                    <span>Área</span>
-                                    <button
-                                        type="button"
-                                        class="filter-btn-insumos p-1 rounded hover:bg-blue-500 transition"
-                                        data-column="area"
-                                        title="Filtrar Área"
                                     >
                                         <i class="fas fa-filter text-xs"></i>
                                     </button>
@@ -277,15 +274,26 @@
 
                                         {{-- Dropdown de Acciones (solo para no-patronistas) --}}
                                         @if(!$isPatronista)
-                                            {{-- Botón Enviar a Producción (visible en la fila) --}}
-                                            @if(in_array($orden->estado, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'INSUMOS_PEDIDOS', 'Insumos Pedidos']))
+                                            {{-- Boton Enviar a Produccion --}}
+                                            @if($esGestionReflectivo && !in_array($orden->estado, ['En Ejecución', 'En Ejecucion']))
+                                                <button 
+                                                    class="btn-enviar-produccion btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
+                                                    data-insumos-action="enviar-produccion-reflectivo"
+                                                    data-recibo-id="{{ $reciboId }}"
+                                                    data-consecutivo="{{ $orden->consecutivo_actual }}"
+                                                    data-tooltip="Enviar a produccion"
+                                                    title="Enviar a produccion"
+                                                >
+                                                    <i class="fas fa-paper-plane text-lg"></i>
+                                                </button>
+                                            @elseif(in_array($orden->estado, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'INSUMOS_PEDIDOS', 'Insumos Pedidos']))
                                                 <button 
                                                     class="btn-enviar-produccion btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
                                                     data-insumos-action="enviar-produccion"
                                                     data-recibo-id="{{ $reciboId }}"
                                                     data-consecutivo="{{ $orden->consecutivo_actual }}"
-                                                    data-tooltip="Enviar a producción"
-                                                    title="Enviar a producción"
+                                                    data-tooltip="Enviar a produccion"
+                                                    title="Enviar a produccion"
                                                 >
                                                     <i class="fas fa-paper-plane text-lg"></i>
                                                 </button>
@@ -306,6 +314,23 @@
                                             </button>
                                         @endif
                                     </div>
+                                </td>
+                                <td class="py-4 px-6 text-center">
+                                    @php
+                                        $areaClass = '';
+                                        $areaText = $orden->area ?? 'N/A';
+                                        if ($areaText === 'Corte') {
+                                            $areaClass = 'bg-purple-100 text-purple-800';
+                                        } elseif ($areaText === 'Creación de Orden' || $areaText === 'Creación de orden') {
+                                            $areaClass = 'bg-green-100 text-green-800';
+                                            $areaText = 'Creación de Orden';
+                                        } elseif ($areaText === 'Costura') {
+                                            $areaClass = 'bg-blue-100 text-blue-800';
+                                        }
+                                    @endphp
+                                    <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $areaClass }}">
+                                        {{ $areaText }}
+                                    </span>
                                 </td>
                                 <td class="py-4 px-6">
                                     <span class="font-bold text-blue-600 text-lg">{{ $orden->consecutivo_actual ?? 'N/A' }}</span>
@@ -397,23 +422,7 @@
                                     @endif
                                 </td>
                                 @endunless
-                                @unless($esGestionReflectivo)
-                                <td class="py-4 px-6 text-center">
-                                    @php
-                                        $areaClass = '';
-                                        $areaText = $orden->area ?? 'N/A';
-                                        if ($orden->area === 'Corte') {
-                                            $areaClass = 'bg-purple-100 text-purple-800';
-                                        } elseif ($orden->area === 'Creación de Orden' || $orden->area === 'Creación de orden') {
-                                            $areaClass = 'bg-green-100 text-green-800';
-                                            $areaText = 'Creación de Orden';
-                                        }
-                                    @endphp
-                                    <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $areaClass }}">
-                                        {{ $areaText }}
-                                    </span>
-                                </td>
-                                @endunless
+
                                 <td class="py-4 px-6 text-center">
                                     @php
                                         $motivoDevolucion = trim((string) ($orden->motivo_devolucion ?? ''));

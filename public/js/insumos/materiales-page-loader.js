@@ -453,6 +453,14 @@
                     safeCall('cerrarDropdownAcciones', [], 'cerrarDropdownAcciones no esta disponible');
                     break;
                 }
+                case 'enviar-produccion-reflectivo': {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const reciboId = btn.getAttribute('data-recibo-id');
+                    const consecutivo = btn.getAttribute('data-consecutivo');
+                    safeCall('enviarProduccionReflectivo', [reciboId, consecutivo], 'enviarProduccionReflectivo no esta disponible');
+                    break;
+                }
                 case 'close-modal-overlay': {
                     event.preventDefault();
                     await ensureFeatureScripts('modalHandlers');

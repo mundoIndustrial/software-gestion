@@ -24,6 +24,8 @@ use App\Application\Insumos\UseCases\ObtenerAnchoMetrajePrendaInsumosUseCase;
 use App\Application\Insumos\UseCases\ObtenerColoresPrendaInsumosUseCase;
 use App\Application\Insumos\Services\RecibosQueryService;
 use App\Models\PedidoProduccion;
+use App\Models\ConsecutivoReciboPedido;
+use App\Models\ProcesoPrenda;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -185,6 +187,7 @@ class InsumosController extends Controller
                 'ordenes' => $ordenes,
                 'user' => $user,
                 'search' => $search,
+                'esGestionReflectivo' => false,
             ]);
         } catch (\Exception $e) {
             Log::error(' ERROR en InsumosController.materiales()', [
@@ -484,6 +487,67 @@ class InsumosController extends Controller
                 'Error al cambiar el estado del recibo',
                 ['recibo_id' => $reciboId]
             );
+        }
+    }
+
+    /**
+     * Enviar recibo reflectivo a producción (Costura)
+     * Lógica específica para la vista de reflectivo
+     */
+    public function enviarProduccionReflectivo(Request $request, $reciboId)
+    {
+        try {
+            $recibo = ConsecutivoReciboPedido::findOrFail((int) $reciboId);
+            $pedido = $recibo->pedido;
+
+            // 1. Actualizar el recibo: pasarlo a área Costura y estado En Ejecución
+            $recibo->update([
+                'area' => 'Costura',
+                'estado' => 'En Ejecución',
+                'aprobado_insumos_en' => now(),
+            ]);
+
+            // 2. Crear el proceso en el área de Costura en procesos_prenda
+            // Evitar duplicados
+            $existeProceso = ProcesoPrenda::whereNull('deleted_at')
+                ->where('numero_pedido', $pedido->numero_pedido)
+                ->where('prenda_pedido_id', $recibo->prenda_id)
+                ->where('proceso', 'Costura')
+                ->where('numero_recibo', $recibo->consecutivo_actual)
+                ->exists();
+
+            if (!$existeProceso) {
+                ProcesoPrenda::create([
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'prenda_pedido_id' => $recibo->prenda_id,
+                    'numero_recibo' => $recibo->consecutivo_actual,
+                    'proceso' => 'Costura',
+                    'fecha_inicio' => now(),
+                    'estado_proceso' => 'En Progreso',
+                    'encargado' => 'MODULO REFLECTIVO',
+                    'observaciones' => 'Proceso creado automáticamente desde Gestión Reflectivo (Insumos)',
+                    'codigo_referencia' => sprintf(
+                        'P%s-COS-PP%s-R%s',
+                        $pedido->numero_pedido,
+                        $recibo->prenda_id ?? '0',
+                        $recibo->consecutivo_actual ?? '0'
+                    ),
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Recibo de reflectivo enviado a producción (Costura) correctamente'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error en enviarProduccionReflectivo: ' . $e->getMessage(), [
+                'recibo_id' => $reciboId,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al enviar a producción: ' . $e->getMessage()
+            ], 500);
         }
     }
 

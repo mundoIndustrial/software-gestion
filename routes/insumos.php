@@ -43,6 +43,7 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
     Route::post('/guardar-observaciones', [InsumosController::class, 'guardarObservaciones'])->name('guardar-observaciones');
     Route::post('/materiales/{numeroPedido}/cambiar-estado', [InsumosController::class, 'cambiarEstado'])->name('materiales.cambiar-estado');
     Route::post('/materiales/recibo/{reciboId}/cambiar-estado', [InsumosController::class, 'cambiarEstadoRecibo'])->name('materiales.recibo.cambiar-estado');
+    Route::post('/materiales/recibo/{reciboId}/enviar-produccion-reflectivo', [InsumosController::class, 'enviarProduccionReflectivo'])->name('materiales.recibo.enviar-produccion-reflectivo');
     Route::post('/materiales/{materialId}/toggle-marcado', [RecibosController::class, 'toggleMarcado'])->name('materiales.toggle-marcado');
     Route::post('/materiales/{reciboId}/pasar-revisar', [RecibosController::class, 'pasarRevisar'])->name('materiales.pasar-revisar');
     Route::post('/materiales/{reciboId}/anular', [RecibosController::class, 'anularRecibo'])->name('materiales.anular-recibo');

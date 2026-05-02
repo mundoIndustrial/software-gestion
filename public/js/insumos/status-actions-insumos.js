@@ -235,6 +235,75 @@ function confirmarEnvioProduccion() {
     });
 }
 
+/**
+ * Envia un recibo de reflectivo a producción (Costura)
+ * Lógica específica para la vista de reflectivo
+ */
+async function enviarProduccionReflectivo(reciboId, consecutivo) {
+    if (!reciboId) return;
+
+    if (window.Swal && typeof window.Swal.fire === 'function') {
+        const result = await window.Swal.fire({
+            title: `Enviar recibo #${consecutivo} a producción`,
+            text: "¿Estás seguro de enviar este recibo de reflectivo al área de Costura?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, enviar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#2563eb'
+        });
+
+        if (!result.isConfirmed) return;
+    } else {
+        if (!confirm(`¿Estás seguro de enviar el recibo #${consecutivo} a producción?`)) return;
+    }
+
+    // Mostrar loading overlay
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.add('active');
+
+    try {
+        const response = await fetch(`/insumos/materiales/recibo/${reciboId}/enviar-produccion-reflectivo`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            if (typeof showToast === 'function') {
+                showToast(data.message, 'success');
+            } else {
+                alert(data.message);
+            }
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            if (typeof showToast === 'function') {
+                showToast(data.message || 'Error al enviar a producción', 'error');
+            } else {
+                alert(data.message || 'Error al enviar a producción');
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        if (typeof showToast === 'function') {
+            showToast('Error al procesar la solicitud', 'error');
+        } else {
+            alert('Error al procesar la solicitud');
+        }
+    } finally {
+        if (overlay) overlay.classList.remove('active');
+    }
+}
+
+
 
 // ===== VARIABLES GLOBALES PARA MODAL DE CONFIRMACIÓN =====
 if (typeof window.cambioEstadoPendiente === 'undefined') {
@@ -551,6 +620,7 @@ function exportStatusActionsInsumos() {
         restaurarBotonAprobar,
         confirmarEnvioProduccion,
         anularReciboInsumos,
+        enviarProduccionReflectivo,
     };
     
     // Función para aplicar estilos de color según el estado
