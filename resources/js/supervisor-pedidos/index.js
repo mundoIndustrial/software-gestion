@@ -4,6 +4,7 @@ import { initializeFilters } from './modules/filter-manager.js';
 import { initializeRealtime } from './modules/realtime-manager.js';
 import { initializeInvoiceManager } from './modules/invoice-manager.js';
 import { initPerformanceMonitor } from './modules/performance-monitor.js';
+import { initBodegaBadgesManager } from './modules/bodega-badges-manager.js';
 
 const initState = {
     isReady: false,
@@ -79,6 +80,8 @@ async function initSupervisorPedidos() {
         await initializeInvoiceManager();
         perfMonitor.mark('INVOICE_READY');
 
+        initBodegaBadgesManager();
+
         initState.isReady = true;
         initState.initializedAt = new Date().toISOString();
         perfMonitor.mark('MODULE_FULLY_READY');
@@ -125,4 +128,3 @@ if (document.readyState === 'loading') {
 }
 
 export { initSupervisorPedidos, isSupervisorView, initState };
-

@@ -20,6 +20,9 @@ Route::middleware(['web', 'auth:web', 'role:asesor,supervisor_pedidos,admin'])
         Route::get('/ordenes/{id}/comparar', [SupervisorOrdersApiController::class, 'comparison'])
             ->whereNumber('id')
             ->name('ordenes.comparar');
+        Route::get('/ordenes/{id}/novedades', [SupervisorOrdersApiController::class, 'novedades'])
+            ->whereNumber('id')
+            ->name('ordenes.novedades');
     });
 
 Route::middleware(['web', 'auth:web', 'role:supervisor_pedidos,admin'])

@@ -1,19 +1,19 @@
-/**
+﻿/**
  * =====================================================
  * SUPERVISOR PEDIDOS INDEX - FUNCIONALIDAD PRINCIPAL
  * =====================================================
  *
- * Requiere: supervisor-pedidos/core/bootstrap.js → window.supervisorPedidos
+ * Requiere: supervisor-pedidos/core/bootstrap.js â†’ window.supervisorPedidos
  */
 
 if (!window.supervisorPedidos?.isReady) {
-    throw new Error('[index] window.supervisorPedidos no está disponible. Carga core/bootstrap.js ANTES.');
+    throw new Error('[index] window.supervisorPedidos no estÃ¡ disponible. Carga core/bootstrap.js ANTES.');
 }
 
 const _spFilter = window.supervisorPedidos.filterService;
 const _spNotify = window.shared.notify;
 
-// Ocultar overlay inicial solo cuando la página y módulos críticos estén listos.
+// Ocultar overlay inicial solo cuando la pÃ¡gina y mÃ³dulos crÃ­ticos estÃ©n listos.
 (function initInitialLoadingOverlayController() {
     const overlay = document.getElementById('sp-loading-overlay');
     if (!overlay) return;
@@ -76,6 +76,7 @@ const _spNotify = window.shared.notify;
 // ===== VARIABLES GLOBALES =====
 let filtroActual = null;
 let _spCurrentListUrl = window.location.href;
+const _spNovedadesByOrderCache = new Map();
 
 function _spSetCurrentListUrl(urlString) {
     try {
@@ -173,7 +174,7 @@ function _spStateBadge(estado) {
     const map = {
         PENDIENTE_SUPERVISOR: { bg: '#fff3cd', text: '#856404', label: 'Pendiente Supervisor' },
         PENDIENTE_INSUMOS: { bg: '#d1ecf1', text: '#0c5460', label: 'Pendiente Insumos' },
-        'En Ejecución': { bg: '#d4edda', text: '#155724', label: 'En Ejecución' },
+        'En EjecuciÃ³n': { bg: '#d4edda', text: '#155724', label: 'En EjecuciÃ³n' },
         'No iniciado': { bg: '#e2e3e5', text: '#383d41', label: 'No Iniciado' },
         Entregado: { bg: '#d4edda', text: '#155724', label: 'Entregado' },
         Finalizada: { bg: '#d4edda', text: '#155724', label: 'Finalizada' },
@@ -241,6 +242,33 @@ function cerrarModalNovedades() {
 window.abrirNovedades = abrirNovedades;
 window.cerrarModalNovedades = cerrarModalNovedades;
 
+async function _spFetchNovedadesByOrderId(ordenId) {
+    const key = String(ordenId || '').trim();
+    if (!key) return [];
+    if (_spNovedadesByOrderCache.has(key)) {
+        return _spNovedadesByOrderCache.get(key);
+    }
+
+    const response = await fetch(`/api/supervisor-pedidos/ordenes/${encodeURIComponent(key)}/novedades`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        cache: 'no-store',
+    });
+
+    const payload = await response.json();
+    if (!response.ok || !payload?.success) {
+        throw new Error(payload?.message || 'No se pudieron cargar novedades');
+    }
+
+    const rawNovedades = payload?.data?.novedades ?? '';
+    const normalizadas = _spNormalizeNovedadesInput(rawNovedades);
+    _spNovedadesByOrderCache.set(key, normalizadas);
+    return normalizadas;
+}
+
 function _spBuildPageUrl(page) {
     const url = new URL(_spCurrentListUrl || window.location.href, window.location.origin);
     url.searchParams.set('page', String(page));
@@ -272,7 +300,7 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                     <div class="th-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><span>Listo</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><span>Acciones</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Fecha</span><button type="button" class="btn-filter-column" data-col="fecha" title="Filtrar Fecha" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
-                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Número</span><button type="button" class="btn-filter-column" data-col="numero" title="Filtrar Número" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>NÃºmero</span><button type="button" class="btn-filter-column" data-col="numero" title="Filtrar NÃºmero" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Cliente</span><button type="button" class="btn-filter-column" data-col="cliente" title="Filtrar Cliente" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Asesora</span><button type="button" class="btn-filter-column" data-col="asesora" title="Filtrar Asesora" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Estado</span><button type="button" class="btn-filter-column" data-col="estado" title="Filtrar Estado" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
@@ -285,7 +313,7 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
 
     let body = '';
     if (rows.length === 0) {
-        body = `<div style="padding: 3rem 2rem; text-align: center; color: #6b7280;"><i class="fas fa-inbox" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem; display: block;"></i><p style="font-size: 1rem; margin: 0;">No hay órdenes disponibles</p></div>`;
+        body = `<div style="padding: 3rem 2rem; text-align: center; color: #6b7280;"><i class="fas fa-inbox" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem; display: block;"></i><p style="font-size: 1rem; margin: 0;">No hay Ã³rdenes disponibles</p></div>`;
     } else {
         body = rows.map((orden) => {
             const isSelected = pedidosSeleccionados.includes(orden.id);
@@ -323,16 +351,18 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                     </div>
                     <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
                         <button class="btn-accion btn-accion--ver btn-ver-dropdown" data-menu-id="menu-ver-${numeroPedidoNoHash}" data-pedido="${numeroPedidoNoHash}" data-pedido-id="${orden.id}" title="Ver Opciones" style="position:relative;overflow:visible;"><i class="fas fa-eye"></i><span class="btn-ver-bodega-badge" data-bodega-button-badge style="display:none;position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;line-height:18px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.25);">0</span></button>
-                        ${canApprove ? `<button class="btn-accion btn-accion--aprobar" onclick="abrirModalAprobacion(${orden.id}, '${jsNumero}')" title="Aprobar Pedido"><i class="fas fa-check"></i></button>` : ''}
-                        ${canApprove ? `<button class="btn-accion btn-accion--anular" onclick="abrirModalAnulacion(${orden.id}, '${jsNumeroHash}')" title="Pasar a Revisión"><i class="fas fa-ban"></i></button>` : ''}
+                        ${canApprove ? `<button class="btn-accion btn-accion--aprobar" data-action="aprobar" data-pedido-id="${orden.id}" data-pedido-numero="${jsNumero}" title="Aprobar Pedido"><i class="fas fa-check"></i></button>` : ''}
+                        ${canApprove ? `<button class="btn-accion btn-accion--anular" data-action="anular" data-pedido-id="${orden.id}" data-pedido-numero="${jsNumeroHash}" title="Pasar a RevisiÃ³n"><i class="fas fa-ban"></i></button>` : ''}
                         <button class="btn-accion ${canBulkDeliver ? '' : 'btn-accion--disabled'}"
-                            onclick="${canBulkDeliver ? `marcarTodasPrendasEntregadasPedido(${orden.id}, '${jsNumero}')` : 'return false;'}"
+                            data-action="entregar"
+                            data-pedido-id="${orden.id}"
+                            data-pedido-numero="${jsNumero}"
                             title="${canBulkDeliver ? 'Marcar todas las prendas entregadas' : 'Todas las prendas ya fueron entregadas'}"
                             ${canBulkDeliver ? '' : 'disabled aria-disabled="true"'}
                             style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%); color: #ffffff;">
                             <i class="fas fa-check-double"></i>
                         </button>
-                        <button class="btn-accion btn-accion--ocultar" onclick="abrirModalOcultar(${orden.id}, '${jsNumero}')" title="Ocultar Pedido"><i class="fas fa-eye-slash"></i></button>
+                        <button class="btn-accion btn-accion--ocultar" data-action="ocultar" data-pedido-id="${orden.id}" data-pedido-numero="${jsNumero}" title="Ocultar Pedido"><i class="fas fa-eye-slash"></i></button>
                     </div>
                     <div><span style="font-size: 0.85rem; color: #6b7280;">${fecha}</span></div>
                     <div><span style="font-weight: 600; color: #1e5ba8;">${numeroPedidoText}</span></div>
@@ -341,7 +371,7 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                     <div><span style="background: ${estadoInfo.bg}; color: ${estadoInfo.text}; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">${_spEscapeHtml(estadoInfo.label)}</span></div>
                     <div>
                         ${novedadesCount > 0
-                            ? `<button class="btn-novedades" type="button" data-orden-id="${orden.id}" data-novedades="${novedadesJson}" style="background: #e8f3ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; border: 1px solid #bfdbfe; cursor: pointer; transition: all 0.2s ease;">${novedadesCount} novedades</button>`
+                            ? `<button class="btn-novedades" type="button" data-orden-id="${orden.id}" data-has-novedades="1" data-novedades-count="${novedadesCount}" style="background: #e8f3ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; border: 1px solid #bfdbfe; cursor: pointer; transition: all 0.2s ease;">${novedadesCount} novedades</button>`
                             : `<span style="background: #f3f4f6; color: #9ca3af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap;">Sin novedades</span>`
                         }
                     </div>
@@ -413,15 +443,15 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                 ${makeBtn('&larr; Anterior', Math.max(1, currentPage - 1), prevDisabled, 'nav')}
                 ${pageButtons}
                 ${makeBtn('Siguiente &rarr;', Math.min(lastPage, currentPage + 1), nextDisabled, 'nav')}
-                ${makeBtn('Última &raquo;', lastPage, nextDisabled, 'nav')}
+                ${makeBtn('Ãšltima &raquo;', lastPage, nextDisabled, 'nav')}
                 </div>
-                <span style="color: #64748b; font-size: 13px; font-weight: 600;">Página ${currentPage} de ${lastPage} | Total: ${total} registros</span>
+                <span style="color: #64748b; font-size: 13px; font-weight: 600;">PÃ¡gina ${currentPage} de ${lastPage} | Total: ${total} registros</span>
             </div>
         `;
     }
 
     container.innerHTML = `${header}${body}${footerTop}${pagination}`;
-    refreshVerButtonsBodegaBadges();
+    scheduleDeferredBodegaBadgesPrefetch();
 };
 
 // ===== TOGGLE MENU ACCIONES =====
@@ -500,8 +530,8 @@ function resolveFilterColumn(btn) {
     const title = btn.getAttribute('title') || '';
     switch (title) {
         case 'Filtrar Fecha': return 'fecha';
-        case 'Filtrar Número':
-        case 'Filtrar Número': return 'numero';
+        case 'Filtrar NÃºmero':
+        case 'Filtrar NÃºmero': return 'numero';
         case 'Filtrar Cliente': return 'cliente';
         case 'Filtrar Estado': return 'estado';
         case 'Filtrar Asesora': return 'asesora';
@@ -513,7 +543,7 @@ function resolveFilterColumn(btn) {
 
 document.addEventListener('DOMContentLoaded', function() {
     actualizarIndicadoresFiltros();
-    refreshVerButtonsBodegaBadges();
+    scheduleDeferredBodegaBadgesPrefetch();
 
     // Buscar sin recargar toda la pagina: filtra por AJAX en la tabla.
     const searchForm = document.querySelector('form.search-form');
@@ -550,6 +580,64 @@ const SP_VER_MENU_CLASS = 'sp-ver-dropdown-menu';
 const SP_BODEGA_RESUMEN_ENDPOINT = (pedidoId) => `/api/supervisor-pedidos/ordenes/${pedidoId}/bodega-novedades-resumen`;
 const SP_BODEGA_NOVEDADES_ENDPOINT = (pedidoId) => `/api/supervisor-pedidos/ordenes/${pedidoId}/bodega-novedades`;
 const spBodegaResumenCache = new Map();
+let spBodegaDeferredPrefetchScheduled = false;
+let spBodegaDeferredPrefetchCompleted = false;
+let spBodegaDeferredPrefetchAttempts = 0;
+let spBodegaDeferredPrefetchTimer = null;
+
+function getVisibleVerButtons() {
+    return Array.from(document.querySelectorAll('.btn-ver-dropdown[data-pedido-id]'))
+        .filter((btn) => !!btn && btn.offsetParent !== null);
+}
+
+function scheduleDeferredBodegaBadgesPrefetch() {
+    if (spBodegaDeferredPrefetchCompleted || spBodegaDeferredPrefetchScheduled) return;
+    spBodegaDeferredPrefetchScheduled = true;
+
+    const runPrefetch = () => {
+        spBodegaDeferredPrefetchScheduled = false;
+        const visibleButtons = getVisibleVerButtons();
+        if (visibleButtons.length === 0) {
+            spBodegaDeferredPrefetchCompleted = true;
+            return;
+        }
+
+        // Reusar manager moderno para batch + cache compartido.
+        if (window.spBodegaBadgesManager?.refreshVerButtonsBodegaBadges) {
+            spBodegaDeferredPrefetchCompleted = true;
+            window.spBodegaBadgesManager.refreshVerButtonsBodegaBadges().catch(() => {});
+            return;
+        }
+
+        // Si el manager moderno aun no existe, reintentar de forma acotada.
+        spBodegaDeferredPrefetchAttempts += 1;
+        if (spBodegaDeferredPrefetchAttempts <= 6) {
+            spBodegaDeferredPrefetchTimer = window.setTimeout(() => {
+                scheduleDeferredBodegaBadgesPrefetch();
+            }, 450);
+        }
+    };
+
+    if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(runPrefetch, { timeout: 3200 });
+        return;
+    }
+
+    setTimeout(runPrefetch, 1400);
+}
+
+function _spUseModernBodegaManager() {
+    return window.__SP_BODEGA_BADGES_MANAGER_ACTIVE
+        && typeof window.spBodegaBadgesManager === 'object'
+        && window.spBodegaBadgesManager !== null;
+}
+
+function _spLogLegacyBodegaBridge(message) {
+    const isLocal = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+    if (isLocal) {
+        console.info(`[SP Legacy->Modern Bodega] ${message}`);
+    }
+}
 
 function closeAllVerMenus(exceptId = null) {
     document.querySelectorAll(`.${SP_VER_MENU_CLASS}`).forEach((menu) => {
@@ -566,6 +654,11 @@ function _spNormalizePendingCount(value) {
 }
 
 async function _spFetchBodegaResumen(pedidoId) {
+    if (_spUseModernBodegaManager()) {
+        _spLogLegacyBodegaBridge('_spFetchBodegaResumen neutralizado (usa manager moderno)');
+        return null;
+    }
+
     const cacheKey = String(pedidoId || '');
     if (!cacheKey) return null;
     if (spBodegaResumenCache.has(cacheKey)) return spBodegaResumenCache.get(cacheKey);
@@ -593,6 +686,10 @@ async function _spFetchBodegaResumen(pedidoId) {
 
 async function _spRenderBodegaBadge(opcionBodega, pedidoId) {
     if (!opcionBodega) return;
+    if (_spUseModernBodegaManager() && window.spBodegaBadgesManager?.updateMenuOptionBadge) {
+        await window.spBodegaBadgesManager.updateMenuOptionBadge(opcionBodega, pedidoId);
+        return;
+    }
     const badge = opcionBodega.querySelector('[data-bodega-pendientes-badge]');
     if (!badge) return;
 
@@ -611,6 +708,11 @@ async function _spRenderBodegaBadge(opcionBodega, pedidoId) {
 }
 
 function _spRenderBadgeOnVerButton(button, pendingCount) {
+    if (_spUseModernBodegaManager()) {
+        _spLogLegacyBodegaBridge('_spRenderBadgeOnVerButton neutralizado (render moderno)');
+        return;
+    }
+
     if (!button) return;
     const badge = button.querySelector('[data-bodega-button-badge]');
     if (!badge) return;
@@ -626,6 +728,11 @@ function _spRenderBadgeOnVerButton(button, pendingCount) {
 }
 
 async function refreshVerButtonsBodegaBadges() {
+    if (_spUseModernBodegaManager() && typeof window.spBodegaBadgesManager?.refreshVerButtonsBodegaBadges === 'function') {
+        _spLogLegacyBodegaBridge('refreshVerButtonsBodegaBadges puente a manager moderno');
+        return window.spBodegaBadgesManager.refreshVerButtonsBodegaBadges();
+    }
+
     const buttons = Array.from(document.querySelectorAll('.btn-ver-dropdown[data-pedido-id]'));
     if (buttons.length === 0) return;
 
@@ -687,7 +794,7 @@ async function refreshVerButtonsBodegaBadges() {
 
         const data = await response.json();
         if (!data?.success || !Array.isArray(data.data)) {
-            console.warn('[BodegaBadges] Respuesta inválida del batch endpoint');
+            console.warn('[BodegaBadges] Respuesta invÃ¡lida del batch endpoint');
             return;
         }
 
@@ -708,6 +815,11 @@ async function refreshVerButtonsBodegaBadges() {
 }
 
 function _spEnsureBodegaNovedadesModal() {
+    if (_spUseModernBodegaManager()) {
+        _spLogLegacyBodegaBridge('_spEnsureBodegaNovedadesModal neutralizado (modal moderno)');
+        return null;
+    }
+
     if (!document.getElementById('spBodegaNovedadesModalStyles')) {
         const style = document.createElement('style');
         style.id = 'spBodegaNovedadesModalStyles';
@@ -762,7 +874,13 @@ function _spEnsureBodegaNovedadesModal() {
 }
 
 function _spRenderBodegaNovedadesLoading() {
+    if (_spUseModernBodegaManager()) {
+        _spLogLegacyBodegaBridge('_spRenderBodegaNovedadesLoading neutralizado (modal moderno)');
+        return;
+    }
+
     const modal = _spEnsureBodegaNovedadesModal();
+    if (!modal) return;
     const body = modal.querySelector('#spBodegaNovedadesBody');
     if (!body) return;
     body.innerHTML = `
@@ -774,7 +892,13 @@ function _spRenderBodegaNovedadesLoading() {
 }
 
 function _spRenderBodegaNovedadesContent(payload) {
+    if (_spUseModernBodegaManager()) {
+        _spLogLegacyBodegaBridge('_spRenderBodegaNovedadesContent neutralizado (modal moderno)');
+        return;
+    }
+
     const modal = _spEnsureBodegaNovedadesModal();
+    if (!modal) return;
     const body = modal.querySelector('#spBodegaNovedadesBody');
     const meta = modal.querySelector('#spBodegaNovedadesMeta');
     if (!body) return;
@@ -815,7 +939,7 @@ function _spRenderBodegaNovedadesContent(payload) {
                     <strong>Prenda:</strong> ${prendaNombre}
                 </div>
                 <div style="font-size:13px; color:#475569; margin-bottom:6px;">
-                    <strong>Descripción:</strong> ${prendaDescripcion}
+                    <strong>DescripciÃ³n:</strong> ${prendaDescripcion}
                 </div>
                 <div style="font-size:12px; color:#64748b; margin-bottom:4px; font-weight:700;">--Del Pedido</div>
                 <div style="font-size:13px; color:#475569; margin-bottom:8px;">
@@ -824,7 +948,7 @@ function _spRenderBodegaNovedadesContent(payload) {
                     <strong>Cantidad:</strong> ${cantidad}
                 </div>
                 <div style="font-size:13px; color:#475569; margin-bottom:8px;">
-                    <strong>Género:</strong> ${genero}
+                    <strong>GÃ©nero:</strong> ${genero}
                 </div>
                 <div style="font-size:14px; color:#111827; line-height:1.45; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
                     ${contenido || '<span style="color:#94a3b8;">Sin contenido</span>'}
@@ -837,6 +961,10 @@ function _spRenderBodegaNovedadesContent(payload) {
 }
 
 async function abrirModalNovedadesBodega(pedidoId, numeroPedido) {
+    if (_spUseModernBodegaManager() && typeof window.spBodegaBadgesManager?.abrirModalNovedadesBodega === 'function') {
+        _spLogLegacyBodegaBridge('abrirModalNovedadesBodega puente a manager moderno');
+        return window.spBodegaBadgesManager.abrirModalNovedadesBodega(pedidoId, numeroPedido);
+    }
     const modal = _spEnsureBodegaNovedadesModal();
     const title = modal.querySelector('#spBodegaNovedadesTitle');
     const meta = modal.querySelector('#spBodegaNovedadesMeta');
@@ -861,7 +989,7 @@ async function abrirModalNovedadesBodega(pedidoId, numeroPedido) {
         const payload = await response.json();
 
         if (!response.ok || !payload?.success) {
-            throw new Error(payload?.message || 'No se pudo cargar la información');
+            throw new Error(payload?.message || 'No se pudo cargar la informaciÃ³n');
         }
 
         _spRenderBodegaNovedadesContent(payload);
@@ -999,7 +1127,7 @@ function positionVerMenu(button, menu) {
     const menuWidth = menu.offsetWidth || 180;
     const menuHeight = menu.offsetHeight || 130;
 
-    // Abrir a la derecha del botón por defecto.
+    // Abrir a la derecha del botÃ³n por defecto.
     let left = rect.right + margin;
     let top = rect.top;
 
@@ -1040,7 +1168,7 @@ function abrirModalFiltro(columna) {
             campoNombre = 'numero';
             break;
         case 'numero':
-            titulo = 'Filtrar por Número';
+            titulo = 'Filtrar por NÃºmero';
             campoNombre = 'numero';
             break;
         case 'cliente':
@@ -1054,8 +1182,8 @@ function abrirModalFiltro(columna) {
         case 'estado': {
             titulo = 'Filtrar por Estado';
             campoNombre = 'estado';
-            const estadosDisplay = ['Pendiente', 'No iniciado', 'En Ejecución', 'Entregado', 'Anulada', 'Pendiente Supervisor', 'Pendiente Insumos', 'Pendiente Cartera', 'Rechazado Cartera', 'Devuelto a Asesora'];
-            const estadosDB    = ['Pendiente', 'No iniciado', 'En Ejecución', 'Entregado', 'Anulada', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'pendiente_cartera', 'RECHAZADO_CARTERA', 'DEVUELTO_A_ASESORA'];
+            const estadosDisplay = ['Pendiente', 'No iniciado', 'En EjecuciÃ³n', 'Entregado', 'Anulada', 'Pendiente Supervisor', 'Pendiente Insumos', 'Pendiente Cartera', 'Rechazado Cartera', 'Devuelto a Asesora'];
+            const estadosDB    = ['Pendiente', 'No iniciado', 'En EjecuciÃ³n', 'Entregado', 'Anulada', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'pendiente_cartera', 'RECHAZADO_CARTERA', 'DEVUELTO_A_ASESORA'];
             filtroContenido.innerHTML = `
                 <div class="form-group">
                     <input type="text" id="buscadorEstado" class="form-control" placeholder="Buscar estado..." style="margin-bottom: 1rem;">
@@ -1085,7 +1213,7 @@ function abrirModalFiltro(columna) {
             return;
         }
         case 'aprobacion_cartera': {
-            titulo = 'Filtrar por Aprobación Cartera';
+            titulo = 'Filtrar por AprobaciÃ³n Cartera';
             campoNombre = 'aprobacion_cartera';
             const opciones = [
                 { label: 'No aprobado por cartera', value: 'no_aprobado' },
@@ -1209,7 +1337,7 @@ function cargarOpcionesFiltro(campo, titulo, modal, filtroContenido) {
                     paginacion.style.display = shouldShowPagination ? 'flex' : 'none';
                     btnPrev.disabled = currentPage <= 1;
                     btnNext.disabled = currentPage >= totalPages;
-                    paginaInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+                    paginaInfo.textContent = `PÃ¡gina ${currentPage} de ${totalPages}`;
                 }
             }
 
@@ -1309,7 +1437,7 @@ document.getElementById('modalFiltro')?.addEventListener('click', function(e) {
     if (e.target === this) cerrarModalFiltro();
 });
 
-// ===== MODALES DE ÓRDENES =====
+// ===== MODALES DE Ã“RDENES =====
 function verOrdenComparar(ordenId) {
     document.getElementById(`ver-menu-${ordenId}`).style.display = 'none';
     abrirModalComparar(ordenId);
@@ -1319,7 +1447,7 @@ function cerrarModalVerOrden() {
     document.getElementById('modalVerOrden').style.display = 'none';
 }
 
-// Contador de caracteres del textarea de anulación
+// Contador de caracteres del textarea de anulaciÃ³n
 document.getElementById('motivoAnulacion')?.addEventListener('input', function() {
     document.getElementById('contadorActual').textContent = this.value.length;
     const btnConfirmar = document.getElementById('btnConfirmarAnulacion');
@@ -1361,6 +1489,23 @@ document.addEventListener('click', function(e) {
         if (!isOpen) {
             menu.style.display = 'block';
             positionVerMenu(btnVerDropdown, menu);
+
+            // Hook on-demand: al abrir menu Ver, sincronizar badges de bodega
+            // (boton Ver + opcion "Novedades Bodega") sin cargar nada en arranque.
+            const pedidoId = btnVerDropdown.getAttribute('data-pedido-id');
+            const opcionBodega = menu.querySelector('button[data-action="bodega-novedades"]');
+
+            if (window.spBodegaBadgesManager?.refreshVerButtonsBodegaBadges) {
+                window.spBodegaBadgesManager
+                    .refreshVerButtonsBodegaBadges({ onlyButton: btnVerDropdown })
+                    .catch(() => {});
+            }
+
+            if (window.spBodegaBadgesManager?.updateMenuOptionBadge && opcionBodega && pedidoId) {
+                window.spBodegaBadgesManager
+                    .updateMenuOptionBadge(opcionBodega, pedidoId)
+                    .catch(() => {});
+            }
         } else {
             menu.style.display = 'none';
         }
@@ -1370,14 +1515,16 @@ document.addEventListener('click', function(e) {
     const btnNovedades = e.target.closest('.btn-novedades');
     if (btnNovedades) {
         e.preventDefault();
-        const ordenId = btnNovedades.dataset.ordenId;
-        const novedadesJson = btnNovedades.getAttribute('data-novedades');
-        try {
-            const novedades = JSON.parse(novedadesJson);
-            abrirNovedades(ordenId, novedades);
-        } catch (err) {
-            console.error('[Novedades] Error al parsear JSON:', err);
-        }
+        const ordenId = String(btnNovedades.dataset.ordenId || '').trim();
+        if (!ordenId) return;
+
+        abrirNovedades(ordenId, ['Cargando novedades...']);
+        _spFetchNovedadesByOrderId(ordenId)
+            .then((novedades) => abrirNovedades(ordenId, novedades))
+            .catch((err) => {
+                console.error('[Novedades] Error al cargar novedades:', err);
+                abrirNovedades(ordenId, []);
+            });
         return;
     }
 
@@ -1391,9 +1538,56 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Función para aprobar orden
+function handleSupervisorRowActionClick(e) {
+    const btnRowAction = e.target.closest('.btn-accion[data-action]');
+    if (!btnRowAction) return;
+
+    e.preventDefault();
+    if (btnRowAction.disabled || btnRowAction.getAttribute('aria-disabled') === 'true') {
+        return;
+    }
+
+    const action = String(btnRowAction.getAttribute('data-action') || '').trim();
+    const pedidoId = Number.parseInt(String(btnRowAction.getAttribute('data-pedido-id') || ''), 10);
+    const pedidoNumero = String(btnRowAction.getAttribute('data-pedido-numero') || '').trim();
+
+    if (!Number.isFinite(pedidoId) || pedidoId <= 0) {
+        return;
+    }
+
+    if (action === 'aprobar' && typeof window.abrirModalAprobacion === 'function') {
+        window.abrirModalAprobacion(pedidoId, pedidoNumero);
+        return;
+    }
+
+    if (action === 'anular' && typeof window.abrirModalAnulacion === 'function') {
+        window.abrirModalAnulacion(pedidoId, pedidoNumero);
+        return;
+    }
+
+    if (action === 'ocultar' && typeof window.abrirModalOcultar === 'function') {
+        window.abrirModalOcultar(pedidoId, pedidoNumero);
+        return;
+    }
+
+    if (action === 'entregar') {
+        marcarTodasPrendasEntregadasPedido(pedidoId, pedidoNumero);
+    }
+}
+
+function bindSupervisorRowActionsDelegationOnce() {
+    const container = document.getElementById('supervisorPedidosIndexContent');
+    if (!container) return;
+    if (container.dataset.rowActionsDelegated === '1') return;
+    container.dataset.rowActionsDelegated = '1';
+    container.addEventListener('click', handleSupervisorRowActionClick);
+}
+
+bindSupervisorRowActionsDelegationOnce();
+
+// FunciÃ³n para aprobar orden
 async function aprobarOrden(ordenId, numeroOrden) {
-    const result = await _spNotify.confirm(`¿Deseas aprobar el pedido <strong>#${numeroOrden}</strong>?`, '¿Aprobar Pedido?');
+    const result = await _spNotify.confirm(`Â¿Deseas aprobar el pedido <strong>#${numeroOrden}</strong>?`, 'Â¿Aprobar Pedido?');
 
     if (!result.isConfirmed) return;
 
@@ -1411,7 +1605,7 @@ async function aprobarOrden(ordenId, numeroOrden) {
 
         if (data.success) {
             Swal.fire({
-                title: '¡Aprobado!',
+                title: 'Â¡Aprobado!',
                 html: `<p>${data.message || 'Pedido aprobado correctamente'}</p><p style="margin-top: 10px; font-weight: 600; color: #10b981;">Estado: ${data.estado}</p>`,
                 icon: 'success',
                 confirmButtonColor: '#10b981'
@@ -1450,20 +1644,38 @@ async function verOrdenDetalles(ordenId, numeroPedido = null) {
     }
 }
 
-function abrirSeguimiento(ordenId) {
+function esperarFuncionGlobal(nombre, timeoutMs = 3000, intervalMs = 60) {
+    return new Promise((resolve, reject) => {
+        const startedAt = Date.now();
+        const tick = () => {
+            if (typeof window[nombre] === 'function') {
+                resolve(window[nombre]);
+                return;
+            }
+            if ((Date.now() - startedAt) >= timeoutMs) {
+                reject(new Error(`Funcion global no disponible: ${nombre}`));
+                return;
+            }
+            setTimeout(tick, intervalMs);
+        };
+        tick();
+    });
+}
+
+async function abrirSeguimiento(ordenId) {
     const menu = document.getElementById(`ver-menu-${ordenId}`);
     if (menu) menu.style.display = 'none';
 
-    if (typeof openOrderTrackingModal === 'function') {
-        try {
-            openOrderTrackingModal(ordenId);
-        } catch (error) {
-            console.error('[abrirSeguimiento] Error:', error);
-            _spNotify.error('Error en modal de seguimiento: ' + error.message);
+    try {
+        if (typeof window.ensureTrackingRuntimeLoaded === 'function') {
+            await window.ensureTrackingRuntimeLoaded();
         }
-    } else {
-        console.error('[abrirSeguimiento] openOrderTrackingModal no está disponible');
-        _spNotify.error('El modal de seguimiento no está disponible. Intenta nuevamente.');
+
+        const openTracking = await esperarFuncionGlobal('openOrderTrackingModal');
+        await openTracking(ordenId);
+    } catch (error) {
+        console.error('[abrirSeguimiento] Error:', error);
+        _spNotify.error('El modal de seguimiento no estÃ¡ disponible. Intenta nuevamente.');
     }
 }
 
@@ -1524,3 +1736,5 @@ async function editarPedido(pedidoId) {
         window.edicionEnProgreso = false;
     }
 }
+
+

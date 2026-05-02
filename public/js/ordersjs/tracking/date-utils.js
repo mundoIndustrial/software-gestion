@@ -1,13 +1,15 @@
-'use strict';
+﻿'use strict';
 
-// Protección contra redeclaraciones si el script se carga múltiples veces
+// ProtecciÃ³n contra redeclaraciones si el script se carga mÃºltiples veces
 if (typeof DateUtils !== 'undefined') {
-  console.warn('[date-utils.js] DateUtils ya fue declarado, omitiendo redeclaración');
+  console.warn('[date-utils.js] DateUtils ya fue declarado, omitiendo redeclaraciÃ³n');
 } else {
-  // Utilidades para manejo de fechas y cálculo de días hábiles
+  // Utilidades para manejo de fechas y cÃ¡lculo de dÃ­as hÃ¡biles
   class DateUtils {
   constructor() {
     this.festivosCache = new Map();
+    this.festivosInFlight = new Map();
+    this.precargaFestivosPromise = null;
   }
 
   // Formatear fecha
@@ -52,7 +54,7 @@ if (typeof DateUtils !== 'undefined') {
         }
       }
       
-      // Para formatos estándar (ISO, etc.)
+      // Para formatos estÃ¡ndar (ISO, etc.)
       const date = new Date(dateString);
       return date.toLocaleDateString('es-ES', {
         day: '2-digit',
@@ -123,7 +125,7 @@ if (typeof DateUtils !== 'undefined') {
     return [];
   }
 
-  // Formatear duración humana
+  // Formatear duraciÃ³n humana
   formatDurationHuman(diffMs) {
     const totalSeconds = Math.floor((diffMs || 0) / 1000);
     const days = Math.floor(totalSeconds / 86400);
@@ -132,28 +134,52 @@ if (typeof DateUtils !== 'undefined') {
     const seconds = totalSeconds % 60;
 
     const parts = [];
-    if (days > 0) parts.push(`${days} ${days === 1 ? 'día' : 'días'}`);
+    if (days > 0) parts.push(`${days} ${days === 1 ? 'dÃ­a' : 'dÃ­as'}`);
     if (hours > 0) parts.push(`${hours}h`);
     if (minutes > 0) parts.push(`${minutes}m`);
     if (seconds > 0 || parts.length === 0) parts.push(`${seconds}s`);
     return parts.join(' ');
   }
 
-  // Precargar festivos del año actual y siguiente
+  // Precargar festivos del aÃ±o actual y siguiente
   async precargarFestivos() {
     const anioActual = new Date().getFullYear();
     const anioSiguiente = anioActual + 1;
-    
-    try {
-      // Precargar en paralelo
-      await Promise.all([
-        this.obtenerFestivos(anioActual),
-        this.obtenerFestivos(anioSiguiente)
-      ]);
-      console.log('[precargarFestivos] Festivos precargados correctamente');
-    } catch (error) {
-      console.warn('[precargarFestivos] Error precargando festivos:', error);
+
+    if (this.festivosCache.has(anioActual) && this.festivosCache.has(anioSiguiente)) {
+      console.log('[precargarFestivos] Cache hit: festivos ya precargados');
+      return Promise.resolve({
+        source: 'cache',
+        years: [anioActual, anioSiguiente]
+      });
     }
+
+    if (this.precargaFestivosPromise) {
+      console.log('[precargarFestivos] Reutilizando promise en curso (in-flight)');
+      return this.precargaFestivosPromise;
+    }
+
+    console.log('[precargarFestivos] Iniciando primer preload real');
+    this.precargaFestivosPromise = (async () => {
+      try {
+        await Promise.all([
+          this.obtenerFestivos(anioActual),
+          this.obtenerFestivos(anioSiguiente)
+        ]);
+        console.log('[precargarFestivos] Festivos precargados correctamente');
+        return {
+          source: 'network-or-cache',
+          years: [anioActual, anioSiguiente]
+        };
+      } catch (error) {
+        console.warn('[precargarFestivos] Error precargando festivos:', error);
+        throw error;
+      } finally {
+        this.precargaFestivosPromise = null;
+      }
+    })();
+
+    return this.precargaFestivosPromise;
   }
 
   // Obtener festivos desde la API (con cache)
@@ -162,66 +188,77 @@ if (typeof DateUtils !== 'undefined') {
       return this.festivosCache.get(anio);
     }
 
+    if (this.festivosInFlight.has(anio)) {
+      return this.festivosInFlight.get(anio);
+    }
+
     // En entorno de prueba (file://), usar directamente los festivos fijos
     if (window.location.protocol === 'file:') {
       console.log('[obtenerFestivos] Entorno de prueba detectado, usando festivos fijos');
       const festivosFijos = [
-        `${anio}-01-01`, // Año Nuevo
-        `${anio}-05-01`, // Día del Trabajo
-        `${anio}-07-01`, // Día de la Independencia
+        `${anio}-01-01`, // AÃ±o Nuevo
+        `${anio}-05-01`, // DÃ­a del Trabajo
+        `${anio}-07-01`, // DÃ­a de la Independencia
         `${anio}-07-20`, // Grito de Independencia
-        `${anio}-08-07`, // Batalla de Boyacá
-        `${anio}-12-08`, // Inmaculada Concepción
+        `${anio}-08-07`, // Batalla de BoyacÃ¡
+        `${anio}-12-08`, // Inmaculada ConcepciÃ³n
         `${anio}-12-25`, // Navidad
       ];
-      
+
       this.festivosCache.set(anio, festivosFijos);
       return festivosFijos;
     }
 
-    try {
-      const response = await fetch(`/api/festivos?year=${anio}`);
-      if (!response.ok) throw new Error('Error al obtener festivos');
-      
-      const data = await response.json();
-      if (data.success && data.data) {
-        this.festivosCache.set(anio, data.data);
-        return data.data;
+    const requestPromise = (async () => {
+      try {
+        const response = await fetch(`/api/festivos?year=${anio}`);
+        if (!response.ok) throw new Error('Error al obtener festivos');
+
+        const data = await response.json();
+        if (data.success && data.data) {
+          this.festivosCache.set(anio, data.data);
+          return data.data;
+        }
+
+        // Fallback: festivos fijos colombianos si la API falla
+        const festivosFijos = [
+          `${anio}-01-01`, // AÃ±o Nuevo
+          `${anio}-05-01`, // DÃ­a del Trabajo
+          `${anio}-07-01`, // DÃ­a de la Independencia
+          `${anio}-07-20`, // Grito de Independencia
+          `${anio}-08-07`, // Batalla de BoyacÃ¡
+          `${anio}-12-08`, // Inmaculada ConcepciÃ³n
+          `${anio}-12-25`, // Navidad
+        ];
+
+        this.festivosCache.set(anio, festivosFijos);
+        return festivosFijos;
+      } catch (error) {
+        console.warn('[obtenerFestivos] Error obteniendo festivos, usando fallback:', error);
+
+        // Fallback: festivos fijos colombianos
+        const festivosFijos = [
+          `${anio}-01-01`, // AÃ±o Nuevo
+          `${anio}-05-01`, // DÃ­a del Trabajo
+          `${anio}-07-01`, // DÃ­a de la Independencia
+          `${anio}-07-20`, // Grito de Independencia
+          `${anio}-08-07`, // Batalla de BoyacÃ¡
+          `${anio}-12-08`, // Inmaculada ConcepciÃ³n
+          `${anio}-12-25`, // Navidad
+        ];
+
+        this.festivosCache.set(anio, festivosFijos);
+        return festivosFijos;
+      } finally {
+        this.festivosInFlight.delete(anio);
       }
-      
-      // Fallback: festivos fijos colombianos si la API falla
-      const festivosFijos = [
-        `${anio}-01-01`, // Año Nuevo
-        `${anio}-05-01`, // Día del Trabajo
-        `${anio}-07-01`, // Día de la Independencia
-        `${anio}-07-20`, // Grito de Independencia
-        `${anio}-08-07`, // Batalla de Boyacá
-        `${anio}-12-08`, // Inmaculada Concepción
-        `${anio}-12-25`, // Navidad
-      ];
-      
-      this.festivosCache.set(anio, festivosFijos);
-      return festivosFijos;
-    } catch (error) {
-      console.warn('[obtenerFestivos] Error obteniendo festivos, usando fallback:', error);
-      
-      // Fallback: festivos fijos colombianos
-      const festivosFijos = [
-        `${anio}-01-01`, // Año Nuevo
-        `${anio}-05-01`, // Día del Trabajo
-        `${anio}-07-01`, // Día de la Independencia
-        `${anio}-07-20`, // Grito de Independencia
-        `${anio}-08-07`, // Batalla de Boyacá
-        `${anio}-12-08`, // Inmaculada Concepción
-        `${anio}-12-25`, // Navidad
-      ];
-      
-      this.festivosCache.set(anio, festivosFijos);
-      return festivosFijos;
-    }
+    })();
+
+    this.festivosInFlight.set(anio, requestPromise);
+    return requestPromise;
   }
 
-  // Calcular días hábiles entre dos fechas (replicando lógica exacta del backend)
+  // Calcular dÃ­as hÃ¡biles entre dos fechas (replicando lÃ³gica exacta del backend)
   async calcularDiasHabiles(fechaInicio, fechaFin) {
     if (!fechaInicio || !fechaFin) return 0;
 
@@ -232,14 +269,14 @@ if (typeof DateUtils !== 'undefined') {
     if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return 0;
     if (fin < inicio) return 0;
     
-    // Si las fechas son iguales, retornar 0 (no cuenta el mismo día)
+    // Si las fechas son iguales, retornar 0 (no cuenta el mismo dÃ­a)
     if (inicio.toDateString() === fin.toDateString()) return 0;
 
     try {
-      // Obtener festivos del año de inicio
+      // Obtener festivos del aÃ±o de inicio
       let festivos = await this.obtenerFestivos(inicio.getFullYear());
       
-      // Agregar festivos del siguiente año si es necesario
+      // Agregar festivos del siguiente aÃ±o si es necesario
       if (fin.getFullYear() > inicio.getFullYear()) {
         const festivosSiguiente = await this.obtenerFestivos(fin.getFullYear());
         festivos = [...festivos, ...festivosSiguiente];
@@ -250,7 +287,7 @@ if (typeof DateUtils !== 'undefined') {
       
       // Iterar desde la fecha de inicio hasta la fecha fin (inclusive)
       while (actual <= fin) {
-        // Verificar si no es sábado (6) ni domingo (0)
+        // Verificar si no es sÃ¡bado (6) ni domingo (0)
         if (actual.getDay() !== 0 && actual.getDay() !== 6) {
           // Verificar si no es festivo
           const fechaStr = actual.toISOString().slice(0, 10);
@@ -262,18 +299,18 @@ if (typeof DateUtils !== 'undefined') {
         actual.setDate(actual.getDate() + 1);
       }
 
-      // Excluir el día de inicio solo si es un día hábil (si cae en fin de semana/festivo ya no fue contado)
+      // Excluir el dÃ­a de inicio solo si es un dÃ­a hÃ¡bil (si cae en fin de semana/festivo ya no fue contado)
       const inicioStr = inicio.toISOString().slice(0, 10);
       const inicioEsDiaHabil = inicio.getDay() !== 0 && inicio.getDay() !== 6 && !festivos.includes(inicioStr);
       return Math.max(0, diasHabiles - (inicioEsDiaHabil ? 1 : 0));
     } catch (error) {
       console.error('[calcularDiasHabiles] Error:', error);
-      // Fallback a cálculo simple sin festivos
+      // Fallback a cÃ¡lculo simple sin festivos
       return this.calcularDiasHabilesSimple(fechaInicio, fechaFin);
     }
   }
 
-  // Versión síncrona para compatibilidad (usa cache o fallback)
+  // VersiÃ³n sÃ­ncrona para compatibilidad (usa cache o fallback)
   calcularDiasHabilesSync(fechaInicio, fechaFin) {
     if (!fechaInicio || !fechaFin) return 0;
 
@@ -284,27 +321,27 @@ if (typeof DateUtils !== 'undefined') {
     if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return 0;
     if (fin < inicio) return 0;
     
-    // Si las fechas son iguales, retornar 0 (no cuenta el mismo día)
+    // Si las fechas son iguales, retornar 0 (no cuenta el mismo dÃ­a)
     if (inicio.toDateString() === fin.toDateString()) return 0;
 
-    // Usar festivos del cache si están disponibles, sino usar fallback
+    // Usar festivos del cache si estÃ¡n disponibles, sino usar fallback
     const anio = inicio.getFullYear();
     let festivos = this.festivosCache.get(anio);
     
     if (!festivos) {
       // Fallback: festivos fijos colombianos
       festivos = [
-        `${anio}-01-01`, // Año Nuevo
-        `${anio}-05-01`, // Día del Trabajo
-        `${anio}-07-01`, // Día de la Independencia
+        `${anio}-01-01`, // AÃ±o Nuevo
+        `${anio}-05-01`, // DÃ­a del Trabajo
+        `${anio}-07-01`, // DÃ­a de la Independencia
         `${anio}-07-20`, // Grito de Independencia
-        `${anio}-08-07`, // Batalla de Boyacá
-        `${anio}-12-08`, // Inmaculada Concepción
+        `${anio}-08-07`, // Batalla de BoyacÃ¡
+        `${anio}-12-08`, // Inmaculada ConcepciÃ³n
         `${anio}-12-25`, // Navidad
       ];
     }
 
-    // Agregar festivos del siguiente año si es necesario
+    // Agregar festivos del siguiente aÃ±o si es necesario
     if (fin.getFullYear() > inicio.getFullYear()) {
       const festivosSiguiente = this.festivosCache.get(fin.getFullYear()) || [
         `${fin.getFullYear()}-01-01`,
@@ -323,7 +360,7 @@ if (typeof DateUtils !== 'undefined') {
     
     // Iterar desde la fecha de inicio hasta la fecha fin (inclusive)
     while (actual <= fin) {
-      // Verificar si no es sábado (6) ni domingo (0)
+      // Verificar si no es sÃ¡bado (6) ni domingo (0)
       if (actual.getDay() !== 0 && actual.getDay() !== 6) {
         // Verificar si no es festivo
         const fechaStr = actual.toISOString().slice(0, 10);
@@ -335,13 +372,13 @@ if (typeof DateUtils !== 'undefined') {
       actual.setDate(actual.getDate() + 1);
     }
 
-    // Excluir el día de inicio solo si es un día hábil (si cae en fin de semana/festivo ya no fue contado)
+    // Excluir el dÃ­a de inicio solo si es un dÃ­a hÃ¡bil (si cae en fin de semana/festivo ya no fue contado)
     const inicioStr = inicio.toISOString().slice(0, 10);
     const inicioEsDiaHabil = inicio.getDay() !== 0 && inicio.getDay() !== 6 && !festivos.includes(inicioStr);
     return Math.max(0, diasHabiles - (inicioEsDiaHabil ? 1 : 0));
   }
 
-  // Cálculo simple sin festivos (fallback)
+  // CÃ¡lculo simple sin festivos (fallback)
   calcularDiasHabilesSimple(fechaInicio, fechaFin) {
     if (!fechaInicio || !fechaFin) return 0;
 
@@ -371,7 +408,7 @@ if (typeof DateUtils !== 'undefined') {
 window.DateUtils = DateUtils;
 window.dateUtils = new DateUtils();
 
-// Funciones globales para compatibilidad (sin recursión)
+// Funciones globales para compatibilidad (sin recursiÃ³n)
 window.formatDate = function(dateString) {
   return window.dateUtils.formatDate(dateString);
 };
@@ -400,4 +437,5 @@ window.calcularDiasHabilesSync = function(fechaInicio, fechaFin) {
   return window.dateUtils.calcularDiasHabilesSync(fechaInicio, fechaFin);
 };
 
-} // Cierre del else - protección contra redeclaraciones
+} // Cierre del else - protecciÃ³n contra redeclaraciones
+

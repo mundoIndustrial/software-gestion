@@ -17,6 +17,7 @@ use App\Models\SeleccionPedido;
 use App\Models\TipoCotizacion;
 use App\Services\CalculadorDiasService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Servicio de lectura para supervisor sobre pedidos de produccion.
@@ -35,6 +36,11 @@ class PedidoProduccionReadService
 
     public function listOrders(ListOrdersRequest $request)
     {
+        $perfEnabled = app()->environment(['local', 'development'])
+            && request()?->attributes?->get('sp_ordenes_perf_enabled') === true;
+        $perfStartedAt = microtime(true);
+        $filtersStartedAt = microtime(true);
+
         $query = PedidoProduccion::withTrashed()
             ->select([
                 'id',
@@ -60,8 +66,24 @@ class PedidoProduccionReadService
         $this->applySearchFilter($query, $request);
         $this->applyColumnFilters($query, $request);
         $this->applyDateFilters($query, $request);
+        $filtersMs = (microtime(true) - $filtersStartedAt) * 1000;
 
-        return $this->orderAndPaginate($query, $request);
+        $queryExecutionStartedAt = microtime(true);
+        $result = $this->orderAndPaginate($query, $request);
+        $queryExecutionMs = (microtime(true) - $queryExecutionStartedAt) * 1000;
+
+        if ($perfEnabled) {
+            Log::info('[SP_ORDENES_PERF] READ_SERVICE_LIST_ORDERS', [
+                'filters_build_ms' => round($filtersMs, 2),
+                'query_main_and_eager_ms' => round($queryExecutionMs, 2),
+                'service_total_ms' => round((microtime(true) - $perfStartedAt) * 1000, 2),
+                'current_page' => method_exists($result, 'currentPage') ? $result->currentPage() : null,
+                'per_page' => method_exists($result, 'perPage') ? $result->perPage() : null,
+                'items_count' => method_exists($result, 'count') ? $result->count() : null,
+            ]);
+        }
+
+        return $result;
     }
 
     public function findOrderForComparison(int $orderId): ?PedidoProduccion

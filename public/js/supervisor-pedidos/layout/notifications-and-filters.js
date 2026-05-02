@@ -364,6 +364,9 @@
         let sidebarCountsPromise = null;
         let sidebarCountsFetchedAt = 0;
         const SIDEBAR_COUNTS_TTL_MS = 8000;
+        let controlCalidadPromise = null;
+        let controlCalidadFetchedAt = 0;
+        let sidebarBadgesBootstrapped = false;
 
         function fetchSidebarOrderCounts() {
             const now = Date.now();
@@ -408,8 +411,15 @@
             const badgesControlCalidad = document.querySelectorAll('[data-control-calidad-badge]');
             if (!badgesControlCalidad.length) return;
 
-            fetch('/api/supervisor-pedidos/recibos/pendientes-control-calidad-count')
-                .then(response => response.json())
+            const now = Date.now();
+            if (!controlCalidadPromise || (now - controlCalidadFetchedAt) >= SIDEBAR_COUNTS_TTL_MS) {
+                controlCalidadFetchedAt = now;
+                controlCalidadPromise = fetch('/api/supervisor-pedidos/recibos/pendientes-control-calidad-count')
+                    .then(response => response.json())
+                    .catch(() => ({ success: false, data: { count: 0 } }));
+            }
+
+            controlCalidadPromise
                 .then(data => {
                     const rawCount = (!data || !data.success)
                         ? 0
@@ -471,6 +481,17 @@
             cargarBadgeSidebarPendienteCartera();
         }, 300);
 
+        function bootstrapSidebarBadges() {
+            if (sidebarBadgesBootstrapped) return;
+            if (isCarteraRoute()) return;
+            sidebarBadgesBootstrapped = true;
+
+            cargarBadgeSidebarPedidos();
+            cargarBadgeSidebarControlCalidad();
+            cargarBadgeSidebarPendienteCartera();
+            onEchoReady(() => iniciarRealtimeBadgeSidebarPedidos());
+        }
+
         function iniciarRealtimeBadgeSidebarPedidos() {
             if (isCarteraRoute()) return;
             if (badgesRealtimeSubscribed) return;
@@ -497,12 +518,15 @@
         document.addEventListener('DOMContentLoaded', function() {
             if (isCarteraRoute()) return;
 
-            runWhenIdle(() => {
-                cargarBadgeSidebarPedidos();
-                cargarBadgeSidebarControlCalidad();
-                cargarBadgeSidebarPendienteCartera();
-                onEchoReady(() => iniciarRealtimeBadgeSidebarPedidos());
-            }, 2200);
+            // Diferir requests de sidebar: al terminar load + idle o por primera interaccion.
+            window.addEventListener('load', function() {
+                runWhenIdle(() => bootstrapSidebarBadges(), 4500);
+            }, { once: true });
+
+            const triggerByInteraction = () => bootstrapSidebarBadges();
+            ['pointerdown', 'keydown', 'touchstart'].forEach((eventName) => {
+                window.addEventListener(eventName, triggerByInteraction, { once: true, passive: true });
+            });
         });
 
         // Recargar contador cada 30 segundos (solo en supervisores)

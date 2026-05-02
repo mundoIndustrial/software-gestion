@@ -32,6 +32,8 @@ use App\Http\Controllers\Controller;
 use App\Models\PedidoProduccion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
 
 class SupervisorOrdersApiController extends Controller
@@ -55,22 +57,93 @@ class SupervisorOrdersApiController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $perfEnabled = app()->environment(['local', 'development']);
+        $perfStartedAt = microtime(true);
+
+        if ($perfEnabled) {
+            $request->attributes->set('sp_ordenes_perf_enabled', true);
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+        }
+
         $params = $request->query();
         $params['user_id'] = $request->user()?->id;
 
+        $useCaseStartedAt = microtime(true);
         $response = $this->listOrdersUseCase->execute(new ListOrdersRequest($params));
+        $useCaseMs = (microtime(true) - $useCaseStartedAt) * 1000;
         extract($response->toArray());
 
+        $viewStartedAt = microtime(true);
         $html = View::make('supervisor-pedidos.partials.tabla-ordenes', compact('ordenes', 'estados', 'pedidosSeleccionados'))
             ->render();
+        $viewMs = (microtime(true) - $viewStartedAt) * 1000;
 
-        return response()->json([
+        $responseBody = [
             'success' => true,
             'message' => 'Ordenes recuperadas correctamente',
             'data' => array_merge($response->toArray(), [
                 'html' => $html,
             ]),
-        ]);
+        ];
+
+        if ($perfEnabled) {
+            $serializeStartedAt = microtime(true);
+            $encoded = json_encode($responseBody);
+            $serializeMs = (microtime(true) - $serializeStartedAt) * 1000;
+            $payloadBytes = is_string($encoded) ? strlen($encoded) : 0;
+
+            $queries = DB::getQueryLog();
+            $sqlCount = count($queries);
+            $sqlTotalMs = array_sum(array_map(static fn ($q) => (float) ($q['time'] ?? 0), $queries));
+
+            usort($queries, static fn ($a, $b) => ((float) ($b['time'] ?? 0)) <=> ((float) ($a['time'] ?? 0)));
+            $topSlowQueries = array_map(static function (array $q) {
+                return [
+                    'time_ms' => round((float) ($q['time'] ?? 0), 2),
+                    'sql' => (string) ($q['query'] ?? ''),
+                    'bindings_count' => count($q['bindings'] ?? []),
+                ];
+            }, array_slice($queries, 0, 10));
+
+            $nPlusOneSignals = [];
+            $fingerprints = [];
+            foreach ($queries as $q) {
+                $sql = (string) ($q['query'] ?? '');
+                $normalized = preg_replace('/\s+/', ' ', trim($sql));
+                $normalized = preg_replace('/\bin\s*\(\s*\?(\s*,\s*\?)*\s*\)/i', 'IN(?)', (string) $normalized);
+                $normalized = preg_replace('/=\s*\?/i', '=?', (string) $normalized);
+                $fingerprints[$normalized] = ($fingerprints[$normalized] ?? 0) + 1;
+            }
+            foreach ($fingerprints as $fingerprint => $times) {
+                if ($times >= 5) {
+                    $nPlusOneSignals[] = [
+                        'repeated_times' => $times,
+                        'sql_fingerprint' => $fingerprint,
+                    ];
+                }
+            }
+
+            $totalRequestMs = (microtime(true) - $perfStartedAt) * 1000;
+            Log::info('[SP_ORDENES_PERF] ENDPOINT_METRICS', [
+                'route' => '/api/supervisor-pedidos/ordenes',
+                'request_ms_total' => round($totalRequestMs, 2),
+                'use_case_ms' => round($useCaseMs, 2),
+                'view_render_ms' => round($viewMs, 2),
+                'json_serialize_ms' => round($serializeMs, 2),
+                'sql_total_ms' => round($sqlTotalMs, 2),
+                'sql_queries_count' => $sqlCount,
+                'top_10_slowest_queries' => $topSlowQueries,
+                'n_plus_one_signals' => array_slice($nPlusOneSignals, 0, 10),
+                'payload_bytes' => $payloadBytes,
+                'payload_kb' => round($payloadBytes / 1024, 2),
+                'orders_count' => method_exists($ordenes, 'count') ? $ordenes->count() : null,
+                'page' => method_exists($ordenes, 'currentPage') ? $ordenes->currentPage() : null,
+                'per_page' => method_exists($ordenes, 'perPage') ? $ordenes->perPage() : null,
+            ]);
+        }
+
+        return response()->json($responseBody);
     }
 
     public function indexFragment(Request $request): JsonResponse
@@ -116,6 +189,23 @@ class SupervisorOrdersApiController extends Controller
             'success' => true,
             'message' => 'Detalle de orden recuperado correctamente',
             'data' => $response->toArray(),
+        ]);
+    }
+
+    public function novedades(int $id): JsonResponse
+    {
+        $pedido = PedidoProduccion::withTrashed()
+            ->select(['id', 'numero_pedido', 'novedades'])
+            ->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Novedades recuperadas correctamente',
+            'data' => [
+                'id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'novedades' => $pedido->novedades ?? '',
+            ],
         ]);
     }
 

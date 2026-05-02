@@ -171,7 +171,9 @@
                         @if($estado === 'PENDIENTE_SUPERVISOR')
                             @if(!$orden->es_solo_epp)
                             <button class="btn-accion btn-accion--aprobar"
-                                onclick="abrirModalAprobacion({{ $orden->id }}, '{{ str_replace('#', '', $numeroPedido) }}')"
+                                data-action="aprobar"
+                                data-pedido-id="{{ $orden->id }}"
+                                data-pedido-numero="{{ str_replace('#', '', $numeroPedido) }}"
                                 title="Aprobar Pedido">
                                 <i class="fas fa-check"></i>
                             </button>
@@ -182,7 +184,9 @@
                         @if($estado === 'PENDIENTE_SUPERVISOR')
                             @if(!$orden->es_solo_epp)
                             <button class="btn-accion btn-accion--anular"
-                                onclick="abrirModalAnulacion({{ $orden->id }}, '{{ $numeroPedido }}')"
+                                data-action="anular"
+                                data-pedido-id="{{ $orden->id }}"
+                                data-pedido-numero="{{ $numeroPedido }}"
                                 title="Pasar a Revisión">
                                 <i class="fas fa-ban"></i>
                             </button>
@@ -190,7 +194,9 @@
                         @endif
 
                         <button class="btn-accion {{ $canBulkDeliver ? '' : 'btn-accion--disabled' }}"
-                            onclick="{{ $canBulkDeliver ? "marcarTodasPrendasEntregadasPedido({$orden->id}, '" . str_replace('#', '', $numeroPedido) . "')" : 'return false;' }}"
+                            data-action="entregar"
+                            data-pedido-id="{{ $orden->id }}"
+                            data-pedido-numero="{{ str_replace('#', '', $numeroPedido) }}"
                             title="{{ $canBulkDeliver ? 'Marcar todas las prendas entregadas' : 'Todas las prendas ya fueron entregadas' }}"
                             {{ $canBulkDeliver ? '' : 'disabled aria-disabled=true' }}
                             style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%); color: #ffffff;">
@@ -199,7 +205,9 @@
 
                         <!-- Botón Ocultar -->
                         <button class="btn-accion btn-accion--ocultar"
-                            onclick="abrirModalOcultar({{ $orden->id }}, '{{ str_replace('#', '', $numeroPedido) }}')"
+                            data-action="ocultar"
+                            data-pedido-id="{{ $orden->id }}"
+                            data-pedido-numero="{{ str_replace('#', '', $numeroPedido) }}"
                             title="Ocultar Pedido">
                             <i class="fas fa-eye-slash"></i>
                         </button>
@@ -252,7 +260,8 @@
                         @if($orden->novedades_count > 0)
                             <button class="btn-novedades" type="button"
                                 data-orden-id="{{ $orden->id }}"
-                                data-novedades="{{ json_encode($orden->novedades, JSON_HEX_APOS | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) }}"
+                                data-has-novedades="1"
+                                data-novedades-count="{{ (int) $orden->novedades_count }}"
                                 style="background: #e8f3ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; border: 1px solid #bfdbfe; cursor: pointer; transition: all 0.2s ease;">
                                 {{ $orden->novedades_count }} novedades
                             </button>
