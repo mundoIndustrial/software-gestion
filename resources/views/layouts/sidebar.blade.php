@@ -568,8 +568,20 @@
                   <span class="menu-label">Seguimiento</span>
                 </a>
               </li>
+              @if(auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('admin'))
+              <li class="submenu-item">
+                <a href="{{ route('entregas-talleres.index') }}"
+                   class="menu-link {{ request()->routeIs('entregas-talleres.*') ? 'active' : '' }}"
+                   aria-label="Entregas de talleres">
+                  <span class="material-symbols-rounded" aria-hidden="true">construction</span>
+                  <span class="menu-label">Talleres</span>
+                </a>
+              </li>
+              @endif
+
             </ul>
           </li>
+
 
           <!-- Tableros -->
           <li class="submenu-item">

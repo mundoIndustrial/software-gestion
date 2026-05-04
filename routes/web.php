@@ -174,6 +174,8 @@ require base_path('routes/festivos.php');
 require base_path('routes/broadcasting.php');
 require base_path('routes/seguimiento-proceso.php');
 require base_path('routes/epp.php');
+require base_path('routes/entregas-talleres.php');
+
 // ========================================
 
 

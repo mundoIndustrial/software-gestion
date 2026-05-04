@@ -8,8 +8,8 @@
 
         const userBtn = document.getElementById('userBtn');
         const userMenu = document.getElementById('userMenu');
-        const notificationBtn = document.getElementById('notificationBtn');
-        const notificationMenu = document.getElementById('notificationMenu');
+        const notificationBtn = document.getElementById('notificationBtn') || document.getElementById('notificacionesBtn');
+        const notificationMenu = document.getElementById('notificationMenu') || document.getElementById('notificacionesMenu');
         const mobileToggle = document.getElementById('mobileToggle');
         const sidebarEl = document.getElementById('sidebar');
         const esUIAsesores = document.body?.dataset?.notificationsUi === 'asesores' ||

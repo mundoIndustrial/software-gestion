@@ -112,9 +112,9 @@ function setupEchoListener() {
 
 // Configurar listeners del UI
 function setupUIListeners() {
-    const notificationBtn = document.getElementById('notificationBtn');
-    const notificationMenu = document.getElementById('notificationMenu');
-    const markAllReadBtn = document.querySelector('.mark-all-read');
+    const notificationBtn = document.getElementById('notificationBtn') || document.getElementById('notificacionesBtn');
+    const notificationMenu = document.getElementById('notificationMenu') || document.getElementById('notificacionesMenu');
+    const markAllReadBtn = document.querySelector('.mark-all-read') || document.getElementById('notificacionesMarkAll');
     
     // Toggle del dropdown
     if (notificationBtn && notificationMenu) {
@@ -239,7 +239,7 @@ async function updateUnreadCount() {
 
 // Actualizar badge de notificaciones
 function updateNotificationBadge(count) {
-    const badge = document.getElementById('notificationBadge');
+    const badge = document.getElementById('notificationBadge') || document.getElementById('notificacionesBadge');
     if (badge) {
         badge.textContent = count;
         badge.style.display = count > 0 ? 'block' : 'none';
@@ -249,7 +249,7 @@ function updateNotificationBadge(count) {
 
 // Renderizar notificaciones
 function renderNotifications(notifications) {
-    const notificationList = document.getElementById('notificationList');
+    const notificationList = document.getElementById('notificationList') || document.getElementById('notificacionesList');
     if (!notificationList) return;
     
     notificationList.innerHTML = '';

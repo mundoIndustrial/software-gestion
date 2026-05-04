@@ -287,7 +287,24 @@
                             </a>
                             <div class="menu-divider"></div>
                         @endif
+                        @if(Auth::user()->hasRole('vista-costura'))
+                            @if(request()->routeIs('entregas-talleres.*'))
+                                <a href="{{ url('/operario/dashboard') }}" class="menu-item">
+                                    <span class="material-symbols-rounded">arrow_back</span>
+                                    <span>Volver a pedidos</span>
+                                </a>
+                            @else
+                                <a href="{{ route('entregas-talleres.index') }}" class="menu-item">
+                                    <span class="material-symbols-rounded">construction</span>
+                                    <span>Entregas Talleres</span>
+                                </a>
+                            @endif
+                            <div class="menu-divider"></div>
+                        @endif
+
+
                         <form method="POST" action="{{ route('logout') }}">
+
                             @csrf
                             <button type="submit" class="menu-item logout">
                                 <span class="material-symbols-rounded">logout</span>
