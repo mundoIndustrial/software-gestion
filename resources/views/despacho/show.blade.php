@@ -106,10 +106,10 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
             <table class="w-full border-collapse text-sm">
                 <thead style="position: sticky; top: 0; z-index: 10;">
                     <tr class="bg-blue-600 text-white shadow-md">
-                        <th class="px-2 py-3 text-center font-bold w-14">Versión</th>
+                        <th class="px-2 py-3 text-center font-bold w-36 whitespace-nowrap">Versión</th>
                         <th class="px-4 py-3 text-left font-bold">Nombre</th>
-                        <th class="px-4 py-3 text-center font-bold w-20">Cantidad</th>
-                        <th class="px-4 py-3 text-center font-bold w-32">Fecha & Hora</th>
+                        <th class="px-4 py-3 text-center font-bold w-36 whitespace-nowrap">Cantidad</th>
+                        <th class="px-4 py-3 text-center font-bold w-32 whitespace-nowrap">Fecha & Hora</th>
                     </tr>
                 </thead>
                 <tbody>
