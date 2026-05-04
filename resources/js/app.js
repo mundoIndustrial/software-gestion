@@ -30,7 +30,7 @@ if (moduleName !== 'insumos-materiales') {
 |--------------------------------------------------------------------------
 */
 const currentPath = window.location?.pathname || '';
-const isOperarioRoute = currentPath.startsWith('/operario');
+const isOperarioRoute = currentPath.startsWith('/operario') || currentPath.startsWith('/entregas-talleres');
 
 if (isOperarioRoute) {
     Promise.all([

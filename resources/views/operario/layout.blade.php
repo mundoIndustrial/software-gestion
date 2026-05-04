@@ -291,7 +291,7 @@
                             @if(request()->routeIs('entregas-talleres.*'))
                                 <a href="{{ url('/operario/dashboard') }}" class="menu-item">
                                     <span class="material-symbols-rounded">arrow_back</span>
-                                    <span>Volver a pedidos</span>
+                                    <span>Volver a recibos</span>
                                 </a>
                             @else
                                 <a href="{{ route('entregas-talleres.index') }}" class="menu-item">
