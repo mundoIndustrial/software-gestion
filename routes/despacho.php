@@ -85,6 +85,9 @@ Route::prefix('despacho')
 
         Route::get('/entregados', [DespachoPendientesController::class, 'entregados'])
             ->name('despacho.entregados');
+        
+        Route::get('/anulados', [DespachoPendientesController::class, 'anulados'])
+            ->name('despacho.anulados');
 
         Route::get('/historial-pendientes', [DespachoPendientesController::class, 'historialPendientes'])
             ->name('despacho.historial-pendientes');
@@ -103,6 +106,9 @@ Route::prefix('despacho')
 
         Route::get('/api/entregados', [DespachoPendientesController::class, 'obtenerEntregados'])
             ->name('despacho.api.entregados');
+        
+        Route::get('/api/anulados', [DespachoPendientesController::class, 'obtenerAnulados'])
+            ->name('despacho.api.anulados');
 
         Route::get('/api/historial-pendientes', [DespachoPendientesController::class, 'obtenerHistorialPendientes'])
             ->name('despacho.api.historial-pendientes');

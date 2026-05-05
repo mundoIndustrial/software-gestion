@@ -60,6 +60,18 @@ class DespachoPendientesController extends Controller
     }
 
     /**
+     * Vista de pedidos anulados
+     */
+    public function anulados(Request $request)
+    {
+        $search = $request->query('search', '');
+
+        return view('despacho.anulados', [
+            'search' => $search,
+        ]);
+    }
+
+    /**
      * Vista del historial de todos los pendientes (actuales e históricos)
      */
     public function historialPendientes(Request $request)
@@ -198,6 +210,27 @@ class DespachoPendientesController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener pedidos entregados: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * API para obtener pedidos anulados
+     */
+    public function obtenerAnulados(Request $request)
+    {
+        try {
+            return response()->json(
+                $this->service->obtenerAnuladosData(
+                    search: (string) $request->query('search', ''),
+                    page: (int) $request->query('page', 1),
+                    perPage: (int) $request->query('per_page', 10)
+                )
+            );
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener pedidos anulados: ' . $e->getMessage(),
             ]);
         }
     }

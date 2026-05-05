@@ -32,6 +32,11 @@
 @section('content')
 <div class="min-h-screen bg-white">
     <div class="max-w-7xl mx-auto">
+        @php
+            $detalleRouteName = ($routeName ?? '') === 'gestion-bodega.pedidos-anulados'
+                ? 'despacho.show'
+                : 'gestion-bodega.pedidos-show';
+        @endphp
         <!-- Buscador -->
         <div class="px-6 py-4 border-b border-slate-200">
             <form method="GET" class="flex gap-2">
@@ -101,7 +106,7 @@
                                                title="Marcar pedido como revisado">
                                     </td>
                                     <td class="px-6 py-4 text-center flex gap-2 justify-center items-center">
-                                        <a href="{{ route('gestion-bodega.pedidos-show', $pedidoData['id']) }}"
+                                        <a href="{{ route($detalleRouteName, $pedidoData['id']) }}"
                                            class="inline-flex items-center justify-center p-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded transition-colors"
                                            onclick="abrirDetallePedidoInline(event, {{ $pedidoData['id'] }})">
                                             <span class="material-symbols-rounded text-base">visibility</span>

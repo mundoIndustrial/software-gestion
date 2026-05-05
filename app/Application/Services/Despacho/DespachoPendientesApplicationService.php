@@ -414,6 +414,60 @@ class DespachoPendientesApplicationService
         ];
     }
 
+    public function obtenerAnuladosData(
+        string $search = '',
+        int $page = 1,
+        int $perPage = 10
+    ): array {
+        $query = PedidoProduccion::query()
+            ->where('estado', 'Anulada')
+            ->whereNotNull('numero_pedido')
+            ->where('numero_pedido', '!=', '')
+            ->orderByDesc('numero_pedido');
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('numero_pedido', 'like', "%{$search}%")
+                    ->orWhere('cliente', 'like', "%{$search}%");
+            });
+        }
+
+        $total = $query->count();
+        $pedidos = $query->skip(($page - 1) * $perPage)
+            ->take($perPage)
+            ->get();
+
+        $pedidos->transform(function ($pedido) {
+            $pedido->fecha_creacion = $pedido->created_at ? $pedido->created_at->format('d/m/Y') : '';
+            $pedido->fecha_anulacion = $pedido->updated_at ? $pedido->updated_at->format('d/m/Y h:i A') : '';
+            return $pedido;
+        });
+
+        return [
+            'success' => true,
+            'data' => $pedidos->map(function ($pedido) {
+                return [
+                    'id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cliente' => $pedido->cliente,
+                    'estado' => $pedido->estado,
+                    'fecha_anulacion' => $pedido->fecha_anulacion,
+                    'fecha_creacion' => $pedido->fecha_creacion,
+                ];
+            }),
+            'total' => $total,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => $perPage > 0 ? (int) ceil($total / $perPage) : 1,
+                'from' => $total > 0 ? ($page - 1) * $perPage + 1 : null,
+                'to' => min($page * $perPage, $total),
+                'has_more' => $page < ceil($total / $perPage),
+            ],
+        ];
+    }
+
     public function obtenerTodosLosPedidosData(string $search = ''): array
     {
         // TODO: completar caso de uso; se mantiene comportamiento legado
@@ -840,4 +894,3 @@ class DespachoPendientesApplicationService
         }
     }
 }
-
