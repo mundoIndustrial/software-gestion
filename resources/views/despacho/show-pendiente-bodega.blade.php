@@ -100,12 +100,12 @@
                                         $genero = '';
                                     }
                                 @endphp
-                                <tr class="hover:bg-slate-50 transition-colors {{ $filaAmarilla ? 'bg-yellow-100' : '' }}"
+                                <tr class="hover:bg-slate-50 transition-colors {{ $filaAmarilla ? 'bg-yellow-200' : '' }}"
                                     data-numero-pedido="{{ $item['numero_pedido'] }}"
                                     data-asesor="{{ $item['asesor'] ?? ($pedido['asesor'] ?? '') }}"
                                     data-empresa="{{ $item['empresa'] ?? ($pedido['cliente'] ?? '') }}"
                                     @if($filaAmarilla)
-                                    style="background-color: rgba(254, 243, 199, 0.5) !important;"
+                                    style="background-color: rgba(254, 240, 138, 0.7) !important;"
                                     @endif
                                 >
                                     <!-- DESCRIPCIÓN (PRENDA) -->

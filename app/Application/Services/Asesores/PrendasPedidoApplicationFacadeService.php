@@ -85,7 +85,8 @@ final class PrendasPedidoApplicationFacadeService
         $this->prendaPedidoEdicionAuditoriaService->registrarPrendaNueva(
             $pedidoId,
             $prenda->id,
-            $validated['nombre_prenda'] ?? 'PRENDA'
+            $validated['nombre_prenda'] ?? 'PRENDA',
+            false
         );
 
         return $prenda;
@@ -132,7 +133,8 @@ final class PrendasPedidoApplicationFacadeService
             $prenda->id,
             $prenda->nombre_prenda ?? $validated['nombre_prenda'] ?? 'PRENDA',
             'prenda completa',
-            null
+            null,
+            false
         );
 
         return $prenda;

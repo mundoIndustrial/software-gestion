@@ -76,13 +76,29 @@ class RegistroOrdenUpdateService
                 $this->invalidateCacheDays($orden->numero_pedido);
             }
 
-            // Registrar cambios en News
+            // Registrar cambios en News de forma consolidada
+            $newsChanges = [];
             if (isset($updates['estado']) && $updates['estado'] !== $oldStatus) {
-                $this->logStatusChange($orden->numero_pedido, $oldStatus, $updates['estado']);
+                $newsChanges[] = "Estado: {$oldStatus} → {$updates['estado']}";
+            }
+            if (array_key_exists('area', $validatedData) && $validatedData['area'] !== $oldArea) {
+                $newsChanges[] = "Área: {$oldArea} → {$validatedData['area']}";
             }
 
-            if (array_key_exists('area', $validatedData) && $validatedData['area'] !== $oldArea) {
-                $this->logAreaChange($orden->numero_pedido, $oldArea, $validatedData['area']);
+            if (!empty($newsChanges)) {
+                News::create([
+                    'event_type' => 'order_updated',
+                    'description' => "Pedido {$orden->numero_pedido} actualizado: " . implode(', ', $newsChanges),
+                    'user_id' => auth()->id(),
+                    'pedido' => $orden->numero_pedido,
+                    'metadata' => [
+                        'old_status' => $oldStatus,
+                        'new_status' => $updates['estado'] ?? $oldStatus,
+                        'old_area' => $oldArea,
+                        'new_area' => $validatedData['area'] ?? $oldArea,
+                        'changes' => $newsChanges
+                    ]
+                ]);
             }
 
             DB::commit();
@@ -197,33 +213,6 @@ class RegistroOrdenUpdateService
         }
     }
 
-    /**
-     * Registrar cambio de estado
-     */
-    private function logStatusChange(int $numeroPedido, string $oldStatus, string $newStatus): void
-    {
-        News::create([
-            'event_type' => 'order_status_changed',
-            'description' => "Estado de orden cambió: {$oldStatus} → {$newStatus} (Pedido {$numeroPedido})",
-            'user_id' => auth()->id(),
-            'pedido' => $numeroPedido,
-            'metadata' => ['old_status' => $oldStatus, 'new_status' => $newStatus]
-        ]);
-    }
-
-    /**
-     * Registrar cambio de área
-     */
-    private function logAreaChange(int $numeroPedido, string $oldArea, string $newArea): void
-    {
-        News::create([
-            'event_type' => 'order_area_changed',
-            'description' => "Área de orden cambió: {$oldArea} → {$newArea} (Pedido {$numeroPedido})",
-            'user_id' => auth()->id(),
-            'pedido' => $numeroPedido,
-            'metadata' => ['old_area' => $oldArea, 'new_area' => $newArea]
-        ]);
-    }
 
     /**
      * Preparar respuesta de actualización

@@ -359,6 +359,34 @@
             document.addEventListener('DOMContentLoaded', function() {
                 cargarNotificacionesBodega();
                 setInterval(cargarNotificacionesBodega, 30000);
+
+                // Escuchar notificaciones en tiempo real si EchoInstance está disponible
+                if (window.waitForEcho) {
+                    window.waitForEcho((echo) => {
+                        console.log('[BODEGA NOTIF] Suscribiéndose a canal notifications para tiempo real');
+                        
+                        // Cache para evitar ráfagas de refresco (debouncing)
+                        const bellCache = {
+                            lastRefresh: 0,
+                            shouldRefresh() {
+                                const now = Date.now();
+                                if (now - this.lastRefresh < 1000) return false;
+                                this.lastRefresh = now;
+                                return true;
+                            }
+                        };
+
+                        echo.channel('notifications')
+                            .listen('.new-notification', (e) => {
+                                console.log('[BODEGA NOTIF] Nueva notificación recibida en tiempo real:', e);
+                                
+                                // Refrescar la campana solo una vez por ráfaga
+                                if (bellCache.shouldRefresh()) {
+                                    cargarNotificacionesBodega();
+                                }
+                            });
+                    });
+                }
             });
         })();
         </script>

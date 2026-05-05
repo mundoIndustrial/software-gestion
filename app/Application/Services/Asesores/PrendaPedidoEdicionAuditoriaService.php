@@ -11,24 +11,28 @@ class PrendaPedidoEdicionAuditoriaService
     public function registrarPrendaNueva(
         int $pedidoId,
         ?int $prendaId,
-        string $nombrePrenda
+        string $nombrePrenda,
+        bool $notificar = true
     ): void {
         PedidoAnexoHistorial::registrarPrendaNueva(
             $pedidoId,
             $prendaId,
-            $nombrePrenda
+            $nombrePrenda,
+            $notificar
         );
     }
 
     public function registrarEppNuevo(
         int $pedidoId,
         int $pedidoEppId,
-        int $eppIdNuevo
+        int $eppIdNuevo,
+        bool $notificar = true
     ): void {
         PedidoAnexoHistorial::registrarEppNuevo(
             $pedidoId,
             $pedidoEppId,
-            $eppIdNuevo
+            $eppIdNuevo,
+            $notificar
         );
     }
 
@@ -37,14 +41,16 @@ class PrendaPedidoEdicionAuditoriaService
         int $prendaId,
         string $nombrePrenda,
         string $seccion,
-        ?string $detalle
+        ?string $detalle,
+        bool $notificar = true
     ): void {
         PedidoAnexoHistorial::registrarPrendaEditada(
             $pedidoId,
             $prendaId,
             $nombrePrenda,
             $seccion,
-            $detalle
+            $detalle,
+            $notificar
         );
     }
 

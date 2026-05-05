@@ -117,6 +117,25 @@ class PedidosController extends Controller
             return back()->with('error', 'Error al cargar los pedidos: ' . $e->getMessage());
         }
     }
+    
+    /**
+     * Obtener datos de una fila individual para actualización en tiempo real
+     */
+    public function renderFilaPedido(int $id): JsonResponse
+    {
+        try {
+            $fila = $this->bodegaPedidoService->obtenerDatosParaFila($id);
+            return response()->json([
+                'success' => true,
+                'fila' => $fila
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 404);
+        }
+    }
 
     /**
      * Mostrar lista de pedidos anulados (estado del pedido principal = ANULADA)
@@ -612,7 +631,7 @@ class PedidosController extends Controller
                 $tracker->logFull();
             }
 
-            if ($request->boolean('inline') || $request->expectsJson()) {
+            if ($request->expectsJson()) {
                 return response()->json([
                     'success' => true,
                     'data' => $datos,

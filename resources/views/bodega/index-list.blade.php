@@ -78,6 +78,9 @@
                                 <th class="px-6 py-3 text-center font-medium text-slate-700 w-20">
                                     Acción
                                 </th>
+                                <th class="px-6 py-3 text-center font-medium text-slate-700 w-20">
+                                    Novedades
+                                </th>
                                 <th class="px-6 py-3 text-left font-medium text-slate-700">
                                     Nº Pedido
                                 </th>
@@ -95,20 +98,22 @@
                                 </th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-200">
+                        <tbody id="tablaOrdenesBody" class="divide-y divide-slate-200">
                             @foreach($pedidosPorPagina as $pedidoData)
-                                <tr class="hover:opacity-75 transition-opacity @if($pedidoData['tiene_cambios_nuevos'] ?? false) bg-white @elseif($pedidoData['todos_pendientes'] ?? false) bg-yellow-100 @elseif($pedidoData['todos_entregados'] ?? false) bg-blue-100 @else bg-white @endif" data-pedido-id="{{ $pedidoData['id'] }}">
+                                <tr class="hover:opacity-75 transition-all duration-300 @if($pedidoData['tiene_cambios_nuevos'] ?? false) bg-red-200 @elseif($pedidoData['todos_pendientes'] ?? false) bg-yellow-200 @elseif($pedidoData['todos_entregados'] ?? false) bg-blue-200 @else bg-white @endif" 
+                                    data-pedido-id="{{ $pedidoData['id'] }}"
+                                    data-numero-pedido="{{ $pedidoData['numero_pedido'] }}">
                                     <td class="px-6 py-4 text-center">
                                         <input type="checkbox"
                                                class="w-5 h-5 rounded cursor-pointer"
-                                               @if(!empty($pedidoData['pedido_revisado'])) checked @endif
+                                               @if(!($pedidoData['tiene_cambios_nuevos'] ?? false) && !empty($pedidoData['pedido_revisado'])) checked @endif
                                                onchange="guardarCheckPedido({{ $pedidoData['id'] }}, this.checked)"
                                                title="Marcar pedido como revisado">
                                     </td>
                                     <td class="px-6 py-4 text-center flex gap-2 justify-center items-center">
                                         <a href="{{ route($detalleRouteName, $pedidoData['id']) }}"
                                            class="inline-flex items-center justify-center p-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded transition-colors"
-                                           onclick="abrirDetallePedidoInline(event, {{ $pedidoData['id'] }})">
+                                           title="Ver detalles del pedido">
                                             <span class="material-symbols-rounded text-base">visibility</span>
                                         </a>
                                         <button type="button"
@@ -116,6 +121,44 @@
                                                 onclick="ocultarPedido({{ $pedidoData['id'] }})"
                                                 title="Ocultar este pedido">
                                             <span class="material-symbols-rounded text-base">visibility_off</span>
+                                        </button>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        @php
+                                            $rawNovedades = $pedidoData['novedades'];
+                                            $novedades = [];
+                                            if (!empty($rawNovedades)) {
+                                                $decoded = json_decode($rawNovedades, true);
+                                                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                                    // Si es JSON, filtrar por rol 'asesor' si el campo existe
+                                                    $novedades = array_filter($decoded, function($nov) {
+                                                        $rol = strtolower($nov['rol'] ?? $nov['role'] ?? '');
+                                                        return $rol === 'asesor' || $rol === 'asesora';
+                                                    });
+                                                } else {
+                                                    // Es texto plano. Mostrar todas las novedades (no filtrar por rol)
+                                                    // porque el formato es [Usuario - Fecha] Texto
+                                                    $entries = explode("\n\n", $rawNovedades);
+                                                    $novedades = array_filter(array_map(function($entry) {
+                                                        $trimmed = trim($entry);
+                                                        return !empty($trimmed) ? ['texto' => $trimmed] : null;
+                                                    }, $entries));
+                                                }
+                                            }
+                                            // Reindexar el array para asegurar que sea un array JSON válido
+                                            $novedades = array_values($novedades);
+                                            $cantidadNovedades = count($novedades);
+                                        @endphp
+                                        <button type="button" 
+                                                class="relative inline-flex items-center justify-center p-2 text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors"
+                                                onclick="abrirModalNovedades({{ $pedidoData['id'] }}, '{{ $pedidoData['numero_pedido'] }}', {{ json_encode($novedades) }})"
+                                                title="Ver novedades">
+                                            <span class="material-symbols-rounded">notifications</span>
+                                            @if($cantidadNovedades > 0)
+                                                <span class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white ring-2 ring-white">
+                                                    {{ $cantidadNovedades }}
+                                                </span>
+                                            @endif
                                         </button>
                                     </td>
                                     <td class="px-6 py-4 font-medium text-black">
@@ -196,7 +239,6 @@
     <div id="pedidoDetalleDrawerBackdrop" class="absolute inset-0 bg-black/40"></div>
     <aside class="absolute right-0 top-0 h-full w-full bg-white shadow-2xl flex flex-col">
         <div class="relative flex-1">
-            {{-- Loading overlay removido para ver contenido mientras carga --}}
             <iframe id="pedidoDetalleIframe"
                     title="Detalle del pedido"
                     class="w-full h-full border-0"
@@ -216,6 +258,35 @@
         <span class="material-symbols-rounded text-sm">filter_alt_off</span>
         <span class="text-sm font-medium">Limpiar filtros</span>
     </button>
+</div>
+
+<!-- Modal de Novedades -->
+<div id="modalNovedades" class="fixed inset-0 bg-black/50 z-[10000] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white">
+            <div>
+                <h3 class="text-lg font-bold text-slate-900">Novedades del Pedido</h3>
+                <p class="text-xs text-slate-500 font-medium">Nº Pedido: <span id="novedadesNumeroPedido">—</span></p>
+            </div>
+            <button type="button" onclick="cerrarModalNovedades()" class="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <span class="material-symbols-rounded text-slate-400">close</span>
+            </button>
+        </div>
+        
+        <!-- Content -->
+        <div id="novedadesLista" class="p-6 max-h-[60vh] overflow-y-auto bg-slate-50/30 space-y-4">
+            <!-- Novedades dinámicas -->
+        </div>
+
+        <!-- Footer -->
+        <div class="p-4 border-t border-slate-100 bg-white">
+            <button type="button" onclick="cerrarModalNovedades()" 
+                    class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg transition-colors shadow-sm">
+                Cerrar
+            </button>
+        </div>
+    </div>
 </div>
 
 <!-- Modal de Filtros -->
@@ -246,7 +317,6 @@
                     type="button"
                     onclick="buscarEnModal()"
                     class="absolute right-2 top-2 p-1 hover:bg-slate-100 rounded transition-colors"
-                    title="Buscar"
                 >
                     <span class="material-symbols-rounded text-slate-600 text-sm">search</span>
                 </button>
@@ -274,11 +344,6 @@
             <div id="contenidoModal" class="p-6">
                 <!-- Contenido dinámico se cargará aquí -->
             </div>
-            
-            <!-- Paginación dentro del modal -->
-            <div id="paginacionModal" class="px-6 pb-4 border-t border-slate-200 flex-shrink-0">
-                <!-- Paginación dinámica se cargará aquí -->
-            </div>
         </div>
         
         <!-- Botones de acción -->
@@ -303,755 +368,479 @@
     </div>
 </div>
 
+@push('scripts')
 <script>
-let tipoFiltroActual = '';
-let datosOriginales = [];
-let paginaActual = 1;
-let terminoBusqueda = '';
+(function() {
+    let tipoFiltroActual = '';
+    let datosOriginales = [];
+    let paginaActual = 1;
+    let terminoBusqueda = '';
 
-function abrirModalFiltros(tipoFiltro) {
-    tipoFiltroActual = tipoFiltro;
-    paginaActual = 1;
-    terminoBusqueda = '';
-    
-    // Configurar el modal según el tipo de filtro
-    const modal = document.getElementById('modalFiltros');
-    const titulo = modal.querySelector('h3');
-    const buscador = document.getElementById('buscadorModal');
-    
-    // Configurar título y placeholder según el tipo
-    switch(tipoFiltro) {
-        case 'numero_pedido':
-            titulo.textContent = 'Filtrar por Nº Pedido';
-            buscador.placeholder = 'Buscar número de pedido...';
-            break;
-        case 'cliente':
-            titulo.textContent = 'Filtrar por Cliente';
-            buscador.placeholder = 'Buscar nombre del cliente...';
-            break;
-        case 'asesor':
-            titulo.textContent = 'Filtrar por Asesor';
-            buscador.placeholder = 'Buscar nombre del asesor...';
-            break;
-        case 'estado':
-            titulo.textContent = 'Filtrar por Estado';
-            buscador.placeholder = 'Buscar estado...';
-            break;
-        case 'fecha':
-            titulo.textContent = 'Filtrar por Fecha de Creación';
-            buscador.placeholder = 'Buscar fecha...';
-            break;
-    }
-    
-    // Limpiar buscador
-    buscador.value = '';
-    
-    // Cargar datos iniciales
-    cargarDatosFiltro();
-    
-    // Mostrar modal
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    document.body.style.overflow = 'hidden';
-    
-    // Enfocar buscador
-    setTimeout(() => buscador.focus(), 100);
-}
-
-async function cargarDatosFiltro() {
-    try {
-        // Obtener token CSRF
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        
-        // Obtener datos únicos según el tipo de filtro - usar ruta web en lugar de API
-        const response = await fetch(`/gestion-bodega/filtro-datos/${tipoFiltroActual}?page=${paginaActual}&search=${terminoBusqueda}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    // --- FILTROS ---
+    window.abrirModalFiltros = function(tipo) {
+        tipoFiltroActual = tipo; paginaActual = 1; terminoBusqueda = '';
+        const modal = document.getElementById('modalFiltros');
+        const titulo = modal.querySelector('h3');
+        const buscador = document.getElementById('buscadorModal');
+        switch(tipo) {
+            case 'numero_pedido': titulo.textContent = 'Filtrar por Nº Pedido'; break;
+            case 'cliente': titulo.textContent = 'Filtrar por Cliente'; break;
+            case 'asesor': titulo.textContent = 'Filtrar por Asesor'; break;
+            case 'estado': titulo.textContent = 'Filtrar por Estado'; break;
+            case 'fecha': titulo.textContent = 'Filtrar por Fecha'; break;
         }
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            datosOriginales = data.datos;
-            renderizarContenidoModal(data.datos);
-            renderizarPaginacionModal(data.paginacion);
-        } else {
-            mostrarError('Error al cargar datos del filtro: ' + (data.message || 'Error desconocido'));
-        }
-    } catch (error) {
-        console.error('Error al cargar datos del filtro:', error);
-        mostrarError('Error de conexión al cargar datos: ' + error.message);
-    }
-}
-
-function renderizarContenidoModal(datos) {
-    const contenido = document.getElementById('contenidoModal');
-    
-    if (datos.length === 0) {
-        contenido.innerHTML = `
-            <div class="text-center py-8">
-                <span class="material-symbols-rounded text-slate-300 text-4xl">search_off</span>
-                <p class="text-slate-500 mt-2">No se encontraron resultados</p>
-            </div>
-        `;
-        actualizarContadorSeleccionados();
-        return;
-    }
-    
-    let html = '<div class="space-y-2">';
-    
-    datos.forEach(item => {
-        // Usar texto para visualización, valor para ID y selección
-        const textoMostrar = item.texto || String(item.valor || item.nombre || item.texto || '');
-        const valor = String(item.valor || item.nombre || item.texto || '');
-        const cantidad = item.cantidad || 0;
-        
-        html += `
-            <div class="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
-                 onclick="seleccionarValor('${valor}')">
-                <div class="flex items-center gap-3">
-                    <input type="checkbox" id="valor_${valor.replace(/[^a-zA-Z0-9]/g, '_')}" class="rounded border-slate-300">
-                    <label for="valor_${valor.replace(/[^a-zA-Z0-9]/g, '_')}" class="cursor-pointer">
-                        <span class="text-sm font-medium text-slate-900">${textoMostrar}</span>
-                    </label>
-                </div>
-                ${cantidad > 0 ? `<span class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">${cantidad}</span>` : ''}
-            </div>
-        `;
-    });
-    
-    html += '</div>';
-    contenido.innerHTML = html;
-    
-    // Actualizar contador y estado del botón
-    actualizarContadorSeleccionados();
-    actualizarBotonSeleccionarTodo();
-}
-
-function renderizarPaginacionModal(paginacion) {
-    const contenedor = document.getElementById('paginacionModal');
-    
-    if (!paginacion || paginacion.total_pages <= 1) {
-        contenedor.innerHTML = '';
-        return;
-    }
-    
-    let html = `
-        <div class="flex items-center justify-between">
-            <div class="text-sm text-slate-600">
-                Mostrando ${paginacion.from}-${paginacion.to} de ${paginacion.total} resultados
-            </div>
-            <div class="flex gap-2">
-    `;
-    
-    // Botón anterior
-    if (paginacion.current_page > 1) {
-        html += `
-            <button onclick="cambiarPagina(${paginacion.current_page - 1})"
-                    class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm rounded transition-colors">
-                ← Anterior
-            </button>
-        `;
-    }
-    
-    // Página actual
-    html += `
-        <span class="px-3 py-1 text-sm text-slate-600">
-            Página ${paginacion.current_page} de ${paginacion.total_pages}
-        </span>
-    `;
-    
-    // Botón siguiente
-    if (paginacion.current_page < paginacion.total_pages) {
-        html += `
-            <button onclick="cambiarPagina(${paginacion.current_page + 1})"
-                    class="px-3 py-1 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm rounded transition-colors">
-                Siguiente →
-            </button>
-        `;
-    }
-    
-    html += `
-            </div>
-        </div>
-    `;
-    
-    contenedor.innerHTML = html;
-}
-
-function cambiarPagina(nuevaPagina) {
-    paginaActual = nuevaPagina;
-    cargarDatosFiltro();
-}
-
-function seleccionarValor(valor) {
-    // Asegurar que valor sea string
-    valor = String(valor || '');
-    
-    // Marcar/desmarcar checkbox
-    const checkbox = document.getElementById(`valor_${valor.replace(/[^a-zA-Z0-9]/g, '_')}`);
-    if (checkbox) {
-        checkbox.checked = !checkbox.checked;
-    }
-    
-    // Actualizar contador y botón
-    actualizarContadorSeleccionados();
-    actualizarBotonSeleccionarTodo();
-}
-
-function toggleSeleccionarTodo() {
-    const checkboxes = document.querySelectorAll('#contenidoModal input[type="checkbox"]');
-    const btnSeleccionarTodo = document.getElementById('btnSeleccionarTodo');
-    const todosSeleccionados = Array.from(checkboxes).every(cb => cb.checked);
-    
-    if (todosSeleccionados) {
-        // Deseleccionar todo
-        checkboxes.forEach(checkbox => checkbox.checked = false);
-        btnSeleccionarTodo.textContent = 'Seleccionar todo';
-    } else {
-        // Seleccionar todo
-        checkboxes.forEach(checkbox => checkbox.checked = true);
-        btnSeleccionarTodo.textContent = 'Deseleccionar todo';
-    }
-    
-    actualizarContadorSeleccionados();
-}
-
-function actualizarContadorSeleccionados() {
-    const checkboxes = document.querySelectorAll('#contenidoModal input[type="checkbox"]:checked');
-    const contador = document.getElementById('contadorSeleccionados');
-    if (contador) {
-        contador.textContent = checkboxes.length;
-    }
-}
-
-function actualizarBotonSeleccionarTodo() {
-    const checkboxes = document.querySelectorAll('#contenidoModal input[type="checkbox"]');
-    const btnSeleccionarTodo = document.getElementById('btnSeleccionarTodo');
-    
-    if (checkboxes.length === 0) {
-        btnSeleccionarTodo.style.display = 'none';
-        return;
-    }
-    
-    btnSeleccionarTodo.style.display = 'block';
-    
-    const todosSeleccionados = Array.from(checkboxes).every(cb => cb.checked);
-    btnSeleccionarTodo.textContent = todosSeleccionados ? 'Deseleccionar todo' : 'Seleccionar todo';
-}
-
-function buscarEnModal() {
-    const buscador = document.getElementById('buscadorModal');
-    terminoBusqueda = buscador.value;
-    paginaActual = 1;
-    cargarDatosFiltro();
-}
-
-function aplicarFiltroSeleccionado() {
-    // Obtener valores seleccionados
-    const checkboxes = document.querySelectorAll('#contenidoModal input[type="checkbox"]:checked');
-    const valoresSeleccionados = Array.from(checkboxes).map(cb => cb.id.replace('valor_', '').replace(/_/g, ' '));
-    
-    if (valoresSeleccionados.length === 0) {
-        mostrarError('Por favor selecciona al menos un valor para filtrar');
-        return;
-    }
-    
-    // Aplicar filtro a la tabla principal
-    aplicarFiltroATabla(valoresSeleccionados);
-    
-    // Cerrar modal
-    cerrarModalFiltros();
-}
-
-function aplicarFiltroATabla(valores) {
-    const url = new URL(window.location);
-    const params = new URLSearchParams(url.search);
-    
-    // Limpiar filtros anteriores del mismo tipo
-    switch(tipoFiltroActual) {
-        case 'numero_pedido':
-            params.delete('filtro_numero_pedido');
-            params.set('filtro_numero_pedido', valores.join(','));
-            break;
-        case 'cliente':
-            params.delete('filtro_cliente');
-            params.set('filtro_cliente', valores.join(','));
-            break;
-        case 'asesor':
-            params.delete('filtro_asesor');
-            params.set('filtro_asesor', valores.join(','));
-            break;
-        case 'estado':
-            params.delete('filtro_estado');
-            params.set('filtro_estado', valores.join(','));
-            break;
-    }
-    
-    // Mantener otros filtros y búsqueda
-    const search = params.get('search');
-    if (!search) {
-        params.delete('search');
-    }
-    
-    // Redirigir con nuevos filtros
-    const newUrl = url.pathname + (params.toString() ? '?' + params.toString() : '');
-    window.location.href = newUrl;
-}
-
-function mostrarError(mensaje) {
-    const contenido = document.getElementById('contenidoModal');
-    contenido.innerHTML = `
-        <div class="text-center py-8">
-            <span class="material-symbols-rounded text-red-500 text-4xl">error</span>
-            <p class="text-red-600 mt-2">${mensaje}</p>
-        </div>
-    `;
-}
-
-function cerrarModalFiltros() {
-    document.getElementById('modalFiltros').classList.add('hidden');
-    document.getElementById('modalFiltros').classList.remove('flex');
-    document.body.style.overflow = 'auto';
-}
-
-// Event listener para el buscador
-document.addEventListener('DOMContentLoaded', function() {
-    const buscador = document.getElementById('buscadorModal');
-    if (buscador) {
-        let timeout;
-        buscador.addEventListener('input', function(e) {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                terminoBusqueda = e.target.value;
-                paginaActual = 1;
-                cargarDatosFiltro();
-            }, 300);
-        });
-    }
-    
-    // Verificar si hay filtros activos al cargar la página
-    verificarFiltrosActivos();
-});
-
-function verificarFiltrosActivos() {
-    const url = new URL(window.location);
-    const params = new URLSearchParams(url.search);
-    
-    // Verificar si hay algún parámetro de filtro activo
-    const filtrosActivos = [
-        'filtro_numero_pedido',
-        'filtro_cliente',
-        'filtro_asesor',
-        'filtro_estado',
-        'filtro_fecha_desde',
-        'filtro_fecha_hasta'
-    ];
-    
-    const tieneFiltros = filtrosActivos.some(filtro => params.get(filtro));
-    
-    // Mostrar u ocultar botón flotante
-    const btnLimpiarFiltros = document.getElementById('btnLimpiarFiltros');
-    if (btnLimpiarFiltros) {
-        if (tieneFiltros) {
-            btnLimpiarFiltros.classList.remove('hidden');
-        } else {
-            btnLimpiarFiltros.classList.add('hidden');
-        }
-    }
-}
-
-function limpiarTodosLosFiltros() {
-    // Redirigir a la misma página sin parámetros de filtro
-    const url = new URL(window.location);
-    const params = new URLSearchParams(url.search);
-    
-    // Eliminar todos los parámetros de filtro
-    params.delete('filtro_numero_pedido');
-    params.delete('filtro_cliente');
-    params.delete('filtro_asesor');
-    params.delete('filtro_estado');
-    params.delete('filtro_fecha_desde');
-    params.delete('filtro_fecha_hasta');
-    
-    // Mantener búsqueda si existe
-    const search = params.get('search');
-    params.delete('search');
-    if (search) {
-        params.set('search', search);
-    }
-    
-    // Reconstruir URL sin parámetros de filtro
-    const newUrl = url.pathname + (params.toString() ? '?' + params.toString() : '');
-    window.location.href = newUrl;
-}
-
-// Cerrar modal al hacer clic fuera
-document.getElementById('modalFiltros').addEventListener('click', function(e) {
-    if (e.target === this) {
-        cerrarModalFiltros();
-    }
-});
-
-// Cerrar modal con tecla Escape
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        cerrarModalFiltros();
-    }
-});
-
-// Función para guardar el check de revisión del pedido
-async function guardarCheckPedido(pedidoId, revisado) {
-    try {
-        const response = await fetch(`/gestion-bodega/pedidos/${pedidoId}/revisar`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            },
-            body: JSON.stringify({ revisado: revisado })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            console.log(`Pedido ${pedidoId} marcado como ${revisado ? 'revisado' : 'no revisado'}`);
-            // No recargar página, solo mostrar notificación visual
-            mostrarNotificacionExito(`Pedido marcado como ${revisado ? 'revisado' : 'no revisado'}`);
-        } else {
-            console.error('Error al guardar revisión:', data.message);
-            mostrarNotificacionError('Error al guardar la revisión');
-        }
-    } catch (error) {
-        console.error('Error en la petición:', error);
-        mostrarNotificacionError('Error en la conexión');
-    }
-}
-
-async function ocultarPedido(pedidoId) {
-    try {
-        const response = await fetch(`/gestion-bodega/pedidos/${pedidoId}/ocultar`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            console.log(`Pedido ${pedidoId} ocultado`);
-            // Eliminar la fila de la tabla con animación
-            const fila = document.querySelector(`tr[data-pedido-id="${pedidoId}"]`);
-            if (fila) {
-                fila.style.opacity = '0';
-                fila.style.transition = 'opacity 0.3s ease';
-                setTimeout(() => {
-                    fila.remove();
-                    mostrarNotificacionExito('Pedido ocultado correctamente');
-                }, 300);
-            }
-        } else {
-            console.error('Error al ocultar pedido:', data.message);
-            mostrarNotificacionError('Error al ocultar el pedido');
-        }
-    } catch (error) {
-        console.error('Error en la petición:', error);
-        mostrarNotificacionError('Error al ocultar el pedido');
-    }
-}
-
-function mostrarNotificacionExito(mensaje) {
-    const notificacion = document.createElement('div');
-    notificacion.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-    notificacion.textContent = mensaje;
-    document.body.appendChild(notificacion);
-    
-    setTimeout(() => {
-        notificacion.style.opacity = '0';
-        notificacion.style.transition = 'opacity 0.3s ease';
-        setTimeout(() => {
-            notificacion.remove();
-        }, 300);
-    }, 2000);
-}
-
-function mostrarNotificacionError(mensaje) {
-    const notificacion = document.createElement('div');
-    notificacion.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-    notificacion.textContent = mensaje;
-    document.body.appendChild(notificacion);
-    
-    setTimeout(() => {
-        notificacion.style.opacity = '0';
-        notificacion.style.transition = 'opacity 0.3s ease';
-        setTimeout(() => {
-            notificacion.remove();
-        }, 300);
-    }, 2000);
-}
-
-// Función para desmarcar un pedido como no visto
-async function desmarcarPedido(pedidoId, button) {
-    // Deshabilitar botón y mostrar estado de carga
-    const originalContent = button.innerHTML;
-    button.disabled = true;
-    button.innerHTML = '';
-    
-    try {
-        const response = await fetch(`/gestion-bodega/pedidos/${pedidoId}/desmarcar`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            },
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            // Recargar la página para mostrar los cambios
-            window.location.reload();
-        } else {
-            // Error: restaurar botón
-            button.disabled = false;
-            button.innerHTML = originalContent;
-            console.error('Error al desmarcar el pedido:', data.message);
-        }
-    } catch (error) {
-        console.error('Error al desmarcar pedido:', error);
-        button.disabled = false;
-        button.innerHTML = originalContent;
-    }
-}
-
-// Función para marcar pedido como visto (solo para rol EPP-Bodega)
-function marcarComoVisto(pedidoId, visto) {
-    // Solo ejecutar si el usuario tiene rol EPP-Bodega
-    if (!{{ auth()->user()->hasRole('EPP-Bodega') ? 'true' : 'false' }}) {
-        console.log('Usuario no tiene rol EPP-Bodega, función ignorada');
-        return;
-    }
-    
-    const tr = document.querySelector(`tr[data-pedido-id="${pedidoId}"]`);
-    
-    fetch(`/gestion-bodega/pedidos/${pedidoId}/marcar-visto`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-        },
-        body: JSON.stringify({ visto: visto })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Cambiar color de la fila
-            if (visto) {
-                // Marcar como visto - verde tiene máxima prioridad
-                tr.className = tr.className.replace(/bg-\w+-100/g, '');
-                tr.classList.add('bg-green-100');
-            } else {
-                // Desmarcar como visto - restaurar color original según estado
-                tr.classList.remove('bg-green-100');
-                
-                // Para restaurar el color correcto, necesitamos verificar los datos actuales
-                // Por ahora, aplicamos lógica simple basada en clases existentes
-                if (!tr.classList.contains('bg-yellow-100') && !tr.classList.contains('bg-blue-100')) {
-                    // Si no tiene otros colores especiales, mantener alternado
-                    const index = Array.from(tr.parentNode.children).indexOf(tr);
-                    if (index % 2 === 0) {
-                        tr.classList.add('bg-white');
-                    } else {
-                        tr.classList.add('bg-slate-50');
-                    }
-                }
-            }
-            
-            console.log(`Pedido ${pedidoId} marcado como ${visto ? 'visto' : 'no visto'}`);
-        } else {
-            // Si hay error, revertir el checkbox
-            const checkbox = tr.querySelector('input[type="checkbox"]');
-            if (checkbox) {
-                checkbox.checked = !visto;
-            }
-            console.error('Error al marcar como visto:', data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error en la petición:', error);
-        // Revertir el checkbox si hay error
-        const checkbox = tr.querySelector('input[type="checkbox"]');
-        if (checkbox) {
-            checkbox.checked = !visto;
-        }
-    });
-}
-
-// Sistema de tiempo real para actualizaciones de pedidos
-document.addEventListener('DOMContentLoaded', function() {
-    // Verificar si Echo está disponible
-    if (window.EchoInstance) {
-        console.log('[Bodega Realtime] Escuchando actualizaciones de pedidos...');
-        
-        // Escuchar actualizaciones de pedidos desde cartera
-        window.EchoInstance.channel('pedidos.general')
-            .listen('.pedido.actualizado', function(e) {
-                console.log('[Bodega Realtime] Pedido actualizado:', e);
-                
-                // Verificar si changedFields es un array o un objeto
-                const changedFields = e.changedFields || [];
-                const hasEstadoChange = Array.isArray(changedFields)
-                    ? changedFields.includes('estado')
-                    : (changedFields.estado !== undefined);
-                
-                // Si el pedido fue aprobado, recargar la página para mostrarlo
-                if (e.pedido && (hasEstadoChange || e.action === 'approved')) {
-                    console.log('[Bodega Realtime] Pedido aprobado, recargando página...');
-                    
-                    // Mostrar notificación sutil
-                    const notificacion = document.createElement('div');
-                    notificacion.innerHTML = `
-                        <div style="position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                             Pedido #${e.pedido.numero_pedido} actualizado
-                        </div>
-                    `;
-                    document.body.appendChild(notificacion);
-                    
-                    // Remover notificación después de 3 segundos
-                    setTimeout(() => {
-                        notificacion.remove();
-                    }, 3000);
-                    
-                    // Recargar página después de un breve delay
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                }
-            })
-            .error(function(error) {
-                console.error('[Bodega Realtime] Error en WebSocket:', error);
-            });
-            
-        console.log('[Bodega Realtime]  Conectado al canal pedidos.general');
-    } else {
-        console.log('[Bodega Realtime]  Echo no disponible, usando fallback de polling');
-        
-        // Fallback: verificar actualizaciones cada 30 segundos
-        setInterval(function() {
-            console.log('[Bodega Realtime] Verificando actualizaciones...');
-            // Aquí podrías agregar una llamada AJAX para verificar si hay nuevos pedidos
-        }, 30000);
-    }
-});
-</script>
-
-<script>
-function mostrarOverlayPedido(event) {
-    event.preventDefault();
-    console.log('[BODEGA] 1️⃣ Click en botón "Ver"');
-
-    // Marcar transición para que la vista show no duplique el overlay.
-    try {
-        sessionStorage.setItem('bodega:from-list-transition', '1');
-    } catch (e) {
-        console.warn('[BODEGA] No se pudo guardar flag de transición en sessionStorage');
-    }
-
-    const overlay = document.getElementById('bodega-loading-overlay');
-    if (overlay) {
-        console.log('[BODEGA] 2️⃣ Overlay encontrado, agregando clase is-visible');
-        overlay.classList.add('is-visible');
-        console.log('[BODEGA] 3️⃣ Overlay visible - esperando 50ms antes de navegar');
-    } else {
-        console.error('[BODEGA] ❌ Overlay NO encontrado!');
-    }
-
-    // Navegar a la página después de mostrar el overlay
-    const href = event.currentTarget.getAttribute('href');
-    setTimeout(function() {
-        console.log('[BODEGA] 4️⃣ Navegando a:', href);
-        window.location.href = href;
-    }, 50);
-}
-
-function abrirDetallePedidoInline(event, pedidoId) {
-    event.preventDefault();
-
-    const target = event.currentTarget;
-    const href = target?.getAttribute('href');
-    const drawer = document.getElementById('pedidoDetalleDrawer');
-    const iframe = document.getElementById('pedidoDetalleIframe');
-    const loading = document.getElementById('pedidoDetalleDrawerLoading');
-
-    if (!href || !drawer || !iframe || !loading) {
-        console.warn('[BODEGA] Drawer no disponible, usando navegación tradicional');
-        mostrarOverlayPedido(event);
-        return;
-    }
-
-    console.log('[BODEGA INLINE] Abriendo detalle inline del pedido:', pedidoId);
-
-    drawer.classList.remove('hidden');
-    drawer.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-
-    loading.style.display = 'flex';
-    iframe.onload = function() {
-        loading.style.display = 'none';
-        console.log('[BODEGA INLINE] Detalle completo cargado en panel (misma vista show)');
+        buscador.value = ''; window.cargarDatosFiltro();
+        modal.classList.remove('hidden'); modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => buscador.focus(), 100);
     };
 
-    const iframeUrl = new URL(href, window.location.origin);
-    iframeUrl.searchParams.set('embed', '1');
-    iframe.src = iframeUrl.toString();
-}
+    window.cargarDatosFiltro = async function() {
+        try {
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+            const res = await fetch(`/gestion-bodega/filtro-datos/${tipoFiltroActual}?page=${paginaActual}&search=${terminoBusqueda}`, {
+                headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                datosOriginales = data.datos;
+                const cont = document.getElementById('contenidoModal');
+                if (data.datos.length === 0) { cont.innerHTML = '<p class="text-center py-4 text-slate-500">No hay resultados</p>'; return; }
+                let html = '<div class="space-y-2">';
+                data.datos.forEach(item => {
+                    const val = String(item.valor || item.nombre || item.texto || '');
+                    html += `<div class="p-3 border rounded-lg hover:bg-slate-50 cursor-pointer flex items-center gap-3" onclick="seleccionarValor('${val}')">
+                        <input type="checkbox" id="valor_${val.replace(/[^a-zA-Z0-9]/g, '_')}" class="rounded border-slate-300">
+                        <span class="text-sm font-medium text-slate-900">${item.texto || val}</span></div>`;
+                });
+                cont.innerHTML = html + '</div>';
+                window.actualizarContadorSeleccionados();
+            }
+        } catch (e) { console.error(e); }
+    };
 
-function cerrarDetallePedidoInline() {
-    const drawer = document.getElementById('pedidoDetalleDrawer');
-    const iframe = document.getElementById('pedidoDetalleIframe');
-    const loading = document.getElementById('pedidoDetalleDrawerLoading');
+    window.seleccionarValor = function(v) {
+        const cb = document.getElementById(`valor_${v.replace(/[^a-zA-Z0-9]/g, '_')}`);
+        if (cb) { cb.checked = !cb.checked; window.actualizarContadorSeleccionados(); }
+    };
 
-    if (!drawer) return;
+    window.actualizarContadorSeleccionados = function() {
+        const count = document.querySelectorAll('#contenidoModal input:checked').length;
+        const el = document.getElementById('contadorSeleccionados');
+        if (el) el.textContent = count;
+    };
 
-    drawer.classList.add('hidden');
-    drawer.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
+    window.toggleSeleccionarTodo = function() {
+        const cbs = document.querySelectorAll('#contenidoModal input[type="checkbox"]');
+        const all = Array.from(cbs).every(x => x.checked);
+        cbs.forEach(x => x.checked = !all);
+        window.actualizarContadorSeleccionados();
+    };
 
-    if (iframe) iframe.src = 'about:blank';
-    if (loading) loading.style.display = 'flex';
-}
+    window.buscarEnModal = function() {
+        terminoBusqueda = document.getElementById('buscadorModal').value;
+        paginaActual = 1; window.cargarDatosFiltro();
+    };
 
-document.addEventListener('DOMContentLoaded', function() {
-    const backdrop = document.getElementById('pedidoDetalleDrawerBackdrop');
+    window.cerrarModalFiltros = function() {
+        document.getElementById('modalFiltros').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    };
+    
+    window.aplicarFiltroSeleccionado = function() {
+        const sel = [];
+        document.querySelectorAll('#contenidoModal input:checked').forEach(cb => {
+            const id = cb.id.replace('valor_', '');
+            const d = datosOriginales.find(x => String(x.valor || x.nombre || x.texto || '').replace(/[^a-zA-Z0-9]/g, '_') === id);
+            if (d) sel.push(d.valor || d.nombre || d.texto);
+        });
+        const url = new URL(window.location);
+        const paramMap = { 'numero_pedido': 'filtro_numero_pedido', 'cliente': 'filtro_cliente', 'asesor': 'filtro_asesor', 'estado': 'filtro_estado' };
+        const pName = paramMap[tipoFiltroActual] || tipoFiltroActual;
+        if (sel.length > 0) url.searchParams.set(pName, sel.join(','));
+        else url.searchParams.delete(pName);
+        url.searchParams.set('page', '1');
+        window.location.href = url.toString();
+    };
 
-    if (backdrop) {
-        backdrop.addEventListener('click', cerrarDetallePedidoInline);
+    window.limpiarTodosLosFiltros = function() {
+        const url = new URL(window.location.origin + window.location.pathname);
+        window.location.href = url.toString();
+    };
+
+    function verificarFiltrosActivos() {
+        const params = new URLSearchParams(window.location.search);
+        const filtros = ['filtro_numero_pedido', 'filtro_cliente', 'filtro_asesor', 'filtro_estado', 'search'];
+        const activo = filtros.some(f => params.get(f));
+        const btn = document.getElementById('btnLimpiarFiltros');
+        if (btn) btn.classList.toggle('hidden', !activo);
     }
-});
 
-document.addEventListener('keydown', function(e) {
-    if (e.key !== 'Escape') return;
-    const drawer = document.getElementById('pedidoDetalleDrawer');
-    if (drawer && !drawer.classList.contains('hidden')) {
-        cerrarDetallePedidoInline();
-    }
-});
+    // --- ACCIONES ---
+    window.abrirDetallePedidoInline = function(e, id) {
+        if (e) e.preventDefault();
+        const dr = document.getElementById('pedidoDetalleDrawer');
+        const ifr = document.getElementById('pedidoDetalleIframe');
+        ifr.src = `/gestion-bodega/pedidos/${id}?inline=1`;
+        dr.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    };
 
-// Escuchar postMessage desde el iframe para cerrar el drawer
-window.addEventListener('message', function(event) {
-    if (event.data.action === 'cerrarDrawerPedido') {
-        cerrarDetallePedidoInline();
+    window.cerrarDetallePedidoInline = function() {
+        document.getElementById('pedidoDetalleDrawer').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        document.getElementById('pedidoDetalleIframe').src = 'about:blank';
+    };
+
+    window.guardarCheckPedido = async function(id, v) {
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+        await fetch(`/gestion-bodega/pedidos/${id}/revisar`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+            body: JSON.stringify({ revisado: v })
+        });
+        const tr = document.querySelector(`tr[data-pedido-id="${id}"]`);
+        if (tr && v) {
+            tr.classList.remove('bg-red-200');
+            if (!tr.classList.contains('bg-yellow-200') && !tr.classList.contains('bg-blue-200')) tr.classList.add('bg-white');
+        }
+    };
+
+    window.ocultarPedido = async function(id) {
+        if (!confirm('¿Ocultar pedido?')) return;
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+        const res = await fetch(`/gestion-bodega/pedidos/${id}/ocultar`, { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf } });
+        const data = await res.json();
+        if (data.success) {
+            const tr = document.querySelector(`tr[data-pedido-id="${id}"]`);
+            if (tr) {
+                tr.style.opacity = '0';
+                tr.style.transform = 'translateX(20px)';
+                setTimeout(() => tr.remove(), 300);
+            }
+        }
+    };
+
+    // --- NOVEDADES ---
+    window.abrirModalNovedades = function(id, numero, novedades) {
+        console.log('[abrirModalNovedades] Parámetros recibidos:', {
+            id: id,
+            numero: numero,
+            novedades: novedades,
+            tipo: typeof novedades,
+            esArray: Array.isArray(novedades)
+        });
+
+        document.getElementById('novedadesNumeroPedido').textContent = numero;
+        const lista = document.getElementById('novedadesLista');
+        lista.innerHTML = '';
+
+        // Asegurar que novedades es un array
+        let novedadesArray = [];
+        if (typeof novedades === 'string') {
+            try {
+                novedadesArray = JSON.parse(novedades);
+                console.log('[abrirModalNovedades] Parseado desde string:', novedadesArray);
+                if (!Array.isArray(novedadesArray)) {
+                    console.warn('[abrirModalNovedades] El resultado del parse no es un array:', novedadesArray);
+                    novedadesArray = [];
+                }
+            } catch (e) {
+                console.error('[abrirModalNovedades] Error parseando novedades:', e, 'String:', novedades);
+                novedadesArray = [];
+            }
+        } else if (Array.isArray(novedades)) {
+            novedadesArray = novedades;
+            console.log('[abrirModalNovedades] Ya es un array:', novedadesArray);
+        } else {
+            console.warn('[abrirModalNovedades] Tipo desconocido:', typeof novedades, novedades);
+        }
+
+        console.log('[abrirModalNovedades] Array final:', novedadesArray, 'Cantidad:', novedadesArray.length);
+
+        if (!novedadesArray || novedadesArray.length === 0) {
+            lista.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 text-slate-400">
+                    <span class="material-symbols-rounded text-5xl mb-2">notifications_off</span>
+                    <p class="text-sm font-medium">No hay novedades registradas</p>
+                </div>
+            `;
+        } else {
+            novedadesArray.forEach((nov, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden';
+                
+                div.innerHTML = `
+                    <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                        ${nov.texto || nov}
+                    </div>
+                `;
+                lista.appendChild(div);
+            });
+        }
+
+        const modal = document.getElementById('modalNovedades');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.cerrarModalNovedades = function() {
+        document.getElementById('modalNovedades').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    };
+
+    // --- TIEMPO REAL ---
+    function formatFechaJS(dateStr) {
+        if (!dateStr) return '—';
+        const d = new Date(dateStr);
+        const pad = (n) => String(n).padStart(2, '0');
+        let h = d.getHours();
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(h)}:${pad(d.getMinutes())}:${pad(d.getSeconds())} ${ampm}`;
     }
-});
+
+    // Función auxiliar para procesar novedades
+    function procesarNovedades(rawNov) {
+        let novedades = [];
+        if (rawNov) {
+            try {
+                let decoded = typeof rawNov === 'string' ? JSON.parse(rawNov) : rawNov;
+                if (Array.isArray(decoded)) {
+                    // Si es JSON, filtrar por rol asesor
+                    novedades = decoded.filter(nov => {
+                        let rol = (nov.rol || nov.role || '').toLowerCase();
+                        return rol === 'asesor' || rol === 'asesora';
+                    });
+                } else {
+                    // Texto plano: separar por \n\n y mostrar todas las novedades
+                    // (no filtrar por rol porque el formato no lo incluye)
+                    let entries = rawNov.split(/\n\n+/);
+                    novedades = entries
+                        .filter(entry => entry.trim().length > 0)
+                        .map(entry => ({texto: entry.trim()}));
+                }
+            } catch(e) { 
+                // Si falla el parseo, tratar como texto plano
+                let entries = rawNov.split(/\n\n+/);
+                novedades = entries
+                    .filter(entry => entry.trim().length > 0)
+                    .map(entry => ({texto: entry.trim()}));
+            }
+        }
+        return novedades;
+    }
+
+    // Función para actualizar el badge de novedades en una fila
+    function actualizarBadgeNovedades(pedidoId, novedades) {
+        const tr = document.querySelector(`tr[data-pedido-id="${pedidoId}"]`);
+        if (!tr) return;
+
+        const notificacionBtn = tr.querySelector('button[title="Ver novedades"]');
+        if (!notificacionBtn) return;
+
+        const cantidadNovedades = novedades.length;
+        const badgeExistente = notificacionBtn.querySelector('span.absolute');
+        
+        if (cantidadNovedades > 0) {
+            if (badgeExistente) {
+                // Actualizar el badge existente
+                badgeExistente.textContent = cantidadNovedades;
+            } else {
+                // Crear nuevo badge
+                const badgeHtml = `<span class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white ring-2 ring-white">${cantidadNovedades}</span>`;
+                notificacionBtn.insertAdjacentHTML('beforeend', badgeHtml);
+            }
+        } else {
+            // Remover badge si no hay novedades
+            if (badgeExistente) {
+                badgeExistente.remove();
+            }
+        }
+
+        // Actualizar el onclick del botón con las nuevas novedades
+        notificacionBtn.onclick = function() {
+            abrirModalNovedades(pedidoId, tr.dataset.numeroPedido, novedades);
+        };
+    }
+
+    async function insertarPedidoDinamico(id) {
+        try {
+            const res = await fetch(`/gestion-bodega/pedidos/${id}/fila`, { headers: { 'Accept': 'application/json' } });
+            const data = await res.json();
+            if (data.success) {
+                const p = data.fila;
+                const tbody = document.getElementById('tablaOrdenesBody');
+                if (!tbody || document.querySelector(`tr[data-pedido-id="${p.id}"]`)) return;
+
+                const tr = document.createElement('tr');
+                tr.className = `hover:opacity-75 transition-all duration-300 ${p.tiene_cambios_nuevos ? 'bg-red-200' : (p.todos_pendientes ? 'bg-yellow-200' : (p.todos_entregados ? 'bg-blue-200' : 'bg-white'))}`;
+                tr.dataset.pedidoId = p.id;
+                tr.dataset.numeroPedido = p.numero_pedido;
+                tr.style.opacity = '0';
+                tr.style.transform = 'translateY(-20px)';
+
+                const novedades = procesarNovedades(p.novedades);
+                const cantidadNovedades = novedades.length;
+                const badgeHtml = cantidadNovedades > 0 ? `<span class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white ring-2 ring-white">${cantidadNovedades}</span>` : '';
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 text-center">
+                        <input type="checkbox" class="w-5 h-5 rounded cursor-pointer" ${p.pedido_revisado ? 'checked' : ''} 
+                               onchange="guardarCheckPedido(${p.id}, this.checked)" title="Marcar pedido como revisado">
+                    </td>
+                    <td class="px-6 py-4 text-center flex gap-2 justify-center items-center">
+                        <a href="/gestion-bodega/pedidos/${p.id}" class="inline-flex items-center justify-center p-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded transition-colors"
+                           title="Ver detalles del pedido">
+                            <span class="material-symbols-rounded text-base">visibility</span>
+                        </a>
+                        <button type="button" class="inline-flex items-center justify-center p-1.5 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 rounded-lg transition-colors"
+                                onclick="ocultarPedido(${p.id})" title="Ocultar este pedido">
+                            <span class="material-symbols-rounded text-base">visibility_off</span>
+                        </button>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <button type="button" 
+                                class="relative inline-flex items-center justify-center p-2 text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors"
+                                onclick='abrirModalNovedades(${p.id}, "${p.numero_pedido}", ${JSON.stringify(novedades)})'
+                                title="Ver novedades">
+                            <span class="material-symbols-rounded">notifications</span>
+                            ${badgeHtml}
+                        </button>
+                    </td>
+                    <td class="px-6 py-4 font-medium text-black">${p.numero_pedido}</td>
+                    <td class="px-6 py-4 text-black">${p.cliente}</td>
+                    <td class="px-6 py-4 text-black">${p.asesor}</td>
+                    <td class="px-6 py-4 text-center text-black">${formatFechaJS(p.fecha_pedido)}</td>
+                    <td class="px-6 py-4 text-center text-black">${formatFechaJS(p.fecha_actualizacion)}</td>
+                `;
+
+                tbody.prepend(tr);
+                setTimeout(() => {
+                    tr.style.opacity = '1';
+                    tr.style.transform = 'translateY(0)';
+                    tr.animate([{backgroundColor:'#fecaca'},{backgroundColor:'#fee2e2'},{backgroundColor:'#fecaca'}], {duration:2000});
+                }, 50);
+            }
+        } catch (e) { console.error('[BODEGA-LIST] Error insertando pedido:', e); }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        verificarFiltrosActivos();
+        const bd = document.getElementById('pedidoDetalleDrawerBackdrop');
+        if (bd) bd.addEventListener('click', window.cerrarDetallePedidoInline);
+        
+        document.getElementById('buscadorModal')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') window.buscarEnModal(); });
+
+        if (typeof window.waitForEcho === 'function') {
+            window.waitForEcho((echo) => {
+                console.log('[BODEGA] Echo Activo');
+                
+                // Cache para evitar procesamiento duplicado de eventos en ráfaga (debouncing por pedido)
+                const eventCache = {
+                    processed: new Map(),
+                    shouldProcess(pedidoId, eventType) {
+                        const key = `${pedidoId}_${eventType}`;
+                        const now = Date.now();
+                        if (this.processed.has(key) && (now - this.processed.get(key)) < 2000) {
+                            return false; // Ignorar si se procesó hace menos de 2 segundos
+                        }
+                        this.processed.set(key, now);
+                        // Limpieza periódica del mapa
+                        if (this.processed.size > 100) this.processed.clear();
+                        return true;
+                    }
+                };
+
+                echo.channel('notifications').listen('.new-notification', (e) => {
+                    console.log('[BODEGA-LIST] Evento recibido:', e.event_type, e);
+                    const num = e.pedido; if (!num) return;
+                    
+                    // Deduplicar: Si es un pedido_approved, evitamos procesar ráfagas
+                    if (['pedido_approved', 'pedido_aprobado', 'order_status_changed'].includes(e.event_type)) {
+                        if (!eventCache.shouldProcess(num, 'update')) return;
+                    }
+
+                    const row = document.querySelector(`tr[data-numero-pedido="${num}"]`);
+                    if (row) {
+                        console.log('[BODEGA-LIST] Resaltando pedido existente:', num);
+                        row.classList.remove('bg-white', 'bg-yellow-200', 'bg-blue-200');
+                        row.classList.add('bg-red-200');
+                        const tbody = document.getElementById('tablaOrdenesBody');
+                        if (tbody && tbody.firstChild !== row) {
+                            row.style.transition = 'all 0.5s ease-out';
+                            tbody.prepend(row);
+                            row.animate([{backgroundColor:'#fecaca'},{backgroundColor:'#fee2e2'},{backgroundColor:'#fecaca'}], {duration:2000});
+                        }
+                        
+                        // 🔥 ACTUALIZAR CHECKBOX Y ESTADO DEL PEDIDO
+                        const pedidoId = row.dataset.pedidoId;
+                        if (pedidoId) {
+                            fetch(`/gestion-bodega/pedidos/${pedidoId}/fila`, { headers: { 'Accept': 'application/json' } })
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.success && data.fila) {
+                                        // Actualizar checkbox: desmarcar si hay cambios nuevos
+                                        const checkbox = row.querySelector('input[type="checkbox"]');
+                                        if (checkbox) {
+                                            const tieneChanges = data.fila.tiene_cambios_nuevos;
+                                            checkbox.checked = !tieneChanges;
+                                            console.log('[BODEGA-LIST] Checkbox actualizado para pedido:', pedidoId, 'Checked:', checkbox.checked, 'Tiene cambios:', tieneChanges);
+                                        }
+                                        
+                                        // Actualizar color de fila según estado
+                                        row.classList.remove('bg-white', 'bg-yellow-200', 'bg-blue-200', 'bg-red-200');
+                                        if (data.fila.tiene_cambios_nuevos) {
+                                            row.classList.add('bg-red-200');
+                                        } else if (data.fila.todos_pendientes) {
+                                            row.classList.add('bg-yellow-200');
+                                        } else if (data.fila.todos_entregados) {
+                                            row.classList.add('bg-blue-200');
+                                        } else {
+                                            row.classList.add('bg-white');
+                                        }
+                                        
+                                        // Actualizar badge de novedades
+                                        const novedades = procesarNovedades(data.fila.novedades);
+                                        actualizarBadgeNovedades(pedidoId, novedades);
+                                        console.log('[BODEGA-LIST] Fila actualizada para pedido:', pedidoId, 'Novedades:', novedades.length);
+                                    }
+                                })
+                                .catch(err => console.error('[BODEGA-LIST] Error actualizando fila:', err));
+                        }
+                    } else if (['pedido_creado', 'order_created', 'pedido_approved', 'pedido_aprobado', 'order_status_changed'].includes(e.event_type)) {
+                        console.log('[BODEGA-LIST] Nuevo pedido detectado, insertando dinámicamente...');
+                        const params = new URLSearchParams(window.location.search);
+                        if ((params.get('page') || '1') === '1' && !params.has('search')) {
+                            insertarPedidoDinamico(e.record_id || e.id);
+                        }
+                    }
+                });
+
+                echo.channel('pedidos.general').listen('.pedido.actualizado', (e) => {
+                    if (e.action === 'approved') {
+                        // Usar el mismo cache para evitar duplicación con 'new-notification'
+                        const pedidoNum = e.numero_pedido || e.pedido_id;
+                        if (eventCache.shouldProcess(pedidoNum, 'update')) {
+                            insertarPedidoDinamico(e.pedido_id);
+                        }
+                    }
+                });
+            });
+        }
+    });
+
+    window.addEventListener('message', (e) => { if (e.data.action === 'cerrarDrawerPedido') window.cerrarDetallePedidoInline(); });
+
+    // 🔥 REFRESH ON BACK: Forzar recarga si se vuelve atrás desde el navegador
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+            console.log('[BODEGA-LIST] Detectada navegación atrás, recargando para actualizar estados...');
+            window.location.reload();
+        }
+    });
+})();
 </script>
+@endpush
+
 @endsection

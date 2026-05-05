@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\News;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -39,15 +40,31 @@ class PedidoAnexoHistorial extends Model
     public static function registrarPrendaNueva(
         int $pedidoProduccionId,
         ?int $prendaId,
-        string $nombrePrenda = 'PRENDA'
+        string $nombrePrenda = 'PRENDA',
+        bool $notificar = true
     ): self {
-        return self::create([
+        $anexo = self::create([
             'pedido_produccion_id' => $pedidoProduccionId,
             'tipo'                 => 'PRENDA',
             'referencia_id'        => $prendaId ?? 0,
             'descripcion'          => 'PRENDA NUEVA: ' . strtoupper($nombrePrenda),
             'created_by'           => auth()->id(),
         ]);
+
+        if ($notificar) {
+            // Notificar a bodega
+            $pedido = $anexo->pedido;
+            News::create([
+                'event_type' => 'prenda_agregada',
+                'table_name' => 'pedido_anexos_historial',
+                'record_id' => $anexo->id,
+                'description' => "Se ha AGREGADO la prenda " . strtoupper($nombrePrenda) . " a la Orden #" . ($pedido->numero_pedido ?? $pedido->id),
+                'user_id' => auth()->id(),
+                'pedido' => $pedido->numero_pedido ?? $pedido->id,
+            ]);
+        }
+
+        return $anexo;
     }
 
     /**
@@ -58,13 +75,14 @@ class PedidoAnexoHistorial extends Model
         int $prendaId,
         string $nombrePrenda = 'PRENDA',
         string $accion = '',
-        ?string $detalle = null
+        ?string $detalle = null,
+        bool $notificar = true
     ): self {
         $descripcion = 'PRENDA EDITADA: ' . strtoupper($nombrePrenda);
         if ($accion !== '') {
             $descripcion .= ' (' . $accion . ')';
         }
-        return self::create([
+        $anexo = self::create([
             'pedido_produccion_id' => $pedidoProduccionId,
             'tipo'                 => 'PRENDA',
             'referencia_id'        => $prendaId,
@@ -72,6 +90,21 @@ class PedidoAnexoHistorial extends Model
             'detalle'              => $detalle,
             'created_by'           => auth()->id(),
         ]);
+
+        if ($notificar) {
+            // Notificar a bodega
+            $pedido = $anexo->pedido;
+            News::create([
+                'event_type' => 'prenda_modificada',
+                'table_name' => 'pedido_anexos_historial',
+                'record_id' => $anexo->id,
+                'description' => "Se ha MODIFICADO la prenda " . strtoupper($nombrePrenda) . " en la Orden #" . ($pedido->numero_pedido ?? $pedido->id),
+                'user_id' => auth()->id(),
+                'pedido' => $pedido->numero_pedido ?? $pedido->id,
+            ]);
+        }
+
+        return $anexo;
     }
 
     /**
@@ -80,15 +113,31 @@ class PedidoAnexoHistorial extends Model
     public static function registrarEppNuevo(
         int $pedidoProduccionId,
         int $pedidoEppId,
-        int $eppId
+        int $eppId,
+        bool $notificar = true
     ): self {
-        return self::create([
+        $anexo = self::create([
             'pedido_produccion_id' => $pedidoProduccionId,
             'tipo'                 => 'EPP',
             'referencia_id'        => $pedidoEppId,
             'descripcion'          => 'EPP NUEVO #' . $eppId,
             'created_by'           => auth()->id(),
         ]);
+
+        if ($notificar) {
+            // Notificar a bodega
+            $pedido = $anexo->pedido;
+            News::create([
+                'event_type' => 'epp_agregado',
+                'table_name' => 'pedido_anexos_historial',
+                'record_id' => $anexo->id,
+                'description' => "Se ha AGREGADO un EPP a la Orden #" . ($pedido->numero_pedido ?? $pedido->id),
+                'user_id' => auth()->id(),
+                'pedido' => $pedido->numero_pedido ?? $pedido->id,
+            ]);
+        }
+
+        return $anexo;
     }
 
     /**
@@ -97,14 +146,30 @@ class PedidoAnexoHistorial extends Model
     public static function registrarEppEditado(
         int $pedidoProduccionId,
         int $pedidoEppId,
-        int $eppId
+        int $eppId,
+        bool $notificar = true
     ): self {
-        return self::create([
+        $anexo = self::create([
             'pedido_produccion_id' => $pedidoProduccionId,
             'tipo'                 => 'EPP',
             'referencia_id'        => $pedidoEppId,
             'descripcion'          => 'EPP EDITADO #' . $eppId,
             'created_by'           => auth()->id(),
         ]);
+
+        if ($notificar) {
+            // Notificar a bodega
+            $pedido = $anexo->pedido;
+            News::create([
+                'event_type' => 'epp_modificado',
+                'table_name' => 'pedido_anexos_historial',
+                'record_id' => $anexo->id,
+                'description' => "Se ha MODIFICADO un EPP en la Orden #" . ($pedido->numero_pedido ?? $pedido->id),
+                'user_id' => auth()->id(),
+                'pedido' => $pedido->numero_pedido ?? $pedido->id,
+            ]);
+        }
+
+        return $anexo;
     }
 }

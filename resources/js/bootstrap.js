@@ -172,6 +172,9 @@ function shouldAutoInitializeEcho() {
         moduleName === 'insumos-materiales' ||
         moduleName === 'cartera' ||
         moduleName === 'control-calidad' ||
+        moduleName === 'bodega' ||
+        moduleName === 'despacho' ||
+        moduleName === 'produccion' ||
         notificationsUi === 'asesores'
     );
 }

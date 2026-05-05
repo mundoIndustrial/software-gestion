@@ -38,6 +38,11 @@ class BodegaPedidoService implements BodegaPedidoServiceContract
         return $this->consultaService->obtenerDatosFactura($id);
     }
 
+    public function obtenerDatosParaFila(int $pedidoId): array
+    {
+        return $this->consultaService->obtenerDatosParaFila($pedidoId);
+    }
+
     public function guardarDetalles(array $validatedData): array
     {
         return $this->persistenciaService->guardarDetalles($validatedData);

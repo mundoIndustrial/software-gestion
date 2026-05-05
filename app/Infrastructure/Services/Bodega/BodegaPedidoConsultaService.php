@@ -120,12 +120,16 @@ class BodegaPedidoConsultaService
             $todosPendientes = $estadosPedido['todos_pendientes'];
 
             $userId = auth()->id();
-            $vistoPorUsuario = PedidoVistoSupervisor::where('pedido_id', $primerPedido->id)
+            
+            // Usar el ID del pedido de producción para las tablas de estado
+            $targetPedidoId = $pedidoProduccion?->id ?? $primerPedido->pedido_produccion_id ?? $primerPedido->id;
+
+            $vistoPorUsuario = PedidoVistoSupervisor::where('pedido_id', $targetPedidoId)
                 ->where('user_id', $userId)
                 ->first();
 
-            // Buscar por el ID real del recibo, no por numero_pedido
-            $pedidoRevisado = PedidoRevisado::where('pedido_id', $primerPedido->id)
+            // Buscar por el ID del pedido de producción
+            $pedidoRevisado = PedidoRevisado::where('pedido_id', $targetPedidoId)
                 ->where('user_id', $userId)
                 ->first();
 
@@ -513,7 +517,7 @@ class BodegaPedidoConsultaService
 
         // Query 1: Todos los PedidoProduccion para esta página
         $producciones = PedidoProduccion::whereIn('numero_pedido', $numerosPedidos)
-            ->select('id', 'numero_pedido', 'estado')
+            ->select('id', 'numero_pedido', 'estado', 'novedades')
             ->get()
             ->keyBy('numero_pedido');
 
@@ -524,28 +528,44 @@ class BodegaPedidoConsultaService
         }
 
         // Query 3: Todos los PedidoVistoSupervisor para los recibos en esta página
-        $recibosIds = $pedidosFiltrados->whereIn('numero_pedido', $numerosPedidos)
-            ->pluck('id')
-            ->unique();
+        // IDs de producción para buscar estados de vista y revisión
+        $produccionIds = $producciones->pluck('id')->filter()->unique();
 
-        $vistosMap = PedidoVistoSupervisor::whereIn('pedido_id', $recibosIds)
+        $vistosMap = PedidoVistoSupervisor::whereIn('pedido_id', $produccionIds)
             ->where('user_id', $userId)
             ->select('pedido_id', 'created_at')
             ->get()
             ->keyBy('pedido_id');
 
-        // Query 4: Todos los PedidoRevisado para los recibos en esta página
-        $revisadosMap = PedidoRevisado::whereIn('pedido_id', $recibosIds)
+        // Query 4: Todos los PedidoRevisado para los pedidos en esta página
+        $revisadosMap = PedidoRevisado::whereIn('pedido_id', $produccionIds)
             ->where('user_id', $userId)
-            ->select('pedido_id', 'created_at')
+            ->select('pedido_id', 'created_at', 'updated_at')
             ->get()
             ->keyBy('pedido_id');
 
-        // Query 5: Todas las últimas actualizaciones para esta página
-        $actualizacionesMap = DB::table('bodega_detalles_talla')
+        // Query 5: Todas las últimas actualizaciones para esta página (Bodega)
+        $actualizacionesBodegaMap = DB::table('bodega_detalles_talla')
             ->whereIn('numero_pedido', $numerosPedidos)
             ->select('numero_pedido', DB::raw('MAX(updated_at) as ultima_actualizacion'))
             ->groupBy('numero_pedido')
+            ->pluck('ultima_actualizacion', 'numero_pedido');
+
+        // Query 6: Últimas actualizaciones de Asesores (Anexos)
+        $actualizacionesAsesorMap = DB::table('pedido_anexos_historial')
+            ->join('pedidos_produccion', 'pedidos_produccion.id', '=', 'pedido_anexos_historial.pedido_produccion_id')
+            ->whereIn('pedidos_produccion.numero_pedido', $numerosPedidos)
+            ->select('pedidos_produccion.numero_pedido', DB::raw('MAX(pedido_anexos_historial.created_at) as ultima_actualizacion'))
+            ->groupBy('pedidos_produccion.numero_pedido')
+            ->pluck('ultima_actualizacion', 'numero_pedido');
+
+        // Query 7: Últimas actualizaciones de EPP
+        $actualizacionesEppMap = DB::table('pedido_epp')
+            ->join('pedidos_produccion', 'pedidos_produccion.id', '=', 'pedido_epp.pedido_produccion_id')
+            ->whereIn('pedidos_produccion.numero_pedido', $numerosPedidos)
+            ->whereNull('pedido_epp.deleted_at')
+            ->select('pedidos_produccion.numero_pedido', DB::raw('MAX(pedido_epp.created_at) as ultima_actualizacion'))
+            ->groupBy('pedidos_produccion.numero_pedido')
             ->pluck('ultima_actualizacion', 'numero_pedido');
 
         // Procesar datos con batch-loaded información (sin queries adicionales)
@@ -557,9 +577,27 @@ class BodegaPedidoConsultaService
                 $pedidoProduccion = $producciones->get($numeroPedido);
                 $estadosPedido = $estadosPorPedido[$numeroPedido] ?? [];
 
-                $vistoPorUsuario = $vistosMap->get($primerPedido->id);
-                $pedidoRevisado = $revisadosMap->get($primerPedido->id);
-                $fechaActualizacion = $actualizacionesMap->get($numeroPedido) ?? $primerPedido->created_at;
+                $targetPedidoId = $pedidoProduccion?->id ?? $primerPedido->pedido_produccion_id;
+                
+                $vistoPorUsuario = $vistosMap->get($targetPedidoId);
+                $pedidoRevisado = $revisadosMap->get($targetPedidoId);
+                
+                // Combinar la fecha de actualización de bodega, asesores (anexos) y EPP
+                $fechaBodega = $actualizacionesBodegaMap->get($numeroPedido);
+                $fechaAsesor = $actualizacionesAsesorMap->get($numeroPedido);
+                $fechaEpp = $actualizacionesEppMap->get($numeroPedido);
+                
+                $fechaActualizacion = $fechaBodega;
+                
+                if ($fechaAsesor && (!$fechaActualizacion || $fechaAsesor > $fechaActualizacion)) {
+                    $fechaActualizacion = $fechaAsesor;
+                }
+                
+                if ($fechaEpp && (!$fechaActualizacion || $fechaEpp > $fechaActualizacion)) {
+                    $fechaActualizacion = $fechaEpp;
+                }
+                
+                $fechaActualizacion = $fechaActualizacion ?? $primerPedido->created_at;
 
                 $revisadoVigente = false;
                 $tieneCambiosNuevos = false;
@@ -567,12 +605,30 @@ class BodegaPedidoConsultaService
                 if (!empty($pedidoRevisado)) {
                     try {
                         $tsActualizacion = $fechaActualizacion ? Carbon::parse($fechaActualizacion)->timestamp : null;
-                        $tsRevisado = $pedidoRevisado->created_at ? Carbon::parse($pedidoRevisado->created_at)->timestamp : null;
+                        // Usar updated_at en lugar de created_at para obtener la fecha más reciente de revisión
+                        $tsRevisado = $pedidoRevisado->updated_at ? Carbon::parse($pedidoRevisado->updated_at)->timestamp : null;
+                        
                         $revisadoVigente = $tsActualizacion !== null && $tsRevisado !== null
                             ? $tsRevisado >= $tsActualizacion
                             : true;
                         $tieneCambiosNuevos = !$revisadoVigente;
+                        
+                        // Log para debugging
+                        if ($tieneCambiosNuevos) {
+                            \Log::debug('[procesarVistaLista] Cambios nuevos detectados', [
+                                'numero_pedido' => $numeroPedido,
+                                'fecha_actualizacion' => $fechaActualizacion,
+                                'fecha_revisado' => $pedidoRevisado->updated_at,
+                                'ts_actualizacion' => $tsActualizacion,
+                                'ts_revisado' => $tsRevisado,
+                                'revisado_vigente' => $revisadoVigente
+                            ]);
+                        }
                     } catch (\Throwable $e) {
+                        \Log::error('[procesarVistaLista] Error en comparación de timestamps', [
+                            'error' => $e->getMessage(),
+                            'numero_pedido' => $numeroPedido
+                        ]);
                         $revisadoVigente = true;
                         $tieneCambiosNuevos = false;
                     }
@@ -584,6 +640,7 @@ class BodegaPedidoConsultaService
                     'cliente' => $primerPedido->cliente ?? WarehouseConstants::DEFAULT_NA,
                     'asesor' => $primerPedido->asesor?->nombre ?? $primerPedido->asesor?->name ?? WarehouseConstants::DEFAULT_NA,
                     'estado' => $pedidoProduccion?->estado ?? $primerPedido->estado,
+                    'novedades' => $pedidoProduccion?->novedades,
                     'fecha_pedido' => $primerPedido->created_at ?? $primerPedido->fecha_pedido,
                     'fecha_actualizacion' => $fechaActualizacion,
                     'cantidad_items' => $pedidosDelNumero->count(),
@@ -605,5 +662,67 @@ class BodegaPedidoConsultaService
             'por_pagina' => $paginacion['por_pagina'],
         ];
     }
+    public function obtenerDatosParaFila(int $pedidoId): array
+    {
+        $pedidoProduccion = PedidoProduccion::with(['asesora'])->find($pedidoId);
+        if (!$pedidoProduccion) {
+            throw new \Exception("Pedido no encontrado");
+        }
 
+        $numeroPedido = $pedidoProduccion->numero_pedido;
+        $usuarioId = auth()->id();
+
+        // Calcular estados
+        $estadosPedido = $this->estadoCalculator->calcular((string)$numeroPedido);
+
+        // Verificado/Revisado
+        $pedidoRevisado = PedidoRevisado::where('pedido_id', $pedidoId)->first();
+
+        // Fechas de actualización
+        $fechaBodega = DB::table('bodega_detalles_talla')
+            ->where('numero_pedido', $numeroPedido)
+            ->max('updated_at');
+        
+        $fechaAsesor = DB::table('pedido_anexos_historial')
+            ->where('pedido_produccion_id', $pedidoId)
+            ->max('created_at');
+            
+        $fechaEpp = DB::table('pedido_epp')
+            ->where('pedido_produccion_id', $pedidoId)
+            ->whereNull('deleted_at')
+            ->max('created_at');
+
+        $fechaActualizacion = $fechaBodega;
+        if ($fechaAsesor && (!$fechaActualizacion || $fechaAsesor > $fechaActualizacion)) $fechaActualizacion = $fechaAsesor;
+        if ($fechaEpp && (!$fechaActualizacion || $fechaEpp > $fechaActualizacion)) $fechaActualizacion = $fechaEpp;
+        $fechaActualizacion = $fechaActualizacion ?? $pedidoProduccion->created_at;
+
+        // Cambios nuevos
+        $revisadoVigente = false;
+        $tieneCambiosNuevos = false;
+        if (!empty($pedidoRevisado)) {
+            try {
+                $tsActualizacion = $fechaActualizacion ? Carbon::parse($fechaActualizacion)->timestamp : null;
+                $tsRevisado = $pedidoRevisado->created_at ? Carbon::parse($pedidoRevisado->created_at)->timestamp : null;
+                $revisadoVigente = $tsActualizacion !== null && $tsRevisado !== null ? $tsRevisado >= $tsActualizacion : true;
+                $tieneCambiosNuevos = !$revisadoVigente;
+            } catch (\Throwable $e) {}
+        }
+
+        return [
+            'id' => $pedidoProduccion->id,
+            'numero_pedido' => $numeroPedido,
+            'cliente' => $pedidoProduccion->cliente ?? WarehouseConstants::DEFAULT_NA,
+            'asesor' => $pedidoProduccion->asesora?->name ?? $pedidoProduccion->asesora?->nombre ?? WarehouseConstants::DEFAULT_NA,
+            'estado' => $pedidoProduccion->estado,
+            'novedades' => $pedidoProduccion->novedades,
+            'fecha_pedido' => $pedidoProduccion->created_at,
+            'fecha_actualizacion' => $fechaActualizacion,
+            'pedido_revisado' => !empty($pedidoRevisado),
+            'tiene_cambios_nuevos' => $tieneCambiosNuevos,
+            'tiene_pendientes' => $estadosPedido['tiene_pendientes'] ?? false,
+            'todos_pendientes' => $estadosPedido['todos_pendientes'] ?? false,
+            'todos_entregados' => $estadosPedido['todos_entregados'] ?? false,
+        ];
+    }
 }

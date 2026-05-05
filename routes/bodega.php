@@ -84,6 +84,10 @@ Route::middleware(['auth', 'role:bodeguero,EPP-Bodega,supervisor_pedidos,supervi
     Route::get('/pedidos/{id}', [PedidosController::class, 'show'])
         ->name('pedidos-show');
 
+    // Obtener HTML/Datos de una fila
+    Route::get('/pedidos/{id}/fila', [PedidosController::class, 'renderFilaPedido'])
+        ->name('pedidos-fila');
+
     // Desmarcar pedido como no visto
     Route::post('/pedidos/{id}/desmarcar', [PedidosController::class, 'desmarcar'])
         ->name('desmarcar-pedido');

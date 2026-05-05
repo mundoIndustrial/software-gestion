@@ -571,7 +571,10 @@ function getNotificationConfig(eventType) {
         'cotizacion_approved': { icon: 'check_circle', color: '#10b981', title: 'Cotización Aprobada' },
         'cotizacion_rejected': { icon: 'cancel', color: '#ef4444', title: 'Cotización Rechazada' },
         'pedido_created': { icon: 'add_shopping_cart', color: '#10b981', title: 'Nuevo Pedido' },
-        'pedido_approved': { icon: 'verified', color: '#10b981', title: 'Pedido Aprobado' }
+        'pedido_approved': { icon: 'verified', color: '#10b981', title: 'Pedido Aprobado' },
+        'epp_agregado': { icon: 'health_and_safety', color: '#8b5cf6', title: 'EPP Agregado' },
+        'epp_modificado': { icon: 'edit', color: '#f59e0b', title: 'EPP Modificado' },
+        'epp_homologado': { icon: 'published_with_changes', color: '#d946ef', title: 'EPP Homologado' }
     };
     
     return configs[eventType] || { icon: 'notifications', color: '#94a3b8', title: 'Notificación' };

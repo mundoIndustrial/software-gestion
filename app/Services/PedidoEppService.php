@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\PedidoProduccion;
 use App\Models\PedidoEpp;
 use App\Models\PedidoEppImagen;
+use App\Models\News;
+use App\Models\PedidoAnexoHistorial;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -71,6 +73,13 @@ class PedidoEppService
                 if (!empty($eppData['imagenes'])) {
                     $this->guardarImagenesDelEpp($pedidoEpp, $eppData['imagenes']);
                 }
+
+                // Registrar auditoría y notificar a bodega
+                PedidoAnexoHistorial::registrarEppNuevo(
+                    $pedido->id,
+                    $pedidoEpp->id,
+                    $eppData['epp_id']
+                );
 
                 $pedidosEpp[] = $pedidoEpp;
             }

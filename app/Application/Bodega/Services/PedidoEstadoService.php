@@ -48,18 +48,44 @@ class PedidoEstadoService
             $userId = auth()->id();
 
             if ($revisado) {
-                PedidoRevisado::firstOrCreate([
-                    'pedido_id' => $pedidoId,
-                    'user_id' => $userId
-                ]);
+                // Buscar si ya existe un registro de revisión
+                $pedidoRevisado = PedidoRevisado::where('pedido_id', $pedidoId)
+                    ->where('user_id', $userId)
+                    ->first();
+
+                if ($pedidoRevisado) {
+                    // Si existe, actualizar solo updated_at para que sea más reciente que cualquier actualización
+                    $pedidoRevisado->touch(); // Esto actualiza updated_at a now()
+                    \Log::info('[marcarComoRevisado] Actualizado registro existente', [
+                        'pedido_id' => $pedidoId,
+                        'user_id' => $userId,
+                        'nueva_fecha' => $pedidoRevisado->updated_at
+                    ]);
+                } else {
+                    // Si no existe, crear uno nuevo
+                    PedidoRevisado::create([
+                        'pedido_id' => $pedidoId,
+                        'user_id' => $userId
+                    ]);
+                    \Log::info('[marcarComoRevisado] Creado nuevo registro', [
+                        'pedido_id' => $pedidoId,
+                        'user_id' => $userId,
+                        'fecha' => now()
+                    ]);
+                }
             } else {
                 PedidoRevisado::where('pedido_id', $pedidoId)
                     ->where('user_id', $userId)
                     ->delete();
+                \Log::info('[marcarComoRevisado] Eliminado registro', [
+                    'pedido_id' => $pedidoId,
+                    'user_id' => $userId
+                ]);
             }
 
             return ['success' => true];
         } catch (\Exception $e) {
+            \Log::error('[marcarComoRevisado] Error: ' . $e->getMessage());
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
