@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
     function formatDateShort(fechaRaw) {
         if (!fechaRaw) return '-';
         const d = new Date(fechaRaw);
@@ -74,9 +74,10 @@
     }
 
     function renderSewingRow(proceso, escapeHtml, options = {}) {
-        const gridTemplate = options.gridTemplate || '110px 170px 110px 200px 120px 200px 160px 130px 100px';
+        const gridTemplate = options.gridTemplate || '110px 170px 150px 110px 200px 120px 200px 160px 130px 100px';
         const showActions = options.showActions === true;
         const showReceiptType = options.showReceiptType === true;
+        const showRemainingDays = options.showRemainingDays !== false;
         const actionMode = options.actionMode || 'link';
         const actionHandlerName = String(options.actionHandlerName || 'openReciboCosturaModalFromRow');
         const getReceiptUrl = typeof options.getReceiptUrl === 'function' ? options.getReceiptUrl : null;
@@ -92,6 +93,10 @@
         const prendasHtml = prendas.length
             ? prendas.map((linea) => `<div style="margin-bottom: 0.25rem;">${escapeHtml(linea)}</div>`).join('')
             : '<div>-</div>';
+        const hasEstimatedDate = Boolean(proceso?.fecha_estimada_de_entrega);
+        const diasRestantes = hasEstimatedDate && Number.isFinite(Number(proceso?.dias_restantes)) && Number(proceso?.dias_restantes) >= 0
+            ? Number(proceso?.dias_restantes)
+            : null;
         const receiptUrlRaw = showActions && getReceiptUrl ? getReceiptUrl(proceso) : '';
         const receiptUrl = typeof receiptUrlRaw === 'string' ? receiptUrlRaw : '';
         const actionsCellHtml = showActions
@@ -132,6 +137,11 @@
             ">
                 ${actionsCellHtml}
                 <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">${escapeHtml(formatDateShort(proceso?.fecha_creacion))}</div>
+                ${showRemainingDays ? `<div>
+                    ${diasRestantes !== null
+                        ? `<span style="display: inline-flex; flex-direction: column; line-height: 1.1; color: #dc2626; font-weight: 700; font-size: 0.78rem;"><span>${escapeHtml(String(diasRestantes))} dí­as</span><span>hábiles restantes</span></span>`
+                        : '<span style="color: #9ca3af;">-</span>'}
+                </div>` : ''}
                 <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151; font-weight: 500;">${escapeHtml(numeroRecibo)}</div>
                 ${showReceiptType ? `<div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">${tipoReciboHtml}</div>` : ''}
                 <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">${escapeHtml(String(proceso?.cliente || '-'))}</div>
@@ -177,7 +187,7 @@
     function renderEmbroideryRow(proceso, escapeHtml, options = {}) {
         const showActions = options.showActions === true;
         const actionHandlerName = String(options.actionHandlerName || 'openReceiptFromLogoPendingRow');
-        const gridTemplate = options.gridTemplate || '160px 110px 200px 150px 140px 130px 170px 130px 100px';
+        const gridTemplate = options.gridTemplate || '160px 150px 110px 200px 150px 140px 130px 170px 130px 100px';
         const fechaCreacion = formatDateTime(proceso?.fecha_creacion);
         const numeroRecibo = proceso?.numero_recibo || 'Sin asignar';
         const cliente = proceso?.cliente || '';
@@ -188,6 +198,10 @@
         const tipoRecibo = renderReceiptTypeBadge(proceso?.tipo_recibo || '', escapeHtml);
         const tipoReciboRaw = proceso?.tipo_recibo || '';
         const fechaAprobacion = formatDateTime(proceso?.fecha_aprobacion);
+        const hasEstimatedDate = Boolean(proceso?.fecha_estimada_de_entrega);
+        const diasRestantes = hasEstimatedDate && Number.isFinite(Number(proceso?.dias_restantes)) && Number(proceso?.dias_restantes) >= 0
+            ? Number(proceso?.dias_restantes)
+            : null;
         const colorBordadoEstampado = proceso?.color_bordado_estampado || '';
         const actionsCellHtml = showActions
             ? `
@@ -215,6 +229,11 @@
             " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=this.getAttribute('data-color-guardado') || 'white'">
                 ${actionsCellHtml}
                 <div>${fechaAprobacion ? `<span>${escapeHtml(fechaAprobacion)}</span>` : `<span style="background: #f3f4f6; color: #9ca3af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">--</span>`}</div>
+                <div>
+                    ${diasRestantes !== null
+                        ? `<span style="display: inline-flex; flex-direction: column; line-height: 1.1; color: #dc2626; font-weight: 700; font-size: 0.78rem;"><span>${escapeHtml(String(diasRestantes))} días</span><span>hábiles restantes</span></span>`
+                        : '<span style="color: #9ca3af;">-</span>'}
+                </div>
                 <div><span style="font-weight: 600; color: #1e5ba8;">${escapeHtml(String(numeroRecibo))}</span></div>
                 <div><span>${escapeHtml(String(cliente))}</span></div>
                 <div><span style="background: #e8f3ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: normal; overflow-wrap: anywhere; word-break: break-word; line-height: 1.2; border: 1px solid #bfdbfe; display: inline-block; max-width: 100%;">${escapeHtml(String(cantidad))} ${escapeHtml(String(nombrePrenda))}</span></div>

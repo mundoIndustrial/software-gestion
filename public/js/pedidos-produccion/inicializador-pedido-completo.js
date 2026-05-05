@@ -47,6 +47,7 @@ window.crearPedidoConBuilderUnificado = async function() {
         const ordenCompra = document.getElementById('orden_compra_editable')?.value;
         const asesora = document.getElementById('asesora_editable')?.value;
         const formaPago = document.getElementById('forma_de_pago_editable')?.value;
+        const diaEntrega = document.getElementById('dia_de_entrega_editable')?.value;
         
         if (!cliente) throw new Error('Cliente es requerido');
         
@@ -56,7 +57,8 @@ window.crearPedidoConBuilderUnificado = async function() {
             .setCliente(cliente)
             .setOrdenCompra(ordenCompra)
             .setAsesora(asesora)
-            .setFormaPago(formaPago);
+            .setFormaPago(formaPago)
+            .setDiaEntrega(diaEntrega);
         
         console.log('[Builder] Estado ANTES:', {
             procesos_totales: prendas.reduce((sum, p) => sum + Object.keys(p.procesos || {}).length, 0),
@@ -172,10 +174,11 @@ window.construirPedidoLimpio = function(datosFormulario) {
     const builder = new PedidoCompletoUnificado();
     
     // Datos generales
-    builder
-        .setCliente(datosFormulario.cliente)
-        .setAsesora(datosFormulario.asesora || datosFormulario.asesor)
-        .setFormaPago(datosFormulario.forma_de_pago);
+        builder
+            .setCliente(datosFormulario.cliente)
+            .setAsesora(datosFormulario.asesora || datosFormulario.asesor)
+            .setFormaPago(datosFormulario.forma_de_pago)
+            .setDiaEntrega(datosFormulario.dia_de_entrega);
     
     // Prendas
     if (Array.isArray(datosFormulario.items)) {
@@ -211,7 +214,8 @@ if (window.ApiService) {
         builder
             .setCliente(pedidoData.cliente)
             .setAsesora(pedidoData.asesora || pedidoData.asesor)
-            .setFormaPago(pedidoData.forma_de_pago);
+            .setFormaPago(pedidoData.forma_de_pago)
+            .setDiaEntrega(pedidoData.dia_de_entrega);
         
         if (Array.isArray(pedidoData.items)) {
             pedidoData.items.forEach(item => builder.agregarPrenda(item));
@@ -234,7 +238,8 @@ if (window.ApiService) {
         builder
             .setCliente(pedidoData.cliente)
             .setAsesora(pedidoData.asesora || pedidoData.asesor)
-            .setFormaPago(pedidoData.forma_de_pago);
+            .setFormaPago(pedidoData.forma_de_pago)
+            .setDiaEntrega(pedidoData.dia_de_entrega);
         
         builder.agregarPrenda(pedidoData);
         

@@ -234,42 +234,24 @@
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Fecha</span>
-                                <button type="button" class="btn-filter-column" data-col="fecha_creacion" title="Filtrar Fecha" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
-                                </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>N° Recibo</span>
-                                <button type="button" class="btn-filter-column" data-col="numero_recibo" title="Filtrar N° Recibo" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
-                                </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Cliente</span>
-                                <button type="button" class="btn-filter-column" data-col="cliente" title="Filtrar Cliente" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
-                                </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Area</span>
-                                <button type="button" class="btn-filter-column" data-col="area" title="Filtrar Area" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
-                                </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Prendas</span>
-                                <button type="button" class="btn-filter-column" data-col="prendas" title="Filtrar Prendas" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
-                                </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Novedades</span>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Asesora</span>
-                                <button type="button" class="btn-filter-column" data-col="asesor" title="Filtrar Asesora" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
-                                </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Color</span>
@@ -317,7 +299,6 @@
                                         <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">
                                             {{ \Carbon\Carbon::parse($proceso['fecha_creacion'])->format('d/m/Y') }}
                                         </div>
-
                                         <!-- Numero de Recibo -->
                                         <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151; font-weight: 500;">
                                             {{ $proceso['numero_recibo'] }}
@@ -472,6 +453,35 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Botón Flotante para Limpiar Filtros -->
+<div id="btnLimpiarFiltros" style="
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 999;
+    display: none;
+    animation: slideIn 0.3s ease;
+">
+    <button onclick="limpiarTodosFiltros()" style="
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 56px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        transition: all 0.3s ease;
+        padding: 0;
+    " title="Limpiar todos los filtros">
+        <i class="fas fa-times"></i>
+    </button>
 </div>
 
 <!-- Modal detalle recibo (estilo Recibos Costura) -->
@@ -821,7 +831,8 @@ window.navegarPendientesReflectivo = async function navegarPendientesReflectivo(
                 gridTemplate: '110px 170px 110px 200px 120px 200px 160px 130px 100px',
                 showActions: true,
                 actionMode: 'modal',
-                actionHandlerName: 'openReciboReflectivoModalFromRow'
+                actionHandlerName: 'openReciboReflectivoModalFromRow',
+                showRemainingDays: false
             })).join('');
         }
 
@@ -967,9 +978,55 @@ async function guardarColorReflectivo(reciboId, color) {
         console.error('Error al guardar color:', error);
     }
 }
+
+function limpiarTodosFiltros() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('area');
+    url.searchParams.delete('cliente');
+    url.searchParams.delete('asesor');
+    url.searchParams.delete('numero_recibo');
+    url.searchParams.delete('prendas');
+    url.searchParams.delete('fecha_creacion');
+    url.searchParams.delete('busqueda');
+    url.searchParams.delete('page');
+
+    window.navegarPendientesReflectivo(url.toString());
+}
+
+function actualizarVisibilidadBotonLimpiar() {
+    const url = new URL(window.location.href);
+    const params = url.searchParams;
+
+    const hayFiltros =
+        params.has('area') ||
+        params.has('cliente') ||
+        params.has('asesor') ||
+        params.has('numero_recibo') ||
+        params.has('prendas') ||
+        params.has('fecha_creacion') ||
+        params.has('busqueda');
+
+    const btnLimpiar = document.getElementById('btnLimpiarFiltros');
+    if (btnLimpiar) {
+        btnLimpiar.style.display = hayFiltros ? 'block' : 'none';
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', actualizarVisibilidadBotonLimpiar);
+} else {
+    actualizarVisibilidadBotonLimpiar();
+}
+
+window.addEventListener('popstate', actualizarVisibilidadBotonLimpiar);
+const originalNavegarReflectivo = window.navegarPendientesReflectivo;
+window.navegarPendientesReflectivo = function(url, options) {
+    if (originalNavegarReflectivo) {
+        originalNavegarReflectivo(url, options);
+    }
+    setTimeout(actualizarVisibilidadBotonLimpiar, 100);
+};
 </script>
 @endpush
 
 @endsection
-
-

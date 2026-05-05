@@ -133,6 +133,44 @@ class RegistroOrdenQueryController extends Controller
         return response()->json(['success' => true, ...$result], 200);
     }
 
+    /**
+     * Calcular fecha estimada de entrega (preview) sin depender de tabla festivos.
+     * Usa cmixin/business-day a traves de Carbon::isBusinessDay().
+     *
+     * POST /api/registros/calcular-fecha-estimada-preview
+     */
+    public function calcularFechaEstimadaPreview(Request $request)
+    {
+        $validated = $request->validate([
+            'dia_de_entrega' => 'required|integer|min:1|max:35',
+            'fecha_base' => 'nullable|date',
+        ]);
+
+        $fechaBase = isset($validated['fecha_base'])
+            ? \Carbon\Carbon::parse($validated['fecha_base'])->startOfDay()
+            : now()->startOfDay();
+
+        $diasHabiles = (int) $validated['dia_de_entrega'];
+        $fecha = $fechaBase->copy();
+        $contados = 0;
+
+        while ($contados < $diasHabiles) {
+            $fecha->addDay();
+            if (!$fecha->isBusinessDay()) {
+                continue;
+            }
+            $contados++;
+        }
+
+        return response()->json([
+            'success' => true,
+            'fecha_estimada' => $fecha->format('d/m/Y'),
+            'fecha_estimada_iso' => $fecha->toDateString(),
+            'fecha_base' => $fechaBase->toDateString(),
+            'dias_habiles' => $diasHabiles,
+        ], 200);
+    }
+
 
     /**
      * GET /registros/{pedido}/recibos-datos

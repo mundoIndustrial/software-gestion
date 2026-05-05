@@ -58,6 +58,7 @@ class CrearPedidoCompleteUseCase
                 'asesora' => $dtoPedido->asesora,
                 'forma_de_pago' => $dtoPedido->forma_de_pago,
                 'observaciones' => $dtoPedido->observaciones,
+                'dia_de_entrega' => $dtoPedido->dia_de_entrega,
                 'cliente_id' => $dtoPedido->cliente_id,
                 'items' => $dtoPedido->prendas,
                 'epps' => $dtoPedido->epps,
@@ -161,4 +162,3 @@ class CrearPedidoCompleteUseCase
         }
     }
 }
-

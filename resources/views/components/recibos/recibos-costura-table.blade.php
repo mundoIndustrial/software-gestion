@@ -27,10 +27,10 @@
                         </button>
                     </div>
                 </th>
-                <th style="width: 120px;">
+                <th style="width: 140px;">
                     <div class="th-wrapper">
-                        <span>Total de dí­as</span>
-                        <button class="btn-filter-column" type="button" data-column="total_dias" onclick="openColumnFilter('total_dias', 'Total de dí­as')">
+                        <span>Días</span>
+                        <button class="btn-filter-column" type="button" data-column="total_dias" onclick="openColumnFilter('total_dias', 'Días')">
                             <i class="fas fa-filter"></i>
                             <span class="filter-badge" data-badge="total_dias">0</span>
                         </button>
@@ -192,7 +192,7 @@
                             </span>
                         </td>
                         
-                        <!-- Total de dias -->
+                        <!-- Días (Total + Restantes) -->
                         <td style="text-align: center;">
                             @if(isset($recibo['dias_calculados']))
                                 @if($recibo['dias_calculados'] == 0)
@@ -207,6 +207,34 @@
                             @else
                                 <span class="text-muted">-</span>
                             @endif
+                            @php
+                                $diasRestantes = null;
+                                $diasObjetivo = (int) ($recibo['dia_de_entrega']
+                                    ?? $recibo['pedido_info']['dia_de_entrega']
+                                    ?? 0);
+                                $diasTranscurridos = isset($recibo['dias_calculados']) ? (int) $recibo['dias_calculados'] : null;
+
+                                if ($diasObjetivo > 0 && $diasTranscurridos !== null) {
+                                    $diasRestantes = max(0, $diasObjetivo - $diasTranscurridos);
+                                } elseif (!empty($recibo['fecha_estimada_de_entrega']) && $recibo['fecha_estimada_de_entrega'] !== 'null') {
+                                    try {
+                                        $hoy = \Carbon\Carbon::today('America/Bogota');
+                                        $fechaEntrega = \Carbon\Carbon::parse($recibo['fecha_estimada_de_entrega'])->startOfDay();
+                                        $diasRestantes = $fechaEntrega->lt($hoy) ? 0 : $hoy->diffInWeekdays($fechaEntrega);
+                                    } catch (\Throwable $e) {
+                                        $diasRestantes = null;
+                                    }
+                                }
+                            @endphp
+                            <div style="margin-top: 4px;">
+                                @if($diasRestantes !== null)
+                                    <span class="badge {{ $diasRestantes <= 3 ? 'bg-danger' : ($diasRestantes <= 7 ? 'bg-warning' : 'bg-success') }}" style="font-weight: 600;">
+                                        Rest: {{ $diasRestantes }}
+                                    </span>
+                                @else
+                                    <span class="text-muted" style="font-size: 11px;">Rest: -</span>
+                                @endif
+                            </div>
                         </td>
                         
                         <!-- N° Recibo -->
@@ -358,13 +386,13 @@
                     </tr>
                 @endforeach
             @else
-                <tr>
-                    <td colspan="12" class="text-center py-4">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i>
-                            No se encontraron recibos de costura.
-                        </div>
-                    </td>
+        <tr>
+            <td colspan="12" class="text-center py-4">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    No se encontraron recibos de costura.
+                </div>
+            </td>
                 </tr>
             @endif
         </tbody>

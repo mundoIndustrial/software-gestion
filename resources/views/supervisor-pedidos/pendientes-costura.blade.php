@@ -210,16 +210,6 @@
         <div class="col-12">
             <div class="supervisor-pedidos-container">
                 <div id="supervisorPendientesCosturaContent">
-                <div style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:0.75rem;">
-                    <a
-                        href="{{ route('supervisor-pedidos.pendientes-costura.reporte', request()->query()) }}"
-                        style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 0.95rem;background:linear-gradient(135deg,#b91c1c 0%,#dc2626 100%);color:#fff;border-radius:8px;font-size:0.85rem;font-weight:600;text-decoration:none;box-shadow:0 4px 10px rgba(185,28,28,.25);"
-                        title="Descargar reporte PDF por area"
-                    >
-                        <i class="fas fa-file-pdf"></i>
-                        Generar reporte PDF por area
-                    </a>
-                </div>
                 <!-- Tabla de Ordenes -->
                 <div class="costura-table-frame" style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
                     <!-- Contenedor con Scroll -->
@@ -244,21 +234,12 @@
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Fecha de Creacion</span>
-                                <button type="button" class="btn-filter-column" data-col="fecha_creacion" title="Filtrar Fecha de Creacion" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
-                                </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>N° Recibo</span>
-                                <button type="button" class="btn-filter-column" data-col="numero_recibo" title="Filtrar N° Recibo" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
-                                </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Cliente</span>
-                                <button type="button" class="btn-filter-column" data-col="cliente" title="Filtrar Cliente" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
-                                </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Area</span>
@@ -268,18 +249,12 @@
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Prendas</span>
-                                <button type="button" class="btn-filter-column" data-col="prendas" title="Filtrar Prendas" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
-                                </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Novedades</span>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Asesora</span>
-                                <button type="button" class="btn-filter-column" data-col="asesor" title="Filtrar Asesora" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
-                                </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Color</span>
@@ -485,7 +460,7 @@
 </div>
 
 <!-- Botón Flotante para Limpiar Filtros -->
-<div id="btnLimpiarFiltros" style="
+<div id="btnLimpiarFiltrosCostura" style="
     position: fixed;
     bottom: 30px;
     right: 30px;
@@ -845,6 +820,7 @@ window.navegarPendientesCostura = async function navegarPendientesCostura(urlStr
     const { pushState = true } = options;
     const container = document.getElementById('supervisorPendientesCosturaContent');
     const rows = document.getElementById('costurasRows');
+    const pagination = document.querySelector('.costura-pagination');
     if (!container) {
         window.location.href = urlString;
         return;
@@ -879,8 +855,34 @@ window.navegarPendientesCostura = async function navegarPendientesCostura(urlStr
                 gridTemplate: '110px 170px 110px 200px 120px 200px 160px 130px 100px',
                 showActions: true,
                 actionMode: 'modal',
-                actionHandlerName: 'openReciboCosturaModalFromRow'
+                actionHandlerName: 'openReciboCosturaModalFromRow',
+                showRemainingDays: false
             })).join('');
+        }
+
+        // Mantener la paginación sincronizada con los filtros actuales.
+        if (pagination) {
+            try {
+                const htmlRes = await fetch(urlString, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'text/html'
+                    },
+                    cache: 'no-store'
+                });
+
+                if (htmlRes.ok) {
+                    const htmlText = await htmlRes.text();
+                    const tempDoc = new DOMParser().parseFromString(htmlText, 'text/html');
+                    const newPagination = tempDoc.querySelector('.costura-pagination');
+                    if (newPagination) {
+                        pagination.innerHTML = newPagination.innerHTML;
+                    }
+                }
+            } catch (paginationError) {
+                console.warn('[navegarPendientesCostura] No se pudo sincronizar la paginación:', paginationError);
+            }
         }
 
         if (pushState) {
@@ -923,6 +925,7 @@ document.addEventListener('click', function(e) {
     const a = e.target.closest('#supervisorPendientesCosturaContent a');
     if (!a) return;
     if (e.target.closest('.costura-pagination')) return;
+    if (a.hasAttribute('data-pdf-report-link')) return;
     const href = a.getAttribute('href');
     if (!href) return;
     if (href.startsWith('#')) return;
@@ -939,6 +942,7 @@ document.addEventListener('click', function(e) {
     }
 
     if (!path.startsWith('/supervisor-pedidos/pendientes-costura')) return;
+    if (path === '/supervisor-pedidos/pendientes-costura/reporte') return;
     e.preventDefault();
     navegarPendientesCostura(urlAbs);
 });
@@ -1038,6 +1042,11 @@ function limpiarTodosFiltros() {
     url.searchParams.delete('busqueda');
     url.searchParams.delete('page');
 
+    const btnLimpiar = document.getElementById('btnLimpiarFiltrosCostura');
+    if (btnLimpiar) {
+        btnLimpiar.style.display = 'none';
+    }
+
     window.navegarPendientesCostura(url.toString());
 }
 
@@ -1056,7 +1065,7 @@ function actualizarVisibilidadBotonLimpiar() {
 
     const hayFiltros = tieneArea || tieneCliente || tieneAsesor || tieneNumeroRecibo || tienePrendas || tieneFechaCreacion || tieneBusqueda;
 
-    const btnLimpiar = document.getElementById('btnLimpiarFiltros');
+    const btnLimpiar = document.getElementById('btnLimpiarFiltrosCostura');
     if (btnLimpiar) {
         btnLimpiar.style.display = hayFiltros ? 'block' : 'none';
     }
@@ -1072,11 +1081,11 @@ if (document.readyState === 'loading') {
 // Actualizar cuando se navegue
 window.addEventListener('popstate', actualizarVisibilidadBotonLimpiar);
 const originalNavegar = window.navegarPendientesCostura;
-window.navegarPendientesCostura = function(url, options) {
+window.navegarPendientesCostura = async function(url, options) {
     if (originalNavegar) {
-        originalNavegar(url, options);
+        await originalNavegar(url, options);
     }
-    setTimeout(actualizarVisibilidadBotonLimpiar, 100);
+    actualizarVisibilidadBotonLimpiar();
 };
 </script>
 @endpush

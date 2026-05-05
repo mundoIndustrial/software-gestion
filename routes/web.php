@@ -81,6 +81,8 @@ Route::middleware(['auth', 'supervisor-access'])->group(function () {
     Route::get('/dashboard/entregas-costura-data', [DashboardController::class, 'getEntregasCosturaData'])->name('dashboard.entregas-costura-data');
     Route::get('/dashboard/entregas-corte-data', [DashboardController::class, 'getEntregasCorteData'])->name('dashboard.entregas-corte-data');
     Route::get('/dashboard/kpis', [DashboardController::class, 'getKPIs'])->name('dashboard.kpis');
+    Route::get('/dashboard/reporte-seguimiento', [DashboardController::class, 'reporteSeguimiento'])->name('dashboard.reporte-seguimiento');
+    Route::get('/dashboard/timeline-pedidos', [DashboardController::class, 'timelinePedidos'])->name('dashboard.timeline-pedidos');
     Route::get('/dashboard/recent-orders', [DashboardController::class, 'getRecentOrders'])->name('dashboard.recent-orders');
     Route::get('/dashboard/news', [DashboardController::class, 'getNews'])->name('dashboard.news');
     Route::get('/dashboard/admin-notifications', [DashboardController::class, 'getAdminNotifications'])->name('dashboard.admin-notifications');

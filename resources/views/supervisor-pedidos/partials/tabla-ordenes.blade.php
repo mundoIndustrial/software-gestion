@@ -1,5 +1,5 @@
 @php
-    $columnTemplate = '60px 220px 130px 120px 220px 150px 150px 150px 150px 150px 150px';
+    $columnTemplate = '60px 220px 130px 140px 120px 220px 150px 150px 150px 150px 150px 150px';
     $gridGap = '1.2rem';
 @endphp
 
@@ -49,6 +49,9 @@
                 <button type="button" class="btn-filter-column" data-col="aprobacion_cartera" title="Filtrar Aprob. Cartera" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                     <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
                 </button>
+            </div>
+            <div class="th-wrapper" style="display: flex; align-items: center;">
+                <span>Días Restantes</span>
             </div>
             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                 <span>Número</span>
@@ -122,6 +125,46 @@
                     $rowBgHover = $estaEntregadoFila ? '#bbf7d0' : '#f9fafb';
                     $rowBgSelected = $estaEntregadoFila ? '#86efac' : '#d1d5db';
                     $rowBgUnselected = $estaEntregadoFila ? '#dcfce7' : 'white';
+                    $diasRestantes = null;
+                    $fechaEstimadaEntrega = null;
+                    if (!empty($orden->created_at) && !empty($orden->dia_de_entrega)) {
+                        try {
+                            $diasHabilesTranscurridos = \App\Services\CalculadorDiasService::calcularDiasHabiles(
+                                \Carbon\Carbon::parse($orden->created_at)->startOfDay(),
+                                now()->startOfDay()
+                            );
+                            $diasRestantes = max(0, ((int) $orden->dia_de_entrega) - (int) $diasHabilesTranscurridos);
+                        } catch (\Throwable $e) {
+                            $diasRestantes = null;
+                        }
+                    }
+
+                    $fechaEstimadaRaw = $orden->fecha_estimada_de_entrega
+                        ?? $orden->fecha_estimada_entrega
+                        ?? $orden->fecha_estimada
+                        ?? null;
+                    if (!empty($fechaEstimadaRaw)) {
+                        try {
+                            $fechaEstimadaEntrega = \Carbon\Carbon::parse($fechaEstimadaRaw)
+                                ->timezone('America/Bogota')
+                                ->format('d/m/Y');
+                        } catch (\Throwable $e) {
+                            $fechaEstimadaEntrega = null;
+                        }
+                    }
+
+                    // Fallback: si falta dia_de_entrega pero existe fecha estimada,
+                    // calcular restantes directamente desde hoy hasta la fecha estimada.
+                    if ($diasRestantes === null && !empty($fechaEstimadaRaw)) {
+                        try {
+                            $diasRestantes = \App\Services\CalculadorDiasService::calcularDiasHabiles(
+                                now()->startOfDay(),
+                                \Carbon\Carbon::parse($fechaEstimadaRaw)->startOfDay()
+                            );
+                        } catch (\Throwable $e) {
+                            $diasRestantes = null;
+                        }
+                    }
                 @endphp
                 <div class="sp-orders-grid" style="
                     padding: 1rem;
@@ -218,6 +261,22 @@
                         <span class="sp-date-cell">
                             {{ $orden->aprobado_por_cartera_en ? \Carbon\Carbon::parse($orden->aprobado_por_cartera_en)->timezone('America/Bogota')->format('d/m/Y h:i A') : '-' }}
                         </span>
+                    </div>
+
+                    <!-- Días restantes (desde Aprob. Cartera) -->
+                    <div>
+                        @if($diasRestantes !== null)
+                        <span style="display: inline-flex; flex-direction: column; line-height: 1.1; color: #dc2626; font-weight: 700; font-size: 0.78rem;">
+                            <span>{{ $diasRestantes }} días</span>
+                            <span>hábiles restantes</span>
+                            <span style="margin-top: 0.2rem; color: #6b7280; font-weight: 600; font-size: 0.72rem;">Est.: {{ $fechaEstimadaEntrega ?? '-' }}</span>
+                        </span>
+                    @else
+                        <span style="display: inline-flex; flex-direction: column; line-height: 1.1; color: #6b7280; font-weight: 600; font-size: 0.78rem;">
+                            <span>-</span>
+                            <span style="margin-top: 0.2rem; font-size: 0.72rem;">Est.: {{ $fechaEstimadaEntrega ?? '-' }}</span>
+                        </span>
+                    @endif
                     </div>
 
                     <!-- Numero -->

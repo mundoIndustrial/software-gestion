@@ -40,6 +40,8 @@ final class PedidoTableRowPresenter
         $row->created_at = self::parseDate($item->fecha_creacion);
         $row->fecha_estimada = $item->fecha_estimada;
         $row->fecha_estimada_de_entrega = $item->fecha_estimada;
+        $row->dia_de_entrega = $item->dia_de_entrega;
+        $row->dias_restantes_entrega = self::calcularDiasRestantes($item->fecha_creacion, $item->dia_de_entrega);
 
         // Keep shape compatible with optional relation access in Blade
         $row->asesora = null;
@@ -61,5 +63,32 @@ final class PedidoTableRowPresenter
             return null;
         }
     }
-}
 
+    private static function calcularDiasRestantes(?string $fechaCreacion, ?int $diaEntrega): ?int
+    {
+        if (empty($fechaCreacion) || empty($diaEntrega) || $diaEntrega <= 0) {
+            return null;
+        }
+
+        try {
+            $creacion = Carbon::parse($fechaCreacion)->startOfDay();
+            $hoy = now()->startOfDay();
+
+            $diasHabilesTranscurridos = 0;
+            $cursor = $creacion->copy()->addDay(); // contar desde el día siguiente
+
+            while ($cursor->lte($hoy)) {
+                if ($cursor->isBusinessDay()) {
+                    $diasHabilesTranscurridos++;
+                }
+                $cursor->addDay();
+            }
+
+            // El día de creación NO descuenta; el conteo inicia desde el siguiente día hábil.
+            $restantes = $diaEntrega - $diasHabilesTranscurridos;
+            return max(0, $restantes);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+}

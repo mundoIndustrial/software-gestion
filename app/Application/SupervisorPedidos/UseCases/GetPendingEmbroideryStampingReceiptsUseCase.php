@@ -4,10 +4,13 @@ namespace App\Application\SupervisorPedidos\UseCases;
 
 use App\Application\SupervisorPedidos\DTOs\GetPendingEmbroideryStampingReceiptsRequest;
 use App\Application\SupervisorPedidos\DTOs\GetPendingEmbroideryStampingReceiptsResponse;
+use App\Application\SupervisorPedidos\Support\CalculaDiasRestantesEntrega;
 use App\Domain\SupervisorPedidos\Repositories\ReceiptRepository;
 
 class GetPendingEmbroideryStampingReceiptsUseCase
 {
+    use CalculaDiasRestantesEntrega;
+
     public function __construct(
         private readonly ReceiptRepository $receiptRepository
     ) {}
@@ -40,6 +43,11 @@ class GetPendingEmbroideryStampingReceiptsUseCase
 
             $procesosConCantidad = $procesosPendientes->map(function ($proceso) use ($cantidadPorPrenda, $cantidadPorParcial) {
                 $parcialId = $this->resolveParcialId($proceso);
+                $proceso->dias_restantes = $this->calcularDiasRestantesEntrega(
+                    $proceso->aprobado_por_cartera_en ?? null,
+                    isset($proceso->dia_de_entrega) ? (int) $proceso->dia_de_entrega : null,
+                    $proceso->fecha_estimada_de_entrega ?? null
+                );
 
                 if ($parcialId !== null) {
                     $proceso->cantidad_total_prendas = (int) ($cantidadPorParcial[$parcialId] ?? 0);

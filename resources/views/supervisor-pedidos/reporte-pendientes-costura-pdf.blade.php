@@ -19,7 +19,7 @@
     <h1>Reporte de Pendientes Costura por Area</h1>
 
     <div class="meta">
-        <div><strong>Fecha de generacion:</strong> {{ $fechaGeneracion->format('Y-m-d H:i:s') }}</div>
+        <div><strong>Fecha de generacion:</strong> {{ $fechaGeneracion->format('d/m/Y H:i:s') }}</div>
         <div><strong>Total recibos:</strong> {{ $totalRecibos }}</div>
         <div>
             <strong>Filtros aplicados:</strong>
@@ -63,27 +63,28 @@
     <table>
         <thead>
             <tr>
+                <th>#</th>
                 <th>Area</th>
-                <th>N° Recibo</th>
+                <th>No. Recibo</th>
                 <th>Fecha Creacion</th>
                 <th>Cliente</th>
                 <th>Asesora</th>
-                <th>Pedido ID</th>
             </tr>
         </thead>
         <tbody>
+            @php $contador = 1; @endphp
             @forelse($grouped as $area => $rows)
                 @foreach($rows as $row)
                     <tr>
+                        <td>{{ $contador++ }}</td>
                         <td>{{ $area }}</td>
                         <td>{{ data_get($row, 'numero_recibo', '') }}</td>
                         <td>
                             @php $fecha = data_get($row, 'fecha_creacion'); @endphp
-                            {{ $fecha ? \Carbon\Carbon::parse((string) $fecha)->format('Y-m-d') : '' }}
+                            {{ $fecha ? \Carbon\Carbon::parse((string) $fecha)->format('d/m/Y') : '' }}
                         </td>
                         <td>{{ data_get($row, 'cliente', '') }}</td>
                         <td>{{ data_get($row, 'asesor', '') }}</td>
-                        <td>{{ data_get($row, 'pedido_id', '') }}</td>
                     </tr>
                 @endforeach
             @empty

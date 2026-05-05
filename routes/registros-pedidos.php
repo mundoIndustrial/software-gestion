@@ -61,6 +61,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/api/pedido/{id}/area-reciente', [RegistroOrdenController::class, 'getAreaReciente'])->name('api.pedido.area-reciente');
     Route::post('/api/registros/dias-batch', [RegistroOrdenQueryController::class, 'calcularDiasBatchAPI'])->name('api.registros.dias-batch');
     Route::post('/api/registros/{id}/calcular-fecha-estimada', [RegistroOrdenQueryController::class, 'calcularFechaEstimada'])->name('api.registros.calcular-fecha-estimada');
+    Route::post('/api/registros/calcular-fecha-estimada-preview', [RegistroOrdenQueryController::class, 'calcularFechaEstimadaPreview'])->name('api.registros.calcular-fecha-estimada-preview');
     Route::get('/api/bodega/{numero_pedido}/dias', [RegistroBodegaController::class, 'calcularDiasAPI'])->name('api.bodega.dias');
     Route::get('/api/registros/{numero_pedido}/dias', [RegistroOrdenQueryController::class, 'calcularDiasAPI'])->name('api.registros.dias');
     Route::get('/api/tabla-original/{numeroPedido}/procesos', [RegistroOrdenController::class, 'getProcesosTablaOriginal'])->name('api.tabla-original.procesos');

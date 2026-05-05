@@ -2,8 +2,15 @@
 
 @section('content')
 <link rel="stylesheet" href="{{ asset('css/dashboard-styles/dashboard.css') }}">
-
 <div class="dashboard-container">
+
+    <div class="d-flex justify-content-between align-items-center mb-3 animate-in">
+        <h2 class="mb-0 text-primary font-weight-bold" style="font-size: 1.5rem; margin-bottom: 0;">Resumen del Dashboard</h2>
+        <a href="{{ route('dashboard.timeline-pedidos') }}" class="btn btn-primary d-flex align-items-center" style="gap: 5px;">
+            <span class="material-symbols-rounded">timeline</span> Generar Reporte
+        </a>
+    </div>
+
     <div class="kpis-row animate-in">
         <div class="kpi-card">
             <h3>Total Órdenes</h3>
@@ -47,4 +54,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ asset('js/dashboard-js/dashboard.js') }}"></script>
+<script>
+// Dashboard logic
+</script>
 @endsection

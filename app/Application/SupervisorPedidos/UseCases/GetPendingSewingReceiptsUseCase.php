@@ -4,11 +4,14 @@ namespace App\Application\SupervisorPedidos\UseCases;
 
 use App\Application\SupervisorPedidos\DTOs\GetPendingSewingReceiptsRequest;
 use App\Application\SupervisorPedidos\DTOs\GetPendingSewingReceiptsResponse;
+use App\Application\SupervisorPedidos\Support\CalculaDiasRestantesEntrega;
 use App\Domain\SupervisorPedidos\Repositories\ReceiptRepository;
 use Illuminate\Support\Facades\Log;
 
 class GetPendingSewingReceiptsUseCase
 {
+    use CalculaDiasRestantesEntrega;
+
     public function __construct(
         private readonly ReceiptRepository $receiptRepository
     ) {}
@@ -71,6 +74,14 @@ class GetPendingSewingReceiptsUseCase
             'pedido_id' => $recibo->pedido_id,
             'asesor' => $recibo->asesor,
             'color_costura' => $recibo->color_costura,
+            'aprobado_por_cartera_en' => $recibo->aprobado_por_cartera_en ?? null,
+            'dia_de_entrega' => isset($recibo->dia_de_entrega) ? (int) $recibo->dia_de_entrega : null,
+            'fecha_estimada_de_entrega' => $recibo->fecha_estimada_de_entrega ?? null,
+            'dias_restantes' => $this->calcularDiasRestantesEntrega(
+                $recibo->aprobado_por_cartera_en ?? null,
+                isset($recibo->dia_de_entrega) ? (int) $recibo->dia_de_entrega : null,
+                $recibo->fecha_estimada_de_entrega ?? null
+            ),
             'es_parcial' => $isPartial,
             'pedido_parcial_id' => $partialId > 0 ? $partialId : null,
             'prendas' => collect(),

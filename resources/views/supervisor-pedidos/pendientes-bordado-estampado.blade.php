@@ -1,4 +1,4 @@
-@extends('supervisor-pedidos.layout')
+﻿@extends('supervisor-pedidos.layout')
 
 @section('title', 'Pendientes Logo')
 @section('page-title', 'Pendientes Logo')
@@ -16,7 +16,7 @@
                     </button>
                 </div>
 
-                <!-- Tabla de Órdenes - Diseño asesores/pedidos -->
+                <!-- Tabla de ordenes - Diseno asesores/pedidos -->
                 <div class="pendientes-logo-scale-wrapper" style="transform: scale(0.80); transform-origin: top left; width: 133.333333%;">
                     <div class="pendientes-logo-table-frame" style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
                         <!-- Contenedor con Scroll -->
@@ -47,7 +47,7 @@
                                 </div>
                                 <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                     <span>N° Recibo</span>
-                                    <button type="button" class="btn-filter-column" data-col="numero_recibo" title="Filtrar N° Recibo" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                                    <button type="button" class="btn-filter-column" data-col="numero_recibo" title="Filtrar NÂ° Recibo" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                                         <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
                                     </button>
                                 </div>
@@ -215,7 +215,7 @@
     Limpiar filtros
 </button>
 
-<!-- Modal Filtro Dinámico -->
+<!-- Modal Filtro Dinamico -->
 <div id="modalFiltro" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
     <div class="modal-content" style="width: 90%; max-width: 420px; position: relative;">
         <div class="modal-header">
@@ -331,7 +331,7 @@ function verDetalles(procesoId, tipoRecibo) {
         </div>
     `;
     
-    // Configurar botón aprobar
+    // Configurar boton aprobar
     document.getElementById('btn-aprobar-modal').onclick = function() {
         aprobarProceso(procesoId);
         modal.hide();
@@ -412,7 +412,7 @@ function renderizarDetalles(data) {
         </div>
     `;
     
-    // Agregar imágenes si hay
+    // Agregar imagenes si hay
     if (data.imagenes && data.imagenes.length > 0) {
         html += `
             <div class="row mt-3">
@@ -589,7 +589,7 @@ async function recargarTablaPendientes() {
             });
 
             cont.innerHTML = procesosOrdenados.map((proceso) => receiptsRenderers.renderEmbroideryRow(proceso, escapeHtml, {
-                gridTemplate: '110px 160px 110px 200px 150px 140px 130px 170px 130px 100px',
+                gridTemplate: '110px 160px 150px 110px 200px 150px 140px 130px 170px 130px 100px',
                 showActions: true,
                 actionHandlerName: 'openReceiptFromLogoPendingRow'
             })).join('');
@@ -987,7 +987,7 @@ async function guardarFechaLlegada(input) {
     }
 }
 
-// Inicializar DataTable si está disponible
+// Inicializar DataTable si esta disponible
 $(document).ready(function() {
     if ($.fn.DataTable && false) {
         $('#tabla-pendientes').DataTable({
@@ -1044,7 +1044,7 @@ function inicializarSelectorColores() {
             const color = this.getAttribute('data-color');
             const fila = this.closest('[data-row="proceso"]');
             
-            // Retroalimentación visual en botones
+            // Retroalimentacion visual en botones
             wrapper.querySelectorAll('.color-btn').forEach(b => b.style.boxShadow = '');
             this.style.boxShadow = '0 0 0 2px #1e40af';
             
@@ -1098,7 +1098,7 @@ async function guardarColorBordadoEstampado(reciboId, tipoRecibo, color) {
             console.error('Error al guardar color (API):', data);
         } else {
             console.log('Color guardado exitosamente:', data);
-            // NO recargar tabla - el color ya está visible en el front
+            // NO recargar tabla - el color ya esta visible en el front
         }
     } catch (error) {
         console.error('Error al guardar color:', error);
@@ -1112,3 +1112,7 @@ if (document.readyState === 'loading') {
 }
 </script>
 @endpush
+
+
+
+

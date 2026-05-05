@@ -85,6 +85,17 @@
                     <input type="text" id="forma_de_pago_editable" name="forma_de_pago">
                 </div>
 
+                <div class="form-group">
+                    <label for="dia_de_entrega_editable">Dias de Entrega</label>
+                    <select id="dia_de_entrega_editable" name="dia_de_entrega">
+                        <option value="">Selecciona dias</option>
+                        <option value="15">15 dias</option>
+                        <option value="20">20 dias</option>
+                        <option value="25">25 dias</option>
+                        <option value="30">30 dias</option>
+                    </select>
+                </div>
+
             </div>
 
             <div style="width: 100%; margin-top: 1rem;">
@@ -92,6 +103,9 @@
                     <label for="observaciones_editable">Observaciones</label>
                     <textarea id="observaciones_editable" name="observaciones" rows="3" placeholder="Agrega cualquier observación adicional sobre el pedido..."></textarea>
                 </div>
+            </div>
+            <div style="width: 100%; margin-top: 0.5rem;">
+                <small id="fecha_estimada_preview" style="color:#2563eb;font-weight:600;"></small>
             </div>
         </div>
 
@@ -846,6 +860,43 @@
                 }
             }, 100);
         }
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const selectDias = document.getElementById('dia_de_entrega_editable');
+        const previewFecha = document.getElementById('fecha_estimada_preview');
+        const actualizarFechaEstimada = async () => {
+            if (!selectDias || !previewFecha) return;
+            const dias = parseInt(selectDias.value || '', 10);
+            if (!dias) {
+                previewFecha.textContent = '';
+                return;
+            }
+            previewFecha.textContent = 'Calculando fecha estimada...';
+            try {
+                const res = await fetch('/api/registros/calcular-fecha-estimada-preview', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    },
+                    body: JSON.stringify({ dia_de_entrega: dias }),
+                });
+                const data = await res.json();
+                if (res.ok && data?.success && data?.fecha_estimada) {
+                    previewFecha.textContent = `Fecha estimada de entrega: ${data.fecha_estimada}`;
+                    return;
+                }
+                previewFecha.textContent = '';
+            } catch (e) {
+                previewFecha.textContent = '';
+            }
+        };
+        selectDias?.addEventListener('change', actualizarFechaEstimada);
+        actualizarFechaEstimada();
     });
 </script>
 

@@ -14,6 +14,7 @@ final class PedidoProduccionListItem
         public readonly ?string $forma_pago,
         public readonly ?string $fecha_creacion,
         public readonly ?string $fecha_estimada,
+        public readonly ?int $dia_de_entrega,
         public readonly ?int $asesor_id,
     ) {}
 }

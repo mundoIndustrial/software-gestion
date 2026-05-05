@@ -117,7 +117,8 @@ class EloquentPedidoProduccionRepository implements PedidoProduccionReadReposito
                 fecha_creacion: optional($pedido->created_at)?->format('Y-m-d H:i:s'),
                 fecha_estimada: !empty($pedido->fecha_estimada_calculada)
                     ? (string) $pedido->fecha_estimada_calculada
-                    : null,
+                    : (!empty($pedido->fecha_estimada_de_entrega) ? (string) $pedido->fecha_estimada_de_entrega : null),
+                dia_de_entrega: $pedido->dia_de_entrega !== null ? (int) $pedido->dia_de_entrega : null,
                 asesor_id: $pedido->asesor_id !== null ? (int) $pedido->asesor_id : null,
             ))
             ->all();

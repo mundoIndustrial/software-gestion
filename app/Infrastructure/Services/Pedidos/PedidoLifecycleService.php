@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Services\Pedidos;
 
 use App\Infrastructure\Services\Pedidos\PedidoSequenceService;
+use App\Application\Pedidos\Services\PedidoProduccionCalculatorService;
 use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\Log;
 
@@ -10,6 +11,7 @@ class PedidoLifecycleService
 {
     public function __construct(
         private PedidoSequenceService $pedidoSequenceService,
+        private PedidoProduccionCalculatorService $pedidoProduccionCalculatorService,
     ) {}
 
     public function crearPedidoBase(array $datos, int $asesorId): PedidoProduccion
@@ -24,6 +26,12 @@ class PedidoLifecycleService
             'estado' => $estado,
         ]);
 
+        $createdAt = now();
+        $diaEntrega = isset($datos['dia_de_entrega']) ? (int) $datos['dia_de_entrega'] : null;
+        $fechaEstimada = $diaEntrega
+            ? $this->pedidoProduccionCalculatorService->calcularFechaEstimada($createdAt, $diaEntrega)
+            : null;
+
         return PedidoProduccion::create([
             'numero_pedido' => $numeroPedido,
             'orden_compra' => $datos['orden_compra'] ?? null,
@@ -33,10 +41,12 @@ class PedidoLifecycleService
             'forma_de_pago' => $datos['forma_de_pago'] ?? 'CONTADO',
             'novedades' => $datos['descripcion'] ?? null,
             'observaciones' => $datos['observaciones'] ?? null,
+            'dia_de_entrega' => $diaEntrega,
+            'fecha_estimada_de_entrega' => $fechaEstimada,
             'estado' => $estado,
             'cantidad_total' => 0,
             'area' => $area,
-            'created_at' => now(),
+            'created_at' => $createdAt,
         ]);
     }
 
@@ -50,6 +60,12 @@ class PedidoLifecycleService
             'estado' => 'Borrador',
         ]);
 
+        $createdAt = now();
+        $diaEntrega = isset($datos['dia_de_entrega']) ? (int) $datos['dia_de_entrega'] : null;
+        $fechaEstimada = $diaEntrega
+            ? $this->pedidoProduccionCalculatorService->calcularFechaEstimada($createdAt, $diaEntrega)
+            : null;
+
         return PedidoProduccion::create([
             'numero_pedido' => null,
             'orden_compra' => $datos['orden_compra'] ?? null,
@@ -59,10 +75,12 @@ class PedidoLifecycleService
             'forma_de_pago' => $datos['forma_de_pago'] ?? 'CONTADO',
             'novedades' => null,
             'observaciones' => $datos['observaciones'] ?? null,
+            'dia_de_entrega' => $diaEntrega,
+            'fecha_estimada_de_entrega' => $fechaEstimada,
             'estado' => 'Borrador',
             'cantidad_total' => 0,
             'area' => $area,
-            'created_at' => now(),
+            'created_at' => $createdAt,
         ]);
     }
 
@@ -80,6 +98,14 @@ class PedidoLifecycleService
             'estado' => $estado,
         ]);
 
+        $diaEntrega = isset($datosValidados['dia_de_entrega'])
+            ? (int) $datosValidados['dia_de_entrega']
+            : $borrador->dia_de_entrega;
+        $fechaBase = now();
+        $fechaEstimada = $diaEntrega
+            ? $this->pedidoProduccionCalculatorService->calcularFechaEstimada($fechaBase, $diaEntrega)
+            : null;
+
         $borrador->update([
             'numero_pedido' => $numeroPedido,
             'estado' => $estado,
@@ -88,12 +114,14 @@ class PedidoLifecycleService
             'orden_compra' => $datosValidados['orden_compra'] ?? $borrador->orden_compra,
             'forma_de_pago' => $datosValidados['forma_de_pago'] ?? $borrador->forma_de_pago,
             'observaciones' => $datosValidados['observaciones'] ?? $borrador->observaciones,
+            'dia_de_entrega' => $diaEntrega,
+            'fecha_estimada_de_entrega' => $fechaEstimada,
         ]);
 
         // `created_at` no es fillable en PedidoProduccion, por eso se fuerza
         // al convertir el borrador para reflejar la fecha real de creación final.
         $borrador->forceFill([
-            'created_at' => now(),
+            'created_at' => $fechaBase,
         ])->save();
 
         Log::info('[PedidoLifecycleService] Borrador convertido exitosamente', [

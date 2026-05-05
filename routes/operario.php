@@ -40,6 +40,7 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
 // ========================================
 Route::middleware(['auth', 'control-calidad-access'])->prefix('control-calidad')->name('control-calidad.')->group(function () {
     Route::get('/dashboard', [ControlCalidadController::class, 'dashboard'])->name('dashboard');
+    Route::get('/reporte-seguimiento', [ControlCalidadController::class, 'reporteSeguimiento'])->name('reporte-seguimiento');
     Route::get('/pedido/{numeroPedido}', [ControlCalidadController::class, 'verPedido'])->name('ver-pedido');
     Route::get('/api/pedido/{numeroPedido}', [ControlCalidadController::class, 'getPedidoData'])->name('api.pedido');
     Route::post('/api/recibos/{idRecibo}/completar', [ControlCalidadController::class, 'completarRecibo'])->name('api.recibos.completar.cc');

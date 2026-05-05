@@ -4,11 +4,14 @@ namespace App\Application\SupervisorPedidos\UseCases;
 
 use App\Application\SupervisorPedidos\DTOs\GetPendingSewingReceiptsRequest;
 use App\Application\SupervisorPedidos\DTOs\GetPendingSewingReceiptsResponse;
+use App\Application\SupervisorPedidos\Support\CalculaDiasRestantesEntrega;
 use App\Domain\SupervisorPedidos\Repositories\ReceiptRepository;
 use Illuminate\Support\Facades\Log;
 
 class GetPendingReflectiveReceiptsUseCase
 {
+    use CalculaDiasRestantesEntrega;
+
     public function __construct(
         private readonly ReceiptRepository $receiptRepository
     ) {}
@@ -46,6 +49,7 @@ class GetPendingReflectiveReceiptsUseCase
             'asesor' => $this->parseCsvFilter($request->getAsesor()),
             'prendas' => $this->parseCsvFilter($request->getPrendas()),
             'fecha_creacion' => ($fecha = trim((string) $request->getFechaCreacion())) !== '' ? $fecha : null,
+            'area' => $this->parseCsvFilter($request->getArea()),
             'busqueda' => $request->getBusqueda(),
         ];
     }
@@ -64,6 +68,14 @@ class GetPendingReflectiveReceiptsUseCase
             'pedido_id' => $recibo->pedido_id,
             'asesor' => $recibo->asesor,
             'color_reflectivo' => $recibo->color_reflectivo,
+            'aprobado_por_cartera_en' => $recibo->aprobado_por_cartera_en ?? null,
+            'dia_de_entrega' => isset($recibo->dia_de_entrega) ? (int) $recibo->dia_de_entrega : null,
+            'fecha_estimada_de_entrega' => $recibo->fecha_estimada_de_entrega ?? null,
+            'dias_restantes' => $this->calcularDiasRestantesEntrega(
+                $recibo->aprobado_por_cartera_en ?? null,
+                isset($recibo->dia_de_entrega) ? (int) $recibo->dia_de_entrega : null,
+                $recibo->fecha_estimada_de_entrega ?? null
+            ),
             'es_parcial' => $isPartial,
             'pedido_parcial_id' => $partialId > 0 ? $partialId : null,
             'prendas' => collect(),

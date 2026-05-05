@@ -446,7 +446,17 @@
     function normalizarPedido(pedidoRaw) {
         if (!pedidoRaw || typeof pedidoRaw !== 'object') {
             console.warn('[PayloadNormalizer] Pedido inválido');
-            return { cliente: '', orden_compra: '', asesora: '', forma_de_pago: '', observaciones: '', prendas: [], epps: [] };
+            return {
+                cliente: '',
+                orden_compra: '',
+                asesora: '',
+                forma_de_pago: '',
+                observaciones: '',
+                dia_de_entrega: null,
+                fecha_estimada_de_entrega: null,
+                prendas: [],
+                epps: []
+            };
         }
 
         const pedidoNorm = {
@@ -455,6 +465,10 @@
             asesora: pedidoRaw.asesora || '',
             forma_de_pago: pedidoRaw.forma_de_pago || '',
             observaciones: pedidoRaw.observaciones || '',
+            dia_de_entrega: Number.isFinite(parseInt(pedidoRaw.dia_de_entrega, 10))
+                ? parseInt(pedidoRaw.dia_de_entrega, 10)
+                : null,
+            fecha_estimada_de_entrega: pedidoRaw.fecha_estimada_de_entrega || null,
             prendas: [],
             epps: [],
             borrador_pedido_id: pedidoRaw.borrador_pedido_id || null,

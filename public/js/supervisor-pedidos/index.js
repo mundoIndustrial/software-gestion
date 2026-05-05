@@ -7,13 +7,13 @@
  */
 
 if (!window.supervisorPedidos?.isReady) {
-    throw new Error('[index] window.supervisorPedidos no estÃ¡ disponible. Carga core/bootstrap.js ANTES.');
+    throw new Error('[index] window.supervisorPedidos no esta disponible. Carga core/bootstrap.js ANTES.');
 }
 
 const _spFilter = window.supervisorPedidos.filterService;
 const _spNotify = window.shared.notify;
 
-// Ocultar overlay inicial solo cuando la pÃ¡gina y mÃ³dulos crÃ­ticos estÃ©n listos.
+// Ocultar overlay inicial solo cuando la pagina y modulos criticos estén listos.
 (function initInitialLoadingOverlayController() {
     const overlay = document.getElementById('sp-loading-overlay');
     if (!overlay) return;
@@ -174,7 +174,7 @@ function _spStateBadge(estado) {
     const map = {
         PENDIENTE_SUPERVISOR: { bg: '#fff3cd', text: '#856404', label: 'Pendiente Supervisor' },
         PENDIENTE_INSUMOS: { bg: '#d1ecf1', text: '#0c5460', label: 'Pendiente Insumos' },
-        'En EjecuciÃ³n': { bg: '#d4edda', text: '#155724', label: 'En EjecuciÃ³n' },
+        'En Ejecución': { bg: '#d4edda', text: '#155724', label: 'En Ejecución' },
         'No iniciado': { bg: '#e2e3e5', text: '#383d41', label: 'No Iniciado' },
         Entregado: { bg: '#d4edda', text: '#155724', label: 'Entregado' },
         Finalizada: { bg: '#d4edda', text: '#155724', label: 'Finalizada' },
@@ -300,7 +300,7 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                     <div class="th-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><span>Listo</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><span>Acciones</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Fecha</span><button type="button" class="btn-filter-column" data-col="fecha" title="Filtrar Fecha" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
-                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>NÃºmero</span><button type="button" class="btn-filter-column" data-col="numero" title="Filtrar NÃºmero" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Nºmero</span><button type="button" class="btn-filter-column" data-col="numero" title="Filtrar Numero" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Cliente</span><button type="button" class="btn-filter-column" data-col="cliente" title="Filtrar Cliente" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Asesora</span><button type="button" class="btn-filter-column" data-col="asesora" title="Filtrar Asesora" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Estado</span><button type="button" class="btn-filter-column" data-col="estado" title="Filtrar Estado" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
@@ -313,7 +313,7 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
 
     let body = '';
     if (rows.length === 0) {
-        body = `<div style="padding: 3rem 2rem; text-align: center; color: #6b7280;"><i class="fas fa-inbox" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem; display: block;"></i><p style="font-size: 1rem; margin: 0;">No hay Ã³rdenes disponibles</p></div>`;
+        body = `<div style="padding: 3rem 2rem; text-align: center; color: #6b7280;"><i class="fas fa-inbox" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem; display: block;"></i><p style="font-size: 1rem; margin: 0;">No hay Ördenes disponibles</p></div>`;
     } else {
         body = rows.map((orden) => {
             const isSelected = pedidosSeleccionados.includes(orden.id);
@@ -352,7 +352,7 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                     <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
                         <button class="btn-accion btn-accion--ver btn-ver-dropdown" data-menu-id="menu-ver-${numeroPedidoNoHash}" data-pedido="${numeroPedidoNoHash}" data-pedido-id="${orden.id}" title="Ver Opciones" style="position:relative;overflow:visible;"><i class="fas fa-eye"></i><span class="btn-ver-bodega-badge" data-bodega-button-badge style="display:none;position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;line-height:18px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.25);">0</span></button>
                         ${canApprove ? `<button class="btn-accion btn-accion--aprobar" data-action="aprobar" data-pedido-id="${orden.id}" data-pedido-numero="${jsNumero}" title="Aprobar Pedido"><i class="fas fa-check"></i></button>` : ''}
-                        ${canApprove ? `<button class="btn-accion btn-accion--anular" data-action="anular" data-pedido-id="${orden.id}" data-pedido-numero="${jsNumeroHash}" title="Pasar a RevisiÃ³n"><i class="fas fa-ban"></i></button>` : ''}
+                        ${canApprove ? `<button class="btn-accion btn-accion--anular" data-action="anular" data-pedido-id="${orden.id}" data-pedido-numero="${jsNumeroHash}" title="Pasar a Revisión"><i class="fas fa-ban"></i></button>` : ''}
                         <button class="btn-accion ${canBulkDeliver ? '' : 'btn-accion--disabled'}"
                             data-action="entregar"
                             data-pedido-id="${orden.id}"
@@ -443,9 +443,9 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                 ${makeBtn('&larr; Anterior', Math.max(1, currentPage - 1), prevDisabled, 'nav')}
                 ${pageButtons}
                 ${makeBtn('Siguiente &rarr;', Math.min(lastPage, currentPage + 1), nextDisabled, 'nav')}
-                ${makeBtn('Ãšltima &raquo;', lastPage, nextDisabled, 'nav')}
+                ${makeBtn('Última &raquo;', lastPage, nextDisabled, 'nav')}
                 </div>
-                <span style="color: #64748b; font-size: 13px; font-weight: 600;">PÃ¡gina ${currentPage} de ${lastPage} | Total: ${total} registros</span>
+                <span style="color: #64748b; font-size: 13px; font-weight: 600;">Página ${currentPage} de ${lastPage} | Total: ${total} registros</span>
             </div>
         `;
     }
@@ -530,8 +530,8 @@ function resolveFilterColumn(btn) {
     const title = btn.getAttribute('title') || '';
     switch (title) {
         case 'Filtrar Fecha': return 'fecha';
-        case 'Filtrar NÃºmero':
-        case 'Filtrar NÃºmero': return 'numero';
+        case 'Filtrar Número':
+        case 'Filtrar Número': return 'numero';
         case 'Filtrar Cliente': return 'cliente';
         case 'Filtrar Estado': return 'estado';
         case 'Filtrar Asesora': return 'asesora';
@@ -794,7 +794,7 @@ async function refreshVerButtonsBodegaBadges() {
 
         const data = await response.json();
         if (!data?.success || !Array.isArray(data.data)) {
-            console.warn('[BodegaBadges] Respuesta invÃ¡lida del batch endpoint');
+            console.warn('[BodegaBadges] Respuesta invalida del batch endpoint');
             return;
         }
 
@@ -939,7 +939,7 @@ function _spRenderBodegaNovedadesContent(payload) {
                     <strong>Prenda:</strong> ${prendaNombre}
                 </div>
                 <div style="font-size:13px; color:#475569; margin-bottom:6px;">
-                    <strong>DescripciÃ³n:</strong> ${prendaDescripcion}
+                    <strong>Descripcion:</strong> ${prendaDescripcion}
                 </div>
                 <div style="font-size:12px; color:#64748b; margin-bottom:4px; font-weight:700;">--Del Pedido</div>
                 <div style="font-size:13px; color:#475569; margin-bottom:8px;">
@@ -948,7 +948,7 @@ function _spRenderBodegaNovedadesContent(payload) {
                     <strong>Cantidad:</strong> ${cantidad}
                 </div>
                 <div style="font-size:13px; color:#475569; margin-bottom:8px;">
-                    <strong>GÃ©nero:</strong> ${genero}
+                    <strong>Genero:</strong> ${genero}
                 </div>
                 <div style="font-size:14px; color:#111827; line-height:1.45; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
                     ${contenido || '<span style="color:#94a3b8;">Sin contenido</span>'}
@@ -989,7 +989,7 @@ async function abrirModalNovedadesBodega(pedidoId, numeroPedido) {
         const payload = await response.json();
 
         if (!response.ok || !payload?.success) {
-            throw new Error(payload?.message || 'No se pudo cargar la informaciÃ³n');
+            throw new Error(payload?.message || 'No se pudo cargar la informacion');
         }
 
         _spRenderBodegaNovedadesContent(payload);
@@ -1127,7 +1127,7 @@ function positionVerMenu(button, menu) {
     const menuWidth = menu.offsetWidth || 180;
     const menuHeight = menu.offsetHeight || 130;
 
-    // Abrir a la derecha del botÃ³n por defecto.
+    // Abrir a la derecha del boton por defecto.
     let left = rect.right + margin;
     let top = rect.top;
 
@@ -1168,7 +1168,7 @@ function abrirModalFiltro(columna) {
             campoNombre = 'numero';
             break;
         case 'numero':
-            titulo = 'Filtrar por NÃºmero';
+            titulo = 'Filtrar por Número';
             campoNombre = 'numero';
             break;
         case 'cliente':
@@ -1182,8 +1182,8 @@ function abrirModalFiltro(columna) {
         case 'estado': {
             titulo = 'Filtrar por Estado';
             campoNombre = 'estado';
-            const estadosDisplay = ['Pendiente', 'No iniciado', 'En EjecuciÃ³n', 'Entregado', 'Anulada', 'Pendiente Supervisor', 'Pendiente Insumos', 'Pendiente Cartera', 'Rechazado Cartera', 'Devuelto a Asesora'];
-            const estadosDB    = ['Pendiente', 'No iniciado', 'En EjecuciÃ³n', 'Entregado', 'Anulada', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'pendiente_cartera', 'RECHAZADO_CARTERA', 'DEVUELTO_A_ASESORA'];
+            const estadosDisplay = ['Pendiente', 'No iniciado', 'En Ejecución', 'Entregado', 'Anulada', 'Pendiente Supervisor', 'Pendiente Insumos', 'Pendiente Cartera', 'Rechazado Cartera', 'Devuelto a Asesora'];
+            const estadosDB    = ['Pendiente', 'No iniciado', 'En Ejecución', 'Entregado', 'Anulada', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'pendiente_cartera', 'RECHAZADO_CARTERA', 'DEVUELTO_A_ASESORA'];
             filtroContenido.innerHTML = `
                 <div class="form-group">
                     <input type="text" id="buscadorEstado" class="form-control" placeholder="Buscar estado..." style="margin-bottom: 1rem;">
@@ -1213,7 +1213,7 @@ function abrirModalFiltro(columna) {
             return;
         }
         case 'aprobacion_cartera': {
-            titulo = 'Filtrar por AprobaciÃ³n Cartera';
+            titulo = 'Filtrar por Aprobación Cartera';
             campoNombre = 'aprobacion_cartera';
             const opciones = [
                 { label: 'No aprobado por cartera', value: 'no_aprobado' },
@@ -1337,7 +1337,7 @@ function cargarOpcionesFiltro(campo, titulo, modal, filtroContenido) {
                     paginacion.style.display = shouldShowPagination ? 'flex' : 'none';
                     btnPrev.disabled = currentPage <= 1;
                     btnNext.disabled = currentPage >= totalPages;
-                    paginaInfo.textContent = `PÃ¡gina ${currentPage} de ${totalPages}`;
+                    paginaInfo.textContent = `Página ${currentPage} de ${totalPages}`;
                 }
             }
 
@@ -1437,7 +1437,7 @@ document.getElementById('modalFiltro')?.addEventListener('click', function(e) {
     if (e.target === this) cerrarModalFiltro();
 });
 
-// ===== MODALES DE Ã“RDENES =====
+// ===== MODALES DE ORDENES =====
 function verOrdenComparar(ordenId) {
     document.getElementById(`ver-menu-${ordenId}`).style.display = 'none';
     abrirModalComparar(ordenId);
@@ -1447,7 +1447,7 @@ function cerrarModalVerOrden() {
     document.getElementById('modalVerOrden').style.display = 'none';
 }
 
-// Contador de caracteres del textarea de anulaciÃ³n
+// Contador de caracteres del textarea de anulación
 document.getElementById('motivoAnulacion')?.addEventListener('input', function() {
     document.getElementById('contadorActual').textContent = this.value.length;
     const btnConfirmar = document.getElementById('btnConfirmarAnulacion');
@@ -1585,7 +1585,7 @@ function bindSupervisorRowActionsDelegationOnce() {
 
 bindSupervisorRowActionsDelegationOnce();
 
-// FunciÃ³n para aprobar orden
+// Función para aprobar orden
 async function aprobarOrden(ordenId, numeroOrden) {
     const result = await _spNotify.confirm(`Â¿Deseas aprobar el pedido <strong>#${numeroOrden}</strong>?`, 'Â¿Aprobar Pedido?');
 
@@ -1675,7 +1675,7 @@ async function abrirSeguimiento(ordenId) {
         await openTracking(ordenId);
     } catch (error) {
         console.error('[abrirSeguimiento] Error:', error);
-        _spNotify.error('El modal de seguimiento no estÃ¡ disponible. Intenta nuevamente.');
+        _spNotify.error('El modal de seguimiento no esta disponible. Intenta nuevamente.');
     }
 }
 

@@ -234,45 +234,27 @@
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Fecha de Creacion</span>
-                                <button type="button" class="btn-filter-column" data-col="fecha_creacion" title="Filtrar Fecha de Creacion" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
-                                </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>N° Recibo</span>
-                                <button type="button" class="btn-filter-column" data-col="numero_recibo" title="Filtrar N° Recibo" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
-                                </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Tipo</span>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Cliente</span>
-                                <button type="button" class="btn-filter-column" data-col="cliente" title="Filtrar Cliente" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
-                                </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Area</span>
-                                <button type="button" class="btn-filter-column" data-col="area" title="Filtrar Area" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
-                                </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Prendas</span>
-                                <button type="button" class="btn-filter-column" data-col="prendas" title="Filtrar Prendas" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
-                                </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Novedades</span>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Asesora</span>
-                                <button type="button" class="btn-filter-column" data-col="asesor" title="Filtrar Asesora" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
-                                    <i class="fas fa-filter" style="font-size: 1rem;"></i>
-                                </button>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>Color</span>
@@ -318,7 +300,6 @@
                                         <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">
                                             {{ \Carbon\Carbon::parse($proceso['fecha_creacion'])->format('d/m/Y') }}
                                         </div>
-
                                         <!-- Numero de Recibo -->
                                         <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151; font-weight: 500;">
                                             {{ $proceso['numero_recibo'] }}
@@ -713,7 +694,8 @@ window.navegarPendientesControlCalidad = async function navegarPendientesControl
                 showActions: true,
                 actionMode: 'modal',
                 actionHandlerName: 'openReciboControlCalidadModalFromRow',
-                showReceiptType: true
+                showReceiptType: true,
+                showRemainingDays: false
             })).join('');
         }
 

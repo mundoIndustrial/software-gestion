@@ -344,6 +344,7 @@ class PedidoCompletoUnificado {
         this._ordenCompra = null;
         this._asesora = null;
         this._formaPago = 'contado';
+        this._diaEntrega = null;
         this._items = [];
         return this;
     }
@@ -386,6 +387,15 @@ class PedidoCompletoUnificado {
     setFormaPago(formaPago) {
         const cleaned = SanitizadorDefensivo.cleanString(formaPago) || 'contado';
         this._formaPago = cleaned.toLowerCase();
+        return this;
+    }
+
+    /**
+     * Establecer dias de entrega
+     */
+    setDiaEntrega(diaEntrega) {
+        const dia = SanitizadorDefensivo.cleanInt(diaEntrega);
+        this._diaEntrega = (dia && dia > 0) ? dia : null;
         return this;
     }
 
@@ -717,6 +727,7 @@ class PedidoCompletoUnificado {
             orden_compra: this._ordenCompra,
             asesora: this._asesora,
             forma_de_pago: this._formaPago,
+            dia_de_entrega: this._diaEntrega,
             items: this._items
         };
 

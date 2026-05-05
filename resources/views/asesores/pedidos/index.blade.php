@@ -1074,7 +1074,7 @@
                     rowDiv.setAttribute('data-cliente', pedido.cliente || '');
                     rowDiv.setAttribute('data-estado', pedido.estado || '');
                     rowDiv.setAttribute('data-forma-pago', pedido.forma_pago || '');
-                    rowDiv.style.cssText = 'display: grid; grid-template-columns: 140px 170px 140px 170px 200px 160px 170px 170px; gap: 1.8rem; padding: 0.75rem 1.25rem; align-items: center; transition: 0.3s; min-width: min-content; background: white; border-radius: 6px; margin-bottom: 0.75rem; box-shadow: rgba(0, 0, 0, 0.05) 0px 2px 4px;';
+                    rowDiv.style.cssText = 'display: grid; grid-template-columns: 140px 170px 190px 140px 170px 200px 160px 170px 170px; gap: 1.8rem; padding: 0.75rem 1.25rem; align-items: center; transition: 0.3s; min-width: min-content; background: white; border-radius: 6px; margin-bottom: 0.75rem; box-shadow: rgba(0, 0, 0, 0.05) 0px 2px 4px;';
                     rowDiv.onmouseover = function() {
                         this.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
                         this.style.transform = 'translateY(-2px)';
@@ -1108,6 +1108,9 @@
                             <span class="estado-badge" style="background: ${estadoColor}; color: white; padding: 0.375rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; display: inline-block; white-space: nowrap;">
                                 ${estadoTexto}
                             </span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; justify-content: center; color: #dc2626; font-size: 0.78rem; font-weight: 700; line-height: 1.1;">
+                            ${pedido.dias_restantes_entrega !== null && pedido.dias_restantes_entrega !== undefined ? `<span>${pedido.dias_restantes_entrega} días</span><span>hábiles restantes</span>` : '-'}
                         </div>
                         <div style="display: flex; align-items: center; color: #2563eb; font-weight: 700; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                             #${pedido.numero_pedido}

@@ -212,6 +212,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <!-- Total de días -->
                 <td style="text-align: center;">
                     ${getDiasBadgeHTML(recibo.dias_calculados)}
+                <div style="margin-top: 4px;">
+                        ${getDiasRestantesBadgeHTML(recibo)}
+                    </div>
                 </td>
                 
                 <!-- Número de recibo -->
@@ -450,7 +453,55 @@ document.addEventListener('DOMContentLoaded', function() {
         return `<span class="badge ${badgeClass}" style="font-weight: 600;">${dias} días</span>`;
     }
 
-    // Función para generar badge de novedades (igual que el blade)
+    function calcularDiasHabilesRestantes(fechaEstimada) {
+    if (!fechaEstimada) return null;
+    const end = new Date(fechaEstimada);
+    if (isNaN(end.getTime())) return null;
+
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+
+    if (endDate < start) return 0;
+
+    let count = 0;
+    const cursor = new Date(start);
+    while (cursor < endDate) {
+        cursor.setDate(cursor.getDate() + 1);
+        const day = cursor.getDay();
+        if (day !== 0 && day !== 6) {
+            count++;
+        }
+    }
+    return count;
+}
+
+function getDiasRestantesBadgeHTML(recibo) {
+    const diasObjetivo = Number.parseInt(recibo?.dia_de_entrega ?? recibo?.pedido_info?.dia_de_entrega ?? 0, 10);
+    const diasTranscurridos = Number.parseInt(recibo?.dias_calculados, 10);
+
+    let dias = null;
+    if (Number.isInteger(diasObjetivo) && diasObjetivo > 0 && Number.isInteger(diasTranscurridos) && diasTranscurridos >= 0) {
+        dias = Math.max(0, diasObjetivo - diasTranscurridos);
+    } else {
+        dias = calcularDiasHabilesRestantes(recibo?.fecha_estimada_de_entrega);
+    }
+
+    if (dias === null || Number.isNaN(dias)) {
+        return '<span class="text-muted">Rest: -</span>';
+    }
+
+    let badgeClass = 'bg-success';
+    if (dias <= 3) {
+        badgeClass = 'bg-danger';
+    } else if (dias <= 7) {
+        badgeClass = 'bg-warning';
+    }
+
+    return `<span class="badge ${badgeClass}" style="font-weight: 600;">Rest: ${dias}</span>`;
+}
+
+// Función para generar badge de novedades (igual que el blade)
     function getNovedadesBadgeHTML(novedades) {
         if (!novedades || novedades === 'Sin novedades') {
             return '<span class="badge bg-light text-dark" style="font-weight: 500;">Sin novedades</span>';
@@ -616,5 +667,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+
+
+
+
+
+
+
+
 
 

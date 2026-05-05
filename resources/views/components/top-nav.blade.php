@@ -26,13 +26,62 @@
             $isRecibosCostura = $currentPath === 'recibos-costura' || $currentPath === 'recibos-bordado-estampado';
             $isRecibosReflectivo = $currentPath === 'recibos-reflectivo';
             $isRecibosBodega = $currentPath === 'recibos-bodega';
+            $isTimelinePedidos = $currentRoute === 'dashboard.timeline-pedidos';
             $searchInputId = $isCotizacionesPendientes ? 'searchInput' : 'navSearchInput';
             $searchPlaceholder = $isRecibosBodega
                 ? 'Buscar recibos por número...'
                 : (($isRecibosCostura || $isRecibosReflectivo || $isCotizacionesPendientes) ? 'Buscar recibos por número o cliente...' : 'Buscar por número o cliente...');
             $searchAriaLabel = ($isRecibosCostura || $isRecibosReflectivo || $isRecibosBodega) ? 'Búsqueda de recibos' : ($isCotizacionesPendientes ? 'Búsqueda de cotizaciones' : 'Búsqueda de órdenes');
         @endphp
-        @if($currentRoute === 'registros.index' || $currentRoute === 'bodega.index' || $currentRoute === 'cotizaciones.pendientes' || $isRecibosCostura || $isRecibosReflectivo || $isRecibosBodega)
+
+        {{-- Buscador especial para Timeline de Pedidos (hace GET al servidor) --}}
+        @if($isTimelinePedidos)
+        @php
+            $tlCliente = trim((string) request('search_cliente', ''));
+            $tlPedido  = trim((string) request('search_pedido', ''));
+            $tlHasFilter = $tlCliente !== '' || $tlPedido !== '';
+        @endphp
+        <div class="nav-search-container" id="timelineSearchContainer" style="position:relative;">
+            <form id="timelineSearchForm" method="GET" action="{{ route('dashboard.timeline-pedidos') }}" style="display:flex; gap:6px; align-items:center;">
+                <div class="nav-search-wrapper" style="min-width:160px;">
+                    <span class="material-symbols-rounded search-icon" aria-hidden="true" style="font-size:16px;">person_search</span>
+                    <input
+                        type="text"
+                        name="search_cliente"
+                        id="tlSearchCliente"
+                        class="nav-search-input"
+                        placeholder="Cliente…"
+                        value="{{ $tlCliente }}"
+                        autocomplete="off"
+                        aria-label="Buscar por cliente"
+                        style="padding-left:32px;"
+                    >
+                </div>
+                <div class="nav-search-wrapper" style="min-width:130px;">
+                    <span class="material-symbols-rounded search-icon" aria-hidden="true" style="font-size:16px;">tag</span>
+                    <input
+                        type="text"
+                        name="search_pedido"
+                        id="tlSearchPedido"
+                        class="nav-search-input"
+                        placeholder="# Pedido…"
+                        value="{{ $tlPedido }}"
+                        autocomplete="off"
+                        aria-label="Buscar por número de pedido"
+                        style="padding-left:30px;"
+                    >
+                </div>
+                <button type="submit" style="background:none;border:none;cursor:pointer;padding:6px;color:#475569;display:flex;align-items:center;" title="Buscar" aria-label="Buscar">
+                    <span class="material-symbols-rounded" style="font-size:20px;">search</span>
+                </button>
+                @if($tlHasFilter)
+                <a href="{{ route('dashboard.timeline-pedidos') }}" style="background:none;border:none;cursor:pointer;padding:6px;color:#ef4444;display:flex;align-items:center;text-decoration:none;" title="Limpiar filtros" aria-label="Limpiar filtros">
+                    <span class="material-symbols-rounded" style="font-size:20px;">close</span>
+                </a>
+                @endif
+            </form>
+        </div>
+        @elseif($currentRoute === 'registros.index' || $currentRoute === 'bodega.index' || $currentRoute === 'cotizaciones.pendientes' || $isRecibosCostura || $isRecibosReflectivo || $isRecibosBodega)
         <div class="nav-search-container">
             <div class="nav-search-wrapper">
                 <span class="material-symbols-rounded search-icon" aria-hidden="true">search</span>

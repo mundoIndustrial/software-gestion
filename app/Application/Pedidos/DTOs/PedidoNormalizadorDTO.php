@@ -15,6 +15,7 @@ class PedidoNormalizadorDTO
     public ?string $asesora;
     public string $forma_de_pago;
     public ?string $observaciones;
+    public ?int $dia_de_entrega;
     public int $cliente_id;
 
     public array $prendas = [];
@@ -51,6 +52,9 @@ class PedidoNormalizadorDTO
         $dto->asesora = $json['asesora'] ?? null;
         $dto->forma_de_pago = $json['forma_de_pago'] ?? 'Contado';
         $dto->observaciones = $json['observaciones'] ?? null;
+        $dto->dia_de_entrega = isset($json['dia_de_entrega']) && is_numeric($json['dia_de_entrega'])
+            ? max(1, min(35, (int) $json['dia_de_entrega']))
+            : null;
         $dto->cliente_id = $clienteId;
         $dto->prendas = self::normalizarPrendas($json['prendas'] ?? []);
         $dto->epps = self::normalizarEpps($json['epps'] ?? []);

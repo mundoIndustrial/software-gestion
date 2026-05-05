@@ -49,6 +49,7 @@ class PedidoProduccionReadService
                 'novedades',
                 'asesor_id',
                 'forma_de_pago',
+                'dia_de_entrega',
                 'aprobado_por_cartera_en',
                 'aprobado_por_supervisor_en',
                 'estado',

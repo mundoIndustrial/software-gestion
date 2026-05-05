@@ -344,6 +344,7 @@ class ItemFormCollector {
             asesora: document.getElementById('asesora_editable')?.value || '',
             forma_de_pago: document.getElementById('forma_de_pago_editable')?.value || '',
             observaciones: document.getElementById('observaciones_editable')?.value || '',
+            dia_de_entrega: parseInt(document.getElementById('dia_de_entrega_editable')?.value || '', 10) || null,
             prendas: prendas,
             epps: epps,
             // Si editamos un borrador, enviar su ID para que el backend lo convierta

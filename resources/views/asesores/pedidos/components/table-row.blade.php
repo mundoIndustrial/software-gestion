@@ -80,7 +80,7 @@
      data-prendas="{{ json_encode($pedidoPrendas) }}"
      style="
     display: grid;
-    grid-template-columns: 140px 170px 140px 170px 200px 160px 170px 170px;
+    grid-template-columns: 140px 170px 190px 140px 170px 200px 160px 170px 170px;
     gap: 1.8rem;
     padding: 0.75rem 1.25rem;
     align-items: center;
@@ -139,6 +139,15 @@
         <span class="estado-badge" style="{{ $badgeStyles }} color: white; padding: 0.375rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; display: inline-block; white-space: nowrap;">
             {{ $estadoTexto }}
         </span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; justify-content: center; color: #dc2626; font-size: 0.78rem; font-weight: 700; line-height: 1.1;">
+        @if(isset($pedido->dias_restantes_entrega) && $pedido->dias_restantes_entrega !== null)
+            <span>{{ $pedido->dias_restantes_entrega }} d&iacute;as</span>
+            <span>h&aacute;biles restantes</span>
+        @else
+            -
+        @endif
     </div>
 
     <div style="display: flex; align-items: center; color: #2563eb; font-weight: 700; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">

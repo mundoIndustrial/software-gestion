@@ -414,7 +414,26 @@ class SupervisorReceiptsController extends Controller
         );
 
         $response = $this->getPendingSewingReceiptsUseCase->execute($requestDTO);
-        $receipts = collect($response->getReceipts());
+        $receipts = collect($response->getReceipts())
+            ->filter(function ($item) {
+                $area = mb_strtolower(trim((string) data_get($item, 'area', '')));
+                $estado = mb_strtolower(trim((string) data_get($item, 'estado', '')));
+
+                if ($area === 'despacho') {
+                    return false;
+                }
+
+                if ($estado !== '' && str_contains($estado, 'anulad')) {
+                    return false;
+                }
+
+                return true;
+            })
+            ->sortBy(function ($item) {
+                $fecha = data_get($item, 'fecha_creacion');
+                return $fecha ? strtotime((string) $fecha) : PHP_INT_MAX;
+            })
+            ->values();
 
         $grouped = $receipts
             ->groupBy(function ($item) {
