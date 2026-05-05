@@ -6,7 +6,9 @@ use App\Domain\Pedidos\UseCases\HomologarEppUseCaseContract;
 
 use App\Models\PedidoEpp;
 use App\Models\PedidoEppImagen;
+use App\Models\News;
 use App\Models\PedidoProduccion;
+use App\Models\Epp;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -104,6 +106,44 @@ final class HomologarEppUseCase implements HomologarEppUseCaseContract
             'pedido_epp_id_nuevo' => $eppNuevo->id,
         ]);
 
+        try {
+            $eppNombreNuevo = $nombreEpp;
+            if ($eppIdNuevo) {
+                $eppModelNuevo = Epp::find($eppIdNuevo);
+                $eppNombreNuevo = $eppModelNuevo?->nombre_completo ?? $eppModelNuevo?->nombre ?? $nombreEpp;
+            }
+
+            $cambioEppTexto = $eppNombreNuevo !== $nombreEpp
+                ? " (EPP: {$nombreEpp} -> {$eppNombreNuevo})"
+                : " (EPP: {$eppNombreNuevo})";
+
+            News::create([
+                'event_type' => 'epp_homologado',
+                'table_name' => 'pedido_epp',
+                'record_id' => $eppNuevo->id,
+                'description' => "{$datosAsesor} homologo EPP en Pedido #{$pedido->numero_pedido}{$cambioEppTexto} y cambio cantidad de {$pedidoEppAnterior->cantidad} a {$cantidadNueva}",
+                'user_id' => auth()?->id(),
+                'pedido' => $pedido->numero_pedido,
+                'metadata' => [
+                    'tipo' => 'epp_homologado',
+                    'pedido_id' => $pedidoId,
+                    'pedido_epp_id_anterior' => $pedidoEppIdAnterior,
+                    'pedido_epp_id_nuevo' => $eppNuevo->id,
+                    'epp_nombre_anterior' => $nombreEpp,
+                    'epp_nombre_nuevo' => $eppNombreNuevo,
+                    'cantidad_anterior' => $pedidoEppAnterior->cantidad,
+                    'cantidad_nueva' => $cantidadNueva,
+                    'motivo' => $motivo,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::warning('[HomologarEppUseCase] Error creando News de homologacion', [
+                'error' => $e->getMessage(),
+                'pedido_id' => $pedidoId,
+                'pedido_epp_id_nuevo' => $eppNuevo->id,
+            ]);
+        }
+
         return [
             'success' => true,
             'message' => 'EPP homologado correctamente',
@@ -129,9 +169,6 @@ final class HomologarEppUseCase implements HomologarEppUseCaseContract
         return strtolower((string) $pedido->estado) === 'borrador';
     }
 }
-
-
-
 
 
 

@@ -103,14 +103,14 @@ class DespachoObservacionesController extends Controller
                 $fecha = $pedido->created_at;
                 $contenidoLimpio = $cambio;
                 
-                // Intenta parsear formato: "Rol-Nombre-FechaHora - Contenido"
-                if (preg_match('/^([^-]+)-([^-]+)-(.+?)\s*-\s+(.+)$/is', $cambio, $matches)) {
+                // Formato estricto: "Rol-Nombre-FechaHora - Contenido"
+                // Evita cortar homologaciones por la flecha "-> Nueva: X".
+                if (preg_match('/^(Asesor|Usuario|Sistema|Admin|Supervisor|Despacho|Bodega)-([^-]+)-(\d{2}\/\d{2}\/\d{4}\s+\d{1,2}:\d{2}\s*[APMapm]{2})\s*-\s+([\s\S]+)$/', $cambio, $matches)) {
                     $rol = trim($matches[1]);
                     $nombreAsesor = trim($matches[2]);
                     $fechaTexto = trim($matches[3] ?? '');
                     $contenidoLimpio = trim($matches[4]);
-                    
-                    // Intentar parsear la fecha
+
                     if (!empty($fechaTexto)) {
                         try {
                             $fecha = Carbon::createFromFormat('d/m/Y, g:i:s a', $fechaTexto);
@@ -127,20 +127,35 @@ class DespachoObservacionesController extends Controller
                             $fecha = $pedido->created_at;
                         }
                     }
-                } elseif (preg_match('/^(.+?)\n\(([^)]+)\)$/', $cambio, $matches)) {
-                    // Formato nuevo con información de asesor en paréntesis al final
+                } elseif (preg_match('/^([\s\S]+)\n\((.+)\)$/', $cambio, $matches)) {
+                    // Formato multilinea con datos al final: "(usuario (rol) - fecha)"
                     $contenidoLimpio = trim($matches[1]);
                     $datosAsesor = trim($matches[2]);
-                    
-                    // Parsear "Asesor - fecha" o "Asesor (Rol) - fecha"
-                    if (preg_match('/^(.+?)\s*(?:\(([^)]+)\))?\s*-\s*(.+)$/', $datosAsesor, $asesoresMatches)) {
-                        $nombreAsesor = trim($asesoresMatches[1]);
-                        $rol = !empty($asesoresMatches[2]) ? trim($asesoresMatches[2]) : 'Asesor';
-                        $fechaTexto = trim($asesoresMatches[3]);
-                        
-                        // Intentar parsear la fecha
+
+                    // Separar por el ultimo " - " para no romper "usuario (asesor)"
+                    if (preg_match('/^(.*)\s-\s(\d{2}\/\d{2}\/\d{4},?\s*\d{1,2}:\d{2}(?::\d{2})?\s*[apmAPM\.]+)$/', $datosAsesor, $asesorFechaMatch)) {
+                        $identidad = trim($asesorFechaMatch[1]);
+                        $fechaTexto = trim($asesorFechaMatch[2]);
+
+                        if (preg_match('/^(.*?)\s*\(([^)]+)\)$/', $identidad, $identidadMatch)) {
+                            $nombreAsesor = trim($identidadMatch[1]);
+                            $rol = trim($identidadMatch[2]) ?: 'Asesor';
+                        } else {
+                            $nombreAsesor = $identidad;
+                            $rol = 'Asesor';
+                        }
+
                         try {
                             $fecha = Carbon::createFromFormat('d/m/Y, g:i:s a', $fechaTexto);
+                            if (!$fecha) {
+                                $fecha = Carbon::createFromFormat('d/m/Y, g:i a', $fechaTexto);
+                            }
+                            if (!$fecha) {
+                                $fecha = Carbon::createFromFormat('d/m/Y g:i:s a', $fechaTexto);
+                            }
+                            if (!$fecha) {
+                                $fecha = Carbon::createFromFormat('d/m/Y g:i a', $fechaTexto);
+                            }
                             if (!$fecha) {
                                 $fecha = Carbon::createFromFormat('d/m/Y H:i:s', $fechaTexto);
                             }

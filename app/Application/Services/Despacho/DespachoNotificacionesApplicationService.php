@@ -40,7 +40,7 @@ class DespachoNotificacionesApplicationService
 
         $newsVistosIds = NewsVisto::where('user_id', $user->id)->pluck('news_id')->toArray();
 
-        $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'order_status_changed'];
+        $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'epp_homologado', 'order_status_changed'];
         $novedadesQuery = News::whereIn('event_type', $novedadesTipos)
             ->where('created_at', '>=', now()->subMonths(3))
             ->orderBy('created_at', 'desc')
@@ -71,6 +71,7 @@ class DespachoNotificacionesApplicationService
                 'prenda_modificada' => 'edit',
                 'epp_agregado' => 'health_and_safety',
                 'epp_modificado' => 'edit',
+                'epp_homologado' => 'compare_arrows',
                 'order_status_changed' => 'sync_alt',
                 default => 'notifications',
             };
@@ -80,6 +81,7 @@ class DespachoNotificacionesApplicationService
                 'prenda_modificada' => '#f59e0b',
                 'epp_agregado' => '#8b5cf6',
                 'epp_modificado' => '#f59e0b',
+                'epp_homologado' => '#0ea5e9',
                 'order_status_changed' => '#6366f1',
                 default => '#6b7280',
             };
@@ -129,7 +131,7 @@ class DespachoNotificacionesApplicationService
 
     public function marcarTodasComoLeidas(User $user): void
     {
-        $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'order_status_changed'];
+        $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'epp_homologado', 'order_status_changed'];
         $newsIds = News::whereIn('event_type', $novedadesTipos)
             ->where('created_at', '>=', now()->subMonths(3))
             ->pluck('id');

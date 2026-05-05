@@ -17,10 +17,6 @@ class PrendaNovedadService
 {
     public function guardarNovedad(PrendaPedido $prenda, AgregarPrendaCompletaDTO $dto): void
     {
-        if (is_null($dto->novedad) || empty(trim($dto->novedad))) {
-            return;
-        }
-
         $pedido = $prenda->pedidoProduccion;
         if (!$pedido) {
             Log::warning('[PrendaNovedadService] No se encontro pedido para prenda', [
@@ -34,20 +30,22 @@ class PrendaNovedadService
 
         $novedadesActuales = $pedido->novedades ?? '';
         $usuarioAutenticado = Auth::user();
-        $nombreAsesor = $usuarioAutenticado?->name ?? 'Sistema';
-        $rolAsesor = $this->resolverRol($usuarioAutenticado);
+        $nombreAsesor = $usuarioAutenticado?->name ?? $pedido->asesora?->name ?? 'Sistema';
+        $rolAsesor = $this->resolverRol($usuarioAutenticado, $pedido);
 
-        $nuevaNovedad = trim($dto->novedad);
-        $fechaHora = now()->format('d/m/Y h:i A');
+        $nuevaNovedad = is_null($dto->novedad) ? '' : trim($dto->novedad);
         $rolLabel = ucfirst(str_replace('_', ' ', $rolAsesor));
         $nombrePrenda = $prenda->nombre_prenda ?? 'Sin nombre';
-        $novedadConInfo = "{$rolLabel}-{$nombreAsesor}-{$fechaHora} - Agrego la prenda \"{$nombrePrenda}\" - {$nuevaNovedad}";
 
-        $novedadesActualizadas = $novedadesActuales . ($novedadesActuales ? "\n\n" : '') . $novedadConInfo;
+        if ($nuevaNovedad !== '') {
+            $fechaHora = now()->format('d/m/Y h:i A');
+            $novedadConInfo = "{$rolLabel}-{$nombreAsesor}-{$fechaHora} - Agrego la prenda \"{$nombrePrenda}\" - {$nuevaNovedad}";
+            $novedadesActualizadas = $novedadesActuales . ($novedadesActuales ? "\n\n" : '') . $novedadConInfo;
 
-        $pedido->update([
-            'novedades' => $novedadesActualizadas,
-        ]);
+            $pedido->update([
+                'novedades' => $novedadesActualizadas,
+            ]);
+        }
 
         Log::info('[PrendaNovedadService] Novedad guardada', [
             'prenda_id' => $prenda->id,
@@ -69,7 +67,7 @@ class PrendaNovedadService
                     'prenda_id' => $prenda->id,
                     'prenda_nombre' => $nombrePrenda,
                     'pedido_id' => $pedido->id,
-                    'novedad' => $nuevaNovedad,
+                    'novedad' => $nuevaNovedad !== '' ? $nuevaNovedad : null,
                 ],
             ]);
         } catch (\Exception $e) {
@@ -83,10 +81,6 @@ class PrendaNovedadService
 
     public function guardarNovedadModificacion(PrendaPedido $prenda, ?string $novedad): void
     {
-        if (is_null($novedad) || empty(trim($novedad))) {
-            return;
-        }
-
         $pedido = $prenda->pedidoProduccion;
         if (!$pedido) {
             Log::warning('[PrendaNovedadService] No se encontro pedido para prenda', [
@@ -100,38 +94,40 @@ class PrendaNovedadService
 
         $novedadesActuales = $pedido->novedades ?? '';
         $usuarioAutenticado = Auth::user();
-        $nombreAsesor = $usuarioAutenticado?->name ?? 'Sistema';
-        $rolAsesor = $this->resolverRol($usuarioAutenticado);
+        $nombreAsesor = $usuarioAutenticado?->name ?? $pedido->asesora?->name ?? 'Sistema';
+        $rolAsesor = $this->resolverRol($usuarioAutenticado, $pedido);
         $rolLabel = ucfirst(str_replace('_', ' ', $rolAsesor));
         $nombrePrenda = $prenda->nombre_prenda ?? 'Sin nombre';
+        $textoNovedad = is_null($novedad) ? '' : trim($novedad);
 
-        $textoNovedad = trim($novedad);
-        $fechaHora = now()->format('d/m/Y h:i A');
-        $novedadConInfo = "{$rolLabel}-{$nombreAsesor}-{$fechaHora} - Modifico la prenda \"{$nombrePrenda}\" - {$textoNovedad}";
-        $novedadesActualizadas = $novedadesActuales . ($novedadesActuales ? "\n\n" : '') . $novedadConInfo;
+        if ($textoNovedad !== '') {
+            $fechaHora = now()->format('d/m/Y h:i A');
+            $novedadConInfo = "{$rolLabel}-{$nombreAsesor}-{$fechaHora} - Modifico la prenda \"{$nombrePrenda}\" - {$textoNovedad}";
+            $novedadesActualizadas = $novedadesActuales . ($novedadesActuales ? "\n\n" : '') . $novedadConInfo;
 
-        Log::info('[PrendaNovedadService] ANTES DE GUARDAR', [
-            'prenda_id' => $prenda->id,
-            'pedido_id' => $pedido->id,
-            'novedades_actuales' => $novedadesActuales,
-            'novedad_a_agregar' => $textoNovedad,
-            'novedad_con_info' => $novedadConInfo,
-            'novedades_finales_length' => strlen($novedadesActualizadas),
-        ]);
+            Log::info('[PrendaNovedadService] ANTES DE GUARDAR', [
+                'prenda_id' => $prenda->id,
+                'pedido_id' => $pedido->id,
+                'novedades_actuales' => $novedadesActuales,
+                'novedad_a_agregar' => $textoNovedad,
+                'novedad_con_info' => $novedadConInfo,
+                'novedades_finales_length' => strlen($novedadesActualizadas),
+            ]);
 
-        $pedido->update([
-            'novedades' => $novedadesActualizadas,
-        ]);
+            $pedido->update([
+                'novedades' => $novedadesActualizadas,
+            ]);
 
-        // VERIFICAR QUÉ SE GUARDÓ
-        $pedidoRecargado = $pedido->fresh();
-        Log::info('[PrendaNovedadService] DESPUÉS DE GUARDAR - VERIFICACIÓN', [
-            'prenda_id' => $prenda->id,
-            'pedido_id' => $pedido->id,
-            'novedades_en_bd' => $pedidoRecargado->novedades,
-            'novedades_length' => strlen($pedidoRecargado->novedades ?? ''),
-            'ultima_linea' => substr($pedidoRecargado->novedades ?? '', -100),
-        ]);
+            // VERIFICAR QUE SE GUARDO
+            $pedidoRecargado = $pedido->fresh();
+            Log::info('[PrendaNovedadService] DESPUES DE GUARDAR - VERIFICACION', [
+                'prenda_id' => $prenda->id,
+                'pedido_id' => $pedido->id,
+                'novedades_en_bd' => $pedidoRecargado->novedades,
+                'novedades_length' => strlen($pedidoRecargado->novedades ?? ''),
+                'ultima_linea' => substr($pedidoRecargado->novedades ?? '', -100),
+            ]);
+        }
 
         Log::info('[PrendaNovedadService] Novedad de modificacion guardada', [
             'prenda_id' => $prenda->id,
@@ -153,7 +149,7 @@ class PrendaNovedadService
                     'prenda_id' => $prenda->id,
                     'prenda_nombre' => $nombrePrenda,
                     'pedido_id' => $pedido->id,
-                    'novedad' => $textoNovedad,
+                    'novedad' => $textoNovedad !== '' ? $textoNovedad : null,
                 ],
             ]);
         } catch (\Exception $e) {
@@ -165,10 +161,14 @@ class PrendaNovedadService
         }
     }
 
-    private function resolverRol(?object $usuarioAutenticado): string
+    private function resolverRol(?object $usuarioAutenticado, PedidoProduccion $pedido): string
     {
         if ($usuarioAutenticado && method_exists($usuarioAutenticado, 'roles')) {
             return $usuarioAutenticado->roles()->first()?->name ?? 'Sistema';
+        }
+
+        if (!empty($pedido->asesora?->name)) {
+            return 'Asesor';
         }
 
         return 'Sistema';

@@ -290,33 +290,69 @@ async function cargarNovedadesAdvanced(pedidoId) {
  */
 function parsearNovedades(novedadesTexto) {
     const novedades = [];
-    const lineas = novedadesTexto.split('\n\n').filter(linea => linea.trim() !== '');
-    
-    lineas.forEach((linea, index) => {
-        // Intentar parsear formato [usuario - fecha hora] contenido
-        const match = linea.match(/^\[([^\]]+)\]\s*(.+)$/);
-        
-        if (match) {
-            novedades.push({
-                id: `novedad-${index}`,
-                usuario: match[1],
-                fechaHora: match[1],
-                texto: match[2].trim(),
-                lineaCompleta: linea
-            });
-        } else {
-            // Formato antiguo o sin prefijo
-            novedades.push({
-                id: `novedad-${index}`,
-                usuario: 'Sistema',
-                fechaHora: 'Sin fecha',
-                texto: linea.trim(),
-                lineaCompleta: linea
-            });
+    const texto = (novedadesTexto || '').replace(/\r\n/g, '\n');
+    const lineas = texto.split('\n');
+
+    const esInicioNovedad = (linea) => {
+        const l = (linea || '').trim();
+        if (!l) return false;
+
+        if (l.startsWith('[HOMOLOGADO EPP]')) return true;
+        if (l.startsWith('[MODIFICADA PRENDA]')) return true;
+
+        // Formato: ROL-NOMBRE-fecha - texto
+        if (/^[^-]+-[^-]+-\d{2}\/\d{2}\/\d{4}\s+\d{1,2}:\d{2}\s*[APMapm]{2}\s*-\s+/.test(l)) return true;
+
+        // Formato legado: Usuario-Sistema-05/05/2026 10:01 AM - ...
+        if (/^Usuario-[^-]+-\d{2}\/\d{2}\/\d{4}\s+\d{1,2}:\d{2}\s*[APMapm]{2}\s*-\s+/.test(l)) return true;
+
+        return false;
+    };
+
+    // 1) Agrupar bloques sin romper multilinea interna
+    const bloques = [];
+    let actual = [];
+    lineas.forEach((linea) => {
+        if (esInicioNovedad(linea) && actual.length > 0) {
+            bloques.push(actual.join('\n').trim());
+            actual = [linea];
+            return;
         }
+        actual.push(linea);
     });
-    
-    return novedades;
+    if (actual.length > 0) {
+        const bloqueFinal = actual.join('\n').trim();
+        if (bloqueFinal) bloques.push(bloqueFinal);
+    }
+
+    // 2) Parsear metadatos visibles (usuario/fecha) de cada bloque
+    bloques.forEach((bloque, index) => {
+        let usuario = 'Sistema';
+        let fechaHora = 'Sin fecha';
+
+        const lineaPrincipal = bloque.split('\n')[0] || '';
+        const matchPrincipal = lineaPrincipal.match(/^([^-]+)-([^-]+)-(\d{2}\/\d{2}\/\d{4}\s+\d{1,2}:\d{2}\s*[APMapm]{2})\s*-\s*(.+)$/);
+        if (matchPrincipal) {
+            usuario = matchPrincipal[2].trim();
+            fechaHora = matchPrincipal[3].trim();
+        } else {
+            const matchParentesis = bloque.match(/\(([^()]+)\s*-\s*(\d{2}\/\d{2}\/\d{4},?\s*\d{1,2}:\d{2}:\d{2}\s*[apm\.]+)\)/i);
+            if (matchParentesis) {
+                usuario = matchParentesis[1].trim();
+                fechaHora = matchParentesis[2].trim();
+            }
+        }
+
+        novedades.push({
+            id: `novedad-${index}`,
+            usuario,
+            fechaHora,
+            texto: bloque.trim(),
+            lineaCompleta: bloque
+        });
+    });
+
+    return novedades.filter(n => n.texto);
 }
 
 /**

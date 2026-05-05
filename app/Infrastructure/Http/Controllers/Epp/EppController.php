@@ -521,40 +521,15 @@ class EppController extends Controller
             // Guardar novedad si se proporciono
             if (!empty($validated['novedad'])) {
                 try {
-                    $usuario = null;
-                    
-                    // Intenta obtener usuario de multiples formas
-                    if (auth('web')->check()) {
-                        $usuario = auth('web')->user();
-                    } elseif (auth()->check()) {
-                        $usuario = auth()->user();
-                    } elseif (\Illuminate\Support\Facades\Auth::user()) {
-                        $usuario = \Illuminate\Support\Facades\Auth::user();
-                    }
-                    
-                    $nombreUsuario = 'Sistema';
-                    $rol = 'Usuario';
-                    
-                    if ($usuario) {
-                        $nombreUsuario = $usuario->name ?? $usuario->email ?? 'Sistema';
-                        
-                        if (method_exists($usuario, 'getRoleNames')) {
-                            $roles = $usuario->getRoleNames();
-                            if ($roles && count($roles) > 0) {
-                                $rol = ucfirst($roles[0]);
-                            }
-                        } elseif (method_exists($usuario, 'roles')) {
-                            $primerRol = $usuario->roles()->first();
-                            if ($primerRol) {
-                                $rol = ucfirst($primerRol->name ?? 'Usuario');
-                            }
-                        }
-                    }
+                    $pedido = PedidoProduccion::with('asesora:id,name')->find($pedidoId);
+                    $actor = $this->resolverActor($request, $pedido);
+                    $usuario = $actor['usuario'];
+                    $nombreUsuario = $actor['nombre'];
+                    $rol = $actor['rol'];
 
                     $fechaFormato = now()->format('d/m/Y h:i A');
                     $linea_novedad = "{$rol}-{$nombreUsuario}-{$fechaFormato} - {$validated['novedad']}";
 
-                    $pedido = PedidoProduccion::find($pedidoId);
                     if ($pedido && !$this->esPedidoBorrador($pedido)) {
                         $pedido->novedades = !empty($pedido->novedades)
                             ? $pedido->novedades . "\n\n" . $linea_novedad
@@ -588,6 +563,32 @@ class EppController extends Controller
                     \Log::warning('[EppController] Error guardando novedad al agregar EPP', [
                         'error' => $e->getMessage(),
                     ]);
+                }
+            }
+
+            // Si no hubo texto de novedad, igual crear notificacion de agregado.
+            if (empty($validated['novedad'])) {
+                try {
+                    $pedido = PedidoProduccion::with('asesora:id,name')->find($pedidoId);
+                    $actor = $this->resolverActor($request, $pedido);
+                    $usuario = $actor['usuario'];
+                    if ($pedido && !$this->esPedidoBorrador($pedido)) {
+                        \App\Models\News::create([
+                            'event_type' => 'epp_agregado',
+                            'table_name' => 'pedido_epp',
+                            'record_id' => $resultado['pedido_epp_id'] ?? 0,
+                            'description' => ($actor['nombre'] . " agrego EPP al Pedido #{$pedido->numero_pedido}"),
+                            'user_id' => $usuario?->id,
+                            'pedido' => $pedido->numero_pedido,
+                            'metadata' => [
+                                'tipo' => 'epp_agregado',
+                                'pedido_id' => $pedidoId,
+                                'novedad' => null,
+                            ],
+                        ]);
+                    }
+                } catch (\Exception $newsEx) {
+                    \Log::warning('[EppController] Error creando News fallback (agregar)', ['error' => $newsEx->getMessage()]);
                 }
             }
 
@@ -715,15 +716,14 @@ class EppController extends Controller
     {
         try {
             $validated = $request->validate([
-                'cantidad' => 'nullable|integer|min:1',
-                'observaciones' => 'nullable|string|max:1000',
-                'epp_id' => 'nullable|integer|exists:epps,id',
-                'novedad' => 'nullable|string|max:2000',
+                'cantidad' => 'sometimes|required|integer|min:1',
+                'observaciones' => 'nullable|string',
+                'novedad' => 'nullable|string',
+                'epp_id' => 'sometimes|required|integer|exists:epp,id',
             ]);
 
-            // Obtener la relacion pedido_epp
-            $pedidoEpp = \App\Models\PedidoEpp::where('pedido_produccion_id', $pedidoId)
-                ->where('id', $pedidoEppId)
+            $pedidoEpp = \App\Models\PedidoEpp::where('id', $pedidoEppId)
+                ->where('pedido_produccion_id', $pedidoId)
                 ->first();
 
             if (!$pedidoEpp) {
@@ -733,7 +733,6 @@ class EppController extends Controller
                 ], 404);
             }
 
-            // Actualizar solo los campos proporcionados
             if (isset($validated['cantidad'])) {
                 $pedidoEpp->cantidad = $validated['cantidad'];
             }
@@ -746,119 +745,51 @@ class EppController extends Controller
 
             $pedidoEpp->save();
 
-            // Guardar la novedad si se proporciona
-            if (isset($validated['novedad']) && !empty($validated['novedad'])) {
+            $pedido = PedidoProduccion::with('asesora:id,name')->find($pedidoId);
+            $actor = $this->resolverActor($request, $pedido);
+            $usuario = $actor['usuario'];
+            $nombreUsuario = $actor['nombre'];
+            $rol = $actor['rol'];
+            $nombreEpp = \App\Models\Epp::find($pedidoEpp->epp_id)?->nombre_completo ?? 'Sin nombre';
+            $textoNovedad = isset($validated['novedad']) ? trim((string) $validated['novedad']) : '';
+
+            if ($pedido && !$this->esPedidoBorrador($pedido)) {
+                if ($textoNovedad !== '') {
+                    $fechaFormato = now()->format('d/m/Y h:i A');
+                    $lineaNovedad = "{$rol}-{$nombreUsuario}-{$fechaFormato} - Modifico EPP \"{$nombreEpp}\" - {$textoNovedad}";
+
+                    $pedido->novedades = !empty($pedido->novedades)
+                        ? $pedido->novedades . "\n\n" . $lineaNovedad
+                        : $lineaNovedad;
+                    $pedido->save();
+
+                    \Log::info('[EppController] Novedad registrada en pedido', [
+                        'pedidoId' => $pedidoId,
+                        'novedad' => $lineaNovedad,
+                    ]);
+                }
+
                 try {
-                    $usuario = null;
-                    
-                    // Intenta obtener usuario de multiples formas
-                    // 1. Usar Auth::user() que debería estar disponible en la sesión
-                    if (auth('web')->check()) {
-                        $usuario = auth('web')->user();
-                    } elseif (auth()->check()) {
-                        $usuario = auth()->user();
-                    } elseif (\Illuminate\Support\Facades\Auth::user()) {
-                        // Fallback a Auth facade
-                        $usuario = \Illuminate\Support\Facades\Auth::user();
-                    }
-                    
-                    $nombreUsuario = 'Sistema';
-                    $rol = 'Usuario';
-                    
-                    if ($usuario) {
-                        // Obtener nombre
-                        $nombreUsuario = strtoupper($usuario->name ?? $usuario->email ?? 'Sistema');
-                        
-                        \Log::info('[EppController] Usuario encontrado:', [
-                            'id' => $usuario->id,
-                            'name' => $usuario->name,
-                            'email' => $usuario->email,
-                        ]);
-                        
-                        // Intentar obtener el rol de diferentes formas
-                        if (method_exists($usuario, 'getRoleNames')) {
-                            $roles = $usuario->getRoleNames();
-                            if ($roles && count($roles) > 0) {
-                                $rol = strtoupper($roles[0]);
-                            }
-                        } elseif (method_exists($usuario, 'roles')) {
-                            $usuarioRoles = $usuario->roles();
-                            if ($usuarioRoles) {
-                                $primerRol = $usuarioRoles->first();
-                                if ($primerRol) {
-                                    $rol = strtoupper($primerRol->name ?? 'Usuario');
-                                }
-                            }
-                        } elseif (property_exists($usuario, 'rol')) {
-                            $rol = strtoupper($usuario->rol ?? 'Usuario');
-                        } elseif (property_exists($usuario, 'role')) {
-                            $rol = strtoupper($usuario->role ?? 'Usuario');
-                        }
-                    }
-
-                    // Formato: NOMBRE-ROL-dd/mm/yyyy-h:mmAM/PM
-                    //         CAMBIO EPP: DESCRIPCIÓN
-                    $fechaActual = now();
-                    $fechaFormato = $fechaActual->format('d/m/Y h:i A');
-                    $nombreEpp = \App\Models\Epp::find($pedidoEpp->epp_id)?->nombre_completo ?? 'Sin nombre';
-                    $linea_novedad = "{$rol}-{$nombreUsuario}-{$fechaFormato} - Modificó EPP \"{$nombreEpp}\" - {$validated['novedad']}";
-                    
-                    \Log::info('[EppController] Datos de usuario para novedad:', [
-                        'nombreUsuario' => $nombreUsuario,
-                        'rol' => $rol,
-                        'fechaFormato' => $fechaFormato,
-                        'linea_novedad' => $linea_novedad,
+                    \App\Models\News::create([
+                        'event_type' => 'epp_modificado',
+                        'table_name' => 'pedido_epp',
+                        'record_id' => $pedidoEppId,
+                        'description' => "{$rol} {$nombreUsuario} modifico EPP \"{$nombreEpp}\" en Pedido #{$pedido->numero_pedido}",
+                        'user_id' => $usuario?->id,
+                        'pedido' => $pedido->numero_pedido,
+                        'metadata' => [
+                            'tipo' => 'epp_modificado',
+                            'pedido_id' => $pedidoId,
+                            'epp_nombre' => $nombreEpp,
+                            'novedad' => $textoNovedad !== '' ? $textoNovedad : null,
+                        ],
                     ]);
-                    
-                    // Obtener el pedido de producción
-                    $pedido = PedidoProduccion::find($pedidoId);
-                    
-                    if ($pedido && !$this->esPedidoBorrador($pedido)) {
-                        // Agregar la novedad al campo existente con separador visual
-                       if (!empty($pedido->novedades)) {
-                            // Solo salto de línea entre novedades
-                            $pedido->novedades .= "\n\n" . $linea_novedad;
-                        } else {
-                            $pedido->novedades = $linea_novedad;
-                        }
-
-                        $pedido->save();
-                        
-                        \Log::info('[EppController] Novedad registrada en pedido:', [
-                            'pedidoId' => $pedidoId,
-                            'novedad' => $linea_novedad,
-                        ]);
-
-                        // Crear notificacion para supervisores
-                        try {
-                            \App\Models\News::create([
-                                'event_type' => 'epp_modificado',
-                                'table_name' => 'pedido_epp',
-                                'record_id' => $pedidoEppId,
-                                'description' => "{$rol} {$nombreUsuario} modificó EPP \"{$nombreEpp}\" en Pedido #{$pedido->numero_pedido}",
-                                'user_id' => $usuario?->id,
-                                'pedido' => $pedido->numero_pedido,
-                                'metadata' => [
-                                    'tipo' => 'epp_modificado',
-                                    'pedido_id' => $pedidoId,
-                                    'epp_nombre' => $nombreEpp,
-                                    'novedad' => $validated['novedad'],
-                                ],
-                            ]);
-                        } catch (\Exception $newsEx) {
-                            \Log::warning('[EppController] Error creando News', ['error' => $newsEx->getMessage()]);
-                        }
-                    } elseif (!$pedido) {
-                        \Log::warning('[EppController] Pedido no encontrado para guardar novedad:', [
-                            'pedidoId' => $pedidoId,
-                        ]);
-                    }
-                } catch (\Exception $e) {
-                    \Log::warning('[EppController] Error guardando novedad (continuando):', [
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString(),
+                } catch (\Exception $newsEx) {
+                    \Log::warning('[EppController] Error creando News', [
+                        'error' => $newsEx->getMessage(),
+                        'pedidoId' => $pedidoId,
+                        'pedidoEppId' => $pedidoEppId,
                     ]);
-                    // No fallar el cambio si hay error guardando la novedad
                 }
             }
 
@@ -866,9 +797,9 @@ class EppController extends Controller
                 'pedidoId' => $pedidoId,
                 'pedidoEppId' => $pedidoEppId,
                 'cantidad' => $validated['cantidad'] ?? 'sin cambios',
-                'observaciones' => $validated['observaciones'] ? 'actualizado' : 'sin cambios',
+                'observaciones' => array_key_exists('observaciones', $validated) ? 'actualizado' : 'sin cambios',
                 'epp_id' => $validated['epp_id'] ?? 'sin cambios',
-                'novedad' => isset($validated['novedad']) ? 'registrada' : 'sin registrar',
+                'novedad' => $textoNovedad !== '' ? 'registrada' : 'sin registrar',
             ]);
 
             return response()->json([
@@ -884,30 +815,16 @@ class EppController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Datos ivalidos',
+                'message' => 'Datos invalidos',
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('[EppController] Error al actualizar EPP del pedido:', [
-                'pedidoId' => $pedidoId,
-                'pedidoEppId' => $pedidoEppId,
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-            ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Error al actualizar EPP: ' . $e->getMessage(),
             ], 500);
         }
     }
-
-    /**
-     * POST /api/epp/{eppId}/imagenes
-     * 
-     * Subir imagen a un EPP
-     */
     public function subirImagen(int $eppId, Request $request): JsonResponse
     {
         try {
@@ -1481,7 +1398,6 @@ class EppController extends Controller
                     $nombreArchivo = "epp_{$pedidoEpp->epp_id}_img_" . ($orden - 1) . '.webp';
                     $rutaCompleta = "{$rutaStorage}/{$nombreArchivo}";
                     $rutaWebRelativa = $rutaCompleta;
-                    
                     \Log::info("[EppController] Rutas generadas:", [
                         'pedido_id' => $pedidoId,
                         'ruta_storage' => $rutaStorage,
@@ -1513,7 +1429,6 @@ class EppController extends Controller
                     $webp = $imagenObj->toWebp(quality: 80);
                     $contenidoWebP = $webp->toString();
                     \Storage::disk('public')->put($rutaCompleta, $contenidoWebP);
-                    
                     // Verificar que el archivo se guardo correctamente
                     $rutaArchivoCompleta = storage_path("app/public/{$rutaCompleta}");
                     if (file_exists($rutaArchivoCompleta)) {
@@ -1534,7 +1449,6 @@ class EppController extends Controller
                         'principal' => $tienePrincipal ? 0 : 1,
                         'orden' => $orden
                     ]);
-                    
                     $imagenesGuardadas[] = [
                         'id' => $pedidoEppImagen->id,
                         'ruta_original' => $rutaCompleta,
@@ -1543,7 +1457,6 @@ class EppController extends Controller
                         'orden' => (int)$pedidoEppImagen->orden,
                         'nombre' => $nombreOriginal
                     ];
-                    
                     \Log::info("[EppController] Imagen guardada: {$nombreArchivo}");
                 }
             }
@@ -1620,6 +1533,56 @@ class EppController extends Controller
                 'message' => 'Error al eliminar la imagen: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    private function resolverActor(Request $request, ?PedidoProduccion $pedido = null): array
+    {
+        $usuario = $request->user();
+        if (!$usuario && auth('web')->check()) {
+            $usuario = auth('web')->user();
+        }
+        if (!$usuario && auth()->check()) {
+            $usuario = auth()->user();
+        }
+        if (!$usuario && \Illuminate\Support\Facades\Auth::user()) {
+            $usuario = \Illuminate\Support\Facades\Auth::user();
+        }
+
+        if ($usuario) {
+            $rol = 'Usuario';
+            if (method_exists($usuario, 'getRoleNames')) {
+                $roles = $usuario->getRoleNames();
+                if ($roles && count($roles) > 0) {
+                    $rol = ucfirst((string) $roles[0]);
+                }
+            } elseif (method_exists($usuario, 'roles')) {
+                $primerRol = $usuario->roles()->first();
+                if ($primerRol) {
+                    $rol = ucfirst((string) ($primerRol->name ?? 'Usuario'));
+                }
+            }
+
+            return [
+                'usuario' => $usuario,
+                'nombre' => (string) ($usuario->name ?? $usuario->email ?? 'Sistema'),
+                'rol' => $rol,
+            ];
+        }
+
+        $nombreAsesora = $pedido?->asesora?->name;
+        if (!empty($nombreAsesora)) {
+            return [
+                'usuario' => null,
+                'nombre' => (string) $nombreAsesora,
+                'rol' => 'Asesor',
+            ];
+        }
+
+        return [
+            'usuario' => null,
+            'nombre' => 'Sistema',
+            'rol' => 'Sistema',
+        ];
     }
 
     private function esPedidoBorrador(PedidoProduccion $pedido): bool

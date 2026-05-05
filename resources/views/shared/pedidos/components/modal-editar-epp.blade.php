@@ -814,9 +814,11 @@
                 response = await fetch(`/api/asesores/pedidos/${pedidoId}/homologar-epp`, {
                     method: 'POST',
                     headers: {
+                        'Accept': 'application/json',
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
+                    credentials: 'same-origin',
                     body: JSON.stringify({
                         pedido_epp_id: window.eppEnHomologacion.id,
                         cantidad: cambios.cantidad,
@@ -830,9 +832,11 @@
                 response = await fetch(`/api/pedidos/${pedidoId}/epp/${pedidoEppId}`, {
                     method: 'PATCH',
                     headers: {
+                        'Accept': 'application/json',
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
+                    credentials: 'same-origin',
                     body: JSON.stringify({
                         cantidad: cambios.cantidad,
                         observaciones: cambios.observaciones,
@@ -842,12 +846,26 @@
                 });
             }
             
+            const contentType = response.headers.get('content-type') || '';
+            const esJson = contentType.includes('application/json');
+            const payload = esJson ? await response.json() : await response.text();
+
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Error al guardar');
+                if (esJson) {
+                    throw new Error(payload?.message || 'Error al guardar');
+                }
+
+                const mensajeHtml = (typeof payload === 'string' && payload.trim().startsWith('<!DOCTYPE'))
+                    ? 'El servidor devolvio HTML en lugar de JSON (posible sesion expirada o error interno).'
+                    : 'Respuesta inesperada del servidor.';
+                throw new Error(`${mensajeHtml} [HTTP ${response.status}]`);
             }
-            
-            const resultado = await response.json();
+
+            if (!esJson) {
+                throw new Error(`Respuesta no JSON del servidor [HTTP ${response.status}]`);
+            }
+
+            const resultado = payload;
             console.log(' Cambios guardados con novedad:', resultado);
 
             const refrescoOk = await refrescarDatosEdicionPedidoDesdeServidor(pedidoId);
