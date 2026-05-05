@@ -98,6 +98,7 @@
             orden_compra: document.getElementById('orden_compra_editable')?.value || '',
             asesora: document.getElementById('asesora_editable')?.value || '',
             forma_de_pago: document.getElementById('forma_de_pago_editable')?.value || '',
+            dia_de_entrega: parseInt(document.getElementById('dia_de_entrega_editable')?.value || '', 10) || null,
             numero_cotizacion: esSinCotizacion ? null : cotizacionId,
             es_sin_cotizacion: esSinCotizacion,
             

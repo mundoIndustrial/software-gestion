@@ -281,6 +281,8 @@ final class AsesoresPedidosQueryController extends Controller
                         'cliente' => data_get($pedido, 'cliente'),
                         'estado' => data_get($pedido, 'estado'),
                         'forma_pago' => data_get($pedido, 'forma_pago'),
+                        'dias_restantes_entrega' => \App\Application\Pedidos\Presenters\PedidoTableRowPresenter::present($pedido)->dias_restantes_entrega ?? null,
+                        'fecha_estimada' => data_get($pedido, 'fecha_estimada'),
                         'page' => $page,
                     ];
                 }

@@ -145,8 +145,14 @@
         @if(isset($pedido->dias_restantes_entrega) && $pedido->dias_restantes_entrega !== null)
             <span>{{ $pedido->dias_restantes_entrega }} d&iacute;as</span>
             <span>h&aacute;biles restantes</span>
+            <span style="color:#2563eb; font-size:0.7rem; font-weight:600; margin-top:2px;">
+                Entrega: {{ $fechaEstimada }}
+            </span>
         @else
-            -
+            <span>-</span>
+            <span style="color:#2563eb; font-size:0.7rem; font-weight:600; margin-top:2px;">
+                Entrega: {{ $fechaEstimada }}
+            </span>
         @endif
     </div>
 

@@ -479,6 +479,9 @@
             cliente: datos.cliente || '',
             asesora: datos.asesora || '',
             forma_de_pago: datos.forma_de_pago || '',
+            dia_de_entrega: Number.isFinite(parseInt((datos.dia_de_entrega ?? document.getElementById('dia_de_entrega_editable')?.value ?? ''), 10))
+                ? parseInt((datos.dia_de_entrega ?? document.getElementById('dia_de_entrega_editable')?.value ?? ''), 10)
+                : null,
             observaciones: datos.observaciones || '',
             orden_compra: datos.orden_compra || document.getElementById('orden_compra_editable')?.value?.trim() || '',
             numero_cotizacion: datos.numero_cotizacion,

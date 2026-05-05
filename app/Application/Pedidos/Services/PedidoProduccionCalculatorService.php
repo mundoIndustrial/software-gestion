@@ -2,20 +2,19 @@
 
 namespace App\Application\Pedidos\Services;
 
-use App\Models\Festivo;
 use Carbon\Carbon;
 
 /**
- * Servicio para cálculos y lógica de procesos de pedidos
+ * Servicio para calculos y logica de procesos de pedidos
  * Este servicio maneja:
- * - Cálculo de fecha estimada (con festivos)
- * - Determinación del proceso actual con prioridades
- * - Toda la lógica que NO es queries puras
+ * - Calculo de fecha estimada (con festivos)
+ * - Determinacion del proceso actual con prioridades
+ * - Toda la logica que NO es queries puras
  */
 class PedidoProduccionCalculatorService
 {
     /**
-     * Calcular fecha estimada de entrega basada en días hábiles
+     * Calcular fecha estimada de entrega basada en dias habiles
      * @param Carbon $fechaCreacion
      * @param int $diasEntrega
      * @return Carbon|null
@@ -28,31 +27,22 @@ class PedidoProduccionCalculatorService
 
         try {
             $fechaInicio = $fechaCreacion->copy();
-            $diasAñadir = intval($diasEntrega);
-            
-            // Obtener festivos
-            $festivos = Festivo::pluck('fecha')->toArray();
-            
-            // Contar días hábiles
+            $diasAnadir = intval($diasEntrega);
+
+            // Contar dias habiles usando cmixin/business-day (co-national)
             $fecha = $fechaInicio->copy();
             $diasContados = 0;
-            
-            while ($diasContados < $diasAñadir) {
+
+            while ($diasContados < $diasAnadir) {
                 $fecha->addDay();
-                
-                // Saltar fines de semana
-                if ($fecha->isWeekend()) {
+
+                if (!$fecha->isBusinessDay()) {
                     continue;
                 }
-                
-                // Saltar festivos
-                if (in_array($fecha->format('Y-m-d'), $festivos)) {
-                    continue;
-                }
-                
+
                 $diasContados++;
             }
-            
+
             return $fecha;
         } catch (\Exception $e) {
             return null;
@@ -62,7 +52,7 @@ class PedidoProduccionCalculatorService
     /**
      * Determinar el proceso actual con prioridades
      * Asume que $procesos es una Collection ya cargada en memoria
-     * (típicamente desde eager loading)
+     * (tipicamente desde eager loading)
      * @param \Illuminate\Support\Collection $procesos
      * @return string
      */
@@ -79,49 +69,49 @@ class PedidoProduccionCalculatorService
             'Costura',
             'Corte',
             'Control Calidad',
-            'Creación de Orden',
+            'Creacion de Orden',
             'tcc'
         ];
-        
+
         // Prioridad 1: Buscar proceso "En Progreso" (que sea uno de los principales)
         foreach ($procesosPrioritarios as $nombreProceso) {
             $proceso = $procesos
                 ->where('estado_proceso', 'En Progreso')
                 ->where('proceso', $nombreProceso)
                 ->first();
-            
+
             if ($proceso) {
                 return $proceso->proceso;
             }
         }
-        
+
         // Prioridad 2: Buscar proceso "Pendiente" (que sea uno de los principales)
         foreach ($procesosPrioritarios as $nombreProceso) {
             $proceso = $procesos
                 ->where('estado_proceso', 'Pendiente')
                 ->where('proceso', $nombreProceso)
                 ->first();
-            
+
             if ($proceso) {
                 return $proceso->proceso;
             }
         }
-        
-        // Prioridad 3: Buscar cualquier proceso que NO esté completado
+
+        // Prioridad 3: Buscar cualquier proceso que NO este completado
         foreach ($procesosPrioritarios as $nombreProceso) {
             $proceso = $procesos
                 ->where('proceso', $nombreProceso)
                 ->whereNotIn('estado_proceso', ['Completado', 'Pausado'])
                 ->first();
-            
+
             if ($proceso) {
                 return $proceso->proceso;
             }
         }
-        
-        // Prioridad 4: El último proceso creado
+
+        // Prioridad 4: El ultimo proceso creado
         $ultimoProceso = $procesos->sortByDesc('created_at')->first();
-        
+
         return $ultimoProceso?->proceso ?? 'Pendiente';
     }
 }

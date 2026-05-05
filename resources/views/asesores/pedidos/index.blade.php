@@ -1110,7 +1110,13 @@
                             </span>
                         </div>
                         <div style="display: flex; flex-direction: column; justify-content: center; color: #dc2626; font-size: 0.78rem; font-weight: 700; line-height: 1.1;">
-                            ${pedido.dias_restantes_entrega !== null && pedido.dias_restantes_entrega !== undefined ? `<span>${pedido.dias_restantes_entrega} días</span><span>hábiles restantes</span>` : '-'}
+                            ${pedido.dias_restantes_entrega !== null && pedido.dias_restantes_entrega !== undefined ? `
+                                <span>${pedido.dias_restantes_entrega} d&iacute;as</span>
+                                <span>h&aacute;biles restantes</span>
+                                <span style="color:#2563eb; font-size:0.7rem; font-weight:600; margin-top:2px;">
+                                    Entrega: ${pedido.fecha_estimada ? new Date(pedido.fecha_estimada + 'T12:00:00').toLocaleDateString('es-ES') : '-'}
+                                </span>
+                            ` : '-'}
                         </div>
                         <div style="display: flex; align-items: center; color: #2563eb; font-weight: 700; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                             #${pedido.numero_pedido}

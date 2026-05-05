@@ -133,12 +133,18 @@ class ActualizarBorradorUseCase
             'cliente' => $cliente,
             'orden_compra' => $input->getOrdenCompra(),
             'forma_de_pago' => $input->datosFrontend['forma_de_pago'] ?? '',
+            'dia_de_entrega' => isset($input->datosFrontend['dia_de_entrega']) && is_numeric($input->datosFrontend['dia_de_entrega'])
+                ? (int) $input->datosFrontend['dia_de_entrega']
+                : null,
             'observaciones' => $input->datosFrontend['observaciones'] ?? '',
         ]);
 
         Log::info('[ActualizarBorradorUseCase] Datos basicos actualizados', [
             'pedido_id' => $input->pedidoId,
             'cliente' => $cliente,
+            'dia_de_entrega' => isset($input->datosFrontend['dia_de_entrega']) && is_numeric($input->datosFrontend['dia_de_entrega'])
+                ? (int) $input->datosFrontend['dia_de_entrega']
+                : null,
         ]);
     }
 

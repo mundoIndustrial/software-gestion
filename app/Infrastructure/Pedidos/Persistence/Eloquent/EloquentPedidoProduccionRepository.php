@@ -181,7 +181,13 @@ class EloquentPedidoProduccionRepository implements PedidoProduccionReadReposito
 
     public function actualizarDatosBasicos(int $pedidoId, array $datos): void
     {
-        PedidoProduccion::where('id', $pedidoId)->update($datos);
+        $pedido = PedidoProduccion::find($pedidoId);
+        if (!$pedido) {
+            return;
+        }
+
+        $pedido->fill($datos);
+        $pedido->save();
     }
 
     public function obtenerEppConImagenes(int $pedidoId, int $eppId): ?PedidoEppRef

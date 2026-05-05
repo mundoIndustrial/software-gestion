@@ -63,6 +63,7 @@ class GuardarBorradorUseCase
                     'orden_compra' => $input->getOrdenCompra(),
                     'asesora' => $dtoPedido->asesora,
                     'forma_de_pago' => $dtoPedido->forma_de_pago,
+                    'dia_de_entrega' => $dtoPedido->dia_de_entrega,
                     'observaciones' => $dtoPedido->observaciones,
                     'cliente_id' => $dtoPedido->cliente_id,
                     'items' => $dtoPedido->prendas,

@@ -43,6 +43,11 @@
                 'orden_compra' => $pedido->orden_compra ?? '',
                 'cliente' => $pedido->cliente_nombre_display ?? '',
                 'forma_de_pago' => $pedido->forma_de_pago ?? '',
+                'dia_de_entrega' => $pedido->dia_de_entrega ?? null,
+                'fecha_estimada_de_entrega' => $pedido->fecha_estimada_de_entrega
+                    ?? $pedido->fecha_estimada_entrega
+                    ?? $pedido->fecha_estimada
+                    ?? null,
                 'observaciones' => $pedido->observaciones ?? '',
                 'estado' => $pedido->estado ?? '',
                 // Contrato explícito: payload ya mapeado por MapearPedidoEdicionService.

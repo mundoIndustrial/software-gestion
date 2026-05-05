@@ -124,6 +124,12 @@ function cargarInformacionGeneral(pedido) {
 
     
     try {
+        const diaEntregaGuardado = pedido?.dia_de_entrega ?? pedido?.dias_de_entrega ?? null;
+        const fechaEstimadaGuardada = pedido?.fecha_estimada_de_entrega
+            ?? pedido?.fecha_estimada_entrega
+            ?? pedido?.fecha_estimada
+            ?? null;
+
         const campos = {
             'cliente_editable': pedido.cliente,
             'orden_compra_editable': pedido.orden_compra,
@@ -140,6 +146,17 @@ function cargarInformacionGeneral(pedido) {
 
             }
         });
+
+        const selectDiasEntrega = document.getElementById('dia_de_entrega_editable');
+        if (selectDiasEntrega && diaEntregaGuardado !== null && diaEntregaGuardado !== undefined && diaEntregaGuardado !== '') {
+            selectDiasEntrega.value = String(diaEntregaGuardado);
+            selectDiasEntrega.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        const previewFecha = document.getElementById('fecha_estimada_preview');
+        if (previewFecha && fechaEstimadaGuardada) {
+            previewFecha.textContent = `Fecha estimada de entrega: ${fechaEstimadaGuardada}`;
+        }
 
     } catch (error) {
 
@@ -691,4 +708,3 @@ window.addEventListener('prendaActualizada', (event) => {
 document.addEventListener('DOMContentLoaded', () => {
     inicializarEventListenersEpp();
 });
-

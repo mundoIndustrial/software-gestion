@@ -41,7 +41,11 @@ final class PedidoTableRowPresenter
         $row->fecha_estimada = $item->fecha_estimada;
         $row->fecha_estimada_de_entrega = $item->fecha_estimada;
         $row->dia_de_entrega = $item->dia_de_entrega;
-        $row->dias_restantes_entrega = self::calcularDiasRestantes($item->fecha_creacion, $item->dia_de_entrega);
+        $row->dias_restantes_entrega = self::calcularDiasRestantes(
+            $item->fecha_creacion,
+            $item->dia_de_entrega,
+            $item->fecha_estimada
+        );
 
         // Keep shape compatible with optional relation access in Blade
         $row->asesora = null;
@@ -64,18 +68,43 @@ final class PedidoTableRowPresenter
         }
     }
 
-    private static function calcularDiasRestantes(?string $fechaCreacion, ?int $diaEntrega): ?int
-    {
-        if (empty($fechaCreacion) || empty($diaEntrega) || $diaEntrega <= 0) {
-            return null;
-        }
-
+    private static function calcularDiasRestantes(
+        ?string $fechaCreacion,
+        ?int $diaEntrega,
+        ?string $fechaEstimada = null
+    ): ?int {
         try {
-            $creacion = Carbon::parse($fechaCreacion)->startOfDay();
             $hoy = now()->startOfDay();
 
+            // Prioridad: calcular desde la fecha estimada real del pedido.
+            if (!empty($fechaEstimada)) {
+                $fechaObjetivo = Carbon::parse($fechaEstimada)->startOfDay();
+
+                if ($fechaObjetivo->lte($hoy)) {
+                    return 0;
+                }
+
+                $restantes = 0;
+                $cursor = $hoy->copy(); // incluir hoy en el conteo para que el descuento empiece mañana
+
+                while ($cursor->lte($fechaObjetivo)) {
+                    if ($cursor->isBusinessDay()) {
+                        $restantes++;
+                    }
+                    $cursor->addDay();
+                }
+
+                return max(0, $restantes);
+            }
+
+            // Fallback legacy para pedidos sin fecha estimada persistida.
+            if (empty($fechaCreacion) || empty($diaEntrega) || $diaEntrega <= 0) {
+                return null;
+            }
+
+            $creacion = Carbon::parse($fechaCreacion)->startOfDay();
             $diasHabilesTranscurridos = 0;
-            $cursor = $creacion->copy()->addDay(); // contar desde el día siguiente
+            $cursor = $creacion->copy()->addDay(); // contar desde el dia siguiente
 
             while ($cursor->lte($hoy)) {
                 if ($cursor->isBusinessDay()) {
@@ -84,9 +113,7 @@ final class PedidoTableRowPresenter
                 $cursor->addDay();
             }
 
-            // El día de creación NO descuenta; el conteo inicia desde el siguiente día hábil.
-            $restantes = $diaEntrega - $diasHabilesTranscurridos;
-            return max(0, $restantes);
+            return max(0, $diaEntrega - $diasHabilesTranscurridos);
         } catch (\Throwable) {
             return null;
         }
