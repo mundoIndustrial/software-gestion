@@ -8,6 +8,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Traits\Auditable;
 use App\Models\PushSubscription;
+use App\Models\PedidoProduccion;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
@@ -308,6 +310,14 @@ class User extends Authenticatable
     public function pushSubscriptions()
     {
         return $this->hasMany(PushSubscription::class);
+    }
+
+    /**
+     * Relación: Un usuario (asesora) tiene muchos pedidos
+     */
+    public function pedidosAsesora(): HasMany
+    {
+        return $this->hasMany(PedidoProduccion::class, 'asesor_id');
     }
 
     /**

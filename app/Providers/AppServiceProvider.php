@@ -11,6 +11,7 @@ use App\Models\TablaOriginalBodega;
 use App\Models\BodegaDetalleTalla;
 use App\Models\ProcesoPrenda;
 use App\Models\PedidoProduccion;
+use App\Models\User;
 use App\Models\PrendaPedido;
 use App\Models\Cotizacion;
 use App\Observers\TablaOriginalBodegaObserver;
@@ -350,6 +351,24 @@ class AppServiceProvider extends ServiceProvider
             }
 
             $view->with('revisarPrendaBadgeCount', (int) $badgeCount);
+        });
+
+        // View Composer para el sidebar de Despacho (Asesoras)
+        View::composer(['components.sidebars.sidebar-despacho', 'despacho.index'], function ($view) {
+            $states = ['Pendiente', 'En Ejecucion', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'];
+            
+            $asesores = User::whereHas('pedidosAsesora', function ($q) use ($states) {
+                $q->whereIn('estado', $states)
+                  ->whereNotNull('numero_pedido')
+                  ->where('numero_pedido', '!=', '');
+            })->withCount(['pedidosAsesora' => function ($q) use ($states) {
+                $q->whereIn('estado', $states)
+                  ->whereNotNull('numero_pedido')
+                  ->where('numero_pedido', '!=', '');
+            }])->get(['id', 'name']);
+
+            $view->with('sidebarAsesores', $asesores);
+            $view->with('currentAsesorId', request('asesor_id'));
         });
     }
 }

@@ -3,6 +3,22 @@
 @section('title', 'Módulo de Despacho')
 @section('page-title', 'Despacho')
 
+@push('styles')
+<style>
+    .asesora-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        background: #f1f5f9;
+        color: #475569;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+</style>
+@endpush
+
 @section('content')
 <script>
 // Definir funciones ANTES de renderizar el HTML para que estén disponibles en los onclick
@@ -108,84 +124,61 @@ window.mostrarNotificacionExito = function(numeroPedido) {
 };
 </script>
 
-<div class="despacho-index min-h-screen bg-white">
-    <div class="max-w-6xl mx-auto">
-        <!-- Header -->
-        <div class="border-b border-slate-200 px-6 py-6">
-            <h1 class="text-2xl font-semibold text-slate-900">Despacho</h1>
-            <p class="text-sm text-slate-500 mt-1">Gestión de entregas parciales</p>
-        </div>
-
-        <!-- Buscador -->
+<div class="p-6">
+    <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+        <!-- Header con buscador -->
         <div class="px-6 py-4 border-b border-slate-200">
-            <form method="GET" class="flex gap-2">
-                <input 
-                    type="text" 
-                    name="search" 
-                    placeholder="Buscar por pedido o cliente..."
-                    value="{{ $search }}"
-                    class="flex-1 px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
-                >
-                <button 
-                    type="submit"
-                    class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded transition-colors"
-                >
-                    Buscar
-                </button>
-                @if($search)
-                    <a 
-                        href="{{ route('despacho.index') }}"
-                        class="px-4 py-2 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors"
+                <form method="GET" class="flex gap-2">
+                    @if($currentAsesorId)<input type="hidden" name="asesor_id" value="{{ $currentAsesorId }}">@endif
+                    <input 
+                        type="text" 
+                        name="search" 
+                        placeholder="Buscar por pedido o cliente..."
+                        value="{{ $search }}"
+                        class="flex-1 px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
                     >
-                        Limpiar
-                    </a>
-                @endif
-            </form>
-        </div>
+                    <button 
+                        type="submit"
+                        class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded transition-colors"
+                    >
+                        Buscar
+                    </button>
+                    @if($search)
+                        <a 
+                            href="{{ route('despacho.index', $currentAsesorId ? ['asesor_id' => $currentAsesorId] : []) }}"
+                            class="px-4 py-2 border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 text-sm font-medium rounded transition-colors"
+                        >
+                            Limpiar
+                        </a>
+                    @endif
+                </form>
+            </div>
 
-        <!-- Stats compactas -->
-        <div class="px-6 py-4 border-b border-slate-200">
-            <div class="flex gap-8">
-                <div>
-                    <span class="text-sm text-slate-500">Pedidos totales</span>
-                    <span class="block text-2xl font-semibold text-slate-900">{{ $pedidos->total() }}</span>
-                </div>
-                <div>
-                    <span class="text-sm text-slate-500">En esta página</span>
-                    <span class="block text-2xl font-semibold text-slate-900">{{ $pedidos->count() }}</span>
-                </div>
-                <div>
-                    <span class="text-sm text-slate-500">Página</span>
-                    <span class="block text-2xl font-semibold text-slate-900">{{ $pedidos->currentPage() }} / {{ $pedidos->lastPage() }}</span>
+            <!-- Stats compactas -->
+            <div class="px-6 py-4 border-b border-slate-200">
+                <div class="flex gap-8">
+                    <div>
+                        <span class="text-sm text-slate-500">Pedidos totales</span>
+                        <span class="block text-2xl font-semibold text-slate-900">{{ $pedidos->total() }}</span>
+                    </div>
+                    <div>
+                        <span class="text-sm text-slate-500">En esta página</span>
+                        <span class="block text-2xl font-semibold text-slate-900">{{ $pedidos->count() }}</span>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Tabla de pedidos -->
-        <div class="bg-white overflow-hidden">
             @if($pedidos->count() > 0)
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead class="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <th class="px-6 py-3 text-center font-medium text-slate-700 w-32">
-                                    Acción
-                                </th>
-                                <th class="px-6 py-3 text-left font-medium text-slate-700">
-                                    Nº Pedido
-                                </th>
-                                <th class="px-6 py-3 text-left font-medium text-slate-700">
-                                    Cliente
-                                </th>
-                                <th class="px-6 py-3 text-left font-medium text-slate-700">
-                                    Novedades
-                                </th>
-                                <th class="px-6 py-3 text-left font-medium text-slate-700">
-                                    Estado
-                                </th>
-                                <th class="px-6 py-3 text-center font-medium text-slate-700">
-                                    Creación
-                                </th>
+                                <th class="px-6 py-3 text-center font-medium text-slate-700 w-32">Acción</th>
+                                <th class="px-6 py-3 text-left font-medium text-slate-700">Nº Pedido</th>
+                                <th class="px-6 py-3 text-left font-medium text-slate-700">Cliente</th>
+                                <th class="px-6 py-3 text-left font-medium text-slate-700">Novedades</th>
+                                <th class="px-6 py-3 text-left font-medium text-slate-700">Estado</th>
+                                <th class="px-6 py-3 text-center font-medium text-slate-700">Creación</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200">
@@ -195,7 +188,7 @@ window.mostrarNotificacionExito = function(numeroPedido) {
                                     @elseif($pedido->estado_entrega === 'parcial') bg-yellow-100
                                     @endif" 
                                     data-pedido-id="{{ $pedido->id }}">
-                                    <td class="px-6 py-4 text-center whitespace-nowrap">
+                                    <td class="px-6 py-4 text-center whitespace-nowrap text-slate-500">
                                         <a href="{{ route('despacho.show', $pedido->id) }}"
                                            class="inline-block px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition-colors">
                                             Ver
@@ -282,8 +275,23 @@ window.mostrarNotificacionExito = function(numeroPedido) {
                     {{ $pedidos->links() }}
                 </div>
             @else
-                <div class="px-6 py-16 text-center text-slate-500">
-                    No hay pedidos disponibles
+                <div class="text-center py-20">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-400 mb-4">
+                        <span class="material-symbols-rounded" style="font-size: 32px;">inbox</span>
+                    </div>
+                    <h3 class="text-lg font-medium text-slate-900">No se encontraron pedidos</h3>
+                    <p class="text-slate-500 mt-1">
+                        @if($currentAsesorId)
+                            Esta asesora no tiene pedidos pendientes en este momento.
+                        @else
+                            No hay pedidos pendientes que coincidan con los filtros aplicados.
+                        @endif
+                    </p>
+                    @if($search || $currentAsesorId)
+                        <a href="{{ route('despacho.index') }}" class="inline-block mt-4 text-sm font-medium text-blue-600 hover:text-blue-700">
+                            Limpiar todos los filtros
+                        </a>
+                    @endif
                 </div>
             @endif
         </div>

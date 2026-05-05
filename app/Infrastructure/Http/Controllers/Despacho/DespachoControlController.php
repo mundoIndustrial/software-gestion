@@ -22,7 +22,10 @@ class DespachoControlController extends Controller
      */
     public function index(Request $request)
     {
-        $data = $this->service->obtenerListadoIndex((string) $request->input('search', ''));
+        $data = $this->service->obtenerListadoIndex(
+            (string) $request->input('search', ''),
+            $request->input('asesor_id') ? (int) $request->input('asesor_id') : null
+        );
 
         return view('despacho.index', [
             'pedidos' => $data['pedidos'],
@@ -71,7 +74,7 @@ class DespachoControlController extends Controller
     }
 
     /**
-     * Vista de impresión del control de entregas
+     * Vista de impresion del control de entregas
      */
     public function printDespacho(PedidoProduccion $pedido)
     {
@@ -119,7 +122,7 @@ class DespachoControlController extends Controller
     }
 
     /**
-     * Marcar ítem como entregado
+     * Marcar item como entregado
      */
     public function marcarEntregado(Request $request, PedidoProduccion $pedido): JsonResponse
     {

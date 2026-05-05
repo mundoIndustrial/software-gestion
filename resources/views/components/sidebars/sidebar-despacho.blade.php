@@ -61,6 +61,26 @@
       </li>
       </ul>
     </div>
+
+    <!-- FILTRO POR ASESORA (NUEVO) -->
+    @if(isset($sidebarAsesores) && $sidebarAsesores->count() > 0)
+    <div class="menu-section mt-4" style="border-top: 1px solid #f1f5f9; padding-top: 16px;">
+      <span class="menu-section-title">Filtrar por Asesora</span>
+      <ul class="menu-list">
+        @foreach($sidebarAsesores as $asesora)
+        <li class="menu-item">
+          <a href="{{ route('despacho.index', array_merge(request()->all(), ['asesor_id' => $asesora->id, 'page' => 1])) }}"
+             class="menu-link {{ $currentAsesorId == $asesora->id ? 'active' : '' }}"
+             style="padding: 8px 12px; font-size: 0.85rem;">
+            <span class="material-symbols-rounded" style="font-size: 1.2rem;">person</span>
+            <span class="menu-label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;">{{ $asesora->name }}</span>
+            <span class="badge" style="background: #ef4444; color: white; margin-left: auto; border-radius: 9999px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0;">{{ $asesora->pedidos_asesora_count }}</span>
+          </a>
+        </li>
+        @endforeach
+      </ul>
+    </div>
+    @endif
   </div>
 </aside>
 

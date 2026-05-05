@@ -44,26 +44,21 @@ class RegistroOrdenExtendedQueryService
                 $query
                     ->whereIn('estado', [
                         'Entregado', self::ESTADO_EN_EJECUCION, 'No iniciado', 'Anulada',
-                        'Pendiente', 'PENDIENTE_SUPERVISOR' //  Agregar estos estados (NO incluye 'Borrador')
-                    ])
-                    ->orWhere(function (Builder $q) {
-                        $q->where('estado', 'PENDIENTE_INSUMOS')
-                            ->whereHas('prendas', function (Builder $prendasQuery) {
-                                $prendasQuery->where('de_bodega', true);
-                            });
-                    });
+                        'Pendiente', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'
+                    ]);
             })
-            //  FILTRO CRÍTICO: Solo mostrar pedidos con prendas (no solo EPP)
-            // Excluye pedidos que SOLO tengan de_bodega = true
-            ->whereHas('prendas', function (Builder $prendasQuery) {
-                $prendasQuery->where('de_bodega', false);
-            })
+            //  FILTRO CRÍTICO [ELIMINADO]: Se permitía solo pedidos con prendas de fabricación.
+            // Ahora se muestran todos los pedidos válidos.
             ->with([
                 'asesora:id,name',
                 'prendas:id,pedido_produccion_id,nombre_prenda,descripcion',
                 'prendas.tallas:prenda_pedido_id,genero,talla,cantidad'
             ])
-            ->orderBy('created_at', 'asc');
+            // Orden global estable para paginacion:
+            // 1) numero_pedido de mayor a menor
+            // 2) id de mayor a menor como desempate
+            ->orderByRaw('CAST(numero_pedido AS UNSIGNED) DESC')
+            ->orderByDesc('id');
 
         return $query;
     }
@@ -89,14 +84,17 @@ class RegistroOrdenExtendedQueryService
         // Para admin y aprobador_pedidos: Solo estados específicos
         if ($user && $user->role && in_array($user->role->name, ['admin', 'aprobador_pedidos'])) {
             $query->whereIn('estado', [
-                'Pendiente', 'Entregado', self::ESTADO_EN_EJECUCION, 'No iniciado', 'Anulada'
+                'Pendiente', 'Entregado', self::ESTADO_EN_EJECUCION, 'No iniciado', 'Anulada',
+                'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'
             ]);
             return $query;
         }
 
-        // Si es supervisor, filtrar por estado por defecto
+        // Si es supervisor, filtrar por estados permitidos
         if ($user && $user->role && $user->role->name === 'supervisor') {
-            $query->where('estado', self::ESTADO_EN_EJECUCION);
+            $query->whereIn('estado', [
+                self::ESTADO_EN_EJECUCION, 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA'
+            ]);
         }
 
         return $query;

@@ -42,6 +42,8 @@ class GetOrdersQueryUseCase
 
             $filterData = $this->extendedFilterService->extractFiltersFromRequest($request);
             $query = $this->extendedFilterService->applyFiltersToQuery($query, $filterData['filters']);
+            $quickStatusCounts = $this->buildQuickStatusCounts(clone $query);
+            $query = $this->applyQuickStatusFilter($query, $request->input('status'));
             $festivos = $this->buildFestivos();
 
             ['ordenes' => $ordenes, 'totalDiasCalculados' => $totalDiasCalculados] = $this->resolveOrdersAndTotals(
@@ -61,7 +63,7 @@ class GetOrdersQueryUseCase
 
             $response = $request->wantsJson()
                 ? $this->buildJsonResponse($ordenes, $areasMap, $encargadosCreacionOrdenMap, $totalDiasCalculados, $areaOptions, $fechaMaximaRecibosPorPedido)
-                : $this->buildViewResponse($ordenes, $areasMap, $encargadosCreacionOrdenMap, $totalDiasCalculados, $areaOptions, $fechaMaximaRecibosPorPedido);
+                : $this->buildViewResponse($ordenes, $areasMap, $encargadosCreacionOrdenMap, $totalDiasCalculados, $areaOptions, $fechaMaximaRecibosPorPedido, $quickStatusCounts);
         }
 
         return $response;
@@ -125,7 +127,7 @@ class GetOrdersQueryUseCase
             return $this->resolveOrdersAndTotalsWithDiasFilter($query, $filterTotalDias, $request, $festivos);
         }
 
-        $ordenes = $query->paginate(25);
+        $ordenes = $query->paginate(25)->withQueryString();
         $totalDiasCalculados = CacheCalculosService::getTotalDiasBatch($ordenes->items(), $festivos);
 
         return [
@@ -239,10 +241,11 @@ class GetOrdersQueryUseCase
         array $encargadosCreacionOrdenMap,
         array $totalDiasCalculados,
         array $areaOptions,
-        array $fechaMaximaRecibosPorPedido
+        array $fechaMaximaRecibosPorPedido,
+        array $quickStatusCounts = []
     ): array {
         $context = 'registros';
-        $title = 'Registro de �rdenes';
+        $title = 'Registro de Órdenes';
         $icon = 'fa-clipboard-list';
         $fetchUrl = '/registros';
         $updateUrl = '/registros';
@@ -263,11 +266,77 @@ class GetOrdersQueryUseCase
                 'fetchUrl',
                 'updateUrl',
                 'modalContext',
-                'fechaMaximaRecibosPorPedido'
+                'fechaMaximaRecibosPorPedido',
+                'quickStatusCounts'
             ),
         ];
     }
+
+    /**
+     * Contadores globales para tabs rápidos (sobre toda la consulta filtrada, no solo la página actual).
+     *
+     * @param mixed $baseQuery
+     * @return array{todos:int,vencidos:int,en_progreso:int,entregados:int}
+     */
+    private function buildQuickStatusCounts($baseQuery): array
+    {
+        $totalTodos = (clone $baseQuery)->count();
+
+        $totalEnProgreso = (clone $baseQuery)
+            ->whereIn('estado', [
+                'En Ejecución', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS',
+                'DEVUELTO_A_ASESORA', 'Pendiente', 'No iniciado'
+            ])
+            ->count();
+
+        $totalEntregados = (clone $baseQuery)
+            ->whereRaw('LOWER(estado) LIKE ?', ['%entregado%'])
+            ->count();
+
+        $totalVencidos = (clone $baseQuery)
+            ->whereNotNull('fecha_estimada_de_entrega')
+            ->whereDate('fecha_estimada_de_entrega', '<', now()->toDateString())
+            ->whereRaw('LOWER(estado) NOT LIKE ?', ['%entregado%'])
+            ->count();
+
+        return [
+            'todos' => (int) $totalTodos,
+            'vencidos' => (int) $totalVencidos,
+            'en_progreso' => (int) $totalEnProgreso,
+            'entregados' => (int) $totalEntregados,
+        ];
+    }
+
+    /**
+     * Aplicar filtro rápido por estado (tabs de la vista)
+     */
+    private function applyQuickStatusFilter($query, ?string $status)
+    {
+        $status = trim((string) $status);
+
+        if ($status === '' || $status === 'todos') {
+            return $query;
+        }
+
+        if ($status === 'en-progreso') {
+            return $query->whereIn('estado', [
+                'En Ejecución', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS',
+                'DEVUELTO_A_ASESORA', 'Pendiente', 'No iniciado'
+            ]);
+        }
+
+        if ($status === 'entregados') {
+            return $query->whereRaw('LOWER(estado) LIKE ?', ['%entregado%']);
+        }
+
+        if ($status === 'vencidos') {
+            return $query->where(function ($q) {
+                $q->whereNotNull('fecha_estimada_de_entrega')
+                  ->whereDate('fecha_estimada_de_entrega', '<', now()->toDateString())
+                  ->whereRaw('LOWER(estado) NOT LIKE ?', ['%entregado%']);
+            });
+        }
+
+        return $query;
+    }
 }
-
-
-

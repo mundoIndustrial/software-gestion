@@ -6,6 +6,17 @@
  */
 
 class ModalUtils {
+  static lockBackgroundScroll() {
+    document.documentElement.classList.add('modal-scroll-lock');
+    document.body.classList.add('modal-scroll-lock');
+  }
+
+  static unlockBackgroundScrollIfNoOverlayOpen() {
+    const hasOpenSelector = !!document.querySelector('#trackingPrendasSelectorOverlay.show');
+    if (hasOpenSelector) return;
+    document.documentElement.classList.remove('modal-scroll-lock');
+    document.body.classList.remove('modal-scroll-lock');
+  }
   /**
    * Abrir un modal con fuerza de estilo (display flex con !important).
    * Usado para modales que necesitan override de CSS.
@@ -21,6 +32,9 @@ class ModalUtils {
     modal.style.setProperty('visibility', 'visible', 'important');
     modal.style.setProperty('opacity', '1', 'important');
     modal.style.setProperty('z-index', '10000000', 'important');
+    if (modalId === 'trackingPrendasSelectorOverlay') {
+      ModalUtils.lockBackgroundScroll();
+    }
 
     if (typeof onOpen === 'function') {
       onOpen();
@@ -38,6 +52,9 @@ class ModalUtils {
     if (!modal) return false;
 
     modal.classList.add('show');
+    if (modalId === 'trackingPrendasSelectorOverlay') {
+      ModalUtils.lockBackgroundScroll();
+    }
 
     if (typeof onOpen === 'function') {
       onOpen();
@@ -56,6 +73,9 @@ class ModalUtils {
 
     modal.classList.remove('show');
     modal.style.display = 'none';
+    if (modalId === 'trackingPrendasSelectorOverlay') {
+      ModalUtils.unlockBackgroundScrollIfNoOverlayOpen();
+    }
 
     if (typeof onClose === 'function') {
       onClose();

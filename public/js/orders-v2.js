@@ -1,27 +1,31 @@
 /**
- * SISTEMA DE ÓRDENES - VERSIÓN 2 (TABLA SIMPLIFICADA)
- * Script principal solo para tabla y filtros rápidos
+ * SISTEMA DE ORDENES - VERSION 2 (TABLA SIMPLIFICADA)
+ * Script principal solo para tabla y filtros rapidos
  */
 
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
 });
 
+let currentQuickFilter = 'todos';
+let paginationDelegatedBound = false;
+
 function initializeApp() {
-    console.log('🚀 Inicializando sistema de órdenes - Vista Tabla');
+    console.log(' Inicializando sistema de Ordenes - Vista Tabla');
     
     initializeFilters();
     initializeSearch();
     initializeActionMenus();
     initializeCheckboxes();
+    initializePaginationAjax();
 }
 
 /**
  * ============================================
- * GESTIÓN DE VISTAS (DESHABILITADA - Solo Tabla)
+ * GESTION DE VISTAS (DESHABILITADA - Solo Tabla)
  * ============================================
  */
-// Las vistas alternativas están deshabilitadas en esta versión
+// Las vistas alternativas estan deshabilitadas en esta version
 
 /**
  * ============================================
@@ -30,27 +34,59 @@ function initializeApp() {
  */
 function initializeFilters() {
     const filterBtns = document.querySelectorAll('.filter-btn');
-    
+
     filterBtns.forEach(btn => {
+        if (btn.dataset.filterBound === '1') {
+            return;
+        }
+
+        btn.dataset.filterBound = '1';
         btn.addEventListener('click', function() {
-            const status = this.dataset.status;
-            
-            if (status === 'todos') {
-                // Mostrar todos
-                filterByStatus(null);
-                filterBtns.forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-            } else {
-                // Filtrar por status específico
-                filterByStatus(status);
-                filterBtns.forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-            }
+            const status = this.dataset.status || 'todos';
+            applyQuickFilter(status);
         });
     });
-    
-    // Trigger the "todos" filter on page load to show all rows
-    filterByStatus(null);
+
+    const urlStatus = new URL(window.location.href).searchParams.get('status') || currentQuickFilter;
+    applyQuickFilter(urlStatus, { skipServer: true });
+}
+
+function applyQuickFilter(status, options = {}) {
+    const { skipServer = false } = options;
+    currentQuickFilter = status || 'todos';
+
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
+        const isActive = (btn.dataset.status || 'todos') === currentQuickFilter;
+        btn.classList.toggle('active', isActive);
+    });
+
+    const isRegistrosPage = window.location.pathname.includes('/registros');
+    if (isRegistrosPage && !skipServer) {
+        applyServerStatusFilter(currentQuickFilter);
+        return;
+    }
+
+    filterByStatus(currentQuickFilter === 'todos' ? null : currentQuickFilter);
+}
+
+function applyServerStatusFilter(status) {
+    const url = new URL(window.location.href);
+    const current = (url.searchParams.get('status') || 'todos').trim();
+    const next = (status || 'todos').trim();
+
+    if (next === 'todos') {
+        url.searchParams.delete('status');
+    } else {
+        url.searchParams.set('status', next);
+    }
+    url.searchParams.set('page', '1');
+
+    if (current === next) {
+        return;
+    }
+
+    refreshOrdersTable(url);
 }
 
 function filterByStatus(status) {
@@ -86,25 +122,37 @@ function filterByStatus(status) {
         }
     });
     
-    console.log(`✓ Mostrando ${visibleCount} registros`);
+    console.log(`âœ“ Mostrando ${visibleCount} registros`);
 }
 
 function getStatusMatch(filterStatus, rowStatus) {
-    const statusMap = {
-        'en-progreso': 'ejecuci\u00f3n'
-    };
+    if (filterStatus === 'en-progreso') {
+        const allowedKeywords = [
+            'ejecuci\u00f3n', 
+            'insumos', 
+            'supervisor', 
+            'asesora', 
+            'pendiente', 
+            'no iniciado'
+        ];
+        return allowedKeywords.some(keyword => rowStatus.includes(keyword));
+    }
     
-    const mappedStatus = statusMap[filterStatus] || filterStatus;
-    return rowStatus.includes(mappedStatus);
+    return rowStatus.includes(filterStatus);
 }
 
 /**
  * ============================================
- * BÚSQUEDA GLOBAL
+ * BUSQUEDA GLOBAL
  * ============================================
  */
 function initializeSearch() {
-    const searchInput = document.getElementById('globalSearch');
+    let searchInput = document.getElementById('navSearchInput');
+    if (!searchInput) {
+        searchInput = document.querySelector('.nav-search-input');
+    }
+    const clearBtn = document.getElementById('navSearchClear');
+    const isRegistrosPage = window.location.pathname.includes('/registros');
     
     if (!searchInput) return;
     
@@ -113,16 +161,151 @@ function initializeSearch() {
     
     searchInput.addEventListener('input', function(e) {
         clearTimeout(searchTimeout);
-        const query = e.target.value.toLowerCase();
+        const rawQuery = e.target.value.trim();
+        const query = rawQuery.toLowerCase();
+
+        if (clearBtn) {
+            clearBtn.style.display = query ? 'flex' : 'none';
+        }
         
         searchTimeout = setTimeout(() => {
+            if (isRegistrosPage) {
+                applyServerSearch(rawQuery);
+                return;
+            }
+            syncSearchParamInUrl(rawQuery);
             performSearch(query);
         }, 300);
+    });
+
+    if (clearBtn) {
+        // Captura el click antes que nav-search.js para evitar que rompa la paginacion de /registros
+        clearBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            searchInput.value = '';
+            clearBtn.style.display = 'none';
+            if (isRegistrosPage) {
+                applyServerSearch('');
+                return;
+            }
+            syncSearchParamInUrl('');
+            performSearch('');
+            searchInput.focus();
+        }, true);
+    }
+
+    // Si viene con ?search=... en URL, reflejarlo en el input.
+    const queryFromUrl = new URL(window.location.href).searchParams.get('search') || '';
+    if (queryFromUrl) {
+        searchInput.value = queryFromUrl;
+        if (clearBtn) {
+            clearBtn.style.display = 'flex';
+        }
+        if (!isRegistrosPage) {
+            performSearch(queryFromUrl.trim().toLowerCase());
+        }
+    }
+}
+
+function applyServerSearch(query) {
+    const url = new URL(window.location.href);
+    const current = (url.searchParams.get('search') || '').trim();
+    const next = query.trim();
+
+    if (next) {
+        url.searchParams.set('search', next);
+        url.searchParams.set('page', '1');
+    } else {
+        url.searchParams.delete('search');
+        url.searchParams.set('page', '1');
+    }
+
+    if (current === next && next !== '') {
+        return;
+    }
+    refreshOrdersTable(url);
+}
+
+function syncSearchParamInUrl(query) {
+    const url = new URL(window.location.href);
+    if (query) {
+        url.searchParams.set('search', query);
+    } else {
+        url.searchParams.delete('search');
+    }
+    window.history.replaceState({}, '', url.toString());
+}
+
+async function refreshOrdersTable(url) {
+    try {
+        const response = await fetch(url.toString(), {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'text/html'
+            }
+        });
+
+        if (!response.ok) {
+            window.location.assign(url.toString());
+            return;
+        }
+
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        const newView = doc.querySelector('#view-tabla');
+        const currentView = document.querySelector('#view-tabla');
+
+        if (!newView || !currentView) {
+            window.location.assign(url.toString());
+            return;
+        }
+
+        currentView.innerHTML = newView.innerHTML;
+        window.history.replaceState({}, '', url.toString());
+        currentQuickFilter = url.searchParams.get('status') || 'todos';
+
+        // Reenlazar eventos para el contenido reemplazado
+        initializeFilters();
+        initializeActionMenus();
+        initializeCheckboxes();
+    } catch (error) {
+        window.location.assign(url.toString());
+    }
+}
+
+function initializePaginationAjax() {
+    if (paginationDelegatedBound) {
+        return;
+    }
+
+    paginationDelegatedBound = true;
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('#view-tabla a[href*=\"page=\"]');
+        if (!link) {
+            return;
+        }
+
+        const isRegistrosPage = window.location.pathname.includes('/registros');
+        if (!isRegistrosPage) {
+            return;
+        }
+
+        e.preventDefault();
+        const url = new URL(link.href, window.location.origin);
+
+        if (currentQuickFilter && currentQuickFilter !== 'todos') {
+            url.searchParams.set('status', currentQuickFilter);
+        }
+
+        refreshOrdersTable(url);
     });
 }
 
 function performSearch(query) {
-    console.log(`🔎 Buscando: "${query}"`);
+    console.log(`ðŸ”Ž Buscando: "${query}"`);
     
     if (query === '') {
         // Mostrar todo
@@ -142,48 +325,48 @@ function performSearch(query) {
 
 /**
  * ============================================
- * MENÚ DE ACCIONES
+ * MENOS DE ACCIONES
  * ============================================
  */
 function initializeActionMenus() {
-    console.log(' Inicializando menús de acciones...');
+    console.log(' Inicializando menos de acciones...');
     
     const menuBtns = document.querySelectorAll('.btn-menu-actions, .btn-card-menu');
     console.log(' Botones encontrados:', menuBtns.length);
     
     menuBtns.forEach((btn, index) => {
-        console.log(` Agregando listener al botón ${index}:`, btn);
+        console.log(` Agregando listener al boton ${index}:`, btn);
         
         btn.addEventListener('click', function(e) {
-            console.log(' Click en botón de menú', this);
+            console.log(' Click en boton de menu', this);
             e.preventDefault();
             e.stopPropagation();
             
-            // Buscar el menú siguiente
+            // Buscar el menu siguiente
             const menu = this.nextElementSibling;
             console.log(' Elemento siguiente:', menu);
-            console.log(' ¿Tiene clase action-menu?:', menu?.classList.contains('action-menu'));
+            console.log(' Â¿Tiene clase action-menu?:', menu?.classList.contains('action-menu'));
             
             if (menu && menu.classList.contains('action-menu')) {
-                console.log(' Menú encontrado, cerrando otros...');
+                console.log(' Menu encontrado, cerrando otros...');
                 
-                // Cerrar otros menús primero
+                // Cerrar otros menus primero
                 document.querySelectorAll('.action-menu').forEach(m => {
                     if (m !== menu) {
-                        console.log(' Cerrando menú:', m);
+                        console.log(' Cerrando menu:', m);
                         m.style.display = 'none';
                     }
                 });
                 
-                // Toggle el menú actual
+                // Toggle el menu actual
                 const isVisible = menu.style.display !== 'none';
-                console.log(' Menú actualmente visible:', isVisible);
+                console.log(' Menu actualmente visible:', isVisible);
                 
                 if (isVisible) {
                     menu.style.display = 'none';
                 } else {
                     menu.style.display = 'block';
-                    // Posicionar el menú fixed basado en el botón
+                    // Posicionar el menu fixed basado en el botón
                     posicionarMenuFixed(this, menu);
                 }
                 console.log(' Display actualizado a:', menu.style.display);
@@ -193,56 +376,56 @@ function initializeActionMenus() {
         });
     });
     
-    // Manejar clicks en items del menú de acciones (solo dentro de .action-menu)
+    // Manejar clicks en items del menu de acciones (solo dentro de .action-menu)
     document.querySelectorAll('.action-menu .menu-item').forEach(item => {
         item.addEventListener('click', function(e) {
-            console.log(' Click en item del menú:', this);
+            console.log(' Click en item del menu:', this);
             e.preventDefault();
             
-            // Obtener la acción y el ID de la orden
+            // Obtener la accion y el ID de la orden
             const action = this.getAttribute('data-action');
             const button = this.closest('.action-menu').previousElementSibling;
             const ordenId = button?.getAttribute('data-orden-id');
             
-            console.log(` Acción: ${action}, Orden: ${ordenId}`);
+            console.log(` Accion: ${action}, Orden: ${ordenId}`);
             
-            // Ejecutar la acción
+            // Ejecutar la accion
             if (action && ordenId) {
                 handleMenuAction(e, action, ordenId);
             }
             
-            // Cerrar el menú
+            // Cerrar el menu
             const menu = this.closest('.action-menu');
             if (menu) {
-                console.log(' Cerrando menú después de click en item');
+                console.log(' Cerrando menu despues de click en item');
                 menu.style.display = 'none';
             }
         });
     });
     
-    // Cerrar menús cuando se hace click fuera
+    // Cerrar menus cuando se hace click fuera
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.action-menu') && !e.target.closest('.btn-menu-actions') && !e.target.closest('.btn-card-menu')) {
-            console.log(' Click fuera, cerrando todos los menús');
+            console.log(' Click fuera, cerrando todos los menus');
             document.querySelectorAll('.action-menu').forEach(menu => {
                 menu.style.display = 'none';
             });
         }
     });
     
-    console.log(' Menús de acciones inicializados');
+    console.log(' Menus de acciones inicializados');
 }
 
-// Función para posicionar el menú en coordenadas fixed
+// Funcion para posicionar el menu en coordenadas fixed
 function posicionarMenuFixed(buttonEl, menuEl) {
     const rect = buttonEl.getBoundingClientRect();
     
-    // Posicionar debajo del botón y alineado a la DERECHA
+    // Posicionar debajo del boton y alineado a la DERECHA
     menuEl.style.top = (rect.bottom + 5) + 'px';
-    menuEl.style.left = (rect.right + 5) + 'px'; // Menú comienza a la derecha del botón
+    menuEl.style.left = (rect.right + 5) + 'px'; // Menu comienza a la derecha del boton
     menuEl.style.right = 'auto'; // Asegurar que no hay conflicto con right
     
-    console.log(' Menú posicionado en:', {
+    console.log(' Menu posicionado en:', {
         top: menuEl.style.top,
         left: menuEl.style.left,
         buttonRight: rect.right
@@ -254,7 +437,7 @@ function posicionarMenuFixed(buttonEl, menuEl) {
  * DRAG & DROP KANBAN (DESHABILITADA)
  * ============================================
  */
-// Funcionalidad deshabilitada en esta versión
+// Funcionalidad deshabilitada en esta version
 
 /**
  * ============================================
@@ -292,13 +475,13 @@ function initializeCheckboxes() {
     });
 }
 
-// Función para abrir modal de detalles
+// Funcion para abrir modal de detalles
 function openDetailModal(ordenId, numeroPedido) {
     console.log(` Abriendo factura - Orden: ${ordenId}, Pedido: ${numeroPedido}`);
     
     // Abrir la factura usando InvoiceLazyLoader
     if (typeof globalThis.verFacturaDelPedido === 'function') {
-        console.log('✓ Cargando factura con verFacturaDelPedido');
+        console.log('âœ“ Cargando factura con verFacturaDelPedido');
         globalThis.verFacturaDelPedido(numeroPedido, ordenId);
     } else {
         console.warn(' verFacturaDelPedido no disponible, usando fallback');
@@ -307,15 +490,15 @@ function openDetailModal(ordenId, numeroPedido) {
     }
 }
 
-// Función para renderizar el HTML del recibo
+// Funcion para renderizar el HTML del recibo
 function renderizarRecibo(datos) {
-    // Debugging: ver qué estructura trae el JSON
+    // Debugging: ver que estructura trae el JSON
     console.log('[renderizarRecibo] Datos recibidos:', datos);
     
     // Manejar estructura de respuesta que puede traer 'data' o datos directos
     const datosRecibo = datos.data || datos;
     
-    // Template básico del recibo
+    // Template basico del recibo
     return `
         <div style="background: white; padding: 8px; border-radius: 4px; max-width: 100%; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 11px;">
             <!-- Header Profesional -->
@@ -361,15 +544,15 @@ function renderizarRecibo(datos) {
     `;
 }
 
-// Función para acción de menú
+// Funcion para accion de menu
 function handleMenuAction(event, action, ordenId) {
     event.preventDefault();
     
-    // Obtener el numeroPedido del botón
+    // Obtener el numeroPedido del boton
     const button = event.target.closest('.action-menu').previousElementSibling;
     const numeroPedido = button?.getAttribute('data-numero-pedido');
     
-    console.log(` Acción: ${action} para orden: ${ordenId}, Pedido: ${numeroPedido}`);
+    console.log(` Accion: ${action} para orden: ${ordenId}, Pedido: ${numeroPedido}`);
     
     switch(action) {
         case 'detalle':
@@ -400,3 +583,4 @@ globalThis.filterByStatus = filterByStatus;
 globalThis.performSearch = performSearch;
 globalThis.openDetailModal = openDetailModal;
 globalThis.handleMenuAction = handleMenuAction;
+

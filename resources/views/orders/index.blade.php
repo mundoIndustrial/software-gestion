@@ -20,29 +20,30 @@
 
         @php
             $hoy = \Carbon\Carbon::today();
+            $activeStatus = request('status', 'todos');
 
             $contadores = [
-                'vencidos' => $ordenes->getCollection()->filter(function($orden) use ($hoy, $fechaMaximaRecibosPorPedido) {
+                'vencidos' => $quickStatusCounts['vencidos'] ?? $ordenes->getCollection()->filter(function($orden) use ($hoy, $fechaMaximaRecibosPorPedido) {
                     $fechaMaximaRecibos = $fechaMaximaRecibosPorPedido[$orden->id] ?? null;
                     $fechaEntrega = $fechaMaximaRecibos ?? $orden->fecha_estimada_de_entrega;
                     $estado = \Illuminate\Support\Str::lower((string) ($orden->estado ?? ''));
                     $esEntregado = \Illuminate\Support\Str::contains($estado, 'entregado');
                     return !$esEntregado && $fechaEntrega && $fechaEntrega < $hoy;
                 })->count(),
-                'en_progreso' => $ordenes->getCollection()->where('estado', 'En Ejecución')->count(),
+                'en_progreso' => $quickStatusCounts['en_progreso'] ?? $ordenes->getCollection()->where('estado', 'En Ejecucion')->count(),
             ];
         @endphp
         <div class="quick-filters">
-            <button class="filter-btn active" data-status="todos">
+            <button class="filter-btn {{ $activeStatus === 'todos' ? 'active' : '' }}" data-status="todos">
                 <i class="fas fa-bars"></i> Todos
             </button>
-            <button class="filter-btn" data-status="vencidos">
+            <button class="filter-btn {{ $activeStatus === 'vencidos' ? 'active' : '' }}" data-status="vencidos">
                 <i class="fas fa-exclamation-circle"></i> Retrasados <span class="filter-count">({{ $contadores['vencidos'] }})</span>
             </button>
-            <button class="filter-btn" data-status="en-progreso">
+            <button class="filter-btn {{ $activeStatus === 'en-progreso' ? 'active' : '' }}" data-status="en-progreso">
                 <i class="fas fa-spinner"></i> En Progreso <span class="filter-count">({{ $contadores['en_progreso'] }})</span>
             </button>
-            <button class="filter-btn" data-status="entregados">
+            <button class="filter-btn {{ $activeStatus === 'entregados' ? 'active' : '' }}" data-status="entregados">
                 <i class="fas fa-check-circle"></i> Entregados
             </button>
         </div>
@@ -54,10 +55,11 @@
             <table class="orders-table">
                 <thead>
                     <tr>
-                        <th class="col-accion">Acción</th>
+                        <th class="col-accion">Accion</th>
                         <th class="col-pedido">Pedido</th>
                         <th class="col-cliente">Cliente</th>
                         <th class="col-estado">Estado</th>
+                        <th class="col-creacion">Fecha creación</th>
                         <th class="col-entrega">Entrega</th>
                     </tr>
                 </thead>
@@ -79,6 +81,30 @@
                                 'entregado'
                             );
                             $esVencida = !$esEntregado && $fechaEntregaVerificacion && $fechaEntregaVerificacion < $hoy;
+
+                            // Cuenta regresiva de días hábiles (igual enfoque de asesora)
+                            $diasRestantesEntrega = $orden->dias_restantes_entrega ?? null;
+                            if ($diasRestantesEntrega === null && !empty($orden->created_at) && is_numeric($orden->dia_de_entrega)) {
+                                try {
+                                    $creacion = $orden->created_at instanceof \Carbon\CarbonInterface
+                                        ? $orden->created_at->copy()->startOfDay()
+                                        : \Carbon\Carbon::parse($orden->created_at)->startOfDay();
+                                    $hoyCalc = \Carbon\Carbon::today();
+                                    $diasHabilesTranscurridos = 0;
+                                    $cursor = $creacion->copy()->addDay();
+
+                                    while ($cursor->lte($hoyCalc)) {
+                                        if ($cursor->isBusinessDay()) {
+                                            $diasHabilesTranscurridos++;
+                                        }
+                                        $cursor->addDay();
+                                    }
+
+                                    $diasRestantesEntrega = max(0, ((int) $orden->dia_de_entrega) - $diasHabilesTranscurridos);
+                                } catch (\Throwable $e) {
+                                    $diasRestantesEntrega = null;
+                                }
+                            }
                         @endphp
                         <tr class="table-row" data-orden-id="{{ $orden->id }}" data-vencido="{{ $esVencida ? 'true' : 'false' }}">
                             <td class="col-accion">
@@ -107,25 +133,39 @@
                             </td>
                             <td class="col-estado">
                                 <span class="badge {{ $estadoClass }}">
-                                    {{ $estado }}
+                                    {{ strtoupper(str_replace('_', ' ', $estado)) }}
                                 </span>
                                 @if($estado === 'Retraso')
-                                    <span class="badge-warning">Retraso 2 días</span>
+                                    <span class="badge-warning">Retraso 2 dias</span>
                                 @endif
                             </td>
+                            <td class="col-creacion">
+                                <span class="entrega-date">
+                                    {{ !empty($orden->created_at) ? \Carbon\Carbon::parse($orden->created_at)->format('d/m/Y') : '-' }}
+                                </span>
+                            </td>
                             <td class="col-entrega">
-                                @if(false && $diaEntrega !== '-')
-                                    <span class="entrega-date">&uarr; {{ $diaEntrega }}</span>
-                                @else
-                                    <span class="entrega-date">{{ $fechaEntregaVerificacion ? $fechaEntregaVerificacion->format('d/m/Y') : '-' }}</span>
-                                @endif
+                                <div style="display:flex;flex-direction:column;line-height:1.15;gap:2px;">
+                                    <span class="entrega-date" style="font-weight:600;">
+                                        {{ $fechaEntregaVerificacion ? $fechaEntregaVerificacion->format('d/m/Y') : '-' }}
+                                    </span>
+                                    @if($diasRestantesEntrega !== null)
+                                        <span class="entrega-date" style="color:#dc2626;font-size:12px;font-weight:700;">
+                                            {{ $diasRestantesEntrega }} días hábiles restantes
+                                        </span>
+                                    @else
+                                        <span class="entrega-date" style="color:#94a3b8;font-size:12px;">
+                                            -
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
                             <td colspan="6" class="empty-state">
                                 <i class="fas fa-inbox"></i>
-                                <p>No hay órdenes disponibles</p>
+                                <p>No hay ordenes disponibles</p>
                             </td>
                         </tr>
                     @endforelse

@@ -2700,3 +2700,98 @@
          text-align: left !important;
      }
  }
+/* ===== FIX SCROLL MODAL SELECTOR PRENDAS (TIMELINE INLINE) ===== */
+#trackingPrendasSelectorOverlay {
+    overflow: hidden !important;
+}
+
+#trackingPrendasSelectorOverlay .tracking-prendas-selector-content {
+    max-height: 90vh !important;
+    height: min(90vh, 980px) !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+#trackingPrendasSelectorOverlay .tracking-prendas-selector-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    display: block !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+#trackingPrendasSelectorOverlay .tracking-prendas-list {
+    overflow: visible !important;
+    max-height: none !important;
+    min-height: auto !important;
+    flex: 0 0 auto !important;
+}
+
+#trackingPrendasSelectorOverlay .tracking-prendas-selector-container,
+#trackingPrendasSelectorOverlay .prendas-table-container {
+    overflow: visible !important;
+}
+
+#trackingPrendasSelectorOverlay #selectorInlineTimelineWrapper {
+    flex-shrink: 0;
+}
+
+html.modal-scroll-lock,
+body.modal-scroll-lock {
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+}
+
+/* ===== TIMELINE INLINE - DISENO PROPIO EN MODAL ===== */
+#trackingPrendasSelectorOverlay .selector-inline-timeline {
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+#trackingPrendasSelectorOverlay .selector-inline-timeline .card.shadow-sm.border-0.mb-4,
+#trackingPrendasSelectorOverlay .selector-inline-timeline .card.shadow-sm.border-0.h-100 {
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+}
+
+#trackingPrendasSelectorOverlay .selector-inline-timeline .timeline-horizontal {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+}
+
+#trackingPrendasSelectorOverlay .selector-inline-timeline .timeline-horizontal::before {
+    display: none !important;
+}
+
+#trackingPrendasSelectorOverlay .selector-inline-timeline .timeline-step {
+    width: 100% !important;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+}
+
+#trackingPrendasSelectorOverlay .selector-inline-timeline .timeline-step .step-indicator {
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+#trackingPrendasSelectorOverlay .selector-inline-timeline .timeline-step .step-label {
+    text-align: left !important;
+}

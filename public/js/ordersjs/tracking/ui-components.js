@@ -8,10 +8,10 @@ class TrackingUIComponents {
   }
 
   init() {
-    // Inicializar contadores dinámicos si es necesario
+    // Inicializar contadores dinamicos si es necesario
   }
 
-  // Iniciar timer para actualización automática de contadores
+  // Iniciar timer para actualizacion automatica de contadores
   iniciarTimerContadores() {
     // Detener timer existente
     if (this.contadorTimer) {
@@ -21,7 +21,7 @@ class TrackingUIComponents {
     // Actualizar inmediatamente
     this.actualizarContadoresDinamicos();
     
-    // Configurar timer para actualizar cada día a medianoche
+    // Configurar timer para actualizar cada di­a a medianoche
     const ahora = new Date();
     const manana = new Date(ahora);
     manana.setDate(manana.getDate() + 1);
@@ -29,7 +29,7 @@ class TrackingUIComponents {
     
     const msHastaManana = manana.getTime() - ahora.getTime();
     
-    // Primer actualización a medianoche
+    // Primer actualizacion a medianoche
     setTimeout(() => {
       this.actualizarContadoresDinamicos();
       
@@ -49,10 +49,10 @@ class TrackingUIComponents {
     }
   }
 
-  // Actualizar contadores de días dinámicos (procesos sin fecha fin)
+  // Actualizar contadores de di­as dinamicos (procesos sin fecha fin)
   actualizarContadoresDinamicos() {
     try {
-      // Buscar todas las tarjetas de áreas que tengan contadores dinámicos
+      // Buscar todas las tarjetas de Areas que tengan contadores dinamicos
       const areaCards = document.querySelectorAll('.tracking-area-card');
       
       areaCards.forEach(card => {
@@ -69,7 +69,7 @@ class TrackingUIComponents {
         const processData = globalThis.currentPrendaData?.seguimientos_por_area?.[area];
         if (!processData) return;
         
-        // Recalcular días dinámicamente
+        // Recalcular di­as dinamicamente
         const ini = typeof toDateObject === 'function' ? toDateObject(processData.fecha_inicio) : null;
         if (!ini) return;
         
@@ -78,10 +78,10 @@ class TrackingUIComponents {
           const diasHabiles = typeof calcularDiasHabilesSync === 'function' 
             ? calcularDiasHabilesSync(ini, new Date())
             : 0;
-          const diasText = diasHabiles === 0 ? '0 días' : `${diasHabiles} día${diasHabiles !== 1 ? 's' : ''}`;
+          const diasText = diasHabiles === 0 ? '0 dí­as' : `${diasHabiles} dí­a${diasHabiles !== 1 ? 's' : ''}`;
           
-          // Actualizar visualización
-          if (totalDiasElement.textContent.includes('día')) {
+          // Actualizar visualizacion
+          if (totalDiasElement.textContent.includes('dí­a')) {
             totalDiasElement.textContent = diasText;
           }
           if (duracionAreaElement.textContent.includes('día')) {
@@ -96,7 +96,7 @@ class TrackingUIComponents {
     }
   }
 
-  // Actualizar información del pedido en el modal y selector
+  // Actualizar informacion del pedido en el modal y selector
   updateOrderInfo(orderData) {
     console.log('[updateOrderInfo] Datos recibidos:', orderData);
     console.log('[updateOrderInfo] numero_pedido:', orderData.numero_pedido);
@@ -172,10 +172,13 @@ class TrackingUIComponents {
           try {
             const date = new Date(fechaInicio);
             if (!isNaN(date.getTime())) {
-              fechaFormateada = date.toLocaleDateString('es-ES', {
+              fechaFormateada = date.toLocaleString('es-ES', {
                 day: '2-digit',
                 month: '2-digit',
-                year: 'numeric'
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
               });
             } else {
               fechaFormateada = fechaInicio;
@@ -184,16 +187,22 @@ class TrackingUIComponents {
             fechaFormateada = fechaInicio;
           }
         } else if (fechaInicio instanceof Date) {
-          fechaFormateada = fechaInicio.toLocaleDateString('es-ES', {
+          fechaFormateada = fechaInicio.toLocaleString('es-ES', {
             day: '2-digit',
             month: '2-digit',
-            year: 'numeric'
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
           });
         } else if (fechaInicio && fechaInicio.date) {
-          fechaFormateada = new Date(fechaInicio.date).toLocaleDateString('es-ES', {
+          fechaFormateada = new Date(fechaInicio.date).toLocaleString('es-ES', {
             day: '2-digit',
             month: '2-digit',
-            year: 'numeric'
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
           });
         }
         
@@ -256,11 +265,11 @@ class TrackingUIComponents {
       }
     }
 
-    // Actualizar selector de días si dia_de_entrega existe
+    // Actualizar selector de dias si dia_de_entrega existe
     if (orderData.dia_de_entrega) {
       console.log('[updateOrderInfo] Dias de entrega encontrados:', orderData.dia_de_entrega);
       
-      // Usar la función de reintentos si existe
+      // Usar la funcion de reintentos si existe
       if (typeof globalThis.updateDaysSelectorWithRetry === 'function') {
         globalThis.updateDaysSelectorWithRetry(orderData.dia_de_entrega);
       } else {
@@ -272,7 +281,7 @@ class TrackingUIComponents {
     
     // Actualizar recibo principal
     if (trackingOrderRecibo) {
-      // Buscar el recibo principal según el tipo de recibo que se está visualizando
+      // Buscar el recibo principal segun el tipo de recibo que se esta visualizando
       let ultimoRecibo = '-';
       
       console.log('[updateOrderInfo] Buscando recibo principal en orderData:', {
@@ -318,7 +327,7 @@ class TrackingUIComponents {
                 console.log('[updateOrderInfo] Analizando recibo:', recibo);
                 totalRecibosEncontrados++;
                 
-                // Buscar recibo activo del tipo actual según prioridad
+                // Buscar recibo activo del tipo actual segun prioridad
                 if (recibo.activo === 1 && recibo.tipo_recibo === prioridad) {
                   reciboPrincipalEncontrado = recibo;
                   console.log('[updateOrderInfo] Recibo principal encontrado:', reciboPrincipalEncontrado);
@@ -339,7 +348,7 @@ class TrackingUIComponents {
           }
         }
         
-        console.log('[updateOrderInfo] Resumen de búsqueda:', {
+        console.log('[updateOrderInfo] Resumen de busqueda:', {
           total_recibos_encontrados: totalRecibosEncontrados,
           recibo_principal_encontrado: reciboPrincipalEncontrado
         });
@@ -413,9 +422,11 @@ class TrackingUIComponents {
     console.log('[showPrendasSelector] Overlay encontrado:', !!overlay);
     if (overlay) {
       overlay.classList.add('show');
+      document.documentElement.classList.add('modal-scroll-lock');
+      document.body.classList.add('modal-scroll-lock');
       console.log('[showPrendasSelector] Overlay mostrado');
     } else {
-      console.error('[showPrendasSelector] No se encontró el overlay');
+      console.error('[showPrendasSelector] No se encontro el overlay');
     }
   }
 
@@ -426,6 +437,8 @@ class TrackingUIComponents {
       overlay.classList.remove('show');
       overlay.style.display = 'none';
     }
+    document.documentElement.classList.remove('modal-scroll-lock');
+    document.body.classList.remove('modal-scroll-lock');
   }
 
   // Mostrar vista de prendas (cerrar modal de seguimiento y volver a prendas)
@@ -437,7 +450,7 @@ class TrackingUIComponents {
       closeTrackingModal();
     }
     
-    // Mostrar el overlay de selección de prendas
+    // Mostrar el overlay de seleccion de prendas
     this.showPrendasSelector();
     
     console.log('[showPrendasView] Modal de seguimiento cerrado y selector de prendas mostrado');
@@ -452,7 +465,7 @@ class TrackingUIComponents {
     }
   }
 
-  // Mostrar mensaje de éxito
+  // Mostrar mensaje de Exito
   showSuccess(message) {
     // Usar el sistema global de toasts
     if (globalThis.showToast) {

@@ -12,6 +12,7 @@ use App\Models\DesparChoParcialesModel;
 use App\Models\PedidoObservacionesDespacho;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaEntrega;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -24,12 +25,26 @@ class DespachoControlApplicationService
     ) {
     }
 
-    public function obtenerListadoIndex(string $search): array
+    public function obtenerListadoIndex(string $search, ?int $asesorId = null): array
     {
+        $states = ['Pendiente', 'En Ejecucion', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'];
+
+        // Obtener lista de asesoras con pedidos en despacho
+        $asesores = User::whereHas('pedidosAsesora', function ($q) use ($states) {
+            $q->whereIn('estado', $states)
+              ->whereNotNull('numero_pedido')
+              ->where('numero_pedido', '!=', '');
+        })->withCount(['pedidosAsesora' => function ($q) use ($states) {
+            $q->whereIn('estado', $states)
+              ->whereNotNull('numero_pedido')
+              ->where('numero_pedido', '!=', '');
+        }])->get(['id', 'name']);
+
         $query = PedidoProduccion::query()
-            ->whereIn('estado', ['Pendiente', 'En Ejecucion', 'No iniciado', 'PENDIENTE_SUPERVISOR', 'PENDIENTE_INSUMOS', 'DEVUELTO_A_ASESORA', 'pendiente_cartera', 'RECHAZADO_CARTERA'])
+            ->whereIn('estado', $states)
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '!=', '')
+            ->with(['asesora'])
             ->orderByRaw('COALESCE((SELECT MAX(created_at) FROM pedido_anexos_historial WHERE pedido_produccion_id = pedidos_produccion.id), pedidos_produccion.created_at) DESC')
             ->orderByDesc('pedidos_produccion.created_at');
 
@@ -38,6 +53,10 @@ class DespachoControlApplicationService
                 $q->where('numero_pedido', 'like', "%{$search}%")
                     ->orWhere('cliente', 'like', "%{$search}%");
             });
+        }
+
+        if ($asesorId) {
+            $query->where('asesor_id', $asesorId);
         }
 
         $pedidos = $query->paginate(20)->withQueryString();
@@ -67,6 +86,8 @@ class DespachoControlApplicationService
         return [
             'pedidos' => $pedidos,
             'search' => $search,
+            'asesores' => $asesores,
+            'asesorId' => $asesorId,
         ];
     }
 

@@ -1,27 +1,30 @@
-/**
+﻿/**
  * UpdateRenderer
  * 
- * Responsabilidad: Actualizar elementos específicos del DOM (parciales)
- * OCP: Centralizar lógica de actualización, fácil de extender
+ * Responsabilidad: Actualizar elementos especi­ficos del DOM (parciales)
+ * OCP: Centralizar logica de actualizacion, facil de extender
  * 
  * @class UpdateRenderer
  */
 export class UpdateRenderer {
   /**
-   * Actualizar información del pedido en el modal y selector
+   * Actualizar informacion del pedido en el modal y selector
    * 
    * @param {Object} orderData - Datos del pedido
    * @param {Object} orderState - Estado centralizado
    * @param {Object} dateFormatter - Formateador de fechas
    */
   updateOrderInfo(orderData, orderState, dateFormatter) {
-    console.log('[UpdateRenderer] Actualizando información del pedido');
+    console.log('[UpdateRenderer] Actualizando informacion del pedido');
 
     const numeroPedido = orderData.numero_pedido || '-';
     const cliente = orderData.cliente || '-';
     const estadoDisplay = (orderData.estado || '-').replace(/_/g, ' ').toUpperCase();
     const fechaEstimada = dateFormatter.getOrderEstimatedDate(orderData);
-    const fechaInicio = dateFormatter.getOrderStartDate(orderData);
+    const fechaInicio = this.formatDateTimeLabel(
+      orderData?.created_at || orderData?.fecha_creacion || null,
+      dateFormatter.getOrderStartDate(orderData)
+    );
 
     // Helper para establecer texto
     const setText = (id, text) => {
@@ -54,6 +57,9 @@ export class UpdateRenderer {
     setText('selectorOrderStartDate', fechaInicio);
     setText('selectorOrderEstimatedDate', fechaEstimada);
 
+    this.removeInlineTimelineSelector();
+    this.renderApprovalSummaryInfo(orderData);
+
     // Estilo de fecha estimada
     const fechaEstimadaEl = document.getElementById('selectorOrderEstimatedDate');
     if (fechaEstimadaEl) {
@@ -63,11 +69,11 @@ export class UpdateRenderer {
       if (!tieneFecha) fechaEstimadaEl.textContent = 'No definida';
     }
 
-    // Actualizar selector de días si dia_de_entrega existe
+    // Actualizar selector de di­as si dia_de_entrega existe
     if (orderData.dia_de_entrega) {
       console.log('[UpdateRenderer] Dias de entrega encontrados:', orderData.dia_de_entrega);
       
-      // Usar la función de reintentos si existe (definida en tracking-modal-handler)
+      // Usar la funcion de reintentos si existe (definida en tracking-modal-handler)
       if (typeof window.updateDaysSelectorWithRetry === 'function') {
         window.updateDaysSelectorWithRetry(orderData.dia_de_entrega);
       } else {
@@ -76,6 +82,93 @@ export class UpdateRenderer {
     } else {
       console.log('[UpdateRenderer] Sin dia_de_entrega en orderData');
     }
+  }
+
+  removeInlineTimelineSelector() {
+    const trigger = document.getElementById('selectorTimelineAccordionBtn');
+    if (trigger && trigger.parentElement) {
+      trigger.parentElement.remove();
+    }
+  }
+
+  renderApprovalSummaryInfo(orderData) {
+    const infoContainer = document.querySelector('#trackingPrendasSelectorOverlay .tracking-prendas-info');
+    if (!infoContainer) return;
+
+    infoContainer.querySelectorAll('[data-approval-extra="1"]').forEach((el) => el.remove());
+
+    const creadoEn = orderData?.created_at || null;
+    const carteraEn = orderData?.aprobado_por_cartera_en || null;
+    const supervisorEn = orderData?.aprobado_por_supervisor_en || null;
+    const carteraNombre = String(orderData?.cartera_nombre || '').trim();
+    const supervisorNombre = String(
+      orderData?.supervisor_nombre ||
+      orderData?.aprobado_por_supervisor_nombre ||
+      ''
+    ).trim();
+
+    const extras = [
+      {
+        label: 'Aprob. Cartera',
+        value: this.formatDateTimeLabel(carteraEn, 'Pendiente'),
+        meta: this.formatDurationLabel(creadoEn, carteraEn)
+      },
+      {
+        label: 'Aprob. Supervisor',
+        value: this.formatDateTimeLabel(supervisorEn, 'Pendiente'),
+        meta: this.formatDurationLabel(carteraEn, supervisorEn) || (supervisorNombre ? `Por: ${supervisorNombre}` : '')
+      }
+    ];
+
+    extras.forEach((item) => {
+      const card = document.createElement('div');
+      card.className = 'tracking-prendas-info-item';
+      card.dataset.approvalExtra = '1';
+      card.innerHTML = `
+        <span class="tracking-prendas-info-label">${item.label}</span>
+        <span class="tracking-prendas-info-value">${item.value}</span>
+        ${item.meta ? `<span class="tracking-prendas-info-meta">${item.meta}</span>` : ''}
+      `;
+      infoContainer.appendChild(card);
+    });
+
+    // Mantener "Fecha Estimada" como ultima tarjeta del resumen
+    const estimatedValueEl = document.getElementById('selectorOrderEstimatedDate');
+    const estimatedCard = estimatedValueEl ? estimatedValueEl.closest('.tracking-prendas-info-item') : null;
+    if (estimatedCard && estimatedCard.parentElement === infoContainer) {
+      infoContainer.appendChild(estimatedCard);
+    }
+  }
+
+  formatDateTimeLabel(dateValue, fallback = '-') {
+    if (!dateValue) return fallback;
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return fallback;
+    return date.toLocaleString('es-CO', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  }
+
+  formatDurationLabel(startValue, endValue) {
+    if (!startValue || !endValue) return '';
+    const start = new Date(startValue);
+    const end = new Date(endValue);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return '';
+
+    const totalMinutes = Math.floor((end.getTime() - start.getTime()) / 60000);
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const minutes = totalMinutes % 60;
+
+    if (days > 0) return `Demora: ${days}d`;
+    if (hours > 0 && minutes > 0) return `Demora: ${hours}h ${minutes}m`;
+    if (hours > 0) return `Demora: ${hours}h`;
+    return `Demora: ${minutes}m`;
   }
 
   /**
@@ -120,8 +213,8 @@ export class UpdateRenderer {
   /**
    * Actualizar header del recibo en el modal
    * 
-   * @param {string} numeroRecibo - Número del recibo
-   * @param {string} area - Área actual
+   * @param {string} numeroRecibo - Nºmero del recibo
+   * @param {string} area - Area actual
    */
   updateReciboHeader(numeroRecibo, area) {
     console.log('[UpdateRenderer.updateReciboHeader] Entrada:', {
@@ -173,7 +266,7 @@ export class UpdateRenderer {
   }
 
   /**
-   * Actualizar días y fecha estimada desde el recibo COSTURA de la prenda seleccionada.
+   * Actualizar dias y fecha estimada desde el recibo COSTURA de la prenda seleccionada.
    * Si no existen en la prenda, usa fallback del pedido.
    *
    * @param {Object} prenda
@@ -224,6 +317,151 @@ export class UpdateRenderer {
       selector.setValue(diaFinal ?? 0);
     }
   }
+  ensureInlineTimelineSelector(orderData) {
+    const selectorBody = document.querySelector('#trackingPrendasSelectorOverlay .tracking-prendas-selector-body');
+    if (!selectorBody) return;
+
+    let trigger = document.getElementById('selectorTimelineAccordionBtn');
+    let wrapper = document.getElementById('selectorInlineTimelineWrapper');
+    let content = document.getElementById('selectorInlineTimelineContent');
+
+    if (!trigger) {
+      const actionRow = document.createElement('div');
+      actionRow.style.marginTop = '10px';
+      actionRow.style.border = '1px solid #e5e7eb';
+      actionRow.style.borderRadius = '10px';
+      actionRow.style.overflow = 'hidden';
+      actionRow.style.background = '#fff';
+
+      trigger = document.createElement('button');
+      trigger.id = 'selectorTimelineAccordionBtn';
+      trigger.type = 'button';
+      trigger.style.width = '100%';
+      trigger.style.display = 'flex';
+      trigger.style.justifyContent = 'space-between';
+      trigger.style.alignItems = 'center';
+      trigger.style.padding = '10px 12px';
+      trigger.style.background = 'transparent';
+      trigger.style.border = '0';
+      trigger.style.cursor = 'pointer';
+      trigger.innerHTML = '<span style="font-weight:600;color:#1f2937;">Linea de tiempo del pedido</span><span id="selectorTimelineChevron" style="font-size:12px;color:#64748b;">▼</span>';
+      actionRow.appendChild(trigger);
+      selectorBody.appendChild(actionRow);
+    }
+
+    if (!wrapper) {
+      wrapper = document.createElement('div');
+      wrapper.id = 'selectorInlineTimelineWrapper';
+      wrapper.style.maxHeight = '0';
+      wrapper.style.opacity = '0';
+      wrapper.style.overflow = 'hidden';
+      wrapper.style.transition = 'max-height 0.25s ease, opacity 0.2s ease';
+      wrapper.style.borderTop = '1px solid #e5e7eb';
+
+      content = document.createElement('div');
+      content.id = 'selectorInlineTimelineContent';
+      content.style.padding = '12px';
+      content.style.background = '#fff';
+      content.innerHTML = '<div style="font-size:13px;color:#64748b;">Haz clic para cargar la linea de tiempo.</div>';
+      wrapper.appendChild(content);
+
+      trigger.parentElement.appendChild(wrapper);
+    }
+
+    const pedidoNormalizado = String(orderData.numero_pedido || '').trim();
+    const pedidoParam = encodeURIComponent(pedidoNormalizado);
+    trigger.dataset.timelineUrl = pedidoParam
+      ? `/dashboard/timeline-pedidos?search_pedido=${pedidoParam}`
+      : '/dashboard/timeline-pedidos';
+
+    trigger.onclick = async () => {
+      if (!content || !wrapper) return;
+
+      const isOpen = wrapper.style.maxHeight && wrapper.style.maxHeight !== '0px';
+      const chevron = document.getElementById('selectorTimelineChevron');
+      if (isOpen) {
+        wrapper.style.maxHeight = '0';
+        wrapper.style.opacity = '0';
+        if (chevron) chevron.textContent = '▼';
+        return;
+      }
+
+      const loadedPedido = content.dataset.loadedPedido || '';
+      if (pedidoNormalizado && loadedPedido !== pedidoNormalizado) {
+        const timelineUrl = trigger.dataset.timelineUrl || '/dashboard/timeline-pedidos';
+        await this.loadInlineTimelineHtml(timelineUrl, content, pedidoNormalizado);
+      }
+
+      wrapper.style.maxHeight = '700px';
+      wrapper.style.opacity = '1';
+      if (chevron) chevron.textContent = '▲';
+    };
+  }
+
+  async loadInlineTimelineHtml(timelineUrl, container, pedidoNumero) {
+    if (!container) return;
+
+    container.innerHTML = '<div style="font-size:13px;color:#64748b;">Cargando linea de tiempo...</div>';
+
+    try {
+      const response = await fetch(timelineUrl, {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'text/html'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Timeline HTTP ${response.status}`);
+      }
+
+      const html = await response.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const source = doc.querySelector('.container-fluid.py-4') || doc.querySelector('.container-fluid');
+
+      if (!source) {
+        container.innerHTML = '<div style="font-size:13px;color:#b91c1c;">No se pudo renderizar la linea de tiempo.</div>';
+        return;
+      }
+
+      const timelineWrapper = document.createElement('div');
+      timelineWrapper.className = 'selector-inline-timeline';
+      timelineWrapper.innerHTML = source.innerHTML;
+      timelineWrapper.querySelectorAll('script').forEach((node) => node.remove());
+      timelineWrapper.querySelectorAll('[onclick]').forEach((node) => node.removeAttribute('onclick'));
+
+      container.innerHTML = '';
+      container.appendChild(timelineWrapper);
+      container.dataset.loadedPedido = pedidoNumero || '';
+      this.bindInlineTimelineAccordions(container);
+    } catch (error) {
+      console.error('[UpdateRenderer.loadInlineTimelineHtml] Error cargando timeline inline:', error);
+      container.innerHTML = '<div style="font-size:13px;color:#b91c1c;">No fue posible cargar la linea de tiempo.</div>';
+    }
+  }
+
+  bindInlineTimelineAccordions(container) {
+    if (!container) return;
+
+    const buttons = container.querySelectorAll('.accordion-button[aria-controls]');
+    buttons.forEach((btn) => {
+      if (btn.dataset.inlineTimelineBound === '1') return;
+      btn.dataset.inlineTimelineBound = '1';
+
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('aria-controls');
+        if (!targetId) return;
+
+        const collapse = container.querySelector(`#${targetId}`);
+        if (!collapse) return;
+
+        const isOpen = collapse.style.display === 'block';
+        collapse.style.display = isOpen ? 'none' : 'block';
+        btn.classList.toggle('collapsed', isOpen);
+        btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+      });
+    });
+  }
 
   getCosturaDataFromPrenda(prenda) {
     const consecutivos = Array.isArray(prenda?.consecutivos) ? prenda.consecutivos : [];
@@ -237,7 +475,7 @@ export class UpdateRenderer {
   }
 
   /**
-   * Actualizar botón de agregar proceso
+   * Actualizar boton de agregar proceso
    * 
    * @param {Object} prenda - Datos de prenda
    * @param {boolean} readonly - Si es solo lectura
@@ -251,16 +489,16 @@ export class UpdateRenderer {
   }
 
   /**
-   * Actualizar estado del contador de días (dinámico)
+   * Actualizar estado del contador de di­as (dinamico)
    * 
    * @param {string} elementId - ID del elemento a actualizar
-   * @param {number} days - Cantidad de días
+   * @param {number} days - Cantidad de di­as
    */
   updateDayCounter(elementId, days) {
     const element = document.getElementById(elementId);
     if (!element) return;
 
-    element.textContent = `${days} ${days === 1 ? 'día' : 'días'}`;
+    element.textContent = `${days} ${days === 1 ? 'día' : 'dí­as'}`;
   }
 
   /**
@@ -274,13 +512,13 @@ export class UpdateRenderer {
 
     console.log('[UpdateRenderer] Actualizando fila de recibo-costura', data);
 
-    // Área (columna 3)
+    // area (columna 3)
     const areaBadge = row.querySelector('td:nth-child(3) .badge');
     if (areaBadge && data.area) {
       areaBadge.textContent = data.area;
     }
 
-    // Encargado orden (última columna)
+    // Encargado orden (ultima columna)
     const encargadoSpan = row.querySelector('td:last-child span');
     if (encargadoSpan) {
       encargadoSpan.textContent = (data.encargado && String(data.encargado).trim() !== '')
@@ -288,7 +526,7 @@ export class UpdateRenderer {
         : '-';
     }
 
-    // Fechas si están disponibles
+    // Fechas si estan disponibles
     if (data.fecha_inicio) {
       const fechaInicioSpan = row.querySelector('[data-fecha-inicio]');
       if (fechaInicioSpan) {
@@ -335,9 +573,9 @@ export class UpdateRenderer {
   }
 
   /**
-   * Mostrar/ocultar sección
+   * Mostrar/ocultar seccion
    * 
-   * @param {string} sectionId - ID de la sección
+   * @param {string} sectionId - ID de la seccion
    * @param {boolean} visible - True para mostrar
    */
   toggleSection(sectionId, visible = true) {
@@ -348,11 +586,11 @@ export class UpdateRenderer {
   }
 
   /**
-   * Actualizar botón estado (cargando, activo, inactivo)
+   * Actualizar boton estado (cargando, activo, inactivo)
    * 
-   * @param {HTMLElement} button - Elemento botón
+   * @param {HTMLElement} button - Elemento boton
    * @param {string} state - Estado ('loading', 'active', 'inactive')
-   * @param {string} text - Texto del botón
+   * @param {string} text - Texto del boton
    */
   updateButtonState(button, state, text = '') {
     if (!button) return;
@@ -410,9 +648,10 @@ export class UpdateRenderer {
   }
 
   /**
-   * Limpiar (no requiere limpieza, métodos son stateless)
+   * Limpiar (no requiere limpieza, metodos son stateless)
    */
   clear() {
     // Stateless - no requiere limpieza
   }
 }
+

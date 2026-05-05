@@ -208,6 +208,16 @@ body {
     background: #eff6ff;
 }
 
+.filter-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.filter-btn.active .filter-count {
+    color: #fff;
+}
+
 .filter-btn.filter-advanced {
     background: var(--light);
 }

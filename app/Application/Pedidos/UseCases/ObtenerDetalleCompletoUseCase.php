@@ -8,6 +8,7 @@ use App\Application\Pedidos\Services\PedidoAuthorizationService;
 use App\Application\Pedidos\Services\PedidoFiltroService;
 use App\Domain\Pedidos\Services\PedidoDetalleReadService;
 use App\Models\PedidoProduccion;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -470,12 +471,31 @@ class ObtenerDetalleCompletoUseCase
             $responseData['dia_de_entrega'] = $pedido->dia_de_entrega;
         }
 
+        // Datos de aprobacion para resumen en modal (registros)
+        $responseData['created_at'] = $pedido->created_at?->format('Y-m-d H:i:s');
+        $responseData['aprobado_por_cartera_en'] = $pedido->aprobado_por_cartera_en
+            ? \Carbon\Carbon::parse($pedido->aprobado_por_cartera_en)->format('Y-m-d H:i:s')
+            : null;
+        $responseData['aprobado_por_supervisor_en'] = $pedido->aprobado_por_supervisor_en
+            ? \Carbon\Carbon::parse($pedido->aprobado_por_supervisor_en)->format('Y-m-d H:i:s')
+            : null;
+
+        $responseData['cartera_nombre'] = null;
+        if (!empty($pedido->aprobado_por_usuario_cartera)) {
+            $responseData['cartera_nombre'] = User::query()
+                ->where('id', (int) $pedido->aprobado_por_usuario_cartera)
+                ->value('name');
+        }
+
         Log::info('[ObtenerDetalleCompletoUseCase] Datos del pedido agregados', [
             'pedido_id' => $pedido->id,
             'numero_pedido' => $pedido->numero_pedido,
             'dia_de_entrega' => $responseData['dia_de_entrega'] ?? null,
             'fecha_estimada_de_entrega' => $responseData['fecha_estimada_de_entrega'] ?? null,
             'fecha_mas_lejana_recibos' => $fechaMasLejanaRecibos,
+            'aprobado_por_cartera_en' => $responseData['aprobado_por_cartera_en'],
+            'aprobado_por_supervisor_en' => $responseData['aprobado_por_supervisor_en'],
+            'cartera_nombre' => $responseData['cartera_nombre'],
         ]);
     }
 }
