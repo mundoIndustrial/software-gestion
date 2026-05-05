@@ -645,7 +645,7 @@ class BodegaPedidoConsultaService
                     'fecha_actualizacion' => $fechaActualizacion,
                     'cantidad_items' => $pedidosDelNumero->count(),
                     'viewed_at' => $vistoPorUsuario?->created_at,
-                    'pedido_revisado' => !empty($pedidoRevisado),
+                    'pedido_revisado' => !$tieneCambiosNuevos && !empty($pedidoRevisado),
                     'tiene_cambios_nuevos' => $tieneCambiosNuevos,
                     'tiene_pendientes' => $estadosPedido['tiene_pendientes'] ?? false,
                     'todos_pendientes' => $estadosPedido['todos_pendientes'] ?? false,

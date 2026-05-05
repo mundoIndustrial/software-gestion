@@ -784,8 +784,10 @@
                                         const checkbox = row.querySelector('input[type="checkbox"]');
                                         if (checkbox) {
                                             const tieneChanges = data.fila.tiene_cambios_nuevos;
-                                            checkbox.checked = !tieneChanges;
-                                            console.log('[BODEGA-LIST] Checkbox actualizado para pedido:', pedidoId, 'Checked:', checkbox.checked, 'Tiene cambios:', tieneChanges);
+                                            const estaRevisado = data.fila.pedido_revisado;
+                                            // Solo marcar si NO tiene cambios nuevos Y está revisado
+                                            checkbox.checked = !tieneChanges && estaRevisado;
+                                            console.log('[BODEGA-LIST] Checkbox actualizado para pedido:', pedidoId, 'Checked:', checkbox.checked, 'Tiene cambios:', tieneChanges, 'Revisado:', estaRevisado);
                                         }
                                         
                                         // Actualizar color de fila según estado
