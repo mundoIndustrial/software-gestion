@@ -1,6 +1,52 @@
 (function () {
     "use strict";
 
+    function nowIso() {
+        return new Date().toISOString();
+    }
+
+    function isTelemetryEnabled() {
+        return !!window.DEBUG_PEDIDO_TELEMETRY;
+    }
+
+    function getSessionId() {
+        if (!window.PEDIDO_SESSION_ID) {
+            window.PEDIDO_SESSION_ID = "pedido-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+        }
+        return window.PEDIDO_SESSION_ID;
+    }
+
+    function resumenItem(item) {
+        if (!item || typeof item !== "object") return null;
+        return {
+            _local_id: item._local_id || null,
+            tipo: item.tipo || (item.epp_id ? "epp" : "prenda"),
+            epp_id: item.epp_id || null,
+            ref: item.nombre_epp || item.nombre_producto || item.nombre_prenda || item.nombre || null
+        };
+    }
+
+    function telemetryGroup(label, data, collapsed) {
+        if (!isTelemetryEnabled()) return;
+        var openFn = collapsed === false ? console.group : console.groupCollapsed;
+        openFn(label);
+        try {
+            if (data !== undefined) {
+                console.log(data);
+            }
+        } finally {
+            console.groupEnd();
+        }
+    }
+
+    function telemetryWarn(label, data, trace) {
+        if (!isTelemetryEnabled()) return;
+        console.warn(label, data || "");
+        if (trace) {
+            console.trace("[LEGACY MUTATION TRACE]");
+        }
+    }
+
     function safeCall(fn) {
         try {
             return typeof fn === "function" ? fn() : undefined;
@@ -126,13 +172,45 @@
     }
 
     function hardResetPedidoState(contexto) {
-        console.warn("[hardResetPedidoState] reset iniciado", { contexto: contexto || "desconocido" });
+        var before = 0;
+        safeCall(function () {
+            if (typeof window.getPedidoSessionStore === "function") {
+                var store = window.getPedidoSessionStore();
+                if (store && typeof store.snapshot === "function") {
+                    before = (store.snapshot() || []).length;
+                }
+            } else if (window.gestionItemsUI && typeof window.gestionItemsUI.obtenerItemsOrdenados === "function") {
+                before = (window.gestionItemsUI.obtenerItemsOrdenados() || []).length;
+            }
+        });
+
         clearGlobalState();
         clearSessionBackups();
         safeCall(function () {
             window.idempotencyService && window.idempotencyService.limpiar && window.idempotencyService.limpiar();
         });
-        console.warn("[hardResetPedidoState] reset completado");
+
+        var after = 0;
+        safeCall(function () {
+            if (typeof window.getPedidoSessionStore === "function") {
+                var store = window.getPedidoSessionStore();
+                if (store && typeof store.snapshot === "function") {
+                    after = (store.snapshot() || []).length;
+                }
+            } else if (window.gestionItemsUI && typeof window.gestionItemsUI.obtenerItemsOrdenados === "function") {
+                after = (window.gestionItemsUI.obtenerItemsOrdenados() || []).length;
+            }
+        });
+
+        telemetryGroup(
+            "[hardResetPedidoState][" + getSessionId() + "] " + nowIso(),
+            {
+                contexto: contexto || "desconocido",
+                beforeItems: before,
+                afterItems: after
+            },
+            true
+        );
     }
 
     function normalizeText(value) {
@@ -188,14 +266,15 @@
         report.ok = report.errors.length === 0;
 
         if (!report.ok) {
-            console.group("[sessionConsistencyCheck] FAILED");
+            console.group("[sessionConsistencyCheck] FAILED [" + getSessionId() + "] " + nowIso());
             console.table(report.errors);
             if (report.warnings.length > 0) {
                 console.table(report.warnings);
             }
+            console.log("snapshot:", list);
             console.groupEnd();
         } else {
-            console.info("[sessionConsistencyCheck] OK", report.counts);
+            console.info("[sessionConsistencyCheck] OK [" + getSessionId() + "]", report.counts);
         }
 
         return report;
@@ -341,6 +420,18 @@
         };
         var hash = hashDjb2(stableStringify(payloadBase));
 
+        telemetryGroup(
+            "[serializarPedidoSeguro][" + getSessionId() + "] " + nowIso(),
+            {
+                totalSnapshot: sane.length,
+                totalEpps: epps.length,
+                totalPrendas: prendas.length,
+                auditHash: hash,
+                localIds: sane.map(function (it) { return it._local_id; }).slice(0, 40)
+            },
+            true
+        );
+
         return {
             prendas: prendas,
             epps: epps,
@@ -352,6 +443,107 @@
             }
         };
     }
+
+    function tagArrayMutations(arrayRef, label) {
+        if (!Array.isArray(arrayRef) || arrayRef.__legacyMutationTagged) return;
+        try {
+            var methods = ["push", "pop", "splice", "shift", "unshift", "sort", "reverse"];
+            methods.forEach(function (m) {
+                if (typeof arrayRef[m] !== "function") return;
+                var original = arrayRef[m];
+                Object.defineProperty(arrayRef, m, {
+                    configurable: true,
+                    writable: true,
+                    value: function () {
+                        telemetryWarn("[LEGACY MUTATION DETECTED] escritura fuera de PedidoSessionStore en " + label + "." + m, { timestamp: nowIso(), sessionId: getSessionId() }, true);
+                        return original.apply(this, arguments);
+                    }
+                });
+            });
+            Object.defineProperty(arrayRef, "__legacyMutationTagged", {
+                configurable: true,
+                enumerable: false,
+                writable: true,
+                value: true
+            });
+        } catch (_) {}
+    }
+
+    function installLegacyMutationDetector() {
+        if (window.__pedidoLegacyMutationDetectorInstalled) return;
+        window.__pedidoLegacyMutationDetectorInstalled = true;
+
+        var lastItemsPedido = window.itemsPedido;
+        Object.defineProperty(window, "itemsPedido", {
+            configurable: true,
+            enumerable: true,
+            get: function () {
+                return lastItemsPedido;
+            },
+            set: function (next) {
+                telemetryWarn("[LEGACY MUTATION DETECTED] escritura fuera de PedidoSessionStore en window.itemsPedido", { timestamp: nowIso(), sessionId: getSessionId(), nextType: typeof next }, true);
+                lastItemsPedido = next;
+                tagArrayMutations(lastItemsPedido, "window.itemsPedido");
+            }
+        });
+        tagArrayMutations(lastItemsPedido, "window.itemsPedido");
+
+        var lastEppStore = window.eppStore;
+        Object.defineProperty(window, "eppStore", {
+            configurable: true,
+            enumerable: true,
+            get: function () {
+                return lastEppStore;
+            },
+            set: function (next) {
+                telemetryWarn("[LEGACY MUTATION DETECTED] escritura fuera de PedidoSessionStore en window.eppStore", { timestamp: nowIso(), sessionId: getSessionId(), nextType: typeof next }, true);
+                lastEppStore = next;
+            }
+        });
+
+        var tries = 0;
+        var maxTries = 120;
+        var intervalId = setInterval(function () {
+            tries++;
+            var ui = window.gestionItemsUI;
+            if (!ui && tries < maxTries) return;
+            if (!ui) {
+                clearInterval(intervalId);
+                return;
+            }
+
+            ["prendas", "epps"].forEach(function (key) {
+                var current = ui[key];
+                tagArrayMutations(current, "gestionItemsUI." + key);
+                try {
+                    Object.defineProperty(ui, key, {
+                        configurable: true,
+                        enumerable: true,
+                        get: function () {
+                            return current;
+                        },
+                        set: function (next) {
+                            telemetryWarn("[LEGACY MUTATION DETECTED] escritura fuera de PedidoSessionStore en gestionItemsUI." + key, { timestamp: nowIso(), sessionId: getSessionId(), nextType: typeof next }, true);
+                            current = next;
+                            tagArrayMutations(current, "gestionItemsUI." + key);
+                        }
+                    });
+                } catch (_) {}
+            });
+            clearInterval(intervalId);
+        }, 1000);
+    }
+
+    window.PedidoTelemetry = {
+        enabled: isTelemetryEnabled,
+        nowIso: nowIso,
+        getSessionId: getSessionId,
+        resumenItem: resumenItem,
+        group: telemetryGroup,
+        warn: telemetryWarn
+    };
+
+    installLegacyMutationDetector();
 
     window.hardResetPedidoState = hardResetPedidoState;
     window.sessionConsistencyCheck = sessionConsistencyCheck;
