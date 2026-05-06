@@ -42,24 +42,25 @@
     <div class="custom-recibo-modal__backdrop" data-close-recibo-modal="true"></div>
     <div class="custom-recibo-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="reciboBodegaCreateModalTitle">
         <div class="custom-recibo-modal__header">
-            <div>
-                <p class="custom-recibo-modal__eyebrow">Nuevo registro</p>
-                <h2 id="reciboBodegaCreateModalTitle" class="mb-0">Registrar recibo de bodega</h2>
+            <div class="custom-recibo-modal__title-wrap">
+                <p class="custom-recibo-modal__eyebrow">Módulo bodega</p>
+                <h2 id="reciboBodegaCreateModalTitle" class="mb-0">Nuevo recibo de bodega</h2>
+                <p class="custom-recibo-modal__subtitle">Registra prendas, color por talla y cantidades para generar el recibo.</p>
             </div>
-            <button type="button" class="custom-recibo-modal__close-btn" data-close-recibo-modal="true" aria-label="Cerrar">X</button>
+            <button type="button" class="custom-recibo-modal__close-btn" data-close-recibo-modal="true" aria-label="Cerrar">×</button>
         </div>
 
         <div class="custom-recibo-modal__body">
             <form id="reciboBodegaCreateForm">
                 <div class="section-card">
                     <div class="section-header">
-                        <h3 class="section-title">Prendas</h3>
+                        <h3 class="section-title">Detalle de prendas</h3>
                     </div>
 
                     <div id="prendasContainer" class="prendas-container">
                         <div class="prenda-card" data-prenda-index="0">
                             <div class="prenda-header">
-                                <span class="prenda-number">1</span>
+                                <span class="prenda-number">01</span>
                                 <button type="button" class="btn-delete eliminar-prenda-btn" style="display: none;">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                         <path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"></path>
@@ -68,53 +69,45 @@
                             </div>
 
                             <div class="prenda-content">
-                                <div class="form-group">
-                                    <label class="form-label-small">Descripcion de la prenda</label>
-                                    <input type="text" name="prenda[0]" class="form-input-compact" placeholder="Ej: Polo roja" required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label class="form-label-small">Detalles adicionales</label>
-                                    <textarea name="descripcion[0]" rows="2" class="form-textarea" placeholder="Ej: Pegar bolsillo en la parte frontal"></textarea>
+                                <div class="prenda-main-grid">
+                                    <div class="form-group">
+                                        <label class="form-label-small">Descripción</label>
+                                        <textarea name="prenda[0]" rows="3" class="form-textarea form-textarea-no-resize" placeholder="Ej: Polo roja con bolsillo frontal" required></textarea>
+                                    </div>
                                 </div>
 
                                 <div class="tallas-section">
-                                    <label class="form-label-small">Tallas y Cantidades</label>
+                                    <label class="form-label-small">Tallas, color y cantidad</label>
+                                    <div class="genero-selector" role="group" aria-label="Seleccionar género">
+                                        <label class="genero-check">
+                                            <input type="checkbox" class="genero-check-input" data-genero-toggle="dama">
+                                            <span>Dama</span>
+                                        </label>
+                                        <label class="genero-check">
+                                            <input type="checkbox" class="genero-check-input" data-genero-toggle="caballero">
+                                            <span>Caballero</span>
+                                        </label>
+                                        <label class="genero-check">
+                                            <input type="checkbox" class="genero-check-input" data-genero-toggle="unisex">
+                                            <span>Unisex</span>
+                                        </label>
+                                    </div>
                                     <datalist id="tallas-sugeridas-list">
-                                        <option value="XS"></option>
-                                        <option value="S"></option>
-                                        <option value="M"></option>
-                                        <option value="L"></option>
-                                        <option value="XL"></option>
-                                        <option value="XXL"></option>
-                                        <option value="XXXL"></option>
-                                        <option value="4"></option>
-                                        <option value="6"></option>
-                                        <option value="8"></option>
-                                        <option value="10"></option>
-                                        <option value="12"></option>
-                                        <option value="14"></option>
-                                        <option value="16"></option>
-                                        <option value="18"></option>
-                                        <option value="20"></option>
-                                        <option value="22"></option>
-                                        <option value="24"></option>
-                                        <option value="26"></option>
-                                        <option value="28"></option>
-                                        <option value="30"></option>
-                                        <option value="32"></option>
-                                        <option value="34"></option>
-                                        <option value="36"></option>
-                                        <option value="38"></option>
-                                        <option value="40"></option>
-                                        <option value="42"></option>
+                                        <option value="XS"></option><option value="S"></option><option value="M"></option><option value="L"></option><option value="XL"></option>
+                                        <option value="XXL"></option><option value="XXXL"></option><option value="4"></option><option value="6"></option><option value="8"></option>
+                                        <option value="10"></option><option value="12"></option><option value="14"></option><option value="16"></option><option value="18"></option>
+                                        <option value="20"></option><option value="22"></option><option value="24"></option><option value="26"></option><option value="28"></option>
+                                        <option value="30"></option><option value="32"></option><option value="34"></option><option value="36"></option><option value="38"></option>
+                                        <option value="40"></option><option value="42"></option>
                                     </datalist>
-                                    <div class="tallas-subsection">
+                                    <div class="tallas-subsection is-hidden" data-genero-section="dama">
                                         <label class="form-label-small mb-1">Dama</label>
+                                        <div class="tallas-head"><span>Talla</span><span>Color</span><span>Cantidad</span><span></span></div>
                                         <div class="tallas-list tallas-list-dama">
                                             <div>
-                                                <input type="text" name="talla_dama[0][]" class="talla-input-uppercase" list="tallas-sugeridas-list" placeholder="Talla (ej: XS)">
-                                                <input type="number" name="cantidad_dama[0][]" placeholder="Cantidad" min="1">
+                                                <input type="text" name="talla_dama[0][]" class="talla-input-uppercase" list="tallas-sugeridas-list" placeholder="XS">
+                                                <input type="text" name="color_dama[0][]" class="color-input-uppercase" placeholder="ROJO">
+                                                <input type="number" name="cantidad_dama[0][]" placeholder="0" min="1">
                                                 <button type="button" class="eliminar-talla-btn">x</button>
                                             </div>
                                         </div>
@@ -122,15 +115,17 @@
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                                 <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round"></path>
                                             </svg>
-                                            Añadir talla dama
+                                            Agregar talla dama
                                         </button>
                                     </div>
-                                    <div class="tallas-subsection mt-2">
+                                    <div class="tallas-subsection mt-2 is-hidden" data-genero-section="caballero">
                                         <label class="form-label-small mb-1">Caballero</label>
+                                        <div class="tallas-head"><span>Talla</span><span>Color</span><span>Cantidad</span><span></span></div>
                                         <div class="tallas-list tallas-list-caballero">
                                             <div>
-                                                <input type="text" name="talla_caballero[0][]" class="talla-input-uppercase" list="tallas-sugeridas-list" placeholder="Talla (ej: M)">
-                                                <input type="number" name="cantidad_caballero[0][]" placeholder="Cantidad" min="1">
+                                                <input type="text" name="talla_caballero[0][]" class="talla-input-uppercase" list="tallas-sugeridas-list" placeholder="M">
+                                                <input type="text" name="color_caballero[0][]" class="color-input-uppercase" placeholder="NEGRO">
+                                                <input type="number" name="cantidad_caballero[0][]" placeholder="0" min="1">
                                                 <button type="button" class="eliminar-talla-btn">x</button>
                                             </div>
                                         </div>
@@ -138,7 +133,25 @@
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                                 <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round"></path>
                                             </svg>
-                                            Añadir talla caballero
+                                            Agregar talla caballero
+                                        </button>
+                                    </div>
+                                    <div class="tallas-subsection mt-2 is-hidden" data-genero-section="unisex">
+                                        <label class="form-label-small mb-1">Unisex</label>
+                                        <div class="tallas-head"><span>Talla</span><span>Color</span><span>Cantidad</span><span></span></div>
+                                        <div class="tallas-list tallas-list-unisex">
+                                            <div>
+                                                <input type="text" name="talla_unisex[0][]" class="talla-input-uppercase" list="tallas-sugeridas-list" placeholder="M">
+                                                <input type="text" name="color_unisex[0][]" class="color-input-uppercase" placeholder="AZUL">
+                                                <input type="number" name="cantidad_unisex[0][]" placeholder="0" min="1">
+                                                <button type="button" class="eliminar-talla-btn">x</button>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn-add-talla anadir-talla-unisex-btn" data-prenda-index="0">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round"></path>
+                                            </svg>
+                                            Agregar talla unisex
                                         </button>
                                     </div>
                                 </div>
@@ -546,21 +559,24 @@
 .custom-recibo-modal__backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: radial-gradient(circle at 20% 10%, rgba(14, 116, 144, 0.25), rgba(15, 23, 42, 0.65));
     cursor: pointer;
 }
 
 .custom-recibo-modal__dialog {
-    position: relative;
-    width: min(920px, 95vw);
-    max-height: 90vh;
-    overflow: auto;
-    margin: auto;
-    background: #fff;
-    border-radius: 16px;
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    min-height: 100vh;
+    overflow: hidden;
+    margin: 0;
+    background: #f8fafc;
+    border-radius: 0;
     padding: 0;
-    border: 1px solid #dbeafe;
-    box-shadow: 0 30px 70px rgba(2, 6, 23, 0.35);
+    border: 0;
+    box-shadow: none;
     transform: translateY(10px) scale(0.98);
     opacity: 0;
     transition: opacity .2s ease, transform .2s ease;
@@ -576,78 +592,94 @@
 .custom-recibo-modal__header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 18px 22px;
-    border-bottom: 1px solid #e5e7eb;
-    background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+    align-items: flex-start;
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid #dbe5f1;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #334155 100%);
+}
+
+.custom-recibo-modal__title-wrap h2 {
+    color: #f8fafc;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
 }
 
 .custom-recibo-modal__eyebrow {
     margin: 0 0 4px 0;
-    color: #2563eb;
-    font-size: 12px;
-    font-weight: 700;
+    color: #cbd5e1;
+    font-size: 10px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: .4px;
+    letter-spacing: .8px;
+}
+
+.custom-recibo-modal__subtitle {
+    margin: 4px 0 0 0;
+    color: #cbd5e1;
+    font-size: 11px;
 }
 
 .custom-recibo-modal__close-btn {
-    width: 34px;
-    height: 34px;
+    width: 30px;
+    height: 30px;
     border-radius: 999px;
-    border: 1px solid #d1d5db;
-    background: #fff;
-    color: #1f2937;
-    font-size: 22px;
+    border: 1px solid rgba(148, 163, 184, 0.55);
+    background: rgba(15, 23, 42, 0.25);
+    color: #f8fafc;
+    font-size: 18px;
     line-height: 1;
     cursor: pointer;
 }
 
 .custom-recibo-modal__body {
-    padding: 18px 22px 14px;
+    padding: 16px 20px 12px;
+    overflow-y: auto;
+    max-height: calc(100vh - 124px);
 }
 
 .custom-recibo-modal__footer {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid #dbe5f1;
     padding-top: 14px;
+    margin-top: 12px;
 }
 
 .custom-recibo-btn {
     border-radius: 10px;
-    padding: 9px 14px;
+    padding: 10px 14px;
     font-weight: 600;
     border: 1px solid transparent;
     cursor: pointer;
 }
 
 .custom-recibo-btn--secondary {
-    border-color: #d1d5db;
+    border-color: #cbd5e1;
     background: #fff;
-    color: #374151;
+    color: #0f172a;
 }
 
 .custom-recibo-btn--primary {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
     color: #fff;
 }
 
 #reciboBodegaCreateModal .section-card {
     background: #ffffff;
     border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 20px;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+    padding: 18px;
+    margin-bottom: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
 }
 
 #reciboBodegaCreateModal .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 
 #reciboBodegaCreateModal .section-title {
@@ -660,24 +692,24 @@
 #reciboBodegaCreateModal .form-group {
     display: flex;
     flex-direction: column;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 #reciboBodegaCreateModal .form-label-small {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
-    color: #374151;
-    margin-bottom: 6px;
+    color: #0f172a;
+    margin-bottom: 4px;
 }
 
 #reciboBodegaCreateModal .form-input-compact,
 #reciboBodegaCreateModal .form-textarea,
 #reciboBodegaCreateModal .tallas-list input {
     width: 100%;
-    padding: 10px 12px;
-    border: 2px solid #e5e7eb;
+    padding: 9px 11px;
+    border: 1px solid #cbd5e1;
     border-radius: 10px;
-    background: #f9fafb;
+    background: #f8fafc;
     color: #1f2937;
     font-size: 14px;
     transition: all .2s ease;
@@ -688,13 +720,17 @@
 #reciboBodegaCreateModal .tallas-list input:focus {
     outline: none;
     border-color: #2563eb;
-    background: #ffffff;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
 }
 
 #reciboBodegaCreateModal .form-textarea {
-    min-height: 72px;
+    min-height: 64px;
     resize: vertical;
+}
+
+#reciboBodegaCreateModal .form-textarea-no-resize {
+    resize: vertical !important;
+    overflow: auto;
 }
 
 #reciboBodegaCreateModal input[type="text"],
@@ -705,13 +741,13 @@
 #reciboBodegaCreateModal .prendas-container {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
 }
 
 #reciboBodegaCreateModal .prenda-card {
-    border: 2px solid #e5e7eb;
+    border: 1px solid #dbe5f1;
     border-radius: 14px;
-    padding: 18px;
+    padding: 14px;
     background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
 }
 
@@ -719,17 +755,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 14px;
+    margin-bottom: 8px;
 }
 
 #reciboBodegaCreateModal .prenda-number {
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
+    width: 38px;
+    height: 26px;
+    border-radius: 999px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: #0f172a;
     color: #fff;
     font-weight: 700;
 }
@@ -737,30 +773,90 @@
 #reciboBodegaCreateModal .prenda-content {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
+}
+
+#reciboBodegaCreateModal .prenda-main-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
 }
 
 #reciboBodegaCreateModal .tallas-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-bottom: 10px;
+    gap: 6px;
+    margin-bottom: 8px;
 }
 
 #reciboBodegaCreateModal .tallas-list > div {
     display: grid;
-    grid-template-columns: 1fr 1fr auto;
+    grid-template-columns: 1fr 1fr 1fr auto;
     gap: 8px;
     align-items: center;
 }
 #reciboBodegaCreateModal .tallas-subsection {
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
+    border: 1px solid #dbe5f1;
+    border-radius: 12px;
     padding: 10px;
-    background: #fff;
+    background: #ffffff;
+}
+
+#reciboBodegaCreateModal .tallas-subsection.is-hidden {
+    display: none;
+}
+
+#reciboBodegaCreateModal .genero-selector {
+    display: flex;
+    gap: 8px;
+    margin: 8px 0 10px;
+    flex-wrap: wrap;
+}
+
+#reciboBodegaCreateModal .genero-check {
+    border: 1px solid #93c5fd;
+    background: #f8fafc;
+    color: #1e3a8a;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#reciboBodegaCreateModal .genero-check-input {
+    width: 14px;
+    height: 14px;
+    accent-color: #1d4ed8;
+    cursor: pointer;
+}
+
+#reciboBodegaCreateModal .genero-check.is-active {
+    background: #1d4ed8;
+    color: #fff;
+    border-color: #1d4ed8;
+}
+
+#reciboBodegaCreateModal .tallas-head {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 32px;
+    gap: 8px;
+    margin-bottom: 6px;
+    color: #64748b;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    font-weight: 700;
 }
 
 #reciboBodegaCreateModal .talla-input-uppercase {
+    text-transform: uppercase;
+}
+
+#reciboBodegaCreateModal .color-input-uppercase {
     text-transform: uppercase;
 }
 
@@ -792,18 +888,18 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #fee2e2;
+    background: #fff5f5;
     color: #dc2626;
     cursor: pointer;
 }
 
 #reciboBodegaCreateModal .btn-add-talla {
-    border: 2px dashed #cbd5e1;
+    border: 1px dashed #60a5fa;
     border-radius: 10px;
-    background: #fff;
-    color: #2563eb;
+    background: #eff6ff;
+    color: #1d4ed8;
     font-weight: 600;
-    padding: 9px 14px;
+    padding: 7px 10px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -811,9 +907,9 @@
 }
 
 #reciboBodegaCreateModal .eliminar-talla-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
     border: 1px solid #fca5a5;
     background: #fff;
     color: #dc2626;
@@ -825,12 +921,32 @@
 
 @media (max-width: 768px) {
     #reciboBodegaCreateModal .custom-recibo-modal__dialog {
-        width: 96vw;
-        margin: 2vh auto;
+        width: 100vw;
+        max-height: 100vh;
+        min-height: 100vh;
+        border-radius: 0;
+        margin: 0;
     }
 
     #reciboBodegaCreateModal .section-card {
-        padding: 14px;
+        padding: 12px;
+    }
+
+    #reciboBodegaCreateModal .tallas-list > div {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    #reciboBodegaCreateModal .tallas-head {
+        display: none;
+    }
+
+    #reciboBodegaCreateModal .custom-recibo-modal__title-wrap h2 {
+        font-size: 22px;
+    }
+
+    #reciboBodegaCreateModal .prenda-main-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
     }
 }
 </style>
@@ -900,23 +1016,38 @@ document.addEventListener('DOMContentLoaded', function () {
             const nombre = formData.get(`prenda[${index}]`);
             const descripcion = formData.get(`descripcion[${index}]`);
             const tallasDama = formData.getAll(`talla_dama[${index}][]`);
+            const coloresDama = formData.getAll(`color_dama[${index}][]`);
             const cantidadesDama = formData.getAll(`cantidad_dama[${index}][]`);
             const tallasCab = formData.getAll(`talla_caballero[${index}][]`);
+            const coloresCab = formData.getAll(`color_caballero[${index}][]`);
             const cantidadesCab = formData.getAll(`cantidad_caballero[${index}][]`);
+            const tallasUni = formData.getAll(`talla_unisex[${index}][]`);
+            const coloresUni = formData.getAll(`color_unisex[${index}][]`);
+            const cantidadesUni = formData.getAll(`cantidad_unisex[${index}][]`);
 
             const tallasList = [];
 
             tallasDama.forEach((talla, i) => {
                 const cantidad = parseInt(cantidadesDama[i]) || 0;
+                const color = (coloresDama[i] || '').trim();
                 if ((talla || '').trim() !== '' && cantidad > 0) {
-                    tallasList.push({ talla, cantidad, genero: 'dama' });
+                    tallasList.push({ talla, color, cantidad, genero: 'dama' });
                 }
             });
 
             tallasCab.forEach((talla, i) => {
                 const cantidad = parseInt(cantidadesCab[i]) || 0;
+                const color = (coloresCab[i] || '').trim();
                 if ((talla || '').trim() !== '' && cantidad > 0) {
-                    tallasList.push({ talla, cantidad, genero: 'caballero' });
+                    tallasList.push({ talla, color, cantidad, genero: 'caballero' });
+                }
+            });
+
+            tallasUni.forEach((talla, i) => {
+                const cantidad = parseInt(cantidadesUni[i]) || 0;
+                const color = (coloresUni[i] || '').trim();
+                if ((talla || '').trim() !== '' && cantidad > 0) {
+                    tallasList.push({ talla, color, cantidad, genero: 'unisex' });
                 }
             });
 
@@ -995,14 +1126,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const prendaIndex = parseInt(prendaCard.dataset.prendaIndex || '0', 10);
         const addDamaBtn = prendaCard.querySelector('.anadir-talla-dama-btn');
         const addCabBtn = prendaCard.querySelector('.anadir-talla-caballero-btn');
+        const addUniBtn = prendaCard.querySelector('.anadir-talla-unisex-btn');
         const tallasDamaList = prendaCard.querySelector('.tallas-list-dama');
         const tallasCabList = prendaCard.querySelector('.tallas-list-caballero');
+        const tallasUniList = prendaCard.querySelector('.tallas-list-unisex');
 
         if (addDamaBtn && tallasDamaList) {
             addDamaBtn.addEventListener('click', function () {
                 const tallaRow = document.createElement('div');
                 tallaRow.innerHTML = `
                     <input type="text" name="talla_dama[${prendaIndex}][]" class="talla-input-uppercase" list="tallas-sugeridas-list" placeholder="Talla (ej: XS)">
+                    <input type="text" name="color_dama[${prendaIndex}][]" class="color-input-uppercase" placeholder="Color (ej: ROJO)">
                     <input type="number" name="cantidad_dama[${prendaIndex}][]" placeholder="Cantidad" min="1">
                     <button type="button" class="eliminar-talla-btn">x</button>
                 `;
@@ -1015,10 +1149,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 const tallaRow = document.createElement('div');
                 tallaRow.innerHTML = `
                     <input type="text" name="talla_caballero[${prendaIndex}][]" class="talla-input-uppercase" list="tallas-sugeridas-list" placeholder="Talla (ej: M)">
+                    <input type="text" name="color_caballero[${prendaIndex}][]" class="color-input-uppercase" placeholder="Color (ej: NEGRO)">
                     <input type="number" name="cantidad_caballero[${prendaIndex}][]" placeholder="Cantidad" min="1">
                     <button type="button" class="eliminar-talla-btn">x</button>
                 `;
                 tallasCabList.appendChild(tallaRow);
+            });
+        }
+
+        if (addUniBtn && tallasUniList) {
+            addUniBtn.addEventListener('click', function () {
+                const tallaRow = document.createElement('div');
+                tallaRow.innerHTML = `
+                    <input type="text" name="talla_unisex[${prendaIndex}][]" class="talla-input-uppercase" list="tallas-sugeridas-list" placeholder="Talla (ej: M)">
+                    <input type="text" name="color_unisex[${prendaIndex}][]" class="color-input-uppercase" placeholder="Color (ej: AZUL)">
+                    <input type="number" name="cantidad_unisex[${prendaIndex}][]" placeholder="Cantidad" min="1">
+                    <button type="button" class="eliminar-talla-btn">x</button>
+                `;
+                tallasUniList.appendChild(tallaRow);
             });
         }
     }
@@ -1032,6 +1180,26 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     prendasContainer.addEventListener('click', function (event) {
+        const generoToggleInput = event.target.closest('.genero-check-input[data-genero-toggle]');
+        if (generoToggleInput) {
+            const prendaCard = generoToggleInput.closest('.prenda-card');
+            if (!prendaCard) return;
+            const genero = generoToggleInput.dataset.generoToggle;
+            const section = prendaCard.querySelector(`[data-genero-section="${genero}"]`);
+            if (!section) return;
+            const label = generoToggleInput.closest('.genero-check');
+
+            if (generoToggleInput.checked) {
+                label?.classList.add('is-active');
+                section.classList.remove('is-hidden');
+            } else {
+                label?.classList.remove('is-active');
+                section.classList.add('is-hidden');
+            }
+
+            return;
+        }
+
         if (!event.target.classList.contains('eliminar-talla-btn')) return;
         const tallasList = event.target.closest('.tallas-list');
         if (!tallasList) return;
@@ -1099,7 +1267,3 @@ function loadRecibosCorteForBodega() {
 }
 </script>
 @endpush
-
-
-
-

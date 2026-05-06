@@ -57,7 +57,8 @@ class ReciboCorteBodegaController extends Controller
             'prendas.*.descripcion' => 'nullable|string',
             'prendas.*.tallas' => 'required|array|min:1',
             'prendas.*.tallas.*.talla' => 'required|string|max:50',
-            'prendas.*.tallas.*.genero' => 'nullable|string|in:dama,caballero,DAMA,CABALLERO',
+            'prendas.*.tallas.*.genero' => 'nullable|string|in:dama,caballero,unisex,DAMA,CABALLERO,UNISEX',
+            'prendas.*.tallas.*.color' => 'nullable|string|max:100',
             'prendas.*.tallas.*.cantidad' => 'required|integer|min:1',
         ]);
 
@@ -125,7 +126,8 @@ class ReciboCorteBodegaController extends Controller
                         $genero = isset($tallaData['genero']) ? strtoupper((string) $tallaData['genero']) : null;
                         $prenda->tallas()->create([
                             'talla' => $tallaData['talla'],
-                            'genero' => in_array($genero, ['DAMA', 'CABALLERO'], true) ? $genero : null,
+                            'genero' => in_array($genero, ['DAMA', 'CABALLERO', 'UNISEX'], true) ? $genero : null,
+                            'color' => isset($tallaData['color']) ? strtoupper(trim((string) $tallaData['color'])) : null,
                             'cantidad' => $tallaData['cantidad'],
                         ]);
                     }
@@ -197,6 +199,7 @@ class ReciboCorteBodegaController extends Controller
             'tallas' => $prenda->tallas->map(fn($t) => [
                 'talla' => $t->talla,
                 'genero' => $t->genero,
+                'color' => $t->color,
                 'cantidad' => $t->cantidad,
             ])->toArray(),
             'total' => $totalCantidad,

@@ -12,6 +12,7 @@ class PrendaTallasBodega extends Model
         'prenda_bodega_id',
         'talla',
         'genero',
+        'color',
         'cantidad',
     ];
 

@@ -250,8 +250,12 @@ function openReciboCorteBodegaModal(id) {
                 tallasList.innerHTML = '';
 
                 data.tallas.forEach(talla => {
+                    const color = (talla.color || '').toString().trim();
+                    const linea = color !== ''
+                        ? `COLOR ${color}: ${talla.talla}:${talla.cantidad}`
+                        : `${talla.talla}:${talla.cantidad}`;
                     const span = document.createElement('div');
-                    span.innerHTML = `<span style="color: red;"><strong>${talla.talla}: ${talla.cantidad}</strong></span><br>`;
+                    span.innerHTML = `<span style="color: red;"><strong>${linea}</strong></span><br>`;
                     tallasList.appendChild(span);
                 });
 
@@ -374,4 +378,3 @@ document.addEventListener('keydown', function(event) {
     }
 });
 </script>
-
