@@ -110,6 +110,16 @@ class ItemAPIService {
      */
     async obtenerItems() {
         try {
+            if (typeof window.getPedidoSessionStore === 'function') {
+                const store = window.getPedidoSessionStore();
+                if (store && typeof store.snapshot === 'function') {
+                    return {
+                        items: store.snapshot() || [],
+                        source: 'pedido-session-store'
+                    };
+                }
+            }
+
             return await this.realizarPeticion(`${this.baseUrl}/items`);
         } catch (error) {
 

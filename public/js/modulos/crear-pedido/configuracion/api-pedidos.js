@@ -85,6 +85,14 @@ class PedidosEditableWebClient {
      */
     async obtenerItems() {
         try {
+            if (typeof window.getPedidoSessionStore === 'function') {
+                const store = window.getPedidoSessionStore();
+                if (store && typeof store.snapshot === 'function') {
+                    const items = store.snapshot() || [];
+                    return { items, source: 'pedido-session-store' };
+                }
+            }
+
             const response = await fetch(`${this.baseUrl}/items`, {
                 method: 'GET',
                 headers: {
