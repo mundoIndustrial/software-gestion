@@ -341,9 +341,14 @@
                                                                 </button>
                                                                 @endif
                                                             @endif
-                                                            @if(isset($desc['descripcion']) && !empty($desc['descripcion']))
+                                                            @php
+                                                                $descripcionLimpia = !empty($desc['descripcion'])
+                                                                    ? trim(strip_tags(html_entity_decode((string) $desc['descripcion'], ENT_QUOTES | ENT_HTML5, 'UTF-8')))
+                                                                    : null;
+                                                            @endphp
+                                                            @if(!empty($descripcionLimpia))
                                                                 <div class="text-slate-600 text-xs mb-2 italic">
-                                                                    {{ $desc['descripcion'] }}
+                                                                    {{ $descripcionLimpia }}
                                                                 </div>
                                                             @endif
                                                             @if($tela || ($color && strtolower($color) !== 'sin color'))
@@ -738,9 +743,14 @@
                                                             <span class="text-orange-600 font-bold"> - SE SACA DE BODEGA</span>
                                                         @endif
                                                     </div>
-                                                    @if(isset($desc['descripcion']) && !empty($desc['descripcion']))
+                                                    @php
+                                                        $descripcionLimpia = !empty($desc['descripcion'])
+                                                            ? trim(strip_tags(html_entity_decode((string) $desc['descripcion'], ENT_QUOTES | ENT_HTML5, 'UTF-8')))
+                                                            : null;
+                                                    @endphp
+                                                    @if(!empty($descripcionLimpia))
                                                         <div class="text-slate-600 text-xs mb-2 italic">
-                                                            {{ $desc['descripcion'] }}
+                                                            {{ $descripcionLimpia }}
                                                         </div>
                                                     @endif
                                                     @if($tela || ($color && strtolower($color) !== 'sin color'))

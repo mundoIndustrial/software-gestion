@@ -471,9 +471,15 @@ document.addEventListener('DOMContentLoaded', function() {
                                                             @endif
                                                         </div>
 
-                                                        @if($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['descripcion']) && $primeraFila->objetoPrenda['descripcion'])
+                                                        @php
+                                                            $descripcionPrenda = $primeraFila->objetoPrenda['descripcion'] ?? null;
+                                                            $descripcionPrendaLimpia = $descripcionPrenda
+                                                                ? trim(strip_tags(html_entity_decode((string) $descripcionPrenda, ENT_QUOTES | ENT_HTML5, 'UTF-8')))
+                                                                : null;
+                                                        @endphp
+                                                        @if(!empty($descripcionPrendaLimpia))
                                                             <div class="text-slate-700 mb-1 text-xs">
-                                                                {{ $primeraFila->objetoPrenda['descripcion'] }}
+                                                                {{ $descripcionPrendaLimpia }}
                                                             </div>
                                                         @endif
                                                 
@@ -612,9 +618,15 @@ document.addEventListener('DOMContentLoaded', function() {
                                                         @endif
                                                     </div>
 
-                                                    @if($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['descripcion']) && $primeraFila->objetoPrenda['descripcion'])
+                                                    @php
+                                                        $descripcionPrenda = $primeraFila->objetoPrenda['descripcion'] ?? null;
+                                                        $descripcionPrendaLimpia = $descripcionPrenda
+                                                            ? trim(strip_tags(html_entity_decode((string) $descripcionPrenda, ENT_QUOTES | ENT_HTML5, 'UTF-8')))
+                                                            : null;
+                                                    @endphp
+                                                    @if(!empty($descripcionPrendaLimpia))
                                                         <div class="text-slate-700 mb-1 text-xs">
-                                                            {{ $primeraFila->objetoPrenda['descripcion'] }}
+                                                            {{ $descripcionPrendaLimpia }}
                                                         </div>
                                                     @endif
                                                     
