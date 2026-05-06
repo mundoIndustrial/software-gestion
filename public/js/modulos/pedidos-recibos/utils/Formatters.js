@@ -1413,8 +1413,8 @@ export class Formatters {
             console.log(`[Formatters._agregarTallasFormato]  ${generoLabel} agregado`);
         };
         
-        // Renderizar secciones de tallas envueltas en un contenedor que ajuste su ancho al contenido
-        lineas.push('<div style="display: inline-block; min-width: 120px;">');
+        // Renderizar secciones de tallas en bloque para evitar desbordes en recibos angostos
+        lineas.push('<div style="display: block; width: 100%; min-width: 0; max-width: 100%;">');
 
         // Renderizar DAMA
         renderizarTallasGenero(tallasDama, 'DAMA');

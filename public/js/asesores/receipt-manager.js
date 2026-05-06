@@ -368,7 +368,9 @@ class ReceiptManager {
             '#' + (this.datosFactura.numero_pedido || '00000');
 
         // Generar contenido del recibo
-        const contenido = this.generarContenido(recibo);
+        let contenido = this.generarContenido(recibo);
+        // Evitar desbordes: normalizar espacios no separables que bloquean el salto de línea
+        contenido = String(contenido).replace(/&nbsp;|\u00a0/g, ' ');
         
         // Establecer el contenido
         document.getElementById('descripcion-text').innerHTML = contenido;
@@ -803,5 +805,4 @@ window.limpiarAnchoMetraje = function() {
     
     console.log('[limpiarAnchoMetraje] Datos limpiados y evento disparado');
 };
-
 
