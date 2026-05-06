@@ -216,6 +216,14 @@ export function initReciboFilters() {
         window.__applyDashboardSearchFilter?.();
     }
 
+    // Exponer función para reaplicar filtros (usada por realtime.js)
+    window.reaplicarFiltrosDashboard = function () {
+        const filtro = obtenerFiltroPrincipalActivo();
+        aplicarTemaDashboard(filtro);
+        aplicarFiltrosDashboard(filtro);
+        window.__applyDashboardSearchFilter?.();
+    };
+
     window.filtrarVistaCosturaEncargados = function (modo = 'todos') {
         window.__vistaCosturaEncargadoFiltro = modo;
 

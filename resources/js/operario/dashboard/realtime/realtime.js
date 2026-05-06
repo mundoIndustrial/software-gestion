@@ -1,4 +1,4 @@
-﻿import { actualizarContadorTarjetas } from '../ui/counters';
+import { actualizarContadorTarjetas } from '../ui/counters';
 import { asegurarBadgeCompletado } from '../ui/badges';
 
 function shouldShowDashboardNotif(key) {
@@ -567,6 +567,12 @@ function setupPublicChannels(ws) {
     if (rol === 'vista-costura') {
         ws.subscribe('recibos-costura', '.recibo.aprobado', (e) => {
             console.log('[Operario Dashboard] Evento recibo.aprobado recibido:', e);
+            actualizarListaSinRecargar();
+        });
+
+        ws.subscribe('recibos-costura', '.encargado.costura.asignado', (e) => {
+            console.log('[Operario Dashboard] Evento encargado.costura.asignado recibido (vista-costura):', e);
+            actualizarListaSinRecargar();
         });
         
         ws.subscribe('recibos-costura', '.recibo.completado', (e) => {

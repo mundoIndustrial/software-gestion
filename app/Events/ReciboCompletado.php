@@ -47,6 +47,13 @@ class ReciboCompletado implements ShouldBroadcastNow
 
     public function broadcastWith()
     {
+        \Log::info('Broadcasting ReciboCompletado event', [
+            'recibo_id' => $this->reciboId,
+            'consecutivo' => $this->consecutivo,
+            'pedido_id' => $this->pedidoProduccionId,
+            'area' => $this->area,
+        ]);
+
         return [
             'recibo_id' => $this->reciboId,
             'consecutivo' => $this->consecutivo,

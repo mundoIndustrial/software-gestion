@@ -175,6 +175,8 @@ function shouldAutoInitializeEcho() {
         moduleName === 'bodega' ||
         moduleName === 'despacho' ||
         moduleName === 'produccion' ||
+        moduleName === 'operario' ||
+        moduleName === 'vista-costura' ||
         notificationsUi === 'asesores'
     );
 }

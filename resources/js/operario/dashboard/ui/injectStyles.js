@@ -1,4 +1,4 @@
-﻿export function injectDashboardStyles() {
+export function injectDashboardStyles() {
     if (document.getElementById('operario-dashboard-injected-styles')) {
         return;
     }
@@ -9,6 +9,16 @@
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
+        }
+
+        @keyframes cardRemove {
+            0% { opacity: 1; transform: scale(1); max-height: 800px; margin-bottom: 1.5rem; }
+            100% { opacity: 0; transform: translateX(100px) scale(0.9); max-height: 0; padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; overflow: hidden; }
+        }
+
+        .card-animate-remove {
+            animation: cardRemove 0.6s forwards ease-in-out;
+            pointer-events: none;
         }
 
         /* Estilos para cards completados por costurero */

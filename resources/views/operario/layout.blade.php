@@ -92,7 +92,7 @@
         : (auth()->user()->hasRole('cortador') || auth()->user()->hasRole('visualizador_plooter') ? 'cortador'
         : (auth()->user()->hasRole('bodeguero') ? 'bodeguero' : 'default')))))));
 @endphp
-<body data-user-role="{{ $rolOperarioLayout }}">
+<body data-user-role="{{ $rolOperarioLayout }}" data-module="operario">
     <!-- Loading overlay global -->
     <div id="loading-overlay">
         <!-- Spinner mejorado -->

@@ -1,4 +1,4 @@
-﻿import { httpJson } from '../api/http';
+import { httpJson } from '../api/http';
 import { asegurarBadgeCompletado } from '../ui/badges';
 
 function actualizarInterfazCorte(container, accion, btnActual) {
@@ -139,13 +139,38 @@ export function completarCorte(btn) {
         .then((response) => response.json())
         .then((data) => {
             if (data.success) {
-                actualizarInterfazCorte(card, 'completado', btn);
+                const rolActual = String(window.USUARIO_ACTUAL?.rol || '').toLowerCase();
+                
+                // Si es cortador, animar y quitar de la vista (no le interesan los de Costura)
+                if (rolActual === 'cortador') {
+                    if (card) {
+                        card.classList.add('card-animate-remove');
+                        setTimeout(() => {
+                            card.remove();
+                            if (typeof window.actualizarContadorTarjetas === 'function') {
+                                window.actualizarContadorTarjetas();
+                            }
+                        }, 650);
+                    }
+                    
+                    // Cerrar el drawer si está abierto en mobile
+                    const drawer = document.querySelector(`#mobile-drawer-${prendaId}`);
+                    if (drawer && typeof window.toggleMobileActions === 'function') {
+                        // toggleMobileActions usualmente alterna, así que solo si está activo
+                        if (drawer.classList.contains('active')) {
+                            window.toggleMobileActions(prendaId);
+                        }
+                    }
+                } else {
+                    // Si no es cortador (ej. admin o visor), solo actualizar botones
+                    actualizarInterfazCorte(card, 'completado', btn);
 
-                const drawerBtn = document.querySelector(
-                    `#mobile-drawer-${prendaId} .btn-completar-corte[data-recibo-id="${reciboId}"]`
-                );
-                if (drawerBtn) {
-                    actualizarInterfazCorte(drawerBtn.closest('.mobile-actions-drawer'), 'completado', drawerBtn);
+                    const drawerBtn = document.querySelector(
+                        `#mobile-drawer-${prendaId} .btn-completar-corte[data-recibo-id="${reciboId}"]`
+                    );
+                    if (drawerBtn) {
+                        actualizarInterfazCorte(drawerBtn.closest('.mobile-actions-drawer'), 'completado', drawerBtn);
+                    }
                 }
             } else {
                 btn.disabled = false;
