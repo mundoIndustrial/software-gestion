@@ -53,6 +53,10 @@
             });
         }
 
+        if (window.pedidoSessionStore) {
+            window.pedidoSessionStore.ui = window.gestionItemsUI || null;
+        }
+
         if (window.gestorPrendaSinCotizacion) {
             window.gestorPrendaSinCotizacion.prendas = [];
             window.gestorPrendaSinCotizacion.fotosNuevas = {};
@@ -200,4 +204,3 @@
     window.sessionConsistencyCheck = sessionConsistencyCheck;
     window.eliminarItemPedidoSeguro = eliminarItemPedidoSeguro;
 })();
-

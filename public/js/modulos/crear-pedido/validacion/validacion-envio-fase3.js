@@ -584,9 +584,11 @@
             return Promise.reject('Validación fallida');
 	        }
 
-	        const itemsOrdenados = (window.gestionItemsUI && typeof window.gestionItemsUI.obtenerItemsOrdenados === 'function')
-	            ? (window.gestionItemsUI.obtenerItemsOrdenados() || [])
-	            : [];
+	        const itemsOrdenados = (typeof window.getPedidoSessionStore === 'function')
+	            ? (window.getPedidoSessionStore().snapshot() || [])
+	            : ((window.gestionItemsUI && typeof window.gestionItemsUI.obtenerItemsOrdenados === 'function')
+	                ? (window.gestionItemsUI.obtenerItemsOrdenados() || [])
+	                : []);
 	        if (typeof window.sessionConsistencyCheck === 'function') {
 	            const consistency = window.sessionConsistencyCheck(itemsOrdenados);
 	            if (!consistency.ok) {

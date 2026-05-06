@@ -333,6 +333,7 @@
 <script src="{{ asset('js/modulos/crear-pedido/procesos/prenda-modal-service.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/prenda-flow-service.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/epp-flow-service.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/procesos/pedido-session-store.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/items-sync-service.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/item-removal-service.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/modulos/crear-pedido/procesos/gestion-items-pedido.js') }}?v={{ time() }}"></script>
