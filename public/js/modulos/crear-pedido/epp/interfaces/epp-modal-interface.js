@@ -109,6 +109,10 @@ class EppModalInterface {
      * Eliminar EPP
      */
     static eliminarEPP(id) {
+        if (typeof window.eliminarItemPedidoSeguro === 'function') {
+            window.eliminarItemPedidoSeguro(id);
+            return;
+        }
         if (window.eppService) {
             window.eppService.eliminarEPP(id);
         }

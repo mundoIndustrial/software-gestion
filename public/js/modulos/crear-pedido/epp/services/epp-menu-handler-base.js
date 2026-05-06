@@ -226,6 +226,17 @@ class EppMenuHandlerBase {
 
     realizarEliminacion(tarjetaId) {
         try {
+            if (typeof window.eliminarItemPedidoSeguro === 'function') {
+                const eliminadoSeguro = window.eliminarItemPedidoSeguro(tarjetaId);
+                if (eliminadoSeguro) {
+                    if (window.Swal) {
+                        Swal.fire('Eliminado', 'EPP eliminado correctamente', 'success');
+                    }
+                    console.log(`[${this.constructor.name}] EPP ${tarjetaId} eliminado (ruta segura)`);
+                    return;
+                }
+            }
+
             // Fuente unica de verdad: GestionItemsUI (estado) + ItemRenderer (DOM)
             const gestion = window.gestionItemsUI;
             if (!gestion || typeof gestion.eliminarEPPPorTarjetaId !== 'function') {

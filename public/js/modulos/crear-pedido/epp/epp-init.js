@@ -95,11 +95,14 @@ function editarEPPDesdeDB(eppId) {
 }
 
 function eliminarItemEPP(id) {
+    if (typeof window.eliminarItemPedidoSeguro === 'function') {
+        window.eliminarItemPedidoSeguro(id);
+        return;
+    }
     window.eppService?.eliminarEPP(id);
 }
 
 function actualizarEstilosBotonEPP() {
     window.eppService?.actualizarBoton();
 }
-
 

@@ -76,6 +76,10 @@ async function editarEPPDesdeDB(eppId) {
 }
 
 function eliminarItemEPP(id) {
+    if (typeof window.eliminarItemPedidoSeguro === 'function') {
+        window.eliminarItemPedidoSeguro(id);
+        return;
+    }
     window.EppModalInterface?.eliminarEPP(id);
 }
 
@@ -721,6 +725,10 @@ function agregarEPPAlPedido() {
  * Eliminar item EPP
  */
 function eliminarItemEPP(id) {
+    if (typeof window.eliminarItemPedidoSeguro === 'function') {
+        window.eliminarItemPedidoSeguro(id);
+        return;
+    }
     if (window.eppService) {
         window.eppService.eliminarEPP(id);
     }
