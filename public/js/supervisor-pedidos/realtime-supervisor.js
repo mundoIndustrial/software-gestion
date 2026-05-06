@@ -24,7 +24,7 @@ if (!window.shared?.notify) {
 }
 
 const _rtRepo = window.supervisorPedidos.repository;
-const SUPERVISOR_GRID_TEMPLATE = '60px 220px 120px 200px 150px 140px 150px 150px 150px';
+const SUPERVISOR_GRID_TEMPLATE = '60px 220px 130px 140px 120px 220px 150px 150px 150px 150px 150px 150px';
 const SUPERVISOR_GRID_GAP = '1.2rem';
 const _RT_MODAL_IDS = [
     'modal-overlay',
