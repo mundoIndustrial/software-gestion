@@ -26,6 +26,8 @@
 
     function clearGlobalState() {
         window.itemsPedido = [];
+        window.prendasEliminadas = new Set();
+        window.__pedidoSubmitInFlight = false;
 
         if (window.eppStore && typeof window.eppStore.cargarItems === "function") {
             window.eppStore.cargarItems([]);
@@ -63,16 +65,45 @@
             window.gestorPrendaSinCotizacion.telasFotosNuevas = {};
         }
 
+        // Buffers de edición / contextos previos
+        window.datosEdicionPedido = null;
+        window.pedidoEditarData = null;
+        window.pedidoEdicionData = null;
+        window.prendaOriginalDesdeSelector = null;
+        window._telasMultiplesOriginales = [];
+
+        // Estado de telas (legacy + nuevo)
+        window.telasCreacion = [];
+        window.telasAgregadas = [];
+        window.imagenesTelaModalNueva = [];
+
+        // Galerías y flags visuales
+        window.prendasGaleria = [];
+        window.telasGaleria = [];
+        window.imagenesGaleriaProceso = null;
+        window.__galeriaPrendaActiva = false;
+        window.__galeriaTelaActiva = false;
+        window.__galeriaPrendaAbierta = false;
+
         window.tallasRelacionales = { DAMA: {}, CABALLERO: {}, UNISEX: {}, SOBREMEDIDA: {} };
         window.tallasSeleccionadasProceso = { dama: [], caballero: [], unisex: [], sobremedida: null };
         window.tallasCantidadesProceso = { dama: {}, caballero: {}, unisex: {}, sobremedida: {} };
         window.procesosSeleccionados = {};
+        window.procesosGuardados = {};
         window.procesosParaEliminarIds = new Set();
         window.ubicacionesProcesoSeleccionadas = [];
+        window.procesoActualIndex = undefined;
         window.imagenesAEliminar = [];
         window.imagenesProcesoActual = [null, null, null];
         window.imagenesProcesoExistentes = [];
         window.imagenesEliminadasProcesoStorage = [];
+        window.datosExtendidosTallasProceso = {
+            dama: {},
+            caballero: {},
+            unisex: {},
+            sobremedida: {}
+        };
+        window._fotosGeneralesKeys = new Set();
 
         safeCall(function () {
             window.imagenesPrendaStorage && window.imagenesPrendaStorage.limpiar && window.imagenesPrendaStorage.limpiar();
@@ -83,6 +114,16 @@
         safeCall(function () {
             window.imagenesReflectivoStorage && window.imagenesReflectivoStorage.limpiar && window.imagenesReflectivoStorage.limpiar();
         });
+        safeCall(function () {
+            window.universalImagenesStorage && window.universalImagenesStorage.limpiarTodo && window.universalImagenesStorage.limpiarTodo();
+        });
+
+        // Estado del adapter store
+        if (window.pedidoSessionStore) {
+            safeCall(function () {
+                window.pedidoSessionStore.ui = window.gestionItemsUI || null;
+            });
+        }
     }
 
     function hardResetPedidoState(contexto) {
