@@ -21,7 +21,6 @@ class RecibosCosturaReadRepository
     public function buildBaseQuery(string $tipoRecibo = 'COSTURA')
     {
         $query = DB::table('consecutivos_recibos_pedidos')
-            ->where('activo', 1)
             ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id');
 
         $query = $this->applyTipoReciboFilter($query, $tipoRecibo);
@@ -50,8 +49,8 @@ class RecibosCosturaReadRepository
         // Para REFLECTIVO se evita mezclar reglas de área/estado de costura.
         if (strtoupper(trim($tipoRecibo)) !== 'REFLECTIVO') {
             $query->where(function ($q) {
-                $q->whereIn('consecutivos_recibos_pedidos.estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER', 'INSUMOS_PEDIDOS', 'DEVUELTO_ASESOR', 'Devuelto_Asesor', 'Anulada'])
-                    ->orWhereIn('consecutivos_recibos_pedidos.area', ['CORTE', 'COSTURA']);
+                $q->whereIn('consecutivos_recibos_pedidos.estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER', 'INSUMOS_PEDIDOS', 'DEVUELTO_ASESOR', 'Devuelto_Asesor', 'ANULADO', 'Anulada'])
+                    ->orWhereIn('consecutivos_recibos_pedidos.area', ['CORTE', 'COSTURA', 'ANULADO']);
             });
         }
 
@@ -61,7 +60,6 @@ class RecibosCosturaReadRepository
     public function buildBaseQueryForFiltering(string $tipoRecibo = 'COSTURA')
     {
         $query = DB::table('consecutivos_recibos_pedidos')
-            ->where('activo', 1)
             ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id');
 
         $query = $this->applyTipoReciboFilter($query, $tipoRecibo);
@@ -163,6 +161,7 @@ class RecibosCosturaReadRepository
                         'Pendiente Plotter' => 'PENDIENTE_PLOTTER',
                         'Devuelto Asesor' => 'DEVUELTO_ASESOR',
                         'Devuelto_Asesor' => 'DEVUELTO_ASESOR',
+                        'Anulada' => 'ANULADO',
                         default => $v,
                     },
                     $values

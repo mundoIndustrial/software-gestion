@@ -111,17 +111,17 @@
                         @elseif($orden->dias_calculados >= 10) dias-10-15
                         @elseif($orden->dias_calculados >= 5) dias-5-9
                         @else dias-0-4 @endif
-                    @endif @if(isset($orden->marcar_plooter) && $orden->marcar_plooter) row-checked @endif @if(isset($orden->esta_completado) && $orden->esta_completado) row-completado @endif" 
-                    data-pedido="{{ strtoupper($orden->numero_pedido ?? '') }}" 
-                    data-cliente="{{ strtoupper($orden->cliente ?? '') }}" 
+                    @endif @if(isset($orden->marcar_plooter) && $orden->marcar_plooter) row-checked @endif @if(isset($orden->esta_completado) && $orden->esta_completado) row-completado @endif @if(isset($orden->estado) && in_array($orden->estado, ['ANULADO', 'Anulada'])) bg-red-100 @endif"
+                    data-pedido="{{ strtoupper($orden->numero_pedido ?? '') }}"
+                    data-cliente="{{ strtoupper($orden->cliente ?? '') }}"
                     data-orden-pedido="{{ $orden->numero_pedido }}"
                     data-recibo="{{ $orden->id ?? '' }}"
                     data-material-id="{{ $orden->id ?? '' }}"
                     data-pedido-produccion-id="{{ $orden->pedido_produccion_id ?? '' }}">
-                        <td class="py-4 px-6 text-center" style="min-width: 250px; overflow: visible; background: white; position: relative; z-index: 5;">
+                        <td class="py-4 px-6 text-center" style="min-width: 250px; overflow: visible; @if(!isset($orden->estado) || !in_array($orden->estado, ['ANULADO', 'Anulada']))background: white;@endif position: relative; z-index: 5;">
                             {{-- Indicador de materiales (punto rojo en esquina izquierda) --}}
                             @if(isset($orden->tiene_materiales) && $orden->tiene_materiales)
-                                <div 
+                                <div
                                     class="btn-tooltip"
                                     data-tooltip="Contiene {{ $orden->cantidad_materiales }} material(es)"
                                     title="Contiene {{ $orden->cantidad_materiales }} material(es)"
@@ -141,9 +141,9 @@
                                     $reciboId = $orden->id;
                                     $pedidoProduccionId = $orden->pedido_produccion_id;
                                 @endphp
-                                
+
                                 {{-- Boton Check (marca) en purple --}}
-                                <button 
+                                <button
                                     class="btn-check-row btn-tooltip p-2 text-purple-600 hover:bg-purple-50 rounded transition @if(isset($orden->marcar_plooter) && $orden->marcar_plooter) checked @endif"
                                     data-insumos-action="toggle-row-check"
                                     data-tooltip="Marcar fila"
@@ -153,7 +153,7 @@
                                 </button>
 
                                 {{-- Dropdown Ver Recibo / Seguimiento --}}
-                                <button 
+                                <button
                                     class="btn-ver-insumos-dropdown btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition relative"
                                     data-insumos-action="ver-recibo-dropdown"
                                     data-pedido-id="{{ $pedidoProduccionId }}"
@@ -174,7 +174,7 @@
                                 @if(!$isPatronista)
                                     {{-- Boton Enviar a Produccion --}}
                                     @if($esGestionReflectivo && !in_array($orden->estado, ['En Ejecución', 'En Ejecucion']))
-                                        <button 
+                                        <button
                                             class="btn-enviar-produccion btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
                                             data-insumos-action="enviar-produccion-reflectivo"
                                             data-recibo-id="{{ $reciboId }}"
@@ -185,7 +185,7 @@
                                             <i class="fas fa-paper-plane text-lg"></i>
                                         </button>
                                     @elseif(in_array($orden->estado, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'INSUMOS_PEDIDOS', 'Insumos Pedidos']))
-                                        <button 
+                                        <button
                                             class="btn-enviar-produccion btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
                                             data-insumos-action="enviar-produccion"
                                             data-recibo-id="{{ $reciboId }}"
@@ -196,8 +196,8 @@
                                             <i class="fas fa-paper-plane text-lg"></i>
                                         </button>
                                     @endif
-                                    
-                                    <button 
+
+                                    <button
                                         class="btn-acciones p-2 text-gray-600 hover:bg-gray-100 rounded transition"
                                         data-insumos-action="acciones-dropdown"
                                         data-pedido-produccion-id="{{ $pedidoProduccionId }}"
@@ -253,8 +253,8 @@
                                 } elseif ($estadoValor === 'En Ejecución' || $estadoValor === 'En Ejecucion') {
                                     $estadoClass = 'bg-blue-100 text-blue-800';
                                     $estadoDisplay = 'En Ejecución';
-                                } elseif ($estadoValor === 'Anulada') {
-                                    $estadoClass = 'bg-amber-100 text-amber-800';
+                                } elseif ($estadoValor === 'Anulada' || $estadoValor === 'ANULADO') {
+                                    $estadoClass = 'bg-red-100 text-red-800';
                                     $estadoDisplay = 'Anulada';
                                 } elseif ($estadoValor === 'PENDIENTE_INSUMOS' || $estadoValor === 'Pendiente_Insumos') {
                                     $estadoClass = 'bg-amber-500 text-white';
@@ -303,7 +303,7 @@
                                             <option value="PENDIENTE_PLOTTER" {{ in_array($estadoValor, ['Pendiente Plotter', 'PENDIENTE_PLOTTER']) ? 'selected' : '' }}>Pendiente&#10;Plotter</option>
                                             <option value="INSUMOS_PEDIDOS" {{ in_array($estadoValor, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos&#10;Pedidos</option>
                                             <option value="DEVUELTO_ASESOR" {{ $estadoValor === 'DEVUELTO_ASESOR' ? 'selected' : '' }}>Devuelto Asesor</option>
-                                            <option value="Anulada" {{ $estadoValor === 'Anulada' ? 'selected' : '' }}>Anulada</option>
+                                            <option value="ANULADO" {{ in_array($estadoValor, ['Anulada', 'ANULADO']) ? 'selected' : '' }}>Anulada</option>
                                         @endif
                                     </select>
                                 </div>
@@ -373,18 +373,18 @@
                 <button class="pagination-btn" data-page="{{ $ordenes->currentPage() - 1 }}" {{ $ordenes->currentPage() == 1 ? 'disabled' : '' }}>
                     <i class="fas fa-angle-left"></i>
                 </button>
-                
+
                 @php
                     $start = max(1, $ordenes->currentPage() - 2);
                     $end = min($ordenes->lastPage(), $ordenes->currentPage() + 2);
                 @endphp
-                
+
                 @for($i = $start; $i <= $end; $i++)
                     <button class="pagination-btn page-number {{ $i == $ordenes->currentPage() ? 'active' : '' }}" data-page="{{ $i }}">
                         {{ $i }}
                     </button>
                 @endfor
-                
+
                 <button class="pagination-btn" data-page="{{ $ordenes->currentPage() + 1 }}" {{ $ordenes->currentPage() == $ordenes->lastPage() ? 'disabled' : '' }}>
                     <i class="fas fa-angle-right"></i>
                 </button>

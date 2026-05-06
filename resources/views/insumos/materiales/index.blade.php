@@ -213,14 +213,14 @@
                                 @elseif($orden->dias_calculados >= 10) dias-10-15
                                 @elseif($orden->dias_calculados >= 5) dias-5-9
                                 @else dias-0-4 @endif
-                            @endif @if(isset($orden->marcar_plooter) && $orden->marcar_plooter) row-checked @endif @if(isset($orden->esta_completado) && $orden->esta_completado) row-completado @endif" 
+                            @endif @if(isset($orden->marcar_plooter) && $orden->marcar_plooter) row-checked @endif @if(isset($orden->esta_completado) && $orden->esta_completado) row-completado @endif @if(isset($orden->estado) && in_array($orden->estado, ['ANULADO', 'Anulada'])) bg-red-100 @endif"
                             data-pedido="{{ strtoupper($orden->numero_pedido ?? '') }}" 
                             data-cliente="{{ strtoupper($orden->cliente ?? '') }}" 
                             data-orden-pedido="{{ $orden->numero_pedido }}"
                             data-recibo="{{ $orden->id ?? '' }}"
                             data-material-id="{{ $orden->id ?? '' }}"
                             data-pedido-produccion-id="{{ $orden->pedido_produccion_id ?? '' }}">
-                                <td class="py-4 px-6 text-center" style="min-width: 250px; overflow: visible; background: white; position: relative; z-index: 5;">
+                                <td class="py-4 px-6 text-center" style="min-width: 250px; overflow: visible; @if(!isset($orden->estado) || !in_array($orden->estado, ['ANULADO', 'Anulada']))background: white;@endif position: relative; z-index: 5;">
                                     {{-- Indicador de materiales (punto rojo en esquina izquierda) --}}
                                     @if(isset($orden->tiene_materiales) && $orden->tiene_materiales)
                                         <div 
@@ -354,8 +354,8 @@
                                         } elseif ($orden->estado === 'En Ejecución') {
                                             $estadoClass = 'bg-blue-100 text-blue-800';
                                             $estadoDisplay = 'En Ejecución';
-                                        } elseif ($orden->estado === 'Anulada') {
-                                            $estadoClass = 'bg-amber-100 text-amber-800';
+                                        } elseif ($orden->estado === 'Anulada' || $orden->estado === 'ANULADO') {
+                                            $estadoClass = 'bg-red-100 text-red-800';
                                             $estadoDisplay = 'Anulada';
                                         } elseif ($orden->estado === 'PENDIENTE_INSUMOS' || $orden->estado === 'Pendiente_Insumos') {
                                             $estadoClass = 'bg-amber-500 text-white';
@@ -410,7 +410,7 @@
                                                     <option value="PENDIENTE_PLOTTER" {{ in_array($orden->estado, ['Pendiente Plotter', 'PENDIENTE_PLOTTER']) ? 'selected' : '' }}>Pendiente&#10;Plotter</option>
                                                     <option value="INSUMOS_PEDIDOS" {{ in_array($orden->estado, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos&#10;Pedidos</option>
                                                     <option value="DEVUELTO_ASESOR" {{ $orden->estado === 'DEVUELTO_ASESOR' ? 'selected' : '' }}>Devuelto Asesor</option>
-                                                    <option value="Anulada" {{ $orden->estado === 'Anulada' ? 'selected' : '' }}>Anulada</option>
+                                                    <option value="ANULADO" {{ in_array($orden->estado, ['Anulada', 'ANULADO']) ? 'selected' : '' }}>Anulada</option>
                                                 @endif
                                             </select>
                                         </div>

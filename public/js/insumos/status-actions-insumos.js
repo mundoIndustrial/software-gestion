@@ -323,7 +323,8 @@ function obtenerEstadoInfo(estado) {
         'No iniciado': { display: 'No iniciado', clase: 'bg-gray-400 text-white' },
         'En Ejecución': { display: 'En Ejecución', clase: 'bg-blue-100 text-blue-800' },
         'En Ejecucion': { display: 'En Ejecución', clase: 'bg-blue-100 text-blue-800' },
-        'Anulada': { display: 'Anulada', clase: 'bg-amber-100 text-amber-800' },
+        'Anulada': { display: 'Anulada', clase: 'bg-red-100 text-red-800' },
+        'ANULADO': { display: 'Anulada', clase: 'bg-red-100 text-red-800' },
         'PENDIENTE_INSUMOS': { display: 'Pendiente Insumos', clase: 'bg-amber-500 text-white' },
         'Pendiente_Insumos': { display: 'Pendiente Insumos', clase: 'bg-amber-500 text-white' },
         'Pendiente Insumos': { display: 'Pendiente Insumos', clase: 'bg-amber-500 text-white' },
@@ -513,18 +514,19 @@ function actualizarColorSelect(selectElement, estado) {
         'bg-gray-400', 'text-white',
         'bg-blue-100', 'text-blue-800',
         'bg-amber-100', 'text-amber-800',
+        'bg-red-100', 'text-red-800',
         'bg-yellow-400', 'text-gray-900',
         'bg-green-500',
         'bg-red-500'
     );
-    
+
     // Agregar las nuevas clases según el estado
     if (estado === 'No iniciado') {
         selectElement.classList.add('bg-gray-400', 'text-white');
     } else if (estado === 'En Ejecución') {
         selectElement.classList.add('bg-blue-100', 'text-blue-800');
-    } else if (estado === 'Anulada') {
-        selectElement.classList.add('bg-amber-100', 'text-amber-800');
+    } else if (estado === 'Anulada' || estado === 'ANULADO') {
+        selectElement.classList.add('bg-red-100', 'text-red-800');
     } else if (estado === 'PENDIENTE_INSUMOS' || estado === 'Pendiente_Insumos') {
         selectElement.classList.add('bg-amber-500', 'text-white');
     } else if (estado === 'Pendiente Tela' || estado === 'PENDIENTE_TELA') {
@@ -640,7 +642,8 @@ function exportStatusActionsInsumos() {
             'INSUMOS_PEDIDOS': { bg: '#10b981', color: '#ffffff', border: '#059669' },
             'DEVUELTO_ASESOR': { bg: '#ef4444', color: '#ffffff', border: '#dc2626' },
             'Devuelto Asesor': { bg: '#ef4444', color: '#ffffff', border: '#dc2626' },
-            'Anulada': { bg: '#6366f1', color: '#ffffff', border: '#4f46e5' }
+            'Anulada': { bg: '#fecaca', color: '#991b1b', border: '#fca5a5' },
+            'ANULADO': { bg: '#fecaca', color: '#991b1b', border: '#fca5a5' }
         };
         
         const estilo = estilosEstado[estado] || { bg: '#e5e7eb', color: '#1f2937', border: '#d1d5db' };
