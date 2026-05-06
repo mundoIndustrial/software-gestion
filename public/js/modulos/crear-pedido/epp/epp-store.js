@@ -1,8 +1,6 @@
 /**
- * EppStore - Compat adapter sobre la fuente de verdad unificada.
- *
- * Prioriza PedidoSessionStore cuando esta disponible.
- * Mantiene fallback legacy sobre window.itemsPedido para compatibilidad.
+ * EppStore - Adapter estricto sobre la fuente de verdad unificada.
+ * No usa window.itemsPedido como respaldo legacy.
  */
 (function () {
     'use strict';
@@ -18,23 +16,24 @@
         return null;
     }
 
+    function requireStore() {
+        var store = getSessionStore();
+        if (!store) {
+            throw new Error('[EppStore] PedidoSessionStore no disponible');
+        }
+        return store;
+    }
+
     var EppStore = {
-        _ensureArray: function () {
-            if (!window.itemsPedido) window.itemsPedido = [];
-        },
 
         getItems: function () {
-            var store = getSessionStore();
-            if (store && typeof store.snapshot === 'function') {
+            var store = requireStore();
+            if (typeof store.snapshot === 'function') {
                 return (store.snapshot() || []).filter(function (it) {
                     return it && it.tipo === 'epp';
                 });
             }
-
-            this._ensureArray();
-            return window.itemsPedido.filter(function (it) {
-                return it && (it.tipo === 'epp' || !it.tipo);
-            });
+            return [];
         },
 
         findItem: function (eppId) {
@@ -70,19 +69,16 @@
         },
 
         agregarItem: function (data) {
-            this._ensureArray();
-
             var item = Object.assign({}, data, {
                 tipo: 'epp',
                 epp_id: data.epp_id || data.id
             });
 
-            var store = getSessionStore();
-            if (store && typeof store.addItem === 'function') {
-                store.addItem(item);
-            } else {
-                window.itemsPedido.push(item);
+            var store = requireStore();
+            if (typeof store.addItem !== 'function') {
+                throw new Error('[EppStore] addItem no disponible en PedidoSessionStore');
             }
+            store.addItem(item);
 
             this._notificar('agregar', item);
             return item;
@@ -95,17 +91,11 @@
                 return false;
             }
 
-            var store = getSessionStore();
-            if (store && found._local_id && typeof store.updateItem === 'function') {
+            var store = requireStore();
+            if (found._local_id && typeof store.updateItem === 'function') {
                 store.updateItem(found._local_id, datos);
             } else {
-                this._ensureArray();
-                var idx = window.itemsPedido.findIndex(function (it) {
-                    return it && (str(it.epp_id) === str(eppId) || str(it.id) === str(eppId));
-                });
-                if (idx >= 0) {
-                    Object.assign(window.itemsPedido[idx], datos);
-                }
+                throw new Error('[EppStore] updateItem requiere _local_id y store.updateItem');
             }
 
             this._notificar('actualizar', Object.assign({}, found, datos));
@@ -113,64 +103,35 @@
         },
 
         eliminarItem: function (eppId) {
-            var store = getSessionStore();
-            if (store && typeof store.removeItem === 'function') {
-                var deletedByStore = store.removeItem(eppId);
-                if (deletedByStore) {
-                    this._notificar('eliminar', { epp_id: eppId });
-                }
-                return !!deletedByStore;
+            var store = requireStore();
+            if (typeof store.removeItem !== 'function') {
+                throw new Error('[EppStore] removeItem no disponible en PedidoSessionStore');
             }
-
-            this._ensureArray();
-            var id = str(eppId);
-            var before = window.itemsPedido.length;
-
-            window.itemsPedido = window.itemsPedido.filter(function (it) {
-                if (it.tipo !== 'epp' && it.tipo) return true;
-                return str(it.epp_id) !== id && str(it.id) !== id;
-            });
-
-            var removed = before - window.itemsPedido.length;
-            if (removed > 0) {
+            var removed = store.removeItem(eppId);
+            if (removed) {
                 this._notificar('eliminar', { epp_id: eppId });
             }
-            return removed > 0;
+            return !!removed;
         },
 
         cargarItems: function (items) {
-            var store = getSessionStore();
-            if (store && typeof store.snapshot === 'function' && typeof store.addItem === 'function' && typeof store.removeItem === 'function') {
-                var actuales = store.snapshot() || [];
-                actuales.forEach(function (it) {
-                    if (it && it.tipo === 'epp') {
-                        store.removeItem(it._local_id || it.epp_id || it.id);
-                    }
-                });
-                (items || []).forEach(function (it) {
-                    store.addItem(Object.assign({}, it, {
-                        tipo: 'epp',
-                        epp_id: it.epp_id || it.id
-                    }));
-                });
-                this._notificar('cargar', this.getItems());
-                return;
+            var store = requireStore();
+            if (typeof store.snapshot !== 'function' || typeof store.addItem !== 'function' || typeof store.removeItem !== 'function') {
+                throw new Error('[EppStore] PedidoSessionStore incompleto para cargarItems');
             }
-
-            this._ensureArray();
-            var noEpp = window.itemsPedido.filter(function (it) {
-                return it.tipo && it.tipo !== 'epp';
+            var actuales = store.snapshot() || [];
+            actuales.forEach(function (it) {
+                if (it && it.tipo === 'epp') {
+                    store.removeItem(it._local_id || it.epp_id || it.id);
+                }
             });
-
-            var normalizados = (items || []).map(function (it) {
-                return Object.assign({}, it, {
+            (items || []).forEach(function (it) {
+                store.addItem(Object.assign({}, it, {
                     tipo: 'epp',
                     epp_id: it.epp_id || it.id
-                });
+                }));
             });
-
-            window.itemsPedido = noEpp.concat(normalizados);
-            this._notificar('cargar', normalizados);
+            this._notificar('cargar', this.getItems());
         },
 
         _listeners: [],

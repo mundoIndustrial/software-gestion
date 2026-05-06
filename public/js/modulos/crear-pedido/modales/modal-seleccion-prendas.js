@@ -9,25 +9,25 @@ let prendasSeleccionadas = [];
 let cotizacionActual = null;
 
 function getPedidoItemsSnapshot() {
-    if (typeof window.getPedidoSessionStore === 'function') {
-        const store = window.getPedidoSessionStore();
-        if (store && typeof store.snapshot === 'function') {
-            return store.snapshot() || [];
-        }
+    if (typeof window.getPedidoSessionStore !== 'function') {
+        throw new Error('[modal-seleccion-prendas] PedidoSessionStore no disponible');
     }
-    return window.itemsPedido || [];
+    const store = window.getPedidoSessionStore();
+    if (!store || typeof store.snapshot !== 'function') {
+        throw new Error('[modal-seleccion-prendas] snapshot no disponible');
+    }
+    return store.snapshot() || [];
 }
 
 function addPedidoItemSeguro(item) {
-    if (typeof window.getPedidoSessionStore === 'function') {
-        const store = window.getPedidoSessionStore();
-        if (store && typeof store.addItem === 'function') {
-            return !!store.addItem(item);
-        }
+    if (typeof window.getPedidoSessionStore !== 'function') {
+        throw new Error('[modal-seleccion-prendas] PedidoSessionStore no disponible');
     }
-    if (!window.itemsPedido) window.itemsPedido = [];
-    window.itemsPedido.push(item);
-    return true;
+    const store = window.getPedidoSessionStore();
+    if (!store || typeof store.addItem !== 'function') {
+        throw new Error('[modal-seleccion-prendas] addItem no disponible');
+    }
+    return !!store.addItem(item);
 }
 
 /**
@@ -39,11 +39,6 @@ window.abrirModalSeleccionPrendas = function(cotizacion) {
     cotizacionActual = cotizacion;
     prendasSeleccionadas = [];
     prendasCotizacion = [];
-    
-    // Inicializar itemsPedido si no existe
-    if (!window.itemsPedido) {
-        window.itemsPedido = [];
-    }
     
     // Mostrar información de la cotización en el modal
     const numeroCot = document.getElementById('modal-cot-numero');
@@ -279,11 +274,6 @@ window.agregarPrendasSeleccionadas = function() {
     if (prendasSeleccionadas.length === 0) {
         alert('Por favor selecciona al menos una prenda');
         return;
-    }
-    
-    // Inicializar itemsPedido si no existe
-    if (!window.itemsPedido) {
-        window.itemsPedido = [];
     }
     
     prendasSeleccionadas.forEach(({ prenda, origen }) => {
@@ -608,8 +598,8 @@ window.eliminarItemCotizacion = function(index) {
     if (typeof window.eliminarItemPedidoSeguro === 'function') {
         const ref = target._local_id || target.epp_id || target.id || index;
         window.eliminarItemPedidoSeguro(ref);
-    } else if (window.itemsPedido && window.itemsPedido[index]) {
-        window.itemsPedido.splice(index, 1);
+    } else {
+        throw new Error('[modal-seleccion-prendas] eliminarItemPedidoSeguro no disponible');
     }
 
     const container = document.getElementById('lista-items-pedido');

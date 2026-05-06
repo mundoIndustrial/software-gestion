@@ -25,7 +25,6 @@
     }
 
     function clearGlobalState() {
-        window.itemsPedido = [];
         window.prendasEliminadas = new Set();
         window.__pedidoSubmitInFlight = false;
 
