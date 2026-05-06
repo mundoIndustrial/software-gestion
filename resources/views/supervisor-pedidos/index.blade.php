@@ -144,7 +144,6 @@
 @push('scripts')
     <script defer src="{{ asset('js/supervisor-pedidos/modales-acciones.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/modales-acciones.js')) }}"></script>
     <script defer src="{{ asset('js/supervisor-pedidos/lazy-editor-loader.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/lazy-editor-loader.js')) }}"></script>
-    <script defer src="{{ asset('js/supervisor-pedidos/index.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/index.js')) }}"></script>
     
 
     <!--  SERVICIO DE ALMACENAMIENTO DE IMÁGENES (Requerido para agregar/eliminar imágenes) -->
