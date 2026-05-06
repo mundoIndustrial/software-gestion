@@ -205,20 +205,31 @@ function setupEchoFallbackListeners() {
 
         const mostrarNotificacion = (e) => {
             try {
-                const encargadoStr = String(e?.encargado || '').trim();
-                const numeroRecibo = String(e?.numero_recibo || '').trim();
-                const mensaje = e?.mensaje || `Pedido #${e?.pedido_id || ''} · Recibo #${numeroRecibo} asignado a ${encargadoStr}`;
-                const notifKey = `${rol}|fallback|${e?.accion || ''}|${e?.proceso_id || ''}|${numeroRecibo}|${encargadoStr}`;
+                const encargadoStr = String(e?.encargado || e?.nombre_operario || '').trim();
+                const numeroRecibo = String(e?.numero_recibo || e?.consecutivo || '').trim();
+                const accion = String(e?.accion || '').toLowerCase();
+                const mensaje = e?.mensaje || `Pedido #${e?.pedido_id || e?.pedido_produccion_id || ''} · Recibo #${numeroRecibo} actualizado`;
+                
+                const notifKey = `${rol}|fallback|${accion}|${e?.recibo_id || ''}|${numeroRecibo}|${encargadoStr}`;
 
                 if (!shouldShowDashboardNotif(notifKey)) {
                     return;
                 }
 
-                let titulo = 'Recibo asignado';
-                if (e?.accion === 'recibo_asignado_reflectivo') {
+                let titulo = 'Actualización de recibo';
+                let tipo = 'info';
+                let icono = 'notifications';
+
+                if (accion === 'recibo_completado') {
+                    titulo = e?.es_parcial ? 'Parcial completado' : 'Recibo completado';
+                    tipo = 'success';
+                    icono = 'check_circle';
+                } else if (accion === 'recibo_asignado_reflectivo') {
                     titulo = e?.es_parcial ? 'Recibo parcial REFLECTIVO asignado' : 'Recibo REFLECTIVO asignado';
-                } else if (e?.accion === 'recibo_asignado_costura' || String(e?.tipo_recibo || '').toUpperCase() === 'COSTURA') {
+                    icono = 'auto_awesome';
+                } else if (accion === 'recibo_asignado_costura' || String(e?.tipo_recibo || '').toUpperCase() === 'COSTURA') {
                     titulo = e?.es_parcial ? 'Recibo parcial COSTURA asignado' : 'Recibo COSTURA asignado';
+                    icono = 'checkroom';
                 } else if (String(e?.tipo_recibo || '').toUpperCase() === 'PARCIAL') {
                     titulo = 'Recibo parcial asignado';
                 }
@@ -228,8 +239,8 @@ function setupEchoFallbackListeners() {
                         id: notifKey,
                         title: titulo,
                         message: mensaje,
-                        type: 'info',
-                        icon: String(e?.tipo_recibo || '').toUpperCase() === 'REFLECTIVO' ? 'auto_awesome' : 'checkroom',
+                        type: tipo,
+                        icon: icono,
                         duration: 8000,
                     });
                 }

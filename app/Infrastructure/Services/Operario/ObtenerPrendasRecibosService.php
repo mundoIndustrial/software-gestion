@@ -330,7 +330,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 
         // Restricciones por rol sobre áreas visibles
         if ($tipoOperario === 'cortador') {
-            $query->whereIn('area', ['Corte', 'Costura']);
+            $query->whereIn('area', ['Corte']);
         }
 
         if ($tipoOperario === 'costurero') {
@@ -354,28 +354,6 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 ->values();
 
             $recibos = $recibos->filter(function ($recibo) use ($prendasDelCortador) {
-                $area = strtolower(trim((string) ($recibo->area ?? '')));
-
-                // Si está en área Costura, verificar que sea prenda asignada al cortador
-                if ($area === 'costura') {
-                    if (empty($recibo->prenda_id)) {
-                        return false;
-                    }
-
-                    //  CRÍTICO: Solo mostrar prendas donde el cortador es encargado de Corte
-                    if (!$prendasDelCortador->contains($recibo->prenda_id)) {
-                        return false;
-                    }
-
-                    // Además, solo si aún no hay encargado de Costura asignado
-                    $procesoCostura = \App\Models\ProcesoPrenda::where('prenda_pedido_id', $recibo->prenda_id)
-                        ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                        ->whereNull('deleted_at')
-                        ->first();
-
-                    return !$procesoCostura || empty($procesoCostura->encargado);
-                }
-
                 // Área Corte: incluir siempre
                 return true;
             })->values();
