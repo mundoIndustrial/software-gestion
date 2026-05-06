@@ -25,6 +25,7 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
     Route::post('/reportar-pendiente', [OperarioController::class, 'reportarPendiente'])->name('reportar-pendiente');
     Route::post('/api/completar-proceso/{numeroPedido}', [OperarioController::class, 'completarProceso'])->name('api.completar-proceso');
     Route::post('/api/recibos/{idRecibo}/completar', [OperarioController::class, 'completarRecibo'])->name('api.recibos.completar');
+    Route::post('/api/recibos/{idRecibo}/completar-corte-sobremedida', [OperarioController::class, 'completarReciboCorteSobremedida'])->name('api.recibos.completar-corte-sobremedida');
     Route::delete('/api/recibos/{idRecibo}/deshacer', [OperarioController::class, 'deshacerRecibo'])->name('api.recibos.deshacer');
     Route::delete('/api/parciales/{id}/deshacer', [OperarioController::class, 'deshacerParcial'])->name('api.parciales.deshacer');
     Route::get('/api/recibos/{idRecibo}/distribucion', [OperarioController::class, 'obtenerDistribucionRecibo'])->name('api.recibos.distribucion');

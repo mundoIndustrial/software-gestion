@@ -20,6 +20,7 @@ import {
 import { pasarAControlCalidad } from '../controlCalidad/controlCalidad';
 import { toggleMobileActions } from '../mobile/mobileActions';
 import { completarCorte, deshacerCorte, completarCostura, deshacerCostura } from '../recibos/corteCostura';
+import { completarReciboCorteSobremedida, deshacerReciboCorteSobremedida } from '../recibos/corteSobremedida';
 import { mostrarExito, mostrarError, mostrarMensaje, cerrarModalMensaje } from '../ui/messages';
 import { actualizarContadorTarjetas } from '../ui/counters';
 import { asegurarBadgeCompletado } from '../ui/badges';
@@ -60,6 +61,8 @@ export function registerDashboardGlobals() {
     window.deshacerCorte = deshacerCorte;
     window.completarCostura = completarCostura;
     window.deshacerCostura = deshacerCostura;
+    window.completarReciboCorteSobremedida = completarReciboCorteSobremedida;
+    window.deshacerReciboCorteSobremedida = deshacerReciboCorteSobremedida;
 
     // Utilidades UI
     window.mostrarExito = mostrarExito;

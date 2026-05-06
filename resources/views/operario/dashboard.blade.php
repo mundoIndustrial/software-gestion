@@ -506,6 +506,45 @@
                                             @endif
                                         @endif
 
+                                        {{-- Bloque para administrador-costura en pestaña sobremedida: Completar recibos en Corte --}}
+                                        @if(auth()->user()->hasRole('administrador-costura') && ($tab ?? 'costura') === 'sobremedida')
+                                            @php
+                                                $reciboPrincipal = $prenda['recibos'][0] ?? null;
+                                                $areaRecibo = strtolower(trim((string) ($reciboPrincipal['area'] ?? '')));
+                                                $esCorteRecibo = $areaRecibo === 'corte';
+                                                $reciboId = $reciboPrincipal['id'] ?? null;
+                                                $reciboCompletadoCorte = (bool) ($reciboPrincipal['completado_corte'] ?? false);
+                                            @endphp
+
+                                            {{-- Botón para administrador-costura: Completar recibo en Corte (pasa a Costura) --}}
+                                            @if($esCorteRecibo && $reciboId && !$reciboCompletadoCorte)
+                                                <button class="btn-completar-corte" 
+                                                        id="btn-completar-corte-sobremedida-{{ $prenda['prenda_id'] }}"
+                                                        data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                        data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                        data-recibo-id="{{ $reciboId }}"
+                                                        data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                        onclick="completarReciboCorteSobremedida(this)">
+                                                    <span class="material-symbols-rounded">check_circle</span>
+                                                    COMPLETAR CORTE
+                                                </button>
+                                            @endif
+
+                                            {{-- Botón para administrador-costura: Deshacer (regresa a Corte) --}}
+                                            @if($esCorteRecibo && $reciboId && $reciboCompletadoCorte)
+                                                <button class="btn-deshacer-corte" 
+                                                        id="btn-deshacer-corte-sobremedida-{{ $prenda['prenda_id'] }}"
+                                                        data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                        data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                        data-recibo-id="{{ $reciboId }}"
+                                                        data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                        onclick="deshacerReciboCorteSobremedida(this)">
+                                                    <span class="material-symbols-rounded">undo</span>
+                                                    DESHACER
+                                                </button>
+                                            @endif
+                                        @endif
+
                                         @if(auth()->user()->hasRole('vista-costura'))
                                             @foreach($prenda['recibos'] ?? [] as $reciboItem)
                                                 @php

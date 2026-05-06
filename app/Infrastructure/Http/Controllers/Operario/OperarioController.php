@@ -7,6 +7,7 @@ use App\Application\Operario\Services\ObtenerPedidosOperarioService;
 use App\Application\Operario\Services\ObtenerPrendasRecibosService;
 use App\Application\Operario\UseCases\GetOperarioDashboardUseCase;
 use App\Application\Operario\UseCases\CompletarReciboOperarioUseCase;
+use App\Application\Operario\UseCases\CompletarReciboCorteSobremedidaUseCase;
 use App\Application\Operario\UseCases\DeshacerReciboOperarioUseCase;
 use App\Application\Operario\UseCases\ListarNotificacionesRecibosUseCase;
 use App\Application\Operario\UseCases\MarcarNotificacionReciboLeidaUseCase;
@@ -48,6 +49,7 @@ class OperarioController extends Controller
         private ObtenerPedidoUseCase $obtenerPedidoUseCase,
         private GetOperarioDashboardUseCase $getOperarioDashboardUseCase,
         private CompletarReciboOperarioUseCase $completarReciboOperarioUseCase,
+        private CompletarReciboCorteSobremedidaUseCase $completarReciboCorteSobremedidaUseCase,
         private DeshacerReciboOperarioUseCase $deshacerReciboOperarioUseCase,
         private ListarNotificacionesRecibosUseCase $listarNotificacionesRecibosUseCase,
         private MarcarNotificacionReciboLeidaUseCase $marcarNotificacionReciboLeidaUseCase,
@@ -892,4 +894,37 @@ class OperarioController extends Controller
         return [$tipo];
     }
 
+    /**
+     * API: Completar recibo en área Corte desde pestaña sobremedida
+     * POST /operario/api/recibos/{idRecibo}/completar-corte-sobremedida
+     * 
+     * Solo para administrador-costura
+     * Mueve el recibo de Corte a Costura y crea el proceso de costura
+     */
+    public function completarReciboCorteSobremedida(Request $request, $idRecibo): JsonResponse
+    {
+        try {
+            $result = $this->completarReciboCorteSobremedidaUseCase->execute((int) $idRecibo);
+
+            return response()->json([
+                'success' => (bool) $result->success,
+                'message' => (string) $result->message,
+                'data' => $result->data,
+            ], (int) $result->statusCode);
+        } catch (\Exception $e) {
+            \Log::error('[OperarioController] Error al completar recibo en Corte (sobremedida)', [
+                'id_recibo' => (int) $idRecibo,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al completar el recibo: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
 }
+
