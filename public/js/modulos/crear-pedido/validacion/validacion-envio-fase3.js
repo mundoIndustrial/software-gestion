@@ -58,7 +58,49 @@
         return {
             valido: errores.length === 0,
             errores: errores
-        };
+	        };
+	        const storePayload = (typeof window.getPedidoSessionStore === 'function')
+	            ? window.getPedidoSessionStore().toPayload()
+	            : null;
+	        const usarStoreBase = !!(storePayload && Array.isArray(storePayload.items) && storePayload.items.length > 0);
+
+	        if (usarStoreBase) {
+	            const prendasStore = Array.isArray(storePayload.prendas) ? storePayload.prendas : [];
+	            const eppsStore = Array.isArray(storePayload.epps) ? storePayload.epps : [];
+
+	            datos.prendas = prendasStore.map((prenda) => ({
+	                tipo: 'prenda',
+	                _local_id: prenda._local_id || null,
+	                nombre_producto: prenda.nombre_producto || prenda.nombre_prenda || prenda.nombre || '',
+	                descripcion: prenda.descripcion || '',
+	                de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1,
+	                genero: prenda.genero || '',
+	                cantidades: prenda.cantidades || prenda.cantidad_talla || prenda.cantidadesPorTalla || {},
+	                imagenes: Array.isArray(prenda.imagenes) ? prenda.imagenes : [],
+	                telas: Array.isArray(prenda.telas) ? prenda.telas : (Array.isArray(prenda.telasAgregadas) ? prenda.telasAgregadas : []),
+	                procesos: prenda.procesos || {},
+	                variaciones: prenda.variaciones || prenda.variantes || {},
+	                origen: prenda.origen || 'bodega'
+	            }));
+
+	            datos.epps = eppsStore.map((epp) => ({
+	                tipo: 'epp',
+	                _local_id: epp._local_id || null,
+	                epp_id: epp.epp_id || null,
+	                pedido_epp_id: epp.pedido_epp_id || epp.pedidoEppId || null,
+	                nombre_epp: epp.nombre_epp || epp.nombre_completo || epp.nombre || '',
+	                categoria: epp.categoria || '',
+	                cantidad: epp.cantidad || 1,
+	                observaciones: epp.observaciones || null,
+	                imagenes: Array.isArray(epp.imagenes) ? epp.imagenes : []
+	            }));
+
+	            datos.items = [...datos.prendas, ...datos.epps];
+	            console.debug('[prepararDatosParaEnvio] Fuente primaria: PedidoSessionStore', {
+	                prendas: datos.prendas.length,
+	                epps: datos.epps.length
+	            });
+	        }
     };
 
     /**
@@ -118,7 +160,7 @@
         // ========== RECOPILACIÓN DE PRENDAS DEL GESTOR ==========
         // FIX: Si gestionItemsUI está disponible (modo edición de borrador), usarlo como fuente PRIMARIA
         // PERO COMBINAR con prendas nuevas de gestorPrendaSinCotizacion (prendas agregadas sin guardar borrador)
-        if (window.gestionItemsUI && window.gestionItemsUI.prendas && window.gestionItemsUI.prendas.length > 0) {
+	        if (!usarStoreBase && window.gestionItemsUI && window.gestionItemsUI.prendas && window.gestionItemsUI.prendas.length > 0) {
             // PRIORIDAD: Usar gestionItemsUI (prendas del borrador siendo editado)
             const prendasEdicion = window.gestionItemsUI.prendas;
             const fotosNuevasGestor = window.gestorPrendaSinCotizacion?.fotosNuevas || {};
@@ -182,7 +224,7 @@
                     }
                 });
             }
-        } else if (window.gestorPrendaSinCotizacion && window.gestorPrendaSinCotizacion.prendas) {
+	        } else if (!usarStoreBase && window.gestorPrendaSinCotizacion && window.gestorPrendaSinCotizacion.prendas) {
             // Fallback: Usar gestor si gestionItemsUI no está disponible (modo nuevo sin ediciones)
             const prendas = window.gestorPrendaSinCotizacion.obtenerActivas() || [];
             const fotosNuevasGestor = window.gestorPrendaSinCotizacion.fotosNuevas || {};
@@ -214,7 +256,7 @@
                     datos.items.push(prendaParaEnviar);  //  AGREGADO: también en items
                 }
             });
-        } else {
+	        } else if (!usarStoreBase) {
             // Fallback: usar DOM si gestor no existe
             const prendasContainer = document.getElementById('prendas-container-editable');
             const prendaCards = prendasContainer?.querySelectorAll('.prenda-card-editable') || [];
@@ -302,25 +344,27 @@
 
         // ========== RECOPILACION DE EPPs ==========
         // Fuente unica de verdad: gestionItemsUI.
-        let eppsDelPedido = [];
-        if (window.gestionItemsUI && typeof window.gestionItemsUI.obtenerItemsOrdenados === 'function') {
-            eppsDelPedido = (window.gestionItemsUI.obtenerItemsOrdenados() || []).filter(item => item.tipo === 'epp');
-        } else {
-            console.warn('[prepararDatosParaEnvio] gestionItemsUI no disponible; no se incluiran EPPs');
-        }
+	        if (!usarStoreBase) {
+	            let eppsDelPedido = [];
+	            if (window.gestionItemsUI && typeof window.gestionItemsUI.obtenerItemsOrdenados === 'function') {
+	                eppsDelPedido = (window.gestionItemsUI.obtenerItemsOrdenados() || []).filter(item => item.tipo === 'epp');
+	            } else {
+	                console.warn('[prepararDatosParaEnvio] gestionItemsUI no disponible; no se incluiran EPPs');
+	            }
 
-        if (eppsDelPedido.length > 0) {
-            datos.epps = eppsDelPedido.map(epp => ({
-                tipo: 'epp',
-                epp_id: epp.epp_id,
-                pedido_epp_id: epp.pedido_epp_id || epp.pedidoEppId || null,
-                cantidad: epp.cantidad || 1,
-                observaciones: epp.observaciones || null,
-                imagenes: epp.imagenes || [],
-                imagenes_editadas: epp.imagenes_editadas === true
-            }));
-            datos.items.push(...datos.epps);
-        }
+	            if (eppsDelPedido.length > 0) {
+	                datos.epps = eppsDelPedido.map(epp => ({
+	                    tipo: 'epp',
+	                    epp_id: epp.epp_id,
+	                    pedido_epp_id: epp.pedido_epp_id || epp.pedidoEppId || null,
+	                    cantidad: epp.cantidad || 1,
+	                    observaciones: epp.observaciones || null,
+	                    imagenes: epp.imagenes || [],
+	                    imagenes_editadas: epp.imagenes_editadas === true
+	                }));
+	                datos.items.push(...datos.epps);
+	            }
+	        }
         console.debug('[prepararDatosParaEnvio] EPPs a enviar:', datos.epps);
 
         return datos;
