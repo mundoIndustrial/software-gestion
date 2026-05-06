@@ -122,6 +122,14 @@ class ItemAPIService {
      */
     async agregarItem(itemData) {
         try {
+            if (typeof window.getPedidoSessionStore === 'function') {
+                const store = window.getPedidoSessionStore();
+                if (store && typeof store.addItem === 'function') {
+                    const ok = !!store.addItem(itemData);
+                    return { success: ok, source: 'pedido-session-store' };
+                }
+            }
+
             return await this.realizarPeticion(`${this.baseUrl}/items`, {
                 method: 'POST',
                 body: JSON.stringify(itemData)
@@ -137,6 +145,14 @@ class ItemAPIService {
      */
     async eliminarItem(index) {
         try {
+            if (typeof window.getPedidoSessionStore === 'function') {
+                const store = window.getPedidoSessionStore();
+                if (store && typeof store.removeItem === 'function') {
+                    const ok = !!store.removeItem(index);
+                    return { success: ok, source: 'pedido-session-store' };
+                }
+            }
+
             return await this.realizarPeticion(`${this.baseUrl}/items/${index}`, {
                 method: 'DELETE'
             });
