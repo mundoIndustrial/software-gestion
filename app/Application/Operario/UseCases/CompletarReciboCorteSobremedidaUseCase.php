@@ -65,7 +65,7 @@ class CompletarReciboCorteSobremedidaUseCase
 
             // Ejecutar en transacción
             $this->workflow->runInTransaction(function () use ($recibo, $nombreOperario) {
-                // 1. Crear registro en prenda_recibo_completado
+                // 1. Crear registro en prenda_recibo_completado para Corte
                 $this->workflow->upsertCompletado(
                     idRecibo: (int) $recibo->id,
                     idParcial: null,
@@ -78,7 +78,16 @@ class CompletarReciboCorteSobremedidaUseCase
                 $recibo->area = 'Costura';
                 $this->recibos->save($recibo);
 
-                // 3. Crear proceso de costura si no existe
+                // 3. Crear registro en prenda_recibo_completado para Costura
+                $this->workflow->upsertCompletado(
+                    idRecibo: (int) $recibo->id,
+                    idParcial: null,
+                    area: 'Costura',
+                    numeroRecibo: (string) ($recibo->consecutivo_actual ?? 0),
+                    nombreOperario: $nombreOperario
+                );
+
+                // 4. Crear proceso de costura si no existe
                 if (!empty($recibo->prenda_id)) {
                     $numeroPedido = $this->workflow->findNumeroPedidoByPrendaId((int) $recibo->prenda_id);
 
