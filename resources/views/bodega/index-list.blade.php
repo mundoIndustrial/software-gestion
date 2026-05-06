@@ -130,22 +130,36 @@
                                             if (!empty($rawNovedades)) {
                                                 $decoded = json_decode($rawNovedades, true);
                                                 if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                                                    // Si es JSON, filtrar por rol 'asesor' si el campo existe
+                                                    // Si es JSON, filtrar por rol 'asesor' y por contenido (prenda o epp)
                                                     $novedades = array_filter($decoded, function($nov) {
                                                         $rol = strtolower($nov['rol'] ?? $nov['role'] ?? '');
-                                                        return $rol === 'asesor' || $rol === 'asesora';
+                                                        $esAsesor = ($rol === 'asesor' || $rol === 'asesora');
+                                                        
+                                                        $texto = strtolower($nov['texto'] ?? $nov['text'] ?? $nov['description'] ?? '');
+                                                        $esPrendaOEpp = str_contains($texto, 'prenda') || str_contains($texto, 'epp');
+                                                        $esActualizacion = str_contains($texto, 'modific') || str_contains($texto, 'agreg') || str_contains($texto, 'homolog');
+                                                        
+                                                        return $esAsesor && $esPrendaOEpp && $esActualizacion;
                                                     });
                                                 } else {
-                                                    // Es texto plano. Mostrar todas las novedades (no filtrar por rol)
-                                                    // porque el formato es [Usuario - Fecha] Texto
+                                                    // Es texto plano. El formato suele ser: Rol-Nombre-Fecha - Accion
                                                     $entries = explode("\n\n", $rawNovedades);
-                                                    $novedades = array_filter(array_map(function($entry) {
+                                                    foreach ($entries as $entry) {
                                                         $trimmed = trim($entry);
-                                                        return !empty($trimmed) ? ['texto' => $trimmed] : null;
-                                                    }, $entries));
+                                                        if (empty($trimmed)) continue;
+                                                        
+                                                        $lowerEntry = strtolower($trimmed);
+                                                        $esAsesor = str_contains($lowerEntry, 'asesor') || str_contains($lowerEntry, 'asesora');
+                                                        $esPrendaOEpp = str_contains($lowerEntry, 'prenda') || str_contains($lowerEntry, 'epp');
+                                                        $esActualizacion = str_contains($lowerEntry, 'modific') || str_contains($lowerEntry, 'agreg') || str_contains($lowerEntry, 'homolog');
+                                                        
+                                                        if ($esAsesor && $esPrendaOEpp && $esActualizacion) {
+                                                            $novedades[] = ['texto' => $trimmed];
+                                                        }
+                                                    }
                                                 }
                                             }
-                                            // Reindexar el array para asegurar que sea un array JSON válido
+                                            // Reindexar el array
                                             $novedades = array_values($novedades);
                                             $cantidadNovedades = count($novedades);
                                         @endphp
@@ -607,25 +621,50 @@
             try {
                 let decoded = typeof rawNov === 'string' ? JSON.parse(rawNov) : rawNov;
                 if (Array.isArray(decoded)) {
-                    // Si es JSON, filtrar por rol asesor
+                    // Si es JSON, filtrar por rol asesor y contenido
                     novedades = decoded.filter(nov => {
                         let rol = (nov.rol || nov.role || '').toLowerCase();
-                        return rol === 'asesor' || rol === 'asesora';
+                        let esAsesor = (rol === 'asesor' || rol === 'asesora');
+                        
+                        let texto = (nov.texto || nov.text || nov.description || '').toLowerCase();
+                        let esPrendaOEpp = texto.includes('prenda') || texto.includes('epp');
+                        let esActualizacion = texto.includes('modific') || texto.includes('agreg') || texto.includes('homolog');
+                        
+                        return esAsesor && esPrendaOEpp && esActualizacion;
                     });
                 } else {
-                    // Texto plano: separar por \n\n y mostrar todas las novedades
-                    // (no filtrar por rol porque el formato no lo incluye)
+                    // Texto plano: separar por \n\n y filtrar
                     let entries = rawNov.split(/\n\n+/);
-                    novedades = entries
-                        .filter(entry => entry.trim().length > 0)
-                        .map(entry => ({texto: entry.trim()}));
+                    entries.forEach(entry => {
+                        let trimmed = entry.trim();
+                        if (trimmed.length === 0) return;
+                        
+                        let lowerEntry = trimmed.toLowerCase();
+                        let esAsesor = lowerEntry.includes('asesor') || lowerEntry.includes('asesora');
+                        let esPrendaOEpp = lowerEntry.includes('prenda') || lowerEntry.includes('epp');
+                        let esActualizacion = lowerEntry.includes('modific') || lowerEntry.includes('agreg') || lowerEntry.includes('homolog');
+                        
+                        if (esAsesor && esPrendaOEpp && esActualizacion) {
+                            novedades.push({texto: trimmed});
+                        }
+                    });
                 }
             } catch(e) { 
                 // Si falla el parseo, tratar como texto plano
                 let entries = rawNov.split(/\n\n+/);
-                novedades = entries
-                    .filter(entry => entry.trim().length > 0)
-                    .map(entry => ({texto: entry.trim()}));
+                entries.forEach(entry => {
+                    let trimmed = entry.trim();
+                    if (trimmed.length === 0) return;
+                    
+                    let lowerEntry = trimmed.toLowerCase();
+                    let esAsesor = lowerEntry.includes('asesor') || lowerEntry.includes('asesora');
+                    let esPrendaOEpp = lowerEntry.includes('prenda') || lowerEntry.includes('epp');
+                    let esActualizacion = lowerEntry.includes('modific') || lowerEntry.includes('agreg') || lowerEntry.includes('homolog');
+                    
+                    if (esAsesor && esPrendaOEpp && esActualizacion) {
+                        novedades.push({texto: trimmed});
+                    }
+                });
             }
         }
         return novedades;

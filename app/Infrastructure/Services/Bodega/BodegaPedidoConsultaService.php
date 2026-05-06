@@ -63,7 +63,7 @@ class BodegaPedidoConsultaService
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '!=', '')
             ->pluck('numero_pedido')
-            ->filter(fn ($n) => !empty($n))
+            ->filter(fn($n) => !empty($n))
             ->unique()
             ->values();
 
@@ -94,7 +94,7 @@ class BodegaPedidoConsultaService
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '!=', '')
             ->pluck('numero_pedido')
-            ->filter(fn ($n) => !empty($n))
+            ->filter(fn($n) => !empty($n))
             ->unique()
             ->values();
 
@@ -120,7 +120,7 @@ class BodegaPedidoConsultaService
             $todosPendientes = $estadosPedido['todos_pendientes'];
 
             $userId = auth()->id();
-            
+
             // Usar el ID del pedido de producción para las tablas de estado
             $targetPedidoId = $pedidoProduccion?->id ?? $primerPedido->pedido_produccion_id ?? $primerPedido->id;
 
@@ -329,7 +329,7 @@ class BodegaPedidoConsultaService
     private function filtrarPedidosAnulados(Collection $pedidos): Collection
     {
         $numerosPedido = $pedidos->pluck('numero_pedido')
-            ->filter(fn ($n) => !empty($n))
+            ->filter(fn($n) => !empty($n))
             ->unique()
             ->values();
 
@@ -347,7 +347,7 @@ class BodegaPedidoConsultaService
             return $pedidos;
         }
 
-        return $pedidos->reject(fn ($p) => $numerosAnulados->contains($p->numero_pedido))->values();
+        return $pedidos->reject(fn($p) => $numerosAnulados->contains($p->numero_pedido))->values();
     }
 
     private function filtrarPedidosOcultosUsuario(Collection $pedidos): Collection
@@ -372,7 +372,7 @@ class BodegaPedidoConsultaService
             ->whereIn('id', $pedidosOcultosIds)
             ->whereNotNull('numero_pedido')
             ->pluck('numero_pedido')
-            ->filter(fn ($numero) => $numero !== null && trim((string) $numero) !== '')
+            ->filter(fn($numero) => $numero !== null && trim((string) $numero) !== '')
             ->unique()
             ->values();
 
@@ -381,7 +381,7 @@ class BodegaPedidoConsultaService
         }
 
         return $pedidos
-            ->reject(fn ($pedido) => $numerosPedidoOcultos->contains($pedido->numero_pedido))
+            ->reject(fn($pedido) => $numerosPedidoOcultos->contains($pedido->numero_pedido))
             ->values();
     }
 
@@ -551,15 +551,22 @@ class BodegaPedidoConsultaService
             ->groupBy('numero_pedido')
             ->pluck('ultima_actualizacion', 'numero_pedido');
 
-        // Query 6: Últimas actualizaciones de Asesores (Anexos)
+        // Query 6: Últimas actualizaciones de Asesores (Anexos de prendas y EPP)
+        // Filtramos por el rol de asesor (ID 5 según la base de datos)
         $actualizacionesAsesorMap = DB::table('pedido_anexos_historial')
             ->join('pedidos_produccion', 'pedidos_produccion.id', '=', 'pedido_anexos_historial.pedido_produccion_id')
+            ->join('users', 'users.id', '=', 'pedido_anexos_historial.created_by')
+            ->whereRaw('JSON_CONTAINS(users.roles_ids, \'5\')') // ID 5 = Asesor
             ->whereIn('pedidos_produccion.numero_pedido', $numerosPedidos)
+            ->where(function ($q) {
+                $q->where('pedido_anexos_historial.descripcion', 'LIKE', '%prenda%')
+                    ->orWhere('pedido_anexos_historial.descripcion', 'LIKE', '%epp%');
+            })
             ->select('pedidos_produccion.numero_pedido', DB::raw('MAX(pedido_anexos_historial.created_at) as ultima_actualizacion'))
             ->groupBy('pedidos_produccion.numero_pedido')
             ->pluck('ultima_actualizacion', 'numero_pedido');
 
-        // Query 7: Últimas actualizaciones de EPP
+        // Query 7: Últimas actualizaciones de EPP (Homologaciones)
         $actualizacionesEppMap = DB::table('pedido_epp')
             ->join('pedidos_produccion', 'pedidos_produccion.id', '=', 'pedido_epp.pedido_produccion_id')
             ->whereIn('pedidos_produccion.numero_pedido', $numerosPedidos)
@@ -571,32 +578,32 @@ class BodegaPedidoConsultaService
         // Procesar datos con batch-loaded información (sin queries adicionales)
         $pedidosPorPagina = [];
         foreach ($numerosPedidos as $numeroPedido) {
-            $pedidosDelNumero = $pedidosFiltrados->filter(fn ($p) => $p->numero_pedido === $numeroPedido)->values();
+            $pedidosDelNumero = $pedidosFiltrados->filter(fn($p) => $p->numero_pedido === $numeroPedido)->values();
             if ($pedidosDelNumero->isNotEmpty()) {
                 $primerPedido = $pedidosDelNumero->first();
                 $pedidoProduccion = $producciones->get($numeroPedido);
                 $estadosPedido = $estadosPorPedido[$numeroPedido] ?? [];
 
                 $targetPedidoId = $pedidoProduccion?->id ?? $primerPedido->pedido_produccion_id;
-                
+
                 $vistoPorUsuario = $vistosMap->get($targetPedidoId);
                 $pedidoRevisado = $revisadosMap->get($targetPedidoId);
-                
-                // Combinar la fecha de actualización de bodega, asesores (anexos) y EPP
-                $fechaBodega = $actualizacionesBodegaMap->get($numeroPedido);
+
+                // Combinar la fecha de actualización de asesores (anexos) y EPP
+                // IMPORTANTE: Ignoramos fechaBodega para que el resaltado rojo solo sea por novedades externas (Asesor)
                 $fechaAsesor = $actualizacionesAsesorMap->get($numeroPedido);
                 $fechaEpp = $actualizacionesEppMap->get($numeroPedido);
-                
-                $fechaActualizacion = $fechaBodega;
-                
+
+                $fechaActualizacion = null;
+
                 if ($fechaAsesor && (!$fechaActualizacion || $fechaAsesor > $fechaActualizacion)) {
                     $fechaActualizacion = $fechaAsesor;
                 }
-                
+
                 if ($fechaEpp && (!$fechaActualizacion || $fechaEpp > $fechaActualizacion)) {
                     $fechaActualizacion = $fechaEpp;
                 }
-                
+
                 $fechaActualizacion = $fechaActualizacion ?? $primerPedido->created_at;
 
                 $revisadoVigente = false;
@@ -607,12 +614,12 @@ class BodegaPedidoConsultaService
                         $tsActualizacion = $fechaActualizacion ? Carbon::parse($fechaActualizacion)->timestamp : null;
                         // Usar updated_at en lugar de created_at para obtener la fecha más reciente de revisión
                         $tsRevisado = $pedidoRevisado->updated_at ? Carbon::parse($pedidoRevisado->updated_at)->timestamp : null;
-                        
+
                         $revisadoVigente = $tsActualizacion !== null && $tsRevisado !== null
                             ? $tsRevisado >= $tsActualizacion
                             : true;
                         $tieneCambiosNuevos = !$revisadoVigente;
-                        
+
                         // Log para debugging
                         if ($tieneCambiosNuevos) {
                             \Log::debug('[procesarVistaLista] Cambios nuevos detectados', [
@@ -673,28 +680,33 @@ class BodegaPedidoConsultaService
         $usuarioId = auth()->id();
 
         // Calcular estados
-        $estadosPedido = $this->estadoCalculator->calcular((string)$numeroPedido);
+        $estadosPedido = $this->estadoCalculator->calcular((string) $numeroPedido);
 
         // Verificado/Revisado
         $pedidoRevisado = PedidoRevisado::where('pedido_id', $pedidoId)->first();
 
-        // Fechas de actualización
-        $fechaBodega = DB::table('bodega_detalles_talla')
-            ->where('numero_pedido', $numeroPedido)
-            ->max('updated_at');
-        
+        // Fechas de actualización (Filtrado por rol Asesor y palabras clave relevantes)
         $fechaAsesor = DB::table('pedido_anexos_historial')
+            ->join('users', 'users.id', '=', 'pedido_anexos_historial.created_by')
+            ->whereRaw('JSON_CONTAINS(users.roles_ids, \'5\')') // ID 5 = Asesor
             ->where('pedido_produccion_id', $pedidoId)
-            ->max('created_at');
-            
+            ->where(function ($q) {
+                $q->where('pedido_anexos_historial.descripcion', 'LIKE', '%prenda%')
+                    ->orWhere('pedido_anexos_historial.descripcion', 'LIKE', '%epp%');
+            })
+            ->max('pedido_anexos_historial.created_at');
+
         $fechaEpp = DB::table('pedido_epp')
             ->where('pedido_produccion_id', $pedidoId)
             ->whereNull('deleted_at')
             ->max('created_at');
 
-        $fechaActualizacion = $fechaBodega;
-        if ($fechaAsesor && (!$fechaActualizacion || $fechaAsesor > $fechaActualizacion)) $fechaActualizacion = $fechaAsesor;
-        if ($fechaEpp && (!$fechaActualizacion || $fechaEpp > $fechaActualizacion)) $fechaActualizacion = $fechaEpp;
+        // IMPORTANTE: Ignoramos fechaBodega para que el resaltado sea solo por cambios de Asesor
+        $fechaActualizacion = null;
+        if ($fechaAsesor && (!$fechaActualizacion || $fechaAsesor > $fechaActualizacion))
+            $fechaActualizacion = $fechaAsesor;
+        if ($fechaEpp && (!$fechaActualizacion || $fechaEpp > $fechaActualizacion))
+            $fechaActualizacion = $fechaEpp;
         $fechaActualizacion = $fechaActualizacion ?? $pedidoProduccion->created_at;
 
         // Cambios nuevos
@@ -706,7 +718,8 @@ class BodegaPedidoConsultaService
                 $tsRevisado = $pedidoRevisado->created_at ? Carbon::parse($pedidoRevisado->created_at)->timestamp : null;
                 $revisadoVigente = $tsActualizacion !== null && $tsRevisado !== null ? $tsRevisado >= $tsActualizacion : true;
                 $tieneCambiosNuevos = !$revisadoVigente;
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
         }
 
         return [
