@@ -364,9 +364,10 @@
                     : null,
                 es_sin_cotizacion: datos.es_sin_cotizacion,
                 tipo_cotizacion: datos.tipo_cotizacion || null,
-                logo: datos.logo || null,
-                reflectivo: datos.reflectivo || null,
-                prendas: (datos.prendas || []).map(p => ({
+	                logo: datos.logo || null,
+	                reflectivo: datos.reflectivo || null,
+	                audit_payload: datos.audit_payload || null,
+	                prendas: (datos.prendas || []).map(p => ({
                     tipo: p.tipo,
                     nombre_producto: p.nombre_producto,
                     descripcion: p.descripcion,
@@ -599,9 +600,24 @@
 
 	        // 2. PREPARAR DATOS
 	        const datos = window.prepararDatosParaEnvio();
+	        if (typeof window.serializarPedidoSeguro === 'function') {
+	            try {
+	                const serializadoSeguro = window.serializarPedidoSeguro(itemsOrdenados);
+	                if (serializadoSeguro && Array.isArray(serializadoSeguro.items)) {
+	                    datos.prendas = serializadoSeguro.prendas || [];
+	                    datos.epps = serializadoSeguro.epps || [];
+	                    datos.items = serializadoSeguro.items || [];
+	                    datos.audit_payload = serializadoSeguro.audit_payload || null;
+	                }
+	            } catch (error) {
+	                console.error('[procesarSubmitFormulario] Error serializando pedido de forma segura:', error);
+	                alert('No se puede enviar el pedido por inconsistencias de serialización. Revisa consola.');
+	                return Promise.reject(error);
+	            }
+	        }
 
 
-        // 3. ENVIAR
+	        // 3. ENVIAR
         return window.enviarDatosAlServidor(datos, endpoint)
             .then(response => {
                 // Redirigir a lista de pedidos después de 2 segundos

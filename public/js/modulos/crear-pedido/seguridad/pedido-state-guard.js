@@ -200,7 +200,121 @@
         return true;
     }
 
+    function stableStringify(obj) {
+        if (obj === null || typeof obj !== "object") {
+            return JSON.stringify(obj);
+        }
+        if (Array.isArray(obj)) {
+            return "[" + obj.map(stableStringify).join(",") + "]";
+        }
+        var keys = Object.keys(obj).sort();
+        var parts = keys.map(function (k) {
+            return JSON.stringify(k) + ":" + stableStringify(obj[k]);
+        });
+        return "{" + parts.join(",") + "}";
+    }
+
+    function hashDjb2(str) {
+        var hash = 5381;
+        for (var i = 0; i < str.length; i++) {
+            hash = ((hash << 5) + hash) + str.charCodeAt(i);
+            hash = hash >>> 0;
+        }
+        return hash.toString(16);
+    }
+
+    function cleanUndefined(input) {
+        if (Array.isArray(input)) {
+            return input.map(cleanUndefined);
+        }
+        if (!input || typeof input !== "object") {
+            return input;
+        }
+        var out = {};
+        Object.keys(input).forEach(function (k) {
+            if (input[k] !== undefined) {
+                out[k] = cleanUndefined(input[k]);
+            }
+        });
+        return out;
+    }
+
+    function sanitizeItem(item, idx) {
+        var tipo = item.tipo || (item.epp_id ? "epp" : "prenda");
+        var out = cleanUndefined(Object.assign({}, item, { tipo: tipo }));
+
+        if (!out._local_id) {
+            throw new Error("Item sin _local_id en indice " + idx);
+        }
+        if (tipo === "epp" && !out.epp_id) {
+            throw new Error("EPP sin epp_id en indice " + idx);
+        }
+        return out;
+    }
+
+    function mapPrendaPayload(item) {
+        return {
+            tipo: "prenda",
+            _local_id: item._local_id,
+            nombre_producto: item.nombre_producto || item.nombre_prenda || item.nombre || "",
+            descripcion: item.descripcion || "",
+            genero: item.genero || "",
+            cantidades: item.cantidades || item.cantidadesPorTalla || item.cantidad_talla || {},
+            telas: Array.isArray(item.telas) ? item.telas : (Array.isArray(item.telasAgregadas) ? item.telasAgregadas : []),
+            imagenes: Array.isArray(item.imagenes) ? item.imagenes : [],
+            procesos: item.procesos || {},
+            variaciones: item.variaciones || item.variantes || {},
+            origen: item.origen || "bodega"
+        };
+    }
+
+    function mapEppPayload(item) {
+        return {
+            tipo: "epp",
+            _local_id: item._local_id,
+            epp_id: item.epp_id || null,
+            pedido_epp_id: item.pedido_epp_id || item.pedidoEppId || null,
+            nombre_epp: item.nombre_epp || item.nombre_completo || item.nombre || "",
+            categoria: item.categoria || "",
+            cantidad: item.cantidad || 1,
+            observaciones: item.observaciones || null,
+            imagenes: Array.isArray(item.imagenes) ? item.imagenes : []
+        };
+    }
+
+    function serializarPedidoSeguro(items) {
+        var list = Array.isArray(items) ? items : [];
+        var sane = list.map(function (it, idx) { return sanitizeItem(it, idx); });
+
+        var prendas = sane
+            .filter(function (it) { return it.tipo !== "epp"; })
+            .map(mapPrendaPayload);
+
+        var epps = sane
+            .filter(function (it) { return it.tipo === "epp"; })
+            .map(mapEppPayload);
+
+        var payloadBase = {
+            prendas: prendas,
+            epps: epps,
+            items: prendas.concat(epps)
+        };
+        var hash = hashDjb2(stableStringify(payloadBase));
+
+        return {
+            prendas: prendas,
+            epps: epps,
+            items: prendas.concat(epps),
+            audit_payload: {
+                hash: hash,
+                generated_at: new Date().toISOString(),
+                total_items: sane.length
+            }
+        };
+    }
+
     window.hardResetPedidoState = hardResetPedidoState;
     window.sessionConsistencyCheck = sessionConsistencyCheck;
     window.eliminarItemPedidoSeguro = eliminarItemPedidoSeguro;
+    window.serializarPedidoSeguro = serializarPedidoSeguro;
 })();
