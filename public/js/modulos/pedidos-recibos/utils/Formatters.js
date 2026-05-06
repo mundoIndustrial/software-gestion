@@ -829,11 +829,10 @@ export class Formatters {
     /**
      * Preserva formato de texto libre:
      * - Saltos de línea -> <br>
-     * - Espacios múltiples -> &nbsp; (mantiene columnas por espacios)
+     * - Mantiene espacios normales para flujo natural del párrafo
      */
     static _formatearTextoMonoespaciadoHTML(texto) {
         return String(texto ?? '')
-            .replace(/ /g, '&nbsp;')
             .replace(/\r?\n/g, '<br>');
     }
 

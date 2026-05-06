@@ -230,14 +230,6 @@
     width: 100%;
     text-align: left;
     white-space: normal;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-}
-
-#descripcion-text * {
-    max-width: 100%;
-    overflow-wrap: anywhere;
-    word-break: break-word;
 }
 
 .order-descripcion {
