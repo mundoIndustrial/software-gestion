@@ -85,7 +85,7 @@ final class PedidoTableRowPresenter
                 }
 
                 $restantes = 0;
-                $cursor = $hoy->copy(); // incluir hoy en el conteo para que el descuento empiece maÃ±ana
+                $cursor = $hoy->copy()->addDay(); // contar desde mañana (no incluir hoy)
 
                 while ($cursor->lte($fechaObjetivo)) {
                     if ($cursor->isBusinessDay()) {

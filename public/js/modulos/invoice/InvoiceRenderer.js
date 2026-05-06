@@ -145,7 +145,7 @@ class InvoiceRenderer {
                         </div>
                         <div style="flex: 1; font-size: 11px;">
                             <div style="font-weight: 700; color: #2c3e50; margin-bottom: 3px; line-height: 1.3;">${prenda.nombre}${prenda.de_bodega ? ' <span style="color: #ea580c; font-weight: bold;">- SE SACA DE BODEGA</span>' : ''}</div>
-                            ${descripcionHTML ? `<div style="color: #666; font-size: 11px; line-height: 1.3; white-space: pre; overflow-x: auto; font-family: Consolas, 'Courier New', monospace;">${descripcionHTML}</div>` : ''}
+                            ${descripcionHTML ? `<div style="color: #666; font-size: 11px; line-height: 1.3; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; max-width: 100%; font-family: Consolas, 'Courier New', monospace;">${descripcionHTML}</div>` : ''}
                         </div>
                     </div>
 
