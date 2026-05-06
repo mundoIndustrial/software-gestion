@@ -58,49 +58,7 @@
         return {
             valido: errores.length === 0,
             errores: errores
-	        };
-	        const storePayload = (typeof window.getPedidoSessionStore === 'function')
-	            ? window.getPedidoSessionStore().toPayload()
-	            : null;
-	        const usarStoreBase = !!(storePayload && Array.isArray(storePayload.items) && storePayload.items.length > 0);
-
-	        if (usarStoreBase) {
-	            const prendasStore = Array.isArray(storePayload.prendas) ? storePayload.prendas : [];
-	            const eppsStore = Array.isArray(storePayload.epps) ? storePayload.epps : [];
-
-	            datos.prendas = prendasStore.map((prenda) => ({
-	                tipo: 'prenda',
-	                _local_id: prenda._local_id || null,
-	                nombre_producto: prenda.nombre_producto || prenda.nombre_prenda || prenda.nombre || '',
-	                descripcion: prenda.descripcion || '',
-	                de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1,
-	                genero: prenda.genero || '',
-	                cantidades: prenda.cantidades || prenda.cantidad_talla || prenda.cantidadesPorTalla || {},
-	                imagenes: Array.isArray(prenda.imagenes) ? prenda.imagenes : [],
-	                telas: Array.isArray(prenda.telas) ? prenda.telas : (Array.isArray(prenda.telasAgregadas) ? prenda.telasAgregadas : []),
-	                procesos: prenda.procesos || {},
-	                variaciones: prenda.variaciones || prenda.variantes || {},
-	                origen: prenda.origen || 'bodega'
-	            }));
-
-	            datos.epps = eppsStore.map((epp) => ({
-	                tipo: 'epp',
-	                _local_id: epp._local_id || null,
-	                epp_id: epp.epp_id || null,
-	                pedido_epp_id: epp.pedido_epp_id || epp.pedidoEppId || null,
-	                nombre_epp: epp.nombre_epp || epp.nombre_completo || epp.nombre || '',
-	                categoria: epp.categoria || '',
-	                cantidad: epp.cantidad || 1,
-	                observaciones: epp.observaciones || null,
-	                imagenes: Array.isArray(epp.imagenes) ? epp.imagenes : []
-	            }));
-
-	            datos.items = [...datos.prendas, ...datos.epps];
-	            console.debug('[prepararDatosParaEnvio] Fuente primaria: PedidoSessionStore', {
-	                prendas: datos.prendas.length,
-	                epps: datos.epps.length
-	            });
-	        }
+        };
     };
 
     /**
@@ -157,6 +115,49 @@
             reflectivo: null
         };
 
+        const storePayload = (typeof window.getPedidoSessionStore === 'function')
+            ? window.getPedidoSessionStore().toPayload()
+            : null;
+        const usarStoreBase = !!(storePayload && Array.isArray(storePayload.items) && storePayload.items.length > 0);
+
+        if (usarStoreBase) {
+            const prendasStore = Array.isArray(storePayload.prendas) ? storePayload.prendas : [];
+            const eppsStore = Array.isArray(storePayload.epps) ? storePayload.epps : [];
+
+            datos.prendas = prendasStore.map((prenda) => ({
+                tipo: 'prenda',
+                uid: prenda.uid || prenda._local_id || prenda.local_id || null,
+                local_id: prenda.local_id || prenda._local_id || prenda.uid || null,
+                _local_id: prenda._local_id || prenda.local_id || prenda.uid || null,
+                nombre_producto: prenda.nombre_producto || prenda.nombre_prenda || prenda.nombre || '',
+                descripcion: prenda.descripcion || '',
+                de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1,
+                genero: prenda.genero || '',
+                cantidades: prenda.cantidades || prenda.cantidad_talla || prenda.cantidadesPorTalla || {},
+                imagenes: Array.isArray(prenda.imagenes) ? prenda.imagenes : [],
+                telas: Array.isArray(prenda.telas) ? prenda.telas : (Array.isArray(prenda.telasAgregadas) ? prenda.telasAgregadas : []),
+                procesos: prenda.procesos || {},
+                variaciones: prenda.variaciones || prenda.variantes || {},
+                origen: prenda.origen || 'bodega'
+            }));
+
+            datos.epps = eppsStore.map((epp) => ({
+                tipo: 'epp',
+                uid: epp.uid || epp._local_id || epp.local_id || null,
+                local_id: epp.local_id || epp._local_id || epp.uid || null,
+                _local_id: epp._local_id || epp.local_id || epp.uid || null,
+                epp_id: epp.epp_id || null,
+                pedido_epp_id: epp.pedido_epp_id || epp.pedidoEppId || null,
+                nombre_epp: epp.nombre_epp || epp.nombre_completo || epp.nombre || '',
+                categoria: epp.categoria || '',
+                cantidad: epp.cantidad || 1,
+                observaciones: epp.observaciones || null,
+                imagenes: Array.isArray(epp.imagenes) ? epp.imagenes : []
+            }));
+
+            datos.items = [...datos.prendas, ...datos.epps];
+        }
+
         // ========== RECOPILACIÓN DE PRENDAS DEL GESTOR ==========
         // FIX: Si gestionItemsUI está disponible (modo edición de borrador), usarlo como fuente PRIMARIA
         // PERO COMBINAR con prendas nuevas de gestorPrendaSinCotizacion (prendas agregadas sin guardar borrador)
@@ -169,6 +170,9 @@
             prendasEdicion.forEach((prenda, index) => {
                 const prendaParaEnviar = {
                     tipo: 'prenda',  //  AGREGADO: identificador de tipo
+                    uid: prenda.uid || prenda._local_id || prenda.local_id || null,
+                    local_id: prenda.local_id || prenda._local_id || prenda.uid || null,
+                    _local_id: prenda._local_id || prenda.local_id || prenda.uid || null,
                     nombre_producto: prenda.nombre_producto || prenda.nombre_prenda || '',
                     descripcion: prenda.descripcion || '',
                     de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1,  //  AGREGADO: origen (bodega=1, confección=0)
@@ -204,6 +208,9 @@
                 prendasNuevasDelGestor.forEach((prenda, index) => {
                     const prendaParaEnviar = {
                         tipo: 'prenda',
+                        uid: prenda.uid || prenda._local_id || prenda.local_id || null,
+                        local_id: prenda.local_id || prenda._local_id || prenda.uid || null,
+                        _local_id: prenda._local_id || prenda.local_id || prenda.uid || null,
                         nombre_producto: prenda.nombre_producto || prenda.nombre_prenda || '',
                         descripcion: prenda.descripcion || '',
                         de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1,
@@ -233,6 +240,9 @@
             prendas.forEach((prenda, index) => {
                 const prendaParaEnviar = {
                     tipo: 'prenda',  //  AGREGADO: identificador de tipo
+                    uid: prenda.uid || prenda._local_id || prenda.local_id || null,
+                    local_id: prenda.local_id || prenda._local_id || prenda.uid || null,
+                    _local_id: prenda._local_id || prenda.local_id || prenda.uid || null,
                     nombre_producto: prenda.nombre_producto || '',
                     descripcion: prenda.descripcion || '',
                     de_bodega: prenda.de_bodega !== undefined ? prenda.de_bodega : 1,  //  AGREGADO: origen (bodega=1, confección=0)
@@ -270,6 +280,9 @@
                 const prenda = {
                     index: index,
                     tipo: 'prenda',  //  AGREGADO: identificador de tipo
+                    uid: null,
+                    local_id: null,
+                    _local_id: null,
                     nombre_producto: card.querySelector('.prenda-nombre')?.value || '',
                     descripcion: card.querySelector('.prenda-descripcion')?.value || '',
                     de_bodega: card.querySelector(`input[name="de_bodega[${index}]"]`)?.checked ? 1 : 0,  //  AGREGADO: origen
@@ -355,6 +368,9 @@
 	            if (eppsDelPedido.length > 0) {
 	                datos.epps = eppsDelPedido.map(epp => ({
 	                    tipo: 'epp',
+	                    uid: epp.uid || epp._local_id || epp.local_id || null,
+	                    local_id: epp.local_id || epp._local_id || epp.uid || null,
+	                    _local_id: epp._local_id || epp.local_id || epp.uid || null,
 	                    epp_id: epp.epp_id,
 	                    pedido_epp_id: epp.pedido_epp_id || epp.pedidoEppId || null,
 	                    cantidad: epp.cantidad || 1,
@@ -412,7 +428,10 @@
 	                reflectivo: datos.reflectivo || null,
 	                audit_payload: datos.audit_payload || null,
 	                prendas: (datos.prendas || []).map(p => ({
+                    uid: p.uid || p._local_id || p.local_id || null,
+                    local_id: p.local_id || p._local_id || p.uid || null,
                     tipo: p.tipo,
+                    _local_id: p._local_id || p.local_id || p.uid || null,
                     nombre_producto: p.nombre_producto,
                     descripcion: p.descripcion,
                     genero: p.genero,
@@ -420,6 +439,9 @@
                     telas: (p.telas || []).map(t => ({tela: t.nombre_tela || t.tela, color: t.color, referencia: t.referencia}))
                 })),
                 epps: (datos.epps || []).map(e => ({
+                    uid: e.uid || e._local_id || e.local_id || null,
+                    local_id: e.local_id || e._local_id || e.uid || null,
+                    _local_id: e._local_id || e.local_id || e.uid || null,
                     epp_id: e.epp_id,
                     cantidad: e.cantidad,
                     observaciones: e.observaciones,
@@ -450,6 +472,9 @@
             if (datos.items && Array.isArray(datos.items)) {
                 datos.items.forEach((item, itemIndex) => {
                     // Datos básicos del item
+                    formData.append(`items[${itemIndex}][uid]`, item.uid || item._local_id || item.local_id || '');
+                    formData.append(`items[${itemIndex}][local_id]`, item.local_id || item._local_id || item.uid || '');
+                    formData.append(`items[${itemIndex}][_local_id]`, item._local_id || item.local_id || item.uid || '');
                     formData.append(`items[${itemIndex}][tipo]`, item.tipo || '');
                     formData.append(`items[${itemIndex}][nombre_producto]`, item.nombre_producto || '');
                     formData.append(`items[${itemIndex}][descripcion]`, item.descripcion || '');
@@ -551,6 +576,9 @@
             // Agregar EPPs al FormData
             if (datos.epps && Array.isArray(datos.epps)) {
                 datos.epps.forEach((epp, eppIndex) => {
+                    formData.append(`epps[${eppIndex}][uid]`, epp.uid || epp._local_id || epp.local_id || '');
+                    formData.append(`epps[${eppIndex}][local_id]`, epp.local_id || epp._local_id || epp.uid || '');
+                    formData.append(`epps[${eppIndex}][_local_id]`, epp._local_id || epp.local_id || epp.uid || '');
                     formData.append(`epps[${eppIndex}][epp_id]`, epp.epp_id || '');
                     formData.append(`epps[${eppIndex}][cantidad]`, epp.cantidad || 1);
                     if (epp.observaciones) {
@@ -644,6 +672,9 @@
 
 	        // 2. PREPARAR DATOS
 	        const datos = window.prepararDatosParaEnvio();
+	        if (!datos) {
+	            return Promise.reject('prepararDatosParaEnvio returned null');
+	        }
 	        if (typeof window.serializarPedidoSeguro === 'function') {
 	            try {
 	                const serializadoSeguro = window.serializarPedidoSeguro(itemsOrdenados);
@@ -659,6 +690,20 @@
 	                return Promise.reject(error);
 	            }
 	        }
+
+	        console.groupCollapsed('[IDENTIDAD-QA][pre-submit] items');
+	        (datos.items || []).forEach((item, idx) => {
+	            console.log({
+	                idx,
+	                tipo: item.tipo || (item.epp_id ? 'epp' : 'prenda'),
+	                uid: item.uid || null,
+	                _local_id: item._local_id || null,
+	                local_id: item.local_id || null,
+	                epp_id: item.epp_id || null,
+	                nombre: item.nombre || item.nombre_epp || item.nombre_producto || item.nombre_prenda || null
+	            });
+	        });
+	        console.groupEnd();
 
 
 	        // 3. ENVIAR

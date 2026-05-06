@@ -168,6 +168,7 @@ class ActualizarBorradorUseCase
             $localId = trim((string) (
                 $nuevasPrendas[$idx]['local_id']
                 ?? $nuevasPrendas[$idx]['_local_id']
+                ?? $nuevasPrendas[$idx]['uid']
                 ?? ''
             ));
 
@@ -394,7 +395,7 @@ class ActualizarBorradorUseCase
 
         // Validar prendas nuevas por _local_id
         foreach ($nuevasPrendas as $idx => $prendaPayload) {
-            $localId = trim((string) ($prendaPayload['_local_id'] ?? $prendaPayload['local_id'] ?? ''));
+            $localId = trim((string) ($prendaPayload['_local_id'] ?? $prendaPayload['local_id'] ?? $prendaPayload['uid'] ?? ''));
 
             if ($localId === '') {
                 continue;
@@ -428,7 +429,7 @@ class ActualizarBorradorUseCase
         foreach ($epps as $idx => $eppData) {
             $eppId = (int) ($eppData['epp_id'] ?? 0);
             $pedidoEppId = (int) ($eppData['pedido_epp_id'] ?? 0);
-            $eppIdentifier = $eppData['_epp_form_identifier'] ?? null;
+            $eppIdentifier = $eppData['_epp_form_identifier'] ?? $eppData['local_id'] ?? $eppData['_local_id'] ?? $eppData['uid'] ?? null;
 
             // Validar por pedido_epp_id para EPP existentes
             if ($pedidoEppId > 0) {

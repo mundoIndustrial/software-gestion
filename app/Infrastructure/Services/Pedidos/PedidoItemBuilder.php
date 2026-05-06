@@ -60,7 +60,7 @@ class PedidoItemBuilder
         $nombrePrenda = $itemData['nombre_prenda'] ?? 'SIN NOMBRE';
         $this->pedidoTipoPrendaService->asegurarTipo($nombrePrenda);
 
-        $localId = trim((string) ($itemData['_local_id'] ?? $itemData['local_id'] ?? ''));
+        $localId = trim((string) ($itemData['_local_id'] ?? $itemData['local_id'] ?? $itemData['uid'] ?? ''));
         $descripcionOriginal = $itemData['descripcion'] ?? null;
         $descripcionNormalizada = $this->normalizarDescripcionMultilinea($descripcionOriginal);
 
@@ -93,6 +93,8 @@ class PedidoItemBuilder
             'prenda_id' => $prenda->id,
             'pedido_id' => $pedido->id,
             'nombre' => $prenda->nombre_prenda,
+            'local_id' => $prenda->local_id,
+            'local_id_source' => $itemData['_local_id'] ?? $itemData['local_id'] ?? $itemData['uid'] ?? null,
         ]);
 
         return $prenda;

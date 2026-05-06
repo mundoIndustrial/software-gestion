@@ -37,7 +37,13 @@ class PedidoImagenesEppService
                 continue;
             }
 
-            $localId = trim((string) ($eppData['_epp_form_identifier'] ?? ''));
+            $localId = trim((string) (
+                $eppData['local_id']
+                ?? $eppData['_local_id']
+                ?? $eppData['uid']
+                ?? $eppData['_epp_form_identifier']
+                ?? ''
+            ));
 
             // Idempotencia: si ya existe un EPP con este local_id en el pedido, reusar
             $pedidoEpp = null;
@@ -65,7 +71,7 @@ class PedidoImagenesEppService
                 ]);
             }
 
-            $eppIdentifier = $localId !== '' ? $localId : $pedidoEpp->id;
+            $eppIdentifier = $localId !== '' ? $localId : ($eppData['_epp_form_identifier'] ?? $pedidoEpp->id);
             $this->procesarImagenesEpp($request, $pedidoId, $eppIdentifier, $eppData, $pedidoEpp);
         }
     }
@@ -78,7 +84,12 @@ class PedidoImagenesEppService
         ]);
 
         foreach ($epps as $eppData) {
-            $eppIdentifier = $eppData['_epp_form_identifier'] ?? $eppData['pedido_epp_id'] ?? null;
+            $eppIdentifier = $eppData['local_id']
+                ?? $eppData['_local_id']
+                ?? $eppData['uid']
+                ?? $eppData['_epp_form_identifier']
+                ?? $eppData['pedido_epp_id']
+                ?? null;
             $pedidoEpp = $this->obtenerPedidoEppParaImagenes($eppData, $pedidoId);
             if ($pedidoEpp === null) {
                 continue;
@@ -168,7 +179,12 @@ class PedidoImagenesEppService
     {
         $eppId = (int) ($eppData['epp_id'] ?? 0);
         $modo = strtolower(trim((string) ($eppData['modo_imagenes'] ?? '')));
-        $eppIdentifier = $eppData['_epp_form_identifier'] ?? $eppData['pedido_epp_id'] ?? null;
+        $eppIdentifier = $eppData['local_id']
+            ?? $eppData['_local_id']
+            ?? $eppData['uid']
+            ?? $eppData['_epp_form_identifier']
+            ?? $eppData['pedido_epp_id']
+            ?? null;
         $tieneArchivos = $eppIdentifier !== null && $request->hasFile("epps_{$eppIdentifier}_imagenes_0");
 
         if ($modo === '') {

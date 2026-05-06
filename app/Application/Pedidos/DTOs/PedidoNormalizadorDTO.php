@@ -71,7 +71,8 @@ class PedidoNormalizadorDTO
             $procesosNorm = self::normalizarProcesos($prenda['procesos'] ?? []);
 
             return [
-                'uid' => $prenda['uid'] ?? null,
+                'uid' => $prenda['uid'] ?? $prenda['local_id'] ?? $prenda['_local_id'] ?? null,
+                'local_id' => $prenda['local_id'] ?? $prenda['_local_id'] ?? $prenda['uid'] ?? null,
                 'nombre_prenda' => trim($prenda['nombre_prenda'] ?? ''),
                 'descripcion' => self::normalizarTextoMultilinea($prenda['descripcion'] ?? ''),
                 'de_bodega' => $itemTransformer->determinardeBodega($prenda),
@@ -300,7 +301,8 @@ class PedidoNormalizadorDTO
     {
         return array_map(function ($epp) {
             return [
-                'uid' => $epp['uid'] ?? null,
+                'uid' => $epp['uid'] ?? $epp['local_id'] ?? $epp['_local_id'] ?? null,
+                'local_id' => $epp['local_id'] ?? $epp['_local_id'] ?? $epp['uid'] ?? null,
                 'epp_id' => intval($epp['epp_id'] ?? 0),
                 'nombre' => trim($epp['nombre'] ?? $epp['nombre_epp'] ?? ''),
                 'cantidad' => intval($epp['cantidad'] ?? 1),

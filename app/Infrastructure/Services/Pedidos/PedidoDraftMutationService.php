@@ -180,7 +180,7 @@ class PedidoDraftMutationService
         $nuevasPrendasIds = [];
 
         foreach ($nuevasPrendas as $index => $itemData) {
-            $localId = trim((string) ($itemData['_local_id'] ?? $itemData['local_id'] ?? ''));
+            $localId = trim((string) ($itemData['_local_id'] ?? $itemData['local_id'] ?? $itemData['uid'] ?? ''));
 
             // Idempotencia: si ya existe una prenda con este local_id en el pedido, reusar
             if ($localId !== '') {
