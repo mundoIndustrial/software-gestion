@@ -8,6 +8,28 @@ let prendasCotizacion = [];
 let prendasSeleccionadas = [];
 let cotizacionActual = null;
 
+function getPedidoItemsSnapshot() {
+    if (typeof window.getPedidoSessionStore === 'function') {
+        const store = window.getPedidoSessionStore();
+        if (store && typeof store.snapshot === 'function') {
+            return store.snapshot() || [];
+        }
+    }
+    return window.itemsPedido || [];
+}
+
+function addPedidoItemSeguro(item) {
+    if (typeof window.getPedidoSessionStore === 'function') {
+        const store = window.getPedidoSessionStore();
+        if (store && typeof store.addItem === 'function') {
+            return !!store.addItem(item);
+        }
+    }
+    if (!window.itemsPedido) window.itemsPedido = [];
+    window.itemsPedido.push(item);
+    return true;
+}
+
 /**
  * Abrir modal con prendas de cotización
  */
@@ -345,7 +367,7 @@ window.agregarPrendasSeleccionadas = function() {
         // REGLA DE SPLIT: Si tiene procesos, crear 2 ítems
         if (procesos.length > 0) {
             // ÍTEM 1: Prenda BASE (sin procesos)
-            window.itemsPedido.push({
+            addPedidoItemSeguro({
                 tipo: 'cotizacion',
                 id: cotizacionActual.id,
                 numero: cotizacionActual.numero_cotizacion,
@@ -359,7 +381,7 @@ window.agregarPrendasSeleccionadas = function() {
             });
             
             // ÍTEM 2: Prenda PROCESO (con procesos)
-            window.itemsPedido.push({
+            addPedidoItemSeguro({
                 tipo: 'cotizacion',
                 id: cotizacionActual.id,
                 numero: cotizacionActual.numero_cotizacion,
@@ -375,7 +397,7 @@ window.agregarPrendasSeleccionadas = function() {
 
         } else {
             // Sin procesos: 1 solo ítem
-            window.itemsPedido.push({
+            addPedidoItemSeguro({
                 tipo: 'cotizacion',
                 id: cotizacionActual.id,
                 numero: cotizacionActual.numero_cotizacion,
@@ -443,15 +465,16 @@ function renderizarItemsCotizacionEnDOM() {
         return;
     }
     
-    if (!window.itemsPedido || window.itemsPedido.length === 0) {
+    const itemsPedido = getPedidoItemsSnapshot();
+    if (!itemsPedido || itemsPedido.length === 0) {
         console.warn(' No hay items para renderizar');
         return;
     }
     
-    console.log(' Renderizando', window.itemsPedido.length, 'items en el DOM');
+    console.log(' Renderizando', itemsPedido.length, 'items en el DOM');
     
     // Renderizar cada item
-    window.itemsPedido.forEach((item, idx) => {
+    itemsPedido.forEach((item, idx) => {
         const itemDiv = document.createElement('div');
         itemDiv.id = `item-cotizacion-${idx}`;
         itemDiv.className = 'prenda-card';
@@ -567,7 +590,7 @@ function renderizarItemsCotizacionEnDOM() {
     
     // Ocultar mensaje de sin items
     const mensajeSinItems = document.getElementById('mensaje-sin-items');
-    if (mensajeSinItems && window.itemsPedido.length > 0) {
+    if (mensajeSinItems && itemsPedido.length > 0) {
         mensajeSinItems.style.display = 'none';
     }
 }
@@ -577,17 +600,21 @@ function renderizarItemsCotizacionEnDOM() {
  */
 window.eliminarItemCotizacion = function(index) {
     if (!confirm('¿Eliminar este ítem?')) return;
-    
-    if (window.itemsPedido && window.itemsPedido[index]) {
+
+    const items = getPedidoItemsSnapshot();
+    const target = items && items[index] ? items[index] : null;
+    if (!target) return;
+
+    if (typeof window.eliminarItemPedidoSeguro === 'function') {
+        const ref = target._local_id || target.epp_id || target.id || index;
+        window.eliminarItemPedidoSeguro(ref);
+    } else if (window.itemsPedido && window.itemsPedido[index]) {
         window.itemsPedido.splice(index, 1);
-        
-        // Re-renderizar
-        const container = document.getElementById('lista-items-pedido');
-        if (container) {
-            container.innerHTML = '';
-            renderizarItemsCotizacionEnDOM();
-        }
-        
-        console.log('✓ Ítem eliminado');
+    }
+
+    const container = document.getElementById('lista-items-pedido');
+    if (container) {
+        container.innerHTML = '';
+        renderizarItemsCotizacionEnDOM();
     }
 };
