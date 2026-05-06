@@ -138,6 +138,11 @@ function initializeItemCardInteractions() {
  * @param {number} itemIndex - Índice del item a eliminar
  */
 function handleEliminarItem(itemIndex) {
+  if (typeof window.eliminarItemPedidoSeguro === 'function') {
+    window.eliminarItemPedidoSeguro(itemIndex);
+    return;
+  }
+
   // Obtener la UI de gestión de items si existe
   if (window.gestionItemsUI && typeof window.gestionItemsUI.eliminarItem === 'function') {
     window.gestionItemsUI.eliminarItem(itemIndex);

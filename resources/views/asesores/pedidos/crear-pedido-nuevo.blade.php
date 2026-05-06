@@ -240,6 +240,8 @@
 
     <!-- ─── Config, Security, Constants, Image Storage ─── -->
     <script defer src="{{ js_asset('js/modulos/crear-pedido/seguridad/protector-datos-principales.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/utils/local-id.js') }}?v={{ $v }}"></script>
+    <script defer src="{{ js_asset('js/modulos/crear-pedido/seguridad/pedido-state-guard.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/configuraciones/constantes-tallas.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/modulos/crear-pedido/modales/modales-dinamicos.js') }}?v={{ $v }}"></script>
     <script defer src="{{ js_asset('js/services/epp/EppHttpService.js') }}?v={{ $v }}"></script>

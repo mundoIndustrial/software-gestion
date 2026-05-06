@@ -231,6 +231,8 @@
 
 <!-- IMPORTANTE: Cargar PRIMERO el protector de datos principales -->
 <script src="{{ asset('js/modulos/crear-pedido/seguridad/protector-datos-principales.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/utils/local-id.js') }}"></script>
+<script src="{{ asset('js/modulos/crear-pedido/seguridad/pedido-state-guard.js') }}"></script>
 
 <!-- Scripts base de pedidos -->
 <script src="{{ asset('js/asesores/pedidos.js') }}"></script>

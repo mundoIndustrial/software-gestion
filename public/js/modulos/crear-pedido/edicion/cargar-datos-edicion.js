@@ -73,6 +73,9 @@ function esperarModulosYCargar(intentos = 0) {
 
 function cargarDatosEdicion() {
     try {
+        if (typeof window.hardResetPedidoState === 'function') {
+            window.hardResetPedidoState('cargar-edicion');
+        }
         // 🔧 FIX: Usar el nuevo nombre + fallback al antiguo
         const datos = window.pedidoEditarData || window.pedidoEdicionData;
 
@@ -265,7 +268,6 @@ function ocultarLoadingOverlay() {
         }, 300);
     }
 }
-
 
 
 

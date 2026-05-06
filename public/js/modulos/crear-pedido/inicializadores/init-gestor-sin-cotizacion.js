@@ -29,6 +29,9 @@
      * pero ahora usa el gestor
      */
     window.crearPedidoSinCotizacionConGestor = function() {
+        if (typeof window.hardResetPedidoState === 'function') {
+            window.hardResetPedidoState('nuevo-pedido-sin-cotizacion');
+        }
 
         
         // Inicializar si no existe

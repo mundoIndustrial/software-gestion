@@ -521,6 +521,9 @@ class PrendaFlowService {
     }
 
     _agregarPrendaNuevaEnMemoria(prendaData) {
+        if (typeof window.asegurarLocalId === 'function') {
+            window.asegurarLocalId(prendaData, 'prenda');
+        }
         const indiceEdicionRecuperado = this._resolverIndiceEdicion();
         if (Number.isInteger(indiceEdicionRecuperado) && this.ui?.prendas?.[indiceEdicionRecuperado]) {
             debugLog('[guardarPrenda] Fallback anti-duplicado: se recupero indice de edicion en modo creacion', {

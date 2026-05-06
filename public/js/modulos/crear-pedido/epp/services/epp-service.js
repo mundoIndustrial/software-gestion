@@ -385,6 +385,9 @@ class EppService {
                 valor_unitario: valores.valor_unitario,
                 total: valores.total
             };
+            if (typeof window.asegurarLocalId === 'function') {
+                window.asegurarLocalId(eppData, 'epp');
+            }
             
             console.log('[EppService]  Objeto EPP a guardar:', eppData);
 
@@ -422,6 +425,10 @@ class EppService {
             '¿Eliminar este EPP?',
             'Esta accion no se puede deshacer.',
             () => {
+                if (typeof window.eliminarItemPedidoSeguro === 'function') {
+                    window.eliminarItemPedidoSeguro(eppId);
+                    return;
+                }
                 this.itemManager.eliminarItem(eppId);
             }
         );
@@ -722,6 +729,5 @@ class EppService {
 
 // Exportar instancia global
 globalThis.eppService = new EppService();
-
 
 

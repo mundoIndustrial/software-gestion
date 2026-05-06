@@ -292,6 +292,9 @@ class GestionItemsUI {
      * Agregar prenda y registrar en orden
      */
     agregarPrendaAlOrden(prenda) {
+        if (typeof window.asegurarLocalId === 'function') {
+            window.asegurarLocalId(prenda, 'prenda');
+        }
         const prendaNormalizada = this._asegurarIdentidadPrenda(prenda);
         const clavePrenda = this._obtenerClavePrenda(prendaNormalizada);
 
@@ -320,6 +323,9 @@ class GestionItemsUI {
      * Agregar EPP y registrar en orden
      */
     agregarEPPAlOrden(epp) {
+        if (typeof window.asegurarLocalId === 'function') {
+            window.asegurarLocalId(epp, 'epp');
+        }
         this._asegurarTarjetaIdEpp(epp);
         return this._getEppFlowService().agregarEPPAlOrden(epp);
     }

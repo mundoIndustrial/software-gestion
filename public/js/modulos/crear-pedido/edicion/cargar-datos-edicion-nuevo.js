@@ -71,6 +71,9 @@ function esperarElementosYCargar(intentos = 0) {
 
 function cargarDatosEdicion() {
     try {
+        if (typeof window.hardResetPedidoState === 'function') {
+            window.hardResetPedidoState('cargar-edicion-nuevo');
+        }
 
         
         // Si window.pedidoEditarData está dentro de un objeto 'pedido', acceder correctamente

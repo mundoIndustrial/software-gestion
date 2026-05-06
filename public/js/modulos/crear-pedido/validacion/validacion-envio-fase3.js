@@ -574,18 +574,29 @@
      * @param {string} endpoint - URL para enviar datos
      * @returns {Promise}
      */
-    window.procesarSubmitFormulario = function(endpoint = '/api/asesores/pedidos/crear') {
-        // 1. VALIDAR
-        const validacion = window.validarFormularioConGestores();
+	    window.procesarSubmitFormulario = function(endpoint = '/api/asesores/pedidos/crear') {
+	        // 1. VALIDAR
+	        const validacion = window.validarFormularioConGestores();
 
         if (!validacion.valido) {
 
             window.mostrarErroresValidacion(validacion.errores);
             return Promise.reject('Validación fallida');
-        }
+	        }
 
-        // 2. PREPARAR DATOS
-        const datos = window.prepararDatosParaEnvio();
+	        const itemsOrdenados = (window.gestionItemsUI && typeof window.gestionItemsUI.obtenerItemsOrdenados === 'function')
+	            ? (window.gestionItemsUI.obtenerItemsOrdenados() || [])
+	            : [];
+	        if (typeof window.sessionConsistencyCheck === 'function') {
+	            const consistency = window.sessionConsistencyCheck(itemsOrdenados);
+	            if (!consistency.ok) {
+	                alert('No se puede enviar el pedido por inconsistencias de estado. Revisa la consola.');
+	                return Promise.reject('sessionConsistencyCheck failed');
+	            }
+	        }
+
+	        // 2. PREPARAR DATOS
+	        const datos = window.prepararDatosParaEnvio();
 
 
         // 3. ENVIAR
