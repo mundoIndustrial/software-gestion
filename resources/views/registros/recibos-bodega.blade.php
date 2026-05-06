@@ -100,6 +100,17 @@
                                         <option value="30"></option><option value="32"></option><option value="34"></option><option value="36"></option><option value="38"></option>
                                         <option value="40"></option><option value="42"></option>
                                     </datalist>
+                                    <datalist id="tallas-sugeridas-letra-list">
+                                        <option value="XS"></option><option value="S"></option><option value="M"></option><option value="L"></option><option value="XL"></option>
+                                        <option value="XXL"></option><option value="XXXL"></option><option value="XXXXL"></option>
+                                    </datalist>
+                                    <datalist id="tallas-sugeridas-numero-list">
+                                        <option value="4"></option><option value="6"></option><option value="8"></option><option value="10"></option><option value="12"></option>
+                                        <option value="14"></option><option value="16"></option><option value="18"></option><option value="20"></option><option value="22"></option>
+                                        <option value="24"></option><option value="26"></option><option value="28"></option><option value="30"></option><option value="32"></option>
+                                        <option value="34"></option><option value="36"></option><option value="38"></option><option value="40"></option><option value="42"></option>
+                                        <option value="44"></option><option value="46"></option><option value="48"></option><option value="50"></option>
+                                    </datalist>
                                     <div class="tallas-subsection is-hidden" data-genero-section="dama">
                                         <label class="form-label-small mb-1">Dama</label>
                                         <div class="tallas-head"><span>Talla</span><span>Color</span><span>Cantidad</span><span></span></div>
@@ -164,6 +175,23 @@
                     <button type="submit" class="custom-recibo-btn custom-recibo-btn--primary">Generar recibo</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<div id="tipoTallaGeneroModal" class="tipo-talla-modal is-hidden" aria-hidden="true">
+    <div class="tipo-talla-modal__backdrop"></div>
+    <div class="tipo-talla-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="tipoTallaGeneroModalTitle">
+        <h3 id="tipoTallaGeneroModalTitle" class="mb-2">Tipo de talla</h3>
+        <p id="tipoTallaGeneroModalText" class="mb-3 text-sm text-muted">Selecciona si deseas manejar tallas por letra o por número.</p>
+        <div class="tipo-talla-modal__actions">
+            <button type="button" class="btn btn-outline-primary" data-tipo-talla-select="letra">Por letra</button>
+            <button type="button" class="btn btn-primary" data-tipo-talla-select="numero">Por número</button>
+        </div>
+        <div id="tipoTallaGeneroGrid" class="tipo-talla-grid"></div>
+        <div class="tipo-talla-modal__footer">
+            <button type="button" id="cancelarTipoTallaGeneroBtn" class="btn btn-light">Cancelar</button>
+            <button type="button" id="confirmarTipoTallaGeneroBtn" class="btn btn-primary" disabled>Confirmar</button>
         </div>
     </div>
 </div>
@@ -595,7 +623,7 @@
     align-items: flex-start;
     padding: 12px 16px 10px;
     border-bottom: 1px solid #dbe5f1;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #334155 100%);
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 55%, #3b82f6 100%);
 }
 
 .custom-recibo-modal__title-wrap h2 {
@@ -624,8 +652,8 @@
     width: 30px;
     height: 30px;
     border-radius: 999px;
-    border: 1px solid rgba(148, 163, 184, 0.55);
-    background: rgba(15, 23, 42, 0.25);
+    border: 1px solid rgba(191, 219, 254, 0.7);
+    background: rgba(30, 64, 175, 0.35);
     color: #f8fafc;
     font-size: 18px;
     line-height: 1;
@@ -840,6 +868,69 @@
     border-color: #1d4ed8;
 }
 
+.tipo-talla-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000200;
+}
+
+.tipo-talla-modal.is-hidden {
+    display: none;
+}
+
+.tipo-talla-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.tipo-talla-modal__dialog {
+    position: relative;
+    z-index: 10000201;
+    width: min(92vw, 420px);
+    margin: 14vh auto 0;
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 24px 44px rgba(15, 23, 42, 0.32);
+}
+
+.tipo-talla-modal__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.tipo-talla-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.tipo-talla-pill {
+    border: 2px solid #d1d5db;
+    background: #fff;
+    color: #1f2937;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.tipo-talla-pill.is-selected {
+    border-color: #1d4ed8;
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.tipo-talla-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
 #reciboBodegaCreateModal .tallas-head {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 32px;
@@ -959,8 +1050,128 @@ document.addEventListener('DOMContentLoaded', function () {
     const openBtn = document.getElementById('openReciboBodegaModalBtn');
     const prendasContainer = document.getElementById('prendasContainer');
     const form = document.getElementById('reciboBodegaCreateForm');
+    const tipoTallaModal = document.getElementById('tipoTallaGeneroModal');
+    const tipoTallaModalText = document.getElementById('tipoTallaGeneroModalText');
+    const tipoTallaCancelarBtn = document.getElementById('cancelarTipoTallaGeneroBtn');
+    const tipoTallaConfirmarBtn = document.getElementById('confirmarTipoTallaGeneroBtn');
+    const tipoTallaGrid = document.getElementById('tipoTallaGeneroGrid');
 
-    if (!modal || !openBtn || !prendasContainer || !form) return;
+    if (!modal || !openBtn || !prendasContainer || !form || !tipoTallaModal || !tipoTallaModalText) return;
+
+    const tipoTallaState = {
+        isOpen: false,
+        resolve: null,
+        genero: null,
+        tipoSeleccionado: null,
+        tallasSeleccionadas: new Set(),
+    };
+
+    const LISTA_TALLAS_POR_TIPO = {
+        letra: 'tallas-sugeridas-letra-list',
+        numero: 'tallas-sugeridas-numero-list',
+    };
+    const TALLAS_POR_TIPO = {
+        letra: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'],
+        numero: ['4', '6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '26', '28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50'],
+    };
+
+    function toGeneroLabel(genero) {
+        const key = String(genero || '').trim().toLowerCase();
+        if (key === 'dama') return 'Dama';
+        if (key === 'caballero') return 'Caballero';
+        if (key === 'unisex') return 'Unisex';
+        return 'Género';
+    }
+
+    function renderTallasDisponibles(tipo) {
+        if (!tipoTallaGrid) return;
+        const tallas = TALLAS_POR_TIPO[tipo] || [];
+        tipoTallaGrid.innerHTML = '';
+        tallas.forEach((talla) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'tipo-talla-pill';
+            btn.dataset.talla = talla;
+            btn.textContent = talla;
+            btn.addEventListener('click', function () {
+                if (tipoTallaState.tallasSeleccionadas.has(talla)) {
+                    tipoTallaState.tallasSeleccionadas.delete(talla);
+                    btn.classList.remove('is-selected');
+                } else {
+                    tipoTallaState.tallasSeleccionadas.add(talla);
+                    btn.classList.add('is-selected');
+                }
+                if (tipoTallaConfirmarBtn) {
+                    tipoTallaConfirmarBtn.disabled = tipoTallaState.tallasSeleccionadas.size === 0;
+                }
+            });
+            tipoTallaGrid.appendChild(btn);
+        });
+    }
+
+    function abrirModalTipoTalla(genero) {
+        return new Promise((resolve) => {
+            tipoTallaState.isOpen = true;
+            tipoTallaState.resolve = resolve;
+            tipoTallaState.genero = genero;
+            tipoTallaState.tipoSeleccionado = null;
+            tipoTallaState.tallasSeleccionadas = new Set();
+            tipoTallaModalText.textContent = `Selecciona el tipo de talla para ${toGeneroLabel(genero)}.`;
+            if (tipoTallaGrid) tipoTallaGrid.innerHTML = '';
+            if (tipoTallaConfirmarBtn) tipoTallaConfirmarBtn.disabled = true;
+            tipoTallaModal.classList.remove('is-hidden');
+            tipoTallaModal.setAttribute('aria-hidden', 'false');
+        });
+    }
+
+    function cerrarModalTipoTalla(resultado) {
+        if (!tipoTallaState.isOpen) return;
+        tipoTallaModal.classList.add('is-hidden');
+        tipoTallaModal.setAttribute('aria-hidden', 'true');
+        tipoTallaState.isOpen = false;
+        if (typeof tipoTallaState.resolve === 'function') {
+            tipoTallaState.resolve(resultado || null);
+        }
+        tipoTallaState.resolve = null;
+        tipoTallaState.genero = null;
+        tipoTallaState.tipoSeleccionado = null;
+        tipoTallaState.tallasSeleccionadas = new Set();
+    }
+
+    function setTipoTallaEnSeccion(section, tipo) {
+        if (!section) return;
+        const datalistId = LISTA_TALLAS_POR_TIPO[tipo] || 'tallas-sugeridas-list';
+        section.dataset.tipoTalla = tipo || '';
+        section.querySelectorAll('input[name^="talla_"]').forEach((input) => {
+            input.setAttribute('list', datalistId);
+            input.placeholder = tipo === 'numero' ? '34' : 'M';
+        });
+    }
+
+    function crearFilaTalla(prendaIndex, genero, listId, talla = '') {
+        const fila = document.createElement('div');
+        fila.innerHTML = `
+            <input type="text" name="talla_${genero}[${prendaIndex}][]" class="talla-input-uppercase" list="${listId}" placeholder="Talla" value="${talla}">
+            <input type="text" name="color_${genero}[${prendaIndex}][]" class="color-input-uppercase" placeholder="Color (ej: ROJO)">
+            <input type="number" name="cantidad_${genero}[${prendaIndex}][]" placeholder="Cantidad" min="1">
+            <button type="button" class="eliminar-talla-btn">x</button>
+        `;
+        return fila;
+    }
+
+    function aplicarTallasSeleccionadas(prendaCard, genero, tipo, tallasSeleccionadas) {
+        const prendaIndex = parseInt(prendaCard.dataset.prendaIndex || '0', 10);
+        const list = prendaCard.querySelector(`.tallas-list-${genero}`);
+        if (!list) return;
+        const listId = LISTA_TALLAS_POR_TIPO[tipo] || 'tallas-sugeridas-list';
+        list.innerHTML = '';
+        (tallasSeleccionadas || []).forEach((talla) => {
+            list.appendChild(crearFilaTalla(prendaIndex, genero, listId, talla));
+        });
+        if ((tallasSeleccionadas || []).length === 0) {
+            list.appendChild(crearFilaTalla(prendaIndex, genero, listId, ''));
+        }
+    }
 
     let previousActiveElement = null;
 
@@ -1134,8 +1345,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (addDamaBtn && tallasDamaList) {
             addDamaBtn.addEventListener('click', function () {
                 const tallaRow = document.createElement('div');
+                const section = prendaCard.querySelector('[data-genero-section="dama"]');
+                const listId = LISTA_TALLAS_POR_TIPO[section?.dataset?.tipoTalla] || 'tallas-sugeridas-list';
                 tallaRow.innerHTML = `
-                    <input type="text" name="talla_dama[${prendaIndex}][]" class="talla-input-uppercase" list="tallas-sugeridas-list" placeholder="Talla (ej: XS)">
+                    <input type="text" name="talla_dama[${prendaIndex}][]" class="talla-input-uppercase" list="${listId}" placeholder="Talla">
                     <input type="text" name="color_dama[${prendaIndex}][]" class="color-input-uppercase" placeholder="Color (ej: ROJO)">
                     <input type="number" name="cantidad_dama[${prendaIndex}][]" placeholder="Cantidad" min="1">
                     <button type="button" class="eliminar-talla-btn">x</button>
@@ -1147,8 +1360,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (addCabBtn && tallasCabList) {
             addCabBtn.addEventListener('click', function () {
                 const tallaRow = document.createElement('div');
+                const section = prendaCard.querySelector('[data-genero-section="caballero"]');
+                const listId = LISTA_TALLAS_POR_TIPO[section?.dataset?.tipoTalla] || 'tallas-sugeridas-list';
                 tallaRow.innerHTML = `
-                    <input type="text" name="talla_caballero[${prendaIndex}][]" class="talla-input-uppercase" list="tallas-sugeridas-list" placeholder="Talla (ej: M)">
+                    <input type="text" name="talla_caballero[${prendaIndex}][]" class="talla-input-uppercase" list="${listId}" placeholder="Talla">
                     <input type="text" name="color_caballero[${prendaIndex}][]" class="color-input-uppercase" placeholder="Color (ej: NEGRO)">
                     <input type="number" name="cantidad_caballero[${prendaIndex}][]" placeholder="Cantidad" min="1">
                     <button type="button" class="eliminar-talla-btn">x</button>
@@ -1160,8 +1375,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (addUniBtn && tallasUniList) {
             addUniBtn.addEventListener('click', function () {
                 const tallaRow = document.createElement('div');
+                const section = prendaCard.querySelector('[data-genero-section="unisex"]');
+                const listId = LISTA_TALLAS_POR_TIPO[section?.dataset?.tipoTalla] || 'tallas-sugeridas-list';
                 tallaRow.innerHTML = `
-                    <input type="text" name="talla_unisex[${prendaIndex}][]" class="talla-input-uppercase" list="tallas-sugeridas-list" placeholder="Talla (ej: M)">
+                    <input type="text" name="talla_unisex[${prendaIndex}][]" class="talla-input-uppercase" list="${listId}" placeholder="Talla">
                     <input type="text" name="color_unisex[${prendaIndex}][]" class="color-input-uppercase" placeholder="Color (ej: AZUL)">
                     <input type="number" name="cantidad_unisex[${prendaIndex}][]" placeholder="Cantidad" min="1">
                     <button type="button" class="eliminar-talla-btn">x</button>
@@ -1179,7 +1396,7 @@ document.addEventListener('DOMContentLoaded', function () {
         target.value = String(target.value || '').toUpperCase();
     });
 
-    prendasContainer.addEventListener('click', function (event) {
+    prendasContainer.addEventListener('change', async function (event) {
         const generoToggleInput = event.target.closest('.genero-check-input[data-genero-toggle]');
         if (generoToggleInput) {
             const prendaCard = generoToggleInput.closest('.prenda-card');
@@ -1190,15 +1407,30 @@ document.addEventListener('DOMContentLoaded', function () {
             const label = generoToggleInput.closest('.genero-check');
 
             if (generoToggleInput.checked) {
+                const seleccion = await abrirModalTipoTalla(genero);
+                if (!seleccion || !seleccion.tipo || !Array.isArray(seleccion.tallas) || seleccion.tallas.length === 0) {
+                    generoToggleInput.checked = false;
+                    label?.classList.remove('is-active');
+                    section.classList.add('is-hidden');
+                    return;
+                }
+                setTipoTallaEnSeccion(section, seleccion.tipo);
+                aplicarTallasSeleccionadas(prendaCard, genero, seleccion.tipo, seleccion.tallas);
                 label?.classList.add('is-active');
                 section.classList.remove('is-hidden');
             } else {
                 label?.classList.remove('is-active');
                 section.classList.add('is-hidden');
+                section.dataset.tipoTalla = '';
             }
 
             return;
         }
+    });
+
+    prendasContainer.addEventListener('click', function (event) {
+        const generoToggleInput = event.target.closest('.genero-check-input[data-genero-toggle]');
+        if (generoToggleInput) return;
 
         if (!event.target.classList.contains('eliminar-talla-btn')) return;
         const tallasList = event.target.closest('.tallas-list');
@@ -1208,6 +1440,35 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     prendasContainer.querySelectorAll('.prenda-card').forEach(bindPrendaActions);
+
+    tipoTallaModal.querySelectorAll('[data-tipo-talla-select]').forEach((btn) => {
+        btn.addEventListener('click', function () {
+            tipoTallaState.tipoSeleccionado = btn.dataset.tipoTallaSelect;
+            tipoTallaState.tallasSeleccionadas = new Set();
+            tipoTallaModal.querySelectorAll('[data-tipo-talla-select]').forEach((b) => {
+                b.classList.toggle('btn-primary', b === btn);
+                b.classList.toggle('btn-outline-primary', b !== btn);
+            });
+            renderTallasDisponibles(tipoTallaState.tipoSeleccionado);
+            if (tipoTallaConfirmarBtn) tipoTallaConfirmarBtn.disabled = true;
+        });
+    });
+
+    tipoTallaConfirmarBtn?.addEventListener('click', function () {
+        if (!tipoTallaState.tipoSeleccionado || tipoTallaState.tallasSeleccionadas.size === 0) return;
+        cerrarModalTipoTalla({
+            tipo: tipoTallaState.tipoSeleccionado,
+            tallas: Array.from(tipoTallaState.tallasSeleccionadas),
+        });
+    });
+
+    tipoTallaCancelarBtn?.addEventListener('click', function () {
+        cerrarModalTipoTalla(null);
+    });
+
+    tipoTallaModal.querySelector('.tipo-talla-modal__backdrop')?.addEventListener('click', function () {
+        cerrarModalTipoTalla(null);
+    });
 });
 
 document.addEventListener('DOMContentLoaded', function() {

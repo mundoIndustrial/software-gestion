@@ -249,15 +249,36 @@ function openReciboCorteBodegaModal(id) {
                 const tallasList = document.getElementById('rcb-tallas-list');
                 tallasList.innerHTML = '';
 
+                const grupos = new Map();
+                const sinGenero = [];
+
                 data.tallas.forEach(talla => {
-                    const color = (talla.color || '').toString().trim();
-                    const linea = color !== ''
+                    const genero = (talla.genero || '').toString().trim().toUpperCase();
+                    const color = (talla.color || '').toString().trim().toUpperCase();
+                    const detalle = color !== ''
                         ? `COLOR ${color}: ${talla.talla}:${talla.cantidad}`
                         : `${talla.talla}:${talla.cantidad}`;
+
+                    if (genero !== '') {
+                        if (!grupos.has(genero)) grupos.set(genero, []);
+                        grupos.get(genero).push(detalle);
+                    } else {
+                        sinGenero.push(detalle);
+                    }
+                });
+
+                grupos.forEach((detalles, genero) => {
+                    const linea = `${genero} - ${detalles.join(', ')}`;
                     const span = document.createElement('div');
                     span.innerHTML = `<span style="color: red;"><strong>${linea}</strong></span><br>`;
                     tallasList.appendChild(span);
                 });
+
+                if (sinGenero.length > 0) {
+                    const span = document.createElement('div');
+                    span.innerHTML = `<span style="color: red;"><strong>${sinGenero.join(', ')}</strong></span><br>`;
+                    tallasList.appendChild(span);
+                }
 
                 // Mostrar modal
                 document.getElementById('rcb-modal-wrapper').classList.add('is-visible');

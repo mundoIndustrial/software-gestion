@@ -10,6 +10,26 @@ use Illuminate\Support\Facades\Schema;
 
 class ReciboCorteBodegaController extends Controller
 {
+    private function inferirGeneroDesdeTalla(?string $talla): ?string
+    {
+        $valor = strtoupper(trim((string) $talla));
+        if ($valor === '') {
+            return null;
+        }
+
+        if (is_numeric($valor)) {
+            $num = (int) $valor;
+            if ($num >= 4 && $num <= 26) {
+                return 'DAMA';
+            }
+            if ($num >= 28) {
+                return 'CABALLERO';
+            }
+        }
+
+        return null;
+    }
+
     public function index()
     {
         $prendas = PrendaBodega::with('tallas')
@@ -198,7 +218,7 @@ class ReciboCorteBodegaController extends Controller
             'ano' => $prenda->created_at->format('Y'),
             'tallas' => $prenda->tallas->map(fn($t) => [
                 'talla' => $t->talla,
-                'genero' => $t->genero,
+                'genero' => $t->genero ?: $this->inferirGeneroDesdeTalla($t->talla),
                 'color' => $t->color,
                 'cantidad' => $t->cantidad,
             ])->toArray(),
