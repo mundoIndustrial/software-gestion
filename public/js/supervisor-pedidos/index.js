@@ -164,6 +164,57 @@ function _spFormatDateTime(value) {
     return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
 }
 
+function _spFormatDate(value) {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+}
+
+function _spFormatDateTime12h(value) {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    let hh = date.getHours();
+    const min = String(date.getMinutes()).padStart(2, '0');
+    const ampm = hh >= 12 ? 'PM' : 'AM';
+    hh = hh % 12;
+    if (hh === 0) hh = 12;
+    return `${dd}/${mm}/${yyyy} ${String(hh).padStart(2, '0')}:${min} ${ampm}`;
+}
+
+function _spCountBusinessDays(startDate, endDate) {
+    if (!(startDate instanceof Date) || !(endDate instanceof Date)) return 0;
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return 0;
+
+    const from = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const to = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+
+    if (from.getTime() === to.getTime()) return 0;
+
+    const forward = from < to;
+    const a = forward ? from : to;
+    const b = forward ? to : from;
+
+    let count = 0;
+    const cursor = new Date(a);
+    cursor.setDate(cursor.getDate() + 1);
+
+    while (cursor <= b) {
+        const day = cursor.getDay();
+        if (day !== 0 && day !== 6) count += 1;
+        cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return forward ? count : -count;
+}
+
 function _spCountNovedades(novedades) {
     const value = String(novedades ?? '').trim();
     if (!value) return 0;
@@ -287,27 +338,34 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
         <style>
             .sp-orders-grid {
                 display: grid;
-                grid-template-columns: 60px 220px 130px 120px 220px 150px 150px 150px 150px 150px 150px;
+                grid-template-columns: 60px 220px 130px 140px 120px 220px 150px 150px 150px 150px 150px 150px;
                 gap: 1.2rem;
                 min-width: max-content;
                 box-sizing: border-box;
             }
             .sp-orders-grid > div { min-width: 0; }
+            .sp-date-cell {
+                white-space: nowrap;
+                display: inline-block;
+                font-size: 0.85rem;
+                color: #6b7280;
+            }
         </style>
         <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
             <div class="table-scroll-container" style="overflow-x: auto; overflow-y: auto; width: 100%; max-width: 100%; max-height: 800px; border-radius: 6px; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9;">
                 <div class="sp-orders-grid" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 0.75rem 1rem; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 6px;">
                     <div class="th-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><span>Listo</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><span>Acciones</span></div>
-                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Fecha</span><button type="button" class="btn-filter-column" data-col="fecha" title="Filtrar Fecha" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Aprob. Cartera</span><button type="button" class="btn-filter-column" data-col="aprobacion_cartera" title="Filtrar Aprob. Cartera" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center;"><span>Días Restantes</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Nºmero</span><button type="button" class="btn-filter-column" data-col="numero" title="Filtrar Numero" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Cliente</span><button type="button" class="btn-filter-column" data-col="cliente" title="Filtrar Cliente" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Asesora</span><button type="button" class="btn-filter-column" data-col="asesora" title="Filtrar Asesora" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Estado</span><button type="button" class="btn-filter-column" data-col="estado" title="Filtrar Estado" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Novedades</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Forma Pago</span><button type="button" class="btn-filter-column" data-col="forma_pago" title="Filtrar Forma Pago" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
-                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Aprob. Cartera</span><button type="button" class="btn-filter-column" data-col="aprobacion_cartera" title="Filtrar Aprob. Cartera" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                     <div class="th-wrapper" style="display: flex; align-items: center;"><span>Aprob. Supervisor</span></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Fecha</span><button type="button" class="btn-filter-column" data-col="fecha" title="Filtrar Fecha" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
                 </div>
     `;
 
@@ -328,6 +386,19 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
             const formaPago = _spEscapeHtml(orden?.forma_de_pago ?? 'N/A');
             const cliente = _spEscapeHtml(orden?.cliente ?? '');
             const fecha = _spFormatDateTime(orden?.created_at);
+            const fechaAprobacionCartera = _spFormatDateTime12h(orden?.aprobado_por_cartera_en);
+            const fechaAprobacionSupervisor = _spFormatDateTime12h(orden?.aprobado_por_supervisor_en);
+            const fechaEstimadaRaw = orden?.fecha_estimada_de_entrega ?? orden?.fecha_estimada_entrega ?? orden?.fecha_estimada ?? null;
+            const fechaEstimada = _spFormatDate(fechaEstimadaRaw) ?? '-';
+            const diaEntrega = Number(orden?.dia_de_entrega);
+            let diasRestantes = null;
+            if (Number.isFinite(diaEntrega) && orden?.created_at) {
+                const transcurridos = _spCountBusinessDays(new Date(orden.created_at), new Date());
+                diasRestantes = Math.max(0, diaEntrega - transcurridos);
+            } else if (fechaEstimadaRaw) {
+                const hastaFechaEstimada = _spCountBusinessDays(new Date(), new Date(fechaEstimadaRaw));
+                diasRestantes = Math.max(0, hastaFechaEstimada);
+            }
             const canApprove = estado === 'PENDIENTE_SUPERVISOR' && !Boolean(orden?.es_solo_epp);
             const canBulkDeliver = !_spHasAllPrendasEntregadas(orden);
             const isDelivered = !canBulkDeliver;
@@ -364,7 +435,13 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                         </button>
                         <button class="btn-accion btn-accion--ocultar" data-action="ocultar" data-pedido-id="${orden.id}" data-pedido-numero="${jsNumero}" title="Ocultar Pedido"><i class="fas fa-eye-slash"></i></button>
                     </div>
-                    <div><span style="font-size: 0.85rem; color: #6b7280;">${fecha}</span></div>
+                    <div><span class="sp-date-cell">${fechaAprobacionCartera}</span></div>
+                    <div>
+                        ${diasRestantes !== null
+                            ? `<span style="display: inline-flex; flex-direction: column; line-height: 1.1; color: #dc2626; font-weight: 700; font-size: 0.78rem;"><span>${diasRestantes} días</span><span>hábiles restantes</span><span style="margin-top: 0.2rem; color: #6b7280; font-weight: 600; font-size: 0.72rem;">Est.: ${fechaEstimada}</span></span>`
+                            : `<span style="display: inline-flex; flex-direction: column; line-height: 1.1; color: #6b7280; font-weight: 600; font-size: 0.78rem;"><span>-</span><span style="margin-top: 0.2rem; font-size: 0.72rem;">Est.: ${fechaEstimada}</span></span>`
+                        }
+                    </div>
                     <div><span style="font-weight: 600; color: #1e5ba8;">${numeroPedidoText}</span></div>
                     <div><span>${cliente}</span></div>
                     <div><span>${asesora}</span></div>
@@ -376,8 +453,8 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                         }
                     </div>
                     <div><span>${formaPago}</span></div>
-                    <div><span class="sp-date-cell">${_spFormatDateTime(orden?.aprobado_por_cartera_en)}</span></div>
-                    <div><span class="sp-date-cell">${_spFormatDateTime(orden?.aprobado_por_supervisor_en)}</span></div>
+                    <div><span class="sp-date-cell">${fechaAprobacionSupervisor}</span></div>
+                    <div><span class="sp-date-cell">${fecha}</span></div>
                 </div>
             `;
         }).join('');
@@ -1736,5 +1813,4 @@ async function editarPedido(pedidoId) {
         window.edicionEnProgreso = false;
     }
 }
-
 
