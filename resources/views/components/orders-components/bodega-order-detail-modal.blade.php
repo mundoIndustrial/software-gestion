@@ -223,6 +223,21 @@
         #descripcion-text {
             width: 100%;
             text-align: left;
+            font-size: 13px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        #descripcion-text * {
+            font-size: 13px !important;
+            font-family: 'Poppins', sans-serif !important;
+        }
+
+        #descripcion-text [style*="color: rgb(102, 102, 102)"],
+        #descripcion-text [style*="color:#666"],
+        #descripcion-text [style*="color: #666"],
+        #descripcion-text [style*="color:gray"],
+        #descripcion-text [style*="color: gray"] {
+            color: #000 !important;
         }
 
         .arrow-container {

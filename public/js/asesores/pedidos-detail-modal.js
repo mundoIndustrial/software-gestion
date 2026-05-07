@@ -3,6 +3,84 @@
  * Handles opening, closing, and overlay management for the order detail modal
  */
 
+globalThis.receiptZoomState = {
+    current: 1,
+    levels: [1, 1.2, 1.4, 1.6]
+};
+
+globalThis.modalWheelBlockHandler = function modalWheelBlockHandler(wheelEvent) {
+    const overlay = document.getElementById('modal-overlay');
+    const modalWrapper = document.getElementById('order-detail-modal-wrapper');
+    const isOpen = !!(
+        overlay &&
+        overlay.style.display !== 'none' &&
+        modalWrapper &&
+        modalWrapper.style.display !== 'none'
+    );
+
+    if (isOpen) {
+        wheelEvent.preventDefault();
+    }
+};
+
+if (!globalThis.__modalWheelBlockBound) {
+    document.addEventListener('wheel', globalThis.modalWheelBlockHandler, { passive: false });
+    globalThis.__modalWheelBlockBound = true;
+}
+
+globalThis.applyReceiptZoom = function applyReceiptZoom(zoomLevel = 1) {
+    const wrapper =
+        document.getElementById('order-detail-modal-wrapper') ||
+        document.getElementById('order-detail-modal-wrapper-logo');
+
+    let card = wrapper ? wrapper.querySelector('.order-detail-card') : null;
+    if (!card) {
+        card = document.querySelector('.order-detail-modal-container .order-detail-card');
+    }
+    if (!card) return;
+
+    if (wrapper) {
+        wrapper.style.maxHeight = '';
+        wrapper.style.overflowY = 'visible';
+        wrapper.style.overflowX = 'visible';
+        wrapper.style.paddingRight = '0';
+    }
+
+    card.style.transformOrigin = 'center top';
+    card.style.transition = 'transform 0.2s ease';
+
+    // `zoom` mantiene el flujo del layout y permite scroll real al crecer el contenido.
+    // Fallback a transform para navegadores sin soporte.
+    if (typeof card.style.zoom !== 'undefined') {
+        card.style.zoom = String(zoomLevel);
+        card.style.transform = 'none';
+    } else {
+        card.style.zoom = '';
+        card.style.transform = `scale(${zoomLevel})`;
+    }
+
+    const btnZoom = document.getElementById('btn-zoom-receipt');
+    if (btnZoom) {
+        const percent = Math.round(zoomLevel * 100);
+        btnZoom.title = `Zoom recibo (${percent}%)`;
+    }
+};
+
+globalThis.resetReceiptZoom = function resetReceiptZoom() {
+    globalThis.receiptZoomState.current = 1;
+    globalThis.applyReceiptZoom(1);
+};
+
+globalThis.toggleReceiptZoom = function toggleReceiptZoom() {
+    const { levels, current } = globalThis.receiptZoomState;
+    const currentIndex = levels.findIndex((level) => level === current);
+    const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % levels.length : 1;
+    const nextLevel = levels[nextIndex];
+
+    globalThis.receiptZoomState.current = nextLevel;
+    globalThis.applyReceiptZoom(nextLevel);
+};
+
 
 /**
  * Abre el modal de detalle de la orden y carga los datos
@@ -15,6 +93,9 @@ globalThis.verFactura = async function verFactura(numeroPedido) {
 
     
     try {
+        globalThis.resetReceiptZoom();
+        document.body.style.overflow = 'hidden';
+
         //  HACER FETCH a la API para obtener datos del pedido
         // Intentar primero con /registros (para asesores), luego con /orders (para órdenes)
 
@@ -134,6 +215,8 @@ globalThis.verFacturaLogo = async function verFacturaLogo(logoPedidoId) {
  * Cierra el modal de detalle y el overlay
  */
 globalThis.closeModalOverlay = function closeModalOverlay() {
+    globalThis.resetReceiptZoom();
+    document.body.style.overflow = '';
     // Si PedidosRecibosModule está disponible, delegar para limpiar estado correctamente
     if (globalThis.pedidosRecibosModule && typeof globalThis.pedidosRecibosModule.cerrarRecibo === 'function') {
         globalThis.pedidosRecibosModule.cerrarRecibo();
@@ -521,3 +604,5 @@ function showErrorMessage(message) {
         setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
+
+

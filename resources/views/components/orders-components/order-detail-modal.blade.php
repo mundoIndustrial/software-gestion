@@ -175,6 +175,8 @@
     <button id="btn-print-receipt" type="button" title="Imprimir" onclick="window.printReceiptModal && window.printReceiptModal()" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #27ae60, #229954); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); pointer-events: auto;">
         <i class="fas fa-print"></i>
     </button>
+    <button id="btn-zoom-receipt" type="button" title="Zoom recibo (100%)" onclick="window.toggleReceiptZoom && window.toggleReceiptZoom()" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); pointer-events: auto;">
+        <i class="fas fa-search-plus"></i>
+    </button>
 </div>
-
 

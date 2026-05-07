@@ -6,11 +6,120 @@
 
 
 
+if (typeof window.toggleReceiptZoom !== 'function') {
+    window.receiptZoomState = {
+        current: 1,
+        levels: [1, 1.2, 1.4, 1.6]
+    };
+
+    window.applyReceiptZoom = function applyReceiptZoom(zoomLevel = 1) {
+        const wrapper =
+            document.getElementById('order-detail-modal-wrapper') ||
+            document.getElementById('order-detail-modal-wrapper-logo');
+
+        let card = wrapper ? wrapper.querySelector('.order-detail-card') : null;
+        if (!card) {
+            card = document.querySelector('.order-detail-modal-container .order-detail-card');
+        }
+        if (!card) return;
+
+        card.style.transformOrigin = 'center top';
+        card.style.transition = 'transform 0.2s ease';
+
+        if (typeof card.style.zoom !== 'undefined') {
+            card.style.zoom = String(zoomLevel);
+            card.style.transform = 'none';
+        } else {
+            card.style.zoom = '';
+            card.style.transform = `scale(${zoomLevel})`;
+        }
+
+        const btnZoom = document.getElementById('btn-zoom-receipt');
+        if (btnZoom) {
+            const percent = Math.round(zoomLevel * 100);
+            btnZoom.title = `Zoom recibo (${percent}%)`;
+        }
+    };
+
+    window.resetReceiptZoom = function resetReceiptZoom() {
+        window.receiptZoomState.current = 1;
+        window.applyReceiptZoom(1);
+    };
+
+    window.toggleReceiptZoom = function toggleReceiptZoom() {
+        const { levels, current } = window.receiptZoomState;
+        const currentIndex = levels.findIndex((level) => level === current);
+        const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % levels.length : 1;
+        const nextLevel = levels[nextIndex];
+
+        window.receiptZoomState.current = nextLevel;
+        window.applyReceiptZoom(nextLevel);
+    };
+}
+
+window.modalWheelBlockHandler = window.modalWheelBlockHandler || function modalWheelBlockHandler(wheelEvent) {
+    const overlay = document.getElementById('modal-overlay');
+    const modalWrapper = document.getElementById('order-detail-modal-wrapper');
+    const modalWrapperLogo = document.getElementById('order-detail-modal-wrapper-logo');
+    const isOrderOpen = !!(modalWrapper && modalWrapper.style.display !== 'none');
+    const isLogoOpen = !!(modalWrapperLogo && modalWrapperLogo.style.display !== 'none');
+    const isOverlayOpen = !!(overlay && overlay.style.display !== 'none');
+
+    if (!isOverlayOpen || (!isOrderOpen && !isLogoOpen)) return;
+
+    const activeWrapper = isOrderOpen ? modalWrapper : modalWrapperLogo;
+    if (!activeWrapper) return;
+
+    const target = wheelEvent.target;
+    const inActiveModal = activeWrapper.contains(target);
+
+    // Si el wheel ocurre fuera del modal, bloquear para que no se mueva el fondo.
+    if (!inActiveModal) {
+        wheelEvent.preventDefault();
+        return;
+    }
+
+    // Buscar el contenedor scrolleable más cercano dentro del modal (ej: #order-descripcion).
+    let scrollContainer = target;
+    while (scrollContainer && scrollContainer !== activeWrapper) {
+        const style = window.getComputedStyle(scrollContainer);
+        const overflowY = style.overflowY;
+        const isScrollableY = (overflowY === 'auto' || overflowY === 'scroll') &&
+            scrollContainer.scrollHeight > scrollContainer.clientHeight;
+        if (isScrollableY) break;
+        scrollContainer = scrollContainer.parentElement;
+    }
+    if (!scrollContainer || scrollContainer === activeWrapper) {
+        scrollContainer = activeWrapper;
+    }
+
+    // Permitir scroll dentro del contenedor si hay espacio para desplazar.
+    const canScrollDown = scrollContainer.scrollTop + scrollContainer.clientHeight < scrollContainer.scrollHeight;
+    const canScrollUp = scrollContainer.scrollTop > 0;
+    const goingDown = wheelEvent.deltaY > 0;
+
+    if ((goingDown && canScrollDown) || (!goingDown && canScrollUp)) {
+        return;
+    }
+
+    // Si el modal ya llegó al límite, bloquear para que no se transfiera al fondo.
+    wheelEvent.preventDefault();
+};
+
+if (!window.__modalWheelBlockBound) {
+    document.addEventListener('wheel', window.modalWheelBlockHandler, { passive: false });
+    window.__modalWheelBlockBound = true;
+}
+
 /**
  * Abre el modal de detalle de la orden
  * Compatible con la estructura de asesores
  */
 window.openOrderDetailModal = function(orderId) {
+    if (typeof window.resetReceiptZoom === 'function') {
+        window.resetReceiptZoom();
+    }
+
     // Cerrar el modal de logo si está abierto
     const modalWrapperLogo = document.getElementById('order-detail-modal-wrapper-logo');
     if (modalWrapperLogo) {
@@ -43,6 +152,9 @@ window.openOrderDetailModal = function(orderId) {
         // Mostrar el wrapper del modal
         const modalWrapper = document.getElementById('order-detail-modal-wrapper');
         if (modalWrapper) {
+            modalWrapper.style.maxHeight = '92vh';
+            modalWrapper.style.overflowY = 'auto';
+            modalWrapper.style.overflowX = 'hidden';
             modalWrapper.style.display = 'block';
             modalWrapper.style.zIndex = '9998';
             modalWrapper.style.position = 'fixed';
@@ -61,6 +173,10 @@ window.openOrderDetailModal = function(orderId) {
  * Cierra el modal de detalle de la orden
  */
 window.closeOrderDetailModal = function() {
+    if (typeof window.resetReceiptZoom === 'function') {
+        window.resetReceiptZoom();
+    }
+
     const overlay = document.getElementById('modal-overlay');
     const modalWrapper = document.getElementById('order-detail-modal-wrapper');
     
@@ -131,6 +247,9 @@ window.openOrderDetailModalLogo = function(orderId) {
         // Mostrar el wrapper del modal de LOGO
         const modalWrapper = document.getElementById('order-detail-modal-wrapper-logo');
         if (modalWrapper) {
+            modalWrapper.style.maxHeight = '92vh';
+            modalWrapper.style.overflowY = 'auto';
+            modalWrapper.style.overflowX = 'hidden';
             modalWrapper.style.display = 'block';
             modalWrapper.style.zIndex = '99999';
             modalWrapper.style.position = 'fixed';
@@ -1005,4 +1124,3 @@ document.addEventListener('DOMContentLoaded', function() {
     
 
 });
-
