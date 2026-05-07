@@ -156,34 +156,25 @@ class DashboardController extends Controller
     public function getKPIs()
     {
         try {
-            $totalOrders = DB::table('pedidos_produccion')->count();
-            $ordersByStatus = DB::table('pedidos_produccion')
-                ->select('estado', DB::raw('count(*) as count'))
-                ->groupBy('estado')
-                ->get();
-            $ordersByArea = DB::table('pedidos_produccion')
-                ->select('area', DB::raw('count(*) as count'))
-                ->groupBy('area')
-                ->get();
+            $costuraPendientes = DB::table('consecutivos_recibos_pedidos')
+                ->where('tipo_recibo', 'COSTURA')
+                ->where('estado', 'En Ejecución')
+                ->count();
 
-            $recentDeliveries = collect();
-            try {
-                $recentDeliveries = DB::table('entregas_pedido_costura')
-                    ->select('pedido', 'cantidad_entregada', 'fecha_entrega', 'costurero')
-                    ->orderBy('fecha_entrega', 'desc')
-                    ->limit(5)
-                    ->get();
-            } catch (\Throwable $e) {
-                Log::warning('[DashboardController] entregas_pedido_costura table not found', [
-                    'error' => $e->getMessage()
-                ]);
-            }
+            $costurasCompletadas = DB::table('consecutivos_recibos_pedidos')
+                ->where('tipo_recibo', 'COSTURA')
+                ->where('area', 'despacho')
+                ->count();
+
+            $costurasEnPendiente = DB::table('consecutivos_recibos_pedidos')
+                ->where('tipo_recibo', 'COSTURA')
+                ->where('estado', 'Pendiente')
+                ->count();
 
             return response()->json([
-                'total_orders' => $totalOrders,
-                'orders_by_status' => $ordersByStatus,
-                'orders_by_area' => $ordersByArea,
-                'recent_deliveries' => $recentDeliveries
+                'total_orders' => $costuraPendientes,
+                'ordenes_completadas' => $costurasCompletadas,
+                'ordenes_pendientes' => $costurasEnPendiente
             ]);
         } catch (\Throwable $e) {
             Log::error('[DashboardController] getKPIs error', [
@@ -192,12 +183,10 @@ class DashboardController extends Controller
             ]);
 
             return response()->json([
-                'error' => 'Error retrieving KPIs',
                 'total_orders' => 0,
-                'orders_by_status' => [],
-                'orders_by_area' => [],
-                'recent_deliveries' => []
-            ], 500);
+                'ordenes_completadas' => 0,
+                'ordenes_pendientes' => 0
+            ], 200);
         }
     }
 

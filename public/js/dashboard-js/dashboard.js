@@ -335,12 +335,9 @@ class CorteChart extends ChartBase {
 const DataLoader = {
     async loadKPIs() {
         const data = await fetch('/dashboard/kpis').then(r => r.json());
-        document.getElementById('total-orders').textContent = data.total_orders;
-        document.getElementById('ordenes-completadas').textContent = 
-            data.orders_by_status.find(s => s.estado === 'Entregado')?.count || 0;
-        document.getElementById('ordenes-pendientes').textContent = 
-            (data.orders_by_status.find(s => s.estado === 'En Ejecución')?.count || 0) + 
-            (data.orders_by_status.find(s => s.estado === 'No iniciado')?.count || 0);
+        document.getElementById('total-orders').textContent = data.total_orders || 0;
+        document.getElementById('ordenes-completadas').textContent = data.ordenes_completadas || 0;
+        document.getElementById('ordenes-pendientes').textContent = data.ordenes_pendientes || 0;
     },
 
     async loadNews(date = new Date().toISOString().split('T')[0], filters = {}) {
