@@ -111,7 +111,7 @@
                         @elseif($orden->dias_calculados >= 10) dias-10-15
                         @elseif($orden->dias_calculados >= 5) dias-5-9
                         @else dias-0-4 @endif
-                    @endif @if(isset($orden->marcar_plooter) && $orden->marcar_plooter) row-checked @endif @if(isset($orden->esta_completado) && $orden->esta_completado) row-completado @endif @if(isset($orden->estado) && in_array($orden->estado, ['ANULADO', 'Anulada'])) bg-red-100 @endif"
+                    @endif @if(isset($orden->marcar_plooter) && $orden->marcar_plooter) row-checked @endif @if(!$esGestionReflectivo && isset($orden->esta_completado) && $orden->esta_completado) row-completado @endif @if(isset($orden->estado) && in_array($orden->estado, ['ANULADO', 'Anulada'])) bg-red-100 @endif"
                     data-pedido="{{ strtoupper($orden->numero_pedido ?? '') }}"
                     data-cliente="{{ strtoupper($orden->cliente ?? '') }}"
                     data-orden-pedido="{{ $orden->numero_pedido }}"

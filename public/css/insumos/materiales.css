@@ -1079,3 +1079,472 @@ body.dark-theme input[type="date"]::-webkit-calendar-picker-indicator {
     color: white !important;
     border-color: #b45309 !important;
 }
+
+
+/* ========================================
+   ANIMACIÓN DE DESAPARICIÓN DE FILA
+   ======================================== */
+
+/* Animación de desaparición suave */
+@keyframes rowDisappear {
+    0% {
+        opacity: 1;
+        transform: translateX(0) scaleY(1);
+        height: auto;
+        max-height: 100px;
+    }
+    50% {
+        opacity: 0.5;
+        transform: translateX(20px) scaleY(0.95);
+        max-height: 50px;
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(100px) scaleY(0);
+        height: 0;
+        max-height: 0;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none;
+        display: none;
+    }
+}
+
+/* Clase para aplicar la animación */
+tr.row-disappearing {
+    animation: rowDisappear 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    overflow: hidden;
+    display: table-row;
+}
+
+/* Animación alternativa más rápida */
+@keyframes rowDisappearFast {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+        height: auto;
+        max-height: 100px;
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(100%);
+        height: 0;
+        max-height: 0;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: none;
+    }
+}
+
+tr.row-disappearing-fast {
+    animation: rowDisappearFast 0.4s ease-out forwards;
+    overflow: hidden;
+    display: table-row;
+}
+
+/* Animación con efecto de fade y slide */
+@keyframes rowFadeSlide {
+    0% {
+        opacity: 1;
+        transform: translateX(0) rotateZ(0deg);
+        max-height: 100px;
+    }
+    50% {
+        opacity: 0.7;
+        transform: translateX(10px) rotateZ(1deg);
+        max-height: 50px;
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(150px) rotateZ(5deg);
+        height: 0;
+        max-height: 0;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: none;
+    }
+}
+
+tr.row-disappearing-fade-slide {
+    animation: rowFadeSlide 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    overflow: hidden;
+    display: table-row;
+}
+
+/* Animación con efecto de colapso */
+@keyframes rowCollapse {
+    0% {
+        opacity: 1;
+        max-height: 100px;
+        transform: scaleY(1);
+        padding: inherit;
+        margin: inherit;
+    }
+    50% {
+        opacity: 0.5;
+        transform: scaleY(0.8);
+        max-height: 50px;
+    }
+    100% {
+        opacity: 0;
+        max-height: 0;
+        transform: scaleY(0);
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none;
+        display: none;
+    }
+}
+
+tr.row-disappearing-collapse {
+    animation: rowCollapse 0.5s ease-in-out forwards;
+    overflow: hidden;
+    display: table-row;
+}
+
+/* Animación con efecto de zoom out */
+@keyframes rowZoomOut {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+        max-height: 100px;
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.8) translateX(100px);
+        height: 0;
+        max-height: 0;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: none;
+    }
+}
+
+tr.row-disappearing-zoom {
+    animation: rowZoomOut 0.5s cubic-bezier(0.4, 0, 1, 1) forwards;
+    overflow: hidden;
+    display: table-row;
+}
+
+/* Animación con efecto de rotación y desaparición */
+@keyframes rowRotateDisappear {
+    0% {
+        opacity: 1;
+        transform: rotateY(0deg) translateX(0);
+        max-height: 100px;
+    }
+    100% {
+        opacity: 0;
+        transform: rotateY(90deg) translateX(100px);
+        height: 0;
+        max-height: 0;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: none;
+    }
+}
+
+tr.row-disappearing-rotate {
+    animation: rowRotateDisappear 0.6s ease-in forwards;
+    overflow: hidden;
+    transform-style: preserve-3d;
+    display: table-row;
+}
+
+/* Animación con efecto de bounce out */
+@keyframes rowBounceOut {
+    0% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+        max-height: 100px;
+    }
+    25% {
+        transform: translateX(10px) scale(1.02);
+        max-height: 100px;
+    }
+    50% {
+        transform: translateX(20px) scale(1.01);
+        max-height: 80px;
+    }
+    75% {
+        opacity: 0.5;
+        transform: translateX(80px) scale(0.95);
+        max-height: 40px;
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(150px) scale(0.8);
+        height: 0;
+        max-height: 0;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: none;
+    }
+}
+
+tr.row-disappearing-bounce {
+    animation: rowBounceOut 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+    overflow: hidden;
+    display: table-row;
+}
+
+/* Animación suave y elegante */
+@keyframes rowElegantDisappear {
+    0% {
+        opacity: 1;
+        transform: translateX(0) translateY(0);
+        filter: blur(0px);
+        height: auto;
+        max-height: 100px;
+        padding: inherit;
+        margin: inherit;
+    }
+    50% {
+        opacity: 0.7;
+        filter: blur(1px);
+        max-height: 50px;
+    }
+    99% {
+        opacity: 0;
+        transform: translateX(100px) translateY(-10px);
+        filter: blur(3px);
+        height: 0;
+        max-height: 0;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none;
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(100px) translateY(-10px);
+        filter: blur(3px);
+        height: 0;
+        max-height: 0;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none;
+        display: none;
+    }
+}
+
+tr.row-disappearing-elegant {
+    animation: rowElegantDisappear 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    overflow: hidden;
+    display: table-row;
+}
+
+/* Animación con efecto de desvanecimiento */
+@keyframes rowFadeOut {
+    0% {
+        opacity: 1;
+        height: auto;
+        max-height: 100px;
+    }
+    100% {
+        opacity: 0;
+        height: 0;
+        max-height: 0;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: none;
+    }
+}
+
+tr.row-disappearing-fade {
+    animation: rowFadeOut 0.4s ease-out forwards;
+    overflow: hidden;
+    display: table-row;
+}
+
+/* Animación con efecto de deslizamiento hacia arriba */
+@keyframes rowSlideUp {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+        height: auto;
+        max-height: 100px;
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-20px);
+        height: 0;
+        max-height: 0;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: none;
+    }
+}
+
+tr.row-disappearing-slide-up {
+    animation: rowSlideUp 0.5s ease-in forwards;
+    overflow: hidden;
+    display: table-row;
+}
+
+/* Animación con efecto de deslizamiento hacia abajo */
+@keyframes rowSlideDown {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+        height: auto;
+        max-height: 100px;
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(20px);
+        height: 0;
+        max-height: 0;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: none;
+    }
+}
+
+tr.row-disappearing-slide-down {
+    animation: rowSlideDown 0.5s ease-in forwards;
+    overflow: hidden;
+    display: table-row;
+}
+
+/* Animación con efecto de explosión */
+@keyframes rowExplode {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+        max-height: 100px;
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+        max-height: 100px;
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0) translateX(100px);
+        height: 0;
+        max-height: 0;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: none;
+    }
+}
+
+tr.row-disappearing-explode {
+    animation: rowExplode 0.5s cubic-bezier(0.6, 0.04, 0.98, 0.34) forwards;
+    overflow: hidden;
+    display: table-row;
+}
+
+/* Animación con efecto de implosión */
+@keyframes rowImplode {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+        max-height: 100px;
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(0.95) translateX(20px);
+        max-height: 80px;
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0) translateX(100px);
+        height: 0;
+        max-height: 0;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: none;
+    }
+}
+
+tr.row-disappearing-implode {
+    animation: rowImplode 0.6s ease-in forwards;
+    overflow: hidden;
+    display: table-row;
+}
+
+/* Animación con efecto de onda */
+@keyframes rowWave {
+    0% {
+        opacity: 1;
+        transform: translateX(0) skewX(0deg);
+        max-height: 100px;
+    }
+    50% {
+        opacity: 0.7;
+        transform: translateX(30px) skewX(5deg);
+        max-height: 80px;
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(100px) skewX(10deg);
+        height: 0;
+        max-height: 0;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: none;
+    }
+}
+
+tr.row-disappearing-wave {
+    animation: rowWave 0.7s ease-out forwards;
+    overflow: hidden;
+    display: table-row;
+}
+
+/* Animación con efecto de giro y desaparición */
+@keyframes rowSpinDisappear {
+    0% {
+        opacity: 1;
+        transform: rotate(0deg) translateX(0);
+        max-height: 100px;
+    }
+    100% {
+        opacity: 0;
+        transform: rotate(360deg) translateX(100px);
+        height: 0;
+        max-height: 0;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: none;
+    }
+}
+
+tr.row-disappearing-spin {
+    animation: rowSpinDisappear 0.8s ease-in forwards;
+    overflow: hidden;
+    display: table-row;
+}
+
+/* Animación con efecto de flip */
+@keyframes rowFlip {
+    0% {
+        opacity: 1;
+        transform: rotateX(0deg);
+        max-height: 100px;
+    }
+    100% {
+        opacity: 0;
+        transform: rotateX(90deg) translateX(100px);
+        height: 0;
+        max-height: 0;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: none;
+    }
+}
+
+tr.row-disappearing-flip {
+    animation: rowFlip 0.6s ease-in forwards;
+    overflow: hidden;
+    transform-style: preserve-3d;
+    display: table-row;
+}
+
+/* Animación por defecto (la más suave) */
+tr.row-disappearing-default {
+    animation: rowDisappear 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    overflow: hidden;
+    display: table-row;
+}

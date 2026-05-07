@@ -275,15 +275,23 @@ async function enviarProduccionReflectivo(reciboId, consecutivo) {
         const data = await response.json();
 
         if (data.success) {
+            // Encontrar la fila de la tabla y aplicar animación de desaparición
+            const tableRow = document.querySelector(`tr[data-recibo="${reciboId}"]`);
+            if (tableRow) {
+                // Aplicar la clase de animación (puedes cambiar a otra si prefieres)
+                tableRow.classList.add('row-disappearing-elegant');
+                
+                // Esperar a que termine la animación antes de mostrar el toast
+                await new Promise(resolve => {
+                    setTimeout(resolve, 800); // Duración de la animación
+                });
+            }
+
             if (typeof showToast === 'function') {
                 showToast(data.message, 'success');
             } else {
                 alert(data.message);
             }
-            
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
         } else {
             if (typeof showToast === 'function') {
                 showToast(data.message || 'Error al enviar a producción', 'error');
