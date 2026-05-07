@@ -63,6 +63,13 @@ class WebSocketChannelConfigurator {
 
             this.ws.subscribe('pedidos.creados', '.pedido.creado', (event) => {
                 if (this.debug) console.log('[WebSocketChannelConfigurator]  Pedido creado:', event?.pedido?.id);
+                
+                // Filtrar: NO mostrar pedidos en estado pendiente_cartera al supervisor
+                if (event?.pedido?.estado === 'pendiente_cartera') {
+                    if (this.debug) console.log('[WebSocketChannelConfigurator] ⏭️ Pedido omitido (pendiente_cartera):', event?.pedido?.numero_pedido);
+                    return;
+                }
+                
                 this.onUpdate('pedido.creado', event?.pedido);
             });
 

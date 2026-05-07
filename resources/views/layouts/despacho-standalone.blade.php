@@ -147,7 +147,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 </head>
-<body>
+<body data-module="despacho">
 <div class="app-container">
     @include('components.sidebars.sidebar-despacho')
 
@@ -209,6 +209,17 @@
 
 <!-- Vite App Bundle -->
 @vite(['resources/js/app.js'])
+
+<!-- SHARED CORE - DEPENDENCY INJECTION CONTAINER -->
+<!-- DEBE CARGARSE ANTES de pedidos-realtime.js -->
+<script src="{{ asset('js/bundles/shared-core.min.js') }}"></script>
+
+<!-- WebSocket Real-time para despacho -->
+@auth
+@if(auth()->user()->hasRole('despacho'))
+<script src="{{ asset('js/modulos/asesores/pedidos-realtime.js') }}"></script>
+@endif
+@endauth
 
 <!-- Modal de Imágenes -->
 <script src="{{ asset('js/ImageModal.js') }}"></script>

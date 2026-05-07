@@ -355,15 +355,15 @@
                 .catch(err => console.error('Error toggle visto:', err));
             }
 
-            // Auto-load on page and refresh every 30s
+            // Auto-load on page and listen for real-time updates via WebSocket
             document.addEventListener('DOMContentLoaded', function() {
+                // Initial load
                 cargarNotificacionesBodega();
-                setInterval(cargarNotificacionesBodega, 30000);
 
-                // Escuchar notificaciones en tiempo real si EchoInstance está disponible
+                // Escuchar notificaciones en tiempo real via WebSocket
                 if (window.waitForEcho) {
                     window.waitForEcho((echo) => {
-                        console.log('[BODEGA NOTIF] Suscribiéndose a canal notifications para tiempo real');
+                        console.log('[BODEGA NOTIF] ✅ Suscribiéndose a canal notifications para tiempo real (WebSocket)');
                         
                         // Cache para evitar ráfagas de refresco (debouncing)
                         const bellCache = {
@@ -378,14 +378,17 @@
 
                         echo.channel('notifications')
                             .listen('.new-notification', (e) => {
-                                console.log('[BODEGA NOTIF] Nueva notificación recibida en tiempo real:', e);
+                                console.log('[BODEGA NOTIF] 🚀 Nueva notificación recibida en tiempo real (WebSocket):', e);
                                 
                                 // Refrescar la campana solo una vez por ráfaga
                                 if (bellCache.shouldRefresh()) {
+                                    console.log('[BODEGA NOTIF] Actualizando campana en tiempo real...');
                                     cargarNotificacionesBodega();
                                 }
                             });
                     });
+                } else {
+                    console.warn('[BODEGA NOTIF] ⚠️ window.waitForEcho no disponible, WebSocket no se inicializará');
                 }
             });
         })();

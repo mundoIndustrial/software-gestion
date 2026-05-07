@@ -63,12 +63,10 @@ class PedidoProduccionObserver
             }
 
             // No disparar evento si el pedido no tiene número de pedido (es un borrador)
-            // o si el estado es 'pendiente_cartera' (el supervisor no debe verlo aún)
-            if (empty($pedido->numero_pedido) || strtolower((string)$pedido->estado) === 'pendiente_cartera') {
-                Log::info('[PedidoProduccionObserver] Pedido omitido para broadcast PedidoCreado', [
+            if (empty($pedido->numero_pedido)) {
+                Log::info('[PedidoProduccionObserver] Pedido omitido para broadcast PedidoCreado (sin número)', [
                     'pedido_id' => $pedido->id,
                     'estado' => $pedido->estado,
-                    'tiene_numero' => !empty($pedido->numero_pedido)
                 ]);
                 return;
             }
@@ -77,12 +75,15 @@ class PedidoProduccionObserver
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'asesor_id' => $userId,
+                'estado' => $pedido->estado,
             ]);
 
             // Obtener user fresco para el evento
             $user = User::find($userId);
             
             // Disparar evento de forma SÍNCRONA (sin cola)
+            // NOTA: El filtrado por estado se hace en el JavaScript (pedidos-realtime.js)
+            // para que despacho pueda ver pendiente_cartera pero supervisor no
             if ($user) {
                 Log::info('[PedidoProduccionObserver]  Despachando PedidoCreado::dispatch', [
                     'pedido_id' => $pedido->id,

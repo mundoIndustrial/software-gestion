@@ -926,14 +926,68 @@
 
     // ==================== WEBSOCKET / REALTIME ====================
     function setupObservacionesRealtime() {
-        if (!globalThis.EchoInstance) {
-            console.warn('[Despacho] EchoInstance no disponible, reintentando en 2s...');
+        // Usar window.waitForEcho para esperar a que Echo esté disponible
+        if (typeof window.waitForEcho !== 'function') {
+            console.warn('[Despacho] window.waitForEcho no disponible, reintentando en 2s...');
             setTimeout(setupObservacionesRealtime, 2000);
             return;
         }
 
-        // Escuchar canal general de despacho (observaciones)
-        globalThis.EchoInstance.channel('despacho.observaciones')
+        window.waitForEcho(() => {
+            const echo = window.Echo || window.EchoInstance;
+            if (!echo) {
+                console.warn('[Despacho] Echo no disponible después de waitForEcho, reintentando en 2s...');
+                setTimeout(setupObservacionesRealtime, 2000);
+                return;
+            }
+
+            console.log('✅ [Despacho] Echo disponible, configurando WebSocket...');
+
+            // Escuchar evento personalizado disparado por pedidos-realtime.js
+            globalThis.addEventListener('despacho:pedidoActualizado', (event) => {
+                console.log('[Despacho] 🎯 EVENTO PERSONALIZADO RECIBIDO despacho:pedidoActualizado:', event.detail);
+                
+                const pedido = event.detail?.pedido;
+                if (!pedido || !pedido.id) {
+                    console.warn('[Despacho] Evento sin datos de pedido válidos');
+                    return;
+                }
+                
+                console.log('[Despacho] ✅ Procesando actualización de pedido:', pedido.id);
+                
+                // Actualizar novedades si existen
+                if (pedido.novedades) {
+                    const textarea = document.querySelector(`textarea.despacho-novedades-preview[data-pedido-id="${pedido.id}"]`);
+                    if (textarea) {
+                        console.log('[Despacho] Actualizando textarea de novedades');
+                        textarea.value = pedido.novedades && pedido.novedades.trim() ? pedido.novedades : '—';
+                        textarea.title = pedido.novedades || '';
+                    }
+                }
+            });
+
+            // Escuchar nuevo pedido creado
+            globalThis.addEventListener('despacho:pedidoCreado', (event) => {
+                console.log('[Despacho] 🎯 EVENTO PERSONALIZADO RECIBIDO despacho:pedidoCreado:', event.detail);
+                
+                const pedido = event.detail?.pedido;
+                if (!pedido || !pedido.id) {
+                    console.warn('[Despacho] Evento sin datos de pedido válidos');
+                    return;
+                }
+                
+                console.log('[Despacho] ✅ Nuevo pedido creado:', pedido.id, 'Número:', pedido.numero_pedido);
+                
+                // Verificar si el pedido ya existe en la tabla
+                const existingRow = document.querySelector(`tr[data-pedido-id="${pedido.id}"]`);
+                if (!existingRow) {
+                    console.log('[Despacho] Insertando nuevo pedido en la tabla');
+                    insertarNuevoPedidoEnTabla(pedido);
+                }
+            });
+
+            // Escuchar canal general de despacho (observaciones)
+            echo.channel('despacho.observaciones')
             .listen('.observacion.despacho', (e) => {
                 console.log(`[DEBUG-BADGE] 🚨 Evento WebSocket recibido en canal despacho.observaciones:`, e);
                 console.log(`[DEBUG-BADGE] Pedido ID: ${e?.pedido_id}, Action: ${e?.action}`);
@@ -962,7 +1016,7 @@
             });
 
         // Escuchar canal de ordenes para nuevos pedidos aprobados
-        globalThis.EchoInstance.channel('ordenes')
+            echo.channel('ordenes')
             .listen('.orden.updated', (e) => {
                 console.log('[Despacho] Evento orden.updated recibido:', e);
 
@@ -984,7 +1038,7 @@
                             console.log(`[Despacho] Pedido ${orden.id} ya existe en la tabla`);
                         } else {
                             // Es un pedido nuevo, insertar dinámicamente en la tabla
-                            insertarPedidoEnTabla(orden);
+                            insertarNuevoPedidoEnTabla(orden);
                             mostrarNotificacion(`Nuevo pedido aprobado: ${orden.numero_pedido || orden.pedido || orden.id}`, 'success');
                         }
                     }
@@ -992,22 +1046,35 @@
             });
 
         // Escuchar actualizaciones de pedido (incluye novedades) para actualizar badge en tiempo real
-        globalThis.EchoInstance.channel('pedidos.general')
+            echo.channel('pedidos.general')
             .listen('.pedido.actualizado', (e) => {
+                console.log('[Despacho] 🚀 EVENTO RECIBIDO en pedidos.general:', e);
+                
                 const pedidoId = e?.pedido_id || e?.pedido?.id;
-                if (!pedidoId) return;
+                console.log('[Despacho] Pedido ID extraído:', pedidoId);
+                
+                if (!pedidoId) {
+                    console.warn('[Despacho] No se pudo extraer pedido_id del evento');
+                    return;
+                }
+
+                console.log('[Despacho] ✅ Actualizando novedades para pedido:', pedidoId);
 
                 const novedades = e?.pedido?.novedades;
                 if (typeof novedades === 'string') {
                     const textarea = document.querySelector(`textarea.despacho-novedades-preview[data-pedido-id="${pedidoId}"]`);
                     if (textarea) {
+                        console.log('[Despacho] Textarea encontrado, actualizando contenido');
                         textarea.value = novedades && novedades.trim() ? novedades : '—';
                         textarea.title = novedades || '';
+                    } else {
+                        console.warn('[Despacho] Textarea NO encontrado para pedido:', pedidoId);
                     }
                 }
 
                 const textarea2 = document.querySelector(`textarea.despacho-novedades-preview[data-pedido-id="${pedidoId}"]`);
                 const count = __countNovedadesFromText(textarea2 ? textarea2.value : novedades);
+                console.log('[Despacho] Actualizando badge de novedades con count:', count);
                 __renderNovedadesBadge(String(pedidoId), count);
             });
 
@@ -1017,7 +1084,7 @@
             const pedidoId = row.getAttribute('data-pedido-id');
             if (!pedidoId) return;
 
-            globalThis.EchoInstance.channel(`pedido.${pedidoId}`)
+            echo.channel(`pedido.${pedidoId}`)
                 .listen('.observacion.despacho', (e) => {
                     console.log(`[Despacho] Evento en pedido ${pedidoId}:`, e);
 
@@ -1032,7 +1099,110 @@
                 });
         });
 
-        console.log('[Despacho] WebSocket configurado para observaciones');
+        console.log('✅ [Despacho] WebSocket configurado para observaciones');
+        });
+    }
+
+    /**
+     * Insertar nuevo pedido en la tabla con animación
+     */
+    function insertarNuevoPedidoEnTabla(pedido) {
+        console.log('[Despacho] Insertando nuevo pedido:', pedido.numero_pedido);
+        
+        // Obtener la tabla
+        const tbody = document.querySelector('table tbody');
+        if (!tbody) {
+            console.warn('[Despacho] No se encontró tbody en la tabla');
+            return;
+        }
+
+        // Crear la fila del nuevo pedido
+        const fila = document.createElement('tr');
+        fila.className = 'hover:bg-slate-50 transition-colors';
+        fila.setAttribute('data-pedido-id', pedido.id);
+        
+        // Determinar clase de fondo según estado
+        let bgClass = '';
+        if (pedido.estado_entrega === 'completo') bgClass = 'bg-blue-100';
+        else if (pedido.estado_entrega === 'parcial') bgClass = 'bg-yellow-100';
+        
+        if (bgClass) fila.classList.add(bgClass);
+
+        // Crear el HTML de la fila
+        fila.innerHTML = `
+            <td class="px-6 py-4 text-center whitespace-nowrap text-slate-500">
+                <a href="/despacho/${pedido.id}"
+                   class="inline-block px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition-colors">
+                    Ver
+                </a>
+                <button type="button"
+                        onclick="entregarTodo(${pedido.id}, '${pedido.numero_pedido}')"
+                        class="inline-block ml-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors"
+                        title="Marcar todos los ítems como entregados">
+                    Entregar
+                </button>
+            </td>
+            <td class="px-6 py-4 font-medium text-slate-900">
+                ${pedido.numero_pedido}
+            </td>
+            <td class="px-6 py-4 text-slate-600">
+                ${pedido.cliente || '—'}
+            </td>
+            <td class="px-6 py-3" style="min-width: 320px;">
+                <div class="flex gap-2 items-center">
+                    <textarea
+                        class="despacho-novedades-preview w-56 px-2 py-1 border border-slate-300 rounded text-xs bg-slate-50 resize-none"
+                        data-pedido-id="${pedido.id}"
+                        rows="3"
+                        readonly
+                        title="${pedido.novedades || ''}"
+                        style="height:72px"
+                    >${pedido.novedades && pedido.novedades.trim() ? pedido.novedades : '—'}</textarea>
+                    <button
+                        type="button"
+                        onclick="abrirModalNovedadesDespachoIndex(${pedido.id}, '${pedido.numero_pedido}')"
+                        data-pedido-id="${pedido.id}"
+                        class="despacho-novedades-btn px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors"
+                        title="Ver novedades"
+                        style="position:relative"
+                    >
+                        💬
+                    </button>
+                </div>
+            </td>
+            <td class="px-6 py-4">
+                <span class="inline-block px-2 py-1 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                    ${pedido.estado ? pedido.estado.replace(/_/g, ' ') : '—'}
+                </span>
+            </td>
+            <td class="px-6 py-4 text-center text-slate-600 text-xs">
+                ${pedido.created_at ? new Date(pedido.created_at).toLocaleDateString('es-ES', {year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'}) : '—'}
+            </td>
+        `;
+
+        // Agregar la fila al inicio de la tabla con animación
+        tbody.insertBefore(fila, tbody.firstChild);
+
+        // Aplicar animación de entrada
+        fila.style.opacity = '0';
+        fila.style.transform = 'translateY(-20px)';
+        fila.style.transition = 'all 0.5s ease-out';
+
+        // Forzar reflow para que la transición se aplique
+        void fila.offsetWidth;
+
+        // Animar entrada
+        fila.style.opacity = '1';
+        fila.style.transform = 'translateY(0)';
+
+        // Agregar efecto de brillo
+        fila.style.backgroundColor = '#fef3c7';
+        setTimeout(() => {
+            fila.style.transition = 'background-color 1s ease-out';
+            fila.style.backgroundColor = bgClass ? (bgClass === 'bg-blue-100' ? '#dbeafe' : '#fef08a') : 'transparent';
+        }, 100);
+
+        console.log('[Despacho] ✅ Nuevo pedido insertado en la tabla con animación');
     }
 
     document.addEventListener('DOMContentLoaded', () => {

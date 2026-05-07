@@ -554,6 +554,13 @@ function _subscribeToChannels(ws) {
     try {
         ws.subscribe('pedidos.creados', '.pedido.creado', (data) => {
             const pedido = data?.pedido || data?.orden || data || {};
+            
+            // Filtrar: NO mostrar pedidos en estado pendiente_cartera al supervisor
+            if (pedido?.estado === 'pendiente_cartera') {
+                console.log('[RT-SUPERVISOR] ⏭️ Pedido omitido (pendiente_cartera):', pedido?.numero_pedido);
+                return;
+            }
+            
             if (_rtHasBlockingModalOpen()) {
                 _rtQueuedRefresh = true;
             } else {

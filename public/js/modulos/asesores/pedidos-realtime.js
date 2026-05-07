@@ -1,12 +1,9 @@
 /**
  * Real-Time Table Refresh System - Laravel Echo + Reverb Integration
- * @version 2.0 (Phase 5: DDD WebSocket Abstraction)
+ * @version 2.1 (WebSocket directo sin abstracción)
  * 
- * Uses globalThis.shared.websocket (EchoReverbWebSocketClient) abstraction instead of direct Echo access
- * Polling fallback uses globalThis.shared.cache (SessionStorageCacheRepository) for centralized cache handling
- * 
- * Removed all direct globalThis.Echo.channel() calls - replaced with ws.subscribe() pattern
- * Polling uses cache.getOrFetch() with TTL instead of raw fetch loops
+ * Usa globalThis.waitForEcho() y globalThis.Echo directamente
+ * Sin polling - solo WebSocket en tiempo real
  */
 
 class PedidosRealtimeRefresh {
@@ -33,6 +30,7 @@ class PedidosRealtimeRefresh {
         this.isCarteraPage = globalThis.location.pathname.includes('/cartera/pedidos');
         this.isAnyCarteraPage = globalThis.location.pathname.includes('/cartera/');
         this.isSupervisorPedidosPage = globalThis.location.pathname.includes('/supervisor-pedidos');
+        this.isDespachoPage = globalThis.location.pathname.includes('/despacho');
         this.usingWebSockets = false;
 
         // No ejecutar realtime en páginas de cartera (excepto /cartera/pedidos)
@@ -42,36 +40,20 @@ class PedidosRealtimeRefresh {
             return;
         }
         
-        // Service injection from globalThis.shared (DDD pattern)
-        // NOTA: No acceder a globalThis.shared aquí, esperar a initializeServices()
-        this.uiUpdate = null;
-        this.activityDetector = null;
-        this.channelConfigurator = null;
-        
         this.init();
     }
 
     init() {
-        // CRÍTICO: Esperar a que globalThis.shared esté disponible (race condition fix)
-        if (!globalThis.shared?.isReady) {
-            if (this.debug) console.log(' [PedidosRealtime] Esperando globalThis.shared.isReady en init...');
-            setTimeout(() => this.init(), 50);
-            return;
-        }
-        
-        if (this.debug) console.log(' [PedidosRealtime] Sistema inicializado');
-        
-        // Inyectar y configurar servicios (DDD pattern)
-        this.initializeServices();
-        
         // Validar que Echo esté disponible
         if (typeof globalThis.waitForEcho !== 'function') {
-            if (this.debug) console.log(' [PedidosRealtime] Esperando inicialización de Echo...');
+            if (this.debug) console.log('[PedidosRealtime] Esperando inicialización de Echo...');
             setTimeout(() => this.init(), 100);
             return;
         }
         
-        // Configurar WebSocket mediante abstracción
+        if (this.debug) console.log('[PedidosRealtime] Sistema inicializado');
+        
+        // Configurar WebSocket
         this.setupWebSocket();
         
         if (this.autoStart) {
@@ -80,189 +62,214 @@ class PedidosRealtimeRefresh {
     }
 
     /**
-     * Inicializar servicios inyectados
-     */
-    initializeServices() {
-        // Esperar a que globalThis.shared esté disponible (CRÍTICO para evitar race condition)
-        if (!globalThis.shared?.isReady) {
-            if (this.debug) console.log(' [PedidosRealtime] Esperando globalThis.shared.isReady...');
-            setTimeout(() => this.initializeServices(), 50);
-            return;
-        }
-        
-        // UIUpdateService para UI updates
-        if (!this.uiUpdate && globalThis.shared?.uiUpdate) {
-            this.uiUpdate = globalThis.shared.uiUpdate;
-            if (this.debug) console.log(' UIUpdateService inyectado');
-        }
-        
-        // ActivityDetectionService para detectar actividad
-        if (!this.activityDetector && globalThis.shared?.activityDetector) {
-            this.activityDetector = globalThis.shared.activityDetector;
-            // Configurar callbacks de actividad
-            if (this.activityDetector && typeof this.activityDetector.setupActivityDetection === 'function') {
-                this.activityDetector.setupActivityDetection();
-                if (this.debug) console.log(' ActivityDetectionService inyectado y configurado');
-            }
-        }
-        
-        // WebSocketChannelConfigurator para mapeo de canales
-        if (!this.channelConfigurator && globalThis.shared?.channelConfigurator) {
-            this.channelConfigurator = globalThis.shared.channelConfigurator;
-            if (this.debug) console.log(' WebSocketChannelConfigurator inyectado');
-        }
-    }
-
-    /**
-     * Configurar WebSocket usando abstracción centralizada
+     * Configurar WebSocket usando Echo directamente
      */
     setupWebSocket() {
-        // CRÍTICO: Esperar a que globalThis.shared esté disponible (race condition fix)
-        if (!globalThis.shared?.isReady) {
-            if (this.debug) console.log(' [PedidosRealtime] Esperando globalThis.shared.isReady en setupWebSocket...');
-            setTimeout(() => this.setupWebSocket(), 50);
-            return;
-        }
-        
         if (typeof globalThis.waitForEcho !== 'function') {
             console.warn('[PedidosRealtime] Echo initializer not available, retrying');
             setTimeout(() => this.setupWebSocket(), 100);
             return;
         }
 
-        globalThis.waitForEcho(() => {
-            try {
-                // Validar que globalThis.shared esté disponible dentro del callback
-                if (!globalThis.shared?.isReady || !globalThis.shared?.websocket) {
-                    if (this.debug) console.log(' [PedidosRealtime] globalThis.shared no listo en callback, reintentando...');
-                    setTimeout(() => this.setupWebSocket(), 100);
-                    return;
-                }
+        console.log('[PedidosRealtime] Llamando a waitForEcho...');
 
-                const ws = globalThis.shared.websocket;
-                if (!ws) {
-                    throw new Error('WebSocket abstraction not available');
+        globalThis.waitForEcho((echo) => {
+            console.log('[PedidosRealtime] ✅ Callback de waitForEcho ejecutado, echo:', typeof echo);
+            
+            try {
+                if (!echo) {
+                    throw new Error('Echo no disponible');
                 }
+                
+                console.log('[PedidosRealtime] Echo está disponible, detectando página...');
+                console.log('[PedidosRealtime] isDespachoPage:', this.isDespachoPage);
+                console.log('[PedidosRealtime] isSupervisorPedidosPage:', this.isSupervisorPedidosPage);
+                console.log('[PedidosRealtime] isCarteraPage:', this.isCarteraPage);
                 
                 // /supervisor-pedidos: escuchar eventos pero no recargar
                 if (this.isSupervisorPedidosPage) {
-                    if (this.debug) console.log(' [PedidosRealtime] Configurando supervisor-pedidos');
+                    console.log('[PedidosRealtime] 📍 Configurando supervisor-pedidos');
 
-                    ws.subscribe('pedidos.general', '.pedido.actualizado', (event) => {
-                        if (this.debug) console.log(' Pedido actualizado (supervisor)');
-                        try {
-                            globalThis.dispatchEvent(new CustomEvent('supervisorPedidos:realtimePedidoActualizado', { 
-                                detail: { pedido: event?.pedido, source: 'pedidos.general' }
-                            }));
-                        } catch (e) {
-                            console.warn('[PedidosRealtime] Event dispatch error:', e.message);
-                        }
-                    });
+                    echo.channel('pedidos.general')
+                        .listen('.pedido.actualizado', (event) => {
+                            if (this.debug) console.log('[PedidosRealtime] Pedido actualizado (supervisor)');
+                            try {
+                                globalThis.dispatchEvent(new CustomEvent('supervisorPedidos:realtimePedidoActualizado', { 
+                                    detail: { pedido: event?.pedido, source: 'pedidos.general' }
+                                }));
+                            } catch (e) {
+                                console.warn('[PedidosRealtime] Event dispatch error:', e.message);
+                            }
+                        });
 
-                    ws.subscribe('pedidos.creados', '.pedido.creado', (event) => {
-                        if (this.debug) console.log(' Pedido creado (supervisor)');
-                        try {
-                            globalThis.dispatchEvent(new CustomEvent('supervisorPedidos:realtimePedidoCreado', { 
-                                detail: { pedido: event?.pedido, source: 'pedidos.creados' }
-                            }));
-                        } catch (e) {
-                            console.warn('[PedidosRealtime] Event dispatch error:', e.message);
-                        }
-                    });
+                    echo.channel('pedidos.creados')
+                        .listen('.pedido.creado', (event) => {
+                            if (this.debug) console.log('[PedidosRealtime] Pedido creado (supervisor)');
+                            
+                            // Filtrar: NO mostrar pedidos en estado pendiente_cartera al supervisor
+                            if (event?.pedido?.estado === 'pendiente_cartera') {
+                                console.log('[PedidosRealtime] ⏭️ Pedido omitido para supervisor (pendiente_cartera):', event?.pedido?.numero_pedido);
+                                return;
+                            }
+                            
+                            try {
+                                globalThis.dispatchEvent(new CustomEvent('supervisorPedidos:realtimePedidoCreado', { 
+                                    detail: { pedido: event?.pedido, source: 'pedidos.creados' }
+                                }));
+                            } catch (e) {
+                                console.warn('[PedidosRealtime] Event dispatch error:', e.message);
+                            }
+                        });
 
                     this.usingWebSockets = true;
-                    if (this.debug) console.log(' WebSocket activo para supervisor-pedidos');
+                    if (this.debug) console.log('[PedidosRealtime] ✅ WebSocket activo para supervisor-pedidos');
                     return;
                 }
 
                 // /cartera/pedidos: escuchar y recargar tabla
                 if (this.isCarteraPage) {
-                    if (this.debug) console.log(' [PedidosRealtime] Configurando cartera/pedidos');
+                    console.log('[PedidosRealtime] 📍 Configurando cartera/pedidos');
 
-                    ws.subscribe('pedidos.creados', '.pedido.creado', (event) => {
-                        if (this.debug) console.log(' Pedido creado (cartera)');
-                        if (this.uiUpdate) {
-                            this.uiUpdate.showRealtimeToast(`Nuevo pedido recibido`, 'success');
-                        }
-                        if (typeof globalThis.cargarPedidos === 'function') {
-                            globalThis.cargarPedidos();
-                        }
-                    });
+                    echo.channel('pedidos.creados')
+                        .listen('.pedido.creado', (event) => {
+                            if (this.debug) console.log('[PedidosRealtime] Pedido creado (cartera)');
+                            if (typeof globalThis.cargarPedidos === 'function') {
+                                globalThis.cargarPedidos();
+                            }
+                        });
 
-                    ws.subscribe('pedidos.general', '.pedido.actualizado', (event) => {
-                        if (this.debug) console.log(' Pedido actualizado (cartera)');
-                        this.moverPedidoAlInicio(event?.pedido?.id);
-                        if (typeof globalThis.cargarPedidos === 'function') {
-                            setTimeout(() => {
-                                if (!this.pedidoMovido) {
-                                    globalThis.cargarPedidos();
-                                }
-                                this.pedidoMovido = false;
-                            }, 1000);
-                        }
-                    });
-
-                    ws.subscribe('supervisor-pedidos', 'OrdenUpdated', (data) => {
-                        if (this.debug) console.log(' OrdenUpdated (cartera)');
-                        if (typeof globalThis.cargarPedidos === 'function') {
-                            globalThis.cargarPedidos();
-                        }
-                    });
+                    echo.channel('pedidos.general')
+                        .listen('.pedido.actualizado', (event) => {
+                            if (this.debug) console.log('[PedidosRealtime] Pedido actualizado (cartera)');
+                            this.moverPedidoAlInicio(event?.pedido?.id);
+                            if (typeof globalThis.cargarPedidos === 'function') {
+                                setTimeout(() => {
+                                    if (!this.pedidoMovido) {
+                                        globalThis.cargarPedidos();
+                                    }
+                                    this.pedidoMovido = false;
+                                }, 1000);
+                            }
+                        });
 
                     // Canal privado del usuario
-                    if (globalThis.usuarioAutenticado?.id) {
-                        const userId = globalThis.usuarioAutenticado.id;
+                    const userId = document.querySelector('meta[name="user-id"]')?.getAttribute('content');
+                    if (userId) {
                         try {
-                            ws.subscribe(`pedidos.${userId}`, '.PedidoActualizado', (event) => {
-                                if (this.debug) console.log(' PedidoActualizado privado (cartera)');
-                                if (typeof globalThis.cargarPedidos === 'function') {
-                                    globalThis.cargarPedidos();
-                                }
-                            });
+                            echo.private(`pedidos.${userId}`)
+                                .listen('.PedidoActualizado', (event) => {
+                                    if (this.debug) console.log('[PedidosRealtime] PedidoActualizado privado (cartera)');
+                                    if (typeof globalThis.cargarPedidos === 'function') {
+                                        globalThis.cargarPedidos();
+                                    }
+                                });
                         } catch (error) {
                             console.error('[PedidosRealtime] Error en canal privado cartera:', error);
                         }
                     }
 
                     this.usingWebSockets = true;
-                    if (this.debug) console.log(' WebSocket activo para cartera/pedidos');
+                    if (this.debug) console.log('[PedidosRealtime] ✅ WebSocket activo para cartera/pedidos');
+                    return;
+                }
+                
+                // /despacho: Configuración especial para despacho
+                if (this.isDespachoPage) {
+                    console.log('[PedidosRealtime] 📍 Configurando despacho - INICIANDO SUSCRIPCIONES');
+                    
+                    // Escuchar cambios generales de pedidos
+                    console.log('[PedidosRealtime] Suscribiendo a pedidos.general...');
+                    echo.channel('pedidos.general')
+                        .listen('.pedido.actualizado', (event) => {
+                            console.log('[PedidosRealtime] 🎯 EVENTO RECIBIDO en pedidos.general (desde pedidos-realtime.js):', event?.pedido?.numero_pedido);
+                            
+                            // Disparar evento personalizado para despacho
+                            try {
+                                globalThis.dispatchEvent(new CustomEvent('despacho:pedidoActualizado', {
+                                    detail: {
+                                        pedido: event?.pedido,
+                                        source: 'websocket',
+                                        timestamp: new Date().toISOString()
+                                    }
+                                }));
+                                console.log('[PedidosRealtime] ✅ CustomEvent despacho:pedidoActualizado disparado');
+                            } catch (e) {
+                                console.warn('[PedidosRealtime] Error despachando evento despacho:', e.message);
+                            }
+                        });
+                    console.log('[PedidosRealtime] ✅ Suscrito a pedidos.general');
+                    
+                    // Escuchar nuevos pedidos
+                    console.log('[PedidosRealtime] Suscribiendo a pedidos.creados...');
+                    echo.channel('pedidos.creados')
+                        .listen('.pedido.creado', (event) => {
+                            console.log('[PedidosRealtime] 🎯 EVENTO RECIBIDO en pedidos.creados (desde pedidos-realtime.js):', event?.pedido?.numero_pedido);
+                            
+                            try {
+                                globalThis.dispatchEvent(new CustomEvent('despacho:pedidoCreado', {
+                                    detail: {
+                                        pedido: event?.pedido,
+                                        source: 'websocket',
+                                        timestamp: new Date().toISOString()
+                                    }
+                                }));
+                                console.log('[PedidosRealtime] ✅ CustomEvent despacho:pedidoCreado disparado');
+                            } catch (e) {
+                                console.warn('[PedidosRealtime] Error despachando evento despacho:', e.message);
+                            }
+                        });
+                    console.log('[PedidosRealtime] ✅ Suscrito a pedidos.creados');
+                    
+                    this.usingWebSockets = true;
+                    console.log('[PedidosRealtime] ✅✅✅ WebSocket ACTIVO para despacho');
                     return;
                 }
 
-                // Asesores: usar canal privado
+                // Asesores - canal privado
                 const userId = document.querySelector('meta[name="user-id"]')?.getAttribute('content');
                 if (!userId) {
                     console.error('[PedidosRealtime] User ID no encontrado, WebSocket desactivado');
                     throw new Error('User ID no encontrado para suscripción privada');
                 }
 
-                if (this.debug) console.log(' [PedidosRealtime] Configurando asesores - canal privado');
+                console.log('[PedidosRealtime] 📍 Configurando asesores - canal privado');
 
                 try {
-                    ws.subscribe(`pedidos.${userId}`, '.PedidoActualizado', (event) => {
-                        if (this.debug) console.log(' Actualización privada');
-                        this.handlePedidoUpdate(event.pedido, 'pedido.actualizado');
-                    });
-
-                    ws.subscribe(`pedidos.${userId}`, '.PedidoCreado', (event) => {
-                        if (this.debug) console.log(' Nuevo pedido privado');
-                        this.handlePedidoUpdate(event.pedido, 'pedido.creado');
-                    });
+                    echo.private(`pedidos.${userId}`)
+                        .listen('.PedidoActualizado', (event) => {
+                            if (this.debug) console.log('[PedidosRealtime] Actualización privada');
+                            this.handlePedidoUpdate(event.pedido, 'pedido.actualizado');
+                        })
+                        .listen('.PedidoCreado', (event) => {
+                            if (this.debug) console.log('[PedidosRealtime] Nuevo pedido privado');
+                            this.handlePedidoUpdate(event.pedido, 'pedido.creado');
+                        });
 
                     this.usingWebSockets = true;
-                    if (this.debug) console.log(' WebSocket activo para asesores');
+                    if (this.debug) console.log('[PedidosRealtime] ✅ WebSocket activo para asesores');
                 } catch (error) {
                     console.error('[PedidosRealtime] Error en suscripción privada:', error);
                     throw error;
                 }
 
             } catch (error) {
-                console.error('[PedidosRealtime] WebSocket setup failed - CRITICO:', error.message);
+                console.error('[PedidosRealtime] WebSocket setup failed:', error.message);
                 this.usingWebSockets = false;
-                if (this.uiUpdate) {
-                    this.uiUpdate.showConnectionIndicator('WebSocket Error - Realtime no disponible', 'error');
-                }
-                throw error; // Propagar el error, no permitir fallback
+                
+                // Log detallado del error para debugging
+                console.error('[PedidosRealtime] Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    type: error.constructor.name,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Reintentar conexión después de 5 segundos
+                console.log('[PedidosRealtime] Reintentando conexión WebSocket en 5 segundos...');
+                setTimeout(() => {
+                    console.log('[PedidosRealtime] Reintentando setupWebSocket...');
+                    this.setupWebSocket();
+                }, 5000);
             }
         });
     }
@@ -271,7 +278,7 @@ class PedidosRealtimeRefresh {
      * Manejar actualización de pedido desde WebSocket
      */
     handlePedidoUpdate(pedido, action) {
-        if (this.debug) console.log(' Actualización de pedido:', pedido?.id);
+        if (this.debug) console.log('[PedidosRealtime] Actualización de pedido:', pedido?.id);
         this.actualizarPedidoIndividual(pedido);
         this.lastChangeTime = new Date();
     }
@@ -288,7 +295,7 @@ class PedidosRealtimeRefresh {
         if (fila) {
             this.actualizarFila(fila, pedido);
         } else if (!this.isCarteraPage && this.debug) {
-            console.log(' Nuevo pedido:', pedido.id);
+            console.log('[PedidosRealtime] Nuevo pedido:', pedido.id);
             this.agregarFilaNueva(pedido);
         }
         
@@ -306,29 +313,26 @@ class PedidosRealtimeRefresh {
             return;
         }
         
-        if (this.debug) console.log(` [PedidosRealtime]  Iniciando monitoreo`);
+        if (this.debug) console.log('[PedidosRealtime] Iniciando monitoreo');
         this.isRunning = true;
         
-        if (this.debug) console.log(' [PedidosRealtime] Usando WebSockets exclusivamente (sin polling)');
+        if (this.debug) console.log('[PedidosRealtime] Usando WebSockets exclusivamente (sin polling)');
     }
     
-
-
     pause() {
         if (!this.isRunning) return;
         
-        if (this.debug) console.log(' [PedidosRealtime] ⏸️ Pausado');
+        if (this.debug) console.log('[PedidosRealtime] ⏸️ Pausado');
         this.isRunning = false;
     }
 
     stop() {
         if (!this.isRunning) return;
         
-        if (this.debug) console.log('⏹️ [PedidosRealtime] Detenido');
+        if (this.debug) console.log('[PedidosRealtime] ⏹️ Detenido');
         this.isRunning = false;
-        clearTimeout(this.userActivityTimeout);
         
-        // Note: Channel unsubscription is handled by the WebSocket abstraction (globalThis.shared.websocket)
+        // Note: Channel unsubscription is handled by Echo
         // No direct cleanup needed here
     }
 
@@ -336,7 +340,7 @@ class PedidosRealtimeRefresh {
      * Destruir instancia completamente
      */
     destroy() {
-        if (this.debug) console.log('💥 [PedidosRealtime] Destruyendo instancia');
+        if (this.debug) console.log('[PedidosRealtime] 💥 Destruyendo instancia');
         
         this.stop();
         this.pedidosAnterior.clear();
@@ -371,13 +375,13 @@ class PedidosRealtimeRefresh {
      * Verificar cambios en lista de pedidos
      */
     async checkForChanges(pedidosNuevos) {
-        if (this.debug) console.log(' Analizando', pedidosNuevos.length, 'pedidos');
+        if (this.debug) console.log('[PedidosRealtime] Analizando', pedidosNuevos.length, 'pedidos');
         
         const hayCambios = this.detectarCambios(pedidosNuevos);
         
         if (hayCambios) {
             this.lastChangeTime = new Date();
-            if (this.debug) console.log(' Cambios detectados');
+            if (this.debug) console.log('[PedidosRealtime] Cambios detectados');
             
             if (typeof globalThis.cargarPedidos === 'function') {
                 await globalThis.cargarPedidos();
@@ -400,7 +404,7 @@ class PedidosRealtimeRefresh {
         
         // Nueva cantidad
         if (pedidosNuevos.length !== this.pedidosAnterior.size) {
-            if (this.debug) console.log('Cantidad cambió:', this.pedidosAnterior.size, '->', pedidosNuevos.length);
+            if (this.debug) console.log('[PedidosRealtime] Cantidad cambió:', this.pedidosAnterior.size, '->', pedidosNuevos.length);
             hayCambios = true;
         }
         
@@ -409,13 +413,13 @@ class PedidosRealtimeRefresh {
             const anterior = this.pedidosAnterior.get(pedido.id);
             
             if (!anterior) {
-                if (this.debug) console.log(' Nuevo pedido:', pedido.id);
+                if (this.debug) console.log('[PedidosRealtime] Nuevo pedido:', pedido.id);
                 hayCambios = true;
                 continue;
             }
             
             if (anterior.estado !== pedido.estado || anterior.novedades !== pedido.novedades) {
-                if (this.debug) console.log('Cambio en pedido:', pedido.id);
+                if (this.debug) console.log('[PedidosRealtime] Cambio en pedido:', pedido.id);
                 hayCambios = true;
             }
         }
@@ -463,7 +467,7 @@ class PedidosRealtimeRefresh {
      */
     agregarFilaNueva(pedido) {
         // Placeholder para agregar nueva fila si es necesario
-        if (this.debug) console.log('Nueva fila para pedido:', pedido.id);
+        if (this.debug) console.log('[PedidosRealtime] Nueva fila para pedido:', pedido.id);
     }
 
     moverPedidoAlInicio(pedidoId) {
@@ -473,7 +477,7 @@ class PedidosRealtimeRefresh {
             // Buscar el contenedor principal
             const contenedorTabla = document.querySelector('.table-scroll-container');
             if (!contenedorTabla) {
-                console.log('[PedidosRealtime]  Contenedor de tabla no encontrado');
+                console.log('[PedidosRealtime] Contenedor de tabla no encontrado');
                 this.pedidoMovido = false;
                 return;
             }
@@ -481,7 +485,7 @@ class PedidosRealtimeRefresh {
             // Buscar el header
             const header = contenedorTabla.querySelector('[style*="grid-template-columns: 200px"]');
             if (!header) {
-                console.log('[PedidosRealtime]  Header de tabla no encontrado');
+                console.log('[PedidosRealtime] Header de tabla no encontrado');
                 this.pedidoMovido = false;
                 return;
             }
@@ -491,7 +495,7 @@ class PedidosRealtimeRefresh {
                 .filter(fila => fila !== header); // Excluir el header
             
             if (filas.length === 0) {
-                console.log('[PedidosRealtime]  No se encontraron filas de pedidos');
+                console.log('[PedidosRealtime] No se encontraron filas de pedidos');
                 this.pedidoMovido = false;
                 return;
             }
@@ -521,7 +525,7 @@ class PedidosRealtimeRefresh {
                 const numero = parseInt(numeroTexto) || 0;
                 const id = fila.getAttribute('data-pedido-id');
                 
-                console.log('[PedidosRealtime]  Pedido encontrado:', { id, numero, texto: numeroElement?.textContent });
+                console.log('[PedidosRealtime] Pedido encontrado:', { id, numero, texto: numeroElement?.textContent });
                 
                 return { fila, numero, id };
             });
@@ -529,10 +533,10 @@ class PedidosRealtimeRefresh {
             // Ordenar por número de pedido en orden ascendente (más antiguo primero)
             filasConNumero.sort((a, b) => a.numero - b.numero);
             
-            console.log('[PedidosRealtime]  Pedidos antes de reordenar:', 
+            console.log('[PedidosRealtime] Pedidos antes de reordenar:', 
                 filasConNumero.map(item => ({ id: item.id, numero: item.numero }))
             );
-            console.log('[PedidosRealtime]  Pedidos después de ordenar (ascendente):', 
+            console.log('[PedidosRealtime] Pedidos después de ordenar (ascendente):', 
                 filasConNumero.map(item => ({ id: item.id, numero: item.numero }))
             );
             
@@ -556,7 +560,7 @@ class PedidosRealtimeRefresh {
                     const checkbox = item.fila.querySelector(`input.pedido-checkbox[data-pedido-id="${pedidoId}"]`);
                     if (checkbox) {
                         checkbox.checked = false;
-                        if (this.debug) console.log('[PedidosRealtime]  Checkbox desmarcado para pedido:', pedidoId);
+                        if (this.debug) console.log('[PedidosRealtime] Checkbox desmarcado para pedido:', pedidoId);
                     }
                     
                     // Actualizar atributo data-seleccionado a false
@@ -574,10 +578,10 @@ class PedidosRealtimeRefresh {
             });
             
             this.pedidoMovido = true;
-            console.log('[PedidosRealtime]  Tabla reordenada por número de pedido (ascendente)');
+            console.log('[PedidosRealtime] Tabla reordenada por número de pedido (ascendente)');
             
         } catch (error) {
-            console.error('[PedidosRealtime]  Error al reordenar tabla:', error);
+            console.error('[PedidosRealtime] Error al reordenar tabla:', error);
             this.pedidoMovido = false;
         }
     }
@@ -607,33 +611,19 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // También inicializar si el DOM ya está cargado
-if (document.readyState === 'loading') {
-    // DOM todavía cargando, esperar evento
-} else {
-    // DOM ya cargado, pero esperar a que globalThis.shared esté disponible
-    function initializePedidosRealtimeIfReady() {
-        if (!globalThis.shared?.isReady) {
-            // globalThis.shared aún no disponible, reintentar
-            setTimeout(initializePedidosRealtimeIfReady, 50);
-            return;
-        }
-        
-        // Ahora sí, crear la instancia
-        if (!globalThis.pedidosRealtimeRefresh) {
-            const realtimeDebug = (
-                globalThis.location.search.includes('realtimeDebug=1') ||
-                globalThis.localStorage?.getItem('realtimeDebug') === '1'
-            );
+if (document.readyState !== 'loading') {
+    // DOM ya cargado, crear la instancia
+    const realtimeDebug = (
+        globalThis.location.search.includes('realtimeDebug=1') ||
+        globalThis.localStorage?.getItem('realtimeDebug') === '1'
+    );
 
-            globalThis.pedidosRealtimeRefresh = new PedidosRealtimeRefresh({
-                checkInterval: 30000,
-                autoStart: true,
-                debug: realtimeDebug // Activable por querystring/localStorage
-            });
-        }
+    if (!globalThis.pedidosRealtimeRefresh) {
+        globalThis.pedidosRealtimeRefresh = new PedidosRealtimeRefresh({
+            checkInterval: 30000,
+            autoStart: true,
+            debug: realtimeDebug
+        });
     }
-    
-    // Ejecutar solo cuando globalThis.shared esté listo
-    initializePedidosRealtimeIfReady();
 }
 

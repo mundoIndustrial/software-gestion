@@ -383,7 +383,7 @@ let reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
 
 function connectWebSocket() {
-    console.log(' Iniciando conexión WebSocket para despacho...');
+    console.log(' ✅ Iniciando conexión WebSocket para despacho...');
     
     if (!window.Echo || !window.EchoInstance) {
         console.error('❌ Echo no está inicializado. Reintentando...');
@@ -410,7 +410,7 @@ function connectWebSocket() {
         console.log(' Canal pedidos.general creado, configurando listener...');
         
         despachoChannel.listen('.pedido.actualizado', (event) => {
-            console.log(' Pedido actualizado en tiempo real (despacho):', event);
+            console.log(' ✅ Evento WebSocket recibido en despacho:', event);
             
             // Log adicional para debugging
             console.log(' Debug evento recibido:', {
@@ -506,13 +506,13 @@ function connectWebSocket() {
                 console.error(' Error en WebSocket (despacho):', error);
             });
 
-        console.log(' WebSocket conectado para lista de despacho');
+        console.log(' ✅ WebSocket conectado para lista de despacho');
         console.log(' Verificando canal público de despacho...');
         
         // Verificar si podemos suscribirnos al canal público
         const channel = socket.channel('pedidos.general');
         if (channel) {
-            console.log(' Canal público pedidos.general creado correctamente');
+            console.log(' ✅ Canal público pedidos.general creado correctamente');
         } else {
             console.error(' Error al crear canal público pedidos.general');
         }
