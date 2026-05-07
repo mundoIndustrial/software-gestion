@@ -76,7 +76,7 @@ class ReciboCorteBodegaController extends Controller
             'prendas.*.nombre' => 'nullable|string|max:255',
             'prendas.*.descripcion' => 'required|string',
             'prendas.*.tallas' => 'required|array|min:1',
-            'prendas.*.tallas.*.talla' => 'required|string|max:50',
+            'prendas.*.tallas.*.talla' => 'nullable|string|max:50',
             'prendas.*.tallas.*.genero' => 'nullable|string|in:dama,caballero,unisex,DAMA,CABALLERO,UNISEX',
             'prendas.*.tallas.*.color' => 'nullable|string|max:100',
             'prendas.*.tallas.*.cantidad' => 'required|integer|min:1',
@@ -138,8 +138,8 @@ class ReciboCorteBodegaController extends Controller
                         'consecutivo_inicial' => $siguienteConsecutivo,
                         'activo' => 1,
                         'marcar_plooter' => 0,
-                        'estado' => 'En Ejecución',
-                        'area' => 'Corte',
+                        'estado' => 'PENDIENTE_INSUMOS',
+                        'area' => 'Insumos',
                         'notas' => null,
                         'created_at' => now(),
                         'updated_at' => now(),
@@ -148,8 +148,12 @@ class ReciboCorteBodegaController extends Controller
 
                     foreach ($prendaData['tallas'] as $tallaData) {
                         $genero = isset($tallaData['genero']) ? strtoupper((string) $tallaData['genero']) : null;
+                        $tallaValor = strtoupper(trim((string) ($tallaData['talla'] ?? '')));
+                        if ($tallaValor === '' || $tallaValor === 'UNICA') {
+                            $tallaValor = null;
+                        }
                         $prenda->tallas()->create([
-                            'talla' => $tallaData['talla'],
+                            'talla' => $tallaValor,
                             'genero' => in_array($genero, ['DAMA', 'CABALLERO', 'UNISEX'], true) ? $genero : null,
                             'color' => isset($tallaData['color']) ? strtoupper(trim((string) $tallaData['color'])) : null,
                             'cantidad' => $tallaData['cantidad'],

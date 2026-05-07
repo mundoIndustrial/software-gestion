@@ -115,32 +115,50 @@ class EloquentMaterialesReadRepository implements MaterialesReadRepository
             throw new \InvalidArgumentException("Columna no permitida: {$column}");
         }
 
-        $query = ConsecutivoReciboPedido::query()
-            ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id')
-            ->where('consecutivos_recibos_pedidos.tipo_recibo', $tipoRecibo)
-            ->where('consecutivos_recibos_pedidos.activo', 1)
-            ->where(function ($q) {
-                $q->where('pedidos_produccion.estado', 'PENDIENTE_INSUMOS')
-                    ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR')
-                    ->orWhere(function ($q2) {
-                        $q2->where('pedidos_produccion.area', 'LIKE', '%Corte%')
-                            ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR')
-                            ->orWhere('pedidos_produccion.area', 'LIKE', '%Creacion%orden%')
-                            ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR')
-                            ->orWhere('pedidos_produccion.area', 'LIKE', '%Creacion de orden%')
-                            ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR');
-                    });
-            });
+        $tipoReciboNormalizado = strtoupper(trim($tipoRecibo));
 
-        $campoSeleccion = match ($column) {
-            'consecutivo_actual' => 'consecutivos_recibos_pedidos.consecutivo_actual',
-            'numero_pedido' => 'pedidos_produccion.numero_pedido',
-            'cliente' => 'pedidos_produccion.cliente',
-            'estado' => 'consecutivos_recibos_pedidos.estado',
-            'area' => 'pedidos_produccion.area',
-            'created_at' => 'pedidos_produccion.created_at',
-            default => null,
-        };
+        if ($tipoReciboNormalizado === 'CORTE-PARA-BODEGA') {
+            $query = ConsecutivoReciboPedido::query()
+                ->leftJoin('prenda_bodega', 'consecutivos_recibos_pedidos.prenda_bodega_id', '=', 'prenda_bodega.id')
+                ->whereRaw('UPPER(TRIM(consecutivos_recibos_pedidos.tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
+                ->where('consecutivos_recibos_pedidos.activo', 1);
+
+            $campoSeleccion = match ($column) {
+                'consecutivo_actual', 'numero_pedido' => 'consecutivos_recibos_pedidos.consecutivo_actual',
+                'cliente' => 'prenda_bodega.descripcion',
+                'estado' => 'consecutivos_recibos_pedidos.estado',
+                'area' => 'consecutivos_recibos_pedidos.area',
+                'created_at' => 'consecutivos_recibos_pedidos.created_at',
+                default => null,
+            };
+        } else {
+            $query = ConsecutivoReciboPedido::query()
+                ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id')
+                ->whereRaw('UPPER(TRIM(consecutivos_recibos_pedidos.tipo_recibo)) = ?', [$tipoReciboNormalizado])
+                ->where('consecutivos_recibos_pedidos.activo', 1)
+                ->where(function ($q) {
+                    $q->where('pedidos_produccion.estado', 'PENDIENTE_INSUMOS')
+                        ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR')
+                        ->orWhere(function ($q2) {
+                            $q2->where('pedidos_produccion.area', 'LIKE', '%Corte%')
+                                ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR')
+                                ->orWhere('pedidos_produccion.area', 'LIKE', '%Creacion%orden%')
+                                ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR')
+                                ->orWhere('pedidos_produccion.area', 'LIKE', '%Creacion de orden%')
+                                ->where('pedidos_produccion.estado', '!=', 'PENDIENTE_SUPERVISOR');
+                        });
+                });
+
+            $campoSeleccion = match ($column) {
+                'consecutivo_actual' => 'consecutivos_recibos_pedidos.consecutivo_actual',
+                'numero_pedido' => 'pedidos_produccion.numero_pedido',
+                'cliente' => 'pedidos_produccion.cliente',
+                'estado' => 'consecutivos_recibos_pedidos.estado',
+                'area' => 'pedidos_produccion.area',
+                'created_at' => 'pedidos_produccion.created_at',
+                default => null,
+            };
+        }
 
         if ($campoSeleccion === null) {
             return [];

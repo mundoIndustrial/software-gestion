@@ -11,6 +11,7 @@ use App\Infrastructure\Http\Requests\Asesores\EditarProcesoPedidoRequest;
 use App\Infrastructure\Http\Requests\Asesores\EliminarProcesoPedidoRequest;
 use App\Infrastructure\Http\Requests\Asesores\ObtenerProcesosPedidoRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -69,6 +70,70 @@ class ProcesosPedidoController
 
             return $this->json([
                 'error' => 'Error al obtener procesos',
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/recibos-bodega/{numeroRecibo}/procesos
+     * Seguimiento para CORTE-PARA-BODEGA desde procesos_prenda por numero_recibo.
+     */
+    public function getProcesosPorNumeroReciboBodega(\Illuminate\Http\Request $request, int|string $numeroRecibo): JsonResponse
+    {
+        try {
+            $numeroReciboInt = (int) $numeroRecibo;
+            if ($numeroReciboInt <= 0) {
+                return $this->json([], 200);
+            }
+
+            $prendaBodegaId = (int) $request->query('prenda_bodega_id', 0);
+
+            $hasPrendaBodegaColumn = DB::getSchemaBuilder()->hasColumn('procesos_prenda', 'prenda_bodega_id');
+
+            $query = DB::table('procesos_prenda')
+                ->where('numero_recibo', $numeroReciboInt);
+
+            if ($prendaBodegaId > 0 && $hasPrendaBodegaColumn) {
+                $query->where('prenda_bodega_id', $prendaBodegaId);
+            }
+
+            $selectColumns = [
+                'id',
+                'numero_pedido',
+                'prenda_pedido_id',
+                'numero_recibo',
+                'numero_recibo_parcial',
+                'proceso',
+                'fecha_inicio',
+                'fecha_fin',
+                'dias_duracion',
+                'encargado',
+                'fecha_de_asignacion_encargado',
+                'estado_proceso',
+                'observaciones',
+                'novedades',
+                'codigo_referencia',
+                'created_at',
+                'updated_at',
+            ];
+
+            if ($hasPrendaBodegaColumn) {
+                $selectColumns[] = 'prenda_bodega_id';
+            }
+
+            $procesos = $query
+                ->orderBy('fecha_inicio')
+                ->get($selectColumns);
+
+            return $this->json($procesos, 200);
+        } catch (\Throwable $e) {
+            Log::error('[ProcesosPedidoController] Error en getProcesosPorNumeroReciboBodega', [
+                'numero_recibo' => $numeroRecibo,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->json([
+                'error' => 'Error al obtener procesos de bodega',
             ], 500);
         }
     }

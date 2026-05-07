@@ -93,6 +93,10 @@ class RecibosViewTransformer
             $materialesKey = $recibo->numero_pedido . '_' . $recibo->prenda_id;
             $cantidadMateriales = $materialesMap[$materialesKey] ?? 0;
             $estadoRecibo = (string) ($recibo->recibo_estado ?? $recibo->pedido_estado ?? '');
+            $cliente = (string) ($recibo->cliente ?? '');
+            if ($tipoRecibo === 'CORTE-PARA-BODEGA') {
+                $cliente = 'Bodega';
+            }
             $motivoDevolucion = null;
             $ultimaNovedadAsesora = $this->extraerUltimaNovedadAsesora((string) ($recibo->pedido_novedades ?? ''));
 
@@ -103,11 +107,15 @@ class RecibosViewTransformer
                     ?? trim((string) ($recibo->notas ?? ''));
             }
 
+            $prendaIdVista = $tipoRecibo === 'CORTE-PARA-BODEGA'
+                ? ($recibo->prenda_bodega_id ?? null)
+                : ($recibo->prenda_id ?? null);
+
             return (object) [
                 'id' => $recibo->id,
                 'numero_pedido' => $recibo->consecutivo_actual,
                 'numero_pedido_original' => $recibo->numero_pedido_original,
-                'cliente' => $recibo->cliente,
+                'cliente' => $cliente,
                 'estado' => $recibo->recibo_estado ?? $recibo->pedido_estado,
                 'area' => $recibo->recibo_area ?? $recibo->pedido_area,
                 'recibo_estado' => $recibo->recibo_estado,
@@ -121,7 +129,8 @@ class RecibosViewTransformer
                     : null,
                 'dias_calculados' => $diasCalculados,
                 'pedido_produccion_id' => $recibo->pedido_produccion_id,
-                'prenda_id' => $recibo->prenda_id,
+                'prenda_id' => $prendaIdVista,
+                'prenda_bodega_id' => $recibo->prenda_bodega_id ?? null,
                 'consecutivo_actual' => $recibo->consecutivo_actual,
                 'tipo_recibo' => $recibo->tipo_recibo,
                 'notas' => (string) ($recibo->notas ?? ''),

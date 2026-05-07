@@ -199,6 +199,8 @@ const SearchDebounce = {
             // Construir parametros para AJAX
             const ajaxParams = new URLSearchParams();
             ajaxParams.set('page', '1');
+            const tipoRecibo = globalThis.tipoRecibo || 'COSTURA';
+            ajaxParams.set('tipo_recibo', tipoRecibo);
             if (searchValue) {
                 ajaxParams.set('search', searchValue);
             }
@@ -260,7 +262,11 @@ const SearchDebounce = {
             window.history.replaceState(
                 { search: searchValue, filters: typeof activeFilters !== 'undefined' ? activeFilters : {} },
                 '',
-                baseUrl.toString()
+                (() => {
+                    const urlWithState = new URL(baseUrl.toString());
+                    urlWithState.searchParams.set('tipo_recibo', tipoRecibo);
+                    return urlWithState.toString();
+                })()
             );
 
             setTimeout(() => {

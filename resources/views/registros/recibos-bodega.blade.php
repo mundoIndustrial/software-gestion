@@ -59,7 +59,6 @@
                     <div id="prendasContainer" class="prendas-container">
                         <div class="prenda-card" data-prenda-index="0">
                             <div class="prenda-header">
-                                <span class="prenda-number">01</span>
                                 <button type="button" class="btn-delete eliminar-prenda-btn" style="display: none;">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                         <path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"></path>
@@ -182,10 +181,19 @@
     <div class="tipo-talla-modal__backdrop"></div>
     <div class="tipo-talla-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="tipoTallaGeneroModalTitle">
         <h3 id="tipoTallaGeneroModalTitle" class="mb-2">Tipo de talla</h3>
-        <p id="tipoTallaGeneroModalText" class="mb-3 text-sm text-muted">Selecciona si deseas manejar tallas por letra o por número.</p>
-        <div class="tipo-talla-modal__actions">
-            <button type="button" class="btn btn-outline-primary" data-tipo-talla-select="letra">Por letra</button>
-            <button type="button" class="btn btn-primary" data-tipo-talla-select="numero">Por número</button>
+        <p id="tipoTallaGeneroModalText" class="mb-2 text-sm text-muted">Selecciona el tipo de talla y registra talla, color y cantidad.</p>
+        <div id="tipoTallaWizardBar" class="tipo-talla-wizard-bar">
+            <button type="button" id="tipoTallaBackBtn" class="btn btn-light btn-sm" style="display:none;">Volver</button>
+            <span id="tipoTallaWizardSummary" class="text-xs text-muted"></span>
+        </div>
+        <div id="tipoTallaModoActions" class="tipo-talla-modal__actions tipo-talla-modal__actions--wizard">
+            <button type="button" class="btn btn-primary" data-modo-carga-select="normal">Normal</button>
+            <button type="button" class="btn btn-outline-primary" data-modo-carga-select="color">Talla por color</button>
+            <button type="button" class="btn btn-outline-primary" data-modo-carga-select="cantidad">Cantidad nada más</button>
+        </div>
+        <div id="tipoTallaTipoActions" class="tipo-talla-modal__actions">
+            <button type="button" class="btn btn-primary" data-tipo-talla-select="letra">Por letra</button>
+            <button type="button" class="btn btn-outline-primary" data-tipo-talla-select="numero">Por número</button>
         </div>
         <div id="tipoTallaGeneroGrid" class="tipo-talla-grid"></div>
         <div class="tipo-talla-modal__footer">
@@ -223,6 +231,16 @@
             </button>
         </div>
         <div id="distributionModalBody" class="distribution-modal__body"></div>
+    </div>
+</div>
+
+<div id="rcbSuccessModal" style="display:none; position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 10000300; align-items: center; justify-content: center;">
+    <div style="background:#fff; width:min(92vw,420px); border-radius:14px; padding:18px; box-shadow:0 18px 40px rgba(15,23,42,.25);">
+        <h3 style="margin:0 0 8px 0; font-size:18px; font-weight:700; color:#0f172a;">Recibo registrado</h3>
+        <p style="margin:0 0 14px 0; color:#334155; font-size:14px;">El recibo se guardó correctamente.</p>
+        <div style="display:flex; justify-content:flex-end;">
+            <button type="button" id="rcbSuccessModalOkBtn" class="btn btn-primary">Aceptar</button>
+        </div>
     </div>
 </div>
 
@@ -884,11 +902,13 @@
 .tipo-talla-modal__dialog {
     position: relative;
     z-index: 10000201;
-    width: min(92vw, 420px);
-    margin: 14vh auto 0;
+    width: min(96vw, 880px);
+    margin: 6vh auto 0;
+    max-height: 88vh;
+    overflow-y: auto;
     background: #fff;
     border-radius: 14px;
-    padding: 16px;
+    padding: 20px;
     box-shadow: 0 24px 44px rgba(15, 23, 42, 0.32);
 }
 
@@ -899,27 +919,94 @@
     margin-bottom: 12px;
 }
 
+.tipo-talla-modal__actions--wizard {
+    margin-top: -4px;
+}
+
+.tipo-talla-wizard-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+#tipoTallaBackBtn {
+    background: #e0ecff;
+    color: #1d4ed8;
+    border: 1px solid #93c5fd;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.15);
+}
+
+#tipoTallaBackBtn:hover {
+    background: #dbeafe;
+    border-color: #60a5fa;
+    color: #1e40af;
+}
+
+#tipoTallaBackBtn:focus {
+    outline: 2px solid #60a5fa;
+    outline-offset: 2px;
+}
+
 .tipo-talla-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-    gap: 8px;
+    gap: 10px;
     margin-bottom: 12px;
 }
 
+.tipo-talla-empty {
+    border: 1px dashed #cbd5e1;
+    background: #f8fafc;
+    color: #475569;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12px;
+}
+
+.tipo-talla-pills {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 8px;
+}
+
 .tipo-talla-pill {
-    border: 2px solid #d1d5db;
+    border: 1px solid #d1d5db;
     background: #fff;
     color: #1f2937;
     border-radius: 8px;
-    padding: 8px 10px;
+    padding: 6px 8px;
     font-weight: 700;
     cursor: pointer;
 }
 
-.tipo-talla-pill.is-selected {
-    border-color: #1d4ed8;
-    background: #eff6ff;
-    color: #1d4ed8;
+.tipo-talla-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 110px 36px;
+    gap: 8px;
+}
+
+.tipo-talla-row.is-normal {
+    grid-template-columns: 1fr 110px 36px;
+}
+
+.tipo-talla-row input {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 13px;
+}
+
+.tipo-talla-remove {
+    border: none;
+    border-radius: 8px;
+    background: #fee2e2;
+    color: #b91c1c;
+    font-weight: 700;
+}
+
+.tipo-talla-add-btn {
+    width: fit-content;
 }
 
 .tipo-talla-modal__footer {
@@ -938,6 +1025,31 @@
     text-transform: uppercase;
     letter-spacing: .6px;
     font-weight: 700;
+}
+
+#reciboBodegaCreateModal .tallas-subsection.is-sin-color .tallas-head {
+    grid-template-columns: 1fr 1fr 32px;
+}
+
+#reciboBodegaCreateModal .tallas-subsection.is-sin-color .tallas-head span:nth-child(2) {
+    display: none;
+}
+
+#reciboBodegaCreateModal .tallas-subsection.is-sin-color .tallas-list > div {
+    grid-template-columns: 1fr 1fr 32px;
+}
+
+#reciboBodegaCreateModal .tallas-subsection.is-cantidad-solo .tallas-head {
+    grid-template-columns: 1fr 32px;
+}
+
+#reciboBodegaCreateModal .tallas-subsection.is-cantidad-solo .tallas-head span:nth-child(1),
+#reciboBodegaCreateModal .tallas-subsection.is-cantidad-solo .tallas-head span:nth-child(2) {
+    display: none;
+}
+
+#reciboBodegaCreateModal .tallas-subsection.is-cantidad-solo .tallas-list > div {
+    grid-template-columns: 1fr 32px;
 }
 
 #reciboBodegaCreateModal .talla-input-uppercase {
@@ -1049,18 +1161,43 @@ document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('reciboBodegaCreateForm');
     const tipoTallaModal = document.getElementById('tipoTallaGeneroModal');
     const tipoTallaModalText = document.getElementById('tipoTallaGeneroModalText');
+    const tipoTallaWizardSummary = document.getElementById('tipoTallaWizardSummary');
+    const tipoTallaBackBtn = document.getElementById('tipoTallaBackBtn');
+    const tipoTallaModoActions = document.getElementById('tipoTallaModoActions');
+    const tipoTallaTipoActions = document.getElementById('tipoTallaTipoActions');
     const tipoTallaCancelarBtn = document.getElementById('cancelarTipoTallaGeneroBtn');
     const tipoTallaConfirmarBtn = document.getElementById('confirmarTipoTallaGeneroBtn');
     const tipoTallaGrid = document.getElementById('tipoTallaGeneroGrid');
+    const rcbSuccessModal = document.getElementById('rcbSuccessModal');
+    const rcbSuccessModalOkBtn = document.getElementById('rcbSuccessModalOkBtn');
 
     if (!modal || !openBtn || !prendasContainer || !form || !tipoTallaModal || !tipoTallaModalText) return;
+
+    function showReciboSuccessModal() {
+        if (!rcbSuccessModal) return;
+        rcbSuccessModal.style.display = 'flex';
+    }
+
+    function hideReciboSuccessModal() {
+        if (!rcbSuccessModal) return;
+        rcbSuccessModal.style.display = 'none';
+    }
+
+    rcbSuccessModalOkBtn?.addEventListener('click', hideReciboSuccessModal);
+    rcbSuccessModal?.addEventListener('click', function (event) {
+        if (event.target === rcbSuccessModal) {
+            hideReciboSuccessModal();
+        }
+    });
 
     const tipoTallaState = {
         isOpen: false,
         resolve: null,
         genero: null,
         tipoSeleccionado: null,
-        tallasSeleccionadas: new Set(),
+        modoCarga: 'normal',
+        etapa: 'modo',
+        detallesSeleccionados: [],
     };
 
     const LISTA_TALLAS_POR_TIPO = {
@@ -1071,7 +1208,6 @@ document.addEventListener('DOMContentLoaded', function () {
         letra: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'],
         numero: ['4', '6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '26', '28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50'],
     };
-
     function toGeneroLabel(genero) {
         const key = String(genero || '').trim().toLowerCase();
         if (key === 'dama') return 'Dama';
@@ -1080,30 +1216,136 @@ document.addEventListener('DOMContentLoaded', function () {
         return 'Género';
     }
 
+    function crearFilaDetalleModal(tipo, modo = 'normal', detalle = {}) {
+        const row = document.createElement('div');
+        row.className = `tipo-talla-row ${modo === 'normal' ? 'is-normal' : ''}`;
+        const datalistId = LISTA_TALLAS_POR_TIPO[tipo] || 'tallas-sugeridas-list';
+        if (modo === 'cantidad') {
+            row.classList.add('is-normal');
+            row.innerHTML = `
+                <input type="number" class="modal-cantidad-input" min="1" placeholder="Cantidad" value="${detalle.cantidad || ''}">
+                <button type="button" class="tipo-talla-remove">x</button>
+            `;
+        } else if (modo === 'normal') {
+            row.innerHTML = `
+                <input type="text" class="modal-talla-input" list="${datalistId}" placeholder="Talla" value="${detalle.talla || ''}">
+                <input type="number" class="modal-cantidad-input" min="1" placeholder="Cantidad" value="${detalle.cantidad || ''}">
+                <button type="button" class="tipo-talla-remove">x</button>
+            `;
+        } else {
+            row.innerHTML = `
+                <input type="text" class="modal-talla-input" list="${datalistId}" placeholder="Talla" value="${detalle.talla || ''}">
+                <input type="text" class="modal-color-input" placeholder="Color" value="${detalle.color || ''}">
+                <input type="number" class="modal-cantidad-input" min="1" placeholder="Cantidad" value="${detalle.cantidad || ''}">
+                <button type="button" class="tipo-talla-remove">x</button>
+            `;
+        }
+        return row;
+    }
+
+    function textoModoSeleccionado() {
+        return tipoTallaState.modoCarga === 'normal' ? 'Sin color' : 'Con color';
+    }
+
+    function textoTipoSeleccionado() {
+        return tipoTallaState.tipoSeleccionado === 'numero' ? 'Por número' : 'Por letra';
+    }
+
+    function actualizarUIWizard() {
+        const etapa = tipoTallaState.etapa;
+        if (tipoTallaModoActions) tipoTallaModoActions.style.display = etapa === 'modo' ? '' : 'none';
+        if (tipoTallaTipoActions) tipoTallaTipoActions.style.display = etapa === 'tipo' ? '' : 'none';
+        if (tipoTallaBackBtn) tipoTallaBackBtn.style.display = etapa === 'modo' ? 'none' : '';
+        if (tipoTallaGrid) tipoTallaGrid.style.display = etapa === 'captura' ? '' : 'none';
+        if (tipoTallaWizardSummary) {
+            tipoTallaWizardSummary.textContent = etapa === 'captura'
+                ? 'Modo Normal'
+                : '';
+        }
+        if (tipoTallaConfirmarBtn) {
+            tipoTallaConfirmarBtn.disabled = etapa !== 'captura';
+        }
+    }
+
+    function actualizarConfirmarModal() {
+        if (!tipoTallaConfirmarBtn) return;
+        if (!tipoTallaState.tipoSeleccionado) {
+            tipoTallaConfirmarBtn.disabled = true;
+            return;
+        }
+        const rows = tipoTallaGrid?.querySelectorAll('.tipo-talla-row') || [];
+        let tieneAlMenosUnaValida = false;
+        rows.forEach((row) => {
+            const talla = (row.querySelector('.modal-talla-input')?.value || '').trim();
+            const color = (row.querySelector('.modal-color-input')?.value || '').trim();
+            const cantidad = parseInt(row.querySelector('.modal-cantidad-input')?.value || '0', 10);
+            const esValida = tipoTallaState.modoCarga === 'normal'
+                ? (talla !== '' && cantidad > 0)
+                : tipoTallaState.modoCarga === 'cantidad'
+                    ? (cantidad > 0)
+                : (talla !== '' && color !== '' && cantidad > 0);
+            if (esValida) {
+                tieneAlMenosUnaValida = true;
+            }
+        });
+        tipoTallaConfirmarBtn.disabled = !tieneAlMenosUnaValida;
+    }
+
     function renderTallasDisponibles(tipo) {
         if (!tipoTallaGrid) return;
-        const tallas = TALLAS_POR_TIPO[tipo] || [];
         tipoTallaGrid.innerHTML = '';
-        tallas.forEach((talla) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'tipo-talla-pill';
-            btn.dataset.talla = talla;
-            btn.textContent = talla;
-            btn.addEventListener('click', function () {
-                if (tipoTallaState.tallasSeleccionadas.has(talla)) {
-                    tipoTallaState.tallasSeleccionadas.delete(talla);
-                    btn.classList.remove('is-selected');
-                } else {
-                    tipoTallaState.tallasSeleccionadas.add(talla);
-                    btn.classList.add('is-selected');
-                }
-                if (tipoTallaConfirmarBtn) {
-                    tipoTallaConfirmarBtn.disabled = tipoTallaState.tallasSeleccionadas.size === 0;
-                }
+
+        if (tipoTallaState.modoCarga !== 'cantidad') {
+            const pillsWrap = document.createElement('div');
+            pillsWrap.className = 'tipo-talla-pills';
+            (TALLAS_POR_TIPO[tipo] || []).forEach((talla) => {
+                const pill = document.createElement('button');
+                pill.type = 'button';
+                pill.className = 'tipo-talla-pill';
+                pill.textContent = talla;
+                pill.addEventListener('click', function () {
+                    if (tipoTallaState.modoCarga === 'normal') {
+                        const existe = Array.from(tipoTallaGrid.querySelectorAll('.tipo-talla-row .modal-talla-input'))
+                            .some((input) => String(input.value || '').trim().toUpperCase() === talla.toUpperCase());
+                        if (existe) {
+                            return;
+                        }
+                    }
+                    const addBtnRef = tipoTallaGrid.querySelector('.tipo-talla-add-btn');
+                    const emptyRef = tipoTallaGrid.querySelector('.tipo-talla-empty');
+                    if (emptyRef) emptyRef.remove();
+                    const row = crearFilaDetalleModal(tipo, tipoTallaState.modoCarga, { talla });
+                    if (addBtnRef) {
+                        tipoTallaGrid.insertBefore(row, addBtnRef);
+                    } else {
+                        tipoTallaGrid.appendChild(row);
+                    }
+                    actualizarConfirmarModal();
+                });
+                pillsWrap.appendChild(pill);
             });
-            tipoTallaGrid.appendChild(btn);
+            tipoTallaGrid.appendChild(pillsWrap);
+            const emptyState = document.createElement('div');
+            emptyState.className = 'tipo-talla-empty';
+            emptyState.textContent = 'No hay tallas agregadas. Usa el botón para crear una fila.';
+            tipoTallaGrid.appendChild(emptyState);
+        } else {
+            // En modo cantidad pura mostramos una fila directa sin pedir tipo de talla.
+            tipoTallaGrid.appendChild(crearFilaDetalleModal(tipo, 'cantidad'));
+        }
+
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'btn btn-outline-primary tipo-talla-add-btn';
+        addBtn.textContent = tipoTallaState.modoCarga === 'cantidad' ? '+ Agregar cantidad' : '+ Agregar talla';
+        addBtn.addEventListener('click', function () {
+            const emptyRef = tipoTallaGrid.querySelector('.tipo-talla-empty');
+            if (emptyRef) emptyRef.remove();
+            tipoTallaGrid.insertBefore(crearFilaDetalleModal(tipo, tipoTallaState.modoCarga), addBtn);
+            actualizarConfirmarModal();
         });
+        tipoTallaGrid.appendChild(addBtn);
+        actualizarConfirmarModal();
     }
 
     function abrirModalTipoTalla(genero) {
@@ -1112,10 +1354,35 @@ document.addEventListener('DOMContentLoaded', function () {
             tipoTallaState.resolve = resolve;
             tipoTallaState.genero = genero;
             tipoTallaState.tipoSeleccionado = null;
-            tipoTallaState.tallasSeleccionadas = new Set();
-            tipoTallaModalText.textContent = `Selecciona el tipo de talla para ${toGeneroLabel(genero)}.`;
-            if (tipoTallaGrid) tipoTallaGrid.innerHTML = '';
-            if (tipoTallaConfirmarBtn) tipoTallaConfirmarBtn.disabled = true;
+            tipoTallaState.modoCarga = 'normal';
+            tipoTallaState.etapa = 'modo';
+            tipoTallaState.detallesSeleccionados = [];
+            tipoTallaModalText.textContent = `Configura tallas para ${toGeneroLabel(genero)}.`;
+
+            tipoTallaModal.querySelectorAll('[data-modo-carga-select]').forEach((btn) => {
+                const isActive = btn.dataset.modoCargaSelect === 'normal';
+                btn.classList.toggle('btn-primary', isActive);
+                btn.classList.toggle('btn-outline-primary', !isActive);
+                if (btn.dataset.modoCargaSelect === 'cantidad') {
+                    btn.style.display = genero === 'unisex' ? '' : 'none';
+                }
+            });
+
+            tipoTallaModal.querySelectorAll('[data-tipo-talla-select]').forEach((btn) => {
+                const isActive = btn.dataset.tipoTallaSelect === 'letra';
+                btn.classList.toggle('btn-primary', isActive);
+                btn.classList.toggle('btn-outline-primary', !isActive);
+            });
+
+            tipoTallaModal.querySelectorAll('[data-tipo-talla-select]').forEach((btn) => {
+                btn.classList.toggle('btn-primary', false);
+                btn.classList.toggle('btn-outline-primary', true);
+            });
+
+            if (tipoTallaGrid) {
+                tipoTallaGrid.innerHTML = '';
+            }
+            actualizarUIWizard();
             tipoTallaModal.classList.remove('is-hidden');
             tipoTallaModal.setAttribute('aria-hidden', 'false');
         });
@@ -1132,7 +1399,9 @@ document.addEventListener('DOMContentLoaded', function () {
         tipoTallaState.resolve = null;
         tipoTallaState.genero = null;
         tipoTallaState.tipoSeleccionado = null;
-        tipoTallaState.tallasSeleccionadas = new Set();
+        tipoTallaState.modoCarga = 'normal';
+        tipoTallaState.etapa = 'modo';
+        tipoTallaState.detallesSeleccionados = [];
     }
 
     function setTipoTallaEnSeccion(section, tipo) {
@@ -1145,28 +1414,59 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function crearFilaTalla(prendaIndex, genero, listId, talla = '') {
+    function setModoCargaEnSeccion(section, modo) {
+        if (!section) return;
+        const modoNormalizado = modo === 'color' ? 'color' : (modo === 'cantidad' ? 'cantidad' : 'normal');
+        section.dataset.modoCarga = modoNormalizado;
+        section.classList.toggle('is-sin-color', modoNormalizado === 'normal');
+        section.classList.toggle('is-cantidad-solo', modoNormalizado === 'cantidad');
+    }
+
+    function crearFilaTalla(prendaIndex, genero, listId, talla = '', incluirColor = true, soloCantidad = false) {
         const fila = document.createElement('div');
-        fila.innerHTML = `
-            <input type="text" name="talla_${genero}[${prendaIndex}][]" class="talla-input-uppercase" list="${listId}" placeholder="Talla" value="${talla}">
-            <input type="text" name="color_${genero}[${prendaIndex}][]" class="color-input-uppercase" placeholder="Color (ej: ROJO)">
-            <input type="number" name="cantidad_${genero}[${prendaIndex}][]" placeholder="Cantidad" min="1">
-            <button type="button" class="eliminar-talla-btn">x</button>
-        `;
+        if (soloCantidad) {
+            fila.innerHTML = `
+                <input type="hidden" name="talla_${genero}[${prendaIndex}][]" value="UNICA">
+                <input type="number" name="cantidad_${genero}[${prendaIndex}][]" placeholder="Cantidad" min="1">
+                <button type="button" class="eliminar-talla-btn">x</button>
+            `;
+        } else if (incluirColor) {
+            fila.innerHTML = `
+                <input type="text" name="talla_${genero}[${prendaIndex}][]" class="talla-input-uppercase" list="${listId}" placeholder="Talla" value="${talla}">
+                <input type="text" name="color_${genero}[${prendaIndex}][]" class="color-input-uppercase" placeholder="Color (ej: ROJO)">
+                <input type="number" name="cantidad_${genero}[${prendaIndex}][]" placeholder="Cantidad" min="1">
+                <button type="button" class="eliminar-talla-btn">x</button>
+            `;
+        } else {
+            fila.innerHTML = `
+                <input type="text" name="talla_${genero}[${prendaIndex}][]" class="talla-input-uppercase" list="${listId}" placeholder="Talla" value="${talla}">
+                <input type="number" name="cantidad_${genero}[${prendaIndex}][]" placeholder="Cantidad" min="1">
+                <button type="button" class="eliminar-talla-btn">x</button>
+            `;
+        }
         return fila;
     }
 
-    function aplicarTallasSeleccionadas(prendaCard, genero, tipo, tallasSeleccionadas) {
+    function aplicarTallasSeleccionadas(prendaCard, genero, tipo, detallesSeleccionados, modo = 'normal') {
         const prendaIndex = parseInt(prendaCard.dataset.prendaIndex || '0', 10);
         const list = prendaCard.querySelector(`.tallas-list-${genero}`);
+        const section = prendaCard.querySelector(`[data-genero-section="${genero}"]`);
         if (!list) return;
         const listId = LISTA_TALLAS_POR_TIPO[tipo] || 'tallas-sugeridas-list';
+        const incluirColor = modo === 'color';
+        const soloCantidad = modo === 'cantidad';
+        setModoCargaEnSeccion(section, modo);
         list.innerHTML = '';
-        (tallasSeleccionadas || []).forEach((talla) => {
-            list.appendChild(crearFilaTalla(prendaIndex, genero, listId, talla));
+        (detallesSeleccionados || []).forEach((detalle) => {
+            const fila = crearFilaTalla(prendaIndex, genero, listId, detalle.talla || '', incluirColor, soloCantidad);
+            const colorInput = fila.querySelector(`input[name="color_${genero}[${prendaIndex}][]"]`);
+            const cantidadInput = fila.querySelector(`input[name="cantidad_${genero}[${prendaIndex}][]"]`);
+            if (colorInput) colorInput.value = (detalle.color || '').toUpperCase();
+            if (cantidadInput) cantidadInput.value = detalle.cantidad || '';
+            list.appendChild(fila);
         });
-        if ((tallasSeleccionadas || []).length === 0) {
-            list.appendChild(crearFilaTalla(prendaIndex, genero, listId, ''));
+        if ((detallesSeleccionados || []).length === 0) {
+            list.appendChild(crearFilaTalla(prendaIndex, genero, listId, '', incluirColor, soloCantidad));
         }
     }
 
@@ -1313,7 +1613,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (data.success) {
                 closeModal();
                 form.reset();
-                alert('Recibo registrado correctamente');
+                showReciboSuccessModal();
                 loadRecibosCorteForBodega();
                 if (data.prendas && data.prendas.length > 0) {
                     setTimeout(() => openReciboCorteBodegaModal(data.prendas[0].id), 500);
@@ -1339,46 +1639,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (addDamaBtn && tallasDamaList) {
             addDamaBtn.addEventListener('click', function () {
-                const tallaRow = document.createElement('div');
                 const section = prendaCard.querySelector('[data-genero-section="dama"]');
                 const listId = LISTA_TALLAS_POR_TIPO[section?.dataset?.tipoTalla] || 'tallas-sugeridas-list';
-                tallaRow.innerHTML = `
-                    <input type="text" name="talla_dama[${prendaIndex}][]" class="talla-input-uppercase" list="${listId}" placeholder="Talla">
-                    <input type="text" name="color_dama[${prendaIndex}][]" class="color-input-uppercase" placeholder="Color (ej: ROJO)">
-                    <input type="number" name="cantidad_dama[${prendaIndex}][]" placeholder="Cantidad" min="1">
-                    <button type="button" class="eliminar-talla-btn">x</button>
-                `;
-                tallasDamaList.appendChild(tallaRow);
+                const incluirColor = (section?.dataset?.modoCarga || 'normal') === 'color';
+                tallasDamaList.appendChild(crearFilaTalla(prendaIndex, 'dama', listId, '', incluirColor));
             });
         }
 
         if (addCabBtn && tallasCabList) {
             addCabBtn.addEventListener('click', function () {
-                const tallaRow = document.createElement('div');
                 const section = prendaCard.querySelector('[data-genero-section="caballero"]');
                 const listId = LISTA_TALLAS_POR_TIPO[section?.dataset?.tipoTalla] || 'tallas-sugeridas-list';
-                tallaRow.innerHTML = `
-                    <input type="text" name="talla_caballero[${prendaIndex}][]" class="talla-input-uppercase" list="${listId}" placeholder="Talla">
-                    <input type="text" name="color_caballero[${prendaIndex}][]" class="color-input-uppercase" placeholder="Color (ej: NEGRO)">
-                    <input type="number" name="cantidad_caballero[${prendaIndex}][]" placeholder="Cantidad" min="1">
-                    <button type="button" class="eliminar-talla-btn">x</button>
-                `;
-                tallasCabList.appendChild(tallaRow);
+                const incluirColor = (section?.dataset?.modoCarga || 'normal') === 'color';
+                tallasCabList.appendChild(crearFilaTalla(prendaIndex, 'caballero', listId, '', incluirColor));
             });
         }
 
         if (addUniBtn && tallasUniList) {
             addUniBtn.addEventListener('click', function () {
-                const tallaRow = document.createElement('div');
                 const section = prendaCard.querySelector('[data-genero-section="unisex"]');
                 const listId = LISTA_TALLAS_POR_TIPO[section?.dataset?.tipoTalla] || 'tallas-sugeridas-list';
-                tallaRow.innerHTML = `
-                    <input type="text" name="talla_unisex[${prendaIndex}][]" class="talla-input-uppercase" list="${listId}" placeholder="Talla">
-                    <input type="text" name="color_unisex[${prendaIndex}][]" class="color-input-uppercase" placeholder="Color (ej: AZUL)">
-                    <input type="number" name="cantidad_unisex[${prendaIndex}][]" placeholder="Cantidad" min="1">
-                    <button type="button" class="eliminar-talla-btn">x</button>
-                `;
-                tallasUniList.appendChild(tallaRow);
+                const incluirColor = (section?.dataset?.modoCarga || 'normal') === 'color';
+                tallasUniList.appendChild(crearFilaTalla(prendaIndex, 'unisex', listId, '', incluirColor));
             });
         }
     }
@@ -1403,20 +1685,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (generoToggleInput.checked) {
                 const seleccion = await abrirModalTipoTalla(genero);
-                if (!seleccion || !seleccion.tipo || !Array.isArray(seleccion.tallas) || seleccion.tallas.length === 0) {
+                if (!seleccion || !seleccion.tipo || !Array.isArray(seleccion.detalles) || seleccion.detalles.length === 0) {
                     generoToggleInput.checked = false;
                     label?.classList.remove('is-active');
                     section.classList.add('is-hidden');
                     return;
                 }
                 setTipoTallaEnSeccion(section, seleccion.tipo);
-                aplicarTallasSeleccionadas(prendaCard, genero, seleccion.tipo, seleccion.tallas);
+                aplicarTallasSeleccionadas(prendaCard, genero, seleccion.tipo, seleccion.detalles, seleccion.modo);
                 label?.classList.add('is-active');
                 section.classList.remove('is-hidden');
             } else {
                 label?.classList.remove('is-active');
                 section.classList.add('is-hidden');
                 section.dataset.tipoTalla = '';
+                section.dataset.modoCarga = '';
+                section.classList.remove('is-sin-color');
             }
 
             return;
@@ -1430,8 +1714,26 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!event.target.classList.contains('eliminar-talla-btn')) return;
         const tallasList = event.target.closest('.tallas-list');
         if (!tallasList) return;
-        const rows = tallasList.querySelectorAll(':scope > div');
-        if (rows.length > 1) event.target.closest('div')?.remove();
+        event.target.closest('div')?.remove();
+
+        const section = tallasList.closest('.tallas-subsection');
+        if (!section) return;
+        const rowsRestantes = tallasList.querySelectorAll(':scope > div');
+        if (rowsRestantes.length > 0) return;
+
+        section.classList.add('is-hidden');
+        section.dataset.tipoTalla = '';
+        section.dataset.modoCarga = '';
+        section.classList.remove('is-sin-color');
+
+        const prendaCard = section.closest('.prenda-card');
+        const genero = section.dataset.generoSection;
+        if (!prendaCard || !genero) return;
+
+        const checkbox = prendaCard.querySelector(`.genero-check-input[data-genero-toggle="${genero}"]`);
+        const label = checkbox?.closest('.genero-check');
+        if (checkbox) checkbox.checked = false;
+        label?.classList.remove('is-active');
     });
 
     prendasContainer.querySelectorAll('.prenda-card').forEach(bindPrendaActions);
@@ -1439,21 +1741,106 @@ document.addEventListener('DOMContentLoaded', function () {
     tipoTallaModal.querySelectorAll('[data-tipo-talla-select]').forEach((btn) => {
         btn.addEventListener('click', function () {
             tipoTallaState.tipoSeleccionado = btn.dataset.tipoTallaSelect;
-            tipoTallaState.tallasSeleccionadas = new Set();
+            tipoTallaState.detallesSeleccionados = [];
             tipoTallaModal.querySelectorAll('[data-tipo-talla-select]').forEach((b) => {
                 b.classList.toggle('btn-primary', b === btn);
                 b.classList.toggle('btn-outline-primary', b !== btn);
             });
             renderTallasDisponibles(tipoTallaState.tipoSeleccionado);
+            tipoTallaState.etapa = 'captura';
+            actualizarUIWizard();
             if (tipoTallaConfirmarBtn) tipoTallaConfirmarBtn.disabled = true;
         });
     });
 
+    tipoTallaModal.querySelectorAll('[data-modo-carga-select]').forEach((btn) => {
+        btn.addEventListener('click', function () {
+            tipoTallaState.modoCarga = btn.dataset.modoCargaSelect || 'normal';
+            if (tipoTallaState.genero !== 'unisex' && tipoTallaState.modoCarga === 'cantidad') {
+                tipoTallaState.modoCarga = 'normal';
+            }
+            tipoTallaModal.querySelectorAll('[data-modo-carga-select]').forEach((b) => {
+                b.classList.toggle('btn-primary', b === btn);
+                b.classList.toggle('btn-outline-primary', b !== btn);
+            });
+            if (tipoTallaState.modoCarga === 'cantidad') {
+                tipoTallaState.tipoSeleccionado = 'letra';
+                tipoTallaState.etapa = 'captura';
+                renderTallasDisponibles(tipoTallaState.tipoSeleccionado);
+                actualizarUIWizard();
+                if (tipoTallaConfirmarBtn) tipoTallaConfirmarBtn.disabled = true;
+                return;
+            }
+
+            tipoTallaState.tipoSeleccionado = null;
+            tipoTallaState.etapa = 'tipo';
+            if (tipoTallaGrid) tipoTallaGrid.innerHTML = '';
+            actualizarUIWizard();
+        });
+    });
+
+    tipoTallaBackBtn?.addEventListener('click', function () {
+        if (tipoTallaState.etapa === 'captura') {
+            tipoTallaState.tipoSeleccionado = null;
+            tipoTallaState.etapa = 'tipo';
+            if (tipoTallaGrid) tipoTallaGrid.innerHTML = '';
+        } else if (tipoTallaState.etapa === 'tipo') {
+            tipoTallaState.etapa = 'modo';
+        }
+        actualizarUIWizard();
+    });
+
+    tipoTallaGrid?.addEventListener('input', function () {
+        actualizarConfirmarModal();
+    });
+
+    tipoTallaGrid?.addEventListener('click', function (event) {
+        const removeBtn = event.target.closest('.tipo-talla-remove');
+        if (!removeBtn) return;
+        removeBtn.closest('.tipo-talla-row')?.remove();
+        actualizarConfirmarModal();
+    });
+
     tipoTallaConfirmarBtn?.addEventListener('click', function () {
-        if (!tipoTallaState.tipoSeleccionado || tipoTallaState.tallasSeleccionadas.size === 0) return;
+        if (!tipoTallaState.tipoSeleccionado) return;
+        const detalles = [];
+        const tallasNormal = new Set();
+        const rows = tipoTallaGrid?.querySelectorAll('.tipo-talla-row') || [];
+        rows.forEach((row) => {
+            const talla = (row.querySelector('.modal-talla-input')?.value || '').trim().toUpperCase();
+            const color = (row.querySelector('.modal-color-input')?.value || '').trim().toUpperCase();
+            const cantidad = parseInt(row.querySelector('.modal-cantidad-input')?.value || '0', 10);
+            if (tipoTallaState.modoCarga === 'normal') {
+                if (talla !== '' && cantidad > 0) {
+                    if (tallasNormal.has(talla)) {
+                        return;
+                    }
+                    tallasNormal.add(talla);
+                    detalles.push({ talla, color: '', cantidad });
+                }
+            } else if (tipoTallaState.modoCarga === 'cantidad') {
+                if (cantidad > 0) {
+                    detalles.push({ talla: 'UNICA', color: '', cantidad });
+                }
+            } else if (talla !== '' && color !== '' && cantidad > 0) {
+                detalles.push({ talla, color, cantidad });
+            }
+        });
+        if (tipoTallaState.modoCarga === 'normal') {
+            const tallasCapturadas = rows
+                ? Array.from(rows).map((row) => (row.querySelector('.modal-talla-input')?.value || '').trim().toUpperCase()).filter(Boolean)
+                : [];
+            const unicas = new Set(tallasCapturadas);
+            if (tallasCapturadas.length !== unicas.size) {
+                alert('En modo Normal no se permiten tallas repetidas.');
+                return;
+            }
+        }
+        if (detalles.length === 0) return;
         cerrarModalTipoTalla({
             tipo: tipoTallaState.tipoSeleccionado,
-            tallas: Array.from(tipoTallaState.tallasSeleccionadas),
+            modo: tipoTallaState.modoCarga,
+            detalles,
         });
     });
 

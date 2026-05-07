@@ -1,6 +1,6 @@
-/**
+﻿/**
  * PedidosRecibosModule.js
- * Módulo principal para gestión de recibos dinámicos en pedidos
+ * Modulo principal para gestion de recibos dinamicos en pedidos
  * 
  * Integra: ModalManager, CloseButtonManager, NavigationManager, 
  *          GalleryManager, ReceiptRenderer, y utilidades
@@ -47,19 +47,19 @@ export class PedidosRecibosModule {
     }
 
     /**
-     * FUNCIÓN PRINCIPAL: Abre un recibo específico en el modal
+     * FUNCION PRINCIPAL: Abre un recibo especi­fico en el modal
      * 
      * @param {number} pedidoId - ID del pedido
      * @param {number} prendaId - ID de la prenda
      * @param {string} tipoRecibo - Tipo de recibo (STRING)
-     * @param {number} prendaIndex - Índice de la prenda (opcional)
+     * @param {number} prendaIndex - indice de la prenda (opcional)
      */
     async abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex = null, options = {}) {
-        // VALIDACIÓN: Bloquear COSTURA-BODEGA en supervisor-pedidos y registros
+        // VALIDACION: Bloquear COSTURA-BODEGA en supervisor-pedidos y registros
         const esSupervisorPedidos = window.location.pathname.includes('/supervisor-pedidos');
         const esRegistros = window.location.pathname.includes('/registros');
         if ((esSupervisorPedidos || esRegistros) && tipoRecibo === 'costura-bodega') {
-            console.warn(' [PedidosRecibosModule] Se intentó abrir recibo COSTURA-BODEGA - BLOQUEADO');
+            console.warn(' [PedidosRecibosModule] Se intenta abrir recibo COSTURA-BODEGA - BLOQUEADO');
             return;
         }
 
@@ -72,7 +72,7 @@ export class PedidosRecibosModule {
 
         if (typeof prendaId !== 'number') {
 
-            alert('Error: ID de prenda debe ser número');
+            alert('Error: ID de prenda debe ser numero');
             return;
         }
 
@@ -99,16 +99,16 @@ export class PedidosRecibosModule {
                     nombreAnexo
                 );
             }
-            // Resetear cualquier galería previa para evitar que quede pegada entre recibos
+            // Resetear cualquier galeria previa para evitar que quede pegada entre recibos
             GalleryManager.resetGaleria(this.modalManager);
 
-            // Limpiar estado del modal para evitar caché entre recibos
+            // Limpiar estado del modal para evitar cache entre recibos
             // Solo limpiar si no hay un recibo abierto actualmente
             const estadoActual = this.modalManager.getState();
             if (!estadoActual.pedidoId) {
                 this.modalManager.limpiarEstado();
             } else {
-                console.log('[abrirRecibo] Recibo ya abierto, reutilizando estado para evitar pérdida de datos');
+                console.log('[abrirRecibo] Recibo ya abierto, reutilizando estado para evitar perdida de datos');
             }
 
             // Actualizar estado con los nuevos datos
@@ -121,12 +121,12 @@ export class PedidosRecibosModule {
                 objetivoConsecutivo: options?.targetConsecutivo ?? null,
                 objetivoReciboId: options?.targetReciboId ?? null
             });
-            console.log('[abrirRecibo] Estado después de setState:', this.modalManager.getState());
+            console.log('[abrirRecibo] Estado despues de setState:', this.modalManager.getState());
 
             // Mostrar modal
             this.modalManager.abrirModal();
 
-            // Determinar el endpoint según el contexto
+            // Determinar el endpoint segun el contexto
             let endpoint;
             if (window.location.pathname.includes('/registros')) {
                 // Contexto de registros
@@ -135,12 +135,12 @@ export class PedidosRecibosModule {
                 // Contexto de insumos - usar endpoint de registros para evitar filtro de de_bodega
                 endpoint = `/registros/${pedidoId}/recibos-datos`;
             } else {
-                // Contexto público (accesible para cualquier usuario autenticado)
+                // Contexto publico (accesible para cualquier usuario autenticado)
                 endpoint = `/pedidos-public/${pedidoId}/recibos-datos`;
             }
 
             console.log(' [PedidosRecibosModule] Endpoint seleccionado:', endpoint);
-            console.log(' [PedidosRecibosModule] Parámetros recibidos:', {
+            console.log(' [PedidosRecibosModule] Parametros recibidos:', {
                 pedidoId,
                 prendaId,
                 tipoRecibo,
@@ -192,7 +192,7 @@ export class PedidosRecibosModule {
                 datos = datos.data;
             }
 
-            // Normalización: el backend puede enviar `proceso.tallas` como ARRAY de detalles
+            // Normalizacion: el backend puede enviar `proceso.tallas` como ARRAY de detalles
             // (con ubicaciones/observaciones por talla). El renderer/Formatters espera
             // `proceso.tallas_detalle` para pintar "UBICACIONES POR TALLA".
             if (datos && Array.isArray(datos.prendas)) {
@@ -216,7 +216,7 @@ export class PedidosRecibosModule {
 
                         // Caso: modo_tallas=general y viene observaciones_por_talla como objeto
                         // -> convertir a tallas_detalle para que Formatters pinte "OBSERVACIONES POR TALLA"
-                        // IMPORTANTE: no pisar un tallas_detalle ya válido del backend.
+                        // IMPORTANTE: no pisar un tallas_detalle ya valido del backend.
                         const modo = String(proceso.modo_tallas || '').toLowerCase();
                         const tallasDetalleValido = Array.isArray(proceso.tallas_detalle) && proceso.tallas_detalle.length > 0;
                         if (modo === 'general' && !tallasDetalleValido && proceso.observaciones_por_talla && typeof proceso.observaciones_por_talla === 'object') {
@@ -273,12 +273,12 @@ export class PedidosRecibosModule {
                 });
             }
 
-            console.group('[PedidosRecibosModule.abrirRecibo] 📥 DATOS RECIBIDOS DEL ENDPOINT');
+            console.group('[PedidosRecibosModule.abrirRecibo] ðŸ“¥ DATOS RECIBIDOS DEL ENDPOINT');
             console.log('Endpoint:', endpoint);
             console.log('Cliente:', datos.cliente);
             console.log('Asesor:', datos.asesor);
             console.log('Forma de pago:', datos.forma_de_pago);
-            console.log('Número pedido:', datos.numero_pedido);
+            console.log('Nºmero pedido:', datos.numero_pedido);
             console.log('Total prendas:', datos.prendas ? datos.prendas.length : 'UNDEFINED');
             console.log('IDs de prendas disponibles:', datos.prendas ? datos.prendas.map(p => p.id) : 'NONE');
             console.log('Buscando prenda_id:', prendaId);
@@ -299,7 +299,7 @@ export class PedidosRecibosModule {
 
             if (!prendaData) {
                 console.error(`[PedidosRecibosModule]  Prenda ${prendaId} no encontrada`);
-                console.error(`[PedidosRecibosModule]  Búsqueda realizada con:`, {
+                console.error(`[PedidosRecibosModule]  Busqueda realizada con:`, {
                     buscarPor: 'id',
                     valorBuscado: prendaId,
                     tipoDeComparacion: '== (flexible)',
@@ -319,7 +319,7 @@ export class PedidosRecibosModule {
                 totalRecibos: prendaData.recibos ? prendaData.recibos.length : 0
             });
 
-            // Debug: Verificar si los recibos están llegando desde el backend
+            // Debug: Verificar si los recibos estan llegando desde el backend
             console.log(' [PedidosRecibosModule] Prenda encontrada:', {
                 prendaId,
                 prendaData: prendaData,
@@ -385,7 +385,7 @@ export class PedidosRecibosModule {
 
             if (prendaData.recibos && Array.isArray(prendaData.recibos.parciales)) {
                 const targetConsecutivoNormalizado = String(targetConsecutivo || '').trim();
-                // 1) Prioridad máxima: si tenemos consecutivo objetivo, buscar el parcial exacto.
+                // 1) Prioridad maxima: si tenemos consecutivo objetivo, buscar el parcial exacto.
                 // Esto garantiza cargar tallas/cantidades desde pedidos_parciales_tallas.
                 if (targetConsecutivoNormalizado !== '') {
                     const parcialPorConsecutivo = prendaData.recibos.parciales.find((p) =>
@@ -485,7 +485,7 @@ export class PedidosRecibosModule {
             // Renderizar
             this._renderizarRecibo(prendaData, reciboIndice, tipoRecibo, datos, recibos);
 
-            // Habilitación final
+            // Habilitacion final
             this.modalManager.habilitarInteraccion();
             this.modalManager.configurarZIndex();
 
@@ -501,7 +501,7 @@ export class PedidosRecibosModule {
      * Sigue el mismo flujo que abrirRecibo() pero inyecta las tallas del parcial
      * en el objeto recibo ANTES de renderizar.
      *
-     * @param {number} pedidoId    - ID del pedido de producción
+     * @param {number} pedidoId    - ID del pedido de produccion
      * @param {number} prendaId    - ID de la prenda
      * @param {string} tipoRecibo  - Tipo del proceso base (ej: "BORDADO")
      * @param {number} parcialId   - ID del recibo parcial (pedidos_parciales)
@@ -514,7 +514,7 @@ export class PedidosRecibosModule {
             return;
         }
         if (typeof prendaId !== 'number') {
-            alert('Error: ID de prenda debe ser número');
+            alert('Error: ID de prenda debe ser numero');
             return;
         }
         if (!parcialId) {
@@ -536,7 +536,7 @@ export class PedidosRecibosModule {
             // Mostrar modal
             this.modalManager.abrirModal();
 
-            // Determinar endpoint de datos del pedido (misma lógica que abrirRecibo)
+            // Determinar endpoint de datos del pedido (misma logica que abrirRecibo)
             let endpoint;
             if (window.location.pathname.includes('/registros')) {
                 endpoint = `/registros/${pedidoId}/recibos-datos`;
@@ -579,7 +579,7 @@ export class PedidosRecibosModule {
             // Para anexos: la fecha del recibo debe venir de pedidos_parciales.created_at
             // El renderer usa datosPedido.fecha para pintar los cuadros de fecha.
             if (parcialData && parcialData.created_at) {
-                // Normalizar a solo fecha para evitar desfases por zona horaria (ej: 23:00 -> día siguiente)
+                // Normalizar a solo fecha para evitar desfases por zona horaria (ej: 23:00 -> dia siguiente)
                 const createdAtStr = String(parcialData.created_at);
                 // Soportar formatos: "YYYY-MM-DD HH:MM:SS" o ISO "YYYY-MM-DDTHH:MM:SS..."
                 const soloFecha = createdAtStr.includes('T')
@@ -685,7 +685,7 @@ export class PedidosRecibosModule {
                 ]);
 
                 if (tipoSintetico && tiposSoportados.has(tipoSintetico)) {
-                    console.warn('[PedidosRecibosModule.abrirReciboParcial] Recibo base no encontrado; creando recibo sintético para renderizar anexo', {
+                    console.warn('[PedidosRecibosModule.abrirReciboParcial] Recibo base no encontrado; creando recibo sintetico para renderizar anexo', {
                         solicitado: tipoRecibo,
                         tipo_sintetico: tipoSintetico,
                         nombre_sintetico: nombreSintetico,
@@ -729,7 +729,7 @@ export class PedidosRecibosModule {
                 throw new Error(`Recibo "${tipoRecibo}" no encontrado`);
             }
 
-            // === INYECCIÓN DE TALLAS DEL PARCIAL (antes de renderizar) ===
+            // === INYECCION DE TALLAS DEL PARCIAL (antes de renderizar) ===
             const recibo = recibos[reciboIndice];
             const tallasFormato = parcialResult.data.tallas_formato;
             const tallasFormatoColores = parcialResult.data.tallas_formato_colores;
@@ -747,7 +747,7 @@ export class PedidosRecibosModule {
                 ? tallasFormatoColores
                 : tallasFormato;
 
-            // Guardar originals para restaurar después (antes de filtrar)
+            // Guardar originals para restaurar despues (antes de filtrar)
             const tallaColoresOriginal = prendaData.talla_colores;
             const tallasOriginal = prendaData.tallas;
 
@@ -775,7 +775,7 @@ export class PedidosRecibosModule {
                     const talla = String(tc.talla || '').toUpperCase();
                     const color = String(tc.color_nombre || tc.color || '').trim().toUpperCase();
                     const keyConColor = `${genero}|${talla}|${color || 'SIN_COLOR'}`;
-                    // Para anexos con selección por color, solo conservar exactamente los colores elegidos.
+                    // Para anexos con seleccion por color, solo conservar exactamente los colores elegidos.
                     if (tallasParcialConColorSet.size > 0) {
                         return tallasParcialConColorSet.has(keyConColor);
                     }
@@ -851,14 +851,14 @@ export class PedidosRecibosModule {
                 procesoActualIndice: reciboIndice
             });
 
-            // Renderizar con la pipeline normal (tallas ya están inyectadas)
+            // Renderizar con la pipeline normal (tallas ya estan inyectadas)
             this._renderizarRecibo(prendaData, reciboIndice, tipoRecibo, datos, recibos);
 
             // Restaurar originales para no mutar el estado permanentemente
             prendaData.talla_colores = tallaColoresOriginal;
             prendaData.tallas = tallasOriginal;
 
-            // Post-renderizado: ajustar título y consecutivo para el anexo
+            // Post-renderizado: ajustar ti­tulo y consecutivo para el anexo
             const titleEl = document.querySelector('.receipt-title');
             if (titleEl) {
                 const tipoReciboLower = String(tipoRecibo || '').toLowerCase();
@@ -871,9 +871,9 @@ export class PedidosRecibosModule {
                 pedidoNumberEl.textContent = consecutivoAnexo ? ('#' + consecutivoAnexo) : '#-';
             }
 
-            console.log('[PedidosRecibosModule.abrirReciboParcial] ✓ Renderizado completo con tallas del parcial');
+            console.log('[PedidosRecibosModule.abrirReciboParcial] âœ“ Renderizado completo con tallas del parcial');
 
-            // Habilitación final
+            // Habilitacion final
             this.modalManager.habilitarInteraccion();
             this.modalManager.configurarZIndex();
 
@@ -888,7 +888,7 @@ export class PedidosRecibosModule {
      * Renderiza el recibo y configura componentes
      */
     _renderizarRecibo(prendaData, reciboIndice, tipoProceso, datosPedido, recibos) {
-        // Mantener prendaData y recibos actuales en el estado para impresión/navegación.
+        // Mantener prendaData y recibos actuales en el estado para impresion/navegacion.
         // (printReceiptModal lee prendaData desde el estado)
         console.log('[PedidosRecibosModule._renderizarRecibo] Estableciendo estado:', {
             prendaId: prendaData?.id,
@@ -903,9 +903,9 @@ export class PedidosRecibosModule {
             procesoActualIndice: reciboIndice,
             tipoProceso
         });
-        console.log('[PedidosRecibosModule._renderizarRecibo] Estado después de setState:', this.modalManager.getState());
+        console.log('[PedidosRecibosModule._renderizarRecibo] Estado despues de setState:', this.modalManager.getState());
 
-        // Crear botón X
+        // Crear boton X
         CloseButtonManager.crearBotonCierre(this.modalManager);
 
         // Renderizar contenido
@@ -918,7 +918,7 @@ export class PedidosRecibosModule {
             recibos
         );
 
-        // Configurar navegación
+        // Configurar navegacion
         NavigationManager.configurarFlechas(
             this.modalManager,
             prendaData,
@@ -927,7 +927,7 @@ export class PedidosRecibosModule {
     }
 
     /**
-     * Callback cuando cambia de proceso vía navegación
+     * Callback cuando cambia de proceso vi­a navegacion
      */
     _onProcesoCambiado(prendaData, nuevoIndice, tipoRecibo, datosPedido, recibos) {
         // Renderizar nuevo recibo
@@ -943,7 +943,7 @@ export class PedidosRecibosModule {
         // Actualizar flechas
         NavigationManager.actualizarVisibilidad(this.modalManager);
 
-        // Cerrar galería si estaba abierta
+        // Cerrar galeri­a si estaba abierta
         const galeria = document.getElementById('galeria-modal-costura');
         if (galeria && galeria.style.display !== 'none') {
             GalleryManager.cerrarGaleria();
@@ -951,14 +951,14 @@ export class PedidosRecibosModule {
     }
 
     /**
-     * Abre la galería de imágenes
+     * Abre la galeria de imagenes
      */
     async abrirGaleria() {
         const mostroGaleria = await GalleryManager.abrirGaleria(this.modalManager);
         if (mostroGaleria) {
             GalleryManager.actualizarBotonesEstilo(true);
         } else {
-            // Usar galería original solo si existe y evitando recursión
+            // Usar galeria original solo si existe y evitando recursion
             if (window.toggleGaleria && window.originalToggleGaleria) {
                 return window.originalToggleGaleria.call(this);
             }
@@ -966,7 +966,7 @@ export class PedidosRecibosModule {
     }
 
     /**
-     * Cierra la galería
+     * Cierra la galeria
      */
     cerrarGaleria() {
         GalleryManager.cerrarGaleria();
@@ -991,8 +991,8 @@ export class PedidosRecibosModule {
 window.pedidosRecibosModule = new PedidosRecibosModule();
 
 /**
- * FUNCIÓN GLOBAL compatibilidad con código antiguo
- * Mantiene la API antigua mientras usa el nuevo módulo
+ * FUNCION GLOBAL compatibilidad con codigo antiguo
+ * Mantiene la API antigua mientras usa el nuevo modulo
  */
 window.openOrderDetailModalWithProcess = async function (
     pedidoId,
@@ -1022,8 +1022,8 @@ if (typeof window.printReceiptModal !== 'function') {
             return;
         }
 
-        // Nuevo flujo: imprimir usando el diseño/paginación del ejemplo "sistema-de-recibos-mundo-industrial".
-        // Se genera un HTML limpio para impresión (A4), sin depender del layout actual del modal.
+        // Nuevo flujo: imprimir usando el diseno/paginacion del ejemplo "sistema-de-recibos-mundo-industrial".
+        // Se genera un HTML limpio para impresion (A4), sin depender del layout actual del modal.
         try {
             const estado = window.pedidosRecibosModule && typeof window.pedidosRecibosModule.getEstado === 'function'
                 ? window.pedidosRecibosModule.getEstado()
@@ -1044,7 +1044,7 @@ if (typeof window.printReceiptModal !== 'function') {
             const reciboActual = (recibos && typeof estado?.procesoActualIndice === 'number') ? recibos[estado.procesoActualIndice] : null;
             const tipoProceso = estado && estado.tipoProceso ? estado.tipoProceso : (reciboActual?.tipo || reciboActual?.tipo_proceso || '');
 
-            console.log('[printReceiptModal]  DATOS EXTRAÍDOS:', {
+            console.log('[printReceiptModal]  DATOS EXTRAIDOS:', {
                 datosPedido,
                 prendaData,
                 recibos,
@@ -1052,8 +1052,8 @@ if (typeof window.printReceiptModal !== 'function') {
                 tipoProceso
             });
 
-            // Fallback DOM: si por algún motivo el estado no trae datos (se ve en COSTURA en algunas vistas),
-            // leer lo que ya está pintado en el modal.
+            // Fallback DOM: si por algun motivo el estado no trae datos (se ve en COSTURA en algunas vistas),
+            // leer lo que ya esta pintado en el modal.
             const getDomText = (sel) => {
                 try {
                     const el = wrapper.querySelector(sel);
@@ -1125,17 +1125,17 @@ if (typeof window.printReceiptModal !== 'function') {
                             items.push(`<span style="color: #d32f2f; font-weight: bold;">${tallaKey}:${n}</span>`);
                         }
                         if (items.length > 0) {
-                            // Género en negro
+                            // Genero en negro
                             partes.push(`<span style="color: black;">${gen}:</span> ${items.join(', ')}`);
                         }
                     });
-                    return partes.join('<br>'); // Usar <br> para que cada género sea una línea
+                    return partes.join('<br>'); // Usar <br> para que cada genero sea una li­nea
                 };
 
                 // === 1) Prioridad: tallas por color (array estilo backend: [{genero,talla,color_nombre,cantidad}, ...]) ===
                 const coloresArr = Array.isArray(tallaColores) ? tallaColores : null;
                 if (coloresArr && coloresArr.length > 0) {
-                    // Agrupar por género -> color -> talla para renderizar igual que el modal
+                    // Agrupar por genero -> color -> talla para renderizar igual que el modal
                     const byGenero = new Map();
                     coloresArr.forEach((row) => {
                         const genero = normalizarGenero(row?.genero);
@@ -1182,10 +1182,10 @@ if (typeof window.printReceiptModal !== 'function') {
                     return partesGenero.join(' | ');
                 }
 
-                // === 2) Array simple: [{genero,talla,cantidad}] (agrupar por género sin repetir) ===
+                // === 2) Array simple: [{genero,talla,cantidad}] (agrupar por genero sin repetir) ===
                 if (Array.isArray(tallas)) {
                     const mapGeneroATallas = {};
-                    const mapSobremedida = {}; // Separar sobremedida por género
+                    const mapSobremedida = {}; // Separar sobremedida por genero
 
                     tallas.forEach((t) => {
                         const genero = normalizarGenero(t?.genero);
@@ -1316,7 +1316,7 @@ if (typeof window.printReceiptModal !== 'function') {
                     const talla = d?.es_sobremedida ? 'SOBREMEDIDA' : String(d?.talla || d?.nombre_talla || '').trim();
                     const genero = String(d?.genero || '').trim();
 
-                    // Observaciones/ubicaciones: soportar múltiples formatos
+                    // Observaciones/ubicaciones: soportar multiples formatos
                     let obs = [];
                     if (Array.isArray(d?.observaciones)) obs = d.observaciones;
                     else if (typeof d?.observaciones === 'string') obs = normalizarLista(d.observaciones);
@@ -1362,7 +1362,7 @@ if (typeof window.printReceiptModal !== 'function') {
                 }
             })();
 
-            // Intentar extraer nombre/color/tallas desde el texto del modal si prendaData no está.
+            // Intentar extraer nombre/color/tallas desde el texto del modal si prendaData no esta.
             const extraerDesdeDescripcion = (raw) => {
                 const out = { prendaNombre: '', prendaColor: '', tallas: '', observacionesProceso: '' };
                 const s = String(raw || '').replace(/\r/g, '').trim();
@@ -1371,7 +1371,7 @@ if (typeof window.printReceiptModal !== 'function') {
                 if (mPrenda && mPrenda[1]) out.prendaNombre = String(mPrenda[1]).trim();
                 const mTallas = s.match(/TALLAS\s*:\s*([^\n]+)/i);
                 if (mTallas && mTallas[1]) out.tallas = String(mTallas[1]).trim();
-                // Color: algunas vistas lo imprimen como "COLOR:" o como segunda línea fuerte.
+                // Color: algunas vistas lo imprimen como "COLOR:" o como segunda li­nea fuerte.
                 const mColor = s.match(/COLOR\s*:\s*([^\n]+)/i);
                 if (mColor && mColor[1]) out.prendaColor = String(mColor[1]).trim();
                 const mObsProceso = s.match(/OBSERVACIONES?(?:\s+DEL\s+PROCESO|\s+PROCESO)?\s*:\s*([\s\S]+)/i);
@@ -1384,8 +1384,8 @@ if (typeof window.printReceiptModal !== 'function') {
             const prendaNombre = String(prendaData?.nombre || prendaData?.nombre_prenda || extra.prendaNombre || '').trim();
             const prendaColor = String(prendaData?.color || extra.prendaColor || '').trim();
             const prendaDescripcion = String(prendaData?.descripcion || '').trim();
-            // Prioridad: endpoint dedicado de observación del proceso (como supervisor-pedidos).
-            // Fallback: datos del estado/DOM para no romper impresión si el endpoint falla.
+            // Prioridad: endpoint dedicado de observacion del proceso (como supervisor-pedidos).
+            // Fallback: datos del estado/DOM para no romper impresion si el endpoint falla.
             let observacionProcesoApi = '';
             try {
                 const pedidoIdObs = Number(
@@ -1424,15 +1424,15 @@ if (typeof window.printReceiptModal !== 'function') {
             ).trim();
 
             // COSTURA y algunos recibos base no traen `ubicaciones` en el objeto recibo.
-            // Para COSTURA: usar solo la descripción limpia de la prenda, sin repetir campos ya mostrados
+            // Para COSTURA: usar solo la descripcion limpia de la prenda, sin repetir campos ya mostrados
             const ubicaciones = (() => {
                 if (tipoProceso && tipoProceso.toUpperCase() === 'COSTURA') {
-                    // Para COSTURA: solo la descripción principal de la prenda
+                    // Para COSTURA: solo la descripcion principal de la prenda
                     const desc = prendaData?.descripcion || '';
                     return desc ? [desc] : [];
                 }
 
-                // Para otros tipos: mantener lógica original
+                // Para otros tipos: mantener logica original
                 const raw = (
                     reciboActual?.ubicaciones ||
                     reciboActual?.ubicaciones_array ||
@@ -1440,7 +1440,7 @@ if (typeof window.printReceiptModal !== 'function') {
                     prendaData?.descripcion
                 );
 
-                // Si no hay nada en data/estado, usar lo que se ve en el modal como bloque único.
+                // Si no hay nada en data/estado, usar lo que se ve en el modal como bloque unico.
                 if ((!raw || (Array.isArray(raw) && raw.length === 0)) && descripcionDOM) {
                     return [descripcionDOM];
                 }
@@ -1463,7 +1463,7 @@ if (typeof window.printReceiptModal !== 'function') {
                 });
 
                 if (reciboActual) {
-                    // Para cualquier tipo de recibo (incluyendo COSTURA), usar tallas_detalle si está disponible
+                    // Para cualquier tipo de recibo (incluyendo COSTURA), usar tallas_detalle si esta disponible
                     if (Array.isArray(reciboActual.tallas_detalle) && reciboActual.tallas_detalle.length > 0) {
                         tallasProceso = reciboActual.tallas_detalle;
                         console.log('[printReceiptModal]  Usando tallas_detalle del reciboActual:', tallasProceso);
@@ -1495,7 +1495,7 @@ if (typeof window.printReceiptModal !== 'function') {
                             tallasProceso = procesoActual.tallas_detalle;
                             console.log('[printReceiptModal]  Usando tallas_detalle del proceso encontrado en prendaData:', tallasProceso);
                         } else if (procesoActual && procesoActual.tallas_detalle) {
-                            console.log('[printReceiptModal]  procesoActual.tallas_detalle existe pero no es array válido:', procesoActual.tallas_detalle);
+                            console.log('[printReceiptModal]  procesoActual.tallas_detalle existe pero no es array valido:', procesoActual.tallas_detalle);
                         }
 
                         // Si no hay tallas_detalle, intentar con tallas del proceso
@@ -1506,10 +1506,10 @@ if (typeof window.printReceiptModal !== 'function') {
                     }
                 }
 
-                // Solución de raíz:
+                // Solucion de raiz:
                 // - Resumen de TALLAS debe salir de `tallas` (totales por talla).
-                // - `tallas_detalle` se reserva para la sección de OBSERVACIONES POR TALLA.
-                // Así evitamos contaminar el resumen cuando el detalle viene unitario.
+                // - `tallas_detalle` se reserva para la seccion de OBSERVACIONES POR TALLA.
+                // Asi­ evitamos contaminar el resumen cuando el detalle viene unitario.
                 const fuenteTallasResumen = reciboActual?.tallas || prendaData?.tallas || tallasProceso || null;
 
                 let str = buildTallasResumen(
@@ -1517,7 +1517,7 @@ if (typeof window.printReceiptModal !== 'function') {
                     reciboActual?.talla_colores || prendaData?.talla_colores || null
                 );
 
-                // Calcular total general para impresión
+                // Calcular total general para impresion
                 let totalG = 0;
                 const sumarTallas = (obj) => {
                     if (!obj) return;
@@ -1533,7 +1533,7 @@ if (typeof window.printReceiptModal !== 'function') {
                 sumarTallas(fuenteTallasResumen);
 
                 if (str && totalG > 0) {
-                    // Envolver en inline-block para que la línea coincida con el ancho
+                    // Envolver en inline-block para que la linea coincida con el ancho
                     str = `
                         <div style="display: inline-block; min-width: 100px; margin-bottom: 18px;">
                             ${str}
@@ -1586,12 +1586,12 @@ if (typeof window.printReceiptModal !== 'function') {
             })();
             const observacionesPorTalla = buildObservacionesPorTalla();
 
-            console.log('[printReceiptModal] 🏁 VALORES FINALES PARA HTML:', {
+            console.log('[printReceiptModal] ðŸ VALORES FINALES PARA HTML:', {
                 tallasResumen,
                 observacionesPorTalla,
                 'tallasResumen tipo': typeof tallasResumen,
                 'tallasResumen longitud': tallasResumen?.length,
-                'tallasResumen vacío': !tallasResumen,
+                'tallasResumen vaci­o': !tallasResumen,
                 'observacionesPorTalla longitud': observacionesPorTalla?.length
             });
 
@@ -1599,37 +1599,37 @@ if (typeof window.printReceiptModal !== 'function') {
             const receiptTitle = receiptTitleEl ? receiptTitleEl.textContent.trim() : '';
             const titulo = receiptTitle || ('RECIBO DE ' + String(tipoProceso || '').toUpperCase());
 
-            // Consecutivo real del recibo actual (fuente de verdad para impresión)
+            // Consecutivo real del recibo actual (fuente de verdad para impresion)
             // 1) Preferir el dato estructurado del estado (reciboActual.numero_recibo)
-            // 2) Fallback: leer lo que ya está pintado en el modal (#order-pedido)
+            // 2) Fallback: leer lo que ya esta pintado en el modal (#order-pedido)
             const numeroReciboActual = reciboActual?.numero_recibo ?? reciboActual?.numeroRecibo ?? null;
             const numeroReciboDesdeDOM = (() => {
                 try {
                     const el = document.querySelector('#order-pedido') || document.querySelector('.pedido-number');
                     const raw = el ? String(el.textContent || '').trim() : '';
                     if (!raw) return '';
-                    // raw puede ser "#7" o "7"; normalizar a solo número
+                    // raw puede ser "#7" o "7"; normalizar a solo numero
                     return raw.startsWith('#') ? raw.slice(1).trim() : raw;
                 } catch (_) {
                     return '';
                 }
             })();
 
-            // Número a mostrar en impresión: si no existe, NO inventar un consecutivo.
+            // Numero a mostrar en impresion: si no existe, NO inventar un consecutivo.
             const numeroReciboFinal = (numeroReciboActual !== null && numeroReciboActual !== undefined && String(numeroReciboActual).trim() !== '')
                 ? String(numeroReciboActual).trim()
                 : String(numeroReciboDesdeDOM || '').trim();
             const numeroParaImpresion = numeroReciboFinal ? ('#' + numeroReciboFinal) : '';
 
-            // Paginación (misma lógica del ejemplo): estimación por altura total de 4 columnas.
-            // Ajuste: agrupar por género sin repetirlo en cada talla.
+            // Paginacion (misma logica del ejemplo): estimacion por altura total de 4 columnas.
+            // Ajuste: agrupar por genero sin repetirlo en cada talla.
             const pages = [];
             let currentBlocks = []; // [{type:'genero', genero} | {type:'talla', genero, talla, observaciones}]
             let currentHeightMm = 0;
 
-            // Altura dinámica de la sección de observaciones por talla:
-            // - Arranca con una altura por defecto más parecida a la vista.
-            // - Crece gradualmente si el contenido lo requiere, hasta el máximo permitido en hoja.
+            // Altura dinamica de la seccion de observaciones por talla:
+            // - Arranca con una altura por defecto mas parecida a la vista.
+            // - Crece gradualmente si el contenido lo requiere, hasta el maximo permitido en hoja.
             const MIN_AVAILABLE_HEIGHT_MM = 75;
             const MAX_AVAILABLE_HEIGHT_MM = 110;
             const GEN_HEADER_HEIGHT_MM = 4;
@@ -1678,7 +1678,7 @@ if (typeof window.printReceiptModal !== 'function') {
                 const yaEsta = last && last.type === 'genero' && last.genero === genero;
                 if (yaEsta) return;
 
-                // Si no cabe el header, cortar página.
+                // Si no cabe el header, cortar pagina.
                 if (currentHeightMm + GEN_HEADER_HEIGHT_MM > TOTAL_COLUMN_CAPACITY_MM && currentBlocks.length > 0) {
                     pushPage();
                 }
@@ -1687,7 +1687,7 @@ if (typeof window.printReceiptModal !== 'function') {
                 currentHeightMm += GEN_HEADER_HEIGHT_MM;
             };
 
-            // Agrupar por género manteniendo orden
+            // Agrupar por genero manteniendo orden
             const grupos = new Map();
             observacionesPorTalla.forEach((t) => {
                 const key = t.genero || '';
@@ -1698,7 +1698,7 @@ if (typeof window.printReceiptModal !== 'function') {
             for (const [generoKey, tallasGrupo] of grupos.entries()) {
                 const generoUpper = generoKey ? String(generoKey).toUpperCase() : '';
 
-                // Encabezado de género (una vez por grupo, y se repetirá solo si hay salto de página)
+                // Encabezado de genero (una vez por grupo, y se repetira solo si hay salto de pagina)
                 addGeneroHeaderIfNeeded(generoUpper);
 
                 tallasGrupo.forEach((tallaItem) => {
@@ -1706,12 +1706,12 @@ if (typeof window.printReceiptModal !== 'function') {
                     let isFirstPart = true;
 
                     while (remainingObs.length > 0) {
-                        // Si estamos iniciando un nuevo “bloque” en una página vacía o recién se cortó,
-                        // y el grupo tiene género, repetir el header para contexto.
+                        // Si estamos iniciando un nuevo desbloquea en una pagina vaci­a o recien se corto,
+                        // y el grupo tiene genero, repetir el header para contexto.
                         if (currentBlocks.length === 0) {
                             addGeneroHeaderIfNeeded(generoUpper);
                         } else {
-                            // Si el último block es de otra cosa y el género se perdió por page-break,
+                            // Si el ultimo block es de otra cosa y el genero se perdio por page-break,
                             // lo reinsertamos cuando corresponde.
                             const last = currentBlocks[currentBlocks.length - 1];
                             const generoPresente = last && ((last.type === 'genero' && last.genero === generoUpper) || (last.type === 'talla' && last.genero === generoUpper));
@@ -1754,17 +1754,17 @@ if (typeof window.printReceiptModal !== 'function') {
             const totalPages = (pages && Array.isArray(pages) && pages.length > 0) ? pages.length : 1;
 
             const renderHeader = (pageNum) => {
-                const pageLabel = totalPages > 1 ? (`PÁGINA ${pageNum}`) : '';
+                const pageLabel = totalPages > 1 ? (`PAGINA ${pageNum}`) : '';
 
-                // Mostrar el número real del recibo (ej: #7). Si no existe, no mostrar nada.
+                // Mostrar el nUmero real del recibo (ej: #7). Si no existe, no mostrar nada.
                 const reciboLabel = numeroParaImpresion ? numeroParaImpresion : '';
 
-                // Para COSTURA: renderizar estructura específica con campos separados
+                // Para COSTURA: renderizar estructura especifica con campos separados
                 if (tipoProceso && tipoProceso.toUpperCase() === 'COSTURA') {
                     const variantes = reciboActual?.variantes || prendaData?.variantes || [];
                     const primeraVariante = variantes.length > 0 ? variantes[0] : {};
 
-                    // Extraer datos específicos de COSTURA
+                    // Extraer datos especificos de COSTURA
                     const manga = primeraVariante?.manga || prendaData?.manga || '';
                     const obsManga = primeraVariante?.manga_obs || primeraVariante?.obs_manga || prendaData?.obs_manga || '';
                     const broche = primeraVariante?.broche || prendaData?.broche || '';
@@ -1774,7 +1774,7 @@ if (typeof window.printReceiptModal !== 'function') {
                     const tieneReflectivo = primeraVariante?.tiene_reflectivo || prendaData?.tiene_reflectivo || false;
                     const obsReflectivo = primeraVariante?.obs_reflectivo || prendaData?.obs_reflectivo || '';
 
-                    // Construir línea compacta de TELAS: Nombre / Color | REF: ref | Manga con obs
+                    // Construir li­nea compacta de TELAS: Nombre / Color | REF: ref | Manga con obs
                     const telaPartesPrincipal = [];
                     if (prendaData?.tela) telaPartesPrincipal.push(esc(prendaData.tela));
                     if (prendaColor) telaPartesPrincipal.push(esc(prendaColor));
@@ -1804,15 +1804,17 @@ if (typeof window.printReceiptModal !== 'function') {
 
                         <div class="header-right">
                           ${pageLabel ? `<div class="page-label">${esc(pageLabel)}</div>` : ''}
-                          <div class="receipt-title-print">${esc(titulo).toUpperCase()}</div>
+                          <div class="receipt-title-print">${(() => { const tr = String((reciboActual && reciboActual.tipo_recibo) || "").toUpperCase(); const t = String(tipoProceso || "").toUpperCase(); const tt = String(titulo || "").toUpperCase(); return (tr === "CORTE-PARA-BODEGA" || t === "CORTE-PARA-BODEGA" || (tt.includes("CORTE") && tt.includes("BODEGA"))) ? "RECIBO DE CORTE<br>PARA BODEGA" : esc(titulo).toUpperCase(); })()}</div>
                           ${reciboLabel ? `<div class="recibo-number-print">${esc(reciboLabel)}</div>` : ''}
-                          <div class="cliente-print"><span class="label">CLIENTE:</span> <span class="value">${esc(cliente || '-')}</span></div>
+                          ${(() => { const tr = String((reciboActual && reciboActual.tipo_recibo) || "").toUpperCase(); const t = String(tipoProceso || "").toUpperCase(); const tt = String(titulo || "").toUpperCase(); return (tr === "CORTE-PARA-BODEGA" || t === "CORTE-PARA-BODEGA" || (tt.includes("CORTE") && tt.includes("BODEGA"))) ? "" : `<div class="cliente-print"><span class="label">CLIENTE:</span> <span class="value">${esc(cliente || '-')}</span></div>`; })()}
                         </div>
 
+                        ${(() => { const tr = String((reciboActual && reciboActual.tipo_recibo) || "").toUpperCase(); const t = String(tipoProceso || "").toUpperCase(); const tt = String(titulo || "").toUpperCase(); return (tr === "CORTE-PARA-BODEGA" || t === "CORTE-PARA-BODEGA" || (tt.includes("CORTE") && tt.includes("BODEGA"))); })() ? "" : `
                         <div class="meta">
                           <div style="grid-column: 1 / 3;"><span class="label">ASESOR:</span> <span class="value">${esc(asesor || '-')}</span></div>
                           <div style="grid-column: 1 / 3;"><span class="label">FORMA DE PAGO:</span> <span class="value">${esc(formaPago || '-')}</span></div>
                         </div>
+                        `}
 
                         <div class="prenda-info">
                           <div class="prenda-name">PRENDA 1: ${esc(prendaNombre || '-').toUpperCase()}</div>
@@ -1930,25 +1932,28 @@ if (typeof window.printReceiptModal !== 'function') {
 
                     <div class="header-right">
                       ${pageLabel ? `<div class="page-label">${esc(pageLabel)}</div>` : ''}
-                      <div class="receipt-title-print">${esc(titulo).toUpperCase()}</div>
+                      <div class="receipt-title-print">${(() => { const tr = String((reciboActual && reciboActual.tipo_recibo) || "").toUpperCase(); const t = String(tipoProceso || "").toUpperCase(); const tt = String(titulo || "").toUpperCase(); return (tr === "CORTE-PARA-BODEGA" || t === "CORTE-PARA-BODEGA" || (tt.includes("CORTE") && tt.includes("BODEGA"))) ? "RECIBO DE CORTE<br>PARA BODEGA" : esc(titulo).toUpperCase(); })()}</div>
                       ${reciboLabel ? `<div class="recibo-number-print">${esc(reciboLabel)}</div>` : ''}
-                      <div class="cliente-print"><span class="label">CLIENTE:</span> <span class="value">${esc(cliente || '-')}</span></div>
+                      ${(() => { const tr = String((reciboActual && reciboActual.tipo_recibo) || "").toUpperCase(); const t = String(tipoProceso || "").toUpperCase(); const tt = String(titulo || "").toUpperCase(); return (tr === "CORTE-PARA-BODEGA" || t === "CORTE-PARA-BODEGA" || (tt.includes("CORTE") && tt.includes("BODEGA"))) ? "" : `<div class="cliente-print"><span class="label">CLIENTE:</span> <span class="value">${esc(cliente || '-')}</span></div>`; })()}
                     </div>
 
+                    ${(() => { const tr = String((reciboActual && reciboActual.tipo_recibo) || "").toUpperCase(); const t = String(tipoProceso || "").toUpperCase(); const tt = String(titulo || "").toUpperCase(); return (tr === "CORTE-PARA-BODEGA" || t === "CORTE-PARA-BODEGA" || (tt.includes("CORTE") && tt.includes("BODEGA"))); })() ? "" : `
                     <div class="meta">
                       <div style="grid-column: 1 / 3;"><span class="label">ASESOR:</span> <span class="value">${esc(asesor || '-')}</span></div>
                       <div style="grid-column: 1 / 3;"><span class="label">FORMA DE PAGO:</span> <span class="value">${esc(formaPago || '-')}</span></div>
                     </div>
+                    `}
 
                     <div class="prenda-info">
-                      <div class="prenda-name">${esc(prendaNombre || '-').toUpperCase()}</div>
-                      ${prendaColor && prendaColor !== '-' ? `<div class="prenda-color">${esc(prendaColor).toUpperCase()}</div>` : ''}
-                      ${prendaDescripcion ? `<div class="prenda-descripcion" style="font-size: 11px; margin-top: 4px; color: #333;">${esc(prendaDescripcion)}</div>` : ''}
+                      <div class="prenda-name">${(() => { const tr = String((reciboActual && reciboActual.tipo_recibo) || "").toUpperCase(); const t = String(tipoProceso || "").toUpperCase(); const tt = String(titulo || "").toUpperCase(); return (tr === "CORTE-PARA-BODEGA" || t === "CORTE-PARA-BODEGA" || (tt.includes("CORTE") && tt.includes("BODEGA"))) ? 'PRENDA 1' : esc(prendaNombre || '-').toUpperCase(); })()}</div>
+                      ${(() => { const tr = String((reciboActual && reciboActual.tipo_recibo) || "").toUpperCase(); const t = String(tipoProceso || "").toUpperCase(); const tt = String(titulo || "").toUpperCase(); const esBodega = (tr === "CORTE-PARA-BODEGA" || t === "CORTE-PARA-BODEGA" || (tt.includes("CORTE") && tt.includes("BODEGA"))); const descDom = (document.querySelector('#descripcion-text span')?.textContent || '').trim(); const desc = (descDom || prendaNombre || prendaDescripcion || '-'); return esBodega ? `<div class="prenda-descripcion" style="font-size: 11px; margin-top: 4px; color: #333;">${esc(desc).toUpperCase()}</div>` : ''; })()}
+                      ${(() => { const tr = String((reciboActual && reciboActual.tipo_recibo) || "").toUpperCase(); const t = String(tipoProceso || "").toUpperCase(); const tt = String(titulo || "").toUpperCase(); return (tr === "CORTE-PARA-BODEGA" || t === "CORTE-PARA-BODEGA" || (tt.includes("CORTE") && tt.includes("BODEGA"))); })() ? '' : (prendaColor && prendaColor !== '-' ? `<div class="prenda-color">${esc(prendaColor).toUpperCase()}</div>` : '')}
+                      ${(() => { const tr = String((reciboActual && reciboActual.tipo_recibo) || "").toUpperCase(); const t = String(tipoProceso || "").toUpperCase(); const tt = String(titulo || "").toUpperCase(); return (tr === "CORTE-PARA-BODEGA" || t === "CORTE-PARA-BODEGA" || (tt.includes("CORTE") && tt.includes("BODEGA"))); })() ? '' : (prendaDescripcion ? `<div class="prenda-descripcion" style="font-size: 11px; margin-top: 4px; color: #333;">${esc(prendaDescripcion)}</div>` : '')}
                     </div>
-                    <div class="section">
+                    ${(() => { const tr = String((reciboActual && reciboActual.tipo_recibo) || "").toUpperCase(); const t = String(tipoProceso || "").toUpperCase(); const tt = String(titulo || "").toUpperCase(); return (tr === "CORTE-PARA-BODEGA" || t === "CORTE-PARA-BODEGA" || (tt.includes("CORTE") && tt.includes("BODEGA"))); })() ? '' : `<div class="section">
                       <h4>UBICACIONES:</h4>
                       <div class="ubicaciones-list">${ubicHtml}</div>
-                    </div>
+                    </div>`}
                     ${tallasResumen ? `
                     <div class="section">
                       ${mostrarTituloTallas ? '<h4>TALLAS:</h4>' : ''}
@@ -1961,7 +1966,7 @@ if (typeof window.printReceiptModal !== 'function') {
             // Detectar si es solo sobremedida (basado en el contenido procesado)
             const esSoloSobremedida = tallasResumen && tallasResumen.includes('SOBREMEDIDA:</span>') && !tallasResumen.includes('<span style="color: #d32f2f');
 
-            // Para impresión, necesitamos saber si el contenido original era solo sobremedida
+            // Para impresion, necesitamos saber si el contenido original era solo sobremedida
             const contenidoOriginalEsSoloSobremedida = (() => {
                 if (Array.isArray(reciboActual?.tallas_detalle) && reciboActual.tallas_detalle.length > 0) {
                     return reciboActual.tallas_detalle.every(t => t.es_sobremedida);
@@ -2039,7 +2044,7 @@ if (typeof window.printReceiptModal !== 'function') {
                     return '';
                 }).join('');
 
-                // Si no hay bloques, no mostrar la sección completa
+                // Si no hay bloques, no mostrar la seccion completa
                 if (!Array.isArray(blocks) || blocks.length === 0) {
                     return '';
                 }
@@ -2180,7 +2185,7 @@ if (typeof window.printReceiptModal !== 'function') {
                 .section h4 { margin: 0 0 5px 0; font-weight: 900; text-transform: uppercase; font-size: 12px; }
                 .tallas-resumen { color: inherit; font-weight: 900; }
                 
-                /* Estilos específicos para COSTURA */
+                /* Estilos especi­ficos para COSTURA */
                 .costura-section { margin-bottom: 15px; font-size: 11px; }
                 .costura-row { margin-bottom: 6px; }
                 .costura-field { display: flex; gap: 4px; margin-bottom: 2px; }
@@ -2190,7 +2195,7 @@ if (typeof window.printReceiptModal !== 'function') {
                 .descripcion-list { font-size: 11px; line-height: 1.3; }
                 .observations-section { margin-bottom: 15px; }
                 .observations-section h4 { margin: 0 0 5px 0; font-weight: 900; text-transform: uppercase; font-size: 12px; }
-                /* Vista previa en popup: mantener el mismo flujo por columnas que en impresión */
+                /* Vista previa en popup: mantener el mismo flujo por columnas que en impresion */
                 .tallas-columns {
                   height: ${AVAILABLE_HEIGHT_MM}mm;
                   overflow: hidden;
@@ -2208,7 +2213,7 @@ if (typeof window.printReceiptModal !== 'function') {
                 .talla-title { font-weight: 900; text-decoration: underline; margin-bottom: 1px; font-size: 10.5px; }
                 .observaciones-list { list-style:none; padding: 0; margin: 0; break-inside: auto; page-break-inside: auto; }
                 .observaciones-list li { margin-bottom: 1px; line-height: 1.1; break-inside: auto; page-break-inside: auto; }
-                .observaciones-list li::before { content: "• "; margin-right: 1px; }
+                .observaciones-list li::before { content: "â€¢ "; margin-right: 1px; }
                 .separator-line { position: absolute; bottom: 60px; left: 0; right: 0; height: 1mm; background: #111; }
                 .footer { position:absolute; bottom: 0; left:0; right:0; display:grid; grid-template-columns: 1fr 1fr; font-size: 11px; font-weight: 800; }
                 .footer > div { padding: 10px 15px; border-right: 1mm solid #111; min-height: 50px; }
@@ -2237,7 +2242,7 @@ if (typeof window.printReceiptModal !== 'function') {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Impresión Recibo</title>
+  <title>Impresion Recibo</title>
   <style>${css}</style>
 </head>
 <body class="${bodyClass}">
@@ -2248,7 +2253,7 @@ if (typeof window.printReceiptModal !== 'function') {
 </body>
 </html>`;
 
-            console.log('[printReceiptModal] 🖨️ HTML FINAL PARA IMPRESIÓN:', {
+            console.log('[printReceiptModal]  HTML FINAL PARA IMPRESION:', {
                 'longitud HTML': html?.length,
                 'contiene TALLAS': html?.includes('TALLAS'),
                 'contiene tallas-resumen': html?.includes('tallas-resumen'),
@@ -2266,14 +2271,14 @@ if (typeof window.printReceiptModal !== 'function') {
             w.document.close();
             return;
         } catch (e) {
-            console.warn('[printReceiptModal] Error en impresión nueva, usando fallback window.print():', e);
+            console.warn('[printReceiptModal] Error en impresion nueva, usando fallback window.print():', e);
             window.print();
         }
     };
 }
 
 /**
- * FUNCIÓN GLOBAL para abrir recibo parcial (anexo)
+ * FUNCION GLOBAL para abrir recibo parcial (anexo)
  * Usa la pipeline de renderizado completa, inyectando tallas del parcial
  */
 window.openOrderDetailModalWithParcial = async function (parcialId, prendaId, tipoString, pedidoIdOverride = null, nombreAnexoOverride = null) {
@@ -2292,14 +2297,14 @@ window.openOrderDetailModalWithParcial = async function (parcialId, prendaId, ti
 };
 
 /**
- * FUNCIÓN GLOBAL para cerrar recibos
+ * FUNCION GLOBAL para cerrar recibos
  */
 window.cerrarModalRecibos = function () {
     window.pedidosRecibosModule.cerrarRecibo();
 };
 
 /**
- * FUNCIÓN GLOBAL para abrir imagen en grande desde la galería
+ * FUNCION GLOBAL para abrir imagen en grande desde la galeria
  * Disponible en todas las vistas que usen PedidosRecibosModule
  */
 if (typeof window.abrirModalImagenProcesoGrande !== 'function') {
@@ -2308,9 +2313,9 @@ if (typeof window.abrirModalImagenProcesoGrande !== 'function') {
     };
 }
 
-// Compatibilidad: algunos templates aún llaman onclick="toggleFactura()"
+// Compatibilidad: algunos templates aun llaman onclick="toggleFactura()"
 // Siempre sobreescribir para que funcione en todas las vistas (supervisor-pedidos, recibos-costura, insumos, etc.)
-// Guarda la versión anterior como fallback para cuando NO hay estado activo de recibo
+// Guarda la version anterior como fallback para cuando NO hay estado activo de recibo
 const _originalToggleFactura = window.toggleFactura;
 
 window.toggleFactura = function () {
@@ -2324,40 +2329,40 @@ window.toggleFactura = function () {
     console.log('[toggleFactura-PRM] Estado.prendaId:', estado?.prendaId, 'tipo:', typeof estado?.prendaId);
 
     const tieneEstadoActivo = estado && estado.pedidoId && estado.prendaId;
-    console.log('[toggleFactura-PRM] ¿Tiene estado activo?', tieneEstadoActivo);
+    console.log('[toggleFactura-PRM] Â¿Tiene estado activo?', tieneEstadoActivo);
 
     if (!tieneEstadoActivo) {
-        // Sin estado activo → usar la implementación original si existe
+        // Sin estado activo â†’ usar la implementacion original si existe
         console.log('[toggleFactura-PRM] Sin estado activo, buscando _originalToggleFactura...');
         console.log('[toggleFactura-PRM] _originalToggleFactura existe?', !!_originalToggleFactura);
         if (_originalToggleFactura) {
-            console.log('[toggleFactura-PRM] Delegando a implementación original');
+            console.log('[toggleFactura-PRM] Delegando a implementacion original');
             return _originalToggleFactura.call(this);
         }
-        console.log('[toggleFactura-PRM] No hay implementación original disponible');
+        console.log('[toggleFactura-PRM] No hay implementacion original disponible');
         return;
     }
 
-    console.log('[toggleFactura-PRM] Usando nueva implementación de PedidosRecibosModule');
+    console.log('[toggleFactura-PRM] Usando nueva implementacion de PedidosRecibosModule');
     const galeria = document.getElementById('galeria-modal-costura');
-    console.log('[toggleFactura-PRM] Galería encontrada?', !!galeria);
+    console.log('[toggleFactura-PRM] galeria encontrada?', !!galeria);
     const estaEnGaleria = galeria && (galeria.style.display === 'flex' || galeria.style.display === 'block');
-    console.log('[toggleFactura-PRM] ¿Está en galería?', estaEnGaleria);
+    console.log('[toggleFactura-PRM] ¿Está en galeria?', estaEnGaleria);
 
     const btnFactura = document.getElementById('btn-factura');
     const btnGaleria = document.getElementById('btn-galeria');
 
     if (estaEnGaleria) {
-        // Estamos en galería → cerrar galería y mostrar recibo
-        console.log('[toggleFactura-PRM] Cerrando galería, mostrando recibo');
+        // Estamos en galeria â†’ cerrar galeria y mostrar recibo
+        console.log('[toggleFactura-PRM] Cerrando galeria, mostrando recibo');
         GalleryManager.cerrarGaleria();
-        // Mostrar btn-factura (con icono de galería para indicar que se puede ir a galería)
+        // Mostrar btn-factura (con icono de galeria para indicar que se puede ir a galeria)
         if (btnFactura) {
             btnFactura.style.display = 'block';
             btnFactura.style.visibility = 'visible';
             btnFactura.style.zIndex = '10';
             const icon = btnFactura.querySelector('i');
-            if (icon) { icon.className = 'fas fa-images'; btnFactura.title = 'Ver galería'; }
+            if (icon) { icon.className = 'fas fa-images'; btnFactura.title = 'Ver galeria'; }
         }
         // Ocultar btn-galeria
         if (btnGaleria) {
@@ -2366,18 +2371,18 @@ window.toggleFactura = function () {
             btnGaleria.style.zIndex = '-1';
         }
     } else {
-        // Estamos en recibo → abrir galería
-        console.log('[toggleFactura-PRM] Abriendo galería');
+        // Estamos en recibo â†’ abrir galeria
+        console.log('[toggleFactura-PRM] Abriendo galeria');
         console.log('[toggleFactura-PRM] Intentando abrir con GalleryManager...');
 
         if (window.pedidosRecibosModule && typeof window.pedidosRecibosModule.abrirGaleria === 'function') {
-            console.log('[toggleFactura-PRM] Llamando a abrirGaleria del módulo');
+            console.log('[toggleFactura-PRM] Llamando a abrirGaleria del modulo');
             window.pedidosRecibosModule.abrirGaleria();
         } else if (window.toggleGaleria && typeof window.toggleGaleria === 'function') {
             console.log('[toggleFactura-PRM] Fallback a toggleGaleria global');
             window.toggleGaleria();
         } else {
-            console.log('[toggleFactura-PRM] No hay función para abrir galería disponible');
+            console.log('[toggleFactura-PRM] No hay funcion para abrir galeria disponible');
         }
 
         // Ocultar btn-factura
@@ -2399,25 +2404,25 @@ window.toggleFactura = function () {
 
 // Interceptar toggleGaleria original
 const originalToggleGaleria = window.toggleGaleria;
-window.originalToggleGaleria = originalToggleGaleria; // Guardar referencia para evitar recursión
+window.originalToggleGaleria = originalToggleGaleria; // Guardar referencia para evitar recursion
 
 window.toggleGaleria = async function () {
-    // Evitar recursión infinita
+    // Evitar recursion infinita
     if (window.toggleGaleria._calling) {
-        console.warn('[toggleGaleria]  Evitando recursión infinita');
+        console.warn('[toggleGaleria]  Evitando recursion infinita');
         return;
     }
 
     window.toggleGaleria._calling = true;
 
     try {
-        // Si hay estado de recibos dinámicos, usar la nueva galería
+        // Si hay estado de recibos dinámicos, usar la nueva galeria
         const estado = window.pedidosRecibosModule.getEstado();
         if (estado.pedidoId && (estado.imagenesActuales.length > 0 || estado.prendaPedidoId)) {
             return window.pedidosRecibosModule.abrirGaleria();
         }
 
-        // Si no, usar la galería original
+        // Si no, usar la galeria original
         if (originalToggleGaleria) {
             return originalToggleGaleria.call(this);
         }

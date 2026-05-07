@@ -15,11 +15,41 @@ class RecibosCosturaReadRepository
             return $query->whereRaw('UPPER(TRIM(consecutivos_recibos_pedidos.tipo_recibo)) = ?', ['REFLECTIVO']);
         }
 
-        return $query->where('consecutivos_recibos_pedidos.tipo_recibo', $tipoRecibo);
+        if ($tipoReciboNormalizado === 'CORTE-PARA-BODEGA') {
+            return $query->whereRaw('UPPER(TRIM(consecutivos_recibos_pedidos.tipo_recibo)) = ?', ['CORTE-PARA-BODEGA']);
+        }
+
+        return $query->whereRaw('UPPER(TRIM(consecutivos_recibos_pedidos.tipo_recibo)) = ?', [$tipoReciboNormalizado]);
     }
 
     public function buildBaseQuery(string $tipoRecibo = 'COSTURA')
     {
+        $tipoReciboNormalizado = strtoupper(trim($tipoRecibo));
+
+        if ($tipoReciboNormalizado === 'CORTE-PARA-BODEGA') {
+            return DB::table('consecutivos_recibos_pedidos')
+                ->leftJoin('prenda_bodega', 'consecutivos_recibos_pedidos.prenda_bodega_id', '=', 'prenda_bodega.id')
+                ->select(
+                    'consecutivos_recibos_pedidos.*',
+                    'consecutivos_recibos_pedidos.marcar_plooter',
+                    'consecutivos_recibos_pedidos.created_at as recibo_created_at',
+                    DB::raw('NULL as numero_pedido'),
+                    DB::raw('NULL as numero_pedido_original'),
+                    'prenda_bodega.descripcion as cliente',
+                    DB::raw('NULL as pedido_estado'),
+                    DB::raw('NULL as pedido_area'),
+                    DB::raw('NULL as pedido_novedades'),
+                    'consecutivos_recibos_pedidos.estado as recibo_estado',
+                    'consecutivos_recibos_pedidos.area as recibo_area',
+                    DB::raw('NULL as pedido_created_at'),
+                    DB::raw('NULL as dia_de_entrega'),
+                    DB::raw('NULL as fecha_estimada_de_entrega'),
+                    DB::raw('0 as esta_completado')
+                )
+                ->whereRaw('UPPER(TRIM(consecutivos_recibos_pedidos.tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
+                ->whereNotNull('consecutivos_recibos_pedidos.consecutivo_actual');
+        }
+
         $query = DB::table('consecutivos_recibos_pedidos')
             ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id');
 
@@ -45,9 +75,9 @@ class RecibosCosturaReadRepository
             )
             ->whereNotNull('consecutivos_recibos_pedidos.consecutivo_actual');
 
-        // Estas reglas aplican al flujo de materiales de COSTURA.
-        // Para REFLECTIVO se evita mezclar reglas de área/estado de costura.
-        if (strtoupper(trim($tipoRecibo)) !== 'REFLECTIVO') {
+        // Estas reglas aplican SOLO al flujo de materiales de COSTURA.
+        // Para REFLECTIVO y CORTE-PARA-BODEGA evitamos mezclar reglas de área/estado de costura.
+        if (strtoupper(trim($tipoRecibo)) === 'COSTURA') {
             $query->where(function ($q) {
                 $q->whereIn('consecutivos_recibos_pedidos.estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER', 'INSUMOS_PEDIDOS', 'DEVUELTO_ASESOR', 'Devuelto_Asesor', 'ANULADO', 'Anulada'])
                     ->orWhereIn('consecutivos_recibos_pedidos.area', ['CORTE', 'COSTURA', 'ANULADO']);
@@ -64,6 +94,32 @@ class RecibosCosturaReadRepository
 
     public function buildBaseQueryForFiltering(string $tipoRecibo = 'COSTURA')
     {
+        $tipoReciboNormalizado = strtoupper(trim($tipoRecibo));
+
+        if ($tipoReciboNormalizado === 'CORTE-PARA-BODEGA') {
+            return DB::table('consecutivos_recibos_pedidos')
+                ->leftJoin('prenda_bodega', 'consecutivos_recibos_pedidos.prenda_bodega_id', '=', 'prenda_bodega.id')
+                ->select(
+                    'consecutivos_recibos_pedidos.*',
+                    'consecutivos_recibos_pedidos.marcar_plooter',
+                    'consecutivos_recibos_pedidos.created_at as recibo_created_at',
+                    DB::raw('NULL as numero_pedido'),
+                    DB::raw('NULL as numero_pedido_original'),
+                    'prenda_bodega.descripcion as cliente',
+                    DB::raw('NULL as pedido_estado'),
+                    DB::raw('NULL as pedido_area'),
+                    DB::raw('NULL as pedido_novedades'),
+                    'consecutivos_recibos_pedidos.estado as recibo_estado',
+                    'consecutivos_recibos_pedidos.area as recibo_area',
+                    DB::raw('NULL as pedido_created_at'),
+                    DB::raw('NULL as dia_de_entrega'),
+                    DB::raw('NULL as fecha_estimada_de_entrega'),
+                    DB::raw('0 as esta_completado')
+                )
+                ->whereRaw('UPPER(TRIM(consecutivos_recibos_pedidos.tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
+                ->whereNotNull('consecutivos_recibos_pedidos.consecutivo_actual');
+        }
+
         $query = DB::table('consecutivos_recibos_pedidos')
             ->join('pedidos_produccion', 'consecutivos_recibos_pedidos.pedido_produccion_id', '=', 'pedidos_produccion.id');
 
@@ -107,7 +163,8 @@ class RecibosCosturaReadRepository
         }
 
         $tipoReciboNormalizado = strtoupper(trim($tipoRecibo));
-        $fechaColumn = $tipoReciboNormalizado === 'REFLECTIVO'
+        $esCorteBodega = $tipoReciboNormalizado === 'CORTE-PARA-BODEGA';
+        $fechaColumn = $tipoReciboNormalizado === 'REFLECTIVO' || $esCorteBodega
             ? 'consecutivos_recibos_pedidos.created_at'
             : 'pedidos_produccion.created_at';
 
@@ -124,8 +181,8 @@ class RecibosCosturaReadRepository
                 
                 // Mapear columnas a nombres de BD
                 $dbColumn = match ($column) {
-                    'numero_pedido' => 'pedidos_produccion.numero_pedido',
-                    'cliente' => 'pedidos_produccion.cliente',
+                    'numero_pedido' => $esCorteBodega ? 'consecutivos_recibos_pedidos.consecutivo_actual' : 'pedidos_produccion.numero_pedido',
+                    'cliente' => $esCorteBodega ? 'prenda_bodega.descripcion' : 'pedidos_produccion.cliente',
                     'estado' => 'consecutivos_recibos_pedidos.estado',  // ← RECIBO_ESTADO, no pedido_estado
                     'area' => 'consecutivos_recibos_pedidos.area',   // ← RECIBO_AREA, no pedido_area
                     'created_at' => $fechaColumn,
@@ -174,7 +231,7 @@ class RecibosCosturaReadRepository
             }
             
             // Aplicar filtro segun el tipo de columna
-            if (in_array($dbColumn, ['pedidos_produccion.numero_pedido', 'pedidos_produccion.cliente', 'consecutivos_recibos_pedidos.consecutivo_actual'], true)) {
+            if (in_array($dbColumn, ['pedidos_produccion.numero_pedido', 'pedidos_produccion.cliente', 'prenda_bodega.descripcion', 'consecutivos_recibos_pedidos.consecutivo_actual'], true)) {
                 // Para busqueda de texto: usar LIKE para cada valor
                 \Log::info('[applyFilters] Aplicando filtro LIKE', ['dbColumn' => $dbColumn]);
                 $query->where(function ($q) use ($dbColumn, $values) {
@@ -221,7 +278,8 @@ class RecibosCosturaReadRepository
 
             $query->where(function ($q) use ($search, $searchIsNumeric) {
                 $q->where('consecutivos_recibos_pedidos.consecutivo_actual', 'LIKE', "%{$search}%")
-                    ->orWhere('pedidos_produccion.cliente', 'LIKE', "%{$search}%");
+                    ->orWhere('pedidos_produccion.cliente', 'LIKE', "%{$search}%")
+                    ->orWhere('prenda_bodega.descripcion', 'LIKE', "%{$search}%");
 
                 // Refuerzo para recibos numéricos exactos (ej: "48").
                 if ($searchIsNumeric) {

@@ -70,10 +70,14 @@ function crearDropdownVerRecibo(event, button) {
 
     const pedidoId = button.getAttribute('data-pedido-id') || button.getAttribute('data-pedido-produccion-id');
     const prendaId = button.getAttribute('data-prenda-id');
+    const prendaBodegaId = button.getAttribute('data-prenda-bodega-id');
     const tipoRecibo = button.getAttribute('data-tipo-recibo') || 'COSTURA';
+    const esReciboBodega = String(tipoRecibo).toUpperCase() === 'CORTE-PARA-BODEGA';
     const esParcial = button.getAttribute('data-es-parcial') === '1';
     const pedidoParcialId = button.getAttribute('data-pedido-parcial-id') || '';
     const numeroRecibo = button.getAttribute('data-numero-recibo') || button.getAttribute('data-consecutivo') || '';
+    const pedidoTarget = esReciboBodega ? '' : pedidoId;
+    const prendaTarget = esReciboBodega ? (prendaBodegaId || prendaId) : prendaId;
     const rect = button.getBoundingClientRect();
 
     const dropdown = document.createElement('div');
@@ -94,8 +98,9 @@ function crearDropdownVerRecibo(event, button) {
 
     dropdown.innerHTML = `
         <button data-insumos-action="dropdown-ver-detalle-recibo"
-            data-pedido-id="${pedidoId}"
-            data-prenda-id="${prendaId ?? 'null'}"
+            data-pedido-id="${pedidoTarget}"
+            data-prenda-id="${prendaTarget ?? 'null'}"
+            data-prenda-bodega-id="${prendaBodegaId ?? ''}"
             data-tipo-recibo="${tipoRecibo}"
             data-es-parcial="${esParcial ? '1' : '0'}"
             data-pedido-parcial-id="${pedidoParcialId}"
@@ -109,8 +114,9 @@ function crearDropdownVerRecibo(event, button) {
             <span>Ver recibo</span>
         </button>
         <button data-insumos-action="dropdown-ver-seguimiento"
-            data-pedido-id="${pedidoId}"
-            data-prenda-id="${prendaId ?? ''}"
+            data-pedido-id="${pedidoTarget}"
+            data-prenda-id="${prendaTarget ?? ''}"
+            data-prenda-bodega-id="${prendaBodegaId ?? ''}"
             data-numero-recibo="${numeroRecibo}"
             data-tipo-recibo="${tipoRecibo}"
             data-es-parcial="${esParcial ? '1' : '0'}"
@@ -289,11 +295,17 @@ function cerrarDropdownAcciones() {
 /**
  * Carga los procesos de la prenda y abre el modal de seguimiento (showPrendaTracking).
  */
-async function abrirSeguimientoRecibo(pedidoId, prendaId, consecutivo = null, estado = null, tipoRecibo = null, esParcial = false, pedidoParcialId = null) {
+async function abrirSeguimientoRecibo(pedidoId, prendaId, consecutivo = null, estado = null, tipoRecibo = null, esParcial = false, pedidoParcialId = null, prendaBodegaId = null) {
+    const tipoReciboNorm = String(tipoRecibo || '').toUpperCase();
+    const esReciboBodega = tipoReciboNorm === 'CORTE-PARA-BODEGA';
     pedidoId = parseInt(pedidoId) || null;
     prendaId = parseInt(prendaId) || null;
+    prendaBodegaId = parseInt(prendaBodegaId, 10) || null;
+    if (esReciboBodega && prendaBodegaId) {
+        prendaId = prendaBodegaId;
+    }
 
-    if (!pedidoId) {
+    if (!pedidoId && !esReciboBodega) {
         console.error('[abrirSeguimientoRecibo] pedidoId es requerido');
         return;
     }
@@ -303,6 +315,7 @@ async function abrirSeguimientoRecibo(pedidoId, prendaId, consecutivo = null, es
         globalThis.currentTrackingReceiptContext = {
             pedidoId: pedidoId,
             prendaId: prendaId,
+            prendaBodegaId: prendaBodegaId,
             numeroRecibo: consecutivo ? String(consecutivo) : null,
             tipoRecibo: tipoRecibo ? String(tipoRecibo) : 'REFLECTIVO',
             esParcial: Boolean(esParcial),
@@ -311,7 +324,18 @@ async function abrirSeguimientoRecibo(pedidoId, prendaId, consecutivo = null, es
 
         let procesos = [];
 
-        if (prendaId) {
+        if (esReciboBodega) {
+            const numeroRecibo = parseInt(consecutivo, 10) || null;
+            if (numeroRecibo) {
+                const qs = prendaBodegaId ? `?prenda_bodega_id=${encodeURIComponent(String(prendaBodegaId))}` : '';
+                const response = await fetch(`/api/recibos-bodega/${numeroRecibo}/procesos${qs}`);
+                if (response.ok) {
+                    procesos = await response.json();
+                } else {
+                    console.warn('[abrirSeguimientoRecibo] Error al obtener procesos bodega:', response.status);
+                }
+            }
+        } else if (prendaId) {
             const response = await fetch(`/api/ordenes/${pedidoId}/procesos?prenda_id=${prendaId}`);
             if (response.ok) {
                 procesos = await response.json();
@@ -322,7 +346,8 @@ async function abrirSeguimientoRecibo(pedidoId, prendaId, consecutivo = null, es
 
         const prenda = {
             id:                    prendaId,
-            pedido_produccion_id:  pedidoId,
+            prenda_bodega_id:      prendaBodegaId,
+            pedido_produccion_id:  esReciboBodega ? null : pedidoId,
             numero_prenda:         prendaId,
             procesos,
             ultimo_recibo_numero:  consecutivo || null,

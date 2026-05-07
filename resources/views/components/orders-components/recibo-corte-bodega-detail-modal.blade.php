@@ -19,7 +19,7 @@
 
             <div id="rcb-descripcion-container" class="order-descripcion">
                 <div id="rcb-descripcion-text">
-                    <strong style="font-size: 13.4px;" id="rcb-prenda-title">PRENDA 1: CAMISA POLO</strong><br>
+                    <strong style="font-size: 13.4px;" id="rcb-prenda-title">PRENDA 1</strong><br>
                     <span id="rcb-prenda-desc" style="display: block; margin-top: 8px; margin-bottom: 12px; color: #212529; font-weight: 600;">Descripción de la prenda</span>
                     <strong>TALLAS</strong><br>
                     <div style="display: inline-block; min-width: 120px; margin-top: 8px;">
@@ -239,7 +239,7 @@ function openReciboCorteBodegaModal(id) {
                 document.getElementById('rcb-month').textContent = data.mes;
                 document.getElementById('rcb-year').textContent = data.ano;
 
-                document.getElementById('rcb-prenda-title').textContent = `PRENDA 1: ${data.nombre}`;
+                document.getElementById('rcb-prenda-title').textContent = 'PRENDA 1';
                 document.getElementById('rcb-prenda-desc').textContent = data.descripcion || '';
                 document.getElementById('rcb-total-qty').textContent = data.total;
                 const numeroRecibo = Number(data.numero_recibo ?? 0);
@@ -254,10 +254,14 @@ function openReciboCorteBodegaModal(id) {
 
                 data.tallas.forEach(talla => {
                     const genero = (talla.genero || '').toString().trim().toUpperCase();
+                    const tallaValor = (talla.talla || '').toString().trim().toUpperCase();
                     const color = (talla.color || '').toString().trim().toUpperCase();
-                    const detalle = color !== ''
-                        ? `COLOR ${color}: ${talla.talla}:${talla.cantidad}`
-                        : `${talla.talla}:${talla.cantidad}`;
+                    const esSoloCantidad = tallaValor === '' || tallaValor === 'UNICA';
+                    const detalle = esSoloCantidad
+                        ? `${talla.cantidad}`
+                        : (color !== ''
+                            ? `COLOR ${color}: ${talla.talla}:${talla.cantidad}`
+                            : `${talla.talla}:${talla.cantidad}`);
 
                     if (genero !== '') {
                         if (!grupos.has(genero)) grupos.set(genero, []);

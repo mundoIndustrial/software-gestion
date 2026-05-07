@@ -16,6 +16,7 @@ class ProcesoPrenda extends Model
     protected $fillable = [
         'numero_pedido',
         'prenda_pedido_id',
+        'prenda_bodega_id',
         'numero_recibo',
         'numero_recibo_parcial',
         'proceso',
@@ -42,6 +43,14 @@ class ProcesoPrenda extends Model
     public function prenda(): BelongsTo
     {
         return $this->belongsTo(PrendaPedido::class, 'prenda_pedido_id');
+    }
+
+    /**
+     * Relación: Un proceso puede pertenecer a una prenda de bodega.
+     */
+    public function prendaBodega(): BelongsTo
+    {
+        return $this->belongsTo(PrendaBodega::class, 'prenda_bodega_id');
     }
 
     /**

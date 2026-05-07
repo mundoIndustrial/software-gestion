@@ -130,6 +130,14 @@ class InsumosController extends Controller
         try {
             $traceId = (string) $request->header('X-Insumos-Trace-Id', '');
             $search = (string) $request->get('search', '');
+            $tipoReciboRequest = strtoupper(trim((string) $request->get('tipo_recibo', 'COSTURA')));
+            if ($tipoReciboRequest === 'COSTURA-BODEGA') {
+                // Compatibilidad con enlaces antiguos.
+                $tipoReciboRequest = 'CORTE-PARA-BODEGA';
+            }
+            $tipoReciboActivo = in_array($tipoReciboRequest, ['COSTURA', 'CORTE-PARA-BODEGA'], true)
+                ? $tipoReciboRequest
+                : 'COSTURA';
             $filterColumns = (array) $request->get('filter_columns', []);
             $filterValues = (array) $request->get('filter_values', []);
 
@@ -140,6 +148,7 @@ class InsumosController extends Controller
                 'is_ajax' => $request->header('X-Requested-With') === 'XMLHttpRequest',
                 'trace_id' => $traceId,
                 'search' => $search,
+                'tipo_recibo_activo' => $tipoReciboActivo,
                 'filter_columns' => $filterColumns,
                 'filter_values' => $filterValues,
             ]);
@@ -157,7 +166,7 @@ class InsumosController extends Controller
             $ordenes = $this->recibosQueryService->obtenerRecibosConPaginacion(
                 $request,
                 fn($fecha) => $this->calcularDiasHabiles($fecha),
-                'COSTURA',
+                $tipoReciboActivo,
                 'insumos.materiales.index'
             );
 
@@ -179,6 +188,7 @@ class InsumosController extends Controller
                     'user' => $user,
                     'search' => $search,
                     'esGestionReflectivo' => false,
+                    'tipoReciboActivo' => $tipoReciboActivo,
                 ])->render();
             }
             
@@ -188,6 +198,7 @@ class InsumosController extends Controller
                 'user' => $user,
                 'search' => $search,
                 'esGestionReflectivo' => false,
+                'tipoReciboActivo' => $tipoReciboActivo,
             ]);
         } catch (\Exception $e) {
             Log::error(' ERROR en InsumosController.materiales()', [

@@ -493,6 +493,7 @@
                         );
                         const pedidoId = btn.getAttribute('data-pedido-id');
                         const prendaId = btn.getAttribute('data-prenda-id');
+                        const prendaBodegaId = btn.getAttribute('data-prenda-bodega-id');
                         const numeroRecibo = btn.getAttribute('data-numero-recibo') || null;
                         const tipoRecibo = btn.getAttribute('data-tipo-recibo') || 'REFLECTIVO';
                         const esParcial = btn.getAttribute('data-es-parcial') === '1';
@@ -500,7 +501,7 @@
                         await Promise.resolve(
                             safeCall(
                                 'abrirSeguimientoRecibo',
-                                [pedidoId, prendaId, numeroRecibo, null, tipoRecibo, esParcial, pedidoParcialId],
+                                [pedidoId, prendaId, numeroRecibo, null, tipoRecibo, esParcial, pedidoParcialId, prendaBodegaId],
                                 'abrirSeguimientoRecibo no esta disponible'
                             )
                         );

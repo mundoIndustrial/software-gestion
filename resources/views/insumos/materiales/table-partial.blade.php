@@ -1,4 +1,8 @@
 {{-- Respuesta parcial para búsqueda AJAX - Solo tabla y paginación --}}
+@php
+    $tipoReciboActivo = strtoupper((string) ($tipoReciboActivo ?? 'COSTURA'));
+    $mostrarColumnaPedido = $tipoReciboActivo !== 'CORTE-PARA-BODEGA';
+@endphp
 
 {{-- Mensaje de búsqueda activa --}}
 @if(request('search'))
@@ -45,19 +49,21 @@
                             </button>
                         </div>
                     </th>
-                    <th class="text-left py-4 px-6 font-bold">
-                        <div class="flex items-center justify-between gap-2">
-                            <span>N° Pedido</span>
-                            <button
-                                type="button"
-                                class="filter-btn-insumos p-1 rounded hover:bg-blue-500 transition"
-                                data-column="numero_pedido"
-                                title="Filtrar N° Pedido"
-                            >
-                                <i class="fas fa-filter text-xs"></i>
-                            </button>
-                        </div>
-                    </th>
+                    @if($mostrarColumnaPedido)
+                        <th class="text-left py-4 px-6 font-bold">
+                            <div class="flex items-center justify-between gap-2">
+                                <span>N° Pedido</span>
+                                <button
+                                    type="button"
+                                    class="filter-btn-insumos p-1 rounded hover:bg-blue-500 transition"
+                                    data-column="numero_pedido"
+                                    title="Filtrar N° Pedido"
+                                >
+                                    <i class="fas fa-filter text-xs"></i>
+                                </button>
+                            </div>
+                        </th>
+                    @endif
                     <th class="text-left py-4 px-6 font-bold">
                         <div class="flex items-center justify-between gap-2">
                             <span>Cliente</span>
@@ -159,6 +165,7 @@
                                     data-pedido-id="{{ $pedidoProduccionId }}"
                                     data-pedido-produccion-id="{{ $pedidoProduccionId }}"
                                     data-prenda-id="{{ $orden->prenda_id ?? '' }}"
+                                    data-prenda-bodega-id="{{ $orden->prenda_bodega_id ?? '' }}"
                                     data-tipo-recibo="{{ $orden->tipo_recibo ?? 'COSTURA' }}"
                                     data-numero-recibo="{{ $orden->consecutivo_actual ?? '' }}"
                                     data-consecutivo="{{ $orden->consecutivo_actual ?? '' }}"
@@ -202,6 +209,7 @@
                                         data-insumos-action="acciones-dropdown"
                                         data-pedido-produccion-id="{{ $pedidoProduccionId }}"
                                         data-prenda-id="{{ $orden->prenda_id ?? '' }}"
+                                        data-prenda-bodega-id="{{ $orden->prenda_bodega_id ?? '' }}"
                                         data-recibo-id="{{ $reciboId }}"
                                         data-consecutivo="{{ $orden->consecutivo_actual }}"
                                         data-estado="{{ $orden->estado ?? '' }}"
@@ -234,9 +242,11 @@
                         <td class="py-4 px-6">
                             <span class="font-bold text-blue-600 text-lg">{{ $orden->consecutivo_actual ?? 'N/A' }}</span>
                         </td>
-                        <td class="py-4 px-6">
-                            <span class="font-medium text-gray-800">{{ $orden->numero_pedido_original ?? 'N/A' }}</span>
-                        </td>
+                        @if($mostrarColumnaPedido)
+                            <td class="py-4 px-6">
+                                <span class="font-medium text-gray-800">{{ $orden->numero_pedido_original ?? 'N/A' }}</span>
+                            </td>
+                        @endif
                         <td class="py-4 px-6">
                             <span class="font-medium text-gray-800">{{ $orden->cliente ?? 'N/A' }}</span>
                         </td>

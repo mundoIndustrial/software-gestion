@@ -6,6 +6,9 @@
 @php
     $esGestionReflectivo = (bool) ($esGestionReflectivo ?? false);
     $mostrarSoloVerRecibo = (bool) ($mostrarSoloVerRecibo ?? false);
+    $tipoReciboActivo = strtoupper((string) ($tipoReciboActivo ?? 'COSTURA'));
+    $esTabBodega = $tipoReciboActivo === 'CORTE-PARA-BODEGA';
+    $mostrarColumnaPedido = !$esTabBodega;
     $assetVersion = static fn (string $path): int => is_file(public_path($path))
         ? filemtime(public_path($path))
         : time();
@@ -103,6 +106,21 @@
                     </div>
                 </div>
             </div>
+
+            @unless($esGestionReflectivo)
+            <div style="padding: 0.75rem 0.5rem 0;">
+                <div style="display: inline-flex; gap: 0.4rem; background: #f3f4f6; border-radius: 999px; padding: 0.25rem; border: 1px solid #e5e7eb;">
+                    <a href="{{ route('insumos.materiales.index', ['tipo_recibo' => 'COSTURA']) }}"
+                       style="padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none; {{ !$esTabBodega ? 'background:#2563eb;color:#fff;' : 'color:#374151;' }}">
+                        Pedidos
+                    </a>
+                    <a href="{{ route('insumos.materiales.index', ['tipo_recibo' => 'CORTE-PARA-BODEGA']) }}"
+                       style="padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none; {{ $esTabBodega ? 'background:#2563eb;color:#fff;' : 'color:#374151;' }}">
+                        Bodega (Recibo de corte)
+                    </a>
+                </div>
+            </div>
+            @endunless
         </div>
     </div>
 
@@ -147,19 +165,21 @@
                                     </button>
                                 </div>
                             </th>
-                            <th class="text-left py-4 px-6 font-bold">
-                                <div class="flex items-center justify-between gap-2">
-                                    <span>N° Pedido</span>
-                                    <button
-                                        type="button"
-                                        class="filter-btn-insumos p-1 rounded hover:bg-blue-500 transition"
-                                        data-column="numero_pedido"
-                                        title="Filtrar N° Pedido"
-                                    >
-                                        <i class="fas fa-filter text-xs"></i>
-                                    </button>
-                                </div>
-                            </th>
+                            @if($mostrarColumnaPedido)
+                                <th class="text-left py-4 px-6 font-bold">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span>N° Pedido</span>
+                                        <button
+                                            type="button"
+                                            class="filter-btn-insumos p-1 rounded hover:bg-blue-500 transition"
+                                            data-column="numero_pedido"
+                                            title="Filtrar N° Pedido"
+                                        >
+                                            <i class="fas fa-filter text-xs"></i>
+                                        </button>
+                                    </div>
+                                </th>
+                            @endif
                             <th class="text-left py-4 px-6 font-bold">
                                 <div class="flex items-center justify-between gap-2">
                                     <span>Cliente</span>
@@ -335,9 +355,11 @@
                                 <td class="py-4 px-6">
                                     <span class="font-bold text-blue-600 text-lg">{{ $orden->consecutivo_actual ?? 'N/A' }}</span>
                                 </td>
-                                <td class="py-4 px-6">
-                                    <span class="font-medium text-gray-800">{{ $orden->numero_pedido_original ?? 'N/A' }}</span>
-                                </td>
+                                @if($mostrarColumnaPedido)
+                                    <td class="py-4 px-6">
+                                        <span class="font-medium text-gray-800">{{ $orden->numero_pedido_original ?? 'N/A' }}</span>
+                                    </td>
+                                @endif
                                 <td class="py-4 px-6">
                                     <span class="font-medium text-gray-800">{{ $orden->cliente ?? 'N/A' }}</span>
                                 </td>
@@ -634,7 +656,7 @@ document.addEventListener('insumosTableUpdated', () => {
 <script>
     window.userRole = '{{ $currentRoleName }}';
     window.isInsumos = window.userRole === 'insumos';
-    window.tipoRecibo = '{{ $esGestionReflectivo ? 'REFLECTIVO' : 'COSTURA' }}';
+    window.tipoRecibo = '{{ $esGestionReflectivo ? 'REFLECTIVO' : $tipoReciboActivo }}';
 </script>
 
 @endsection

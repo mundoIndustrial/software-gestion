@@ -224,10 +224,12 @@ async function applyFiltersToBackend() {
         // Construir URL limpia (sin parámetros de filtro)
         const baseUrl = window.location.pathname;
         const url = new URL(baseUrl, window.location.origin);
+        const tipoRecibo = globalThis.tipoRecibo || 'COSTURA';
         
         // Construir parámetros AJAX
         let ajaxParams = new URLSearchParams();
         ajaxParams.set('page', '1');
+        ajaxParams.set('tipo_recibo', tipoRecibo);
         
         // Agregar filtros como parámetros
         for (const [column, values] of Object.entries(activeFilters)) {
@@ -273,6 +275,7 @@ async function applyFiltersToBackend() {
         
         // Actualizar URL CON parámetros de filtro (para que la paginación los conserve)
         const urlWithFilters = new URL(url);
+        urlWithFilters.searchParams.set('tipo_recibo', tipoRecibo);
         for (const [column, values] of Object.entries(activeFilters)) {
             if (values.length > 0) {
                 values.forEach(val => {
