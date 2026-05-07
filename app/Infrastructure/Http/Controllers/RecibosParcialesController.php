@@ -136,22 +136,27 @@ class RecibosParcialesController extends Controller
                 ]);
 
                 // 3. Crear registros de tallas en pedidos_parciales_tallas
+                // Si no llega color por talla explícito, completar desde prenda_pedido_talla_colores.
                 foreach ($validated['tallas'] as $talla) {
-                    DB::table('pedidos_parciales_tallas')->insert([
-                        'pedido_parcial_id' => $parcialId,
-                        'talla' => $talla['talla'],
-                        'cantidad' => $talla['cantidad'],
-                        'genero' => $talla['genero'] ?? null,
-                        'color_nombre' => $talla['color_nombre'] ?? null,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                    $filas = $this->expandirTallaConColoresDesdePrenda((int) $validated['prenda_id'], $talla);
 
-                    Log::info('[RecibosParcialesController@store] Talla parcial creada:', [
-                        'talla' => $talla['talla'],
-                        'cantidad' => $talla['cantidad'],
-                        'color_nombre' => $talla['color_nombre'] ?? null,
-                    ]);
+                    foreach ($filas as $fila) {
+                        DB::table('pedidos_parciales_tallas')->insert([
+                            'pedido_parcial_id' => $parcialId,
+                            'talla' => $fila['talla'],
+                            'cantidad' => $fila['cantidad'],
+                            'genero' => $fila['genero'] ?? null,
+                            'color_nombre' => $fila['color_nombre'] ?? null,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                        Log::info('[RecibosParcialesController@store] Talla parcial creada:', [
+                            'talla' => $fila['talla'],
+                            'cantidad' => $fila['cantidad'],
+                            'color_nombre' => $fila['color_nombre'] ?? null,
+                        ]);
+                    }
                 }
 
                 DB::commit();
@@ -800,6 +805,112 @@ class RecibosParcialesController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Si una talla viene sin color explícito, intenta reconstruir el desglose por color
+     * desde la tabla prenda_pedido_talla_colores para persistirlo en pedidos_parciales_tallas.
+     *
+     * @param int $prendaId
+     * @param array<string,mixed> $talla
+     * @return array<int,array{talla:string,cantidad:int,genero:string,color_nombre:?string}>
+     */
+    private function expandirTallaConColoresDesdePrenda(int $prendaId, array $talla): array
+    {
+        $tallaNombre = strtoupper(trim((string) ($talla['talla'] ?? '')));
+        $cantidadObjetivo = (int) ($talla['cantidad'] ?? 0);
+        $genero = strtoupper(trim((string) ($talla['genero'] ?? 'CABALLERO')));
+        $colorNombre = trim((string) ($talla['color_nombre'] ?? ''));
+
+        if ($tallaNombre === '' || $cantidadObjetivo <= 0) {
+            return [];
+        }
+
+        if ($colorNombre !== '') {
+            return [[
+                'talla' => $tallaNombre,
+                'cantidad' => $cantidadObjetivo,
+                'genero' => $genero,
+                'color_nombre' => $colorNombre,
+            ]];
+        }
+
+        $coloresFuente = DB::table('prenda_pedido_talla_colores as ptc')
+            ->join('prenda_pedido_tallas as pt', 'pt.id', '=', 'ptc.prenda_pedido_talla_id')
+            ->where('pt.prenda_pedido_id', $prendaId)
+            ->whereRaw('UPPER(pt.talla) = ?', [$tallaNombre])
+            ->whereRaw('UPPER(COALESCE(pt.genero, "CABALLERO")) = ?', [$genero])
+            ->whereNotNull('ptc.color_nombre')
+            ->whereRaw('TRIM(ptc.color_nombre) <> ""')
+            ->select(['ptc.color_nombre', 'ptc.cantidad'])
+            ->get();
+
+        if ($coloresFuente->isEmpty()) {
+            return [[
+                'talla' => $tallaNombre,
+                'cantidad' => $cantidadObjetivo,
+                'genero' => $genero,
+                'color_nombre' => null,
+            ]];
+        }
+
+        $sumaFuente = (int) $coloresFuente->sum(fn ($row) => (int) ($row->cantidad ?? 0));
+        if ($sumaFuente <= 0) {
+            return [[
+                'talla' => $tallaNombre,
+                'cantidad' => $cantidadObjetivo,
+                'genero' => $genero,
+                'color_nombre' => null,
+            ]];
+        }
+
+        $basePorColor = [];
+        $residuos = [];
+        $asignado = 0;
+        foreach ($coloresFuente as $idx => $row) {
+            $exacto = ($cantidadObjetivo * (int) ($row->cantidad ?? 0)) / $sumaFuente;
+            $base = (int) floor($exacto);
+            $basePorColor[$idx] = $base;
+            $residuos[$idx] = $exacto - $base;
+            $asignado += $base;
+        }
+
+        $faltante = $cantidadObjetivo - $asignado;
+        if ($faltante > 0) {
+            arsort($residuos);
+            foreach (array_keys($residuos) as $idx) {
+                if ($faltante <= 0) {
+                    break;
+                }
+                $basePorColor[$idx] = ($basePorColor[$idx] ?? 0) + 1;
+                $faltante--;
+            }
+        }
+
+        $resultado = [];
+        foreach ($coloresFuente as $idx => $row) {
+            $cantidadColor = (int) ($basePorColor[$idx] ?? 0);
+            if ($cantidadColor <= 0) {
+                continue;
+            }
+            $resultado[] = [
+                'talla' => $tallaNombre,
+                'cantidad' => $cantidadColor,
+                'genero' => $genero,
+                'color_nombre' => (string) $row->color_nombre,
+            ];
+        }
+
+        if (empty($resultado)) {
+            return [[
+                'talla' => $tallaNombre,
+                'cantidad' => $cantidadObjetivo,
+                'genero' => $genero,
+                'color_nombre' => null,
+            ]];
+        }
+
+        return $resultado;
     }
 
     private function obtenerSnapshotProcesoByTipo(int $prendaId, string $tipoRecibo): ?array

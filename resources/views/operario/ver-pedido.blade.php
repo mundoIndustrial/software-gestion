@@ -1747,12 +1747,21 @@
                 
                 console.log('🔢 [NUMERO RECIBO COSTURA]', numeroReciboCostura, 'tipo:', typeof numeroReciboCostura);
 
-                // Resolver fecha de recibo:
-                // - Si viene pedido_parcial_id (anexo), usar created_at del anexo
-                // - Si NO viene pedido_parcial_id, inferir anexo por (tipoRecibo + es_parcial=true)
-                const pedidoParcialIdParam = urlParams.get('pedido_parcial_id');
-                let fechaRecibo = data.fecha_creacion || new Date().toISOString().split('T')[0];
+                // Resolver fecha de recibo (mobile):
+                // - PRIORIDAD: fecha de activación del recibo/proceso
+                // - NO usar fecha de creación del pedido como fallback
+                const pedidoParcialIdParam = String(urlParams.get('pedido_parcial_id') || urlParams.get('parcial_id') || '').trim();
+                let fechaRecibo = 'N/A';
                 try {
+                    const tipoReciboUpper = String(tipoRecibo || '').trim().toUpperCase();
+
+                    if (data.fecha_activacion_recibo) {
+                        const fechaActivacion = String(data.fecha_activacion_recibo);
+                        fechaRecibo = fechaActivacion.includes('T')
+                            ? fechaActivacion.split('T')[0]
+                            : fechaActivacion.substring(0, 10);
+                    }
+
                     if (data.prendas && Array.isArray(data.prendas) && data.prendas.length > 0) {
                         const prendaIdInt = prendaIdParam ? parseInt(prendaIdParam, 10) : null;
                         const prendaTarget = prendaIdInt
@@ -1772,18 +1781,36 @@
                         };
 
                         let procesoParcial = null;
+                        let reciboCoincidente = null;
+
+                        // 1) Buscar recibo directo (cualquier tipo) en prenda.recibos
+                        if (prendaParaBuscar?.recibos && typeof prendaParaBuscar.recibos === 'object') {
+                            if (tipoReciboUpper && prendaParaBuscar.recibos[tipoReciboUpper]) {
+                                reciboCoincidente = prendaParaBuscar.recibos[tipoReciboUpper];
+                            } else if (tipoReciboUpper === 'PARCIAL' && prendaParaBuscar.recibos['PARCIAL']) {
+                                reciboCoincidente = prendaParaBuscar.recibos['PARCIAL'];
+                            } else {
+                                const firstRecibo = Object.values(prendaParaBuscar.recibos).find(r => r && typeof r === 'object');
+                                if (firstRecibo) reciboCoincidente = firstRecibo;
+                            }
+                        }
+
+                        if (reciboCoincidente?.fecha_activacion_recibo) {
+                            fechaRecibo = normalizarFecha(reciboCoincidente.fecha_activacion_recibo);
+                        } else if (reciboCoincidente?.created_at) {
+                            fechaRecibo = normalizarFecha(reciboCoincidente.created_at);
+                        }
 
                         if (pedidoParcialIdParam) {
                             procesoParcial = procesos.find(proc =>
-                                String(proc?.pedido_parcial_id || '') === String(pedidoParcialIdParam)
+                                String(proc?.pedido_parcial_id || proc?.parcial_id || '') === String(pedidoParcialIdParam)
                             );
                         } else {
-                            const tipoUpper = String(tipoRecibo || '').trim().toUpperCase();
-                            if (tipoUpper) {
+                            if (tipoReciboUpper) {
                                 procesoParcial = procesos
                                     .filter(proc => {
                                         const tipoProc = String(proc?.proceso || proc?.tipo_proceso || proc?.nombre_proceso || '').trim().toUpperCase();
-                                        return tipoProc === tipoUpper && !!proc?.es_parcial;
+                                        return tipoProc === tipoReciboUpper && !!proc?.es_parcial;
                                     })
                                     .sort((a, b) => {
                                         const fa = a?.created_at ? new Date(a.created_at).getTime() : 0;
@@ -1793,7 +1820,9 @@
                             }
                         }
 
-                        if (procesoParcial && procesoParcial.created_at) {
+                        const esTipoParcial = tipoReciboUpper === 'PARCIAL';
+                        const yaHayFechaActivacionParcial = esTipoParcial && !!data.fecha_activacion_recibo;
+                        if (!yaHayFechaActivacionParcial && procesoParcial && procesoParcial.created_at) {
                             fechaRecibo = normalizarFecha(procesoParcial.created_at);
                         }
                     }

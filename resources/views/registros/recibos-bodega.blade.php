@@ -19,7 +19,6 @@
                             <tr>
                                 <th style="width: 60px; text-align: center;">Acciones</th>
                                 <th style="width: 120px; text-align: center;">N&deg; Recibo</th>
-                                <th>Prenda</th>
                                 <th>Descripción</th>
                                 <th style="width: 120px;">Tallas</th>
                                 <th style="width: 120px;">Cantidad Total</th>
@@ -28,7 +27,7 @@
                         </thead>
                         <tbody id="recibo-corte-bodega-tbody">
                             <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">Cargando recibos...</td>
+                                <td colspan="6" class="text-center py-4 text-muted">Cargando recibos...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -289,15 +288,13 @@
 #recibo-corte-bodega-table th:nth-child(2),
 #recibo-corte-bodega-table td:nth-child(2) { width: 120px; text-align: center; white-space: nowrap; }
 #recibo-corte-bodega-table th:nth-child(3),
-#recibo-corte-bodega-table td:nth-child(3) { width: 170px; }
+#recibo-corte-bodega-table td:nth-child(3) { width: 440px; }
 #recibo-corte-bodega-table th:nth-child(4),
-#recibo-corte-bodega-table td:nth-child(4) { width: 320px; }
+#recibo-corte-bodega-table td:nth-child(4) { width: 120px; text-align: center; }
 #recibo-corte-bodega-table th:nth-child(5),
-#recibo-corte-bodega-table td:nth-child(5) { width: 120px; text-align: center; }
+#recibo-corte-bodega-table td:nth-child(5) { width: 140px; text-align: center; }
 #recibo-corte-bodega-table th:nth-child(6),
-#recibo-corte-bodega-table td:nth-child(6) { width: 140px; text-align: center; }
-#recibo-corte-bodega-table th:nth-child(7),
-#recibo-corte-bodega-table td:nth-child(7) { width: 150px; text-align: center; white-space: nowrap; }
+#recibo-corte-bodega-table td:nth-child(6) { width: 150px; text-align: center; white-space: nowrap; }
 </style>
 
 <!-- Estilos adicionales para el modal de agregar proceso -->
@@ -1224,8 +1221,7 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('[FORM] indices de prendas encontrados:', Array.from(prendaIndices));
 
         prendaIndices.forEach(index => {
-            const nombre = formData.get(`prenda[${index}]`);
-            const descripcion = formData.get(`descripcion[${index}]`);
+            const descripcion = formData.get(`prenda[${index}]`);
             const tallasDama = formData.getAll(`talla_dama[${index}][]`);
             const coloresDama = formData.getAll(`color_dama[${index}][]`);
             const cantidadesDama = formData.getAll(`cantidad_dama[${index}][]`);
@@ -1262,12 +1258,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
-            console.log(`[FORM] Prenda ${index}:`, { nombre, descripcion, tallasList });
+            console.log(`[FORM] Prenda ${index}:`, { descripcion, tallasList });
 
-            if (nombre && tallasList.length > 0) {
+            if (descripcion && tallasList.length > 0) {
                 
                 prendas.push({
-                    nombre: nombre,
                     descripcion: descripcion || null,
                     tallas: tallasList,
                 });
@@ -1492,7 +1487,6 @@ function loadRecibosCorteForBodega() {
                             </button>
                         </td>
                         <td style="text-align: center;"><strong>${prenda.numero_recibo || '-'}</strong></td>
-                        <td><strong>${prenda.nombre}</strong></td>
                         <td>${prenda.descripcion || '-'}</td>
                         <td style="text-align: center;">${prenda.cantidad_tallas}</td>
                         <td style="text-align: center;"><span class="badge bg-success">${prenda.total_cantidad}</span></td>
@@ -1503,7 +1497,7 @@ function loadRecibosCorteForBodega() {
             } else {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="text-center py-4">
+                        <td colspan="6" class="text-center py-4">
                             <div class="alert alert-info mb-0">
                                 <i class="fas fa-info-circle"></i> No hay recibos de corte para bodega registrados aún.
                             </div>
@@ -1517,7 +1511,7 @@ function loadRecibosCorteForBodega() {
             const tbody = document.getElementById('recibo-corte-bodega-tbody');
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center py-4">
+                    <td colspan="6" class="text-center py-4">
                         <div class="alert alert-danger mb-0">
                             Error al cargar los recibos de corte para bodega.
                         </div>

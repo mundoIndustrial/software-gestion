@@ -664,7 +664,7 @@
                                                     @endphp
 
                                                     {{-- Botón VER RECIBO para vista-costura --}}
-                                                    <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'VER RECIBO', {{ $pedidoParcialId ? (int) $pedidoParcialId : 'null' }}, '{{ $consecutivoParcial ?? '' }}')">
+                                                    <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'REFLECTIVO', {{ $pedidoParcialId ? (int) $pedidoParcialId : 'null' }}, '{{ $consecutivoParcial ?? '' }}')">
                                                         <span class="material-symbols-rounded">visibility</span>
                                                         VER RECIBO
                                                     </button>
@@ -766,7 +766,7 @@
                                                 @endphp
 
                                                 {{-- Botón VER RECIBO para REFLECTIVO --}}
-                                                <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'VER RECIBO', {{ $pedidoParcialId ? (int) $pedidoParcialId : 'null' }}, '{{ $consecutivoParcial ?? '' }}')">
+                                                <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'REFLECTIVO', {{ $pedidoParcialId ? (int) $pedidoParcialId : 'null' }}, '{{ $consecutivoParcial ?? '' }}')">
                                                     <span class="material-symbols-rounded">visibility</span>
                                                     VER RECIBO
                                                 </button>
@@ -827,7 +827,7 @@
                                                     $pedidoParcialId = $reciboTipo['pedido_parcial_id'] ?? null;
                                                     $consecutivoParcial = $reciboTipo['consecutivo_parcial'] ?? ($reciboTipo['consecutivo_actual'] ?? null);
                                                 @endphp
-                                                <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'VER RECIBO', {{ $pedidoParcialId ? (int) $pedidoParcialId : 'null' }}, '{{ $consecutivoParcial ?? '' }}')">
+                                                <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ strtoupper((string) $tipoReciboUnico) }}', {{ $pedidoParcialId ? (int) $pedidoParcialId : 'null' }}, '{{ $consecutivoParcial ?? '' }}')">
                                                     <span class="material-symbols-rounded">visibility</span>
                                                     VER RECIBO
                                                 </button>
@@ -1138,7 +1138,7 @@
                                                     $pedidoParcialId = $reciboTipo['pedido_parcial_id'] ?? null;
                                                     $consecutivoParcial = $reciboTipo['consecutivo_parcial'] ?? ($reciboTipo['consecutivo_actual'] ?? null);
                                                 @endphp
-                                                <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'VER RECIBO', {{ $pedidoParcialId ? (int) $pedidoParcialId : 'null' }}, '{{ $consecutivoParcial ?? '' }}')">
+                                                <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ strtoupper((string) $tipoReciboUnico) }}', {{ $pedidoParcialId ? (int) $pedidoParcialId : 'null' }}, '{{ $consecutivoParcial ?? '' }}')">
                                                     <span class="material-symbols-rounded">visibility</span>
                                                     VER RECIBO
                                                 </button>

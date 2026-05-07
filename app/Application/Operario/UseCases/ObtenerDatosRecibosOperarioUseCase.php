@@ -180,6 +180,43 @@ class ObtenerDatosRecibosOperarioUseCase
                 'tallas_count' => $parcial->tallas?->count() ?? 0,
             ]);
 
+            // Fecha real de activación del recibo (tabla consecutivos_recibos_pedidos.created_at)
+            // para mostrarla en la vista de detalle del parcial.
+            $tipoReciboParcial = strtoupper(trim((string) ($parcial->tipo_recibo ?: 'COSTURA')));
+            $consecutivoParcialInt = (int) round((float) ($parcial->consecutivo_parcial ?? 0));
+            $consecutivoOriginalInt = (int) round((float) ($parcial->consecutivo_original ?? 0));
+
+            // Prioridad 1: recibo del anexo identificado por parcial_id en notas.
+            $baseReciboActivacionQuery = DB::table('consecutivos_recibos_pedidos')
+                ->where('pedido_produccion_id', (int) $pedido->id)
+                ->where('prenda_id', (int) $parcial->prenda_pedido_id)
+                ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [$tipoReciboParcial]);
+
+            $reciboActivacion = (clone $baseReciboActivacionQuery)
+                ->where('notas', 'like', '%parcial_id:' . (int) $parcial->id . '%')
+                ->orderByDesc('created_at')
+                ->first(['id', 'created_at']);
+
+            // Prioridad 2: consecutivo del parcial (ej: 55 en tu caso).
+            if (!$reciboActivacion && $consecutivoParcialInt > 0) {
+                $reciboActivacion = (clone $baseReciboActivacionQuery)
+                    ->where('consecutivo_actual', $consecutivoParcialInt)
+                    ->orderByDesc('created_at')
+                    ->first(['id', 'created_at']);
+            }
+
+            // Prioridad 3: consecutivo original como último fallback.
+            if (!$reciboActivacion && $consecutivoOriginalInt > 0) {
+                $reciboActivacion = (clone $baseReciboActivacionQuery)
+                    ->where('consecutivo_actual', $consecutivoOriginalInt)
+                    ->orderByDesc('created_at')
+                    ->first(['id', 'created_at']);
+            }
+
+            $fechaActivacionRecibo = $reciboActivacion?->created_at
+                ? (string) $reciboActivacion->created_at
+                : null;
+
             $datosPedido = $this->obtenerPedidoUseCase->ejecutar((int) $pedido->id, false);
             $responseData = $datosPedido->toArray();
 
@@ -189,7 +226,7 @@ class ObtenerDatosRecibosOperarioUseCase
                         $id = $prenda['id'] ?? $prenda['prenda_id'] ?? $prenda['prenda_pedido_id'] ?? null;
                         return $id !== null && (int) $id === (int) $parcial->prenda_pedido_id;
                     })
-                    ->map(function ($prenda) use ($parcial, $generoBase) {
+                    ->map(function ($prenda) use ($parcial, $generoBase, $fechaActivacionRecibo) {
                         $generoPrenda = strtoupper(trim((string) (
                             $prenda['genero']
                             ?? $prenda['tipo_flujo_tallas']
@@ -209,6 +246,50 @@ class ObtenerDatosRecibosOperarioUseCase
                         $tallasRaw = DB::table($tallasTable)
                             ->where($foreignKey, (int) $parcial->id)
                             ->get($columns);
+
+                        // Fallback de compatibilidad:
+                        // algunos anexos guardan colores en pedidos_parciales_tallas aunque el parcial
+                        // se resuelva desde recibos_por_partes_tallas.
+                        $tieneColorEnTallasRaw = false;
+                        foreach ($tallasRaw as $row) {
+                            $colorTmp = is_array($row) ? ($row['color_nombre'] ?? null) : ($row->color_nombre ?? null);
+                            if (is_string($colorTmp) && trim($colorTmp) !== '') {
+                                $tieneColorEnTallasRaw = true;
+                                break;
+                            }
+                        }
+                        if (!$tieneColorEnTallasRaw) {
+                            // 1) Intento directo por ID legacy
+                            $tallasLegacyConColor = DB::table('pedidos_parciales_tallas')
+                                ->where('pedido_parcial_id', (int) $parcial->id)
+                                ->get(['genero', 'talla', 'cantidad', 'color_nombre']);
+
+                            // 2) Fallback robusto por contexto (cuando IDs no coinciden entre tablas)
+                            if ($tallasLegacyConColor->isEmpty()) {
+                                $tipoReciboParcial = strtoupper(trim((string) ($parcial->tipo_recibo ?? '')));
+                                $legacyParcial = DB::table('pedidos_parciales')
+                                    ->where('pedido_produccion_id', (int) $parcial->pedido_produccion_id)
+                                    ->where('prenda_pedido_id', (int) $parcial->prenda_pedido_id)
+                                    ->where('consecutivo_actual', (float) $parcial->consecutivo_parcial)
+                                    ->when(
+                                        $tipoReciboParcial !== '',
+                                        fn ($q) => $q->whereRaw('UPPER(tipo_recibo) = ?', [$tipoReciboParcial])
+                                    )
+                                    ->whereNull('deleted_at')
+                                    ->orderByDesc('id')
+                                    ->first(['id']);
+
+                                if ($legacyParcial?->id) {
+                                    $tallasLegacyConColor = DB::table('pedidos_parciales_tallas')
+                                        ->where('pedido_parcial_id', (int) $legacyParcial->id)
+                                        ->get(['genero', 'talla', 'cantidad', 'color_nombre']);
+                                }
+                            }
+
+                            if ($tallasLegacyConColor->isNotEmpty()) {
+                                $tallasRaw = $tallasLegacyConColor;
+                            }
+                        }
                         
                         \Log::info('[NORMAL DEBUG 1] Tipo tallas raw: ' . gettype($tallasRaw));
                         \Log::info('[NORMAL DEBUG 2] Es Collection: ' . ($tallasRaw instanceof \Illuminate\Support\Collection ? 'si' : 'no'));
@@ -431,6 +512,14 @@ class ObtenerDatosRecibosOperarioUseCase
                             }
                         }
 
+                        if (empty($tallaColoresParcial)) {
+                            $tallaColoresParcial = $this->construirTallaColoresDesdePrenda(
+                                (int) ($parcial->prenda_pedido_id ?? 0),
+                                $tallasParcial,
+                                $prenda['tela_nombre'] ?? $prenda['tela'] ?? null
+                            );
+                        }
+
                         $reciboParcialData = [
                             'id' => $parcial->id,
                             'consecutivo_actual' => (float) $parcial->consecutivo_parcial,
@@ -445,14 +534,17 @@ class ObtenerDatosRecibosOperarioUseCase
                             'observaciones' => $observacionProceso,
                             'es_parcial' => true,
                             'pedido_parcial_id' => (int) $parcial->id,
+                            'fecha_activacion_recibo' => $fechaActivacionRecibo,
+                            'created_at' => $fechaActivacionRecibo,
                         ];
 
                         $prenda['procesos'] = [[
-                            'proceso' => 'COSTURA',
-                            'tipo_proceso' => 'COSTURA',
-                            'nombre_proceso' => 'COSTURA',
+                            'proceso' => $reciboKey,
+                            'tipo_proceso' => $reciboKey,
+                            'nombre_proceso' => $reciboKey,
                             'es_parcial' => true,
                             'pedido_parcial_id' => (int) $parcial->id,
+                            'created_at' => $fechaActivacionRecibo,
                             'tallas' => $tallasProceso,
                             'talla_colores' => $tallaColoresParcial,
                             'ubicaciones' => null,
@@ -461,7 +553,7 @@ class ObtenerDatosRecibosOperarioUseCase
 
                         // Mantener `recibos` como objeto (no array) para que el front lo detecte.
                         $prenda['recibos'] = [
-                            'COSTURA' => array_merge($reciboParcialData, ['tipo_recibo' => 'COSTURA']),
+                            $reciboKey => array_merge($reciboParcialData, ['tipo_recibo' => $reciboKey]),
                             'PARCIAL' => $reciboParcialData,
                         ];
 
@@ -470,6 +562,8 @@ class ObtenerDatosRecibosOperarioUseCase
                     ->values()
                     ->toArray();
             }
+
+            $responseData['fecha_activacion_recibo'] = $fechaActivacionRecibo;
 
             // Fallback defensivo: si por alguna incompatibilidad del transformador la prenda queda vacía,
             // construir una prenda mínima para que el recibo parcial siempre renderice descripción/tallas.
@@ -509,6 +603,48 @@ class ObtenerDatosRecibosOperarioUseCase
                 $tallasRaw = DB::table($tallasTable)
                     ->where($foreignKey, (int) $parcial->id)
                     ->get($columns);
+
+                // Fallback de compatibilidad para colores de anexos legacy.
+                $tieneColorEnTallasRaw = false;
+                foreach ($tallasRaw as $row) {
+                    $colorTmp = is_array($row) ? ($row['color_nombre'] ?? null) : ($row->color_nombre ?? null);
+                    if (is_string($colorTmp) && trim($colorTmp) !== '') {
+                        $tieneColorEnTallasRaw = true;
+                        break;
+                    }
+                }
+                if (!$tieneColorEnTallasRaw) {
+                    // 1) Intento directo por ID legacy
+                    $tallasLegacyConColor = DB::table('pedidos_parciales_tallas')
+                        ->where('pedido_parcial_id', (int) $parcial->id)
+                        ->get(['genero', 'talla', 'cantidad', 'color_nombre']);
+
+                    // 2) Fallback robusto por contexto (cuando IDs no coinciden entre tablas)
+                    if ($tallasLegacyConColor->isEmpty()) {
+                        $tipoReciboParcial = strtoupper(trim((string) ($parcial->tipo_recibo ?? '')));
+                        $legacyParcial = DB::table('pedidos_parciales')
+                            ->where('pedido_produccion_id', (int) $parcial->pedido_produccion_id)
+                            ->where('prenda_pedido_id', (int) $parcial->prenda_pedido_id)
+                            ->where('consecutivo_actual', (float) $parcial->consecutivo_parcial)
+                            ->when(
+                                $tipoReciboParcial !== '',
+                                fn ($q) => $q->whereRaw('UPPER(tipo_recibo) = ?', [$tipoReciboParcial])
+                            )
+                            ->whereNull('deleted_at')
+                            ->orderByDesc('id')
+                            ->first(['id']);
+
+                        if ($legacyParcial?->id) {
+                            $tallasLegacyConColor = DB::table('pedidos_parciales_tallas')
+                                ->where('pedido_parcial_id', (int) $legacyParcial->id)
+                                ->get(['genero', 'talla', 'cantidad', 'color_nombre']);
+                        }
+                    }
+
+                    if ($tallasLegacyConColor->isNotEmpty()) {
+                        $tallasRaw = $tallasLegacyConColor;
+                    }
+                }
                 
                 \Log::info('[FALLBACK DEBUG 1] Tipo tallas raw: ' . gettype($tallasRaw));
                 \Log::info('[FALLBACK DEBUG 2] Es Collection: ' . ($tallasRaw instanceof \Illuminate\Support\Collection ? 'si' : 'no'));
@@ -593,6 +729,14 @@ class ObtenerDatosRecibosOperarioUseCase
                     }
                 }
 
+                if (empty($tallaColoresParcial)) {
+                    $tallaColoresParcial = $this->construirTallaColoresDesdePrenda(
+                        (int) ($parcial->prenda_pedido_id ?? 0),
+                        $tallasParcial,
+                        $coloresTelas[0]['tela_nombre'] ?? null
+                    );
+                }
+
                 $reciboParcialData = [
                     'id' => $parcial->id,
                     'consecutivo_actual' => (float) $parcial->consecutivo_parcial,
@@ -607,6 +751,8 @@ class ObtenerDatosRecibosOperarioUseCase
                     'observaciones' => $observacionProceso,
                     'es_parcial' => true,
                     'pedido_parcial_id' => (int) $parcial->id,
+                    'fecha_activacion_recibo' => $fechaActivacionRecibo,
+                    'created_at' => $fechaActivacionRecibo,
                 ];
 
                 $reciboKey = strtoupper(trim((string) ($parcial->tipo_recibo ?: 'COSTURA')));
@@ -626,11 +772,12 @@ class ObtenerDatosRecibosOperarioUseCase
                     'tallas' => $tallasParcial,
                     'talla_colores' => $tallaColoresParcial,
                     'procesos' => [[
-                        'proceso' => 'COSTURA',
-                        'tipo_proceso' => 'COSTURA',
-                        'nombre_proceso' => 'COSTURA',
+                        'proceso' => $reciboKey,
+                        'tipo_proceso' => $reciboKey,
+                        'nombre_proceso' => $reciboKey,
                         'es_parcial' => true,
                         'pedido_parcial_id' => (int) $parcial->id,
+                        'created_at' => $fechaActivacionRecibo,
                         'tallas' => [
                             'dama' => $dama,
                             'caballero' => $caballero,
@@ -639,10 +786,12 @@ class ObtenerDatosRecibosOperarioUseCase
                         'talla_colores' => $tallaColoresParcial,
                     ]],
                     'recibos' => [
-                        'COSTURA' => array_merge($reciboParcialData, ['tipo_recibo' => 'COSTURA']),
+                        $reciboKey => array_merge($reciboParcialData, ['tipo_recibo' => $reciboKey]),
                         'PARCIAL' => $reciboParcialData,
                     ],
                 ]];
+
+                $responseData['fecha_activacion_recibo'] = $fechaActivacionRecibo;
 
                 \Log::warning('[ObtenerDatosRecibosOperarioUseCase] Prendas vacías en parcial, usando fallback mínimo', [
                     'parcial_id' => (int) $parcial->id,
@@ -685,5 +834,110 @@ class ObtenerDatosRecibosOperarioUseCase
                 'data' => $responseData,
             ],
         ];
+    }
+
+    /**
+     * Reconstruye talla_colores del parcial usando la distribución de colores de la prenda base.
+     *
+     * @param int $prendaPedidoId
+     * @param array<int,array{genero:string,talla:string,cantidad:int,color_nombre:mixed}> $tallasParcial
+     * @param string|null $telaNombre
+     * @return array<int,array<string,mixed>>
+     */
+    private function construirTallaColoresDesdePrenda(int $prendaPedidoId, array $tallasParcial, ?string $telaNombre = null): array
+    {
+        if ($prendaPedidoId <= 0 || empty($tallasParcial)) {
+            return [];
+        }
+
+        $rows = DB::table('prenda_pedido_talla_colores as pptc')
+            ->join('prenda_pedido_tallas as ppt', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+            ->where('ppt.prenda_pedido_id', $prendaPedidoId)
+            ->select(['ppt.genero', 'ppt.talla', 'pptc.color_nombre', 'pptc.cantidad'])
+            ->get();
+
+        if ($rows->isEmpty()) {
+            return [];
+        }
+
+        $fuente = [];
+        foreach ($rows as $row) {
+            $genero = strtoupper(trim((string) ($row->genero ?? '')));
+            $talla = strtoupper(trim((string) ($row->talla ?? '')));
+            $color = trim((string) ($row->color_nombre ?? ''));
+            $cantidad = (int) ($row->cantidad ?? 0);
+            if ($genero === '' || $talla === '' || $color === '' || $cantidad <= 0) {
+                continue;
+            }
+            $key = $genero . '|' . $talla;
+            $fuente[$key][] = ['color' => $color, 'cantidad' => $cantidad];
+        }
+
+        if (empty($fuente)) {
+            return [];
+        }
+
+        $resultado = [];
+        foreach ($tallasParcial as $tallaParcial) {
+            $genero = strtoupper(trim((string) ($tallaParcial['genero'] ?? 'UNISEX')));
+            $talla = strtoupper(trim((string) ($tallaParcial['talla'] ?? '')));
+            $cantidadObjetivo = (int) ($tallaParcial['cantidad'] ?? 0);
+            if ($talla === '' || $cantidadObjetivo <= 0) {
+                continue;
+            }
+
+            $key = $genero . '|' . $talla;
+            $coloresFuente = $fuente[$key] ?? [];
+            if (empty($coloresFuente)) {
+                continue;
+            }
+
+            $sumaFuente = array_sum(array_map(static fn ($c) => (int) ($c['cantidad'] ?? 0), $coloresFuente));
+            if ($sumaFuente <= 0) {
+                continue;
+            }
+
+            $distribucion = [];
+            $asignado = 0;
+            $residuos = [];
+            foreach ($coloresFuente as $idx => $cf) {
+                $exacto = ($cantidadObjetivo * (int) $cf['cantidad']) / $sumaFuente;
+                $base = (int) floor($exacto);
+                $distribucion[$idx] = $base;
+                $asignado += $base;
+                $residuos[$idx] = $exacto - $base;
+            }
+
+            $faltante = $cantidadObjetivo - $asignado;
+            if ($faltante > 0) {
+                arsort($residuos);
+                foreach (array_keys($residuos) as $idx) {
+                    if ($faltante <= 0) {
+                        break;
+                    }
+                    $distribucion[$idx] = ($distribucion[$idx] ?? 0) + 1;
+                    $faltante--;
+                }
+            }
+
+            foreach ($coloresFuente as $idx => $cf) {
+                $cantidadColor = (int) ($distribucion[$idx] ?? 0);
+                if ($cantidadColor <= 0) {
+                    continue;
+                }
+                $resultado[] = [
+                    'genero' => $genero,
+                    'talla' => $talla,
+                    'tela_nombre' => $telaNombre,
+                    'color_nombre' => (string) $cf['color'],
+                    'cantidad' => $cantidadColor,
+                    'referencia' => null,
+                    'observaciones' => null,
+                    'imagen_ruta' => null,
+                ];
+            }
+        }
+
+        return $resultado;
     }
 }

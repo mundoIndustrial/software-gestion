@@ -73,8 +73,8 @@ class ReciboCorteBodegaController extends Controller
     {
         $validated = $request->validate([
             'prendas' => 'required|array|min:1',
-            'prendas.*.nombre' => 'required|string|max:255',
-            'prendas.*.descripcion' => 'nullable|string',
+            'prendas.*.nombre' => 'nullable|string|max:255',
+            'prendas.*.descripcion' => 'required|string',
             'prendas.*.tallas' => 'required|array|min:1',
             'prendas.*.tallas.*.talla' => 'required|string|max:50',
             'prendas.*.tallas.*.genero' => 'nullable|string|in:dama,caballero,unisex,DAMA,CABALLERO,UNISEX',
@@ -120,9 +120,13 @@ class ReciboCorteBodegaController extends Controller
 
                 $resultado = [];
                 foreach ($validated['prendas'] as $prendaData) {
+                    $descripcion = trim((string) ($prendaData['descripcion'] ?? ''));
+                    $nombre = trim((string) ($prendaData['nombre'] ?? ''));
+                    $nombrePersistir = $nombre !== '' ? $nombre : $descripcion;
+
                     $prenda = PrendaBodega::create([
-                        'nombre' => $prendaData['nombre'],
-                        'descripcion' => $prendaData['descripcion'] ?? null,
+                        'nombre' => $nombrePersistir,
+                        'descripcion' => $descripcion,
                     ]);
 
                     DB::table('consecutivos_recibos_pedidos')->insert([

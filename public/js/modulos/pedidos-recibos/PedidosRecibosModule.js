@@ -754,11 +754,14 @@ export class PedidosRecibosModule {
             // Filtrar tallas del parcial para que el renderer solo muestre las del parcial
             // Esto asegura que no muestre todas las tallas de la prenda
             const tallasParcialSet = new Set();
+            const tallasParcialConColorSet = new Set();
             if (Array.isArray(tallasArrayParcial) && tallasArrayParcial.length > 0) {
                 tallasArrayParcial.forEach(t => {
                     const genero = String(t.genero || 'CABALLERO').toUpperCase();
                     const talla = String(t.talla || '').toUpperCase();
+                    const color = String(t.color_nombre || '').trim().toUpperCase();
                     tallasParcialSet.add(`${genero}|${talla}`);
+                    tallasParcialConColorSet.add(`${genero}|${talla}|${color || 'SIN_COLOR'}`);
                 });
                 recibo.talla_colores = tallasArrayParcial;
             } else {
@@ -770,6 +773,12 @@ export class PedidosRecibosModule {
                 prendaData.talla_colores = prendaData.talla_colores.filter(tc => {
                     const genero = String(tc.genero || 'CABALLERO').toUpperCase();
                     const talla = String(tc.talla || '').toUpperCase();
+                    const color = String(tc.color_nombre || tc.color || '').trim().toUpperCase();
+                    const keyConColor = `${genero}|${talla}|${color || 'SIN_COLOR'}`;
+                    // Para anexos con selección por color, solo conservar exactamente los colores elegidos.
+                    if (tallasParcialConColorSet.size > 0) {
+                        return tallasParcialConColorSet.has(keyConColor);
+                    }
                     return tallasParcialSet.has(`${genero}|${talla}`);
                 });
             }

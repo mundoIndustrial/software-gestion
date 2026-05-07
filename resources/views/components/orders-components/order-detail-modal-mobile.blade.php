@@ -530,6 +530,98 @@ window.llenarReciboCosturaMobile = function(data) {
         urlParams.get('pedido_parcial_id') || urlParams.get('parcial_id') || ''
     ).trim();
     const esReciboParcial = pedidoParcialIdParam !== '' || consecutivoParcialParam !== '' || tipoReciboUpper === 'PARCIAL';
+
+    // Unificar con la fuente que usa recibos-reflectivo:
+    // hidratar datos del parcial desde /api/recibos-parciales/{id} antes de renderizar.
+    if (esReciboParcial && pedidoParcialIdParam !== '' && !data?._parcialHydratedOperario) {
+        const parcialIdNum = Number(pedidoParcialIdParam);
+        if (Number.isFinite(parcialIdNum) && parcialIdNum > 0) {
+            data._parcialHydratedOperario = true;
+            fetch(`/api/recibos-parciales/${parcialIdNum}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(r => r.ok ? r.json() : null)
+            .then(json => {
+                if (!json?.success || !json?.data) {
+                    window.llenarReciboCosturaMobile(data);
+                    return;
+                }
+
+                const tallasParcial = Array.isArray(json.data.tallas) ? json.data.tallas : [];
+                const tallaColoresParcial = tallasParcial
+                    .filter(t => (t?.color_nombre || '').toString().trim() !== '')
+                    .map(t => ({
+                        genero: (t?.genero || 'CABALLERO').toString().toUpperCase(),
+                        talla: (t?.talla || '').toString().toUpperCase(),
+                        color_nombre: (t?.color_nombre || '').toString().trim(),
+                        cantidad: parseInt(t?.cantidad || 0, 10) || 0,
+                    }))
+                    .filter(t => t.talla !== '' && t.cantidad > 0);
+
+                if (Array.isArray(data?.prendas)) {
+                    data.prendas = data.prendas.map((prenda) => {
+                        const prendaParcialId = String(
+                            prenda?.recibos?.PARCIAL?.pedido_parcial_id ||
+                            prenda?.recibos?.PARCIAL?.id ||
+                            prenda?.procesos?.[0]?.pedido_parcial_id ||
+                            ''
+                        ).trim();
+
+                        if (prendaParcialId !== pedidoParcialIdParam) return prenda;
+
+                        if (tallasParcial.length > 0) {
+                            prenda.tallas = tallasParcial;
+                        }
+
+                        if (tallaColoresParcial.length > 0) {
+                            prenda.talla_colores = tallaColoresParcial;
+                        }
+
+                        if (Array.isArray(prenda.procesos)) {
+                            prenda.procesos = prenda.procesos.map((proc) => {
+                                const procParcialId = String(proc?.pedido_parcial_id || proc?.id || '').trim();
+                                if (procParcialId !== pedidoParcialIdParam && !proc?.es_parcial) return proc;
+                                if (tallaColoresParcial.length > 0) {
+                                    proc.talla_colores = tallaColoresParcial;
+                                }
+                                if (json?.data?.tallas_formato_colores && typeof json.data.tallas_formato_colores === 'object') {
+                                    proc.tallas = json.data.tallas_formato_colores;
+                                }
+                                return proc;
+                            });
+                        }
+
+                        if (prenda.recibos && typeof prenda.recibos === 'object') {
+                            const keys = Object.keys(prenda.recibos);
+                            keys.forEach((k) => {
+                                const rec = prenda.recibos[k];
+                                if (!rec || typeof rec !== 'object') return;
+                                const recParcialId = String(rec?.pedido_parcial_id || rec?.id || '').trim();
+                                if (recParcialId !== pedidoParcialIdParam) return;
+                                if (tallasParcial.length > 0) rec.tallas = tallasParcial;
+                                if (tallaColoresParcial.length > 0) rec.talla_colores = tallaColoresParcial;
+                                if (json?.data?.tallas_formato_colores && typeof json.data.tallas_formato_colores === 'object') {
+                                    rec.tallas_estructura = json.data.tallas_formato_colores;
+                                }
+                            });
+                        }
+
+                        return prenda;
+                    });
+                }
+
+                window.llenarReciboCosturaMobile(data);
+            })
+            .catch(() => {
+                window.llenarReciboCosturaMobile(data);
+            });
+            return;
+        }
+    }
+
     const receiptTitleEl = document.getElementById('receipt-title-mobile');
     if (receiptTitleEl) {
         if (tipoReciboUpper) {
@@ -928,7 +1020,54 @@ window.llenarReciboCosturaMobile = function(data) {
         if (tieneCosturaBodega) procesosFiltrados.push('COSTURA-BODEGA');
 
         if (tipoReciboUpper === 'PARCIAL') {
-            if (tieneCostu) {
+            // Resolver dinámicamente el proceso real del parcial (puede ser COSTURA, REFLECTIVO, etc.)
+            let procesoParcialReal = null;
+            const parcialIdParam = String(new URLSearchParams(window.location.search).get('parcial_id') || '').trim();
+
+            if (Array.isArray(data?.prendas)) {
+                for (const prenda of data.prendas) {
+                    // Prioridad 1: recibos[key] que coincidan con el parcial_id y no sean la llave PARCIAL
+                    if (prenda?.recibos && typeof prenda.recibos === 'object' && !Array.isArray(prenda.recibos)) {
+                        for (const [key, reciboVal] of Object.entries(prenda.recibos)) {
+                            if (!reciboVal || typeof reciboVal !== 'object') continue;
+                            const keyUpper = String(key || '').trim().toUpperCase();
+                            if (keyUpper === 'PARCIAL') continue;
+
+                            const parcialInterno = String(reciboVal.pedido_parcial_id || reciboVal.parcial_id || reciboVal.id || '').trim();
+                            const coincideParcial = parcialIdParam !== '' && parcialInterno === parcialIdParam;
+                            const tipoInterno = String(reciboVal.tipo_recibo || keyUpper || '').trim().toUpperCase();
+
+                            if (coincideParcial && tipoInterno) {
+                                procesoParcialReal = tipoInterno;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (procesoParcialReal) break;
+
+                    // Prioridad 2: proceso parcial dentro de prenda.procesos
+                    if (Array.isArray(prenda?.procesos)) {
+                        for (const proc of prenda.procesos) {
+                            const procTipo = String(proc?.proceso || proc?.tipo_proceso || proc?.nombre_proceso || '').trim().toUpperCase();
+                            const parcialProceso = String(proc?.pedido_parcial_id || proc?.parcial_id || '').trim();
+                            const coincideParcial = parcialIdParam !== '' && parcialProceso === parcialIdParam;
+                            if (procTipo && procTipo !== 'PARCIAL' && (coincideParcial || !!proc?.es_parcial)) {
+                                procesoParcialReal = procTipo;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (procesoParcialReal) break;
+                }
+            }
+
+            if (procesoParcialReal && todosProcesos.includes(procesoParcialReal)) {
+                procesosFiltrados = [procesoParcialReal];
+            } else if (todosProcesos.includes('REFLECTIVO')) {
+                procesosFiltrados = ['REFLECTIVO'];
+            } else if (tieneCostu) {
                 procesosFiltrados = ['COSTURA'];
             } else if (tieneCosturaBodega) {
                 procesosFiltrados = ['COSTURA-BODEGA'];

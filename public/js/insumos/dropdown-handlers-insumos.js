@@ -329,7 +329,8 @@ async function abrirSeguimientoRecibo(pedidoId, prendaId, consecutivo = null, es
             consecutivos:          consecutivo ? [consecutivo] : [],
             estado:                estado     || 'PENDIENTE_INSUMOS',
             tipo_recibo:           tipoRecibo || 'COSTURA',
-            area:                  estado === 'En Ejecución' ? 'Costura' : (estado || 'Insumos'),
+            // En Insumos, aprobar a "En Ejecución" significa enviar a CORTE (no a Costura).
+            area:                  (estado === 'En Ejecución' || estado === 'En Ejecucion') ? 'Corte' : (estado || 'Insumos'),
             readonly:              Boolean(globalThis.isInsumos || globalThis.location?.pathname?.includes('/insumos/materiales')),
             seguimientos_por_area: {}
         };

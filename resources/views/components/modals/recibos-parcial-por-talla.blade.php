@@ -445,7 +445,40 @@
                 return normalizadas;
             };
 
-            // PRIORIDAD: si la prenda tiene tallas por color, usarlas siempre para anexos
+            // Helper: normaliza talla_colores [{genero,talla,color_nombre,cantidad}, ...]
+            // y consolida duplicados por genero+talla+color.
+            const normalizarDesdeTallaColoresArray = (arr) => {
+                if (!Array.isArray(arr) || arr.length === 0) return [];
+                const map = new Map();
+
+                arr.forEach((item) => {
+                    const talla = String(item?.talla || '').trim();
+                    const genero = item?.genero ? String(item.genero).toUpperCase() : null;
+                    const colorRaw = item?.color_nombre ?? item?.color ?? null;
+                    const color = colorRaw !== null && colorRaw !== undefined && String(colorRaw).trim() !== ''
+                        ? String(colorRaw).trim()
+                        : null;
+                    const cantidad = parseInt(item?.cantidad || 0, 10) || 0;
+                    if (!talla || cantidad <= 0) return;
+
+                    const key = `${genero || ''}__${talla}__${color || ''}`;
+                    const prev = map.get(key) || { talla, genero, color, cantidad: 0 };
+                    prev.cantidad += cantidad;
+                    map.set(key, prev);
+                });
+
+                return Array.from(map.values());
+            };
+
+            // PRIORIDAD 1: talla_colores explícito de la prenda
+            if (Array.isArray(penda.talla_colores) && penda.talla_colores.length > 0) {
+                const candidatas = normalizarDesdeTallaColoresArray(penda.talla_colores);
+                if (candidatas.length > 0) {
+                    tallas = candidatas;
+                }
+            }
+
+            // PRIORIDAD 2: si la prenda tiene tallas por color, usarlas siempre para anexos
             // (las tallas del proceso vienen de pedidos_procesos_prenda_tallas y no incluyen color)
             if (!esCosturaBase && penda.tallas && typeof penda.tallas === 'object' && !Array.isArray(penda.tallas)) {
                 const candidatas = normalizarTallasConColoresDesdePrenda(penda.tallas);
@@ -467,8 +500,16 @@
                 });
                 
                 if (procesoEncontrado) {
+                    // PRIORIDAD 3: talla_colores del proceso seleccionado
+                    if (tallas.length === 0 && Array.isArray(procesoEncontrado.talla_colores) && procesoEncontrado.talla_colores.length > 0) {
+                        const candidatas = normalizarDesdeTallaColoresArray(procesoEncontrado.talla_colores);
+                        if (candidatas.length > 0) {
+                            tallas = candidatas;
+                        }
+                    }
+
                     // Obtener tallas del proceso (pueden estar en diferentes formatos)
-                    if (procesoEncontrado.tallas_transformadas) {
+                    if (tallas.length === 0 && procesoEncontrado.tallas_transformadas) {
                         // Formato transformado: {dama: {...}, caballero: {...}, unisex: {...}}
                         const generos = ['DAMA', 'CABALLERO', 'UNISEX'];
                         generos.forEach(genero => {
@@ -481,7 +522,7 @@
                                 });
                             });
                         });
-                    } else if (procesoEncontrado.tallas && Array.isArray(procesoEncontrado.tallas)) {
+                    } else if (tallas.length === 0 && procesoEncontrado.tallas && Array.isArray(procesoEncontrado.tallas)) {
                         // Formato array directo
                         tallas = procesoEncontrado.tallas;
                     }
