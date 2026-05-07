@@ -7,26 +7,6 @@
     <link rel="stylesheet" href="{{ asset('css/users-styles.css') }}">
 
     <div class="table-container">
-        <div class="table-header">
-            <h1 class="table-title">
-                <i class="fas fa-users"></i>
-                Gestión de Usuarios
-            </h1>
-
-            <div class="search-container">
-                <div class="search-input-wrapper">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="buscarUsuario" placeholder="Buscar por nombre o email..." class="search-input">
-                </div>
-            </div>
-
-            <div class="table-actions">
-                <button class="btn-primary" onclick="openCreateModal()">
-                    <i class="fas fa-plus"></i> Nuevo Usuario
-                </button>
-            </div>
-        </div>
-
         @if(session('status'))
             <div class="alert alert-success">
                 <i class="fas fa-check-circle"></i>
@@ -57,11 +37,31 @@
                 <table id="tablaUsuarios" class="modern-table">
                     <thead class="table-head">
                         <tr>
-                            <th class="table-header-cell">Nombre</th>
-                            <th class="table-header-cell">Email</th>
-                            <th class="table-header-cell">Teléfono</th>
-                            <th class="table-header-cell">Rol</th>
-                            <th class="table-header-cell">Fecha Registro</th>
+                            <th class="table-header-cell" data-column="nombre">
+                                Nombre
+                                <i class="fas fa-filter filter-icon"></i>
+                                <div class="filter-dropdown" id="filter-nombre"></div>
+                            </th>
+                            <th class="table-header-cell" data-column="email">
+                                Email
+                                <i class="fas fa-filter filter-icon"></i>
+                                <div class="filter-dropdown" id="filter-email"></div>
+                            </th>
+                            <th class="table-header-cell" data-column="telefono">
+                                Teléfono
+                                <i class="fas fa-filter filter-icon"></i>
+                                <div class="filter-dropdown" id="filter-telefono"></div>
+                            </th>
+                            <th class="table-header-cell" data-column="rol">
+                                Rol
+                                <i class="fas fa-filter filter-icon"></i>
+                                <div class="filter-dropdown" id="filter-rol"></div>
+                            </th>
+                            <th class="table-header-cell" data-column="fecha">
+                                Fecha Registro
+                                <i class="fas fa-filter filter-icon"></i>
+                                <div class="filter-dropdown" id="filter-fecha"></div>
+                            </th>
                             <th class="table-header-cell acciones-column">Acciones</th>
                         </tr>
                     </thead>
@@ -76,8 +76,12 @@
                                         <span>{{ $user->name }}</span>
                                     </div>
                                 </td>
-                                <td class="table-cell">{{ $user->email }}</td>
-                                <td class="table-cell">{{ $user->telefono ?? '—' }}</td>
+                                <td class="table-cell">
+                                    {{ $user->email }}
+                                </td>
+                                <td class="table-cell">
+                                    {{ $user->telefono ?? '—' }}
+                                </td>
                                 <td class="table-cell">
                                     @if($user->roles_ids && count($user->roles_ids) > 0)
                                         <div style="display: flex; gap: 5px; flex-wrap: wrap;">
@@ -91,8 +95,10 @@
                                         <span class="badge badge-default">Sin rol</span>
                                     @endif
                                 </td>
-                                <td class="table-cell">{{ $user->created_at->format('d/m/Y') }}</td>
-                                <td class="table-cell acciones-cell">
+                                <td class="table-cell">
+                                    {{ $user->created_at->format('d/m/Y') }}
+                                </td>
+                                <td class="table-cell">
                                     <div class="action-buttons">
                                         <button class="btn-action btn-edit"
                                                 onclick="openEditModal({{ $user->id }}, '{{ $user->name }}', '{{ $user->email }}')"
@@ -116,7 +122,7 @@
                             </tr>
                         @empty
                             <tr class="table-row">
-                                <td colspan="5" class="no-results">
+                                <td colspan="6" class="no-results">
                                     <i class="fas fa-users"></i>
                                     <p>No hay usuarios registrados</p>
                                 </td>
@@ -171,16 +177,33 @@
                     </div>
                     <div class="form-group">
                         <label for="create_roles">Roles</label>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
-                            @foreach($roles as $role)
-                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                    <input type="checkbox" name="roles_ids[]" value="{{ $role->id }}" id="role_{{ $role->id }}">
-                                    {{ $role->name }}
-                                </label>
-                            @endforeach
+                        <div class="roles-selector">
+                            <div class="roles-search-wrapper">
+                                <span class="material-symbols-rounded search-icon" aria-hidden="true">search</span>
+                                <input 
+                                    type="text" 
+                                    id="create_roles_search" 
+                                    class="roles-search-input" 
+                                    placeholder="Buscar roles..."
+                                    autocomplete="off"
+                                >
+                            </div>
+                            <div class="roles-list">
+                                @foreach($roles as $role)
+                                    <label class="role-item" data-role-name="{{ strtolower($role->name) }}">
+                                        <input type="checkbox" name="roles_ids[]" value="{{ $role->id }}" class="role-checkbox" data-role-id="{{ $role->id }}">
+                                        <span class="role-name">{{ $role->name }}</span>
+                                        <span class="role-badge">{{ $role->id }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                            <div class="roles-selected">
+                                <div class="selected-label">Roles seleccionados:</div>
+                                <div id="create_selected_roles" class="selected-roles-list"></div>
+                            </div>
                         </div>
+                        <small style="color: #666; display: block; margin-top: 8px;">Selecciona al menos un rol</small>
                     </div>
-                    <small style="color: #666;">Selecciona al menos un rol</small>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-secondary" onclick="closeCreateModal()">Cancelar</button>
@@ -229,16 +252,33 @@
                     </div>
                     <div class="form-group">
                         <label for="edit_roles">Roles</label>
-                        <div id="edit_roles_container" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
-                            @foreach($roles as $role)
-                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                    <input type="checkbox" name="roles_ids[]" value="{{ $role->id }}" id="edit_role_{{ $role->id }}">
-                                    {{ $role->name }}
-                                </label>
-                            @endforeach
+                        <div class="roles-selector">
+                            <div class="roles-search-wrapper">
+                                <span class="material-symbols-rounded search-icon" aria-hidden="true">search</span>
+                                <input 
+                                    type="text" 
+                                    id="edit_roles_search" 
+                                    class="roles-search-input" 
+                                    placeholder="Buscar roles..."
+                                    autocomplete="off"
+                                >
+                            </div>
+                            <div class="roles-list">
+                                @foreach($roles as $role)
+                                    <label class="role-item" data-role-name="{{ strtolower($role->name) }}">
+                                        <input type="checkbox" name="roles_ids[]" value="{{ $role->id }}" class="role-checkbox" data-role-id="{{ $role->id }}">
+                                        <span class="role-name">{{ $role->name }}</span>
+                                        <span class="role-badge">{{ $role->id }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                            <div class="roles-selected">
+                                <div class="selected-label">Roles seleccionados:</div>
+                                <div id="edit_selected_roles" class="selected-roles-list"></div>
+                            </div>
                         </div>
+                        <small style="color: #666; display: block; margin-top: 8px;">Selecciona al menos un rol</small>
                     </div>
-                    <small style="color: #666;">Selecciona al menos un rol</small>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-secondary" onclick="closeEditModal()">Cancelar</button>

@@ -17,6 +17,216 @@ document.getElementById('buscarUsuario').addEventListener('input', function(e) {
     });
 });
 
+// ===== SISTEMA DE FILTROS POR COLUMNAS =====
+const columnFilters = {
+    nombre: new Set(),
+    email: new Set(),
+    telefono: new Set(),
+    rol: new Set(),
+    fecha: new Set()
+};
+
+function initializeFilters() {
+    const headers = document.querySelectorAll('.table-header-cell[data-column]');
+    
+    headers.forEach(header => {
+        const column = header.getAttribute('data-column');
+        const filterDropdown = header.querySelector('.filter-dropdown');
+        
+        // Obtener valores únicos de la columna
+        const values = getUniqueColumnValues(column);
+        
+        // Crear contenido del filtro
+        let filterHTML = `
+            <div class="filter-dropdown-header">Filtrar por ${column}</div>
+            <div class="filter-dropdown-content">
+        `;
+        
+        values.forEach(value => {
+            filterHTML += `
+                <label class="filter-option">
+                    <input type="checkbox" value="${value}" class="filter-checkbox" data-column="${column}">
+                    <span>${value || '(vacío)'}</span>
+                </label>
+            `;
+        });
+        
+        filterHTML += `
+            </div>
+            <div class="filter-dropdown-footer">
+                <button type="button" class="filter-btn filter-btn-clear" onclick="event.stopPropagation(); clearColumnFilter('${column}')">Limpiar</button>
+                <button type="button" class="filter-btn filter-btn-apply" onclick="event.stopPropagation(); applyFilters()">Aplicar</button>
+            </div>
+        `;
+        
+        filterDropdown.innerHTML = filterHTML;
+        
+        // Agregar event listeners a los checkboxes
+        filterDropdown.querySelectorAll('.filter-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    columnFilters[column].add(this.value);
+                    this.closest('.filter-option').classList.add('selected');
+                } else {
+                    columnFilters[column].delete(this.value);
+                    this.closest('.filter-option').classList.remove('selected');
+                }
+            });
+        });
+        
+        // Agregar event listener al dropdown para prevenir que se cierre
+        filterDropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
+    
+    // Agregar event listeners a los headers para abrir/cerrar filtros
+    headers.forEach(header => {
+        header.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            const filterIcon = this.querySelector('.filter-icon');
+            const dropdown = this.querySelector('.filter-dropdown');
+            
+            // Solo abrir si se hace clic en el icono de filtro
+            if (e.target === filterIcon || e.target.closest('.filter-icon')) {
+                // Cerrar otros dropdowns
+                document.querySelectorAll('.filter-dropdown.active').forEach(d => {
+                    if (d !== dropdown) {
+                        d.classList.remove('active');
+                    }
+                });
+                
+                dropdown.classList.toggle('active');
+            }
+        });
+    });
+}
+
+function getUniqueColumnValues(column) {
+    const rows = document.querySelectorAll('#tablaUsuariosBody .table-row');
+    const values = new Set();
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('.table-cell');
+        let value = '';
+        
+        switch(column) {
+            case 'nombre':
+                value = row.querySelector('.user-info span')?.textContent.trim() || '';
+                break;
+            case 'email':
+                value = cells[1]?.textContent.trim() || '';
+                break;
+            case 'telefono':
+                value = cells[2]?.textContent.trim() || '';
+                if (value === '—') value = '';
+                break;
+            case 'rol':
+                const badges = cells[3]?.querySelectorAll('.badge');
+                if (badges && badges.length > 0) {
+                    badges.forEach(badge => {
+                        values.add(badge.textContent.trim());
+                    });
+                    return;
+                }
+                value = cells[3]?.textContent.trim() || '';
+                break;
+            case 'fecha':
+                value = cells[4]?.textContent.trim() || '';
+                break;
+        }
+        
+        if (value) {
+            values.add(value);
+        }
+    });
+    
+    return Array.from(values).sort();
+}
+
+function applyFilters() {
+    const rows = document.querySelectorAll('#tablaUsuariosBody .table-row');
+    
+    rows.forEach(row => {
+        let showRow = true;
+        
+        // Verificar cada filtro activo
+        for (const [column, selectedValues] of Object.entries(columnFilters)) {
+            if (selectedValues.size === 0) continue; // Si no hay filtro, continuar
+            
+            const cells = row.querySelectorAll('.table-cell');
+            let rowValue = '';
+            
+            switch(column) {
+                case 'nombre':
+                    rowValue = row.querySelector('.user-info span')?.textContent.trim() || '';
+                    break;
+                case 'email':
+                    rowValue = cells[1]?.textContent.trim() || '';
+                    break;
+                case 'telefono':
+                    rowValue = cells[2]?.textContent.trim() || '';
+                    if (rowValue === '—') rowValue = '';
+                    break;
+                case 'rol':
+                    const badges = cells[3]?.querySelectorAll('.badge');
+                    if (badges && badges.length > 0) {
+                        let hasMatch = false;
+                        badges.forEach(badge => {
+                            if (selectedValues.has(badge.textContent.trim())) {
+                                hasMatch = true;
+                            }
+                        });
+                        if (!hasMatch) {
+                            showRow = false;
+                        }
+                        break;
+                    }
+                    rowValue = cells[3]?.textContent.trim() || '';
+                    break;
+                case 'fecha':
+                    rowValue = cells[4]?.textContent.trim() || '';
+                    break;
+            }
+            
+            if (column !== 'rol' && !selectedValues.has(rowValue)) {
+                showRow = false;
+                break;
+            }
+        }
+        
+        row.style.display = showRow ? '' : 'none';
+    });
+    
+    // Cerrar todos los dropdowns
+    document.querySelectorAll('.filter-dropdown.active').forEach(d => {
+        d.classList.remove('active');
+    });
+}
+
+function clearColumnFilter(column) {
+    columnFilters[column].clear();
+    
+    const filterDropdown = document.querySelector(`#filter-${column}`);
+    filterDropdown.querySelectorAll('.filter-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+        checkbox.closest('.filter-option').classList.remove('selected');
+    });
+    
+    applyFilters();
+}
+
+// Cerrar filtros al hacer clic fuera
+document.addEventListener('click', function(e) {
+    // Solo cerrar si no es un elemento del filtro
+    if (!e.target.closest('.table-header-cell') && !e.target.closest('.filter-dropdown')) {
+        document.querySelectorAll('.filter-dropdown.active').forEach(d => {
+            d.classList.remove('active');
+        });
+    }
+});
+
 // ===== MODAL CREAR USUARIO =====
 function openCreateModal() {
     const modal = document.getElementById('createModal');
@@ -55,7 +265,7 @@ function openEditModal(userId, name, email) {
     form.action = `/users/${userId}`;
     
     // Desmarcar todos los checkboxes primero
-    document.querySelectorAll('input[name="roles_ids[]"]').forEach(checkbox => {
+    document.querySelectorAll('#editModal .role-checkbox').forEach(checkbox => {
         checkbox.checked = false;
     });
     
@@ -87,12 +297,15 @@ function openEditModal(userId, name, email) {
             // Pre-seleccionar los roles usando IDs
             if (data.roles_ids && data.roles_ids.length > 0) {
                 data.roles_ids.forEach(roleId => {
-                    const checkbox = document.getElementById(`edit_role_${roleId}`);
+                    const checkbox = document.querySelector(`#editModal .role-checkbox[value="${roleId}"]`);
                     if (checkbox) {
                         checkbox.checked = true;
                     }
                 });
             }
+            
+            // Actualizar roles seleccionados
+            updateSelectedRoles('edit');
         })
         .catch(error => {
             console.error('Error:', error);
@@ -211,5 +424,88 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 500);
         }, 5000);
     });
+    
+    // Inicializar filtros
+    initializeFilters();
+    
+    // Inicializar buscador de roles
+    initializeRolesSearch();
 });
 
+
+
+// ===== BUSCADOR DE ROLES =====
+function initializeRolesSearch() {
+    // Buscador para crear modal
+    const createRolesSearch = document.getElementById('create_roles_search');
+    if (createRolesSearch) {
+        createRolesSearch.addEventListener('input', function(e) {
+            filterRoles('create', e.target.value.toLowerCase());
+        });
+    }
+    
+    // Buscador para editar modal
+    const editRolesSearch = document.getElementById('edit_roles_search');
+    if (editRolesSearch) {
+        editRolesSearch.addEventListener('input', function(e) {
+            filterRoles('edit', e.target.value.toLowerCase());
+        });
+    }
+    
+    // Event listeners para checkboxes de roles
+    document.querySelectorAll('.role-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const modalType = this.closest('.roles-selector').querySelector('.roles-search-input').id.includes('create') ? 'create' : 'edit';
+            updateSelectedRoles(modalType);
+        });
+    });
+}
+
+function filterRoles(modalType, searchTerm) {
+    const selector = modalType === 'create' ? '#createModal' : '#editModal';
+    const modal = document.querySelector(selector);
+    const roleItems = modal.querySelectorAll('.role-item');
+    
+    roleItems.forEach(item => {
+        const roleName = item.getAttribute('data-role-name');
+        if (roleName.includes(searchTerm)) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+function updateSelectedRoles(modalType) {
+    const selector = modalType === 'create' ? '#createModal' : '#editModal';
+    const modal = document.querySelector(selector);
+    const selectedContainer = modal.querySelector(modalType === 'create' ? '#create_selected_roles' : '#edit_selected_roles');
+    const checkboxes = modal.querySelectorAll('.role-checkbox:checked');
+    
+    selectedContainer.innerHTML = '';
+    
+    checkboxes.forEach(checkbox => {
+        const roleItem = checkbox.closest('.role-item');
+        const roleName = roleItem.querySelector('.role-name').textContent;
+        const roleId = checkbox.value;
+        
+        const tag = document.createElement('div');
+        tag.className = 'selected-role-tag';
+        tag.innerHTML = `
+            ${roleName}
+            <span class="remove-role" onclick="removeRole(this, '${roleId}', '${modalType}')">×</span>
+        `;
+        selectedContainer.appendChild(tag);
+    });
+}
+
+function removeRole(element, roleId, modalType) {
+    const selector = modalType === 'create' ? '#createModal' : '#editModal';
+    const modal = document.querySelector(selector);
+    const checkbox = modal.querySelector(`.role-checkbox[value="${roleId}"]`);
+    
+    if (checkbox) {
+        checkbox.checked = false;
+        updateSelectedRoles(modalType);
+    }
+}

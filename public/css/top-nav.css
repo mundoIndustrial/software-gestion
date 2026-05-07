@@ -472,7 +472,7 @@
 
 .nav-search-container {
     position: relative;
-    flex: 0 1 450px;
+    flex: 0 1 380px;
     margin: 0 auto;
     margin-left: 2rem;
 }
@@ -483,10 +483,11 @@
     align-items: center;
     background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
     border: 1.5px solid var(--color-border-hr);
-    border-radius: 12px;
-    padding: 0.65rem 1rem;
+    border-radius: 10px;
+    padding: 0.5rem 0.85rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    height: 40px;
 }
 
 .nav-search-wrapper:focus-within {
@@ -497,11 +498,13 @@
 }
 
 .search-icon {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     color: var(--color-accent-primary);
-    margin-right: 0.75rem;
+    margin-right: 0.6rem;
     flex-shrink: 0;
     transition: all 0.3s ease;
+    z-index: 1;
+    position: relative;
 }
 
 .nav-search-wrapper:focus-within .search-icon {
@@ -514,10 +517,10 @@
     background: transparent;
     border: none;
     outline: none;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: var(--color-text-primary);
     min-width: 0;
-    padding: 0.4rem 0;
+    padding: 0.3rem 0;
     font-weight: 500;
 }
 
@@ -749,6 +752,21 @@
     background: var(--color-bg-hover);
     color: var(--color-hover-primary);
     transform: scale(1.05);
+}
+
+/* ========================================
+   BOTÓN NUEVO USUARIO EN NAV
+   ======================================== */
+.nav-right .btn-primary {
+    padding: 8px 16px !important;
+    height: 40px;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
 }
 
 /* ========================================

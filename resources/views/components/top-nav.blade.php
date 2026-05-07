@@ -14,6 +14,8 @@
                 <h1 class="page-title">Recibos Bodega</h1>
             @elseif(request()->is('entregas-completas*'))
                 <h1 class="page-title">Seguimiento Entregas Despacho</h1>
+            @elseif(request()->is('users'))
+                <h1 class="page-title">Gestión de Usuarios</h1>
             @else
                 <h1 class="page-title">@yield('page-title', 'Dashboard')</h1>
             @endif
@@ -27,11 +29,12 @@
             $isRecibosReflectivo = $currentPath === 'recibos-reflectivo';
             $isRecibosBodega = $currentPath === 'recibos-bodega';
             $isTimelinePedidos = $currentRoute === 'dashboard.timeline-pedidos';
+            $isUsersPage = $currentPath === 'users';
             $searchInputId = $isCotizacionesPendientes ? 'searchInput' : 'navSearchInput';
             $searchPlaceholder = $isRecibosBodega
                 ? 'Buscar recibos por número...'
-                : (($isRecibosCostura || $isRecibosReflectivo || $isCotizacionesPendientes) ? 'Buscar recibos por número o cliente...' : 'Buscar por número o cliente...');
-            $searchAriaLabel = ($isRecibosCostura || $isRecibosReflectivo || $isRecibosBodega) ? 'Búsqueda de recibos' : ($isCotizacionesPendientes ? 'Búsqueda de cotizaciones' : 'Búsqueda de órdenes');
+                : (($isRecibosCostura || $isRecibosReflectivo || $isCotizacionesPendientes) ? 'Buscar recibos por número o cliente...' : ($isUsersPage ? 'Buscar por nombre o email...' : 'Buscar por número o cliente...'));
+            $searchAriaLabel = ($isRecibosCostura || $isRecibosReflectivo || $isRecibosBodega) ? 'Búsqueda de recibos' : ($isCotizacionesPendientes ? 'Búsqueda de cotizaciones' : ($isUsersPage ? 'Búsqueda de usuarios' : 'Búsqueda de órdenes'));
         @endphp
 
         {{-- Buscador especial para Timeline de Pedidos (hace GET al servidor) --}}
@@ -81,6 +84,23 @@
                 @endif
             </form>
         </div>
+        @elseif($isUsersPage)
+        <div class="nav-search-container">
+            <div class="nav-search-wrapper">
+                <span class="material-symbols-rounded search-icon" aria-hidden="true">search</span>
+                <input 
+                    type="text" 
+                    id="buscarUsuario" 
+                    class="nav-search-input" 
+                    placeholder="Buscar por nombre o email..."
+                    autocomplete="off"
+                    aria-label="Búsqueda de usuarios"
+                >
+                <button class="nav-search-clear" id="navSearchClear" style="display: none;" aria-label="Limpiar búsqueda">
+                    <span class="material-symbols-rounded" aria-hidden="true">close</span>
+                </button>
+            </div>
+        </div>
         @elseif($currentRoute === 'registros.index' || $currentRoute === 'bodega.index' || $currentRoute === 'cotizaciones.pendientes' || $isRecibosCostura || $isRecibosReflectivo || $isRecibosBodega)
         <div class="nav-search-container">
             <div class="nav-search-wrapper">
@@ -105,6 +125,13 @@
     </div>
 
     <div class="nav-right">
+        <!-- Botón Nuevo Usuario -->
+        @if(request()->is('users'))
+        <button class="btn-primary" onclick="openCreateModal()" style="margin-right: 12px;">
+            <i class="fas fa-plus"></i> Nuevo Usuario
+        </button>
+        @endif
+
         <!-- Campana de Costura -->
         @if(request()->is('recibos-costura') || request()->is('recibos-bodega') || request()->is('recibos-reflectivo'))
         <div class="costura-notification-container">
