@@ -155,27 +155,50 @@ class DashboardController extends Controller
 
     public function getKPIs()
     {
-        $totalOrders = DB::table('pedidos_produccion')->count();
-        $ordersByStatus = DB::table('pedidos_produccion')
-            ->select('estado', DB::raw('count(*) as count'))
-            ->groupBy('estado')
-            ->get();
-        $ordersByArea = DB::table('pedidos_produccion')
-            ->select('area', DB::raw('count(*) as count'))
-            ->groupBy('area')
-            ->get();
-        $recentDeliveries = DB::table('entregas_pedido_costura')
-            ->select('pedido', 'cantidad_entregada', 'fecha_entrega', 'costurero')
-            ->orderBy('fecha_entrega', 'desc')
-            ->limit(5)
-            ->get();
+        try {
+            $totalOrders = DB::table('pedidos_produccion')->count();
+            $ordersByStatus = DB::table('pedidos_produccion')
+                ->select('estado', DB::raw('count(*) as count'))
+                ->groupBy('estado')
+                ->get();
+            $ordersByArea = DB::table('pedidos_produccion')
+                ->select('area', DB::raw('count(*) as count'))
+                ->groupBy('area')
+                ->get();
 
-        return response()->json([
-            'total_orders' => $totalOrders,
-            'orders_by_status' => $ordersByStatus,
-            'orders_by_area' => $ordersByArea,
-            'recent_deliveries' => $recentDeliveries
-        ]);
+            $recentDeliveries = collect();
+            try {
+                $recentDeliveries = DB::table('entregas_pedido_costura')
+                    ->select('pedido', 'cantidad_entregada', 'fecha_entrega', 'costurero')
+                    ->orderBy('fecha_entrega', 'desc')
+                    ->limit(5)
+                    ->get();
+            } catch (\Throwable $e) {
+                Log::warning('[DashboardController] entregas_pedido_costura table not found', [
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            return response()->json([
+                'total_orders' => $totalOrders,
+                'orders_by_status' => $ordersByStatus,
+                'orders_by_area' => $ordersByArea,
+                'recent_deliveries' => $recentDeliveries
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('[DashboardController] getKPIs error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'Error retrieving KPIs',
+                'total_orders' => 0,
+                'orders_by_status' => [],
+                'orders_by_area' => [],
+                'recent_deliveries' => []
+            ], 500);
+        }
     }
 
     public function reporteSeguimiento(Request $request)
@@ -671,39 +694,42 @@ class DashboardController extends Controller
      */
         public function getEntregasCosturaData(Request $request)
     {
-        $tipo = $request->input('tipo', 'pedido'); // Default to 'pedido'
-        $year = $request->input('year');
-        $month = $request->input('month');
-        $week = $request->input('week');
-        $day = $request->input('day');
+        try {
+            $tipo = $request->input('tipo', 'pedido');
+            $year = $request->input('year');
+            $month = $request->input('month');
+            $week = $request->input('week');
+            $day = $request->input('day');
 
-        $table = $tipo === 'bodega' ? 'entregas_bodega_costura' : 'entregas_pedido_costura';
-        // Nombre de columna diferente segun la tabla
-        $fechaColumn = $tipo === 'bodega' ? 'fecha_entrega' : 'fecha_entrega';
+            $table = $tipo === 'bodega' ? 'entregas_bodega_costura' : 'entregas_pedido_costura';
+            $fechaColumn = 'fecha_entrega';
 
-        $query = DB::table($table)
-            ->select('costurero', DB::raw('SUM(cantidad_entregada) as total_entregas'));
+            $query = DB::table($table)
+                ->select('costurero', DB::raw('SUM(cantidad_entregada) as total_entregas'));
 
-        if ($day) {
-            $query->whereDate($fechaColumn, $day);
-        } else {
-            if ($year) {
-                $query->whereYear($fechaColumn, $year);
+            if ($day) {
+                $query->whereDate($fechaColumn, $day);
+            } else {
+                if ($year) {
+                    $query->whereYear($fechaColumn, $year);
+                }
+                if ($month) {
+                    $query->whereMonth($fechaColumn, $month);
+                }
+                if ($week) {
+                    $query->whereRaw("WEEK({$fechaColumn}, 1) = ?", [$week]);
+                }
             }
-            if ($month) {
-                $query->whereMonth($fechaColumn, $month);
-            }
-            if ($week) {
-                // Filter by week number of the year
-                $query->whereRaw("WEEK({$fechaColumn}, 1) = ?", [$week]);
-            }
+
+            $data = $query->groupBy('costurero')->get();
+            return response()->json($data);
+        } catch (\Throwable $e) {
+            Log::warning('[DashboardController] getEntregasCosturaData error', [
+                'error' => $e->getMessage(),
+                'tipo' => $request->input('tipo')
+            ]);
+            return response()->json([], 200);
         }
-
-        $query->groupBy('costurero');
-
-        $data = $query->get();
-
-        return response()->json($data);
     }
 
     /**
@@ -713,37 +739,44 @@ class DashboardController extends Controller
      */
     public function getEntregasCorteData(Request $request)
     {
-        $tipo = $request->input('tipo', 'pedido'); // Default to 'pedido'
-        $year = $request->input('year');
-        $month = $request->input('month');
-        $week = $request->input('week');
-        $day = $request->input('day');
+        try {
+            $tipo = $request->input('tipo', 'pedido');
+            $year = $request->input('year');
+            $month = $request->input('month');
+            $week = $request->input('week');
+            $day = $request->input('day');
 
-        $table = $tipo === 'bodega' ? 'entrega_bodega_corte' : 'entrega_pedido_corte';
+            $table = $tipo === 'bodega' ? 'entrega_bodega_corte' : 'entrega_pedido_corte';
 
-        $query = DB::table($table)
-            ->select('cortador', 'etiquetador', DB::raw('SUM(piezas) as total_piezas'), DB::raw('SUM(pasadas) as total_pasadas'), DB::raw('SUM(piezas * pasadas) as total_etiquetadas'));
+            $query = DB::table($table)
+                ->select('cortador', 'etiquetador',
+                    DB::raw('SUM(piezas) as total_piezas'),
+                    DB::raw('SUM(pasadas) as total_pasadas'),
+                    DB::raw('SUM(piezas * pasadas) as total_etiquetadas'));
 
-        if ($day) {
-            $query->whereDate('fecha_entrega', $day);
-        } else {
-            if ($year) {
-                $query->whereYear('fecha_entrega', $year);
+            if ($day) {
+                $query->whereDate('fecha_entrega', $day);
+            } else {
+                if ($year) {
+                    $query->whereYear('fecha_entrega', $year);
+                }
+                if ($month) {
+                    $query->whereMonth('fecha_entrega', $month);
+                }
+                if ($week) {
+                    $query->whereRaw('WEEK(fecha_entrega, 1) = ?', [$week]);
+                }
             }
-            if ($month) {
-                $query->whereMonth('fecha_entrega', $month);
-            }
-            if ($week) {
-                // Filter by week number of the year
-                $query->whereRaw('WEEK(fecha_entrega, 1) = ?', [$week]);
-            }
+
+            $data = $query->groupBy('cortador', 'etiquetador')->get();
+            return response()->json($data);
+        } catch (\Throwable $e) {
+            Log::warning('[DashboardController] getEntregasCorteData error', [
+                'error' => $e->getMessage(),
+                'tipo' => $request->input('tipo')
+            ]);
+            return response()->json([], 200);
         }
-
-        $query->groupBy('cortador', 'etiquetador');
-
-        $data = $query->get();
-
-        return response()->json($data);
     }
 
     /**
