@@ -184,7 +184,7 @@
                                         >
                                             <i class="fas fa-paper-plane text-lg"></i>
                                         </button>
-                                    @elseif(in_array($orden->estado, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'INSUMOS_PEDIDOS', 'Insumos Pedidos']))
+                                    @elseif(!$esGestionReflectivo && in_array($orden->estado, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'INSUMOS_PEDIDOS', 'Insumos Pedidos']))
                                         <button
                                             class="btn-enviar-produccion btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
                                             data-insumos-action="enviar-produccion"

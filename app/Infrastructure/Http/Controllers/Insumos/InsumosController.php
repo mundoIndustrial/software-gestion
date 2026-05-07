@@ -499,6 +499,15 @@ class InsumosController extends Controller
         try {
             $recibo = ConsecutivoReciboPedido::findOrFail((int) $reciboId);
             $pedido = $recibo->pedido;
+            $areaActual = trim((string) ($recibo->area ?? ''));
+
+            if (strcasecmp($areaActual, 'Insumos') !== 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Solo se puede enviar a produccion cuando el area del recibo es Insumos.',
+                    'area_actual' => $areaActual,
+                ], 422);
+            }
 
             // 1. Actualizar el recibo: pasarlo a área Costura y estado En Ejecución
             $recibo->update([
