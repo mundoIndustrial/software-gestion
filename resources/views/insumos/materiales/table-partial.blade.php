@@ -173,7 +173,7 @@
                                 {{-- Dropdown de Acciones (solo para no-patronistas) --}}
                                 @if(!$isPatronista)
                                     {{-- Boton Enviar a Produccion --}}
-                                    @if($esGestionReflectivo && !in_array($orden->estado, ['En Ejecución', 'En Ejecucion']))
+                                    @if($esGestionReflectivo && !in_array($orden->estado, ['En Ejecución', 'En Ejecucion']) && $orden->area !== 'Costura')
                                         <button
                                             class="btn-enviar-produccion btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
                                             data-insumos-action="enviar-produccion-reflectivo"
