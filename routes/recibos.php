@@ -78,6 +78,10 @@ Route::middleware(['auth'])->prefix('recibos-novedades')->name('recibos-novedade
     Route::post('{pedidoId}/{numeroRecibo}/pasar-a-costura', [ReciboCosturaController::class, 'pasarACostura'])
         ->name('pasar-a-costura');
     
+    // Pasar recibo a Taller (con distribución de tallas)
+    Route::post('{pedidoId}/{numeroRecibo}/pasar-a-taller', [ReciboCosturaController::class, 'pasarATaller'])
+        ->name('pasar-a-taller');
+    
     // Limpiar encargado de Costura (sin cambiar área ni eliminar proceso)
     Route::delete('{pedidoId}/{prendaId}/limpiar-encargado-costura', [ReciboCosturaController::class, 'limpiarEncargadoCostura'])
         ->name('limpiar-encargado-costura');

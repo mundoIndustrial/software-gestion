@@ -1349,6 +1349,18 @@
                                 </div>
                             </div>
                         </button>
+
+                        <button type="button" id="btnTaller" onclick="seleccionarOpcionAsignacion('taller')" style="padding: 1rem; border: 2px solid #e2e8f0; border-radius: 12px; background: white; cursor: pointer; transition: all 0.2s; text-align: left;">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div style="width: 40px; height: 40px; background: #f97316; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <span class="material-symbols-rounded" style="color: white; font-size: 1.25rem;">apartment</span>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <h5 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: #1e293b; line-height: 1.3;">Taller Externo</h5>
+                                    <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #64748b; line-height: 1.3;">Enviar a talleres fuera de planta</p>
+                                </div>
+                            </div>
+                        </button>
                     </div>
                 </div>
 

@@ -226,7 +226,7 @@ class ObtenerDatosRecibosOperarioUseCase
                         $id = $prenda['id'] ?? $prenda['prenda_id'] ?? $prenda['prenda_pedido_id'] ?? null;
                         return $id !== null && (int) $id === (int) $parcial->prenda_pedido_id;
                     })
-                    ->map(function ($prenda) use ($parcial, $generoBase, $fechaActivacionRecibo) {
+                    ->map(function ($prenda) use ($parcial, $generoBase, $fechaActivacionRecibo, $pedido) {
                         $generoPrenda = strtoupper(trim((string) (
                             $prenda['genero']
                             ?? $prenda['tipo_flujo_tallas']
@@ -527,7 +527,7 @@ class ObtenerDatosRecibosOperarioUseCase
                             'consecutivo_original' => (float) $parcial->consecutivo_original,
                             'tipo_recibo' => 'PARCIAL',
                             'area' => $parcial->area,
-                            'encargado' => $parcial->encargado,
+                            'encargado' => $this->obtenerEncargadoDelParcial($parcial, $pedido),
                             'tallas' => $tallasParcial,
                             'tallas_estructura' => $tallasProceso,
                             'talla_colores' => $tallaColoresParcial,
@@ -744,7 +744,7 @@ class ObtenerDatosRecibosOperarioUseCase
                     'consecutivo_original' => (float) $parcial->consecutivo_original,
                     'tipo_recibo' => 'PARCIAL',
                     'area' => $parcial->area ?? 'Costura',
-                    'encargado' => $parcial->encargado ?? null,
+                    'encargado' => $this->obtenerEncargadoDelParcial($parcial, $pedido),
                     'tallas' => $tallasParcial,
                     'tallas_estructura' => $tallasProceso,
                     'talla_colores' => $tallaColoresParcial,
@@ -939,5 +939,47 @@ class ObtenerDatosRecibosOperarioUseCase
         }
 
         return $resultado;
+    }
+
+    /**
+     * Obtener el encargado del parcial desde procesos_prenda
+     * Busca primero en procesos_prenda, luego en el campo encargado del parcial
+     */
+    private function obtenerEncargadoDelParcial($parcial, $pedido): ?string
+    {
+        try {
+            // Obtener el número de recibo del parcial
+            $numeroRecibo = $parcial->consecutivo_actual ?? $parcial->consecutivo_parcial;
+            
+            if (!$numeroRecibo || !$pedido) {
+                return $parcial->encargado ?? null;
+            }
+
+            // Buscar proceso en procesos_prenda con numero_recibo = consecutivo del parcial
+            $proceso = DB::table('procesos_prenda')
+                ->where('numero_pedido', $pedido->numero_pedido)
+                ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+                ->where('numero_recibo', $numeroRecibo)
+                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                ->whereNull('numero_recibo_parcial')  // Asegurar que es un proceso de anexo, no de parcial
+                ->whereNull('deleted_at')
+                ->orderByDesc('fecha_de_asignacion_encargado')
+                ->orderByDesc('created_at')
+                ->value('encargado');
+
+            // Si encontró encargado en procesos_prenda, devolverlo
+            if ($proceso) {
+                return $proceso;
+            }
+
+            // Fallback: usar el campo encargado del parcial
+            return $parcial->encargado ?? null;
+        } catch (\Exception $e) {
+            \Log::warning('[ObtenerDatosRecibosOperarioUseCase] Error obteniendo encargado del parcial', [
+                'parcial_id' => $parcial->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            return $parcial->encargado ?? null;
+        }
     }
 }

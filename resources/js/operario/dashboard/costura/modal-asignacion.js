@@ -46,6 +46,7 @@ export function seleccionarOpcionAsignacion(opcion) {
     // Actualizar estilos de botones
     const btnCompleto = document.getElementById('btnModuloCompleto');
     const btnDistribuir = document.getElementById('btnDistribuirModulos');
+    const btnTaller = document.getElementById('btnTaller');
     const btnConfirmar = document.getElementById('btnConfirmarAsignacion');
     const contenidoDiv = document.getElementById('contenidoAsignacion');
     const opcionesDiv = document.getElementById('opcionesAsignacion');
@@ -58,6 +59,10 @@ export function seleccionarOpcionAsignacion(opcion) {
     btnCompleto.style.background = 'white';
     btnDistribuir.style.borderColor = '#e2e8f0';
     btnDistribuir.style.background = 'white';
+    if (btnTaller) {
+        btnTaller.style.borderColor = '#e2e8f0';
+        btnTaller.style.background = 'white';
+    }
     
     // Expandir modal para mostrar contenido completo
     modalContent.style.maxWidth = '1200px';
@@ -73,16 +78,25 @@ export function seleccionarOpcionAsignacion(opcion) {
         btnCompleto.style.background = '#eff6ff';
         modalSubtitulo.textContent = 'Asignar a Módulo Completo';
         mostrarContenidoModuloCompleto();
+        btnConfirmar.style.background = '#3b82f6';
     } else if (opcion === 'distribuir') {
         btnDistribuir.style.borderColor = '#10b981';
         btnDistribuir.style.background = '#ecfdf5';
         modalSubtitulo.textContent = 'Distribuir por Módulos';
         mostrarContenidoDistribuirModulos();
+        btnConfirmar.style.background = '#10b981';
+    } else if (opcion === 'taller') {
+        if (btnTaller) {
+            btnTaller.style.borderColor = '#f59e0b';
+            btnTaller.style.background = '#fffbeb';
+        }
+        modalSubtitulo.textContent = 'Distribuir a Taller';
+        mostrarContenidoTaller();
+        btnConfirmar.style.background = '#f59e0b';
     }
     
     // Habilitar botón confirmar
     btnConfirmar.disabled = false;
-    btnConfirmar.style.background = opcion === 'completo' ? '#3b82f6' : '#10b981';
 }
 
 // Función para volver a las opciones de asignación
@@ -95,8 +109,9 @@ export function volverAOpciones() {
     const btnConfirmar = document.getElementById('btnConfirmarAsignacion');
     const btnCompleto = document.getElementById('btnModuloCompleto');
     const btnDistribuir = document.getElementById('btnDistribuirModulos');
+    const btnTaller = document.getElementById('btnTaller');
     
-    // Restaurar tamano original
+    // Restaurar tamaño original
     modalContent.style.maxWidth = '900px';
     
     // Mostrar opciones y ocultar volver
@@ -119,6 +134,10 @@ export function volverAOpciones() {
     btnCompleto.style.background = 'white';
     btnDistribuir.style.borderColor = '#e2e8f0';
     btnDistribuir.style.background = 'white';
+    if (btnTaller) {
+        btnTaller.style.borderColor = '#e2e8f0';
+        btnTaller.style.background = 'white';
+    }
 }
 
 // Función para mostrar contenido de módulo completo
@@ -1426,7 +1445,138 @@ export function confirmarAsignacion() {
                     if (originalText !== null) btnConfirmar.innerHTML = originalText;
                 }
             });
+    } else if (window.opcionAsignacionSeleccionada === 'taller') {
+        confirmarDistribucionTaller();
     }
+}
+
+// Función para confirmar distribución a taller
+function confirmarDistribucionTaller() {
+    const tipoDistribucion = window.tipoDistribucionTaller || 'unico';
+    const btnConfirmar = document.getElementById('btnConfirmarAsignacion');
+    const originalText = btnConfirmar ? btnConfirmar.innerHTML : null;
+    
+    const { pedidoId, prendaId, tipoRecibo, recibo } = window.datosModalCostura;
+    
+    if (!pedidoId || !prendaId || !tipoRecibo || !recibo) {
+        mostrarError('Error', 'Faltan datos necesarios para procesar la solicitud');
+        return;
+    }
+    
+    let tallerData = {};
+    
+    if (tipoDistribucion === 'unico') {
+        // Un solo taller
+        const tallerNombre = document.getElementById('tallerUnicoSelector')?.value.trim();
+        if (!tallerNombre) {
+            mostrarError('Error', 'Debe seleccionar un taller');
+            return;
+        }
+        
+        tallerData = {
+            tipo_distribucion: 'taller',
+            subtipo_taller: 'unico',
+            encargado: tallerNombre,
+        };
+    } else {
+        // Múltiples talleres
+        if (!window.asignacionesPorTaller || Object.keys(window.asignacionesPorTaller).length === 0) {
+            mostrarError('Error', 'No hay asignaciones realizadas');
+            return;
+        }
+        
+        const asignaciones = Object.entries(window.asignacionesPorTaller)
+            .map(([tallerIdStr, asignacionesTallas]) => {
+                const tallerId = parseInt(tallerIdStr);
+                const taller = window.talleresSeleccionadosDistribucion?.find(t => parseInt(t.id) === tallerId);
+                const encargado = taller?.nombre || '';
+                
+                const tallas = Object.entries(asignacionesTallas || {})
+                    .map(([tallaRaw, cantidad]) => {
+                        const cantidadNum = parseInt(cantidad) || 0;
+                        const { base } = parseTallaIdUnico(tallaRaw);
+                        const s = String(base || '').trim();
+                        const m = s.match(/^(.+?)\s*\((.+)\)$/);
+                        const tallaNombre = m ? m[1].trim() : s;
+                        
+                        return {
+                            talla: tallaNombre,
+                            cantidad: cantidadNum,
+                        };
+                    })
+                    .filter((t) => t.talla && t.cantidad > 0);
+                
+                return {
+                    encargado,
+                    tallas,
+                };
+            })
+            .filter((a) => a.encargado && Array.isArray(a.tallas) && a.tallas.length > 0);
+        
+        if (asignaciones.length === 0) {
+            mostrarError('Error', 'No hay asignaciones válidas para guardar');
+            return;
+        }
+        
+        tallerData = {
+            tipo_distribucion: 'taller',
+            subtipo_taller: 'multiple',
+            asignaciones,
+        };
+    }
+    
+    const action = `/recibos-novedades/${pedidoId}/${recibo}/pasar-a-taller`;
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+    
+    if (btnConfirmar) {
+        btnConfirmar.disabled = true;
+        btnConfirmar.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">refresh</span> Procesando...';
+    }
+    
+    fetch(action, {
+        method: 'POST',
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {}),
+        },
+        body: JSON.stringify({
+            prenda_id: prendaId,
+            tipo_recibo: tipoRecibo,
+            ...tallerData,
+        }),
+    })
+        .then((r) => r.json())
+        .then(async (data) => {
+            if (data?.success) {
+                cerrarModalCostura();
+                mostrarExito('Éxito', data?.message || 'El recibo fue asignado a taller correctamente');
+                
+                if (
+                    document.getElementById('ordenesList') &&
+                    typeof window.__actualizarDashboardSinRecargar === 'function'
+                ) {
+                    try {
+                        await window.__actualizarDashboardSinRecargar();
+                    } catch (refreshError) {
+                        console.warn('No se pudo actualizar el dashboard tras asignar a taller:', refreshError);
+                    }
+                }
+            } else {
+                mostrarError('Error', data?.message || 'No se pudo asignar a taller');
+            }
+        })
+        .catch((err) => {
+            console.error('Error asignando a taller:', err);
+            mostrarError('Error', 'Error de conexión: ' + (err?.message || err));
+        })
+        .finally(() => {
+            if (btnConfirmar) {
+                btnConfirmar.disabled = false;
+                if (originalText !== null) btnConfirmar.innerHTML = originalText;
+            }
+        });
 }
 
 // Función para cargar usuarios de costura (copiada de costura.js)
@@ -1462,6 +1612,619 @@ function cargarUsuariosCostura(tipoRecibo = '') {
         .catch((error) => {
             console.error('Error cargando usuarios de costura:', error);
         });
+}
+
+// Función para mostrar contenido de distribución a taller
+function mostrarContenidoTaller() {
+    const contenidoDiv = document.getElementById('contenidoAsignacion');
+    
+    contenidoDiv.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+            <!-- Opción: Un solo taller -->
+            <button type="button" id="btnTallerUnico" onclick="seleccionarTipoTaller('unico')" style="padding: 1rem; border: 2px solid #e2e8f0; border-radius: 12px; background: white; cursor: pointer; transition: all 0.2s; text-align: left;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 40px; height: 40px; background: #8b5cf6; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <span class="material-symbols-rounded" style="color: white; font-size: 1.25rem;">person</span>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <h5 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: #1e293b; line-height: 1.3;">Un solo taller</h5>
+                        <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #64748b; line-height: 1.3;">Todas las unidades a un único taller externo</p>
+                    </div>
+                </div>
+            </button>
+
+            <!-- Opción: Múltiples talleres -->
+            <button type="button" id="btnTallerMultiple" onclick="seleccionarTipoTaller('multiple')" style="padding: 1rem; border: 2px solid #e2e8f0; border-radius: 12px; background: white; cursor: pointer; transition: all 0.2s; text-align: left;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 40px; height: 40px; background: #ec4899; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <span class="material-symbols-rounded" style="color: white; font-size: 1.25rem;">groups</span>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <h5 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: #1e293b; line-height: 1.3;">Múltiples talleres</h5>
+                        <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #64748b; line-height: 1.3;">Repartir entre diversos talleres externos</p>
+                    </div>
+                </div>
+            </button>
+        </div>
+    `;
+}
+
+// Función para seleccionar tipo de taller
+window.seleccionarTipoTaller = function(tipo) {
+    window.tipoDistribucionTaller = tipo;
+    
+    if (tipo === 'unico') {
+        mostrarContenidoTallerUnico();
+    } else {
+        mostrarContenidoTallerMultiple();
+    }
+    
+    // Mostrar botón volver
+    document.getElementById('btnVolver').style.display = 'inline-flex';
+};
+
+// Función para mostrar contenido de un solo taller
+function mostrarContenidoTallerUnico() {
+    const contenidoDiv = document.getElementById('contenidoAsignacion');
+    
+    contenidoDiv.innerHTML = `
+        <div>
+            <h4 style="margin: 0 0 1rem 0; font-size: 1rem; font-weight: 600; color: #1e293b;">Seleccionar Taller</h4>
+            
+            <div style="position: relative; margin-bottom: 1rem;">
+                <div style="position: relative;">
+                    <span class="material-symbols-rounded" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 1.25rem; pointer-events: none;">search</span>
+                    <input type="text" id="tallerUnicoSelector" list="listaTalleresUnicos" 
+                        placeholder="Buscar y agregar..." 
+                        style="width: 100%; padding: 0.75rem 0.75rem 0.75rem 2.5rem; border: 2px solid #d1d5db; border-radius: 8px; background: white; font-size: 0.875rem; transition: all 0.2s; outline: none; box-sizing: border-box;"
+                        onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.1)';"
+                        onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none';"
+                    >
+                    <datalist id="listaTalleresUnicos"></datalist>
+                </div>
+            </div>
+            
+            <!-- Resumen visual -->
+            <div style="padding: 0.75rem; background: #f0f9ff; border-radius: 8px; border: 1px solid #bfdbfe;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span class="material-symbols-rounded" style="color: #1e40af; font-size: 1rem;">info</span>
+                    <div style="flex: 1; min-width: 0;">
+                        <p style="margin: 0; font-size: 0.75rem; font-weight: 600; color: #1e40af;">Taller seleccionado:</p>
+                        <p id="textoEstadoTallerUnico" style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #1e40af;">Ninguno</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Cargar talleres disponibles
+    cargarTalleresDisponibles();
+    
+    // Agregar listeners para actualizar el estado visual
+    setTimeout(() => {
+        const input = document.getElementById('tallerUnicoSelector');
+        const textoEstado = document.getElementById('textoEstadoTallerUnico');
+
+        const actualizarEstado = () => {
+            const val = input?.value.trim();
+            if (val) {
+                if (textoEstado) textoEstado.textContent = val;
+            } else {
+                if (textoEstado) textoEstado.textContent = 'Ninguno';
+            }
+        };
+
+        if (input) {
+            input.oninput = actualizarEstado;
+            input.onchange = actualizarEstado;
+        }
+    }, 100);
+}
+
+// Función para mostrar contenido de múltiples talleres
+function mostrarContenidoTallerMultiple() {
+    const contenidoDiv = document.getElementById('contenidoAsignacion');
+    
+    contenidoDiv.innerHTML = `
+        <div>
+            <h4 style="margin: 0 0 1rem 0; font-size: 1rem; font-weight: 600; color: #1e293b;">Múltiples Destinos</h4>
+            
+            <div style="position: relative; margin-bottom: 1rem;">
+                <div style="position: relative;">
+                    <span class="material-symbols-rounded" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 1.25rem; pointer-events: none;">search</span>
+                    <input type="text" id="tallerMultipleSelector" list="listaTalleresMultiplesDatalist" 
+                        placeholder="Buscar y agregar..." 
+                        style="width: 100%; padding: 0.75rem 0.75rem 0.75rem 2.5rem; border: 2px solid #d1d5db; border-radius: 8px; background: white; font-size: 0.875rem; transition: all 0.2s; outline: none; box-sizing: border-box;"
+                        onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.1)';"
+                        onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none';"
+                        onkeypress="if(event.key === 'Enter') agregarTallerSeleccionado()"
+                        onchange="setTimeout(() => agregarTallerSeleccionado(), 100)"
+                    >
+                    <datalist id="listaTalleresMultiplesDatalist"></datalist>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.75rem; font-weight: 600; font-size: 0.875rem; color: #1e293b;">
+                    Seleccionados (0)
+                </label>
+                <div id="listaTalleresSeleccionados" style="display: grid; gap: 0.75rem; min-height: 2rem;">
+                    <p style="text-align: center; color: #9ca3af; padding: 1rem; font-size: 0.875rem; grid-column: 1/-1;">No hay talleres seleccionados</p>
+                </div>
+            </div>
+            
+            <!-- Interfaz de distribución de tallas -->
+            <div id="interfazDistribucionTaller" style="margin-top: 1rem;">
+                <!-- Se cargará dinámicamente -->
+            </div>
+        </div>
+    `;
+    
+    // Cargar talleres disponibles
+    cargarTalleresParaDistribucion();
+}
+
+// Función para cargar talleres disponibles
+function cargarTalleresDisponibles() {
+    const datalist = document.getElementById('listaTalleresUnicos');
+    if (!datalist) return;
+    
+    datalist.innerHTML = '';
+    
+    httpJson('/api/usuarios/taller')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.usuarios) {
+                data.usuarios.forEach((usuario) => {
+                    const option = document.createElement('option');
+                    option.value = usuario.name;
+                    datalist.appendChild(option);
+                });
+            }
+        })
+        .catch((error) => {
+            console.error('Error cargando talleres:', error);
+        });
+}
+
+// Función para cargar talleres para distribución múltiple
+function cargarTalleresParaDistribucion() {
+    const datalist = document.getElementById('listaTalleresMultiplesDatalist');
+    if (!datalist) return;
+    
+    datalist.innerHTML = '';
+    
+    httpJson('/api/usuarios/taller')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.usuarios) {
+                // Guardar datos de talleres
+                window.talleresDisponibles = data.usuarios;
+                
+                // Llenar datalist
+                data.usuarios.forEach((usuario) => {
+                    const option = document.createElement('option');
+                    option.value = usuario.name;
+                    datalist.appendChild(option);
+                });
+            }
+        })
+        .catch((error) => {
+            console.error('Error cargando talleres para distribución:', error);
+        });
+}
+
+// Función para agregar taller seleccionado
+window.agregarTallerSeleccionado = function() {
+    const input = document.getElementById('tallerMultipleSelector');
+    const tallerNombre = input?.value.trim();
+    
+    // Si el input está vacío, no hacer nada
+    if (!tallerNombre) {
+        return;
+    }
+    
+    // Verificar que el taller existe
+    const taller = window.talleresDisponibles?.find(t => t.name === tallerNombre);
+    if (!taller) {
+        mostrarError('Error', 'El taller seleccionado no existe');
+        input.value = ''; // Limpiar input
+        return;
+    }
+    
+    // Verificar que no esté duplicado
+    if (window.talleresSeleccionadosDistribucion?.find(t => t.id === taller.id)) {
+        mostrarError('Error', 'Este taller ya está seleccionado');
+        input.value = ''; // Limpiar input
+        return;
+    }
+    
+    // Agregar taller
+    if (!window.talleresSeleccionadosDistribucion) {
+        window.talleresSeleccionadosDistribucion = [];
+    }
+    
+    window.talleresSeleccionadosDistribucion.push({
+        id: taller.id,
+        nombre: taller.name
+    });
+    
+    // Limpiar input
+    input.value = '';
+    
+    // Actualizar UI
+    actualizarListaTalleresSeleccionados();
+    
+    // Cargar interfaz de distribución
+    if (window.talleresSeleccionadosDistribucion.length > 0) {
+        cargarInterfazDistribucionTallerMultiple(window.talleresSeleccionadosDistribucion);
+    }
+};
+
+// Función para actualizar lista de talleres seleccionados
+function actualizarListaTalleresSeleccionados() {
+    const listaTalleres = document.getElementById('listaTalleresSeleccionados');
+    if (!listaTalleres) return;
+    
+    const count = window.talleresSeleccionadosDistribucion?.length || 0;
+    
+    // Actualizar el label con el contador
+    const labelElement = document.querySelector('label[style*="Seleccionados"]');
+    if (labelElement) {
+        labelElement.textContent = `Seleccionados (${count})`;
+    }
+    
+    if (!window.talleresSeleccionadosDistribucion || window.talleresSeleccionadosDistribucion.length === 0) {
+        listaTalleres.innerHTML = '<p style="text-align: center; color: #9ca3af; padding: 1rem; font-size: 0.875rem; grid-column: 1/-1;">No hay talleres seleccionados</p>';
+        return;
+    }
+    
+    let html = '';
+    window.talleresSeleccionadosDistribucion.forEach((taller, index) => {
+        html += `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
+                    <span class="material-symbols-rounded" style="color: #6366f1; font-size: 1.25rem;">apartment</span>
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.875rem; color: #1e293b;">${taller.nombre}</div>
+                    </div>
+                </div>
+                <button type="button" onclick="removerTallerSeleccionado(${index})" style="background: #fee2e2; border: none; border-radius: 6px; padding: 0.5rem; cursor: pointer; color: #dc2626; transition: all 0.2s;">
+                    <span class="material-symbols-rounded" style="font-size: 1rem;">close</span>
+                </button>
+            </div>
+        `;
+    });
+    
+    listaTalleres.innerHTML = html;
+}
+
+// Función para remover taller seleccionado
+window.removerTallerSeleccionado = function(index) {
+    if (window.talleresSeleccionadosDistribucion) {
+        window.talleresSeleccionadosDistribucion.splice(index, 1);
+        actualizarListaTalleresSeleccionados();
+        
+        // Actualizar interfaz de distribución
+        if (window.talleresSeleccionadosDistribucion.length > 0) {
+            cargarInterfazDistribucionTallerMultiple(window.talleresSeleccionadosDistribucion);
+        } else {
+            const interfazDiv = document.getElementById('interfazDistribucionTaller');
+            if (interfazDiv) {
+                interfazDiv.innerHTML = '';
+            }
+        }
+    }
+};
+
+// Función para cargar la interfaz de distribución para múltiples talleres
+function cargarInterfazDistribucionTallerMultiple(talleresSeleccionados) {
+    if (!window.datosModalCostura) {
+        console.error('No hay datos de la prenda disponibles');
+        return;
+    }
+    
+    const { prendaId, tipoRecibo } = window.datosModalCostura;
+    
+    // Cargar tallas de la prenda
+    cargarTallasPrenda(prendaId, tipoRecibo)
+        .then((tallas) => {
+            console.log('Tallas cargadas para distribución a taller:', tallas);
+            
+            // Procesar tallas al formato esperado
+            const tallasProcesadas = procesarTallasParaDistribucion(tallas);
+            
+            // Cargar interfaz con datos reales
+            cargarInterfazDistribucionTallerConDatos(tallasProcesadas, talleresSeleccionados);
+        })
+        .catch(error => {
+            console.error('Error cargando datos de distribución a taller:', error);
+            const interfazDiv = document.getElementById('interfazDistribucionTaller');
+            if (interfazDiv) {
+                interfazDiv.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #dc2626;">
+                        <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.75rem;">error</span>
+                        <p style="font-size: 0.875rem; margin: 0;">No se pudo cargar la información. Por favor, intente nuevamente.</p>
+                    </div>
+                `;
+            }
+        });
+}
+
+// Función para cargar la interfaz de distribución de tallas para múltiples talleres
+function cargarInterfazDistribucionTallerConDatos(tallas, talleres) {
+    const interfazDiv = document.getElementById('interfazDistribucionTaller');
+    
+    if (!tallas || tallas.length === 0) {
+        interfazDiv.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.75rem;">info</span>
+                <p style="font-size: 0.875rem; margin: 0;">No hay tallas disponibles para esta prenda</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Guardar datos de distribución para usar en actualizarDisponibilidad()
+    window.datosDistribucion = { tallas, talleres };
+    
+    // Inicializar asignaciones por taller
+    window.asignacionesPorTaller = {};
+    talleres.forEach(taller => {
+        window.asignacionesPorTaller[taller.id] = {};
+    });
+    
+    // Generar HTML para cada taller como card
+    let html = '<div style="display: grid; gap: 1.5rem;">';
+    
+    talleres.forEach(taller => {
+        html += `
+            <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; overflow: hidden;">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb;">
+                    <div style="flex: 1; min-width: 0;">
+                        <h6 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: #1e293b;">${taller.nombre}</h6>
+                    </div>
+                </div>
+                <div id="tallas-taller-${taller.id}" style="display: grid; gap: 0.75rem;">
+                    ${generarHtmlTallasParaTaller(tallas, taller.id)}
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    interfazDiv.innerHTML = html;
+    
+    // Recalcular disponibilidad para todas las tallas después de renderizar
+    setTimeout(() => {
+        tallas.forEach(talla => {
+            talleres.forEach(taller => {
+                const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, talla.color, talla.genero);
+                actualizarDisponibilidad(tallaIdUnico, taller.id);
+            });
+        });
+    }, 100);
+}
+
+// Función para generar HTML de tallas para un taller específico (igual a distribuir por módulos)
+function generarHtmlTallasParaTaller(tallas, tallerId) {
+    const grupos = agruparTallasPorGeneroYColor(tallas);
+    let html = '';
+    
+    Object.entries(grupos).forEach(([genero, colores]) => {
+        html += `
+            <div style="margin-bottom: 1.5rem;">
+                <h6 style="margin: 0 0 0.75rem 0; font-size: 0.875rem; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.05em;">
+                    ${genero}
+                </h6>
+                <div style="display: grid; gap: 0.75rem;">
+        `;
+        
+        Object.entries(colores).forEach(([color, tallasColor]) => {
+            const colorDisplay = color === 'Sin color' ? null : color;
+            const colorStyle = colorDisplay ? `background: ${colorDisplay}; border: 1px solid #d1d5db;` : 'background: #f3f4f6; border: 1px solid #d1d5db;';
+            
+            html += `
+                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem;">
+                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                        ${colorDisplay ? `
+                            <span style="display: inline-block; width: 16px; height: 16px; ${colorStyle} border-radius: 4px; margin-right: 0.5rem;"></span>
+                            <span style="font-size: 0.875rem; font-weight: 500; color: #374151;">${color}</span>
+                        ` : `
+                            <span style="font-size: 0.875rem; font-weight: 500; color: #6b7280;">Sin color</span>
+                        `}
+                    </div>
+                    <div style="display: grid; gap: 0.5rem;">
+            `;
+            
+            tallasColor.forEach(talla => {
+                const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, color, talla.genero);
+                const cantidadTotal = talla.cantidad;
+                
+                let asignado = 0;
+                if (window.asignacionesPorTaller && window.asignacionesPorTaller[tallerId]) {
+                    asignado = window.asignacionesPorTaller[tallerId][tallaIdUnico] || 0;
+                }
+                
+                // Calcular cuánto se ha asignado en otros talleres
+                let asignadoEnOtrosTalleres = 0;
+                if (window.asignacionesPorTaller) {
+                    Object.entries(window.asignacionesPorTaller).forEach(([otroTallerId, asignaciones]) => {
+                        if (parseInt(otroTallerId) !== parseInt(tallerId)) {
+                            asignadoEnOtrosTalleres += asignaciones[tallaIdUnico] || 0;
+                        }
+                    });
+                }
+                
+                // Calcular disponible inicial
+                const disponibleInicial = cantidadTotal - asignado - asignadoEnOtrosTalleres;
+                const maxDisponible = cantidadTotal - asignadoEnOtrosTalleres;
+                
+                const isSelected = asignado > 0;
+                
+                // NO MOSTRAR si no hay disponibilidad Y no está seleccionada en este taller
+                if (disponibleInicial <= 0 && !isSelected) return;
+                
+                html += `
+                    <div class="dist-talla-row ${isSelected ? 'is-selected' : ''}" style="padding: 0.5rem; border: 1px solid #f3f4f6; border-radius: 6px;">
+                        <div style="display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 0.75rem;">
+                            <input
+                                type="checkbox"
+                                class="dist-talla-check"
+                                ${isSelected ? 'checked' : ''}
+                                onchange="toggleTallaSeleccionTaller('${tallaIdUnico}', ${tallerId}, this.checked)"
+                                data-tallaid="${tallaIdUnico}"
+                                data-tallerid="${tallerId}"
+                            />
+                            <div style="font-size: 0.875rem; font-weight: 500; color: #374151;">
+                                ${talla.tallaOriginal}
+                            </div>
+                            <input
+                                type="number"
+                                class="dist-talla-input"
+                                id="talla_${tallaIdUnico}_taller_${tallerId}"
+                                data-tallaid="${tallaIdUnico}"
+                                data-tallerid="${tallerId}"
+                                min="0"
+                                max="${maxDisponible}"
+                                value="${asignado}"
+                                ${isSelected ? '' : 'disabled'}
+                                oninput="if(this.value==='')return; const v=parseInt(this.value)||0; const mx=parseInt(this.max)||0; if(v>mx)this.value=mx; if(v<0)this.value=0; actualizarAsignacionTaller('${tallaIdUnico}', ${tallerId}, this.value)"
+                                onchange="actualizarAsignacionTaller('${tallaIdUnico}', ${tallerId}, this.value)"
+                                style="width: 70px; text-align: center; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem; font-weight: 500;"
+                            />
+                            <div class="dist-disp" data-tallaid="${tallaIdUnico}" data-tallerid="${tallerId}" style="font-size: 0.75rem; color: #6366f1; font-weight: 500;">
+                                Disp: ${Math.max(0, disponibleInicial)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    });
+    
+    return html;
+}
+
+// Función para toggle de selección de talla en taller
+window.toggleTallaSeleccionTaller = function(tallaId, tallerId, isChecked) {
+    const input = document.getElementById(`talla_${tallaId}_taller_${tallerId}`);
+    if (input) {
+        input.disabled = !isChecked;
+        if (isChecked) {
+            // Al hacer check, establecer valor a la cantidad máxima disponible
+            const maxDisponible = parseInt(input.max) || 0;
+            input.value = maxDisponible;
+            actualizarAsignacionTaller(tallaId, tallerId, maxDisponible);
+            actualizarDisponibilidad(tallaId, tallerId);
+        } else {
+            // Al desmarcar, establecer a 0
+            input.value = 0;
+            actualizarAsignacionTaller(tallaId, tallerId, 0);
+            actualizarDisponibilidad(tallaId, tallerId);
+        }
+    }
+};
+
+// Función para actualizar asignación de talla en taller
+window.actualizarAsignacionTaller = function(tallaId, tallerId, cantidad) {
+    if (!window.asignacionesPorTaller) {
+        window.asignacionesPorTaller = {};
+    }
+    
+    if (!window.asignacionesPorTaller[tallerId]) {
+        window.asignacionesPorTaller[tallerId] = {};
+    }
+    
+    const cantidadNum = parseInt(cantidad) || 0;
+    if (cantidadNum > 0) {
+        window.asignacionesPorTaller[tallerId][tallaId] = cantidadNum;
+    } else {
+        delete window.asignacionesPorTaller[tallerId][tallaId];
+    }
+    
+    // Actualizar disponibilidad
+    actualizarDisponibilidad(tallaId, tallerId);
+    
+    // Regenerar interfaz de todos los talleres para mostrar/ocultar tallas según disponibilidad
+    if (window.datosDistribucion && window.datosDistribucion.talleres) {
+        window.datosDistribucion.talleres.forEach(taller => {
+            const container = document.getElementById(`tallas-taller-${taller.id}`);
+            if (container) {
+                container.innerHTML = generarHtmlTallasParaTaller(window.datosDistribucion.tallas, taller.id);
+            }
+        });
+        
+        // Recalcular disponibilidad para todas las tallas después de regenerar
+        setTimeout(() => {
+            window.datosDistribucion.tallas.forEach(talla => {
+                window.datosDistribucion.talleres.forEach(taller => {
+                    const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, talla.color, talla.genero);
+                    actualizarDisponibilidad(tallaIdUnico, taller.id);
+                });
+            });
+        }, 50);
+    }
+    
+    console.log('Asignaciones por taller actualizadas:', window.asignacionesPorTaller);
+};
+
+// Función para actualizar disponibilidad de una talla
+function actualizarDisponibilidad(tallaId, tallerId) {
+    // Obtener la cantidad total de la talla
+    const tallaOriginal = window.datosDistribucion?.tallas?.find(t => {
+        const id = construirTallaIdUnico(t.tallaOriginal, t.color, t.genero);
+        return id === tallaId;
+    });
+    
+    if (!tallaOriginal) return;
+    
+    const cantidadTotal = tallaOriginal.cantidad;
+    
+    // Calcular cuánto se ha asignado en otros talleres
+    let asignadoEnOtrosTalleres = 0;
+    if (window.asignacionesPorTaller) {
+        Object.entries(window.asignacionesPorTaller).forEach(([otroTallerId, asignaciones]) => {
+            if (parseInt(otroTallerId) !== parseInt(tallerId)) {
+                asignadoEnOtrosTalleres += asignaciones[tallaId] || 0;
+            }
+        });
+    }
+    
+    // Obtener cantidad asignada en este taller
+    const asignadoEnEsteTaller = window.asignacionesPorTaller?.[tallerId]?.[tallaId] || 0;
+    
+    // Calcular disponible
+    const disponible = cantidadTotal - asignadoEnEsteTaller - asignadoEnOtrosTalleres;
+    
+    // Actualizar el elemento visual
+    const dispElement = document.querySelector(`.dist-disp[data-tallaid="${tallaId}"][data-tallerid="${tallerId}"]`);
+    if (dispElement) {
+        dispElement.textContent = `Disp: ${Math.max(0, disponible)}`;
+    }
+    
+    // Actualizar el max del input
+    const input = document.getElementById(`talla_${tallaId}_taller_${tallerId}`);
+    if (input) {
+        const maxDisponible = Math.max(0, cantidadTotal - asignadoEnOtrosTalleres);
+        input.max = maxDisponible;
+        
+        // Si el valor actual excede el máximo, ajustarlo
+        if (parseInt(input.value) > maxDisponible) {
+            input.value = maxDisponible;
+            window.asignacionesPorTaller[tallerId][tallaId] = maxDisponible;
+        }
+    }
 }
 
 // Función original confirmarPasarACostura (adaptada)

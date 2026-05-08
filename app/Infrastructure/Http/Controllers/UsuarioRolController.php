@@ -209,4 +209,41 @@ class UsuarioRolController extends Controller
         // Evitar duplicados
         return $query->distinct()->get();
     }
+
+    /**
+     * Obtener usuarios con rol 'taller'
+     */
+    public function getUsuariosTaller(Request $request)
+    {
+        try {
+            // Buscar el rol 'taller'
+            $rolTaller = Role::where('name', 'taller')->first();
+            
+            if (!$rolTaller) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró el rol "taller" en el sistema'
+                ], 404);
+            }
+            
+            // Obtener usuarios con rol taller
+            $usuarios = User::select('id', 'name', 'email')
+                ->whereJsonContains('roles_ids', $rolTaller->id)
+                ->orWhere('role_id', $rolTaller->id)
+                ->orderBy('name')
+                ->distinct()
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'usuarios' => $usuarios
+            ], 200);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener usuarios de taller: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

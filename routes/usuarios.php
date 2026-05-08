@@ -17,6 +17,10 @@ Route::withoutMiddleware(['api'])
     Route::get('costura', [UsuarioRolController::class, 'getUsuariosCostura'])
         ->name('costura');
     
+    // Obtener usuarios con rol 'taller'
+    Route::get('taller', [UsuarioRolController::class, 'getUsuariosTaller'])
+        ->name('taller');
+    
     // Obtener usuarios por área
     Route::get('por-area', [UsuarioRolController::class, 'getUsuariosPorArea'])
         ->name('por-area');
