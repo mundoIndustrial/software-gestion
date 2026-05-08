@@ -23,6 +23,7 @@
     <div class="meta">
         <div><strong>Fecha de generacion:</strong> {{ $fechaGeneracion->format('d/m/Y H:i:s') }}</div>
         <div><strong>Total recibos:</strong> {{ $totalRecibos }}</div>
+        <div><strong>Recibos sin encargado:</strong> {{ $recibosSinEncargado->count() }}</div>
         <div>
             <strong>Filtros aplicados:</strong>
             @php
@@ -95,6 +96,7 @@
                     <th style="width: 120px;">Cliente</th>
                     <th style="width: 200px;">Prendas</th>
                     <th style="width: 80px;">Asesora</th>
+                    <th style="width: 190px;">Asignacion en area</th>
                 </tr>
             </thead>
             <tbody>
@@ -148,6 +150,16 @@
                             @endforelse
                         </td>
                         <td>{{ data_get($row, 'asesor', '') }}</td>
+                        <td>
+                            @php $encargadoActual = trim((string) data_get($row, 'encargado_actual', '')); @endphp
+                            <div><strong>Encargado:</strong> {{ $encargadoActual !== '' ? $encargadoActual : 'Sin asignar' }}</div>
+                            <div>
+                                <strong>Llegada:</strong>
+                                @php $fechaLlegadaArea = data_get($row, 'fecha_llegada_area'); @endphp
+                                {{ $fechaLlegadaArea ? \Carbon\Carbon::parse((string) $fechaLlegadaArea)->format('d/m/Y H:i') : '-' }}
+                            </div>
+                            <div><strong>Dias:</strong> {{ data_get($row, 'dias_en_area') !== null ? data_get($row, 'dias_en_area') : '-' }}</div>
+                        </td>
                     </tr>
                 @endforeach
             </tbody>
@@ -155,5 +167,6 @@
     @empty
         <div class="section-title" style="color: #6b7280;">Sin datos para mostrar</div>
     @endforelse
+
 </body>
 </html>

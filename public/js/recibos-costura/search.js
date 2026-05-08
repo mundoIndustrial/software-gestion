@@ -93,24 +93,31 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 currentSearchTerm = term;
                 currentPage = page;
-                
-                // Debug: Ver estructura de datos
-                console.log('Datos recibidos:', data.recibos[0]);
-                console.log('Cliente:', data.recibos[0].pedido_info?.cliente);
-                console.log('Descripción:', data.recibos[0].descripcion_detallada);
-                console.log('Fecha estimada:', data.recibos[0].fecha_estimada_de_entrega);
-                console.log('Fecha creación:', data.recibos[0].created_at);
-                console.log('Encargado:', data.recibos[0].encargado_orden);
-                console.log('Novedades:', data.recibos[0].novedades);
-                
+
+                const recibos = Array.isArray(data.recibos) ? data.recibos : [];
+                const firstRecibo = recibos[0];
+
+                // Debug: Ver estructura de datos cuando existan resultados
+                if (firstRecibo) {
+                    console.log('Datos recibidos:', firstRecibo);
+                    console.log('Cliente:', firstRecibo.pedido_info?.cliente);
+                    console.log('Descripción:', firstRecibo.descripcion_detallada);
+                    console.log('Fecha estimada:', firstRecibo.fecha_estimada_de_entrega);
+                    console.log('Fecha creación:', firstRecibo.created_at);
+                    console.log('Encargado:', firstRecibo.encargado_orden);
+                    console.log('Novedades:', firstRecibo.novedades);
+                } else {
+                    console.log('Datos recibidos: sin resultados');
+                }
+
                 const paginationData = {
                     current_page: data.current_page || 1,
                     last_page: data.last_page || 1,
                     from: data.from || 0,
                     to: data.to || 0
                 };
-                
-                renderResults(data.recibos, data.total, term, paginationData);
+
+                renderResults(recibos, data.total || 0, term, paginationData);
             } else {
                 showError('Error al realizar la búsqueda');
             }
@@ -132,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td colspan="12" style="text-align: center; padding: 3rem;">
                         <div style="color: #64748b;">
                             <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                            <p style="margin: 0; font-weight: 500;">No se encontraron resultados para "${searchTerm}"</p>
+                            <p style="margin: 0; font-weight: 500;">No se ha encontrado "${searchTerm}"</p>
                         </div>
                     </td>
                 </tr>
@@ -674,6 +681,7 @@ function getDiasRestantesBadgeHTML(recibo) {
         }
     });
 });
+
 
 
 

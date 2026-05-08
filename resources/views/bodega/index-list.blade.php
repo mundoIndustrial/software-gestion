@@ -33,9 +33,7 @@
 <div class="min-h-screen bg-white">
     <div class="max-w-7xl mx-auto">
         @php
-            $detalleRouteName = ($routeName ?? '') === 'gestion-bodega.pedidos-anulados'
-                ? 'despacho.show'
-                : 'gestion-bodega.pedidos-show';
+            $detalleRouteName = 'gestion-bodega.pedidos-show';
         @endphp
         <!-- Buscador -->
         <div class="px-6 py-4 border-b border-slate-200">

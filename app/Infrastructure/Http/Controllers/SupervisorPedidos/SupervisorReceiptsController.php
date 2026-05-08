@@ -471,6 +471,115 @@ class SupervisorReceiptsController extends Controller
             })
             ->values();
 
+        $totalRecibos = $receipts->count();
+        $prendaIdsReporte = $receipts
+            ->pluck('prenda_id')
+            ->map(fn ($value) => (int) $value)
+            ->filter(fn ($value) => $value > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        $numerosReciboReporte = $receipts
+            ->pluck('numero_recibo')
+            ->map(fn ($value) => (int) $value)
+            ->filter(fn ($value) => $value > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        $procesosRecibo = collect();
+        if (!empty($prendaIdsReporte) && !empty($numerosReciboReporte)) {
+            $procesosRecibo = DB::table('procesos_prenda')
+                ->select([
+                    'id',
+                    'prenda_pedido_id',
+                    'numero_recibo',
+                    'encargado',
+                    'fecha_inicio',
+                    'fecha_de_asignacion_encargado',
+                    'updated_at',
+                    'created_at',
+                ])
+                ->whereIn('prenda_pedido_id', $prendaIdsReporte)
+                ->whereIn('numero_recibo', $numerosReciboReporte)
+                ->orderByDesc('updated_at')
+                ->orderByDesc('id')
+                ->get();
+        }
+
+        $procesosPorRecibo = $procesosRecibo
+            ->groupBy(fn ($row) => ((int) $row->prenda_pedido_id) . '|' . ((int) $row->numero_recibo))
+            ->map(fn ($rows) => $rows->first());
+
+        $encargadosNoAsignados = ['sin asignar', 'no asignado', 'sinasignar'];
+        $normalizarArea = static fn ($area) => mb_strtolower(trim((string) $area));
+        $sumarCantidadPrendas = static function ($prendas): int {
+            $total = 0;
+            if (!is_array($prendas) && !$prendas instanceof Collection) {
+                return 0;
+            }
+
+            foreach ($prendas as $prenda) {
+                $cantidadColor = (int) ($prenda->cantidad_color ?? 0);
+                $cantidadTalla = (int) ($prenda->cantidad_talla ?? 0);
+                $total += max($cantidadColor, $cantidadTalla);
+            }
+
+            return $total;
+        };
+
+        $receipts = $receipts
+            ->map(function ($item) use ($procesosPorRecibo, $encargadosNoAsignados, $sumarCantidadPrendas) {
+                $prendaId = (int) data_get($item, 'prenda_id', 0);
+                $numeroRecibo = (int) data_get($item, 'numero_recibo', 0);
+                $key = $prendaId . '|' . $numeroRecibo;
+                $proceso = $procesosPorRecibo->get($key);
+                $item['cantidad_total_prendas'] = $sumarCantidadPrendas(data_get($item, 'prendas', []));
+
+                if (!$proceso) {
+                    $item['encargado_actual'] = null;
+                    $item['fecha_llegada_area'] = null;
+                    $item['dias_en_area'] = null;
+                    $item['tiene_encargado'] = false;
+                    return $item;
+                }
+
+                $fechaAsignacionEncargado = $proceso->fecha_de_asignacion_encargado
+                    ? \Carbon\Carbon::parse((string) $proceso->fecha_de_asignacion_encargado)
+                    : null;
+
+                $fechaInicioProceso = $proceso->fecha_inicio
+                    ? \Carbon\Carbon::parse((string) $proceso->fecha_inicio)
+                    : null;
+
+                $fechaReferenciaArea = $fechaAsignacionEncargado ?? $fechaInicioProceso;
+
+                $encargado = mb_strtolower(trim((string) ($proceso->encargado ?? '')));
+                if ($encargado === '' || in_array($encargado, $encargadosNoAsignados, true)) {
+                    $item['encargado_actual'] = $proceso->encargado;
+                    $item['fecha_llegada_area'] = $fechaReferenciaArea
+                        ? $fechaReferenciaArea->toDateTimeString()
+                        : null;
+                    $item['dias_en_area'] = $fechaAsignacionEncargado
+                        ? $this->calcularDiasHabiles($fechaAsignacionEncargado->copy(), now())
+                        : null;
+                    $item['tiene_encargado'] = false;
+                    return $item;
+                }
+
+                $item['encargado_actual'] = $proceso->encargado;
+                $item['fecha_llegada_area'] = $fechaReferenciaArea
+                    ? $fechaReferenciaArea->toDateTimeString()
+                    : null;
+                $item['dias_en_area'] = $fechaAsignacionEncargado
+                    ? $this->calcularDiasHabiles($fechaAsignacionEncargado->copy(), now())
+                    : null;
+                $item['tiene_encargado'] = true;
+                return $item;
+            })
+            ->values();
+
         $grouped = $receipts
             ->groupBy(function ($item) {
                 $dias = (int) data_get($item, 'dias_transcurridos', 0);
@@ -480,7 +589,17 @@ class SupervisorReceiptsController extends Controller
                 return (int) $dias;
             });
 
-        $totalRecibos = $receipts->count();
+        $recibosSinEncargado = $receipts
+            ->filter(function ($item) use ($normalizarArea) {
+                $area = $normalizarArea(data_get($item, 'area', ''));
+                if (!in_array($area, ['corte', 'costura'], true)) {
+                    return false;
+                }
+
+                return !((bool) data_get($item, 'tiene_encargado', false));
+            })
+            ->values();
+
         $filtros = $request->only([
             'numero_recibo',
             'cliente',
@@ -496,6 +615,7 @@ class SupervisorReceiptsController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('supervisor-pedidos.reporte-pendientes-costura-pdf', [
             'grouped' => $grouped,
             'totalRecibos' => $totalRecibos,
+            'recibosSinEncargado' => $recibosSinEncargado,
             'filtros' => $filtros,
             'fechaGeneracion' => now(),
             'diasAntiguedad' => $diasAntiguedad,

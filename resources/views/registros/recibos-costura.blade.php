@@ -38,8 +38,8 @@
                 <i class="fas fa-share-alt"></i>
             </div>
             <div class="distribution-modal__header-copy">
-                <p class="distribution-modal__eyebrow">DistribuciÃ³n activa</p>
-                <h2 id="distributionModalTitle">DistribuciÃ³n del recibo</h2>
+                <p class="distribution-modal__eyebrow">Distribución activa</p>
+                <h2 id="distributionModalTitle">Distribución del recibo</h2>
             </div>
             <button type="button" class="distribution-modal__close" data-distribution-close="true" aria-label="Cerrar">
                 <i class="fas fa-times"></i>
@@ -153,7 +153,7 @@
     left: 100%;
 }
 
-/* Colores personalizados para badges de Ã¡rea */
+/* Colores personalizados para badges de Area */
 .badge.bg-purple {
     background-color: #8b5cf6 !important;
     color: white !important;
@@ -389,7 +389,7 @@
 @push('scripts')
 <!-- 
     ============================================
-    PHASE 2: MÃ³dulo Modular DDD Recibos Costura
+    PHASE 2: Modulo Modular DDD Recibos Costura
     ============================================
     
     Bundle compilado con:
@@ -424,10 +424,10 @@
 <!-- Add Process Modal Controller - Controlador de modal para agregar procesos -->
 <script src="{{ asset('js/recibos-costura/controllers/AddProcessModalController.js') }}"></script>
 
-<!-- Legacy Handlers - Funciones heredadas que delegan a mÃ³dulos -->
+<!-- Legacy Handlers - Funciones heredadas que delegan a modulos -->
 <script src="{{ asset('js/recibos-costura/legacy-handlers.js') }}"></script>
 
-<!-- Search Module - Sistema de bÃºsqueda AJAX -->
+<!-- Search Module - Sistema de busqueda AJAX -->
 <script src="{{ asset('js/recibos-costura/search.js') }}?v={{ time() }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
