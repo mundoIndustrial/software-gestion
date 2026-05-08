@@ -730,8 +730,23 @@
         // Si no hay tallas seleccionadas
         if (Object.keys(tallasCantidad).length === 0) {
             container.innerHTML = '<p style="color: #9ca3af; text-align: center; padding: 12px;">Selecciona tallas para ver cantidades editable</p>';
+            return;
         }
+
+        bloquearWheelEnCantidadesParcial();
     };
+
+    function bloquearWheelEnCantidadesParcial() {
+        const inputs = document.querySelectorAll('#parcial-cantidades-list .parcial-cantidad-input');
+        inputs.forEach((input) => {
+            if (input.dataset.wheelBlocked === 'true') return;
+            input.addEventListener('wheel', function (event) {
+                event.preventDefault();
+                this.blur();
+            }, { passive: false });
+            input.dataset.wheelBlocked = 'true';
+        });
+    }
 
     /**
      * Actualiza el valor de cantidad en el estado

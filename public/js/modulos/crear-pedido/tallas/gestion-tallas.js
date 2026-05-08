@@ -1006,6 +1006,10 @@ window.crearTarjetaGenero = function(genero, tallas) {
         input.value = cantidad;  //  Cargar la cantidad (puede ser 0)
         input.data = { talla, cantidad };  //  Guardar datos para referencia
         input.style.cssText = 'padding: 0.5rem; border: 2px solid #0066cc; border-radius: 6px; text-align: center; font-weight: 600; font-size: 0.9rem;';
+        input.addEventListener('wheel', (event) => {
+            event.preventDefault();
+            input.blur();
+        }, { passive: false });
         input.onchange = () => {
             console.log(`[crearTarjetaGenero] ${genero} - ${talla}: ${input.value}`);  //  Logging
             guardarCantidadTalla(genero, talla, input.value);
