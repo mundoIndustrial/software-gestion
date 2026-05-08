@@ -568,9 +568,20 @@ class GetSeguimientoPorPrendaUseCase
         $reciboCreatedAt = $reciboObjetivo->created_at ? ($reciboObjetivo->created_at instanceof Carbon ? $reciboObjetivo->created_at : Carbon::parse($reciboObjetivo->created_at)) : null;
         $fechaCreacionOrden = $pedidoModel->created_at ? ($pedidoModel->created_at instanceof Carbon ? $pedidoModel->created_at : Carbon::parse($pedidoModel->created_at)) : null;
 
+        $esCorteParaBodega = $tipoObjetivo === 'CORTE-PARA-BODEGA';
+
+        // Regla de negocio solicitada:
+        // en CORTE-PARA-BODEGA la fecha de creación y la llegada a insumos
+        // corresponden al created_at del recibo.
+        if ($esCorteParaBodega && $reciboCreatedAt) {
+            $fechaCreacionOrden = $reciboCreatedAt->copy();
+        }
+
         $diasHabiles = null;
         if ($fechaCreacionOrden && $reciboCreatedAt) {
-            $diasHabiles = $this->calcularDiasHabilesConAPI($fechaCreacionOrden, $reciboCreatedAt);
+            $diasHabiles = $esCorteParaBodega
+                ? 0
+                : $this->calcularDiasHabilesConAPI($fechaCreacionOrden, $reciboCreatedAt);
         }
 
         $datosFormateados = [

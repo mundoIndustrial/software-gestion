@@ -707,12 +707,68 @@ function initTrackingModalListeners() {
       forceTargetRecibo
     });
 
+    const enrichedPrenda = { ...prenda };
+    const tipoReciboCtx = String(trackingReceiptContext?.tipoRecibo || prenda?.tipo_recibo || '').trim().toUpperCase();
+    const esCorteParaBodega = tipoReciboCtx === 'CORTE-PARA-BODEGA';
+
     if (!pedidoId || !prendaId) {
+      // Fallback de bodega: no siempre hay pedido_produccion_id.
+      if (esCorteParaBodega) {
+        try {
+          const prendaBodegaId = trackingReceiptContext?.prendaBodegaId || enrichedPrenda?.prenda_bodega_id || prendaId;
+          if (prendaBodegaId) {
+            const resp = await fetch(`/api/recibo-corte-bodega/${prendaBodegaId}`);
+            if (resp.ok) {
+              const data = await resp.json();
+              const fechaRecibo = data?.fecha || null;
+              if (fechaRecibo) {
+                enrichedPrenda.datos_activacion_recibo = {
+                  fecha_creacion_orden: fechaRecibo,
+                  fecha_creacion_orden_formateada: typeof formatDate === 'function' ? formatDate(fechaRecibo) : fechaRecibo,
+                  fecha_activacion_recibo: fechaRecibo,
+                  fecha_activacion_recibo_formateada: typeof formatDate === 'function' ? formatDate(fechaRecibo) : fechaRecibo,
+                  dias_transcurridos: 0,
+                  dias_transcurridos_texto: '0 días'
+                };
+              }
+            }
+          }
+        } catch (error) {
+          console.warn('[enrichPrendaForTracking] No se pudo hidratar activación para CORTE-PARA-BODEGA:', error);
+        }
+
+        // Fallback: construir seguimientos_por_area desde procesos cuando no viene estructura enriquecida.
+        if ((!enrichedPrenda.seguimientos_por_area || Object.keys(enrichedPrenda.seguimientos_por_area).length === 0) && Array.isArray(enrichedPrenda.procesos)) {
+          const seguimientoMap = {};
+          enrichedPrenda.procesos.forEach((proceso) => {
+            const area = proceso?.proceso || proceso?.area || 'Proceso';
+            if (!area) return;
+            seguimientoMap[area] = {
+              id: proceso?.id || null,
+              area,
+              estado: proceso?.estado_proceso || 'Pendiente',
+              encargado: proceso?.encargado || '-',
+              fecha_inicio: proceso?.fecha_inicio || null,
+              fecha_fin: proceso?.fecha_fin || null,
+              can_edit: false,
+              esta_activo: String(proceso?.estado_proceso || '').toLowerCase() !== 'completado'
+            };
+          });
+          enrichedPrenda.seguimientos_por_area = seguimientoMap;
+        }
+
+        console.log('[enrichPrendaForTracking] Fallback bodega aplicado sin pedidoId:', {
+          prendaId,
+          prendaBodegaId: trackingReceiptContext?.prendaBodegaId || enrichedPrenda?.prenda_bodega_id || null,
+          hasDatosActivacion: Boolean(enrichedPrenda?.datos_activacion_recibo),
+          areas: Object.keys(enrichedPrenda?.seguimientos_por_area || {})
+        });
+        return enrichedPrenda;
+      }
+
       console.warn('[enrichPrendaForTracking] Datos insuficientes, se devuelve prenda sin enriquecer');
       return prenda;
     }
-
-    const enrichedPrenda = { ...prenda };
 
     try {
       const consecutivoData = await OrderApiService.loadConsecutivoCostura(pedidoId, prendaId);
@@ -796,7 +852,8 @@ function initTrackingModalListeners() {
         || trackingReceiptContext?.tipoRecibo
         || trackingReceiptContext?.pedidoParcialId
       );
-      return isReflectivoView && hasReceiptContext;
+      const isCorteBodegaView = esCorteParaBodega;
+      return (isReflectivoView && hasReceiptContext) || isCorteBodegaView;
     })();
 
     if (!hasStructuredSeguimientos || shouldForceTrackingFetch) {
@@ -867,6 +924,26 @@ function initTrackingModalListeners() {
       ultimoReciboNumero: enrichedPrenda.ultimo_recibo_numero || null,
       hasSeguimientosPorArea: !!(enrichedPrenda.seguimientos_por_area && Object.keys(enrichedPrenda.seguimientos_por_area).length > 0)
     });
+
+    // Fallback final: si seguimos sin estructura pero sí hay procesos, mapearlos.
+    if ((!enrichedPrenda.seguimientos_por_area || Object.keys(enrichedPrenda.seguimientos_por_area).length === 0) && Array.isArray(enrichedPrenda.procesos)) {
+      const seguimientoMap = {};
+      enrichedPrenda.procesos.forEach((proceso) => {
+        const area = proceso?.proceso || proceso?.area || 'Proceso';
+        if (!area) return;
+        seguimientoMap[area] = {
+          id: proceso?.id || null,
+          area,
+          estado: proceso?.estado_proceso || 'Pendiente',
+          encargado: proceso?.encargado || '-',
+          fecha_inicio: proceso?.fecha_inicio || null,
+          fecha_fin: proceso?.fecha_fin || null,
+          can_edit: false,
+          esta_activo: String(proceso?.estado_proceso || '').toLowerCase() !== 'completado'
+        };
+      });
+      enrichedPrenda.seguimientos_por_area = seguimientoMap;
+    }
 
     return enrichedPrenda;
   }

@@ -166,6 +166,7 @@
                                     data-pedido-produccion-id="{{ $pedidoProduccionId }}"
                                     data-prenda-id="{{ $orden->prenda_id ?? '' }}"
                                     data-prenda-bodega-id="{{ $orden->prenda_bodega_id ?? '' }}"
+                                    data-recibo-id="{{ $reciboId }}"
                                     data-tipo-recibo="{{ $orden->tipo_recibo ?? 'COSTURA' }}"
                                     data-numero-recibo="{{ $orden->consecutivo_actual ?? '' }}"
                                     data-consecutivo="{{ $orden->consecutivo_actual ?? '' }}"

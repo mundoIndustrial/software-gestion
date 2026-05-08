@@ -71,6 +71,7 @@ function crearDropdownVerRecibo(event, button) {
     const pedidoId = button.getAttribute('data-pedido-id') || button.getAttribute('data-pedido-produccion-id');
     const prendaId = button.getAttribute('data-prenda-id');
     const prendaBodegaId = button.getAttribute('data-prenda-bodega-id');
+    const reciboId = button.getAttribute('data-recibo-id') || '';
     const tipoRecibo = button.getAttribute('data-tipo-recibo') || 'COSTURA';
     const esReciboBodega = String(tipoRecibo).toUpperCase() === 'CORTE-PARA-BODEGA';
     const esParcial = button.getAttribute('data-es-parcial') === '1';
@@ -101,6 +102,7 @@ function crearDropdownVerRecibo(event, button) {
             data-pedido-id="${pedidoTarget}"
             data-prenda-id="${prendaTarget ?? 'null'}"
             data-prenda-bodega-id="${prendaBodegaId ?? ''}"
+            data-recibo-id="${reciboId}"
             data-tipo-recibo="${tipoRecibo}"
             data-es-parcial="${esParcial ? '1' : '0'}"
             data-pedido-parcial-id="${pedidoParcialId}"
@@ -117,6 +119,7 @@ function crearDropdownVerRecibo(event, button) {
             data-pedido-id="${pedidoTarget}"
             data-prenda-id="${prendaTarget ?? ''}"
             data-prenda-bodega-id="${prendaBodegaId ?? ''}"
+            data-recibo-id="${reciboId}"
             data-numero-recibo="${numeroRecibo}"
             data-tipo-recibo="${tipoRecibo}"
             data-es-parcial="${esParcial ? '1' : '0'}"
@@ -261,10 +264,12 @@ function crearDropdownAcciones(event, button) {
         `;
     }
 
+    const tipoReciboNorm = String(tipoRecibo || '').toUpperCase();
+    const esReciboBodega = tipoReciboNorm === 'CORTE-PARA-BODEGA';
     const estadosProduccion = ['CORTE','EN_CORTE','ENVIADO_PRODUCCION','EN_PRODUCCION','CORTANDO','EN_EJECUCIÓN','En Ejecución','EN_COSTURA'];
     const yaEnProduccion = estadosProduccion.some(s => estado && estado.toUpperCase().includes(s.toUpperCase()));
 
-    if (estado !== 'DEVUELTO_ASESOR' && !yaEnProduccion) {
+    if (!esReciboBodega && estado !== 'DEVUELTO_ASESOR' && !yaEnProduccion) {
         html += `
         <button data-insumos-action="dropdown-acciones-pasar-revisar"
             data-recibo-id="${reciboId}"
@@ -295,7 +300,7 @@ function cerrarDropdownAcciones() {
 /**
  * Carga los procesos de la prenda y abre el modal de seguimiento (showPrendaTracking).
  */
-async function abrirSeguimientoRecibo(pedidoId, prendaId, consecutivo = null, estado = null, tipoRecibo = null, esParcial = false, pedidoParcialId = null, prendaBodegaId = null) {
+async function abrirSeguimientoRecibo(pedidoId, prendaId, consecutivo = null, estado = null, tipoRecibo = null, esParcial = false, pedidoParcialId = null, prendaBodegaId = null, reciboId = null) {
     const tipoReciboNorm = String(tipoRecibo || '').toUpperCase();
     const esReciboBodega = tipoReciboNorm === 'CORTE-PARA-BODEGA';
     pedidoId = parseInt(pedidoId) || null;
@@ -316,6 +321,7 @@ async function abrirSeguimientoRecibo(pedidoId, prendaId, consecutivo = null, es
             pedidoId: pedidoId,
             prendaId: prendaId,
             prendaBodegaId: prendaBodegaId,
+            reciboId: reciboId ? Number(reciboId) : null,
             numeroRecibo: consecutivo ? String(consecutivo) : null,
             tipoRecibo: tipoRecibo ? String(tipoRecibo) : 'REFLECTIVO',
             esParcial: Boolean(esParcial),

@@ -82,6 +82,7 @@ class RecibosCosturaReadRepository
                 $q->whereIn('consecutivos_recibos_pedidos.estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER', 'INSUMOS_PEDIDOS', 'DEVUELTO_ASESOR', 'Devuelto_Asesor', 'ANULADO', 'Anulada'])
                     ->orWhereIn('consecutivos_recibos_pedidos.area', ['CORTE', 'COSTURA', 'ANULADO']);
             });
+            $query->whereRaw('UPPER(TRIM(consecutivos_recibos_pedidos.area)) = ?', ['INSUMOS']);
         } else {
             // Para REFLECTIVO: solo mostrar recibos del área "Insumos"
             $query->where(function ($q) {
@@ -276,10 +277,13 @@ class RecibosCosturaReadRepository
                 'search_scope' => 'consecutivo_actual_and_cliente',
             ]);
 
-            $query->where(function ($q) use ($search, $searchIsNumeric) {
+            $query->where(function ($q) use ($search, $searchIsNumeric, $esCorteBodega) {
                 $q->where('consecutivos_recibos_pedidos.consecutivo_actual', 'LIKE', "%{$search}%")
-                    ->orWhere('pedidos_produccion.cliente', 'LIKE', "%{$search}%")
-                    ->orWhere('prenda_bodega.descripcion', 'LIKE', "%{$search}%");
+                    ->orWhere('pedidos_produccion.cliente', 'LIKE', "%{$search}%");
+
+                if ($esCorteBodega) {
+                    $q->orWhere('prenda_bodega.descripcion', 'LIKE', "%{$search}%");
+                }
 
                 // Refuerzo para recibos numéricos exactos (ej: "48").
                 if ($searchIsNumeric) {
