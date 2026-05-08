@@ -458,8 +458,9 @@ class SupervisorReceiptsController extends Controller
                 // Filtrar por rango de antigüedad (de 1 a N días)
                 if ($diasAntiguedad > 0) {
                     $diasTranscurridos = (int) data_get($item, 'dias_transcurridos', 0);
-                    // Solo mostrar si están dentro del rango de 1 a N días
-                    return $diasTranscurridos >= 1 && $diasTranscurridos <= $diasAntiguedad;
+                    // Incluir también recibos con 0 días en el reporte
+                    // cuando se filtra por antigüedad (0..N).
+                    return $diasTranscurridos >= 0 && $diasTranscurridos <= $diasAntiguedad;
                 }
                 // Si no hay filtro, mostrar todos
                 return true;
