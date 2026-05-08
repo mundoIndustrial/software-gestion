@@ -320,6 +320,53 @@
 <script src="{{ asset('js/supervisor-pedidos/shared/receipts-renderers.js') }}?v={{ filemtime(public_path('js/supervisor-pedidos/shared/receipts-renderers.js')) }}"></script>
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
 <script>
+// Fallback de zoom para el modal de detalle cuando no existe el handler global.
+if (typeof window.toggleReceiptZoom !== 'function') {
+    window.receiptZoomState = {
+        current: 1,
+        levels: [1, 1.2, 1.4, 1.6]
+    };
+
+    window.applyReceiptZoom = function applyReceiptZoom(zoomLevel = 1) {
+        const wrapper = document.getElementById('order-detail-modal-wrapper');
+        let card = wrapper ? wrapper.querySelector('.order-detail-card') : null;
+        if (!card) {
+            card = document.querySelector('.order-detail-modal-container .order-detail-card');
+        }
+        if (!card) return;
+
+        card.style.transformOrigin = 'center top';
+        card.style.transition = 'transform 0.2s ease';
+
+        if (typeof card.style.zoom !== 'undefined') {
+            card.style.zoom = String(zoomLevel);
+            card.style.transform = 'none';
+        } else {
+            card.style.zoom = '';
+            card.style.transform = `scale(${zoomLevel})`;
+        }
+
+        const btnZoom = document.getElementById('btn-zoom-receipt');
+        if (btnZoom) {
+            btnZoom.title = `Zoom recibo (${Math.round(zoomLevel * 100)}%)`;
+        }
+    };
+
+    window.resetReceiptZoom = function resetReceiptZoom() {
+        window.receiptZoomState.current = 1;
+        window.applyReceiptZoom(1);
+    };
+
+    window.toggleReceiptZoom = function toggleReceiptZoom() {
+        const { levels, current } = window.receiptZoomState;
+        const idx = levels.findIndex((level) => level === current);
+        const next = idx >= 0 ? (idx + 1) % levels.length : 1;
+        const nextLevel = levels[next];
+        window.receiptZoomState.current = nextLevel;
+        window.applyReceiptZoom(nextLevel);
+    };
+}
+
 function verDetalles(procesoId, tipoRecibo) {
     // Mostrar modal con loading
     const modal = new bootstrap.Modal(document.getElementById('modalDetalles'));
@@ -1112,7 +1159,6 @@ if (document.readyState === 'loading') {
 }
 </script>
 @endpush
-
 
 
 
