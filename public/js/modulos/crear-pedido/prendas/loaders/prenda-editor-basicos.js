@@ -38,6 +38,9 @@ class PrendaEditorBasicos {
         const descripcionInput = document.getElementById('nueva-prenda-descripcion');
         if (descripcionInput) {
             descripcionInput.value = prenda.descripcion || '';
+            if (typeof window.sincronizarEditorDescripcionDesdeTextarea === 'function') {
+                window.sincronizarEditorDescripcionDesdeTextarea();
+            }
         }
         
         console.log(' [Basicos] Cargado');
@@ -65,7 +68,12 @@ class PrendaEditorBasicos {
         if (origenSelect) origenSelect.value = 'confeccion';
         
         const descripcionInput = document.getElementById('nueva-prenda-descripcion');
-        if (descripcionInput) descripcionInput.value = '';
+        if (descripcionInput) {
+            descripcionInput.value = '';
+            if (typeof window.sincronizarEditorDescripcionDesdeTextarea === 'function') {
+                window.sincronizarEditorDescripcionDesdeTextarea();
+            }
+        }
     }
 }
 

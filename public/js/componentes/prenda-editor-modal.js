@@ -1522,7 +1522,12 @@ function cargarPrendaEnFormularioModal(prendaData) {
     const origenSelect = document.getElementById('nueva-prenda-origen-select');
     
     if (nombreField) nombreField.value = prendaData.nombre_producto || prendaData.nombre_prenda || '';
-    if (descripcionField) descripcionField.value = prendaData.descripcion || '';
+    if (descripcionField) {
+        descripcionField.value = prendaData.descripcion || '';
+        if (typeof window.sincronizarEditorDescripcionDesdeTextarea === 'function') {
+            window.sincronizarEditorDescripcionDesdeTextarea();
+        }
+    }
     if (origenSelect) {
         let origen;
         
