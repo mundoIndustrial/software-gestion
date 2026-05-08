@@ -47,6 +47,15 @@
             return;
         }
 
+        const estadoPedido = String(datos.estado || '').trim();
+        if (estadoPedido === 'Entregado') {
+            console.warn('[EPP-Agregar] Bloqueado: pedido en estado Entregado', { pedidoId });
+            if (typeof Swal !== 'undefined') {
+                Swal.fire('Acción no permitida', 'No se puede agregar EPP en pedidos Entregados', 'warning');
+            }
+            return;
+        }
+
         console.log('[EPP-Agregar] Pedido ID:', pedidoId);
 
         // 2. Cerrar el modal actual de Swal (lista de EPP o "sin EPP")

@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Application\Pedidos\UseCases\EliminarEppUseCase;
 use App\Application\Pedidos\UseCases\HomologarEppUseCase;
+use App\Models\PedidoProduccion;
 use App\Application\Services\Asesores\PrendaPedidoEdicionAuditoriaService;
 use App\Infrastructure\Http\Requests\Asesores\EliminarEppRequest;
 use App\Infrastructure\Http\Requests\Asesores\HomologarEppRequest;
@@ -96,6 +97,14 @@ class EppsPedidoController
     public function homologarEpp(HomologarEppRequest $request, int|string $id): JsonResponse
     {
         try {
+            $pedido = PedidoProduccion::query()
+                ->select(['id', 'estado'])
+                ->findOrFail((int) $id);
+
+            if (trim((string) $pedido->estado) === 'Entregado') {
+                return $this->failure('No se puede homologar EPP en pedidos Entregados', 422);
+            }
+
             Log::info('[EppsPedidoController] POST /asesores/pedidos/{id}/homologar-epp', [
                 'pedido_id' => $id,
             ]);

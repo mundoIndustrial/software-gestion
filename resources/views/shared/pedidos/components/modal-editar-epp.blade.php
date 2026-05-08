@@ -25,6 +25,29 @@
 
 <script>
     // Debug: Log de z-index del modal
+    console.info('[EPP-DEBUG] modal-editar-epp.blade cargado | build=2026-05-08-debug-estado-entregado');
+
+    function normalizarEstadoPedido(estado) {
+        return String(estado || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim()
+            .toLowerCase();
+    }
+
+    function esEstadoEntregado(estado) {
+        return normalizarEstadoPedido(estado) === 'entregado';
+    }
+
+    function obtenerEstadoPedidoActual(datos) {
+        const fuente = datos || window.datosEdicionPedido || {};
+        return fuente.estado
+            || fuente.estado_pedido
+            || fuente.estadoPedido
+            || fuente.status
+            || fuente?.pedido?.estado
+            || '';
+    }
  
     /**
      *  Recargar la tabla de pedidos sin recargar la página
@@ -72,6 +95,7 @@
         if (!pedidoId) return false;
 
         try {
+            console.info('[EPP-DEBUG] refrescarDatosEdicionPedidoDesdeServidor -> inicio', { pedidoId });
             const response = await fetch(`/api/asesores/pedidos/${pedidoId}/factura-datos`, {
                 method: 'GET',
                 credentials: 'include',
@@ -82,11 +106,19 @@
             });
 
             if (!response.ok) {
+                console.warn('[EPP-DEBUG] refrescarDatosEdicionPedidoDesdeServidor -> response no OK', {
+                    pedidoId,
+                    status: response.status
+                });
                 return false;
             }
 
             const respuesta = await response.json();
             if (!respuesta?.success) {
+                console.warn('[EPP-DEBUG] refrescarDatosEdicionPedidoDesdeServidor -> success false', {
+                    pedidoId,
+                    respuesta
+                });
                 return false;
             }
 
@@ -97,13 +129,23 @@
                 numero: datos.numero || datos.numero_pedido,
                 cliente: datos.cliente || 'Cliente sin especificar',
                 asesora: datos.asesor || datos.asesora?.name || 'Asesor sin especificar',
-                estado: datos.estado || 'Pendiente',
+                estado: datos.estado ?? window.datosEdicionPedido?.estado ?? '',
                 forma_de_pago: datos.forma_pago || datos.forma_de_pago || 'No especificada',
                 prendas: datos.prendas || [],
                 epps: datos.epps_transformados || datos.epps || [],
                 procesos: datos.procesos || [],
                 ...datos
             };
+
+            const estadoRaw = obtenerEstadoPedidoActual(window.datosEdicionPedido);
+            console.info('[EPP-DEBUG] datosEdicionPedido refrescado', {
+                pedidoId,
+                estadoRaw,
+                estadoNormalizado: normalizarEstadoPedido(estadoRaw),
+                pedidoEntregado: esEstadoEntregado(estadoRaw),
+                keys: Object.keys(window.datosEdicionPedido || {}),
+                eppsCount: (window.datosEdicionPedido?.epps || []).length,
+            });
 
             return true;
         } catch (error) {
@@ -116,14 +158,38 @@
      * Abrir formulario para editar EPP del pedido (lista seleccionable)
      */
     function abrirEditarEPP() {
-        Validator.requireEdicionPedido(() => {
-            const datos = window.datosEdicionPedido;
+        Validator.requireEdicionPedido(async () => {
+            const pedidoId = window.datosEdicionPedido?.id || window.datosEdicionPedido?.numero_pedido;
+            console.info('[EPP-DEBUG] abrirEditarEPP -> antes de refresh', {
+                pedidoId,
+                estadoAntes: obtenerEstadoPedidoActual(window.datosEdicionPedido),
+                estadoAntesNormalizado: normalizarEstadoPedido(obtenerEstadoPedidoActual(window.datosEdicionPedido))
+            });
+
+            if (pedidoId) {
+                const refrescoOk = await refrescarDatosEdicionPedidoDesdeServidor(pedidoId);
+                console.info('[EPP-DEBUG] abrirEditarEPP -> resultado refresh', { pedidoId, refrescoOk });
+            }
+
+            const datos = window.datosEdicionPedido || {};
             // datosEdicionPedido tiene estructura: { epps: [...], prendas: [...], numero_pedido, ...}
             const epp = datos.epps || [];
-
+            const estado = obtenerEstadoPedidoActual(datos);
+            const pedidoEntregado = esEstadoEntregado(estado);
+            console.info('[EPP-DEBUG] abrirEditarEPP -> estado calculado', {
+                pedidoId,
+                estadoRaw: estado,
+                estadoNormalizado: normalizarEstadoPedido(estado),
+                pedidoEntregado,
+                eppsCount: epp.length
+            });
 
             if (epp.length === 0) {
                 // Mostrar modal con opción de agregar EPP
+                const btnAgregarDisabled = pedidoEntregado ? 'disabled' : '';
+                const btnAgregarOpacity = pedidoEntregado ? 'opacity: 0.5; cursor: not-allowed;' : '';
+                const btnAgregarOnClick = pedidoEntregado ? '' : 'onclick="agregarNuevoEPPAPedido()"';
+
                 const htmlSinEPP = `
                     <div style="background: white; border-radius: 6px; width: 100%; display: flex; flex-direction: column; box-shadow: 0 8px 30px rgba(0,0,0,0.3); overflow: hidden;">
                         <div style="padding: 20px; background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
@@ -131,10 +197,11 @@
                                 EPP del Pedido
                             </h3>
                             <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                <button onclick="agregarNuevoEPPAPedido()"
-                                    style="background: #10b981; border: none; cursor: pointer; color: white; padding: 10px 16px; line-height: 1; transition: all 0.2s; font-weight: bold; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; white-space: nowrap; flex-shrink: 0;"
-                                    onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.05)'"
-                                    onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'">
+                                <button ${btnAgregarDisabled} ${btnAgregarOnClick}
+                                    style="background: ${pedidoEntregado ? '#9ca3af' : '#10b981'}; border: none; cursor: pointer; color: white; padding: 10px 16px; line-height: 1; transition: all 0.2s; font-weight: bold; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; white-space: nowrap; flex-shrink: 0; ${btnAgregarOpacity}"
+                                    onmouseover="${pedidoEntregado ? '' : "this.style.opacity='0.8'; this.style.transform='scale(1.05)'"}"
+                                    onmouseout="${pedidoEntregado ? '' : "this.style.opacity='1'; this.style.transform='scale(1)'"}"
+                                    title="${pedidoEntregado ? 'No se puede agregar EPP en pedidos Entregados' : ''}">
                                     ＋ Agregar EPP
                                 </button>
                                 <button onclick="abrirModalEditarPedido(window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido, window.datosEdicionPedido, 'editar');"
@@ -149,10 +216,11 @@
                             <div style="font-size: 3rem; margin-bottom: 1rem;">🛡️</div>
                             <h4 style="margin: 0 0 0.5rem 0; color: #1f2937; font-size: 1.1rem; font-weight: 700;">Sin EPP</h4>
                             <p style="margin: 0 0 1.5rem 0; color: #6b7280; font-size: 0.95rem;">No hay EPP agregado en este pedido</p>
-                            <button onclick="agregarNuevoEPPAPedido()"
-                                style="background: #10b981; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s;"
-                                onmouseover="this.style.background='#059669'; this.style.transform='scale(1.05)'"
-                                onmouseout="this.style.background='#10b981'; this.style.transform='scale(1)'">
+                            <button ${btnAgregarDisabled} ${btnAgregarOnClick}
+                                style="background: ${pedidoEntregado ? '#9ca3af' : '#10b981'}; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s; ${btnAgregarOpacity}"
+                                onmouseover="${pedidoEntregado ? '' : "this.style.background='#059669'; this.style.transform='scale(1.05)'"}"
+                                onmouseout="${pedidoEntregado ? '' : "this.style.background='#10b981'; this.style.transform='scale(1)'"}"
+                                title="${pedidoEntregado ? 'No se puede agregar EPP en pedidos Entregados' : ''}">
                                 ＋ Agregar EPP al Pedido
                             </button>
                         </div>
@@ -196,23 +264,36 @@
             };
             
             let htmlListaEPP = `<div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;">`;
-            
+
             epp.forEach((item, idx) => {
                 // Usar campos estandarizados del backend: nombre_completo, nombre, epp_nombre
                 const nombre = item.nombre_completo || item.epp_nombre || item.nombre || '';
+                const btnHomologarDisabled = pedidoEntregado ? 'disabled' : '';
+                const btnHomologarColor = pedidoEntregado ? '#9ca3af' : '#8b5cf6';
+                const btnHomologarHoverColor = pedidoEntregado ? '#9ca3af' : '#7c3aed';
+                const btnHomologarOnClick = pedidoEntregado ? '' : `onclick="abrirModalHomologarEpp(${JSON.stringify(item).replace(/"/g, '&quot;')}, ${idx}, window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido)"`;
+                const btnHomologarOpacity = pedidoEntregado ? 'opacity: 0.5; cursor: not-allowed;' : '';
+                console.debug('[EPP-DEBUG] item render', {
+                    idx,
+                    pedidoEntregado,
+                    homologarDeshabilitado: !!btnHomologarDisabled,
+                    nombre: nombre
+                });
+
                 htmlListaEPP += `
                     <div style="background: white; border: 2px solid #1e40af; border-radius: 8px; padding: 1rem; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease;"
-                        onmouseover="this.style.background='#eff6ff';"
+                        onmouseover="this.style.background='${pedidoEntregado ? 'white' : '#eff6ff'}';"
                         onmouseout="this.style.background='white';">
                         <div style="flex: 1;">
                             <h4 style="margin: 0; color: #1f2937; font-size: 0.95rem; font-weight: 700;"> ${nombre.toUpperCase()}</h4>
                             <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.85rem;">Cantidad: <strong>${item.cantidad || 0}</strong></p>
                         </div>
                         <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
-                            <button onclick="abrirModalHomologarEpp(${JSON.stringify(item).replace(/"/g, '&quot;')}, ${idx}, window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido)"
-                                style="background: #8b5cf6; color: white; padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"
-                                onmouseover="this.style.background='#7c3aed'; this.style.transform='scale(1.05)';"
-                                onmouseout="this.style.background='#8b5cf6'; this.style.transform='scale(1)';">
+                            <button ${btnHomologarDisabled} ${btnHomologarOnClick}
+                                style="background: ${btnHomologarColor}; color: white; padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; ${btnHomologarOpacity}"
+                                onmouseover="${pedidoEntregado ? '' : `this.style.background='${btnHomologarHoverColor}'; this.style.transform='scale(1.05)';`}"
+                                onmouseout="${pedidoEntregado ? '' : `this.style.background='${btnHomologarColor}'; this.style.transform='scale(1)';`}"
+                                title="${pedidoEntregado ? 'No se puede homologar EPP en pedidos Entregados' : ''}">
                                  Homologar
                             </button>
                         </div>
@@ -222,6 +303,10 @@
             htmlListaEPP += '</div>';
             
             // Crear HTML con header mejorado
+            const btnAgregarDisabled2 = pedidoEntregado ? 'disabled' : '';
+            const btnAgregarOpacity2 = pedidoEntregado ? 'opacity: 0.5; cursor: not-allowed;' : '';
+            const btnAgregarOnClick2 = pedidoEntregado ? '' : 'onclick="agregarNuevoEPPAPedido()"';
+
             const htmlConHeader = `
                 <div style="background: white; border-radius: 6px; width: 100%; display: flex; flex-direction: column; box-shadow: 0 8px 30px rgba(0,0,0,0.3); overflow: hidden;">
                     <!-- Header Azul con mejor espaciado -->
@@ -230,10 +315,11 @@
                              Selecciona un EPP para Editar
                         </h3>
                         <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <button onclick="agregarNuevoEPPAPedido()"
-                                style="background: #10b981; border: none; cursor: pointer; color: white; padding: 10px 16px; line-height: 1; transition: all 0.2s; font-weight: bold; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; white-space: nowrap; flex-shrink: 0;"
-                                onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.05)'"
-                                onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'">
+                            <button ${btnAgregarDisabled2} ${btnAgregarOnClick2}
+                                style="background: ${pedidoEntregado ? '#9ca3af' : '#10b981'}; border: none; cursor: pointer; color: white; padding: 10px 16px; line-height: 1; transition: all 0.2s; font-weight: bold; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; white-space: nowrap; flex-shrink: 0; ${btnAgregarOpacity2}"
+                                onmouseover="${pedidoEntregado ? '' : "this.style.opacity='0.8'; this.style.transform='scale(1.05)'"}"
+                                onmouseout="${pedidoEntregado ? '' : "this.style.opacity='1'; this.style.transform='scale(1)'"}"
+                                title="${pedidoEntregado ? 'No se puede agregar EPP en pedidos Entregados' : ''}">
                                 ＋ Agregar EPP
                             </button>
                             <button onclick="abrirModalEditarPedido(window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido, window.datosEdicionPedido, 'editar');"
@@ -1402,6 +1488,19 @@
      * Homologar EPP: Abrir modal de edición para poder editarlo
      */
     window.abrirModalHomologarEpp = function(epp, eppIndex, pedidoId) {
+        const estadoPedido = obtenerEstadoPedidoActual(window.datosEdicionPedido);
+        console.info('[EPP-DEBUG] click homologar', {
+            pedidoId,
+            eppIndex,
+            estadoRaw: estadoPedido,
+            estadoNormalizado: normalizarEstadoPedido(estadoPedido),
+            bloqueadoPorEntregado: esEstadoEntregado(estadoPedido)
+        });
+        if (esEstadoEntregado(estadoPedido)) {
+            Swal.fire('Acción no permitida', 'No se puede homologar EPP en pedidos Entregados', 'warning');
+            return;
+        }
+
         const eppId = epp.id || epp.pedido_epp_id;
         const nombreEpp = epp.nombre || epp.epp?.nombre || epp.nombre_completo || epp.epp_nombre || 'EPP Sin nombre';
         

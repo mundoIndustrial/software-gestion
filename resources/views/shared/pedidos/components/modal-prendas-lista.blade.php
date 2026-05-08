@@ -1,6 +1,24 @@
 <!-- Modal de lista de prendas con opción de agregar -->
 <script>
     window.__cacheBloqueoPrendasLista = window.__cacheBloqueoPrendasLista || new Map();
+    function _normalizarEstadoPedidoPrendas(estado) {
+        return String(estado || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim()
+            .toLowerCase();
+    }
+
+    function _esPedidoEntregadoPrendas(datosPedido) {
+        const estado = datosPedido?.estado
+            || datosPedido?.estado_pedido
+            || datosPedido?.estadoPedido
+            || datosPedido?.status
+            || '';
+
+        return _normalizarEstadoPedidoPrendas(estado) === 'entregado';
+    }
+
     function _mostrarModalPrendaBloqueadaDesdeLista(mensaje) {
         const texto = mensaje || 'Esta prenda no se puede editar en este momento.';
         if (typeof Swal !== 'undefined') {
@@ -198,6 +216,7 @@
     function abrirEditarPrendas() {
         Validator.requireEdicionPedido(async () => {
             const datos = window.datosEdicionPedido;
+            const pedidoEntregado = _esPedidoEntregadoPrendas(datos);
             const prendas = datos.prendas || [];
             await hidratarBloqueosAntesDeRender(prendas, datos.id);
             // Siempre mostrar lista, aunque esté vacía
@@ -278,6 +297,9 @@
             htmlListaPrendas += '</div>';
             
             // Crear HTML con header mejorado
+            const btnAgregarDisabled = pedidoEntregado ? 'disabled' : '';
+            const btnAgregarOnClick = pedidoEntregado ? '' : 'onclick="agregarNuevaPrendaAPedido();"';
+            const btnAgregarOpacity = pedidoEntregado ? 'opacity: 0.5; cursor: not-allowed;' : '';
             const htmlConHeader = `
                 <div style="background: white; border-radius: 6px; width: 100%; display: flex; flex-direction: column; box-shadow: 0 8px 30px rgba(0,0,0,0.3); overflow: hidden;">
                     <!-- Header Azul con mejor espaciado -->
@@ -286,10 +308,11 @@
                             Selecciona una Prenda para Editar
                         </h3>
                         <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
-                            <button onclick="agregarNuevaPrendaAPedido();" 
-                                style="background: #16a34a; border: none; cursor: pointer; color: white; padding: 10px 16px; line-height: 1; transition: all 0.2s; font-weight: bold; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; white-space: nowrap;"
-                                onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.05)'"
-                                onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'">
+                            <button ${btnAgregarDisabled} ${btnAgregarOnClick}
+                                style="background: ${pedidoEntregado ? '#9ca3af' : '#16a34a'}; border: none; cursor: pointer; color: white; padding: 10px 16px; line-height: 1; transition: all 0.2s; font-weight: bold; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; white-space: nowrap; ${btnAgregarOpacity}"
+                                onmouseover="${pedidoEntregado ? '' : "this.style.opacity='0.8'; this.style.transform='scale(1.05)'"}"
+                                onmouseout="${pedidoEntregado ? '' : "this.style.opacity='1'; this.style.transform='scale(1)'"}"
+                                title="${pedidoEntregado ? 'No se puede agregar prendas en pedidos Entregados' : ''}">
                                 ＋ Agregar Prenda
                             </button>
                             <button onclick="abrirModalEditarPedido(window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido, window.datosEdicionPedido, 'editar');" 

@@ -252,6 +252,26 @@
             return;
         }
 
+        const estadoPedido = String(
+            window.datosEdicionPedido?.estado
+            || window.datosEdicionPedido?.estado_pedido
+            || window.datosEdicionPedido?.estadoPedido
+            || window.datosEdicionPedido?.status
+            || ''
+        )
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim()
+            .toLowerCase();
+
+        if (estadoPedido === 'entregado') {
+            console.warn('[PrendaAgregarPedido] Bloqueado: pedido en estado Entregado', { pedidoId });
+            if (typeof Swal !== 'undefined') {
+                Swal.fire('Acción no permitida', 'No se puede agregar prendas en pedidos Entregados', 'warning');
+            }
+            return;
+        }
+
         console.log('[PrendaAgregarPedido]  Abriendo modal para AGREGAR nueva prenda al pedido:', pedidoId);
 
         // Marcar contexto como "agregar nueva prenda" (sin prendaId)

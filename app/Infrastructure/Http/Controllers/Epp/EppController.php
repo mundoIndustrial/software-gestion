@@ -476,6 +476,24 @@ class EppController extends Controller
     public function agregar(int $pedidoId, Request $request): JsonResponse
     {
         try {
+            $pedido = PedidoProduccion::query()
+                ->select(['id', 'estado', 'numero_pedido'])
+                ->find($pedidoId);
+
+            if (!$pedido) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pedido no encontrado',
+                ], 404);
+            }
+
+            if ($this->esPedidoEntregado($pedido)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se puede agregar EPP en pedidos Entregados',
+                ], 422);
+            }
+
             // Debug: Log all request data before validation
             \Log::info('[EppController::agregar] Request recibido', [
                 'pedidoId' => $pedidoId,
@@ -1592,5 +1610,10 @@ class EppController extends Controller
         }
 
         return strtolower((string) $pedido->estado) === 'borrador';
+    }
+
+    private function esPedidoEntregado(PedidoProduccion $pedido): bool
+    {
+        return trim((string) $pedido->estado) === 'Entregado';
     }
 }
