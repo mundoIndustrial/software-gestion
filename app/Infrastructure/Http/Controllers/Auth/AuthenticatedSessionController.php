@@ -237,17 +237,16 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        // Regenerar token ANTES de invalidar la sesión
-        // Esto previene el error 419 si la sesión está a punto de expirar
-        $request->session()->regenerateToken();
-
         // Hacer logout
         Auth::guard('web')->logout();
 
         // Invalidar sesión
         $request->session()->invalidate();
 
-        // Redirigir con mensaje de éxito
-        return redirect('/')->with('success', 'Sesión cerrada correctamente');
+        // Regenerar token para la próxima sesión
+        $request->session()->regenerateToken();
+
+        // Redirigir al login
+        return redirect(route('login'))->with('success', 'Sesión cerrada correctamente');
     }
 }

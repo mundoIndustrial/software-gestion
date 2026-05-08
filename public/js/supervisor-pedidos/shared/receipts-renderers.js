@@ -86,6 +86,7 @@
         const area = proceso?.area || '';
         const numeroRecibo = String(proceso?.numero_recibo || '');
         const pedidoId = String(proceso?.pedido_id || '');
+        const numeroPedido = String(proceso?.numero_pedido || pedidoId || '-');
         const prendaId = String(proceso?.prenda_id || '');
         const esParcial = Boolean(proceso?.es_parcial);
         const pedidoParcialId = String(proceso?.pedido_parcial_id || '');
@@ -144,7 +145,7 @@
                 </div>` : ''}
                 <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151; font-weight: 500;">${escapeHtml(numeroRecibo)}</div>
                 ${showReceiptType ? `<div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">${tipoReciboHtml}</div>` : ''}
-                <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">${escapeHtml(String(proceso?.cliente || '-'))}</div>
+                <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">${escapeHtml(String(proceso?.cliente || '-'))} (${escapeHtml(numeroPedido)})</div>
                 <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">${areaHtml}</div>
                 <div style="display: flex; align-items: start; font-size: 0.9rem; color: #374151;"><div class="prenda-list">${prendasHtml}</div></div>
                 <div style="display: flex; align-items: center; font-size: 0.85rem; color: #374151;">

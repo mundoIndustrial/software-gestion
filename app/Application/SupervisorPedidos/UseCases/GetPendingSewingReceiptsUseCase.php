@@ -68,6 +68,7 @@ class GetPendingSewingReceiptsUseCase
         $proceso = [
             'fecha_creacion' => $recibo->fecha_creacion,
             'numero_recibo' => $recibo->numero_recibo,
+            'numero_pedido' => $recibo->numero_pedido ?? null,
             'prenda_id' => $recibo->prenda_id,
             'cliente' => $recibo->cliente,
             'area' => $recibo->area,

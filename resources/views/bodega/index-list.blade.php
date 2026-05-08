@@ -125,7 +125,7 @@
                                     </td>
                                     <td class="px-6 py-4 text-center">
                                         @php
-                                            $rawNovedades = $pedidoData['novedades'];
+                                            $rawNovedades = $pedidoData['novedades'] ?? '';
                                             $novedades = [];
                                             if (!empty($rawNovedades)) {
                                                 $decoded = json_decode($rawNovedades, true);

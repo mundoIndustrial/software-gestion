@@ -310,7 +310,7 @@
 
                                         <!-- Cliente -->
                                         <div style="display: flex; align-items: center; font-size: 0.9rem; color: #374151;">
-                                            {{ $proceso['cliente'] }}
+                                            {{ $proceso['cliente'] }} ({{ $proceso['numero_pedido'] ?? '-' }})
                                         </div>
 
                                         <!-- Area -->

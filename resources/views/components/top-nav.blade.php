@@ -422,6 +422,7 @@
         </script>
         @endif
 
+        @auth
         <div class="user-dropdown">
             <button class="user-btn" id="userBtn" aria-label="Menú de usuario" aria-expanded="false" aria-controls="userMenu">
                 <div class="user-avatar">
@@ -464,5 +465,6 @@
                 </form>
             </div>
         </div>
+        @endauth
     </div>
 </header>
