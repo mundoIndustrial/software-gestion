@@ -73,8 +73,7 @@
       <div class="gd-title">{{ $pedido['cliente'] ?? 'Cliente no especificado' }}</div>
     </div>
     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <a class="gd-btn" href="{{ route('despacho.historial-pendientes') }}">← Historial</a>
-      <a class="gd-btn gd-btn-dark" href="{{ route('despacho.pendientes') }}">Ir a pendientes</a>
+      <a class="gd-btn" href="{{ $historialBackUrl ?? route('despacho.historial-pendientes') }}">← Volver</a>
     </div>
   </div>
 

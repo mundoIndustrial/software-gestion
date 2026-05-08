@@ -262,9 +262,14 @@ class DespachoPendientesController extends Controller
     /**
      * Mostrar detalles de pedido desde historial (mostrando todos los items: pendientes + entregados)
      */
-    public function showHistorialPendiente($id)
+    public function showHistorialPendiente(Request $request, $id)
     {
         try {
+            \Log::info('[DESPACHO][HISTORIAL] Inicio showHistorialPendiente', [
+                'id_recibido_en_ruta' => $id,
+                'id_casteado_int' => (int) $id,
+            ]);
+
             $data = $this->service->construirDetallePendienteUnificado((int) $id, true);
             $items = is_array($data['items'] ?? null) ? $data['items'] : [];
 
@@ -277,15 +282,37 @@ class DespachoPendientesController extends Controller
 
             $tieneFechaPendiente = !empty($itemsConFechaPendiente);
 
+            \Log::info('[DESPACHO][HISTORIAL] Resultado filtro fecha_pendiente', [
+                'id_recibido_en_ruta' => $id,
+                'numero_pedido_resuelto' => $data['pedido']['numero_pedido'] ?? null,
+                'estado_pedido_resuelto' => $data['pedido']['estado'] ?? null,
+                'items_totales' => count($items),
+                'items_con_fecha_pendiente' => count($itemsConFechaPendiente),
+                'tiene_fecha_pendiente' => $tieneFechaPendiente,
+            ]);
+
             if (!$tieneFechaPendiente) {
-                return redirect()->route('despacho.historial-pendientes')
-                    ->with('error', 'Este pedido no tiene items con fecha pendiente en historial.');
+                \Log::warning('[DESPACHO][HISTORIAL] Pedido sin items con fecha_pendiente, se mostraran items sin filtro', [
+                    'id_recibido_en_ruta' => $id,
+                    'numero_pedido_resuelto' => $data['pedido']['numero_pedido'] ?? null,
+                    'items_totales' => count($items),
+                ]);
             }
+
+            $backParams = array_filter([
+                'search' => $request->query('search'),
+                'tipo' => $request->query('tipo'),
+                'page' => $request->query('page'),
+                'per_page' => $request->query('per_page'),
+            ], fn ($value) => $value !== null && $value !== '');
+
+            $historialBackUrl = route('despacho.historial-pendientes', $backParams);
 
             return view('despacho.show-historial-pendiente-nuevo', [
                 'pedido' => $data['pedido'],
-                'items' => $itemsConFechaPendiente,
+                'items' => $tieneFechaPendiente ? $itemsConFechaPendiente : $items,
                 'origen' => 'historial',
+                'historialBackUrl' => $historialBackUrl,
             ]);
         } catch (\Exception $e) {
             \Log::error('[DESPACHO] Error al mostrar detalles del pedido en historial', [

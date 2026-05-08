@@ -4,6 +4,7 @@ namespace App\Application\Services\Despacho;
 
 use App\Application\Bodega\Services\BodegaPedidoService;
 use App\Models\DesparChoParcialesModel;
+use App\Models\PedidoEpp;
 use App\Models\PedidoProduccion;
 use App\Models\ReciboPrenda;
 use Illuminate\Support\Collection;
@@ -628,21 +629,69 @@ class DespachoPendientesApplicationService
 
     public function construirDetallePendienteUnificado(int $id, bool $mostrarEntregados = false): array
     {
-        $reciboPrenda = ReciboPrenda::findOrFail($id);
-        $numeroPedido = $reciboPrenda->numero_pedido;
+        \Log::info('[DESPACHO][DETALLE] construirDetallePendienteUnificado INICIO', [
+            'id_entrada' => $id,
+            'mostrar_entregados' => $mostrarEntregados,
+        ]);
 
-        $pedidoProduccion = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+        $reciboPrenda = null;
+        $pedidoProduccion = null;
+
+        // Priorizar numero_pedido para que la URL del historial abra exactamente
+        // el pedido que el usuario ve en la tabla.
+        $pedidoProduccion = PedidoProduccion::where('numero_pedido', $id)->first();
+        $fuenteResolucion = $pedidoProduccion ? 'numero_pedido' : null;
+
+        if (!$pedidoProduccion) {
+            // Compatibilidad con enlaces antiguos que enviaban id interno.
+            $reciboPrenda = ReciboPrenda::find($id);
+            if ($reciboPrenda) {
+                $pedidoProduccion = PedidoProduccion::where('numero_pedido', $reciboPrenda->numero_pedido)->first();
+                if ($pedidoProduccion) {
+                    $fuenteResolucion = 'recibo_prenda_id';
+                }
+            }
+        }
+
+        if (!$pedidoProduccion) {
+            // Fallback: algunos listados pueden enviar id de pedidos_produccion.
+            $pedidoProduccion = PedidoProduccion::find($id);
+            if ($pedidoProduccion) {
+                $fuenteResolucion = 'pedido_produccion_id';
+            }
+        }
 
         if (!$pedidoProduccion) {
             throw new \RuntimeException('Pedido de produccion no encontrado');
         }
 
+        $numeroPedido = $pedidoProduccion->numero_pedido;
+
+        \Log::info('[DESPACHO][DETALLE] Pedido resuelto', [
+            'id_entrada' => $id,
+            'fuente_resolucion' => $fuenteResolucion,
+            'pedido_produccion_id' => $pedidoProduccion->id ?? null,
+            'numero_pedido' => $numeroPedido,
+            'estado' => $pedidoProduccion->estado ?? null,
+        ]);
+
+        if (!$reciboPrenda) {
+            $reciboPrenda = ReciboPrenda::where('numero_pedido', $numeroPedido)
+                ->orderByDesc('id')
+                ->first();
+        }
+
+        \Log::info('[DESPACHO][DETALLE] Recibo resuelto', [
+            'numero_pedido' => $numeroPedido,
+            'recibo_prenda_id' => $reciboPrenda?->id,
+        ]);
+
         $pedidoData = [
-            'id' => $reciboPrenda->id,
+            'id' => $reciboPrenda?->id ?? $pedidoProduccion->id,
             'numero_pedido' => $numeroPedido,
             'estado' => $pedidoProduccion->estado ?? 'Pendiente',
-            'cliente' => $reciboPrenda->cliente ?? 'No especificado',
-            'asesor' => $reciboPrenda->asesor?->nombre ?? $reciboPrenda->asesor?->name ?? null,
+            'cliente' => $reciboPrenda->cliente ?? $pedidoProduccion->cliente ?? 'No especificado',
+            'asesor' => $reciboPrenda?->asesor?->nombre ?? $reciboPrenda?->asesor?->name ?? null,
             'created_at' => $pedidoProduccion->created_at,
         ];
 
@@ -684,6 +733,23 @@ class DespachoPendientesApplicationService
         $items = [];
 
         foreach ($itemsPendientes as $item) {
+            $pedidoEppId = isset($item['pedido_epp_id']) ? (int) $item['pedido_epp_id'] : null;
+            $esItemEpp = strtolower((string) ($item['tipo'] ?? '')) === 'epp' || strtoupper((string) ($item['area'] ?? '')) === 'EPP';
+
+            // No mostrar EPPs eliminados (soft-delete), ya que suelen ser versiones
+            // reemplazadas por homologación.
+            if ($esItemEpp && !empty($pedidoEppId)) {
+                $pedidoEpp = PedidoEpp::withTrashed()->select(['id', 'deleted_at'])->find($pedidoEppId);
+                if ($pedidoEpp && $pedidoEpp->deleted_at !== null) {
+                    \Log::warning('[DESPACHO][DETALLE] Item EPP omitido por soft-delete', [
+                        'numero_pedido' => $numeroPedido,
+                        'pedido_produccion_id' => $pedidoProduccion->id ?? null,
+                        'pedido_epp_id' => $pedidoEppId,
+                    ]);
+                    continue;
+                }
+            }
+
             $prendaNombre = $item['descripcion']['nombre_prenda'] ?? $item['prenda_nombre'] ?? '';
             $colorKey = $item['descripcion']['color'] ?? ($item['color'] ?? '');
             if (empty($colorKey)) {
@@ -710,6 +776,38 @@ class DespachoPendientesApplicationService
             }
 
             $esEpp = strpos(strtoupper($prendaNombre), 'EPP') !== false;
+
+            $fechaPendiente = $item['fecha_pendiente'] ?? null;
+            if ((is_null($fechaPendiente) || (is_string($fechaPendiente) && trim($fechaPendiente) === '')) && !empty($pedidoProduccion->id)) {
+                $fallbackQuery = DB::table('bodega_detalles_talla')
+                    ->where('pedido_produccion_id', $pedidoProduccion->id)
+                    ->whereNull('deleted_at');
+
+                if (!empty($pedidoEppId)) {
+                    $fallbackQuery->where('pedido_epp_id', $pedidoEppId);
+                } else {
+                    $fallbackQuery
+                        ->when(!empty($prendaNombre), fn ($q) => $q->where('prenda_nombre', $prendaNombre))
+                        ->when(!empty($item['talla_color_id']), fn ($q) => $q->where('talla_color_id', $item['talla_color_id']))
+                        ->when(empty($item['talla_color_id']) && !empty($item['talla']), fn ($q) => $q->where('talla', $item['talla']));
+                }
+
+                $fallbackFechaPendiente = $fallbackQuery
+                    ->orderByDesc('id')
+                    ->value('fecha_pendiente');
+
+                if (!empty($fallbackFechaPendiente)) {
+                    $fechaPendiente = (string) $fallbackFechaPendiente;
+                    \Log::info('[DESPACHO][DETALLE] fecha_pendiente recuperada por fallback', [
+                        'numero_pedido' => $numeroPedido,
+                        'pedido_produccion_id' => $pedidoProduccion->id,
+                        'prenda_nombre' => $prendaNombre,
+                        'talla' => $item['talla'] ?? null,
+                        'talla_color_id' => $item['talla_color_id'] ?? null,
+                        'fecha_pendiente' => $fechaPendiente,
+                    ]);
+                }
+            }
 
             // Calcular fecha de entrega: usa fecha_entrega_bodega si existe, sino usa updated_at si estado es Entregado
             $fechaEntrega = '';
@@ -756,7 +854,7 @@ class DespachoPendientesApplicationService
                 'pendientes' => $item['pendientes'] ?? '',
                 'estado_bodega' => $item['estado_bodega'] ?? 'Pendiente',
                 'fecha_pedido' => $item['fecha_pedido'] ?? null,
-                'fecha_pendiente' => $item['fecha_pendiente'] ?? null,
+                'fecha_pendiente' => $fechaPendiente,
                 'fecha_entrega' => $fechaEntrega,
                 'fecha_entrega_bodega' => $item['fecha_entrega_bodega'] ?? null,
                 'created_at' => $item['created_at'] ?? null,
@@ -764,11 +862,27 @@ class DespachoPendientesApplicationService
                 'observaciones' => $item['observaciones'] ?? '',
                 'observaciones_bodega' => $item['observaciones_bodega'] ?? '',
                 'pedido_produccion_id' => $item['pedido_produccion_id'] ?? $pedidoProduccion->id,
-                'recibo_prenda_id' => $item['recibo_prenda_id'] ?? $reciboPrenda->id,
+                'recibo_prenda_id' => $item['recibo_prenda_id'] ?? $reciboPrenda?->id,
+                'pedido_epp_id' => $pedidoEppId,
             ];
 
             $items[] = $itemNormalizado;
         }
+
+        \Log::info('[DESPACHO][DETALLE] Items normalizados', [
+            'numero_pedido' => $numeroPedido,
+            'mostrar_entregados' => $mostrarEntregados,
+            'items_count' => count($items),
+            'items_resumen' => collect($items)->map(function ($it) {
+                return [
+                    'tipo' => $it['tipo'] ?? null,
+                    'area' => $it['area'] ?? null,
+                    'estado_bodega' => $it['estado_bodega'] ?? null,
+                    'fecha_pendiente' => $it['fecha_pendiente'] ?? null,
+                    'prenda_nombre' => $it['prenda_nombre'] ?? null,
+                ];
+            })->take(20)->values()->all(),
+        ]);
 
         $estadosPermitidos = ['Pendiente', 'En Ejecución', 'No iniciado', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera'];
         if (!empty($items)) {
@@ -810,7 +924,7 @@ class DespachoPendientesApplicationService
                 unset($itemRef);
             }
         }
-        if (!in_array($pedidoData['estado'] ?? '', $estadosPermitidos, true)) {
+        if (!$mostrarEntregados && !in_array($pedidoData['estado'] ?? '', $estadosPermitidos, true)) {
             throw new \RuntimeException('Este pedido no tiene un estado válido para despacho');
         }
 

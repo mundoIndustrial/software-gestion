@@ -472,15 +472,54 @@
 @push('scripts')
 <script>
 let searchActual = '{{ $search }}' || '';
+let tipoActual = '{{ $tipo ?? 'todos' }}' || 'todos';
 let currentPage = 1;
+let perPageActual = 10;
 let paginationData = null;
+
+function inicializarDesdeQuery() {
+    const params = new URLSearchParams(window.location.search);
+    const pageQuery = parseInt(params.get('page'), 10);
+    const perPageQuery = parseInt(params.get('per_page'), 10);
+    const searchQuery = params.get('search');
+    const tipoQuery = params.get('tipo');
+
+    if (!Number.isNaN(pageQuery) && pageQuery > 0) {
+        currentPage = pageQuery;
+    }
+
+    if (!Number.isNaN(perPageQuery) && perPageQuery > 0) {
+        perPageActual = perPageQuery;
+    }
+
+    if (searchQuery !== null) {
+        searchActual = searchQuery;
+    }
+
+    if (tipoQuery !== null && tipoQuery !== '') {
+        tipoActual = tipoQuery;
+    }
+}
+
+function sincronizarUrl() {
+    const params = new URLSearchParams();
+    if (searchActual) params.set('search', searchActual);
+    if (tipoActual) params.set('tipo', tipoActual);
+    params.set('page', String(currentPage));
+    params.set('per_page', String(perPageActual));
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+}
 
 // Cargar historial al iniciar
 document.addEventListener('DOMContentLoaded', function() {
-    cargarHistorial();
-
-    // Configurar búsqueda en tiempo real
+    inicializarDesdeQuery();
     const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.value = searchActual;
+    }
+
+    cargarHistorial();
+    // Configurar búsqueda en tiempo real
     let timeout;
     searchInput.addEventListener('input', function() {
         clearTimeout(timeout);
@@ -505,8 +544,9 @@ async function cargarHistorial() {
         const params = new URLSearchParams();
 
         if (searchActual) params.append('search', searchActual);
+        if (tipoActual) params.append('tipo', tipoActual);
         params.append('page', currentPage);
-        params.append('per_page', 10);
+        params.append('per_page', perPageActual);
 
         const response = await fetch(`/despacho/api/historial-pendientes?${params}`);
         const data = await response.json();
@@ -515,6 +555,7 @@ async function cargarHistorial() {
             const historialArray = Array.isArray(data.data) ? data.data : [];
             renderizarHistorial(historialArray);
             actualizarPaginacion(data.pagination);
+            sincronizarUrl();
         } else {
             mostrarError(data.message);
         }
@@ -544,11 +585,16 @@ function renderizarHistorial(registros) {
     } else {
         container.innerHTML = registrosArray.map(registro => {
             const estadoEntrega = registro.estado_entrega === 'Entregado' ? 'estado-entregado' : 'estado-pendiente';
+            const backParams = new URLSearchParams();
+            backParams.append('page', String(currentPage));
+            backParams.append('per_page', String(perPageActual));
+            if (searchActual) backParams.append('search', searchActual);
+            if (tipoActual) backParams.append('tipo', tipoActual);
 
             return `
                 <div class="table-row">
                     <div>
-                        <a href="/despacho/historial-pendientes/${registro.id}" class="btn-action btn-primary">
+                        <a href="/despacho/historial-pendientes/${registro.numero_pedido}?${backParams.toString()}" class="btn-action btn-primary">
                             <span class="material-symbols-rounded">visibility</span>
                             Ver
                         </a>
@@ -623,6 +669,7 @@ function actualizarPaginacion(pagination) {
     if (!pagination) return;
 
     paginationData = pagination;
+    currentPage = Number(pagination.current_page) || currentPage;
 
     const paginationText = document.getElementById('paginationText');
     if (paginationText) {
@@ -660,3 +707,5 @@ function actualizarPaginacion(pagination) {
 }
 </script>
 @endpush
+
+
