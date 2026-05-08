@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Función simplificada para generar HTML de fila (debería coincidir con el blade)
-    function generateRowHTML(recibo) {
+function generateRowHTML(recibo) {
         // Si estamos en la página de bordado-estampado, usar un template diferente
         if (window.location.pathname === '/recibos-bordado-estampado') {
             return generateBordadoEstampadoRowHTML(recibo);
@@ -175,11 +175,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const diasClase = getDiasClass(recibo.dias_calculados);
 
+        const normalizedArea = String(recibo.area || recibo.pedido_info?.area || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim();
+
         return `
             <tr class="${diasClase}"
                 data-orden-id="${recibo.id || ''}"
                 data-pedido-id="${recibo.pedido_produccion_id || ''}"
-                data-numero-recibo="${recibo.consecutivo_actual || ''}">
+                data-numero-recibo="${recibo.consecutivo_actual || ''}"
+                data-area-normalized="${normalizedArea}">
                 
                 <!-- Acciones -->
                 <td class="acciones-column" style="text-align: center; position: relative;">
@@ -667,7 +674,6 @@ function getDiasRestantesBadgeHTML(recibo) {
         }
     });
 });
-
 
 
 

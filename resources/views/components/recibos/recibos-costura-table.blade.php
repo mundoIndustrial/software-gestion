@@ -122,6 +122,7 @@
                         data-orden-id="{{ $recibo['id'] }}"
                         data-pedido-id="{{ $recibo['pedido_produccion_id'] ?? '' }}"
                         data-numero-recibo="{{ $recibo['consecutivo_actual'] ?? '' }}"
+                        data-area-normalized="{{ \Illuminate\Support\Str::lower(trim((string) ($recibo['area'] ?? $recibo['pedido_info']['area'] ?? ''))) }}"
                     >
                         <!-- Acciones -->
                         <td class="acciones-column" style="text-align: center; position: relative;">

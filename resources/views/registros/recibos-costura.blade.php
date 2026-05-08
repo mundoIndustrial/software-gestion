@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Recibos de Costura')
 
@@ -6,6 +6,12 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
+                        <div class="recibos-area-tabs" role="tablist" aria-label="Filtrar por área">
+                <button type="button" class="recibos-area-tab is-active" data-area-tab="all" aria-pressed="true">Todos</button>
+                <button type="button" class="recibos-area-tab" data-area-tab="corte" aria-pressed="false">Corte</button>
+                <button type="button" class="recibos-area-tab" data-area-tab="costura" aria-pressed="false">Costura</button>
+                <button type="button" class="recibos-area-tab" data-area-tab="control-calidad" aria-pressed="false">Control Calidad</button>
+            </div>
             <!-- Table Component -->
             <x-recibos.recibos-costura-table :recibos="$recibos" :totalCantidadGlobal="$totalCantidadGlobal ?? 0" />
         </div>
@@ -32,8 +38,8 @@
                 <i class="fas fa-share-alt"></i>
             </div>
             <div class="distribution-modal__header-copy">
-                <p class="distribution-modal__eyebrow">Distribución activa</p>
-                <h2 id="distributionModalTitle">Distribución del recibo</h2>
+                <p class="distribution-modal__eyebrow">DistribuciÃ³n activa</p>
+                <h2 id="distributionModalTitle">DistribuciÃ³n del recibo</h2>
             </div>
             <button type="button" class="distribution-modal__close" data-distribution-close="true" aria-label="Cerrar">
                 <i class="fas fa-times"></i>
@@ -147,7 +153,7 @@
     left: 100%;
 }
 
-/* Colores personalizados para badges de área */
+/* Colores personalizados para badges de Ã¡rea */
 .badge.bg-purple {
     background-color: #8b5cf6 !important;
     color: white !important;
@@ -192,6 +198,37 @@
 .badge.bg-secondary {
     background-color: #6b7280 !important;
     color: white !important;
+}
+
+.recibos-area-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.recibos-area-tab {
+    border: 1px solid #d1d5db;
+    background: #f9fafb;
+    color: #374151;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.recibos-area-tab:hover {
+    background: #eef2ff;
+    border-color: #c7d2fe;
+}
+
+.recibos-area-tab.is-active {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    color: #ffffff;
 }
 
 /* Toast Notifications */
@@ -352,7 +389,7 @@
 @push('scripts')
 <!-- 
     ============================================
-    PHASE 2: Módulo Modular DDD Recibos Costura
+    PHASE 2: MÃ³dulo Modular DDD Recibos Costura
     ============================================
     
     Bundle compilado con:
@@ -387,9 +424,78 @@
 <!-- Add Process Modal Controller - Controlador de modal para agregar procesos -->
 <script src="{{ asset('js/recibos-costura/controllers/AddProcessModalController.js') }}"></script>
 
-<!-- Legacy Handlers - Funciones heredadas que delegan a módulos -->
+<!-- Legacy Handlers - Funciones heredadas que delegan a mÃ³dulos -->
 <script src="{{ asset('js/recibos-costura/legacy-handlers.js') }}"></script>
 
-<!-- Search Module - Sistema de búsqueda AJAX -->
+<!-- Search Module - Sistema de bÃºsqueda AJAX -->
 <script src="{{ asset('js/recibos-costura/search.js') }}?v={{ time() }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tabs = Array.from(document.querySelectorAll('.recibos-area-tab'));
+    if (!tabs.length) return;
+    const storageKey = 'recibos_costura_filters';
+    const url = new URL(window.location.href);
+    const areaParam = (url.searchParams.get('area') || '').trim();
+
+    const getTabFromAreaParam = (value) => {
+        const lower = value.toLowerCase();
+        if (!lower) return 'all';
+        if (lower.includes('control calidad') || lower.includes('control de calidad')) return 'control-calidad';
+        if (lower.includes('corte')) return 'corte';
+        if (lower.includes('costura')) return 'costura';
+        return 'all';
+    };
+
+    const tabToAreaValue = {
+        'all': '',
+        'corte': 'Corte',
+        'costura': 'Costura',
+        'control-calidad': 'Control Calidad,Control de Calidad'
+    };
+
+    const setActiveTabUI = (targetTab) => {
+        tabs.forEach((tab) => {
+            const isActive = tab.getAttribute('data-area-tab') === targetTab;
+            tab.classList.toggle('is-active', isActive);
+            tab.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+    };
+
+    const syncAreaFilterStorage = (areaValue) => {
+        try {
+            const raw = localStorage.getItem(storageKey);
+            const filters = raw ? JSON.parse(raw) : {};
+
+            if (!areaValue) {
+                delete filters.area;
+            } else {
+                filters.area = areaValue.split(',').map(v => v.trim()).filter(Boolean);
+            }
+
+            localStorage.setItem(storageKey, JSON.stringify(filters));
+            window.__columnFilters = filters;
+        } catch (e) {
+            // no-op
+        }
+    };
+
+    tabs.forEach((tab) => {
+        tab.addEventListener('click', function () {
+            const targetTab = this.getAttribute('data-area-tab') || 'all';
+            const nextArea = tabToAreaValue[targetTab] || '';
+            const nextUrl = new URL(window.location.href);
+
+            if (nextArea) nextUrl.searchParams.set('area', nextArea);
+            else nextUrl.searchParams.delete('area');
+
+            nextUrl.searchParams.delete('page');
+            syncAreaFilterStorage(nextArea);
+            window.location.href = nextUrl.toString();
+        });
+    });
+
+    setActiveTabUI(getTabFromAreaParam(areaParam));
+});
+</script>
 @endpush
+
