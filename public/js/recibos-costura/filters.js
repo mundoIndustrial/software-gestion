@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
         overlay.classList.add('active');
 
         // Columnas que requieren datos de todas las páginas (desde el servidor)
-        const serverColumns = ['area', 'encargado', 'estado', 'cliente', 'numero_recibo'];
+        const serverColumns = ['area', 'encargado', 'estado', 'cliente', 'numero_recibo', 'total_dias'];
         
         let options = [];
         if (serverColumns.includes(columnKey)) {
@@ -93,7 +93,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         'encargado': 'encargados',
                         'estado': 'estados',
                         'cliente': 'clientes',
-                        'numero_recibo': 'numeros_recibo'
+                        'numero_recibo': 'numeros_recibo',
+                        'total_dias': 'dias_entrega'
                     };
                     const apiKey = mapping[columnKey];
                     options = data.filter_options[apiKey] || [];
@@ -165,7 +166,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Agregar filtros activos
         const filters = window.__columnFilters || {};
         Object.keys(filters).forEach(key => {
-            const values = filters[key] || [];
+            let values = filters[key] || [];
+
+            if (key === 'total_dias') {
+                values = values
+                    .map(v => extractNumericDays(v))
+                    .filter(v => Number.isInteger(v))
+                    .map(v => String(v));
+            }
+
             if (values.length > 0) {
                 url.searchParams.set(key, values.join(','));
             }
@@ -214,7 +223,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (colIndex !== undefined) {
                     const cell = row.cells[colIndex];
                     if (cell) {
-                        const cellValue = cell.textContent.trim();
+                        const cellValue = key === 'total_dias'
+                            ? String(extractDaysFromCell(cell) ?? '')
+                            : cell.textContent.trim();
+
                         if (!filterValues.includes(cellValue)) {
                             shouldShow = false;
                         }
@@ -254,7 +266,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (colIndex !== undefined) {
                 const cell = row.cells[colIndex];
                 if (cell) {
-                    value = cell.textContent.trim();
+                    value = columnKey === 'total_dias'
+                        ? String(extractDaysFromCell(cell) ?? '')
+                        : cell.textContent.trim();
                     if (value && value !== '-') {
                         set.add(value);
                     }
@@ -263,6 +277,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         return Array.from(set).sort((a, b) => a.localeCompare(b, 'es'));
+    }
+
+    function extractDaysFromCell(cell) {
+        if (!cell) return null;
+        const txt = cell.textContent || '';
+        return extractNumericDays(txt);
+    }
+
+    function extractNumericDays(value) {
+        if (value === null || value === undefined) return null;
+        const match = String(value).match(/-?\d+/);
+        if (!match) return null;
+        const n = parseInt(match[0], 10);
+        return Number.isNaN(n) ? null : n;
     }
 
     function renderFilterOptions(search) {
@@ -298,9 +326,28 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Aplicar filtros guardados al cargar
+    // Al cargar, si hay filtros guardados y la URL aun no los tiene,
+    // forzar recarga para que el filtrado sea global (servidor), no local por pagina.
     setTimeout(() => {
         updateFilterBadges();
-        applyFiltersToTable();
+        const filters = window.__columnFilters || {};
+        const hasStoredFilters = Object.values(filters).some(arr => Array.isArray(arr) && arr.length > 0);
+        if (!hasStoredFilters) return;
+
+        const url = new URL(window.location.href);
+        const filterKeys = [
+            'estado', 'area', 'total_dias', 'numero_recibo', 'cliente',
+            'descripcion', 'cantidad', 'novedades', 'fecha_creacion',
+            'fecha_estimada', 'encargado'
+        ];
+
+        const hasAnyFilterInUrl = filterKeys.some(key => {
+            const value = (url.searchParams.get(key) || '').trim();
+            return value !== '';
+        });
+
+        if (!hasAnyFilterInUrl) {
+            reloadWithFilters();
+        }
     }, 100);
 });

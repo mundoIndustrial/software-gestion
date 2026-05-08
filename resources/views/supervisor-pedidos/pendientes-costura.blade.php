@@ -209,6 +209,29 @@
     <div class="row">
         <div class="col-12">
             <div class="supervisor-pedidos-container">
+                <!-- Botón Generar Reporte -->
+                <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+                    <button type="button" onclick="abrirModalGenerarReporte()" style="
+                        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                        color: white;
+                        border: none;
+                        padding: 0.75rem 1.5rem;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                    "
+                    onmouseover="this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.4)'; this.style.transform='translateY(-2px)';"
+                    onmouseout="this.style.boxShadow='none'; this.style.transform='translateY(0)';"
+                    >
+                        <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
+                        Generar Reporte
+                    </button>
+                </div>
+
                 <div id="supervisorPendientesCosturaContent">
                 <!-- Tabla de Ordenes -->
                 <div class="costura-table-frame" style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
@@ -547,6 +570,44 @@
             <button type="button" class="btn btn-primary" onclick="aplicarFiltroColumna(event)">Aplicar</button>
             <button type="button" class="btn btn-secondary" onclick="cerrarModalFiltro()">Cancelar</button>
             <button type="button" class="btn btn-secondary" onclick="limpiarFiltroActual()" style="margin-left: auto;">Limpiar Filtro</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Generar Reporte -->
+<div id="modalGenerarReporte" class="modal-overlay">
+    <div class="modal-content" style="max-width: 450px;">
+        <div class="modal-header">
+            <h2>Generar Reporte</h2>
+            <button class="btn-close" type="button" onclick="cerrarModalGenerarReporte()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">
+                    Filtrar por antigüedad
+                </label>
+                <select id="filtroAntiguedad" style="
+                    width: 100%;
+                    padding: 0.75rem;
+                    border: 1px solid #d1d5db;
+                    border-radius: 6px;
+                    font-size: 0.95rem;
+                    background-color: white;
+                    color: #374151;
+                ">
+                    <option value="">Todos los recibos</option>
+                    <option value="7">7 días</option>
+                    <option value="15">15 días</option>
+                    <option value="30">30 días</option>
+                </select>
+                <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #6b7280;">
+                    Los recibos se mostrarán ordenados por fecha (más antiguos primero)
+                </p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModalGenerarReporte()">Cancelar</button>
+            <button type="button" class="btn btn-primary" onclick="generarReporteCostura()">Descargar PDF</button>
         </div>
     </div>
 </div>
@@ -1087,6 +1148,232 @@ window.navegarPendientesCostura = async function(url, options) {
     }
     actualizarVisibilidadBotonLimpiar();
 };
+
+// Funciones para Modal de Reporte - Expuestas globalmente
+window.abrirModalGenerarReporte = function() {
+    const modal = document.getElementById('modalGenerarReporte');
+    if (modal) {
+        modal.style.display = 'flex';
+        const select = document.getElementById('filtroAntiguedad');
+        if (select) select.value = '';
+    }
+};
+
+window.cerrarModalGenerarReporte = function() {
+    const modal = document.getElementById('modalGenerarReporte');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+};
+
+window.generarReporteCostura = function() {
+    const filtroAntiguedad = document.getElementById('filtroAntiguedad').value;
+    const url = new URL(window.location.href);
+
+    // Construir URL para el reporte con todos los parámetros actuales
+    const reporteUrl = new URL('{{ route("supervisor-pedidos.pendientes-costura.reporte") }}', window.location.origin);
+
+    // Copiar filtros actuales
+    url.searchParams.forEach((value, key) => {
+        if (key !== 'page') {
+            reporteUrl.searchParams.set(key, value);
+        }
+    });
+
+    // Agregar parámetro de antigüedad si está seleccionado
+    if (filtroAntiguedad) {
+        reporteUrl.searchParams.set('dias_antiguedad', filtroAntiguedad);
+    }
+
+    window.cerrarModalGenerarReporte();
+    window.mostrarModalGenerando();
+
+    // Usar fetch para obtener el PDF como blob
+    fetch(reporteUrl.toString(), {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        }
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        // Crear link de descarga
+        const urlBlob = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = urlBlob;
+        link.download = 'reporte_pendientes_costura_' + new Date().toISOString().slice(0,10) + '.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(urlBlob);
+
+        // Cerrar modal cuando la descarga inicia
+        const modal = document.getElementById('modalGenerandoPDF');
+        if (modal) modal.remove();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const modal = document.getElementById('modalGenerandoPDF');
+        if (modal) modal.remove();
+        alert('Error al generar el reporte');
+    });
+};
+
+window.mostrarModalGenerando = function() {
+    const tiempoInicio = Date.now();
+    const html = `
+        <div id="modalGenerandoPDF" style="
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        ">
+            <div style="
+                background: white;
+                border-radius: 12px;
+                padding: 2rem;
+                text-align: center;
+                max-width: 450px;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            ">
+                <div style="font-size: 2rem; margin-bottom: 1rem;">⏳</div>
+                <h2 style="margin: 0 0 0.5rem 0; color: #1f2937;">Generando PDF</h2>
+                <p style="margin: 0 0 1rem 0; color: #6b7280; font-size: 0.95rem;">
+                    Tu reporte se está generando. Por favor espera...
+                </p>
+
+                <div style="
+                    background: #f0f9ff;
+                    border: 1px solid #bfdbfe;
+                    border-radius: 8px;
+                    padding: 1rem;
+                    margin-bottom: 1rem;
+                ">
+                    <div style="display: flex; justify-content: space-around; align-items: center;">
+                        <div>
+                            <div style="font-size: 2rem; font-weight: bold; color: #0369a1;" id="tiempoTranscurrido">0s</div>
+                            <div style="font-size: 0.75rem; color: #6b7280;">Tiempo transcurrido</div>
+                        </div>
+                        <div style="color: #cbd5e1;">•</div>
+                        <div>
+                            <div style="font-size: 1.2rem; font-weight: 600; color: #059669;" id="tiempoEstimado">~1-2 min</div>
+                            <div style="font-size: 0.75rem; color: #6b7280;">Tiempo estimado</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1rem; height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden;">
+                    <div style="
+                        height: 100%;
+                        background: #3b82f6;
+                        width: 30%;
+                        animation: progress 1.5s ease-in-out infinite;
+                    "></div>
+                </div>
+
+                <p style="margin: 0; color: #9ca3af; font-size: 0.8rem;">
+                    El PDF se descargará automáticamente cuando esté listo
+                </p>
+            </div>
+        </div>
+        <style>
+            @keyframes progress {
+                0% { width: 30%; }
+                50% { width: 70%; }
+                100% { width: 30%; }
+            }
+        </style>
+    `;
+    document.body.insertAdjacentHTML('beforeend', html);
+
+    // Actualizar contador cada segundo
+    const intervalo = setInterval(() => {
+        const ahora = Date.now();
+        const segundosTranscurridos = Math.floor((ahora - tiempoInicio) / 1000);
+
+        const elementoTiempo = document.getElementById('tiempoTranscurrido');
+        if (elementoTiempo) {
+            if (segundosTranscurridos < 60) {
+                elementoTiempo.textContent = segundosTranscurridos + 's';
+            } else {
+                const minutos = Math.floor(segundosTranscurridos / 60);
+                const segundos = segundosTranscurridos % 60;
+                elementoTiempo.textContent = minutos + 'm ' + segundos + 's';
+            }
+        } else {
+            clearInterval(intervalo);
+        }
+    }, 1000);
+};
+
+window.verificarYDescargarPDF = function(timestamp, intento = 0) {
+    const maxIntentos = 120; // 4 minutos máximo
+
+    fetch('/api/supervisor-pedidos/verificar-reporte-costura?timestamp=' + timestamp, {
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.ready && data.file_path) {
+            // PDF está listo, descargar
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/api/supervisor-pedidos/descargar-reporte-costura';
+            form.innerHTML = `
+                <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
+                <input type="hidden" name="file_path" value="${data.file_path}">
+            `;
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+
+            // Cerrar modal
+            const modal = document.getElementById('modalGenerandoPDF');
+            if (modal) modal.remove();
+        } else if (intento < maxIntentos) {
+            // Reintentar en 2 segundos
+            setTimeout(() => {
+                window.verificarYDescargarPDF(timestamp, intento + 1);
+            }, 2000);
+        } else {
+            // Timeout
+            const modal = document.getElementById('modalGenerandoPDF');
+            if (modal) modal.remove();
+            alert('Timeout: El PDF tardó demasiado en generarse. Por favor intenta de nuevo.');
+        }
+    })
+    .catch(error => {
+        console.error('Error al verificar PDF:', error);
+    });
+};
+
+// Cerrar modal al hacer clic en el overlay
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('modalGenerarReporte');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    window.cerrarModalGenerarReporte();
+                }
+            });
+        }
+    });
+} else {
+    const modal = document.getElementById('modalGenerarReporte');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                window.cerrarModalGenerarReporte();
+            }
+        });
+    }
+}
 </script>
 @endpush
 

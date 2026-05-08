@@ -1261,7 +1261,11 @@ function getCurrentFilterValues() {
             const minInput = document.getElementById(`filter-${currentFilterType}-range-min`);
             const maxInput = document.getElementById(`filter-${currentFilterType}-range-max`);
             if (minInput && maxInput) {
-                values = [parseInt(minInput.value), parseInt(maxInput.value)];
+                const minValue = parseInt(minInput.value, 10);
+                const maxValue = parseInt(maxInput.value, 10);
+                if (!Number.isNaN(minValue) && !Number.isNaN(maxValue)) {
+                    values = [minValue, maxValue];
+                }
             }
             break;
         case 'daterange':
@@ -1358,64 +1362,39 @@ function updateAllFilterButtons() {
 // Función para filtrar la tabla
 function filterTable() {
     console.log('[Filtros] Aplicando filtrado múltiple:', activeFilters);
-    
-    // Mostrar indicador de carga
-    showLoadingIndicator();
-    
+
     // Construir URL con todos los filtros activos
     const url = new URL(window.location.origin + '/recibos-costura');
-    
+
     // Agregar cada tipo de filtro activo
     Object.keys(activeFilters).forEach(filterType => {
-        const values = activeFilters[filterType];
-        if (values.length > 0) {
-            url.searchParams.append(filterType, JSON.stringify(values));
+        let values = activeFilters[filterType];
+        if (!Array.isArray(values) || values.length === 0) {
+            return;
         }
+
+        if (filterType === 'total_dias') {
+            values = values
+                .map(v => parseInt(String(v).replace(/[^\d-]/g, ''), 10))
+                .filter(v => Number.isInteger(v));
+
+            if (values.length >= 2 && values[0] > values[1]) {
+                values = [values[1], values[0]];
+            }
+
+            if (values.length < 2) {
+                return;
+            }
+        }
+
+        url.searchParams.set(filterType, JSON.stringify(values));
     });
-    
+
     console.log('[Filtros] URL construida:', url.toString());
-    
-    // Hacer solicitud AJAX para obtener datos filtrados
-    fetch(url.toString(), {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('[Filtros] Datos recibidos del servidor:', data);
-        
-        if (data.success) {
-            // Actualizar tabla con nuevos datos
-            updateTableWithData(data.recibos);
-            
-            // Mostrar mensaje de no resultados si es necesario
-            showNoResultsMessage(data.recibos.length === 0);
-            
-            console.log(`[Filtros] Tabla actualizada: ${data.recibos.length} recibos mostrados`);
-        } else {
-            console.error('[Filtros] Error del servidor:', data.message);
-            showErrorMessage('Error al aplicar filtros: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('[Filtros] Error en la solicitud:', error);
-        showErrorMessage('Error de conexión al aplicar filtros');
-        
-        // Fallback: filtrar localmente si hay error
-        filterTableLocally();
-    })
-    .finally(() => {
-        hideLoadingIndicator();
-    });
+
+    // Navegación completa para que Laravel regenere tabla + paginación
+    // con el conjunto filtrado real (no solo la página actual).
+    window.location.assign(url.toString());
 }
 
 // Función para actualizar la tabla con nuevos datos
@@ -1626,8 +1605,9 @@ function showErrorMessage(message) {
 
 // Función para determinar si una fila debe mostrarse
 function shouldShowRow(row) {
-    // Si no hay filtros activos, mostrar todo
-    if (activeFilters.length === 0) {
+    const estadoFilters = Array.isArray(activeFilters?.estado) ? activeFilters.estado : [];
+    // Si no hay filtros de estado activos, mostrar todo
+    if (estadoFilters.length === 0) {
         return true;
     }
     
@@ -1638,7 +1618,7 @@ function shouldShowRow(row) {
     const estadoTexto = estadoElement.textContent.trim();
     
     // Verificar si el estado está en los filtros activos
-    return activeFilters.includes(estadoTexto);
+    return estadoFilters.includes(estadoTexto);
 }
 
 // Función para mostrar mensaje de no resultados
@@ -1674,11 +1654,13 @@ function showNoResultsMessage(show) {
 function updateFilterButton() {
     const filterBtn = document.querySelector('.filter-btn');
     if (!filterBtn) return;
-    
-    if (activeFilters.length > 0) {
+
+    const estadoFilters = Array.isArray(activeFilters?.estado) ? activeFilters.estado : [];
+
+    if (estadoFilters.length > 0) {
         // Cambiar color del botón para indicar que hay filtros activos
         filterBtn.style.color = '#fbbf24';
-        filterBtn.title = `Filtrar por estado (${activeFilters.length} activos)`;
+        filterBtn.title = `Filtrar por estado (${estadoFilters.length} activos)`;
     } else {
         // Restaurar color original
         filterBtn.style.color = 'white';

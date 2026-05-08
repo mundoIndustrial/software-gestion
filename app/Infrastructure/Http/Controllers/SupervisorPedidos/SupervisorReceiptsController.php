@@ -32,6 +32,9 @@ use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use \App\Application\SupervisorPedidos\DTOs\ApproveReceiptRequest;
 use App\Domain\SupervisorPedidos\Repositories\ReceiptRepository;
+use Carbon\CarbonInterface;
+use App\Services\DiasHabilesService;
+use App\Jobs\GenerarReporteCosturaJob;
 /**
  * SupervisorReceiptsController
  * 
@@ -58,6 +61,7 @@ class SupervisorReceiptsController extends Controller
     private GetPendingQualityControlReceiptsUseCase $getPendingQualityControlReceiptsUseCase;
     private GetPendingEmbroideryStampingReceiptsUseCase $getPendingEmbroideryStampingReceiptsUseCase;
     private ReceiptRepository $receiptRepository;
+    private DiasHabilesService $diasHabilesService;
 
     public function __construct(
         ActivateSewingReceiptUseCase $activateSewingReceiptUseCase,
@@ -70,7 +74,8 @@ class SupervisorReceiptsController extends Controller
         GetPendingReflectiveReceiptsUseCase $getPendingReflectiveReceiptsUseCase,
         GetPendingQualityControlReceiptsUseCase $getPendingQualityControlReceiptsUseCase,
         GetPendingEmbroideryStampingReceiptsUseCase $getPendingEmbroideryStampingReceiptsUseCase,
-        ReceiptRepository $receiptRepository
+        ReceiptRepository $receiptRepository,
+        DiasHabilesService $diasHabilesService
     ) {
         $this->activateSewingReceiptUseCase = $activateSewingReceiptUseCase;
         $this->cancelSewingReceiptUseCase = $cancelSewingReceiptUseCase;
@@ -83,6 +88,7 @@ class SupervisorReceiptsController extends Controller
         $this->getPendingQualityControlReceiptsUseCase = $getPendingQualityControlReceiptsUseCase;
         $this->getPendingEmbroideryStampingReceiptsUseCase = $getPendingEmbroideryStampingReceiptsUseCase;
         $this->receiptRepository = $receiptRepository;
+        $this->diasHabilesService = $diasHabilesService;
     }
 
     /**
@@ -414,19 +420,48 @@ class SupervisorReceiptsController extends Controller
         );
 
         $response = $this->getPendingSewingReceiptsUseCase->execute($requestDTO);
+        $diasAntiguedad = (int) $request->input('dias_antiguedad', 0);
+
+        $areasPermitidas = ['insumos', 'corte', 'costura'];
+
         $receipts = collect($response->getReceipts())
-            ->filter(function ($item) {
+            ->filter(function ($item) use ($areasPermitidas) {
                 $area = mb_strtolower(trim((string) data_get($item, 'area', '')));
                 $estado = mb_strtolower(trim((string) data_get($item, 'estado', '')));
 
-                if ($area === 'despacho') {
+                // Solo mostrar áreas permitidas
+                if (!in_array($area, $areasPermitidas, true)) {
                     return false;
                 }
 
-                if ($estado !== '' && str_contains($estado, 'anulad')) {
+                // Excluir estados terminados: anulada, entregado, etc
+                $estadosExcluidos = ['anulada', 'anulado', 'entregado', 'entregada', 'cancelada', 'cancelado'];
+                if (in_array($estado, $estadosExcluidos, true)) {
                     return false;
                 }
 
+                return true;
+            })
+            ->map(function ($item) {
+                // Calcular días hábiles desde la fecha de creación (sin sábados, domingos, ni festivos)
+                $fechaCreacion = data_get($item, 'fecha_creacion');
+                if ($fechaCreacion) {
+                    $fecha = \Carbon\Carbon::parse($fechaCreacion);
+                    $diasHabiles = $this->calcularDiasHabiles($fecha, now());
+                    $item['dias_transcurridos'] = $diasHabiles;
+                } else {
+                    $item['dias_transcurridos'] = 0;
+                }
+                return $item;
+            })
+            ->filter(function ($item) use ($diasAntiguedad) {
+                // Filtrar por rango de antigüedad (de 1 a N días)
+                if ($diasAntiguedad > 0) {
+                    $diasTranscurridos = (int) data_get($item, 'dias_transcurridos', 0);
+                    // Solo mostrar si están dentro del rango de 1 a N días
+                    return $diasTranscurridos >= 1 && $diasTranscurridos <= $diasAntiguedad;
+                }
+                // Si no hay filtro, mostrar todos
                 return true;
             })
             ->sortBy(function ($item) {
@@ -437,13 +472,13 @@ class SupervisorReceiptsController extends Controller
 
         $grouped = $receipts
             ->groupBy(function ($item) {
-                $area = trim((string) data_get($item, 'area', ''));
-                return $area !== '' ? $area : 'Sin Area';
+                $dias = (int) data_get($item, 'dias_transcurridos', 0);
+                return $dias;
             })
-            ->sortKeys();
+            ->sortByDesc(function ($group, $dias) {
+                return (int) $dias;
+            });
 
-        $timestamp = now()->format('Ymd_His');
-        $filename = "reporte_pendientes_costura_por_area_{$timestamp}.pdf";
         $totalRecibos = $receipts->count();
         $filtros = $request->only([
             'numero_recibo',
@@ -453,14 +488,19 @@ class SupervisorReceiptsController extends Controller
             'fecha_creacion',
             'area',
             'busqueda',
+            'dias_antiguedad',
         ]);
 
-        $pdf = Pdf::loadView('supervisor-pedidos.reporte-pendientes-costura-pdf', [
+        // Generar el PDF directamente
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('supervisor-pedidos.reporte-pendientes-costura-pdf', [
             'grouped' => $grouped,
             'totalRecibos' => $totalRecibos,
             'filtros' => $filtros,
             'fechaGeneracion' => now(),
+            'diasAntiguedad' => $diasAntiguedad,
         ])->setPaper('a4', 'landscape');
+
+        $filename = "reporte_pendientes_costura_" . now()->format('Ymd_His') . ".pdf";
 
         return $pdf->download($filename);
     }
@@ -1291,5 +1331,61 @@ class SupervisorReceiptsController extends Controller
         }
 
         return [$tipo];
+    }
+
+    /**
+     * Verifica si el PDF de reporte está listo para descargar
+     */
+    public function verificarReporteCosturaListo(): JsonResponse
+    {
+        $timestamp = request()->input('timestamp');
+        $userId = auth()->id();
+
+        if (!$timestamp) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Timestamp requerido',
+            ], 400);
+        }
+
+        $filename = "reporte_pendientes_costura_por_area_{$timestamp}.pdf";
+        $filePath = "reportes/costura/{$userId}/{$filename}";
+
+        $exists = \Storage::disk('local')->exists($filePath);
+
+        return response()->json([
+            'success' => true,
+            'ready' => $exists,
+            'file_path' => $exists ? $filePath : null,
+        ]);
+    }
+
+    /**
+     * Descargar el PDF del reporte de costura
+     */
+    public function descargarReporteCostura()
+    {
+        $filePath = request()->input('file_path');
+        $userId = auth()->id();
+
+        if (!$filePath || !str_starts_with($filePath, "reportes/costura/{$userId}/")) {
+            abort(403, 'No autorizado');
+        }
+
+        if (!\Storage::disk('local')->exists($filePath)) {
+            abort(404, 'Archivo no encontrado');
+        }
+
+        $fullPath = \Storage::disk('local')->path($filePath);
+        return response()->download($fullPath, basename($filePath));
+    }
+
+    /**
+     * Calcula los días hábiles (excluyendo sábados, domingos y festivos)
+     * entre dos fechas usando el servicio DiasHabilesService.
+     */
+    private function calcularDiasHabiles(\Carbon\Carbon $fechaInicio, \Carbon\Carbon $fechaFin): int
+    {
+        return $this->diasHabilesService->calcularDiasHabiles($fechaInicio, $fechaFin);
     }
 }

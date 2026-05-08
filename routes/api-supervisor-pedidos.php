@@ -152,4 +152,9 @@ Route::middleware(['web', 'auth:web', 'role:supervisor_pedidos,admin'])
 
         Route::post('/perfil/actualizar', [SupervisorPedidosController::class, 'updateProfile'])
             ->name('perfil.actualizar');
+
+        Route::get('/verificar-reporte-costura', [SupervisorReceiptsController::class, 'verificarReporteCosturaListo'])
+            ->name('reporte-costura.verificar');
+        Route::post('/descargar-reporte-costura', [SupervisorReceiptsController::class, 'descargarReporteCostura'])
+            ->name('reporte-costura.descargar');
     });
