@@ -142,6 +142,20 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                     continue;
                 }
 
+                $recibosConEncargado = $recibosConEncargado
+                    ->sortBy(function ($recibo) use ($pedido) {
+                        $fechaCorte = $this->obtenerFechaLlegadaACorte($pedido->numero_pedido, $recibo);
+                        return $this->normalizarFechaAOrdenable($fechaCorte ?? $recibo->created_at);
+                    })
+                    ->values();
+                $fechaOrdenPrincipal = optional($recibosConEncargado->first())?->created_at;
+                if ($recibosConEncargado->isNotEmpty()) {
+                    $fechaCortePrincipal = $this->obtenerFechaLlegadaACorte($pedido->numero_pedido, $recibosConEncargado->first());
+                    if (!empty($fechaCortePrincipal)) {
+                        $fechaOrdenPrincipal = $fechaCortePrincipal;
+                    }
+                }
+
                 $resultados[] = [
                     'prenda_id' => $prenda->id,
                     'pedido_id' => $pedido->id,
@@ -269,7 +283,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                     })->toArray();
                     })(),
                     'total_recibos' => $recibosConEncargado->count(),
-                    'fecha_creacion' => $prenda->created_at,
+                    'fecha_creacion' => $fechaOrdenPrincipal ?? $prenda->created_at,
                 ];
             }
 
@@ -278,7 +292,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 
         return $prendasAgrupadas
             ->concat($this->obtenerPrendasParcialesCostura(null, true))
-            ->sortByDesc(function ($item) {
+            ->sortBy(function ($item) {
                 return $item['fecha_creacion'] ?? null;
             })
             ->values();
@@ -826,6 +840,22 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                     $parcialIdPadre = (int) $matches[1];
                 }
 
+                // Ordenar por la fecha de llegada a Corte (created_at del proceso Corte).
+                // Fallback: created_at del recibo si no existe proceso de Corte asociado.
+                $recibosDelTipo = $recibosDelTipo
+                    ->sortBy(function ($recibo) use ($pedido) {
+                        $fechaCorte = $this->obtenerFechaLlegadaACorte($pedido->numero_pedido, $recibo);
+                        return $this->normalizarFechaAOrdenable($fechaCorte ?? $recibo->created_at);
+                    })
+                    ->values();
+                $fechaOrdenPrincipal = optional($recibosDelTipo->first())?->created_at;
+                if ($recibosDelTipo->isNotEmpty()) {
+                    $fechaCortePrincipal = $this->obtenerFechaLlegadaACorte($pedido->numero_pedido, $recibosDelTipo->first());
+                    if (!empty($fechaCortePrincipal)) {
+                        $fechaOrdenPrincipal = $fechaCortePrincipal;
+                    }
+                }
+
                 $resultados[] = [
                     'prenda_id' => $prenda->id,
                     'pedido_id' => $pedido->id,
@@ -960,7 +990,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                         ];
                     })->toArray(),
                     'total_recibos' => $recibosDelTipo->count(),
-                    'fecha_creacion' => $prenda->created_at,
+                    'fecha_creacion' => $fechaOrdenPrincipal ?? $prenda->created_at,
                 ];
             }
 
@@ -969,7 +999,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 
         if ($tipoOperario === 'vista-costura') {
             return $prendasAgrupadas
-                ->sortByDesc(function ($item) {
+                ->sortBy(function ($item) {
                     return $item['fecha_creacion'] ?? null;
                 })
                 ->values();
@@ -983,7 +1013,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 $prefix = $isReciboPorPartes ? 'rx_' : 'an_';
                 return $item['prenda_id'] . ($parcialId ? '_' . $prefix . $parcialId : '');
             })
-            ->sortByDesc(function ($item) {
+            ->sortBy(function ($item) {
                 return $item['fecha_creacion'] ?? null;
             })
             ->values();
@@ -1277,6 +1307,50 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             ->first();
     }
 
+    private function obtenerFechaLlegadaACorte(int $numeroPedido, $recibo): mixed
+    {
+        $query = ProcesoPrenda::query()
+            ->where('numero_pedido', $numeroPedido)
+            ->where('prenda_pedido_id', $recibo->prenda_id)
+            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
+            ->whereNull('deleted_at');
+
+        $notas = (string) ($recibo->notas ?? '');
+        $esParcial = $notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas) === 1;
+
+        if ($esParcial) {
+            $query->where('numero_recibo_parcial', $recibo->consecutivo_actual);
+        } else {
+            $query->where('numero_recibo', $recibo->consecutivo_actual)
+                ->where(function ($subQuery) {
+                    $subQuery->whereNull('numero_recibo_parcial')
+                        ->orWhere('numero_recibo_parcial', 0);
+                });
+        }
+
+        return $query->latest('created_at')->value('created_at');
+    }
+
+    private function normalizarFechaAOrdenable($fecha): int
+    {
+        if ($fecha instanceof \DateTimeInterface) {
+            return $fecha->getTimestamp();
+        }
+
+        if (is_numeric($fecha)) {
+            return (int) $fecha;
+        }
+
+        if (is_string($fecha) && trim($fecha) !== '') {
+            $timestamp = strtotime($fecha);
+            if ($timestamp !== false) {
+                return $timestamp;
+            }
+        }
+
+        return 0;
+    }
+
     /**
      * Obtener tipo de operario del usuario
      */
@@ -1317,4 +1391,3 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
         return 'desconocido';
     }
 }
-
