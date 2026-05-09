@@ -63,4 +63,6 @@ Route::middleware(['auth', 'role:admin,supervisor_gerencia'])->prefix('admin/con
 // ========================================
 Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion'])->prefix('talleres')->name('talleres.')->group(function () {
     Route::get('/', [App\Http\Controllers\Admin\TalleresController::class, 'index'])->name('index');
+    Route::get('/{id}/recibos', [App\Http\Controllers\Admin\TalleresController::class, 'showRecibos'])->name('show');
+    Route::get('/{id}/recibos/{recibo_id}/{es_parcial}/entregas', [App\Http\Controllers\Admin\TalleresController::class, 'showEntregas'])->name('entregas');
 });

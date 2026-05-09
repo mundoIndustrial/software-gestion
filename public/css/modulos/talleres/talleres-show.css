@@ -1,0 +1,199 @@
+body {
+    background-color: #f8fafc;
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+.main-container {
+    padding: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.page-header-taller {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+.btn-back {
+    background: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #475569;
+    text-decoration: none;
+    transition: all 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.btn-back:hover {
+    background: #f1f5f9;
+    text-decoration: none;
+    color: #1e293b;
+}
+.title-group {
+    display: flex;
+    flex-direction: column;
+}
+.title-group .subtitle {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+.title-group h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+.header-stats {
+    display: flex;
+    gap: 15px;
+}
+.stat-box {
+    background: white;
+    border-radius: 12px;
+    padding: 15px 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0;
+    min-width: 140px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+.stat-box.blue {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+}
+.stat-box.green {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+}
+.stat-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+}
+.stat-box.blue .stat-label { color: #2563eb; }
+.stat-box.green .stat-label { color: #16a34a; }
+.stat-number {
+    font-size: 24px;
+    font-weight: 700;
+}
+.stat-box.blue .stat-number { color: #1d4ed8; }
+.stat-box.green .stat-number { color: #15803d; }
+
+.recibos-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+.card-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fafafb;
+}
+.card-header .icon {
+    background: #eff6ff;
+    color: #2563eb;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 16px;
+}
+.card-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #334155;
+    margin: 0;
+}
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+.table-recibos {
+    width: 100%;
+    border-collapse: collapse;
+}
+.table-recibos th {
+    text-align: left;
+    padding: 15px 25px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.table-recibos td {
+    padding: 20px 25px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+.table-recibos tr:last-child td {
+    border-bottom: none;
+}
+
+.col-recibo {
+    font-weight: 600;
+    color: #2563eb;
+    font-size: 15px;
+}
+.col-cliente {
+    font-size: 14px;
+    color: #475569;
+    font-weight: 500;
+}
+.prenda-nombre {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+.prenda-desc {
+    font-size: 12px;
+    color: #94a3b8;
+    margin: 0;
+    font-style: italic;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.col-estado {
+    text-align: center;
+}
+.btn-action {
+    color: #2563eb;
+    font-weight: 600;
+    font-size: 12px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s;
+}
+.btn-action:hover {
+    color: #1d4ed8;
+    text-decoration: none;
+}
