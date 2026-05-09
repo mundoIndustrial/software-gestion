@@ -18,12 +18,22 @@
     <div style="display: flex; justify-content: flex-start;">
         <div style="width: 100%; max-width: 1500px;">
             @if(!$isMinimalLogoRole)
-                <div style="display: flex; gap: 12px; align-items: center; justify-content: flex-start; margin-bottom: 14px;">
-                    <button id="btn-filter-bordado" type="button" onclick="setFiltroRecibosLogo('bordado')" style="padding: 10px 14px; border-radius: 10px; border: 2px solid #0ea5e9; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.18);">
+                <div style="display: flex; gap: 12px; align-items: center; justify-content: flex-start; margin-bottom: 14px; flex-wrap: wrap;">
+                    <button id="btn-filter-bordado" type="button" onclick="setFiltroRecibosLogo('bordado')" style="position: relative; padding: 10px 14px; border-radius: 10px; border: 2px solid #0ea5e9; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.18);">
                         PEDIDOS BORDADO
+                        <span id="badge-bordado" class="conteo-pendiente-badge" style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; border: 2px solid white; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); display: none;">0</span>
                     </button>
-                    <button id="btn-filter-estampado" type="button" onclick="setFiltroRecibosLogo('estampado')" style="padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; background: white; color: #334155; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
+                    <button id="btn-filter-estampado" type="button" onclick="setFiltroRecibosLogo('estampado')" style="position: relative; padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; background: white; color: #334155; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
                         PEDIDOS ESTAMPADO
+                        <span id="badge-estampado" class="conteo-pendiente-badge" style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; border: 2px solid white; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); display: none;">0</span>
+                    </button>
+                    <button id="btn-filter-dtf" type="button" onclick="setFiltroRecibosLogo('dtf')" style="position: relative; padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; background: white; color: #334155; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
+                        PEDIDOS DTF
+                        <span id="badge-dtf" class="conteo-pendiente-badge" style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; border: 2px solid white; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); display: none;">0</span>
+                    </button>
+                    <button id="btn-filter-sublimado" type="button" onclick="setFiltroRecibosLogo('sublimado')" style="position: relative; padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; background: white; color: #334155; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
+                        PEDIDOS SUBLIMADO
+                        <span id="badge-sublimado" class="conteo-pendiente-badge" style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; border: 2px solid white; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); display: none;">0</span>
                     </button>
                 </div>
             @endif
@@ -439,36 +449,45 @@ window.__aplicarColoresFilaReciboLogo = function(procesoId) {
 window.__filtroRecibosLogo = 'bordado';
 
 window.setFiltroRecibosLogo = function(nuevoFiltro) {
-    window.__filtroRecibosLogo = nuevoFiltro === 'estampado' ? 'estampado' : 'bordado';
-    
+    const filtrosValidos = ['bordado', 'estampado', 'dtf', 'sublimado'];
+    window.__filtroRecibosLogo = filtrosValidos.includes(nuevoFiltro) ? nuevoFiltro : 'bordado';
+
     const btnBordado = document.getElementById('btn-filter-bordado');
     const btnEstampado = document.getElementById('btn-filter-estampado');
+    const btnDtf = document.getElementById('btn-filter-dtf');
+    const btnSublimado = document.getElementById('btn-filter-sublimado');
 
-    if (btnBordado && btnEstampado) {
-        if (window.__filtroRecibosLogo === 'bordado') {
-            btnBordado.style.background = 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)';
-            btnBordado.style.borderColor = '#0ea5e9';
-            btnBordado.style.color = 'white';
+    const filtroActual = window.__filtroRecibosLogo;
 
-            btnEstampado.style.background = 'white';
-            btnEstampado.style.borderColor = '#e2e8f0';
-            btnEstampado.style.color = '#334155';
+    // Función para activar/desactivar botón
+    const updateButtonStyle = (btn, isActive) => {
+        if (!btn) return;
+        if (isActive) {
+            btn.style.background = 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)';
+            btn.style.borderColor = '#0ea5e9';
+            btn.style.color = 'white';
         } else {
-            btnEstampado.style.background = 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)';
-            btnEstampado.style.borderColor = '#0ea5e9';
-            btnEstampado.style.color = 'white';
-
-            btnBordado.style.background = 'white';
-            btnBordado.style.borderColor = '#e2e8f0';
-            btnBordado.style.color = '#334155';
+            btn.style.background = 'white';
+            btn.style.borderColor = '#e2e8f0';
+            btn.style.color = '#334155';
         }
-    }
+    };
+
+    updateButtonStyle(btnBordado, filtroActual === 'bordado');
+    updateButtonStyle(btnEstampado, filtroActual === 'estampado');
+    updateButtonStyle(btnDtf, filtroActual === 'dtf');
+    updateButtonStyle(btnSublimado, filtroActual === 'sublimado');
 
     // Resetear paginación y búsqueda al cambiar filtro
     const searchInput = document.getElementById('search-input');
     const clearSearchBtn = document.getElementById('clear-search');
     if (searchInput) searchInput.value = '';
     if (clearSearchBtn) clearSearchBtn.style.display = 'none';
+
+    // Recargar conteos
+    if (typeof window.__cargarConteosPendientes === 'function') {
+        window.__cargarConteosPendientes();
+    }
 
     // Disparar recarga (hook definido en DOMContentLoaded)
     if (typeof window.__reloadRecibosLogo === 'function') {
@@ -481,6 +500,34 @@ document.addEventListener('DOMContentLoaded', function() {
     let searchTimeout;
     let pedidosOriginales = [];
     let recibosUltimaCarga = [];
+
+    // Cargar conteos de pendientes
+    window.__cargarConteosPendientes = async function() {
+        try {
+            const response = await fetch(`{{ route('visualizador-logo.pedidos-logo.conteos-pendientes') }}`);
+            const data = await response.json();
+
+            if (data.success && data.conteos) {
+                const conteos = data.conteos;
+                const tiposFilters = ['bordado', 'estampado', 'dtf', 'sublimado'];
+
+                tiposFilters.forEach(tipo => {
+                    const cantidad = conteos[tipo] || 0;
+                    const badge = document.getElementById(`badge-${tipo}`);
+                    if (badge) {
+                        badge.textContent = String(cantidad);
+                        if (cantidad > 0) {
+                            badge.style.display = 'flex';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error cargando conteos de pendientes:', error);
+        }
+    };
 
     const STORAGE_KEY = 'visualizador_logo_pedidos_logo_filters';
     window.__logoColumnFilters = (() => {
@@ -701,6 +748,9 @@ document.addEventListener('DOMContentLoaded', function() {
         pedidosOriginales = [];
         cargarRecibos('');
     };
+
+    // Cargar conteos de pendientes
+    window.__cargarConteosPendientes();
 
     // Cargar por defecto: bordado (si es diseñador/bordador no mostramos botones)
     if (window.__isDisenadorLogos) {
@@ -1053,8 +1103,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
-                    <div data-field="total_dias" style="color: #0f172a; font-weight: 800; font-size: 0.95rem; text-align: center;">${totalDias}</div>
                     <div style="font-weight: 700; color: #0ea5e9; font-size: 0.95rem;">${numeroRecibo}</div>
+                    <div data-field="total_dias" style="color: #0f172a; font-weight: 800; font-size: 0.95rem; text-align: center;">${totalDias}</div>
                     <div style="color: #334155; font-size: 0.95rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${nombreCliente}</div>
                     <div style="color: #64748b; font-size: 0.95rem;">${formatearFecha(fechaCreacion)}</div>
                     <div style="display: flex; align-items: center; justify-content: flex-start;">

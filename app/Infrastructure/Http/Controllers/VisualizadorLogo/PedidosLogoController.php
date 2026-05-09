@@ -9,6 +9,7 @@ use App\Models\PrendaReciboCompletado;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 final class PedidosLogoController extends Controller
 {
@@ -115,6 +116,41 @@ final class PedidosLogoController extends Controller
         return response()->json([
             'success' => true,
             'valores' => $valores,
+        ]);
+    }
+
+    /**
+     * Obtener conteos de pedidos pendientes por tipo de proceso
+     */
+    public function obtenerConteosPendientes(Request $request): JsonResponse
+    {
+        $conteos = [];
+
+        $tiposProcesoMap = [
+            'bordado' => 2,
+            'estampado' => 3,
+            'dtf' => 4,
+            'sublimado' => 5,
+        ];
+
+        foreach ($tiposProcesoMap as $nombre => $tipoProcesoId) {
+            $cantidad = DB::table('pedidos_procesos_prenda_detalles as ppd')
+                ->select('ppd.id')
+                ->join('prenda_areas_logo_pedido as palp', 'palp.proceso_prenda_detalle_id', '=', 'ppd.id')
+                ->where('ppd.tipo_proceso_id', $tipoProcesoId)
+                ->where('ppd.estado', 'APROBADO')
+                ->where('palp.area', 'PENDIENTE')
+                ->whereNull('palp.pedido_parcial_id')
+                ->distinct()
+                ->get()
+                ->count();
+
+            $conteos[$nombre] = $cantidad;
+        }
+
+        return response()->json([
+            'success' => true,
+            'conteos' => $conteos,
         ]);
     }
 

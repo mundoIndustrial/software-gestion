@@ -22,11 +22,16 @@ final class ListPedidosLogoUseCase
         $isBordador = $user && $user->hasRole('bordador');
         $isMinimalLogoRole = $isDisenadorLogos || $isBordador;
 
-        $filtro = $filtro === 'estampado' ? 'estampado' : 'bordado';
-        $esFiltroEstampado = $filtro === 'estampado';
+        // Mapeo de filtros a IDs de tipo de proceso
+        $filtroMap = [
+            'bordado' => [2],
+            'estampado' => [3],
+            'dtf' => [4],
+            'sublimado' => [5],
+        ];
 
-        // Regla de negocio: en la vista "ESTAMPADO" NO deben aparecer recibos de BORDADO.
-        $tipoProcesoIds = $esFiltroEstampado ? [3, 4, 5] : [2];
+        $tipoProcesoIds = $filtroMap[$filtro] ?? [2]; // Por defecto: bordado
+        $esFiltroEstampado = in_array($filtro, ['estampado', 'dtf', 'sublimado']);
 
         // Para roles mínimos (diseñador/bordador), solo forzar vista reducida en filtro bordado.
         // En filtro estampado respetamos el tipo de proceso para evitar mezclar bordado.
@@ -155,30 +160,42 @@ final class ListPedidosLogoUseCase
 
     public function obtenerAreasUnicas(string $filtro): array
     {
-        $filtro = $filtro === 'estampado' ? 'estampado' : 'bordado';
-        $esFiltroEstampado = $filtro === 'estampado';
+        $filtroMap = [
+            'bordado' => [2],
+            'estampado' => [3],
+            'dtf' => [4],
+            'sublimado' => [5],
+        ];
 
-        $tipoProcesoIds = $esFiltroEstampado ? [3, 4, 5] : [2];
+        $tipoProcesoIds = $filtroMap[$filtro] ?? [2];
 
         return $this->procesoReadRepository->obtenerAreasUnicas($tipoProcesoIds);
     }
 
     public function obtenerAsesorasUnicas(string $filtro): array
     {
-        $filtro = $filtro === 'estampado' ? 'estampado' : 'bordado';
-        $esFiltroEstampado = $filtro === 'estampado';
+        $filtroMap = [
+            'bordado' => [2],
+            'estampado' => [3],
+            'dtf' => [4],
+            'sublimado' => [5],
+        ];
 
-        $tipoProcesoIds = $esFiltroEstampado ? [3, 4, 5] : [2];
+        $tipoProcesoIds = $filtroMap[$filtro] ?? [2];
 
         return $this->procesoReadRepository->obtenerAsesorasUnicas($tipoProcesoIds);
     }
 
     public function buscarValoresColumna(string $columna, string $busqueda, string $filtro): array
     {
-        $filtro = $filtro === 'estampado' ? 'estampado' : 'bordado';
-        $esFiltroEstampado = $filtro === 'estampado';
+        $filtroMap = [
+            'bordado' => [2],
+            'estampado' => [3],
+            'dtf' => [4],
+            'sublimado' => [5],
+        ];
 
-        $tipoProcesoIds = $esFiltroEstampado ? [3, 4, 5] : [2];
+        $tipoProcesoIds = $filtroMap[$filtro] ?? [2];
 
         return $this->procesoReadRepository->buscarValoresColumna($columna, $busqueda, $tipoProcesoIds);
     }

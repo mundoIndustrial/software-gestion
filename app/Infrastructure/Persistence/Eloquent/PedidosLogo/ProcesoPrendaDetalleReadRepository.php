@@ -39,8 +39,8 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                 MAX(palp.area) as area,
                 MAX(palp.novedades) as novedades,
                 MAX(palp.fechas_areas) as fechas_areas,
-                crp.consecutivo_actual as numero_recibo_consecutivo,
-                crp.created_at as fecha_creacion_recibo,
+                COALESCE(crp.consecutivo_actual, pedidos_procesos_prenda_detalles.numero_recibo) as numero_recibo_consecutivo,
+                COALESCE(crp.created_at, pedidos_procesos_prenda_detalles.created_at) as fecha_creacion_recibo,
                 NULL as fecha_activacion,
                 0 as es_parcial,
                 NULL as pedido_parcial_id,
@@ -68,7 +68,10 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                     ->whereRaw("ppar.tipo_recibo = ({$tipoReciboCase})");
             })
             ->where('pedidos_procesos_prenda_detalles.estado', 'APROBADO')
-            ->whereNotNull('crp.consecutivo_actual')
+            ->where(function ($q) {
+                $q->whereNotNull('crp.consecutivo_actual')
+                  ->orWhereNotNull('pedidos_procesos_prenda_detalles.numero_recibo');
+            })
             ->whereNull('ppar.id')
             ->whereIn('pedidos_procesos_prenda_detalles.tipo_proceso_id', $tipoProcesoIds)
             ->groupBy('pedidos_procesos_prenda_detalles.id', 'crp.consecutivo_actual', 'crp.created_at', 'pp.pedido_produccion_id');
@@ -164,6 +167,7 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
 
         // Combinar queries
         $results = $queryProcesos->unionAll($queryParciales)
+            ->orderBy('fecha_creacion_recibo', 'DESC')
             ->orderBy('numero_recibo_consecutivo', 'DESC')
             ->paginate($perPage);
 
