@@ -54,11 +54,12 @@
         return 0;
     };
 
-    if (auth()->user()->hasRole('cortador')) {
+    if (auth()->user()->hasRole('cortador') || auth()->user()->hasRole('vista-costura')) {
         $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortByDesc($callbackOrdenamiento)->values();
     } else {
         $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortBy($callbackOrdenamiento)->values();
     }
+
 
 
     if (auth()->user()->hasAnyRole(['lider-reflectivo', 'costurero', 'administrador-costura', 'cortador'])) {
@@ -333,12 +334,23 @@
                             $reciboReflectivoParaFiltro = collect($prenda['recibos'] ?? [])->first(function ($recibo) {
                                 return strtoupper((string) ($recibo['tipo_recibo'] ?? '')) === 'REFLECTIVO';
                             });
-                            $areaReciboReflectivoFiltro = strtolower(trim((string) ($reciboReflectivoParaFiltro['area'] ?? '')));
-                            $reflectivoEnControlCalidad = in_array($areaReciboReflectivoFiltro, ['control calidad', 'control de calidad'], true);
+                            
                             $mostrarReflectivoEnFiltro = $tieneReflectivo;
-                            if (auth()->user()->hasRole('vista-costura') && $reflectivoEnControlCalidad) {
-                                $mostrarReflectivoEnFiltro = false;
+                            
+                            if (auth()->user()->hasRole('vista-costura')) {
+                                if ($tieneReflectivo && $reciboReflectivoParaFiltro) {
+                                    $areaRef = strtolower(trim((string) ($reciboReflectivoParaFiltro['area'] ?? '')));
+                                    $compCostura = $reciboReflectivoParaFiltro['completado_costura'] ?? false;
+                                    
+                                    // Solo mostrar si es de área costura Y está completado en costura
+                                    if ($areaRef !== 'costura' || !$compCostura) {
+                                        $mostrarReflectivoEnFiltro = false;
+                                    }
+                                } else {
+                                    $mostrarReflectivoEnFiltro = false;
+                                }
                             }
+
 
                             // Obtener el área del recibo principal para filtros
                             $reciboPrincipalFiltro = $prenda['recibos'][0] ?? null;
@@ -422,6 +434,8 @@
                              data-completado-costura="{{ $reciboCompletadoCostura ? '1' : '0' }}"
                              data-completado-reflectivo="{{ $reciboCompletadoReflectivo ? '1' : '0' }}"
                              data-numero-recibo="{{ $numeroReciboBusqueda }}"
+                             data-fecha-completado-reflectivo="{{ ($reciboReflectivoFiltroCard && isset($reciboReflectivoFiltroCard['fecha_completado_costura'])) ? strtotime($reciboReflectivoFiltroCard['fecha_completado_costura']) : 0 }}"
+                             data-fecha-creacion-costura="{{ ($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? '')) ? strtotime($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? '')) : 0 }}"
                              style="display: {{ $displayInicial }}">
 
                             <!-- Borde izquierdo eliminado -->

@@ -863,21 +863,33 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                     $parcialIdPadre = (int) $matches[1];
                 }
 
-                // Ordenar por la fecha de llegada a Corte (created_at del proceso Corte).
-                // Fallback: created_at del recibo si no existe proceso de Corte asociado.
+                // Ordenar por la fecha de llegada a Corte (o Costura para vista-costura)
                 $recibosDelTipo = $recibosDelTipo
-                    ->sortBy(function ($recibo) {
+                    ->sortBy(function ($recibo) use ($tipoOperario) {
+                        if ($tipoOperario === 'vista-costura') {
+                            $fechaCostura = $this->obtenerFechaCreacionProcesoCostura($recibo);
+                            return $this->normalizarFechaAOrdenable($fechaCostura ?? $recibo->created_at);
+                        }
                         $fechaCorte = $this->obtenerFechaLlegadaACorte($recibo);
                         return $this->normalizarFechaAOrdenable($fechaCorte ?? $recibo->created_at);
                     })
                     ->values();
+
                 $fechaOrdenPrincipal = optional($recibosDelTipo->first())?->created_at;
                 if ($recibosDelTipo->isNotEmpty()) {
-                    $fechaCortePrincipal = $this->obtenerFechaLlegadaACorte($recibosDelTipo->first());
-                    if (!empty($fechaCortePrincipal)) {
-                        $fechaOrdenPrincipal = $fechaCortePrincipal;
+                    if ($tipoOperario === 'vista-costura') {
+                        $fechaCosturaPrincipal = $this->obtenerFechaCreacionProcesoCostura($recibosDelTipo->first());
+                        if (!empty($fechaCosturaPrincipal)) {
+                            $fechaOrdenPrincipal = $fechaCosturaPrincipal;
+                        }
+                    } else {
+                        $fechaCortePrincipal = $this->obtenerFechaLlegadaACorte($recibosDelTipo->first());
+                        if (!empty($fechaCortePrincipal)) {
+                            $fechaOrdenPrincipal = $fechaCortePrincipal;
+                        }
                     }
                 }
+
 
                 $resultados[] = [
                     'prenda_id' => $prenda->id,
@@ -979,10 +991,13 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             ->whereRaw('LOWER(TRIM(area)) = ?', ['corte'])
                             ->exists();
 
-                        $completadoCostura = \DB::table('prenda_recibo_completado')
+                        $registroCompletadoCostura = \DB::table('prenda_recibo_completado')
                             ->where('id_recibo', $recibo->id)
                             ->whereRaw('LOWER(TRIM(area)) = ?', ['costura'])
-                            ->exists();
+                            ->first();
+                        $completadoCostura = !empty($registroCompletadoCostura);
+                        $fechaCompletadoCostura = $registroCompletadoCostura->fecha_completado ?? null;
+
 
                         $completadoControlCalidad = \DB::table('prenda_recibo_completado')
                             ->where('id_recibo', $recibo->id)
@@ -1045,7 +1060,9 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             'encargado_corte' => $procesoCorte ? $procesoCorte->encargado : null,
                             'completado_corte' => $completadoCorte,
                             'completado_costura' => $completadoCostura,
+                            'fecha_completado_costura' => $fechaCompletadoCostura,
                             'completado_control_calidad' => $completadoControlCalidad,
+
                             'es_parcial' => $esParcial,
                             'pedido_parcial_id' => $parcialId,
                             'tiene_parciales' => \App\Models\ReciboPorPartes::where('pedido_produccion_id', $recibo->pedido_produccion_id)
@@ -1064,11 +1081,12 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 
         if ($tipoOperario === 'vista-costura') {
             return $prendasAgrupadas
-                ->sortBy(function ($item) {
+                ->sortByDesc(function ($item) {
                     return $item['fecha_creacion'] ?? null;
                 })
                 ->values();
         }
+
 
         $resultadoFinal = $prendasAgrupadas
             ->concat($this->obtenerPrendasParcialesCostura($usuario, false))
@@ -1386,10 +1404,13 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 }
 
                 $consecutivoParcial = $this->formatearConsecutivoParcial($parcial->consecutivo_parcial ?? $parcial->consecutivo_actual);
-                $completadoCostura = \DB::table('prenda_recibo_completado')
+                $registroCompletadoCostura = \DB::table('prenda_recibo_completado')
                     ->where('area', 'Costura')
                     ->where('id_parcial', $parcial->id)
-                    ->exists();
+                    ->first();
+                $completadoCostura = !empty($registroCompletadoCostura);
+                $fechaCompletadoCostura = $registroCompletadoCostura->fecha_completado ?? null;
+
 
                 // Para anexos, el encargado SIEMPRE viene de procesos_prenda
                 // Para parciales (ReciboPorPartes), puede venir de procesos_prenda o del campo encargado del parcial
@@ -1430,7 +1451,9 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                         'completado_area' => $completadoCostura,
                         'completado_corte' => false,
                         'completado_costura' => $completadoCostura,
+                        'fecha_completado_costura' => $fechaCompletadoCostura,
                         'completado_control_calidad' => false,
+
                         'es_parcial' => true,
                         'pedido_parcial_id' => $parcial->id,
                         'tiene_parciales' => false,
@@ -1475,7 +1498,70 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             ->first();
     }
 
+    /**
+     * Obtener la fecha de creación del proceso de Costura asociado a un recibo
+     */
+    private function obtenerFechaCreacionProcesoCostura($recibo): mixed
+    {
+        if (!$recibo) return null;
+
+        // Si la relación ya está cargada en la prenda, usarla
+        if ($recibo->prenda && $recibo->prenda->relationLoaded('procesosPrenda')) {
+            $consecutivo = $recibo->consecutivo_actual;
+            $esParcial = false;
+            $notas = (string) ($recibo->notas ?? '');
+            if (preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+                $esParcial = true;
+            }
+
+            $procesoCostura = $recibo->prenda->procesosPrenda
+                ->filter(function ($p) use ($consecutivo, $esParcial) {
+                    $procName = strtolower(trim((string) $p->proceso));
+                    if ($procName !== 'costura') {
+                        return false;
+                    }
+
+                    if ($esParcial) {
+                        return (string) $p->numero_recibo_parcial === (string) $consecutivo;
+                    } else {
+                        $nrp = $p->numero_recibo_parcial ?? null;
+                        return (string) $p->numero_recibo === (string) $consecutivo && 
+                               ($nrp === null || trim((string)$nrp) === '' || (float) $nrp === 0.0);
+                    }
+                })
+                ->sortByDesc('created_at')
+                ->first();
+
+            if ($procesoCostura) {
+                return $procesoCostura->created_at;
+            }
+        }
+
+        // Fallback a consulta SQL si no está cargada
+        $query = ProcesoPrenda::query()
+            ->where('numero_pedido', $recibo->pedido_produccion_id)
+            ->where('prenda_pedido_id', $recibo->prenda_id)
+            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+            ->whereNull('deleted_at');
+
+        $notas = (string) ($recibo->notas ?? '');
+        $consecutivo = $recibo->consecutivo_actual;
+        if (preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+            $query->where('numero_recibo_parcial', $consecutivo);
+        } else {
+            $query->where('numero_recibo', $consecutivo)
+                  ->where(function($q) {
+                      $q->whereNull('numero_recibo_parcial')
+                        ->orWhere('numero_recibo_parcial', '');
+                  });
+        }
+
+        $proc = $query->latest('created_at')->first();
+        return $proc ? $proc->created_at : null;
+    }
+
     private function obtenerFechaLlegadaACorte($recibo): mixed
+
     {
         // Si la relación ya está cargada, usarla para evitar consulta SQL
         if ($recibo->prenda && $recibo->prenda->relationLoaded('procesosPrenda')) {

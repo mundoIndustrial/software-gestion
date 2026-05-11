@@ -180,8 +180,44 @@ export function initReciboFilters() {
         // Actualizar paginación después de aplicar filtros
         window.__resetDashboardPagination?.();
 
+        // Ordenar tarjetas según el filtro activo (especialmente para vista-costura)
+        ordenarTarjetas(filtroPrincipal);
+
         console.log(` [FILTRO] Filtro completado: ${mostradas} mostradas, ${ocultadas} ocultadas`);
     }
+
+    /**
+     * Ordena las tarjetas en el DOM según el filtro activo
+     */
+    function ordenarTarjetas(filtro) {
+        const ordenesList = document.getElementById('ordenesList');
+        if (!ordenesList) return;
+
+        const cards = Array.from(ordenesList.querySelectorAll('.orden-card-simple'));
+        if (cards.length === 0) return;
+
+        console.log(` [ORDENAMIENTO] Ordenando tarjetas para filtro: ${filtro}`);
+
+        cards.sort((a, b) => {
+            let valA, valB;
+            if (filtro === 'reflectivo') {
+                // Ordenar por fecha de completado reflectivo (descendente)
+                valA = parseInt(a.dataset.fechaCompletadoReflectivo || '0');
+                valB = parseInt(b.dataset.fechaCompletadoReflectivo || '0');
+            } else {
+                // Ordenar por fecha de creación costura (descendente)
+                valA = parseInt(a.dataset.fechaCreacionCostura || '0');
+                valB = parseInt(b.dataset.fechaCreacionCostura || '0');
+            }
+            return valB - valA;
+        });
+
+        // Re-insertar en el DOM en el nuevo orden
+        const fragment = document.createDocumentFragment();
+        cards.forEach(card => fragment.appendChild(card));
+        ordenesList.appendChild(fragment);
+    }
+
 
     window.filtrarPrendasPorRecibo = function (filtro) {
         window.__dashboardFiltroPrincipalActivo = filtro;
