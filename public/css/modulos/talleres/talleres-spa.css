@@ -1,0 +1,493 @@
+/* ============================================
+   GESTIÓN DE TALLERES - SPA STYLES
+   ============================================ */
+
+/* View Transitions */
+.view-container {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.view-container.exit {
+    animation: fadeOut 0.2s ease-in-out;
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+/* ============================================
+   GOOEY SEARCH INPUT
+   ============================================ */
+.gooey-search-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 300px;
+}
+
+.gooey-search-input {
+    width: 100%;
+    padding: 12px 16px 12px 40px;
+    border: 2px solid #e2e8f0;
+    border-radius: 50px;
+    font-size: 14px;
+    color: #334155;
+    background: white;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    outline: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.gooey-search-input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1), 0 4px 12px rgba(37, 99, 235, 0.15);
+    transform: scale(1.02);
+    animation: gooeyPulse 1.5s infinite;
+}
+
+.gooey-search-input::placeholder {
+    color: #94a3b8;
+}
+
+.gooey-search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 18px;
+    pointer-events: none;
+    transition: color 0.3s ease;
+}
+
+.gooey-search-input:focus ~ .gooey-search-icon {
+    color: #2563eb;
+}
+
+.gooey-search-clear {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px;
+    display: none;
+    transition: all 0.2s ease;
+}
+
+.gooey-search-input:not(:placeholder-shown) ~ .gooey-search-clear {
+    display: block;
+}
+
+.gooey-search-clear:hover {
+    color: #2563eb;
+    transform: translateY(-50%) scale(1.2);
+}
+
+@keyframes gooeyPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4), 0 0 0 3px rgba(37, 99, 235, 0.1), 0 4px 12px rgba(37, 99, 235, 0.15);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(37, 99, 235, 0), 0 0 0 3px rgba(37, 99, 235, 0.1), 0 4px 12px rgba(37, 99, 235, 0.15);
+    }
+}
+
+/* ============================================
+   HEADER STYLES
+   ============================================ */
+.page-header-recibos {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 30px;
+    gap: 20px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+}
+
+.btn-back {
+    background: white;
+    border: 1px solid #cbd5e1;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    color: #475569;
+}
+
+.btn-back:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+}
+
+.title-group {
+    flex: 1;
+}
+
+.title-group .subtitle {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.title-group h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.header-stats {
+    display: flex;
+    gap: 12px;
+}
+
+.stat-box {
+    padding: 12px 20px;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid;
+}
+
+.stat-box.blue {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.stat-box.blue .stat-label {
+    color: #2563eb;
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.stat-box.blue .stat-number {
+    color: #1e40af;
+    font-weight: 900;
+    font-size: 20px;
+}
+
+.stat-box.green {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+}
+
+.stat-box.green .stat-label {
+    color: #059669;
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.stat-box.green .stat-number {
+    color: #047857;
+    font-weight: 900;
+    font-size: 20px;
+}
+
+/* ============================================
+   CARD STYLES
+   ============================================ */
+.recibos-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.card-header .icon {
+    color: #2563eb;
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+/* ============================================
+   TABLE STYLES
+   ============================================ */
+.table-container {
+    overflow-x: auto;
+}
+
+.table-recibos {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.table-recibos thead {
+    background: #f1f5f9;
+}
+
+.table-recibos th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 700;
+    color: #64748b;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.table-recibos td {
+    padding: 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.table-recibos tbody tr:hover {
+    background: #f8fafc;
+}
+
+.col-recibo {
+    text-align: center;
+    font-weight: 700;
+    color: #2563eb;
+    font-size: 16px;
+    font-family: 'Courier New', monospace;
+}
+
+.col-cliente {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.prenda-nombre {
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.prenda-desc {
+    font-size: 12px;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #2563eb;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-decoration: none;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    transition: all 0.2s;
+}
+
+.btn-action:hover {
+    text-decoration: underline;
+    gap: 10px;
+}
+
+/* ============================================
+   ENTREGAS STYLES
+   ============================================ */
+.entregas-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.entregas-title h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.entregas-total {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.entregas-total-value {
+    font-size: 18px;
+    font-weight: 900;
+    color: #2563eb;
+    margin-left: 8px;
+}
+
+.semana-group {
+    margin-bottom: 24px;
+}
+
+.semana-header {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #2563eb;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.semana-header .material-symbols-rounded {
+    font-size: 16px;
+}
+
+.table-entregas {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 24px;
+}
+
+.table-entregas thead {
+    background: #f1f5f9;
+}
+
+.table-entregas th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 700;
+    color: #64748b;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.table-entregas td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.table-entregas tbody tr:hover {
+    background: #f8fafc;
+}
+
+.badge-talla {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    padding: 4px 8px;
+    background: #dbeafe;
+    color: #1e40af;
+    font-weight: 700;
+    border-radius: 6px;
+    border: 1px solid #93c5fd;
+    font-size: 12px;
+}
+
+.col-cantidad {
+    text-align: right;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.col-cantidad small {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 600;
+    margin-left: 4px;
+}
+
+/* ============================================
+   UTILITY STYLES
+   ============================================ */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #94a3b8;
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    color: #cbd5e1;
+    margin-bottom: 16px;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #94a3b8;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

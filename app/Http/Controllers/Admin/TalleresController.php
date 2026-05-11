@@ -192,4 +192,185 @@ class TalleresController extends Controller
 
         return view('admin.talleres.entregas', compact('taller', 'recibo', 'entregasAgrupadas', 'totalGeneral'));
     }
+
+    // API endpoints para SPA
+    public function apiRecibos($id)
+    {
+        $taller = \App\Models\User::findOrFail($id);
+        $nombreTaller = $taller->name;
+
+        // 1. Recibos normales
+        $recibosNormales = \Illuminate\Support\Facades\DB::table('consecutivos_recibos_pedidos as crp')
+            ->join('prendas_pedido as pp', 'crp.prenda_id', '=', 'pp.id')
+            ->join('pedidos_produccion as ppro', 'crp.pedido_produccion_id', '=', 'ppro.id')
+            ->join('clientes', 'ppro.cliente_id', '=', 'clientes.id')
+            ->leftJoin('procesos_prenda as ppren', function($join) {
+                $join->on('ppro.numero_pedido', '=', 'ppren.numero_pedido')
+                     ->on('crp.consecutivo_actual', '=', 'ppren.numero_recibo')
+                     ->where('ppren.proceso', '=', 'Costura');
+            })
+            ->whereIn('crp.tipo_recibo', ['REFLECTIVO', 'COSTURA'])
+            ->where('crp.area', '=', 'Costura')
+            ->where('ppren.encargado', '=', $nombreTaller)
+            ->select(
+                'crp.id', 
+                'crp.consecutivo_actual as numero_recibo', 
+                'pp.nombre_prenda',
+                'pp.descripcion as descripcion_prenda',
+                'clientes.nombre as cliente', 
+                'crp.tipo_recibo',
+                \Illuminate\Support\Facades\DB::raw('0 as es_parcial')
+            )
+            ->get();
+
+        // 2. Recibos parciales
+        $recibosParciales = \Illuminate\Support\Facades\DB::table('recibo_por_partes as rpp')
+            ->join('prendas_pedido as pp', 'rpp.prenda_pedido_id', '=', 'pp.id')
+            ->join('pedidos_produccion as ppro', 'rpp.pedido_produccion_id', '=', 'ppro.id')
+            ->join('clientes', 'ppro.cliente_id', '=', 'clientes.id')
+            ->join('procesos_prenda as ppren', function($join) {
+                $join->on('ppro.numero_pedido', '=', 'ppren.numero_pedido')
+                     ->on('rpp.prenda_pedido_id', '=', 'ppren.prenda_pedido_id')
+                     ->on('rpp.consecutivo_parcial', '=', 'ppren.numero_recibo_parcial')
+                     ->where('ppren.proceso', '=', 'Costura');
+            })
+            ->whereIn('rpp.tipo_recibo', ['REFLECTIVO', 'COSTURA'])
+            ->where('ppren.encargado', '=', $nombreTaller)
+            ->select(
+                'rpp.id', 
+                'rpp.consecutivo_parcial as numero_recibo', 
+                'pp.nombre_prenda',
+                'pp.descripcion as descripcion_prenda',
+                'clientes.nombre as cliente', 
+                'rpp.tipo_recibo',
+                \Illuminate\Support\Facades\DB::raw('1 as es_parcial')
+            )
+            ->get();
+
+        $recibos = $recibosNormales->concat($recibosParciales)->map(function($r) {
+            $r->numero_recibo = (int)$r->numero_recibo;
+            return $r;
+        });
+
+        return response()->json([
+            'taller_id' => $id,
+            'taller_name' => $nombreTaller,
+            'recibos' => $recibos,
+            'total' => $recibos->count(),
+            'completados' => 0
+        ]);
+    }
+
+    public function apiEntregas($taller_id, $recibo_id, $es_parcial)
+    {
+        $isParcial = $es_parcial == '1';
+        
+        if ($isParcial) {
+            $recibo = \Illuminate\Support\Facades\DB::table('recibo_por_partes as rpp')
+                ->join('prendas_pedido as pp', 'rpp.prenda_pedido_id', '=', 'pp.id')
+                ->join('pedidos_produccion as ppro', 'rpp.pedido_produccion_id', '=', 'ppro.id')
+                ->join('clientes', 'ppro.cliente_id', '=', 'clientes.id')
+                ->where('rpp.id', $recibo_id)
+                ->select(
+                    'rpp.id',
+                    'rpp.consecutivo_parcial as numero_recibo',
+                    'pp.nombre_prenda',
+                    'pp.descripcion as descripcion_prenda',
+                    'clientes.nombre as cliente'
+                )
+                ->first();
+                
+            $entregasRaw = \App\Models\EntregaReciboCostura::where('recibo_parcial_id', $recibo_id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+        } else {
+            $recibo = \Illuminate\Support\Facades\DB::table('consecutivos_recibos_pedidos as crp')
+                ->join('prendas_pedido as pp', 'crp.prenda_id', '=', 'pp.id')
+                ->join('pedidos_produccion as ppro', 'crp.pedido_produccion_id', '=', 'ppro.id')
+                ->join('clientes', 'ppro.cliente_id', '=', 'clientes.id')
+                ->where('crp.id', $recibo_id)
+                ->select(
+                    'crp.id',
+                    'crp.consecutivo_actual as numero_recibo',
+                    'pp.nombre_prenda',
+                    'pp.descripcion as descripcion_prenda',
+                    'clientes.nombre as cliente'
+                )
+                ->first();
+                
+            $entregasRaw = \App\Models\EntregaReciboCostura::where('consecutivo_recibo_id', $recibo_id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+        
+        if (!$recibo) {
+            return response()->json(['error' => 'Recibo no encontrado'], 404);
+        }
+
+        $recibo->numero_recibo = (int)$recibo->numero_recibo;
+
+        $entregasProcesadas = collect();
+        $totalGeneral = 0;
+        
+        \Carbon\Carbon::setLocale('es');
+
+        foreach ($entregasRaw as $entrega) {
+            $detalleTallas = is_string($entrega->detalle_tallas) ? json_decode($entrega->detalle_tallas, true) : $entrega->detalle_tallas;
+            
+            if (!$detalleTallas || !is_array($detalleTallas)) continue;
+            
+            foreach ($detalleTallas as $talla => $cantidad) {
+                if ($cantidad <= 0) continue;
+                
+                $fecha = \Carbon\Carbon::parse($entrega->created_at);
+                
+                if ($fecha->isSunday()) {
+                    continue;
+                }
+                
+                $startOfWeek = $fecha->copy()->startOfWeek(\Carbon\Carbon::SATURDAY);
+                $endOfWeek = $fecha->copy()->endOfWeek(\Carbon\Carbon::FRIDAY);
+                
+                $diaInicio = $startOfWeek->format('d');
+                $mesInicio = mb_strtoupper($startOfWeek->translatedFormat('F'));
+                $diaFin = $endOfWeek->format('d');
+                $mesFin = mb_strtoupper($endOfWeek->translatedFormat('F'));
+                
+                if ($mesInicio == $mesFin) {
+                    $grupoSemana = "SEMANA DEL {$diaInicio} AL {$diaFin} DE {$mesInicio}";
+                } else {
+                    $grupoSemana = "SEMANA DEL {$diaInicio} DE {$mesInicio} AL {$diaFin} DE {$mesFin}";
+                }
+                
+                $entregasProcesadas->push([
+                    'id' => $entrega->id,
+                    'fecha_obj' => $fecha,
+                    'fecha_formateada' => $fecha->format('d/m/Y'),
+                    'descripcion' => mb_strtoupper($recibo->descripcion_prenda),
+                    'talla' => $talla,
+                    'cantidad' => $cantidad,
+                    'grupo' => $grupoSemana,
+                    'orden_semana' => $startOfWeek->format('Ymd')
+                ]);
+                
+                $totalGeneral += $cantidad;
+            }
+        }
+        
+        $entregasAgrupadas = $entregasProcesadas->sortByDesc('fecha_obj')->groupBy('grupo');
+
+        // Transformar a array para JSON
+        $entregasFormateadas = $entregasAgrupadas->map(function($grupo) {
+            return $grupo->map(function($item) {
+                unset($item['fecha_obj']);
+                return $item;
+            })->values();
+        })->values();
+
+        return response()->json([
+            'recibo' => $recibo,
+            'entregas' => $entregasFormateadas,
+            'total' => $totalGeneral
+        ]);
+    }
 }
