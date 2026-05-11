@@ -38,10 +38,13 @@ use App\Application\UseCases\Receipts\MarcarReciboVistoUseCase;
 use App\Application\SupervisorPedidos\UseCases\GetPendingEmbroideryStampingReceiptsUseCase;
 use App\Application\SupervisorPedidos\DTOs\GetPendingEmbroideryStampingReceiptsRequest;
 use App\Services\FestivosColombiaService;
+use App\Services\DiasHabilesService;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class RegistroOrdenController extends Controller
 {
@@ -79,6 +82,7 @@ class RegistroOrdenController extends Controller
     protected $contarRecibosEjecutandoUseCase;
     protected $marcarReciboVistoUseCase;
     protected $getPendingEmbroideryStampingReceiptsUseCase;
+    private DiasHabilesService $diasHabilesService;
 
     public function __construct(
         RegistroOrdenValidationService $validationService,
@@ -112,7 +116,8 @@ class RegistroOrdenController extends Controller
         GetAreaRecienteUseCase $getAreaRecienteUseCase,
         ContarRecibosEjecutandoUseCase $contarRecibosEjecutandoUseCase,
         MarcarReciboVistoUseCase $marcarReciboVistoUseCase,
-        GetPendingEmbroideryStampingReceiptsUseCase $getPendingEmbroideryStampingReceiptsUseCase
+        GetPendingEmbroideryStampingReceiptsUseCase $getPendingEmbroideryStampingReceiptsUseCase,
+        DiasHabilesService $diasHabilesService
     )
     {
         $this->validationService = $validationService;
@@ -147,6 +152,7 @@ class RegistroOrdenController extends Controller
         $this->contarRecibosEjecutandoUseCase = $contarRecibosEjecutandoUseCase;
         $this->marcarReciboVistoUseCase = $marcarReciboVistoUseCase;
         $this->getPendingEmbroideryStampingReceiptsUseCase = $getPendingEmbroideryStampingReceiptsUseCase;
+        $this->diasHabilesService = $diasHabilesService;
     }
 
     public function getNextPedido()
@@ -1650,6 +1656,102 @@ class RegistroOrdenController extends Controller
                 'message' => 'Error al obtener seguimiento del parcial: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function reporteRecibosLogo(Request $request)
+    {
+        $diasAntiguedad = (int) $request->input('dias_antiguedad', 0);
+        $areasLogo = ['BORDADO', 'BORDANDO', 'ESTAMPANDO', 'DISENO'];
+        $tiposRecibo = ['BORDADO', 'ESTAMPADO', 'DTF', 'SUBLIMADO'];
+        $desde = now()->subDays($diasAntiguedad);
+
+        $recibos = DB::table('prenda_areas_logo_pedido as palo')
+            ->join('prendas_pedido as pp', 'palo.prenda_pedido_id', '=', 'pp.id')
+            ->join('pedidos_produccion as pedprod', 'pp.pedido_produccion_id', '=', 'pedprod.id')
+            ->leftJoin('users as asesor_user', 'pedprod.asesor_id', '=', 'asesor_user.id')
+            ->join('consecutivos_recibos_pedidos as crp', function ($join) {
+                $join->on('pp.id', '=', 'crp.prenda_id');
+            })
+            ->select([
+                'crp.consecutivo_actual as numero_recibo',
+                'palo.area',
+                'palo.created_at as fecha_creacion',
+                'pedprod.cliente',
+                'pp.id as prenda_id',
+                'pp.nombre_prenda',
+                'asesor_user.name as asesor',
+            ])
+            ->where('palo.area', '<>', 'ANULADO')
+            ->where('palo.area', '<>', 'ENTREGADO')
+            ->whereIn('palo.area', $areasLogo)
+            ->whereIn('crp.tipo_recibo', $tiposRecibo)
+            ->when($diasAntiguedad > 0, function ($q) use ($desde) {
+                return $q->where('palo.created_at', '>=', $desde);
+            })
+            ->orderBy('palo.created_at', 'asc')
+            ->get();
+
+        $receipts = collect($recibos)
+            ->map(function ($item) {
+                $fechaCreacion = Carbon::parse($item->fecha_creacion);
+                $diasHabiles = $this->diasHabilesService->calcularDiasHabiles($fechaCreacion, now());
+                $item->dias_transcurridos = $diasHabiles;
+
+                $prendaId = (int) $item->prenda_id;
+
+                $prendasConColores = collect(
+                    DB::table('prendas_pedido as pp')
+                        ->join('prenda_pedido_tallas as ppt', 'pp.id', '=', 'ppt.prenda_pedido_id')
+                        ->join('prenda_pedido_talla_colores as pptc', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+                        ->select([
+                            'pp.nombre_prenda',
+                            'pptc.color_nombre',
+                            'pptc.cantidad as cantidad_color',
+                            DB::raw('null as cantidad_talla'),
+                            DB::raw('null as tela'),
+                        ])
+                        ->where('pp.id', $prendaId)
+                        ->get()
+                );
+
+                $prendasSinColores = collect(
+                    DB::table('prendas_pedido as pp')
+                        ->join('prenda_pedido_tallas as ppt', 'pp.id', '=', 'ppt.prenda_pedido_id')
+                        ->leftJoin('prenda_pedido_talla_colores as pptc', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+                        ->select([
+                            'pp.nombre_prenda',
+                            'ppt.tela',
+                            'ppt.cantidad as cantidad_talla',
+                            DB::raw('null as color_nombre'),
+                            DB::raw('null as cantidad_color'),
+                        ])
+                        ->where('pp.id', $prendaId)
+                        ->whereNull('pptc.id')
+                        ->get()
+                );
+
+                $item->prendas = $prendasConColores->merge($prendasSinColores);
+                return $item;
+            })
+            ->groupBy('dias_transcurridos')
+            ->sortByDesc(function ($group, $dias) {
+                return (int) $dias;
+            });
+
+        $totalRecibos = $recibos->count();
+        $filtros = $request->only(['dias_antiguedad']);
+
+        $pdf = Pdf::loadView('registros.reporte-recibos-logo-pdf', [
+            'grouped' => $receipts,
+            'totalRecibos' => $totalRecibos,
+            'filtros' => $filtros,
+            'fechaGeneracion' => now(),
+            'diasAntiguedad' => $diasAntiguedad,
+        ])->setPaper('a4', 'landscape');
+
+        $filename = "reporte_recibos_logo_" . now()->format('Ymd_His') . ".pdf";
+
+        return $pdf->download($filename);
     }
 
     private function normalizarAreaKey(?string $area): string

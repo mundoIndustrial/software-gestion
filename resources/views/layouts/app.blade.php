@@ -426,6 +426,300 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<!-- Modal Global Generar Reporte -->
+<div id="modalGenerarReporte" style="
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+">
+    <div style="
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+        max-width: 500px;
+        width: 100%;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+    ">
+        <div style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        ">
+            <h2 id="modalTitulo" style="margin: 0; color: #1f2937; font-size: 1.25rem; font-weight: 600;">Generar Reporte</h2>
+            <button type="button" onclick="cerrarModalGenerarReporte()" style="
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+                color: #6b7280;
+                padding: 0;
+            ">&times;</button>
+        </div>
+        <div style="flex: 1; overflow-y: auto;">
+            <div style="margin-bottom: 1rem;">
+                <label for="filtroAntiguedad" style="
+                    display: block;
+                    margin-bottom: 0.5rem;
+                    font-weight: 600;
+                    color: #374151;
+                ">
+                    Filtrar por antigüedad
+                </label>
+                <select id="filtroAntiguedad" style="
+                    width: 100%;
+                    padding: 0.75rem;
+                    border: 1px solid #d1d5db;
+                    border-radius: 6px;
+                    font-size: 0.95rem;
+                    background-color: white;
+                    color: #374151;
+                ">
+                    <option value="">Todos los recibos</option>
+                    <option value="7">7 días</option>
+                    <option value="15">15 días</option>
+                    <option value="30">30 días</option>
+                </select>
+                <p style="
+                    margin-top: 0.5rem;
+                    font-size: 0.85rem;
+                    color: #6b7280;
+                ">
+                    Los recibos se mostrarán ordenados por fecha (más antiguos primero)
+                </p>
+            </div>
+        </div>
+        <div style="
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        ">
+            <button type="button" onclick="cerrarModalGenerarReporte()" style="
+                padding: 0.5rem 1rem;
+                border-radius: 6px;
+                border: 1px solid transparent;
+                cursor: pointer;
+                font-size: 0.9rem;
+                font-weight: 500;
+                background: #e5e7eb;
+                color: #1f2937;
+            ">Cancelar</button>
+            <button type="button" onclick="generarReporteCostura()" style="
+                padding: 0.5rem 1rem;
+                border-radius: 6px;
+                border: 1px solid transparent;
+                cursor: pointer;
+                font-size: 0.9rem;
+                font-weight: 500;
+                background: #3b82f6;
+                color: white;
+            ">Descargar PDF</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Variable global para tipo de reporte
+window.tipoReporteActual = 'costura';
+
+// Funciones para Modal de Reporte Global
+window.abrirModalGenerarReporte = function(tipo = 'costura') {
+    window.tipoReporteActual = tipo;
+    const modal = document.getElementById('modalGenerarReporte');
+    const titulo = document.getElementById('modalTitulo');
+
+    if (modal) {
+        // Actualizar título según el tipo
+        if (tipo === 'logo') {
+            titulo.textContent = 'Generar Reporte - Recibos de Logo';
+        } else {
+            titulo.textContent = 'Generar Reporte - Recibos de Costura';
+        }
+
+        modal.style.display = 'flex';
+        const select = document.getElementById('filtroAntiguedad');
+        if (select) select.value = '';
+    }
+};
+
+window.cerrarModalGenerarReporte = function() {
+    const modal = document.getElementById('modalGenerarReporte');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+};
+
+window.generarReporteCostura = function() {
+    const tipo = window.tipoReporteActual;
+    const filtroAntiguedad = document.getElementById('filtroAntiguedad').value;
+
+    // Determinar la ruta según el tipo
+    let reporteUrl;
+    if (tipo === 'logo') {
+        reporteUrl = '{{ route("recibos-logo.reporte") }}';
+    } else {
+        reporteUrl = '{{ route("supervisor-pedidos.pendientes-costura.reporte") }}';
+    }
+
+    // Agregar parámetro de antigüedad si está seleccionado
+    if (filtroAntiguedad) {
+        reporteUrl += '?dias_antiguedad=' + filtroAntiguedad;
+    }
+
+    window.cerrarModalGenerarReporte();
+    window.mostrarModalGenerando();
+
+    // Usar fetch para obtener el PDF como blob
+    fetch(reporteUrl, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        }
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        // Crear link de descarga
+        const urlBlob = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = urlBlob;
+
+        // Nombre del archivo según tipo
+        const tipo = window.tipoReporteActual;
+        const fecha = new Date().toISOString().slice(0,10);
+        if (tipo === 'logo') {
+            link.download = 'reporte_recibos_logo_' + fecha + '.pdf';
+        } else {
+            link.download = 'reporte_pendientes_costura_' + fecha + '.pdf';
+        }
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(urlBlob);
+
+        // Cerrar modal cuando la descarga inicia
+        const modal = document.getElementById('modalGenerandoPDF');
+        if (modal) modal.remove();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const modal = document.getElementById('modalGenerandoPDF');
+        if (modal) modal.remove();
+        alert('Error al generar el reporte');
+    });
+};
+
+window.mostrarModalGenerando = function() {
+    const tiempoInicio = Date.now();
+    const html = `
+        <div id="modalGenerandoPDF" style="
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        ">
+            <div style="
+                background: white;
+                border-radius: 12px;
+                padding: 2rem;
+                text-align: center;
+                max-width: 450px;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            ">
+                <div style="font-size: 2rem; margin-bottom: 1rem;">⏳</div>
+                <h2 style="margin: 0 0 0.5rem 0; color: #1f2937;">Generando PDF</h2>
+                <p style="margin: 0 0 1rem 0; color: #6b7280; font-size: 0.95rem;">
+                    Tu reporte se está generando. Por favor espera...
+                </p>
+
+                <div style="
+                    background: #f0f9ff;
+                    border: 1px solid #bfdbfe;
+                    border-radius: 8px;
+                    padding: 1rem;
+                    margin-bottom: 1rem;
+                ">
+                    <div style="display: flex; justify-content: space-around; align-items: center;">
+                        <div>
+                            <div style="font-size: 2rem; font-weight: bold; color: #0369a1;" id="tiempoTranscurrido">0s</div>
+                            <div style="font-size: 0.75rem; color: #6b7280;">Tiempo transcurrido</div>
+                        </div>
+                        <div style="color: #cbd5e1;">•</div>
+                        <div>
+                            <div style="font-size: 1.2rem; font-weight: 600; color: #059669;" id="tiempoEstimado">~1-2 min</div>
+                            <div style="font-size: 0.75rem; color: #6b7280;">Tiempo estimado</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1rem; height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden;">
+                    <div style="
+                        height: 100%;
+                        background: #3b82f6;
+                        width: 30%;
+                        animation: progress 1.5s ease-in-out infinite;
+                    "></div>
+                </div>
+
+                <p style="margin: 0; color: #9ca3af; font-size: 0.8rem;">
+                    El PDF se descargará automáticamente cuando esté listo
+                </p>
+            </div>
+        </div>
+        <style>
+            @keyframes progress {
+                0% { width: 30%; }
+                50% { width: 70%; }
+                100% { width: 30%; }
+            }
+        </style>
+    `;
+    document.body.insertAdjacentHTML('beforeend', html);
+
+    // Actualizar contador cada segundo
+    const intervalo = setInterval(() => {
+        const ahora = Date.now();
+        const segundosTranscurridos = Math.floor((ahora - tiempoInicio) / 1000);
+
+        const elementoTiempo = document.getElementById('tiempoTranscurrido');
+        if (elementoTiempo) {
+            if (segundosTranscurridos < 60) {
+                elementoTiempo.textContent = segundosTranscurridos + 's';
+            } else {
+                const minutos = Math.floor(segundosTranscurridos / 60);
+                const segundos = segundosTranscurridos % 60;
+                elementoTiempo.textContent = minutos + 'm ' + segundos + 's';
+            }
+        } else {
+            clearInterval(intervalo);
+        }
+    }, 1000);
+};
+
+// Cerrar modal al hacer clic en el overlay
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('modalGenerarReporte');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                window.cerrarModalGenerarReporte();
+            }
+        });
+    }
+});
+</script>
+
 <!-- Meta tags para usuario actual -->
 @if(auth()->check())
     <meta name="user-id" content="{{ auth()->id() }}">

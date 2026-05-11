@@ -32,6 +32,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/recibos-bordado-estampado', [RegistroOrdenController::class, 'recibosBordadoEstampado'])->name('registros.recibos-bordado-estampado');
     Route::get('/recibos-bordado-estampado/search', [RegistroOrdenController::class, 'searchRecibosBordadoEstampado'])->name('registros.recibos-bordado-estampado-search');
     Route::get('/recibos-reflectivo/search', [RegistroOrdenController::class, 'searchRecibosReflectivo'])->name('registros.recibos-reflectivo-search');
+    Route::match(['get', 'post'], '/recibos-logo/reporte', [RegistroOrdenController::class, 'reporteRecibosLogo'])->name('recibos-logo.reporte');
     Route::get('/bodega/next-pedido', [RegistroBodegaController::class, 'getNextPedido'])->name('bodega.next-pedido');
     Route::get('/bodega', [RegistroBodegaController::class, 'index'])->name('bodega.index');
     

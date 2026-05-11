@@ -535,6 +535,34 @@
           <span class="material-symbols-rounded submenu-arrow">expand_more</span>
         </button>
         <ul class="submenu">
+          <!-- Generar Reporte (con submenu) -->
+          <li class="submenu-item">
+            <button class="menu-link submenu-toggle"
+                    aria-label="Generar reportes">
+              <span class="material-symbols-rounded" aria-hidden="true">file_download</span>
+              <span class="menu-label">Generar Reporte</span>
+              <span class="material-symbols-rounded submenu-arrow">expand_more</span>
+            </button>
+            <ul class="submenu">
+              <li class="submenu-item">
+                <button type="button" onclick="abrirModalGenerarReporte('costura')"
+                   class="menu-link"
+                   aria-label="Generar reporte de recibos de costura">
+                  <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+                  <span class="menu-label">Recibos de Costura</span>
+                </button>
+              </li>
+              <li class="submenu-item">
+                <button type="button" onclick="abrirModalGenerarReporte('logo')"
+                   class="menu-link"
+                   aria-label="Generar reporte de recibos de logo">
+                  <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+                  <span class="menu-label">Recibos de Logo</span>
+                </button>
+              </li>
+            </ul>
+          </li>
+
           <!-- Entregas -->
           <li class="submenu-item">
             <button class="menu-link submenu-toggle {{ request()->routeIs('entrega.*', 'entregas-completas.*') ? 'active' : '' }}"
