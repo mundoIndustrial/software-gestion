@@ -28,16 +28,20 @@ class GetOperarioDashboardUseCase
         $prendasConRecibos = collect();
         $recibosCompletados = collect();
 
-        // Optimización: Solo cargar los datos necesarios para la pestaña actual
-        if ($usuario->hasRole('cortador') && $tab === 'completados') {
+        // Para cortadores, siempre cargamos ambos para mostrar los contadores en los tabs
+        if ($usuario->hasRole('cortador')) {
             $recibosCompletados = $this->dashboardReadService->obtenerRecibosCompletadosPorOperario($usuario->name);
-        } else {
-            // Obtener prendas con recibos del operario (Pendientes / Otros tabs)
+        }
+
+        // Obtener prendas con recibos del operario (Pendientes / Otros tabs)
+        // Se ejecuta si no es cortador O si es cortador (siempre cargamos pendientes para el contador)
+        if (!$usuario->hasRole('cortador') || $tab === 'pendientes' || $usuario->hasRole('cortador')) {
             $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario);
 
             if ($verTodas || $usuario->hasRole('administrador-costura')) {
                 $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibosTodosCostura();
             }
+
 
             if ($usuario->hasRole('administrador-costura') && in_array($tab, ['costura', 'sobremedida'], true)) {
                 $usuariosSobremedida = $this->dashboardReadService->obtenerUsuariosSobremedidaNormalizados();

@@ -349,8 +349,9 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             ->whereIn('area', $tipoOperario === 'visualizador_plooter'
                 ? ['Corte']
                 : ($tipoOperario === 'vista-costura'
-                    ? ['Costura', 'Control de Calidad', 'Control Calidad']
+                    ? ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad']
                     : ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad']))
+
             ->with(['prenda', 'prenda.pedidoProduccion', 'prenda.procesosPrenda', 'prenda.tallas', 'pedido', 'pedido.prendas', 'pedido.prendas.tallas']);
 
         // Para cortadores: excluir PENDIENTE_INSUMOS (misma lógica que /recibos-costura)
@@ -1069,18 +1070,29 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 ->values();
         }
 
-        return $prendasAgrupadas
+        $resultadoFinal = $prendasAgrupadas
             ->concat($this->obtenerPrendasParcialesCostura($usuario, false))
             ->unique(function ($item) {
                 $parcialId = $item['pedido_parcial_id'] ?? null;
                 $isReciboPorPartes = $item['es_recibo_por_partes'] ?? false;
                 $prefix = $isReciboPorPartes ? 'rx_' : 'an_';
                 return $item['prenda_id'] . ($parcialId ? '_' . $prefix . $parcialId : '');
-            })
+            });
+
+        if ($tipoOperario === 'cortador') {
+            return $resultadoFinal
+                ->sortByDesc(function ($item) {
+                    return $item['fecha_creacion'] ?? null;
+                })
+                ->values();
+        }
+
+        return $resultadoFinal
             ->sortBy(function ($item) {
                 return $item['fecha_creacion'] ?? null;
             })
             ->values();
+
     }
 
     /**
@@ -1489,11 +1501,12 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 ->first();
 
             if ($procesoCorte) {
-                return $procesoCorte->created_at;
+                // Priorizar fecha de asignación del encargado
+                return $procesoCorte->fecha_de_asignacion_encargado ?? $procesoCorte->created_at;
             }
         }
 
-        // Fallback a consulta SQL si no está cargada (aunque debería estarlo por el 'with')
+        // Fallback a consulta SQL si no está cargada
         $query = ProcesoPrenda::query()
             ->where('numero_pedido', $recibo->pedido_produccion_id)
             ->where('prenda_pedido_id', $recibo->prenda_id)
@@ -1513,8 +1526,10 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 });
         }
 
-        return $query->latest('created_at')->value('created_at');
+        $proc = $query->latest('created_at')->first();
+        return $proc ? ($proc->fecha_de_asignacion_encargado ?? $proc->created_at) : null;
     }
+
 
 
     private function normalizarFechaAOrdenable($fecha): int

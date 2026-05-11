@@ -305,24 +305,32 @@ body[data-dashboard-theme="reflectivo"] .operario-dashboard.is-vista-costura .fi
     color: #fff;
 }
 
-.operario-dashboard.is-vista-costura .badge-filtro-contador {
+.operario-dashboard .badge-filtro-contador {
     background: #dbe7ff;
     color: #64748b;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 0.35rem;
+    min-width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 0 0.4rem;
     font-size: 0.7rem;
+    font-weight: 800;
+    margin-left: 0.5rem;
+    transition: all 0.3s ease;
 }
 
-.operario-dashboard.is-vista-costura .badge-filtro-active .badge-filtro-contador {
+.operario-dashboard .badge-filtro-active .badge-filtro-contador {
     background: rgba(255, 255, 255, 0.24);
     color: #fff;
 }
 
-body[data-dashboard-theme="reflectivo"] .operario-dashboard.is-vista-costura .badge-filtro.badge-filtro-active .badge-filtro-contador {
+body[data-dashboard-theme="reflectivo"] .operario-dashboard .badge-filtro.badge-filtro-active .badge-filtro-contador {
     background: rgba(255, 255, 255, 0.22);
     color: #fff;
 }
+
 
 /* Lista de órdenes */
 .operario-dashboard .ordenes-list {

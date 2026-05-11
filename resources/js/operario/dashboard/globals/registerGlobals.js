@@ -1,4 +1,4 @@
-﻿import { abrirDetallesRecibos } from '../navigation/detallesRecibos';
+import { abrirDetallesRecibos } from '../navigation/detallesRecibos';
 import {
     abrirModalNovedad,
     cerrarModalNovedad,
@@ -22,7 +22,7 @@ import { toggleMobileActions } from '../mobile/mobileActions';
 import { completarCorte, deshacerCorte, completarCostura, deshacerCostura } from '../recibos/corteCostura';
 import { completarReciboCorteSobremedida, deshacerReciboCorteSobremedida } from '../recibos/corteSobremedida';
 import { mostrarExito, mostrarError, mostrarMensaje, cerrarModalMensaje } from '../ui/messages';
-import { actualizarContadorTarjetas } from '../ui/counters';
+import { actualizarContadorTarjetas, incrementarContadorCompletados } from '../ui/counters';
 import { asegurarBadgeCompletado } from '../ui/badges';
 import { abrirEditarEncargados } from '../distribucion/distribucion';
 
@@ -70,6 +70,8 @@ export function registerDashboardGlobals() {
     window.mostrarMensaje = mostrarMensaje;
     window.cerrarModalMensaje = cerrarModalMensaje;
     window.actualizarContadorTarjetas = actualizarContadorTarjetas;
+    window.incrementarContadorCompletados = incrementarContadorCompletados;
+
     window.asegurarBadgeCompletado = asegurarBadgeCompletado;
 }
 

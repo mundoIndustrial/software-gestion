@@ -17,7 +17,7 @@
     $ordenarPorFechaInicioProceso = auth()->user()->hasRole('vista-costura');
     $ordenarPorFechaAsignacionCorte = auth()->user()->hasRole('cortador');
 
-    $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortBy(function ($prenda) use ($ordenarPorFechaAsignacionProceso, $ordenarPorFechaInicioProceso, $ordenarPorFechaAsignacionCorte) {
+    $callbackOrdenamiento = function ($prenda) use ($ordenarPorFechaAsignacionProceso, $ordenarPorFechaInicioProceso, $ordenarPorFechaAsignacionCorte) {
         $reciboPrincipal = collect($prenda['recibos'] ?? [])->first();
         if ($ordenarPorFechaInicioProceso) {
             $fechaOrden = $reciboPrincipal['fecha_inicio_proceso']
@@ -52,7 +52,14 @@
         }
 
         return 0;
-    })->values();
+    };
+
+    if (auth()->user()->hasRole('cortador')) {
+        $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortByDesc($callbackOrdenamiento)->values();
+    } else {
+        $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortBy($callbackOrdenamiento)->values();
+    }
+
 
     if (auth()->user()->hasAnyRole(['lider-reflectivo', 'costurero', 'administrador-costura', 'cortador'])) {
         $detalleOrden = $prendasOrdenadas->map(function ($prenda, $idx) use ($ordenarPorFechaAsignacionProceso, $ordenarPorFechaAsignacionCorte) {
@@ -236,13 +243,17 @@
                     <button type="button" class="badge-filtro {{ ($tab ?? 'pendientes') === 'pendientes' ? 'badge-filtro-active' : '' }}" onclick="window.location.href='{{ route('operario.dashboard', ['tab' => 'pendientes']) }}'">
                         <span class="material-symbols-rounded">pending_actions</span>
                         Pendientes
+                        <span class="badge-filtro-contador" id="contadorPendientes">{{ $prendasConRecibos->count() }}</span>
                     </button>
                     <button type="button" class="badge-filtro {{ ($tab ?? 'pendientes') === 'completados' ? 'badge-filtro-active' : '' }}" onclick="window.location.href='{{ route('operario.dashboard', ['tab' => 'completados']) }}'">
                         <span class="material-symbols-rounded">task_alt</span>
                         Completados
+                        <span class="badge-filtro-contador" id="contadorCompletados">{{ $recibosCompletados->count() }}</span>
                     </button>
+
                 </div>
             @endif
+
 
             <div class="ordenes-list" id="ordenesList">
                 @if(auth()->user()->hasRole('cortador') && ($tab ?? 'pendientes') === 'completados')
@@ -364,9 +375,10 @@
                             }
                         @endphp
 
-                        @if(auth()->user()->hasRole('vista-costura') && $areaReciboFiltro === 'corte')
+                        @if(auth()->user()->hasRole('vista-costura') && $areaReciboFiltro === 'corte' && !$tieneReflectivo)
                             @continue
                         @endif
+
 
                         @php
                             // Definir variables necesarias para el card

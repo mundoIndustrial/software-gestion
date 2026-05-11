@@ -150,6 +150,10 @@ export function completarCorte(btn) {
                             if (typeof window.actualizarContadorTarjetas === 'function') {
                                 window.actualizarContadorTarjetas();
                             }
+                            if (typeof window.incrementarContadorCompletados === 'function') {
+                                window.incrementarContadorCompletados();
+                            }
+
                         }, 650);
                     }
                     

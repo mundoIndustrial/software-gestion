@@ -2,20 +2,33 @@ export function initOperarioTabs() {
     const tabs = document.querySelectorAll('.filtros-badges-principales .badge-filtro');
     
     tabs.forEach(tab => {
+        const text = tab.textContent.toLowerCase();
+        const isPendientes = text.includes('pendientes');
+        const isCompletados = text.includes('completados');
+
+        // Solo manejamos AJAX para las pestañas de Pendientes/Completados
+        if (!isPendientes && !isCompletados) {
+            return;
+        }
+
         // Quitamos el onclick que viene de Blade si existe
         tab.removeAttribute('onclick');
         
         tab.addEventListener('click', async (e) => {
             e.preventDefault();
             
-            const isPendientes = tab.textContent.toLowerCase().includes('pendientes');
             const tabName = isPendientes ? 'pendientes' : 'completados';
             const url = new URL(window.location.href);
             url.searchParams.set('tab', tabName);
             url.searchParams.delete('page'); // Reset page when changing tab
             
             // Actualizar UI de los botones inmediatamente para feedback visual
-            tabs.forEach(t => t.classList.remove('badge-filtro-active'));
+            tabs.forEach(t => {
+                if (t.textContent.toLowerCase().includes('pendientes') || 
+                    t.textContent.toLowerCase().includes('completados')) {
+                    t.classList.remove('badge-filtro-active');
+                }
+            });
             tab.classList.add('badge-filtro-active');
             
             try {
@@ -44,8 +57,6 @@ export function initOperarioTabs() {
                     if (window.__initDashboardSearch) window.__initDashboardSearch();
                     if (window.reaplicarFiltrosDashboard) window.reaplicarFiltrosDashboard();
                     
-                    // NOTA: __initDashboardSearch ya llama a resetPagination, 
-                    // pero por si acaso forzamos actualización
                     if (window.__resetDashboardPagination) window.__resetDashboardPagination();
                 }
             } catch (err) {
@@ -55,4 +66,5 @@ export function initOperarioTabs() {
             }
         });
     });
+
 }
