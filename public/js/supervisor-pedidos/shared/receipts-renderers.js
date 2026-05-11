@@ -188,7 +188,8 @@
     function renderEmbroideryRow(proceso, escapeHtml, options = {}) {
         const showActions = options.showActions === true;
         const actionHandlerName = String(options.actionHandlerName || 'openReceiptFromLogoPendingRow');
-        const gridTemplate = options.gridTemplate || '160px 150px 110px 200px 150px 140px 130px 170px 130px 100px';
+        const showRemainingDays = options.showRemainingDays !== false;
+        const gridTemplate = options.gridTemplate || '160px 110px 200px 150px 140px 130px 170px 130px 100px';
         const fechaCreacion = formatDateTime(proceso?.fecha_creacion);
         const numeroRecibo = proceso?.numero_recibo || 'Sin asignar';
         const cliente = proceso?.cliente || '';
@@ -216,6 +217,14 @@
             console.warn('[RENDER-EMBROIDERY] Falta tipo_recibo en proceso:', proceso);
         }
 
+        const remainingDaysHtml = showRemainingDays
+            ? `<div>
+                    ${diasRestantes !== null
+                        ? `<span style="display: inline-flex; flex-direction: column; line-height: 1.1; color: #dc2626; font-weight: 700; font-size: 0.78rem;"><span>${escapeHtml(String(diasRestantes))} días</span><span>hábiles restantes</span></span>`
+                        : '<span style="color: #9ca3af;">-</span>'}
+                </div>`
+            : '';
+
         return `
             <div data-row="proceso" data-color-guardado="${colorBordadoEstampado}" style="
                 display: grid;
@@ -230,11 +239,7 @@
             " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=this.getAttribute('data-color-guardado') || 'white'">
                 ${actionsCellHtml}
                 <div>${fechaAprobacion ? `<span>${escapeHtml(fechaAprobacion)}</span>` : `<span style="background: #f3f4f6; color: #9ca3af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; display: inline-block;">--</span>`}</div>
-                <div>
-                    ${diasRestantes !== null
-                        ? `<span style="display: inline-flex; flex-direction: column; line-height: 1.1; color: #dc2626; font-weight: 700; font-size: 0.78rem;"><span>${escapeHtml(String(diasRestantes))} días</span><span>hábiles restantes</span></span>`
-                        : '<span style="color: #9ca3af;">-</span>'}
-                </div>
+                ${remainingDaysHtml}
                 <div><span style="font-weight: 600; color: #1e5ba8;">${escapeHtml(String(numeroRecibo))}</span></div>
                 <div><span>${escapeHtml(String(cliente))}</span></div>
                 <div><span style="background: #e8f3ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: normal; overflow-wrap: anywhere; word-break: break-word; line-height: 1.2; border: 1px solid #bfdbfe; display: inline-block; max-width: 100%;">${escapeHtml(String(cantidad))} ${escapeHtml(String(nombrePrenda))}</span></div>

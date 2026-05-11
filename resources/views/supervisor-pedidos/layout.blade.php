@@ -616,6 +616,12 @@
     <script src="{{ asset('js/shared/echo-ready-utils.js') }}"></script>
     <script src="{{ asset('js/supervisor-pedidos/layout/notifications-and-filters.js') }}"></script>
 
+    <script>
+        function limpiarParametrosVacios(event) {
+            event.preventDefault();
+        }
+    </script>
+
     @stack('scripts')
     <script src="{{ asset('js/supervisor-pedidos/layout/nav-protector.js') }}"></script>
 

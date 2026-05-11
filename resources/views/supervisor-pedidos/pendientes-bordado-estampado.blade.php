@@ -733,7 +733,6 @@ function ejecutarBusquedaGeneralPendientes() {
     const inputBusqueda = document.getElementById('busqueda');
     const textoBusqueda = (inputBusqueda?.value || '').trim();
     const url = new URL(window.location.href);
-    const busquedaActualEnUrl = (url.searchParams.get('busqueda') || '').trim();
 
     if (textoBusqueda === '') {
         url.searchParams.delete('busqueda');
@@ -742,13 +741,7 @@ function ejecutarBusquedaGeneralPendientes() {
     }
 
     url.searchParams.delete('page');
-
-    const destino = url.toString();
-    if (textoBusqueda === busquedaActualEnUrl && destino === window.location.href) {
-        return;
-    }
-
-    window.location.assign(destino);
+    window.navegarPendientesBordadoEstampado(url.toString());
 }
 
 let filtroActual = null;
@@ -1169,6 +1162,93 @@ if (document.readyState === 'loading') {
 } else {
     inicializarSelectorColores();
 }
+
+window.navegarPendientesBordadoEstampado = async function navegarPendientesBordadoEstampado(urlString, options = {}) {
+    const { pushState = true } = options;
+    const rows = document.getElementById('pendientesRows');
+    const pagination = document.querySelector('.pendientes-logo-pagination');
+    if (!rows) return;
+
+    try {
+        rows.style.opacity = '0.6';
+        rows.style.pointerEvents = 'none';
+
+        const source = new URL(urlString, window.location.origin);
+        const apiUrl = `/api/supervisor-pedidos/recibos/pendientes-bordado-estampado${source.search || ''}`;
+
+        const res = await fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            cache: 'no-store'
+        });
+
+        const payload = await res.json();
+        const procesos = payload?.data?.procesosConCantidad;
+        if (!res.ok || !Array.isArray(procesos)) {
+            window.location.href = urlString;
+            return;
+        }
+
+        if (procesos.length === 0) {
+            rows.innerHTML = window.SupervisorReceiptsRenderers.emptyStateHtml();
+        } else {
+            rows.innerHTML = procesos.map((proceso) => window.SupervisorReceiptsRenderers.renderEmbroideryRow(proceso, escapeHtml, {
+                gridTemplate: '110px 160px 110px 200px 150px 140px 130px 170px 130px 100px',
+                showActions: true,
+                actionHandlerName: 'openReceiptFromLogoPendingRow',
+                showRemainingDays: false
+            })).join('');
+        }
+
+        if (pagination) {
+            try {
+                const htmlRes = await fetch(urlString, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'text/html'
+                    },
+                    cache: 'no-store'
+                });
+
+                if (htmlRes.ok) {
+                    const htmlText = await htmlRes.text();
+                    const tempDoc = new DOMParser().parseFromString(htmlText, 'text/html');
+                    const newPagination = tempDoc.querySelector('.pendientes-logo-pagination');
+                    if (newPagination) {
+                        pagination.innerHTML = newPagination.innerHTML;
+                    }
+                }
+            } catch (paginationError) {
+                console.warn('No se pudo sincronizar la paginación:', paginationError);
+            }
+        }
+
+        if (pushState) {
+            window.history.pushState({ url: urlString }, '', urlString);
+        }
+
+        inicializarPendientesUI();
+        inicializarBusquedaGeneralPendientes();
+        inicializarSelectorColores();
+        aplicarFiltrosEnVista();
+        actualizarIndicadoresFiltrosPendientes();
+    } catch (e) {
+        console.error('Error:', e);
+        window.location.href = urlString;
+        return;
+    } finally {
+        rows.style.opacity = '';
+        rows.style.pointerEvents = '';
+    }
+}
+
+window.addEventListener('popstate', function() {
+    navegarPendientesBordadoEstampado(window.location.href, { pushState: false });
+});
 </script>
 @endpush
 
