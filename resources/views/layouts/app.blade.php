@@ -565,6 +565,8 @@ window.generarReporteCostura = function() {
     let reporteUrl;
     if (tipo === 'logo') {
         reporteUrl = '{{ route("recibos-logo.reporte") }}';
+    } else if (tipo === 'reflectivo') {
+        reporteUrl = '{{ route("recibos-reflectivo.reporte") }}';
     } else {
         reporteUrl = '{{ route("supervisor-pedidos.pendientes-costura.reporte") }}';
     }
@@ -596,6 +598,8 @@ window.generarReporteCostura = function() {
         const fecha = new Date().toISOString().slice(0,10);
         if (tipo === 'logo') {
             link.download = 'reporte_recibos_logo_' + fecha + '.pdf';
+        } else if (tipo === 'reflectivo') {
+            link.download = 'reporte_recibos_reflectivo_' + fecha + '.pdf';
         } else {
             link.download = 'reporte_pendientes_costura_' + fecha + '.pdf';
         }

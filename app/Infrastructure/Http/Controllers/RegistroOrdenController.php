@@ -1698,39 +1698,73 @@ class RegistroOrdenController extends Controller
                 $item->dias_transcurridos = $diasHabiles;
 
                 $prendaId = (int) $item->prenda_id;
+                $numeroRecibo = (int) $item->numero_recibo;
 
-                $prendasConColores = collect(
-                    DB::table('prendas_pedido as pp')
-                        ->join('prenda_pedido_tallas as ppt', 'pp.id', '=', 'ppt.prenda_pedido_id')
-                        ->join('prenda_pedido_talla_colores as pptc', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
-                        ->select([
-                            'pp.nombre_prenda',
-                            'pptc.color_nombre',
-                            'pptc.cantidad as cantidad_color',
-                            DB::raw('null as cantidad_talla'),
-                            DB::raw('null as tela'),
-                        ])
-                        ->where('pp.id', $prendaId)
-                        ->get()
-                );
+                // Intentar obtener prendas de pedidos parciales (que coincidan con el número de recibo)
+                $prendasPartiales = DB::table('pedidos_parciales as pp')
+                    ->join('pedidos_parciales_tallas as ppt', 'pp.id', '=', 'ppt.pedido_parcial_id')
+                    ->join('prendas_pedido as prenda', 'pp.prenda_pedido_id', '=', 'prenda.id')
+                    ->select([
+                        'prenda.nombre_prenda',
+                        'ppt.color_nombre',
+                        DB::raw('SUM(ppt.cantidad) as cantidad'),
+                        'ppt.talla',
+                        'ppt.genero',
+                    ])
+                    ->where('pp.prenda_pedido_id', $prendaId)
+                    ->where('pp.consecutivo_actual', $numeroRecibo)
+                    ->where('pp.activo', true)
+                    ->whereNull('pp.deleted_at')
+                    ->groupBy('prenda.nombre_prenda', 'ppt.color_nombre', 'ppt.talla', 'ppt.genero')
+                    ->get();
 
-                $prendasSinColores = collect(
-                    DB::table('prendas_pedido as pp')
-                        ->join('prenda_pedido_tallas as ppt', 'pp.id', '=', 'ppt.prenda_pedido_id')
-                        ->leftJoin('prenda_pedido_talla_colores as pptc', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
-                        ->select([
-                            'pp.nombre_prenda',
-                            'ppt.tela',
-                            'ppt.cantidad as cantidad_talla',
-                            DB::raw('null as color_nombre'),
-                            DB::raw('null as cantidad_color'),
-                        ])
-                        ->where('pp.id', $prendaId)
-                        ->whereNull('pptc.id')
-                        ->get()
-                );
+                if ($prendasPartiales->count() > 0) {
+                    // Usar cantidades de pedidos_parciales_tallas
+                    $item->prendas = collect($prendasPartiales)->map(function ($p) {
+                        return (object)[
+                            'nombre_prenda' => $p->nombre_prenda,
+                            'color_nombre' => !empty($p->color_nombre) ? $p->color_nombre : null,
+                            'cantidad_color' => !empty($p->color_nombre) ? $p->cantidad : null,
+                            'cantidad_talla' => empty($p->color_nombre) ? $p->cantidad : null,
+                            'tela' => !empty($p->talla) ? $p->talla : null,
+                        ];
+                    });
+                } else {
+                    // Usar cantidades de prenda_pedido_tallas (si no hay parcial)
+                    $prendasConColores = collect(
+                        DB::table('prendas_pedido as pp')
+                            ->join('prenda_pedido_tallas as ppt', 'pp.id', '=', 'ppt.prenda_pedido_id')
+                            ->join('prenda_pedido_talla_colores as pptc', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+                            ->select([
+                                'pp.nombre_prenda',
+                                'pptc.color_nombre',
+                                'pptc.cantidad as cantidad_color',
+                                DB::raw('null as cantidad_talla'),
+                                DB::raw('null as tela'),
+                            ])
+                            ->where('pp.id', $prendaId)
+                            ->get()
+                    );
 
-                $item->prendas = $prendasConColores->merge($prendasSinColores);
+                    $prendasSinColores = collect(
+                        DB::table('prendas_pedido as pp')
+                            ->join('prenda_pedido_tallas as ppt', 'pp.id', '=', 'ppt.prenda_pedido_id')
+                            ->leftJoin('prenda_pedido_talla_colores as pptc', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+                            ->select([
+                                'pp.nombre_prenda',
+                                'ppt.tela',
+                                'ppt.cantidad as cantidad_talla',
+                                DB::raw('null as color_nombre'),
+                                DB::raw('null as cantidad_color'),
+                            ])
+                            ->where('pp.id', $prendaId)
+                            ->whereNull('pptc.id')
+                            ->get()
+                    );
+
+                    $item->prendas = $prendasConColores->merge($prendasSinColores);
+                }
+
                 return $item;
             })
             ->groupBy('dias_transcurridos')
@@ -1750,6 +1784,132 @@ class RegistroOrdenController extends Controller
         ])->setPaper('a4', 'landscape');
 
         $filename = "reporte_recibos_logo_" . now()->format('Ymd_His') . ".pdf";
+
+        return $pdf->download($filename);
+    }
+
+    public function reporteRecibosReflectivo(Request $request)
+    {
+        $diasAntiguedad = (int) $request->input('dias_antiguedad', 0);
+        $desde = now()->subDays($diasAntiguedad);
+        $areasReflectivo = ['INSUMOS', 'COSTURA'];
+
+        $recibos = DB::table('consecutivos_recibos_pedidos as crp')
+            ->join('prendas_pedido as pp', 'crp.prenda_id', '=', 'pp.id')
+            ->join('pedidos_produccion as pedprod', 'pp.pedido_produccion_id', '=', 'pedprod.id')
+            ->leftJoin('users as asesor_user', 'pedprod.asesor_id', '=', 'asesor_user.id')
+            ->select([
+                'crp.consecutivo_actual as numero_recibo',
+                'crp.area',
+                'crp.created_at as fecha_creacion',
+                'pedprod.cliente',
+                'pp.id as prenda_id',
+                'pp.nombre_prenda',
+                'asesor_user.name as asesor',
+                'crp.tipo_recibo',
+            ])
+            ->where('crp.tipo_recibo', 'REFLECTIVO')
+            ->where('crp.activo', true)
+            ->whereIn('crp.area', $areasReflectivo)
+            ->when($diasAntiguedad > 0, function ($q) use ($desde) {
+                return $q->where('crp.created_at', '>=', $desde);
+            })
+            ->orderBy('crp.created_at', 'asc')
+            ->get();
+
+        $receipts = collect($recibos)
+            ->map(function ($item) {
+                $fechaCreacion = Carbon::parse($item->fecha_creacion);
+                $diasHabiles = $this->diasHabilesService->calcularDiasHabiles($fechaCreacion, now());
+                $item->dias_transcurridos = $diasHabiles;
+
+                $prendaId = (int) $item->prenda_id;
+                $numeroRecibo = (int) $item->numero_recibo;
+
+                // Intentar obtener prendas de pedidos parciales (que coincidan con el número de recibo)
+                $prendasPartiales = DB::table('pedidos_parciales as pp')
+                    ->join('pedidos_parciales_tallas as ppt', 'pp.id', '=', 'ppt.pedido_parcial_id')
+                    ->join('prendas_pedido as prenda', 'pp.prenda_pedido_id', '=', 'prenda.id')
+                    ->select([
+                        'prenda.nombre_prenda',
+                        'ppt.color_nombre',
+                        DB::raw('SUM(ppt.cantidad) as cantidad'),
+                        'ppt.talla',
+                        'ppt.genero',
+                    ])
+                    ->where('pp.prenda_pedido_id', $prendaId)
+                    ->where('pp.consecutivo_actual', $numeroRecibo)
+                    ->where('pp.activo', true)
+                    ->whereNull('pp.deleted_at')
+                    ->groupBy('prenda.nombre_prenda', 'ppt.color_nombre', 'ppt.talla', 'ppt.genero')
+                    ->get();
+
+                if ($prendasPartiales->count() > 0) {
+                    // Usar cantidades de pedidos_parciales_tallas
+                    $item->prendas = collect($prendasPartiales)->map(function ($p) {
+                        return (object)[
+                            'nombre_prenda' => $p->nombre_prenda,
+                            'color_nombre' => !empty($p->color_nombre) ? $p->color_nombre : null,
+                            'cantidad_color' => !empty($p->color_nombre) ? $p->cantidad : null,
+                            'cantidad_talla' => empty($p->color_nombre) ? $p->cantidad : null,
+                            'tela' => !empty($p->talla) ? $p->talla : null,
+                        ];
+                    });
+                } else {
+                    // Usar cantidades de prenda_pedido_tallas (si no hay parcial)
+                    $prendasConColores = collect(
+                        DB::table('prendas_pedido as pp')
+                            ->join('prenda_pedido_tallas as ppt', 'pp.id', '=', 'ppt.prenda_pedido_id')
+                            ->join('prenda_pedido_talla_colores as pptc', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+                            ->select([
+                                'pp.nombre_prenda',
+                                'pptc.color_nombre',
+                                'pptc.cantidad as cantidad_color',
+                                DB::raw('null as cantidad_talla'),
+                                DB::raw('null as tela'),
+                            ])
+                            ->where('pp.id', $prendaId)
+                            ->get()
+                    );
+
+                    $prendasSinColores = collect(
+                        DB::table('prendas_pedido as pp')
+                            ->join('prenda_pedido_tallas as ppt', 'pp.id', '=', 'ppt.prenda_pedido_id')
+                            ->leftJoin('prenda_pedido_talla_colores as pptc', 'ppt.id', '=', 'pptc.prenda_pedido_talla_id')
+                            ->select([
+                                'pp.nombre_prenda',
+                                'ppt.tela',
+                                'ppt.cantidad as cantidad_talla',
+                                DB::raw('null as color_nombre'),
+                                DB::raw('null as cantidad_color'),
+                            ])
+                            ->where('pp.id', $prendaId)
+                            ->whereNull('pptc.id')
+                            ->get()
+                    );
+
+                    $item->prendas = $prendasConColores->merge($prendasSinColores);
+                }
+
+                return $item;
+            })
+            ->groupBy('dias_transcurridos')
+            ->sortByDesc(function ($group, $dias) {
+                return (int) $dias;
+            });
+
+        $totalRecibos = $recibos->count();
+        $filtros = $request->only(['dias_antiguedad']);
+
+        $pdf = Pdf::loadView('registros.reporte-recibos-reflectivo-pdf', [
+            'grouped' => $receipts,
+            'totalRecibos' => $totalRecibos,
+            'filtros' => $filtros,
+            'fechaGeneracion' => now(),
+            'diasAntiguedad' => $diasAntiguedad,
+        ])->setPaper('a4', 'landscape');
+
+        $filename = "reporte_recibos_reflectivo_" . now()->format('Ymd_His') . ".pdf";
 
         return $pdf->download($filename);
     }

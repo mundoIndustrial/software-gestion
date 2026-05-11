@@ -560,6 +560,14 @@
                   <span class="menu-label">Recibos de Logo</span>
                 </button>
               </li>
+              <li class="submenu-item">
+                <button type="button" onclick="abrirModalGenerarReporte('reflectivo')"
+                   class="menu-link"
+                   aria-label="Generar reporte de recibos de reflectivo">
+                  <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+                  <span class="menu-label">Recibos de Reflectivo</span>
+                </button>
+              </li>
             </ul>
           </li>
 

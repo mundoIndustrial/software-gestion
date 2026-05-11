@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte Recibos de Logo</title>
+    <title>Reporte Recibos de Reflectivo</title>
     <style>
         body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #111827; }
         h1 { margin: 0 0 8px 0; font-size: 18px; }
@@ -18,7 +18,7 @@
     </style>
 </head>
 <body>
-    <h1>Reporte de Recibos de Logo</h1>
+    <h1>Reporte de Recibos de Reflectivo</h1>
 
     <div class="meta">
         <div><strong>Fecha de generacion:</strong> {{ $fechaGeneracion->format('d/m/Y H:i:s') }}</div>
