@@ -39,6 +39,7 @@ class DespachoPendientesApplicationService
                     ->leftJoin('pedidos_procesos_prenda_detalles as pppd', 'pppd.prenda_pedido_id', '=', 'pp.id')
                     ->whereColumn('bdt.pedido_produccion_id', 'pedidos_produccion.id')
                     ->where('bdt.estado_bodega', 'Pendiente')
+                    ->whereNotNull('bdt.fecha_pendiente')
                     ->whereNull('pppd.id');
             })
             ->select('pedidos_produccion.*')
@@ -155,6 +156,7 @@ class DespachoPendientesApplicationService
             ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera'])
             ->where('bodega_detalles_talla.area', 'EPP')
             ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
+            ->whereNotNull('bodega_detalles_talla.fecha_pendiente')
             ->select('pedidos_produccion.*')
             ->distinct();
 
@@ -505,7 +507,8 @@ class DespachoPendientesApplicationService
                     })
                     ->leftJoin('pedidos_procesos_prenda_detalles as pppd', 'pppd.prenda_pedido_id', '=', 'pp.id')
                     ->whereColumn('bdt.pedido_produccion_id', 'pedidos_produccion.id')
-                    ->whereIn('bdt.estado_bodega', ['Pendiente', 'Entregado'])
+                    ->whereIn('bdt.estado_bodega', ['Entregado', 'Pendiente'])
+                    ->whereNotNull('bdt.fecha_pendiente')
                     ->whereNull('pppd.id');
             })
             ->pluck('pedidos_produccion.id');
@@ -516,7 +519,8 @@ class DespachoPendientesApplicationService
             ->where('pedidos_produccion.numero_pedido', '!=', '')
             ->whereIn('pedidos_produccion.estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'PENDIENTE_INSUMOS', 'PENDIENTE_SUPERVISOR', 'DEVUELTO_A_ASESORA', 'pendiente_cartera'])
             ->where('bodega_detalles_talla.area', 'EPP')
-            ->whereIn('bodega_detalles_talla.estado_bodega', ['Pendiente', 'Entregado'])
+            ->whereIn('bodega_detalles_talla.estado_bodega', ['Entregado', 'Pendiente'])
+            ->whereNotNull('bodega_detalles_talla.fecha_pendiente')
             ->pluck('pedidos_produccion.id');
 
         $pedidoIds = $coturaPedidoIds->merge($eppPedidoIds)->unique();
@@ -537,7 +541,7 @@ class DespachoPendientesApplicationService
                         ->leftJoin('pedidos_procesos_prenda_detalles as pppd', 'pppd.prenda_pedido_id', '=', 'pp.id')
                         ->whereColumn('bdt.pedido_produccion_id', 'pedidos_produccion.id')
                         ->whereNull('bdt.deleted_at')
-                        ->whereIn('bdt.estado_bodega', ['Pendiente', 'Entregado'])
+                        ->whereIn('bdt.estado_bodega', ['Entregado', 'Pendiente'])
                         ->whereNotNull('bdt.fecha_pendiente')
                         ->whereNull('pppd.id');
                 })->orWhereExists(function ($sub) {
@@ -546,7 +550,7 @@ class DespachoPendientesApplicationService
                         ->whereColumn('bdt.pedido_produccion_id', 'pedidos_produccion.id')
                         ->whereNull('bdt.deleted_at')
                         ->where('bdt.area', 'EPP')
-                        ->whereIn('bdt.estado_bodega', ['Pendiente', 'Entregado'])
+                        ->whereIn('bdt.estado_bodega', ['Entregado', 'Pendiente'])
                         ->whereNotNull('bdt.fecha_pendiente');
                 });
             });
@@ -715,11 +719,11 @@ class DespachoPendientesApplicationService
                     // Mostrar todos los items (pendiente + entregado)
                     $incluir = ($tipo === 'epp' && $area === 'EPP') || ($tipo === 'prenda' && $deBodega && (empty($procesos) || (is_array($procesos) && count($procesos) === 0)));
                 } else {
-                    // Mostrar solo pendientes
-                    $esEppPendiente = ($tipo === 'epp') && ($area === 'EPP') && ($estadoPendiente || $tieneHistorial);
+                    // Mostrar solo pendientes - EXCLUIR ENTREGADOS
+                    $esEppPendiente = ($tipo === 'epp') && ($area === 'EPP') && ($estadoBodega !== 'Entregado');
                     $esPrendaDeBodegaSinProcesos = ($tipo === 'prenda')
                         && $deBodega
-                        && ($estadoBodega === 'Pendiente')
+                        && ($estadoBodega !== 'Entregado')
                         && (empty($procesos) || (is_array($procesos) && count($procesos) === 0));
                     $incluir = $esEppPendiente || $esPrendaDeBodegaSinProcesos;
                 }

@@ -265,39 +265,38 @@ class DespachoPendientesController extends Controller
     public function showHistorialPendiente(Request $request, $id)
     {
         try {
-            \Log::info('[DESPACHO][HISTORIAL] Inicio showHistorialPendiente', [
-                'id_recibido_en_ruta' => $id,
-                'id_casteado_int' => (int) $id,
-            ]);
-
+            // Obtener datos completos del pedido usando el servicio
             $data = $this->service->construirDetallePendienteUnificado((int) $id, true);
-            $items = is_array($data['items'] ?? null) ? $data['items'] : [];
+            $pedidoProduccionId = $data['pedido']['id'] ?? null;
 
-            $itemsConFechaPendiente = collect($items)->filter(function ($item) {
-                $fechaPendiente = $item['fecha_pendiente'] ?? null;
-                return is_string($fechaPendiente)
-                    ? trim($fechaPendiente) !== ''
-                    : !empty($fechaPendiente);
-            })->values()->all();
-
-            $tieneFechaPendiente = !empty($itemsConFechaPendiente);
-
-            \Log::info('[DESPACHO][HISTORIAL] Resultado filtro fecha_pendiente', [
-                'id_recibido_en_ruta' => $id,
-                'numero_pedido_resuelto' => $data['pedido']['numero_pedido'] ?? null,
-                'estado_pedido_resuelto' => $data['pedido']['estado'] ?? null,
-                'items_totales' => count($items),
-                'items_con_fecha_pendiente' => count($itemsConFechaPendiente),
-                'tiene_fecha_pendiente' => $tieneFechaPendiente,
-            ]);
-
-            if (!$tieneFechaPendiente) {
-                \Log::warning('[DESPACHO][HISTORIAL] Pedido sin items con fecha_pendiente, se mostraran items sin filtro', [
-                    'id_recibido_en_ruta' => $id,
-                    'numero_pedido_resuelto' => $data['pedido']['numero_pedido'] ?? null,
-                    'items_totales' => count($items),
-                ]);
+            if (!$pedidoProduccionId) {
+                throw new \Exception('No se pudo resolver el pedido');
             }
+
+            // Obtener SOLO items con fecha_pendiente IS NOT NULL directamente de bodega_detalles_talla
+            $itemsConFecha = \DB::table('bodega_detalles_talla')
+                ->where('pedido_produccion_id', $pedidoProduccionId)
+                ->whereNull('deleted_at')
+                ->whereNotNull('fecha_pendiente')
+                ->select('*')
+                ->get();
+
+            // Transformar items de bodega_detalles_talla al formato esperado por la vista
+            $items = $itemsConFecha->map(function ($item) {
+                return [
+                    'prenda_nombre' => $item->prenda_nombre,
+                    'tipo' => $item->area === 'EPP' ? 'EPP' : 'prenda',
+                    'area' => $item->area,
+                    'estado_bodega' => $item->estado_bodega,
+                    'cantidad' => $item->cantidad,
+                    'talla' => $item->talla,
+                    'fecha_pedido' => $item->fecha_pedido,
+                    'fecha_pendiente' => $item->fecha_pendiente,
+                    'fecha_entrega_bodega' => $item->fecha_entrega_bodega,
+                    'observaciones_bodega' => $item->observaciones_bodega,
+                    'pendientes' => $item->pendientes,
+                ];
+            })->all();
 
             $backParams = array_filter([
                 'search' => $request->query('search'),
@@ -310,7 +309,7 @@ class DespachoPendientesController extends Controller
 
             return view('despacho.show-historial-pendiente-nuevo', [
                 'pedido' => $data['pedido'],
-                'items' => $tieneFechaPendiente ? $itemsConFechaPendiente : $items,
+                'items' => $items,
                 'origen' => 'historial',
                 'historialBackUrl' => $historialBackUrl,
             ]);
