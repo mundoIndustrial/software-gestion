@@ -80,7 +80,13 @@ class BodegaPedidoConsultaService
             return $this->procesarVistaDetallada($paginacion, $rolesDelUsuario, $areasPermitidas);
         }
 
-        return $this->procesarVistaLista($paginacion, $pedidosFiltradosPorRol);
+        // Usar los números de pedido paginados y filtrados (con búsqueda aplicada)
+        $numerosPedidosPaginados = ($paginacion['pedidos_paginados'] ?? collect())->values()->toArray();
+        $pedidosPaginadosFiltrados = $pedidosFiltradosPorRol->filter(function ($pedido) use ($numerosPedidosPaginados) {
+            return in_array($pedido->numero_pedido, $numerosPedidosPaginados);
+        });
+
+        return $this->procesarVistaLista($paginacion, $pedidosPaginadosFiltrados);
     }
 
     public function obtenerPedidosEntregadosPaginados(Request $request): array
@@ -107,8 +113,16 @@ class BodegaPedidoConsultaService
         $pedidosFiltradosPorRol = $this->filtrarPedidosOcultosUsuario($pedidosFiltradosPorRol);
         $paginacion = $this->paginarPedidos($pedidosFiltradosPorRol, $request);
 
+        // Usar los números de pedido paginados y filtrados (aplicar búsqueda)
+        $numerosPedidosPaginados = ($paginacion['pedidos_paginados'] ?? collect())->values()->toArray();
+
+        // Filtrar la colección de pedidos para obtener solo los de la página actual
+        $pedidosPaginadosFiltrados = $pedidosFiltradosPorRol->filter(function ($pedido) use ($numerosPedidosPaginados) {
+            return in_array($pedido->numero_pedido, $numerosPedidosPaginados);
+        });
+
         $pedidosPorPagina = [];
-        $pedidosAgrupados = $pedidosFiltradosPorRol->groupBy('numero_pedido');
+        $pedidosAgrupados = $pedidosPaginadosFiltrados->groupBy('numero_pedido');
 
         foreach ($pedidosAgrupados as $numeroPedido => $pedidosDelNumero) {
             $primerPedido = $pedidosDelNumero->first();
@@ -157,7 +171,7 @@ class BodegaPedidoConsultaService
         return [
             'view_type' => WarehouseConstants::VIEW_LIST,
             'pedidos_por_pagina' => $pedidosPorPagina,
-            'total_pedidos' => count($pedidosPorPagina),
+            'total_pedidos' => $paginacion['total_pedidos'],
             'pagina_actual' => $paginacion['pagina_actual'],
             'por_pagina' => $paginacion['por_pagina'],
         ];
