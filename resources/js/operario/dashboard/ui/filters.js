@@ -205,9 +205,9 @@ export function initReciboFilters() {
                 valA = parseInt(a.dataset.fechaCompletadoReflectivo || '0');
                 valB = parseInt(b.dataset.fechaCompletadoReflectivo || '0');
             } else {
-                // Ordenar por fecha de creación costura (descendente)
-                valA = parseInt(a.dataset.fechaCreacionCostura || '0');
-                valB = parseInt(b.dataset.fechaCreacionCostura || '0');
+                // Ordenar por fecha de asignación costura (descendente - más reciente primero)
+                valA = parseInt(a.dataset.fechaAsignacionCostura || '0');
+                valB = parseInt(b.dataset.fechaAsignacionCostura || '0');
             }
             return valB - valA;
         });

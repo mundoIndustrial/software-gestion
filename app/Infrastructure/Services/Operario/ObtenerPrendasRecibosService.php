@@ -373,6 +373,10 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             $query->whereIn('area', ['Costura']);
         }
 
+        if ($tipoOperario === 'costura-reflectivo') {
+            $query->whereIn('area', ['Costura']);
+        }
+
         $recibos = $query->orderBy('created_at', 'asc')->get();
 
         if ($tipoOperario === 'cortador') {
@@ -453,8 +457,22 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                     ->where('activo', 1)
                     ->first();
 
-                // Si existe recibo REFLECTIVO con proceso aprobado, agregarlo SIN validar encargado ni área
+                // Si existe recibo REFLECTIVO con proceso aprobado, agregarlo solo si está en área Costura (para costura-reflectivo)
                 if ($reciboReflectivo) {
+                    // Para costura-reflectivo, validar que esté en área Costura
+                    if ($tipoOperario === 'costura-reflectivo') {
+                        $area = strtolower(trim((string) ($reciboReflectivo->area ?? '')));
+                        if ($area !== 'costura') {
+                            \Log::info(' [REFLECTIVO APROBADO EXCLUIDO] No está en área Costura', [
+                                'numero_pedido' => $prendaAprobada->pedidoProduccion->numero_pedido,
+                                'prenda_id' => $prendaAprobada->id,
+                                'recibo_id' => $reciboReflectivo->id,
+                                'area' => $reciboReflectivo->area
+                            ]);
+                            continue;
+                        }
+                    }
+
                     $recibos->push($reciboReflectivo);
 
                     \Log::info(' [REFLECTIVO APROBADO AGREGADO]', [
@@ -472,14 +490,21 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 }
             }
 
-            // Agregar recibos REFLECTIVO de anexos (pedidos_parciales) aunque estén en área Insumos.
-            // Estos recibos se identifican por notas con "parcial_id:".
+            // Agregar recibos REFLECTIVO de anexos (pedidos_parciales)
+            // Para costura-reflectivo: solo si están en área Costura
+            // Para vista-costura: aunque estén en área Insumos
             $recibosReflectivoAnexos = ConsecutivoReciboPedido::query()
                 ->where('activo', 1)
                 ->where('tipo_recibo', 'REFLECTIVO')
                 ->whereNotNull('notas')
-                ->whereRaw('LOWER(notas) LIKE ?', ['%parcial_id:%'])
-                ->get();
+                ->whereRaw('LOWER(notas) LIKE ?', ['%parcial_id:%']);
+            
+            // Para costura-reflectivo, filtrar por área Costura
+            if ($tipoOperario === 'costura-reflectivo') {
+                $recibosReflectivoAnexos = $recibosReflectivoAnexos->whereRaw('LOWER(TRIM(area)) = ?', ['costura']);
+            }
+            
+            $recibosReflectivoAnexos = $recibosReflectivoAnexos->get();
 
             if ($recibosReflectivoAnexos->isNotEmpty()) {
                 $recibos = $recibos->concat($recibosReflectivoAnexos);
@@ -537,7 +562,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 ->values();
         }
 
-        // costura-reflectivo: ver COSTURA solo si área es Costura, REFLECTIVO sin importar área (pero no si pasó a Control Calidad)
+        // costura-reflectivo: ver COSTURA solo si área es Costura, REFLECTIVO solo si área es Costura
         if ($tipoOperario === 'costura-reflectivo') {
             $recibos = $recibos
                 ->filter(function ($recibo) {
@@ -549,17 +574,9 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                         return $area === 'costura';
                     }
 
-                    // REFLECTIVO: mostrar sin importar el área, PERO no mostrar si ya pasó a Control de Calidad
+                    // REFLECTIVO: solo si área es Costura
                     if ($tipoRecibo === 'REFLECTIVO') {
-                        // Verificar si el área es Control de Calidad (ya pasó)
-                        if (in_array($area, ['control calidad', 'control de calidad'])) {
-                            \Log::info(' [Filtro COSTURA-REFLECTIVO] REFLECTIVO excluido - ya pasó a Control de Calidad', [
-                                'recibo_id' => $recibo->id,
-                                'area' => $recibo->area
-                            ]);
-                            return false;
-                        }
-                        return true;
+                        return $area === 'costura';
                     }
 
                     return false;
@@ -834,6 +851,18 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 
                 if (($usuario?->hasRole('lider-reflectivo') ?? false) && strtoupper((string) $tipoRecibo) === 'REFLECTIVO') {
                     $recibosDelTipo = $recibosDelTipo->filter(function ($recibo) {
+                        // FILTRO DE ÁREA: Solo mostrar REFLECTIVO en área "Costura"
+                        $area = strtolower(trim((string) ($recibo->area ?? '')));
+                        if ($area !== 'costura') {
+                            \Log::info(' [REFLECTIVO LIDER-REFLECTIVO] Recibo excluido por área', [
+                                'recibo_id' => $recibo->id,
+                                'consecutivo' => $recibo->consecutivo_actual,
+                                'area' => $recibo->area,
+                                'tipo_recibo' => $recibo->tipo_recibo
+                            ]);
+                            return false;
+                        }
+
                         $notas = isset($recibo->notas) ? (string) $recibo->notas : '';
                         $esParcial = $notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas) === 1;
 
@@ -848,6 +877,28 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             ->exists();
 
                         return !$tieneParciales;
+                    })->values();
+
+                    if ($recibosDelTipo->isEmpty()) {
+                        continue;
+                    }
+                }
+
+                // Para costura-reflectivo: filtrar REFLECTIVO por área Costura
+                if ($tipoOperario === 'costura-reflectivo' && strtoupper((string) $tipoRecibo) === 'REFLECTIVO') {
+                    $recibosDelTipo = $recibosDelTipo->filter(function ($recibo) {
+                        // FILTRO DE ÁREA: Solo mostrar REFLECTIVO en área "Costura"
+                        $area = strtolower(trim((string) ($recibo->area ?? '')));
+                        if ($area !== 'costura') {
+                            \Log::info(' [REFLECTIVO COSTURA-REFLECTIVO] Recibo excluido por área', [
+                                'recibo_id' => $recibo->id,
+                                'consecutivo' => $recibo->consecutivo_actual,
+                                'area' => $recibo->area,
+                                'tipo_recibo' => $recibo->tipo_recibo
+                            ]);
+                            return false;
+                        }
+                        return true;
                     })->values();
 
                     if ($recibosDelTipo->isEmpty()) {
@@ -1321,6 +1372,13 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             ->filter(function (array $item) use ($modoTodosCostura, $tipoOperario, $encargadoNormalizado, $esLiderReflectivo) {
                 $encargado = $item['encargado_normalizado'];
                 $tipoParcial = strtoupper(trim((string) ($item['parcial']->tipo_recibo ?? '')));
+                $area = strtolower(trim((string) ($item['parcial']->area ?? '')));
+                
+                // Para costura-reflectivo, solo mostrar parciales del área Costura
+                if ($tipoOperario === 'costura-reflectivo' && $area !== 'costura') {
+                    return false;
+                }
+                
                 if ($encargado === '') {
                     // Para reflectivo en dashboard costura-reflectivo/lider-reflectivo:
                     // mostrar también anexos sin encargado para que sean visibles.
