@@ -134,16 +134,24 @@ final class PedidosLogoController extends Controller
         ];
 
         foreach ($tiposProcesoMap as $nombre => $tipoProcesoId) {
+            $ultimasAreas = DB::table('prenda_areas_logo_pedido as p1')
+                ->select('p1.proceso_prenda_detalle_id', DB::raw('MAX(p1.id) as max_id'))
+                ->whereNull('p1.pedido_parcial_id')
+                ->groupBy('p1.proceso_prenda_detalle_id');
+
             $cantidad = DB::table('pedidos_procesos_prenda_detalles as ppd')
-                ->select('ppd.id')
-                ->join('prenda_areas_logo_pedido as palp', 'palp.proceso_prenda_detalle_id', '=', 'ppd.id')
+                ->leftJoinSub($ultimasAreas, 'ultima_area', function ($join) {
+                    $join->on('ultima_area.proceso_prenda_detalle_id', '=', 'ppd.id');
+                })
+                ->leftJoin('prenda_areas_logo_pedido as palp', 'palp.id', '=', 'ultima_area.max_id')
                 ->where('ppd.tipo_proceso_id', $tipoProcesoId)
                 ->where('ppd.estado', 'APROBADO')
-                ->where('palp.area', 'PENDIENTE')
-                ->whereNull('palp.pedido_parcial_id')
-                ->distinct()
-                ->get()
-                ->count();
+                ->where(function ($query) {
+                    $query->where('palp.area', 'PENDIENTE')
+                        ->orWhereNull('palp.id');
+                })
+                ->distinct('ppd.id')
+                ->count('ppd.id');
 
             $conteos[$nombre] = $cantidad;
         }
