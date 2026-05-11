@@ -245,6 +245,7 @@ class EloquentReceiptRepository implements ReceiptRepository
                 'p.created_at as fecha_creacion',
                 'crp.consecutivo_actual as numero_recibo',
                 'p.cliente',
+                'p.numero_pedido',
                 'p.id as pedido_id',
                 'p.aprobado_por_cartera_en',
                 'p.dia_de_entrega',

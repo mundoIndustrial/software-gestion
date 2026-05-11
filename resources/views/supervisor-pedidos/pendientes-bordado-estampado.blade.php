@@ -148,7 +148,7 @@
                                         </div>
 
                                         <div>
-                                            <span>{{ $proceso->cliente }}</span>
+                                            <span>{{ $proceso->cliente }} ({{ $proceso->numero_pedido ?? '-' }})</span>
                                         </div>
 
                                         <div>
