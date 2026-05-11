@@ -14,11 +14,16 @@
         'lider-reflectivo',
         'administrador-costura',
     ]);
+    $ordenarPorFechaInicioProceso = auth()->user()->hasRole('vista-costura');
     $ordenarPorFechaAsignacionCorte = auth()->user()->hasRole('cortador');
 
-    $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortBy(function ($prenda) use ($ordenarPorFechaAsignacionProceso, $ordenarPorFechaAsignacionCorte) {
+    $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortBy(function ($prenda) use ($ordenarPorFechaAsignacionProceso, $ordenarPorFechaInicioProceso, $ordenarPorFechaAsignacionCorte) {
         $reciboPrincipal = collect($prenda['recibos'] ?? [])->first();
-        if ($ordenarPorFechaAsignacionCorte) {
+        if ($ordenarPorFechaInicioProceso) {
+            $fechaOrden = $reciboPrincipal['fecha_inicio_proceso']
+                ?? $reciboPrincipal['fecha_proceso_costura_created_at']
+                ?? ($prenda['fecha_creacion'] ?? null);
+        } elseif ($ordenarPorFechaAsignacionCorte) {
             $fechaOrden = $reciboPrincipal['fecha_asignacion_corte']
                 ?? $reciboPrincipal['fecha_proceso_corte_created_at']
                 ?? ($prenda['fecha_creacion'] ?? null);

@@ -269,6 +269,10 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             'consecutivo_inicial' => $recibo->consecutivo_inicial,
                             'notas' => $recibo->notas,
                             'creado_en' => $creadoEn,
+                            'fecha_inicio_proceso' => $procesoCostura?->fecha_inicio
+                                ?? $procesoCorte?->fecha_inicio
+                                ?? $procesoControlCalidad?->fecha_inicio
+                                ?? null,
                             'fecha_asignacion_costura' => $procesoCostura?->fecha_de_asignacion_encargado ?? null,
                             'fecha_proceso_costura_created_at' => $procesoCostura?->created_at ?? null,
                             'fecha_asignacion_corte' => $procesoCorte?->fecha_de_asignacion_encargado ?? null,
@@ -1031,6 +1035,10 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             'consecutivo_inicial' => $recibo->consecutivo_inicial,
                             'notas' => $recibo->notas,
                             'creado_en' => $creadoEn,
+                            'fecha_inicio_proceso' => $procesoCostura?->fecha_inicio
+                                ?? $procesoCorte?->fecha_inicio
+                                ?? $procesoCC?->fecha_inicio
+                                ?? null,
                             'fecha_asignacion_costura' => $procesoCostura?->fecha_de_asignacion_encargado ?? null,
                             'fecha_proceso_costura_created_at' => $procesoCostura?->created_at ?? null,
                             'fecha_asignacion_corte' => $procesoCorte?->fecha_de_asignacion_encargado ?? null,
@@ -1412,6 +1420,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                         'consecutivo_parcial' => $consecutivoParcial,
                         'notas' => $esAnexo ? 'anexo_id:' . $parcial->id : 'parcial_id:' . $parcial->id,
                         'creado_en' => $parcial->created_at,
+                        'fecha_inicio_proceso' => $proceso?->fecha_inicio ?? null,
                         'fecha_asignacion_costura' => $proceso?->fecha_de_asignacion_encargado ?? null,
                         'fecha_proceso_costura_created_at' => $proceso?->created_at ?? null,
                         'area' => 'Costura',

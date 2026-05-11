@@ -80,6 +80,17 @@ class ControlCalidadController extends Controller
             $prenda = $recibo->prenda ?: $pedido?->prendas?->first();
             $numeroPedido = $pedido?->numero_pedido;
             $procesoActual = $numeroPedido ? ($ultimoProcesoPorPedido[$numeroPedido] ?? null) : null;
+            $procesoControlCalidad = null;
+
+            if ($numeroPedido && !empty($prenda?->id) && !empty($recibo->consecutivo_actual)) {
+                $procesoControlCalidad = ProcesoPrenda::query()
+                    ->where('numero_pedido', (int) $numeroPedido)
+                    ->where('prenda_pedido_id', (int) $prenda->id)
+                    ->where('numero_recibo', (int) $recibo->consecutivo_actual)
+                    ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
+                    ->latest('created_at')
+                    ->first();
+            }
 
             // Detectar si este recibo tiene parciales
             $tieneParciales = ReciboPorPartes::query()
@@ -118,7 +129,7 @@ class ControlCalidadController extends Controller
                     'parcial_id' => $parcialId,
                 ]],
                 'total_recibos' => 1,
-                'fecha_creacion' => $recibo->created_at,
+                'fecha_creacion' => $procesoControlCalidad?->created_at ?? $recibo->created_at,
                 'estado_pedido' => $pedido->estado ?? 'Pendiente',
             ];
         });
@@ -224,7 +235,7 @@ class ControlCalidadController extends Controller
                     'completado_area' => $completadosPorParcialId->has($parcial->id),
                 ]],
                 'total_recibos' => 1,
-                'fecha_creacion' => $proceso?->fecha_inicio ?? $parcial->created_at,
+                'fecha_creacion' => $proceso?->created_at ?? $parcial->created_at,
                 'estado_pedido' => $pedido->estado ?? 'Pendiente',
                 'es_parcial' => true,
                 'parcial_id' => $parcial->id,
@@ -249,7 +260,7 @@ class ControlCalidadController extends Controller
 
         $prendasConRecibos = $prendasConRecibos
             ->concat($parcialesConRecibos)
-            ->sortByDesc(fn ($item) => $item['fecha_creacion'] ?? now())
+            ->sortBy(fn ($item) => $item['fecha_creacion'] ?? now())
             ->values();
 
         return view('control-calidad.dashboard', [
