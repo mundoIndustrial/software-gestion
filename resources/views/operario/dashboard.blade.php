@@ -9,6 +9,102 @@
 @endsection
 
 @php
+    $ordenarPorFechaAsignacionProceso = auth()->user()->hasAnyRole([
+        'costurero',
+        'lider-reflectivo',
+        'administrador-costura',
+    ]);
+    $ordenarPorFechaAsignacionCorte = auth()->user()->hasRole('cortador');
+
+    $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortBy(function ($prenda) use ($ordenarPorFechaAsignacionProceso, $ordenarPorFechaAsignacionCorte) {
+        $reciboPrincipal = collect($prenda['recibos'] ?? [])->first();
+        if ($ordenarPorFechaAsignacionCorte) {
+            $fechaOrden = $reciboPrincipal['fecha_asignacion_corte']
+                ?? $reciboPrincipal['fecha_proceso_corte_created_at']
+                ?? ($prenda['fecha_creacion'] ?? null);
+        } elseif ($ordenarPorFechaAsignacionProceso) {
+            $fechaOrden = $reciboPrincipal['fecha_asignacion_costura']
+                ?? $reciboPrincipal['fecha_proceso_costura_created_at']
+                ?? ($prenda['fecha_creacion'] ?? null);
+        } else {
+            $fechaOrden = $reciboPrincipal['fecha_proceso_created_at']
+                ?? ($prenda['fecha_creacion'] ?? null);
+        }
+
+        if ($fechaOrden instanceof \DateTimeInterface) {
+            return $fechaOrden->getTimestamp();
+        }
+
+        if (is_numeric($fechaOrden)) {
+            return (int) $fechaOrden;
+        }
+
+        if (is_string($fechaOrden) && trim($fechaOrden) !== '') {
+            $timestamp = strtotime($fechaOrden);
+            if ($timestamp !== false) {
+                return $timestamp;
+            }
+        }
+
+        return 0;
+    })->values();
+
+    if (auth()->user()->hasAnyRole(['lider-reflectivo', 'costurero', 'administrador-costura', 'cortador'])) {
+        $detalleOrden = $prendasOrdenadas->map(function ($prenda, $idx) use ($ordenarPorFechaAsignacionProceso, $ordenarPorFechaAsignacionCorte) {
+            $reciboPrincipal = collect($prenda['recibos'] ?? [])->first() ?? [];
+
+            if ($ordenarPorFechaAsignacionCorte) {
+                $fechaUsada = $reciboPrincipal['fecha_asignacion_corte']
+                    ?? $reciboPrincipal['fecha_proceso_corte_created_at']
+                    ?? ($prenda['fecha_creacion'] ?? null);
+                $regla = 'corte_asignacion_o_created_at_proceso';
+            } elseif ($ordenarPorFechaAsignacionProceso) {
+                $fechaUsada = $reciboPrincipal['fecha_asignacion_costura']
+                    ?? $reciboPrincipal['fecha_proceso_costura_created_at']
+                    ?? ($prenda['fecha_creacion'] ?? null);
+                $regla = 'costura_asignacion_o_created_at_proceso';
+            } else {
+                $fechaUsada = $reciboPrincipal['fecha_proceso_created_at']
+                    ?? ($prenda['fecha_creacion'] ?? null);
+                $regla = 'proceso_created_at';
+            }
+
+            $timestampOrden = null;
+            if ($fechaUsada instanceof \DateTimeInterface) {
+                $timestampOrden = $fechaUsada->getTimestamp();
+            } elseif (is_numeric($fechaUsada)) {
+                $timestampOrden = (int) $fechaUsada;
+            } elseif (is_string($fechaUsada) && trim($fechaUsada) !== '') {
+                $ts = strtotime($fechaUsada);
+                $timestampOrden = $ts !== false ? $ts : null;
+            }
+
+            return [
+                'posicion' => $idx + 1,
+                'prenda_id' => $prenda['prenda_id'] ?? null,
+                'pedido_id' => $prenda['pedido_id'] ?? null,
+                'numero_pedido' => $prenda['numero_pedido'] ?? null,
+                'consecutivo_card' => $reciboPrincipal['consecutivo_actual'] ?? null,
+                'pedido_parcial_id' => $reciboPrincipal['pedido_parcial_id'] ?? null,
+                'fecha_asignacion_costura' => $reciboPrincipal['fecha_asignacion_costura'] ?? null,
+                'fecha_proceso_costura_created_at' => $reciboPrincipal['fecha_proceso_costura_created_at'] ?? null,
+                'fecha_asignacion_corte' => $reciboPrincipal['fecha_asignacion_corte'] ?? null,
+                'fecha_proceso_corte_created_at' => $reciboPrincipal['fecha_proceso_corte_created_at'] ?? null,
+                'fecha_usada' => $fechaUsada,
+                'timestamp_orden' => $timestampOrden,
+                'regla' => $regla,
+            ];
+        })->values()->all();
+
+        \Log::info('[OPERARIO_DASHBOARD][DEBUG_ORDEN]', [
+            'usuario_id' => auth()->id(),
+            'usuario' => auth()->user()->name ?? null,
+            'roles' => auth()->user()->roles->pluck('name')->values()->all(),
+            'total_cards' => count($detalleOrden),
+            'detalle' => $detalleOrden,
+        ]);
+    }
+
     // Helper para obtener clase de estado
     function getEstadoClass($estado)
     {
@@ -131,8 +227,8 @@
             @endif
 
             <div class="ordenes-list" id="ordenesList">
-                @if(count($prendasConRecibos ?? []) > 0)
-                    @foreach($prendasConRecibos as $prenda)
+                @if($prendasOrdenadas->count() > 0)
+                    @foreach($prendasOrdenadas as $prenda)
                         @php
                             $estadoClass = 'pendiente'; // Siempre pendiente, eliminar en-proceso
                             // Determinar tipo de recibo para filtro

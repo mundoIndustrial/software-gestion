@@ -50,7 +50,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             ->whereIn('tipo_recibo', $tiposRecibo)
             ->whereIn('area', ['Costura', 'Corte'])
             ->with(['prenda', 'prenda.pedidoProduccion', 'prenda.procesosPrenda', 'prenda.tallas', 'pedido', 'pedido.prendas', 'pedido.prendas.tallas'])
-            ->orderBy('created_at', 'desc')
+            ->orderBy('created_at', 'asc')
             ->get();
 
         // Deduplicar: Si hay múltiples recibos con misma prenda_id + tipo_recibo, quedar con el más reciente
@@ -269,6 +269,18 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             'consecutivo_inicial' => $recibo->consecutivo_inicial,
                             'notas' => $recibo->notas,
                             'creado_en' => $creadoEn,
+                            'fecha_asignacion_costura' => $procesoCostura?->fecha_de_asignacion_encargado ?? null,
+                            'fecha_proceso_costura_created_at' => $procesoCostura?->created_at ?? null,
+                            'fecha_asignacion_corte' => $procesoCorte?->fecha_de_asignacion_encargado ?? null,
+                            'fecha_proceso_corte_created_at' => $procesoCorte?->created_at ?? null,
+                            'fecha_proceso_created_at' => $procesoCostura?->created_at
+                                ?? $procesoCorte?->created_at
+                                ?? $procesoControlCalidad?->created_at
+                                ?? null,
+                            'fecha_asignacion_proceso' => $procesoCostura?->fecha_de_asignacion_encargado
+                                ?? $procesoCorte?->fecha_de_asignacion_encargado
+                                ?? $procesoControlCalidad?->fecha_de_asignacion_encargado
+                                ?? null,
                             'area' => $recibo->area,
                             'proceso_id_costura' => $procesoCostura ? $procesoCostura->id : null,
                             'encargado_costura' => $procesoCostura ? $procesoCostura->encargado : null,
@@ -356,7 +368,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             $query->whereIn('area', ['Costura']);
         }
 
-        $recibos = $query->orderBy('created_at', 'desc')->get();
+        $recibos = $query->orderBy('created_at', 'asc')->get();
 
         if ($tipoOperario === 'cortador') {
             $usuarioNombre = strtolower(trim($usuario->name));
@@ -483,18 +495,20 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                     }
                     return $recibo->prenda_id . '_' . $recibo->tipo_recibo . $parcialSuffix;
                 })
+                ->sortBy('created_at')
                 ->values();
         }
 
-        // Deduplicar: Si hay múltiples recibos con misma prenda_id + tipo_recibo, quedar con el más reciente
-        $recibos = $recibos->unique(function ($recibo) {
+        // Deduplicar: Si hay múltiples recibos con misma prenda_id + tipo_recibo,
+        // mantener el más reciente y luego presentar de más viejo a más nuevo.
+        $recibos = $recibos->sortByDesc('created_at')->unique(function ($recibo) {
             $notas = (string) ($recibo->notas ?? '');
             $parcialSuffix = '';
             if (preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
                 $parcialSuffix = '_p' . $matches[1];
             }
             return ($recibo->prenda_id ?: ('pedido_' . $recibo->pedido_produccion_id)) . '_' . $recibo->tipo_recibo . $parcialSuffix;
-        })->values();
+        })->sortBy('created_at')->values();
 
         // vista-costura: ver recibos COSTURA en área Costura, pero REFLECTIVO en cualquier área
         if ($tipoOperario === 'vista-costura') {
@@ -897,7 +911,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                         // Nota: REFLECTIVO también busca el proceso 'costura' ya que es un tipo de recibo, no un proceso
                         $procesoNombreBuscado = 'costura';
 
-                        $procesoCosturaQuery = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                        $procesoCosturaBaseQuery = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
                             ->where('prenda_pedido_id', $recibo->prenda_id)
                             ->whereRaw('LOWER(TRIM(proceso)) = ?', [$procesoNombreBuscado])
                             ->whereNull('deleted_at');
@@ -907,7 +921,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 
                             if ($esAnexo) {
                                 // Para anexos, el proceso usa numero_recibo exacto y no tiene parcial
-                                $procesoCostura = (clone $procesoCosturaQuery)
+                                $procesoCostura = (clone $procesoCosturaBaseQuery)
                                     ->where('numero_recibo', $recibo->consecutivo_actual)
                                     ->where(function ($query) {
                                         $query->whereNull('numero_recibo_parcial')
@@ -918,8 +932,10 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                                     ->first();
                             } else {
                                 // Si es parcial, buscar por numero_recibo_parcial
-                                $procesoCosturaQuery->where('numero_recibo_parcial', $recibo->consecutivo_actual);
-                                $procesoCostura = (clone $procesoCosturaQuery)->latest('created_at')->first();
+                                $procesoCostura = (clone $procesoCosturaBaseQuery)
+                                    ->where('numero_recibo_parcial', $recibo->consecutivo_actual)
+                                    ->latest('created_at')
+                                    ->first();
                             }
 
                             if ($procesoCostura) {
@@ -927,7 +943,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             }
                         } else {
                             // Si NO es parcial, buscar primero por numero_recibo exacto (proceso padre)
-                            $procesoCostura = (clone $procesoCosturaQuery)
+                            $procesoCostura = (clone $procesoCosturaBaseQuery)
                                 ->where('numero_recibo', $recibo->consecutivo_actual)
                                 ->where(function ($query) {
                                     $query->whereNull('numero_recibo_parcial')
@@ -940,7 +956,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             // Si no encuentra proceso padre, buscar cualquier proceso de costura para esta prenda
                             // (puede haber sido actualizado sin parciales)
                             if (!$procesoCostura) {
-                                $procesoCostura = (clone $procesoCosturaQuery)
+                                $procesoCostura = (clone $procesoCosturaBaseQuery)
                                     ->latest('created_at')
                                     ->first();
                             }
@@ -951,7 +967,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             }
                         }
 
-                        $procesoCostura = $procesoCosturaQuery->latest('created_at')->first();
+                        $procesoCostura = (clone $procesoCosturaBaseQuery)->latest('created_at')->first();
 
                         procesoCosturaEncontrado:
 
@@ -1015,6 +1031,18 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             'consecutivo_inicial' => $recibo->consecutivo_inicial,
                             'notas' => $recibo->notas,
                             'creado_en' => $creadoEn,
+                            'fecha_asignacion_costura' => $procesoCostura?->fecha_de_asignacion_encargado ?? null,
+                            'fecha_proceso_costura_created_at' => $procesoCostura?->created_at ?? null,
+                            'fecha_asignacion_corte' => $procesoCorte?->fecha_de_asignacion_encargado ?? null,
+                            'fecha_proceso_corte_created_at' => $procesoCorte?->created_at ?? null,
+                            'fecha_proceso_created_at' => $procesoCostura?->created_at
+                                ?? $procesoCorte?->created_at
+                                ?? $procesoCC?->created_at
+                                ?? null,
+                            'fecha_asignacion_proceso' => $procesoCostura?->fecha_de_asignacion_encargado
+                                ?? $procesoCorte?->fecha_de_asignacion_encargado
+                                ?? $procesoCC?->fecha_de_asignacion_encargado
+                                ?? null,
                             'area' => $recibo->area,
                             'proceso_id' => $procesoCC ? $procesoCC->id : null,
                             'proceso_id_costura' => $procesoCostura ? $procesoCostura->id : null,
@@ -1176,7 +1204,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
         $parciales = ReciboPorPartes::query()
             ->with(['pedido', 'prenda.tallas', 'tallas'])
             ->whereIn('tipo_recibo', $tiposParcial)
-            ->orderByDesc('created_at')
+            ->orderBy('created_at', 'asc')
             ->get();
 
         // Obtener también pedidos_parciales (anexos) que estén activos
@@ -1187,7 +1215,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             ->whereIn('pp.tipo_recibo', $tiposParcial)
             ->whereNull('pp.deleted_at')
             ->select('pp.*', 'p.numero_pedido', 'pr.nombre_prenda', 'pr.descripcion')
-            ->orderByDesc('pp.created_at')
+            ->orderBy('pp.created_at', 'asc')
             ->get();
 
         // Combinar ambas colecciones
@@ -1384,6 +1412,8 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                         'consecutivo_parcial' => $consecutivoParcial,
                         'notas' => $esAnexo ? 'anexo_id:' . $parcial->id : 'parcial_id:' . $parcial->id,
                         'creado_en' => $parcial->created_at,
+                        'fecha_asignacion_costura' => $proceso?->fecha_de_asignacion_encargado ?? null,
+                        'fecha_proceso_costura_created_at' => $proceso?->created_at ?? null,
                         'area' => 'Costura',
                         'proceso_id' => $proceso?->id,
                         'proceso_id_costura' => $proceso?->id,
