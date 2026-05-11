@@ -9,10 +9,22 @@
     <div class="row">
         <div class="col-12">
             <div class="supervisor-pedidos-container">
-                <div class="d-flex justify-content-end mb-3">
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="recargarDatos()" style="position: relative; top: 6px;">
-                        <span class="material-symbols-rounded me-1">refresh</span>
-                        Recargar
+                <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+                    <button type="button" onclick="abrirModalGenerarReporte('logo')" style="
+                        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                        color: white;
+                        border: none;
+                        padding: 0.75rem 1.5rem;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                    " onmouseover="this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.4)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.boxShadow='none'; this.style.transform='translateY(0)';">
+                        <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
+                        Generar Reporte
                     </button>
                 </div>
 

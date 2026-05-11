@@ -651,5 +651,282 @@
 
     <script src="{{ asset('js/contador/cotizacion.js') }}"></script>
 
+    <!-- Modal para Generar Reportes -->
+    <div id="modalGenerarReporte" style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    ">
+        <div style="
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        ">
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1.5rem;
+            ">
+                <h2 id="modalTitulo" style="margin: 0; color: #1f2937; font-size: 1.25rem; font-weight: 600;">Generar Reporte</h2>
+                <button type="button" onclick="cerrarModalGenerarReporte()" style="
+                    background: none;
+                    border: none;
+                    font-size: 1.5rem;
+                    cursor: pointer;
+                    color: #6b7280;
+                    padding: 0;
+                ">&times;</button>
+            </div>
+            <div style="flex: 1; overflow-y: auto;">
+                <div style="margin-bottom: 1rem;">
+                    <label for="filtroAntiguedad" style="
+                        display: block;
+                        margin-bottom: 0.5rem;
+                        font-weight: 600;
+                        color: #374151;
+                    ">
+                        Filtrar por antigüedad
+                    </label>
+                    <select id="filtroAntiguedad" style="
+                        width: 100%;
+                        padding: 0.75rem;
+                        border: 1px solid #d1d5db;
+                        border-radius: 6px;
+                        font-size: 0.95rem;
+                        background-color: white;
+                        color: #374151;
+                    ">
+                        <option value="">Todos los recibos</option>
+                        <option value="7">7 días</option>
+                        <option value="15">15 días</option>
+                        <option value="30">30 días</option>
+                    </select>
+                    <p style="
+                        margin-top: 0.5rem;
+                        font-size: 0.85rem;
+                        color: #6b7280;
+                    ">
+                        Los recibos se mostrarán ordenados por fecha (más antiguos primero)
+                    </p>
+                </div>
+            </div>
+            <div style="
+                display: flex;
+                gap: 0.5rem;
+                margin-top: 1.5rem;
+            ">
+                <button type="button" onclick="cerrarModalGenerarReporte()" style="
+                    padding: 0.5rem 1rem;
+                    border-radius: 6px;
+                    border: 1px solid transparent;
+                    cursor: pointer;
+                    font-size: 0.9rem;
+                    font-weight: 500;
+                    background: #e5e7eb;
+                    color: #1f2937;
+                ">Cancelar</button>
+                <button type="button" onclick="generarReporteLogo()" style="
+                    padding: 0.5rem 1rem;
+                    border-radius: 6px;
+                    border: 1px solid transparent;
+                    cursor: pointer;
+                    font-size: 0.9rem;
+                    font-weight: 500;
+                    background: #3b82f6;
+                    color: white;
+                ">Descargar PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Variable global para tipo de reporte
+    window.tipoReporteActual = 'logo';
+
+    // Funciones para Modal de Reporte
+    window.abrirModalGenerarReporte = function(tipo = 'logo') {
+        window.tipoReporteActual = tipo;
+        const modal = document.getElementById('modalGenerarReporte');
+        const titulo = document.getElementById('modalTitulo');
+
+        if (modal) {
+            if (tipo === 'reflectivo') {
+                titulo.textContent = 'Generar Reporte - Recibos de Reflectivo';
+            } else {
+                titulo.textContent = 'Generar Reporte - Recibos de Logo';
+            }
+            modal.style.display = 'flex';
+            const select = document.getElementById('filtroAntiguedad');
+            if (select) select.value = '';
+        }
+    };
+
+    window.cerrarModalGenerarReporte = function() {
+        const modal = document.getElementById('modalGenerarReporte');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    };
+
+    window.generarReporteLogo = function() {
+        const filtroAntiguedad = document.getElementById('filtroAntiguedad').value;
+        const tipo = window.tipoReporteActual || 'logo';
+        let reporteUrl;
+
+        if (tipo === 'reflectivo') {
+            reporteUrl = '{{ route("recibos-reflectivo.reporte") }}';
+        } else {
+            reporteUrl = '{{ route("recibos-logo.reporte") }}';
+        }
+
+        if (filtroAntiguedad) {
+            reporteUrl += '?dias_antiguedad=' + filtroAntiguedad;
+        }
+
+        window.cerrarModalGenerarReporte();
+        window.mostrarModalGenerando();
+
+        fetch(reporteUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            }
+        })
+        .then(response => response.blob())
+        .then(blob => {
+            const urlBlob = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = urlBlob;
+            const fecha = new Date().toISOString().slice(0,10);
+            if (tipo === 'reflectivo') {
+                link.download = 'reporte_recibos_reflectivo_' + fecha + '.pdf';
+            } else {
+                link.download = 'reporte_recibos_logo_' + fecha + '.pdf';
+            }
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(urlBlob);
+
+            // Cerrar modal cuando la descarga inicia
+            const modal = document.getElementById('modalGenerandoPDF');
+            if (modal) modal.remove();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const modal = document.getElementById('modalGenerandoPDF');
+            if (modal) modal.remove();
+            alert('Error al generar el reporte');
+        });
+    };
+
+    window.mostrarModalGenerando = function() {
+        const tiempoInicio = Date.now();
+        const html = `
+            <div id="modalGenerandoPDF" style="
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+            ">
+                <div style="
+                    background: white;
+                    border-radius: 12px;
+                    padding: 2rem;
+                    text-align: center;
+                    max-width: 450px;
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+                ">
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">⏳</div>
+                    <h2 style="margin: 0 0 0.5rem 0; color: #1f2937;">Generando PDF</h2>
+                    <p style="margin: 0 0 1rem 0; color: #6b7280; font-size: 0.95rem;">
+                        Tu reporte se está generando. Por favor espera...
+                    </p>
+
+                    <div style="
+                        background: #f0f9ff;
+                        border: 1px solid #bfdbfe;
+                        border-radius: 8px;
+                        padding: 1rem;
+                        margin-bottom: 1rem;
+                    ">
+                        <div style="display: flex; justify-content: space-around; align-items: center;">
+                            <div>
+                                <div style="font-size: 2rem; font-weight: bold; color: #0369a1;" id="tiempoTranscurrido">0s</div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Tiempo transcurrido</div>
+                            </div>
+                            <div style="color: #cbd5e1;">•</div>
+                            <div>
+                                <div style="font-size: 1.2rem; font-weight: 600; color: #059669;" id="tiempoEstimado">~1-2 min</div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Tiempo estimado</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="
+                        background: #f3f4f6;
+                        border-radius: 8px;
+                        height: 8px;
+                        overflow: hidden;
+                        margin-bottom: 1rem;
+                    ">
+                        <div id="progressBar" style="
+                            width: 0%;
+                            height: 100%;
+                            background: linear-gradient(90deg, #3b82f6, #2563eb);
+                            border-radius: 8px;
+                            transition: width 0.1s ease;
+                        "></div>
+                    </div>
+
+                    <p style="margin: 0; font-size: 0.85rem; color: #9ca3af;">
+                        No cierres esta ventana...
+                    </p>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', html);
+
+        const intervalo = setInterval(() => {
+            const ahora = Date.now();
+            const segundosTranscurridos = Math.floor((ahora - tiempoInicio) / 1000);
+            const minutos = Math.floor(segundosTranscurridos / 60);
+            const segundos = segundosTranscurridos % 60;
+
+            const elementoTiempo = document.getElementById('tiempoTranscurrido');
+            if (elementoTiempo) {
+                elementoTiempo.textContent = minutos > 0
+                    ? minutos + 'm ' + segundos + 's'
+                    : segundos + 's';
+            }
+
+            const progressBar = document.getElementById('progressBar');
+            if (progressBar) {
+                const progreso = Math.min(90, (segundosTranscurridos / 120) * 100);
+                progressBar.style.width = progreso + '%';
+            }
+
+            if (!document.getElementById('modalGenerandoPDF')) {
+                clearInterval(intervalo);
+            }
+        }, 100);
+    };
+    </script>
+
 </body>
 </html>
