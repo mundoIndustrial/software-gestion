@@ -10,6 +10,19 @@
 
 <!-- Sidebar principal -->
 <aside class="sidebar collapsed" id="sidebar">
+  @php
+    $conteoPendientesInsumos = \Illuminate\Support\Facades\DB::table('consecutivos_recibos_pedidos')
+      ->where('tipo_recibo', 'COSTURA')
+      ->whereRaw("UPPER(TRIM(COALESCE(area, ''))) = 'INSUMOS'")
+      ->distinct('pedido_produccion_id')
+      ->count('pedido_produccion_id');
+
+    $conteoReflectivoInsumos = \Illuminate\Support\Facades\DB::table('consecutivos_recibos_pedidos')
+      ->where('tipo_recibo', 'REFLECTIVO')
+      ->whereRaw("UPPER(TRIM(COALESCE(area, ''))) = 'INSUMOS'")
+      ->count();
+  @endphp
+
   <div class="sidebar-header">
     <img src="{{ asset('images/logo2.png') }}"
          alt="Logo Mundo Industrial"
@@ -42,6 +55,11 @@
              aria-label="Control de Insumos">
             <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
             <span class="menu-label">Control de Insumos</span>
+            @if($conteoPendientesInsumos > 0)
+              <span style="margin-left: auto; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #ef4444; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1;">
+                {{ $conteoPendientesInsumos }}
+              </span>
+            @endif
           </a>
         </li>
 
@@ -52,6 +70,11 @@
              aria-label="Gestion Reflectivo">
             <span class="material-symbols-rounded" aria-hidden="true">visibility</span>
             <span class="menu-label">Gestion Reflectivo</span>
+            @if($conteoReflectivoInsumos > 0)
+              <span style="margin-left: auto; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #ef4444; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1;">
+                {{ $conteoReflectivoInsumos }}
+              </span>
+            @endif
           </a>
         </li>
 

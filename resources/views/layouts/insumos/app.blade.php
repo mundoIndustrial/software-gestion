@@ -63,6 +63,18 @@
 
 </head>
 <body class="light-theme">
+    @php
+        $conteoPendientesInsumos = \Illuminate\Support\Facades\DB::table('consecutivos_recibos_pedidos')
+            ->where('tipo_recibo', 'COSTURA')
+            ->whereRaw("UPPER(TRIM(COALESCE(area, ''))) = 'INSUMOS'")
+            ->distinct('pedido_produccion_id')
+            ->count('pedido_produccion_id');
+
+        $conteoReflectivoInsumos = \Illuminate\Support\Facades\DB::table('consecutivos_recibos_pedidos')
+            ->where('tipo_recibo', 'REFLECTIVO')
+            ->whereRaw("UPPER(TRIM(COALESCE(area, ''))) = 'INSUMOS'")
+            ->count();
+    @endphp
 
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
@@ -130,6 +142,11 @@
                                class="menu-link {{ request()->routeIs('insumos.materiales.*') && !request()->routeIs('insumos.materiales.reflectivo') ? 'active' : '' }}">
                                 <span class="material-symbols-rounded">inventory_2</span>
                                 <span class="menu-label">Control de Insumos</span>
+                                @if($conteoPendientesInsumos > 0)
+                                    <span style="margin-left: auto; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #ef4444; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1;">
+                                        {{ $conteoPendientesInsumos }}
+                                    </span>
+                                @endif
                             </a>
                         </li>
                         <li class="menu-item">
@@ -137,6 +154,11 @@
                                class="menu-link {{ request()->routeIs('insumos.materiales.reflectivo') ? 'active' : '' }}">
                                 <span class="material-symbols-rounded">visibility</span>
                                 <span class="menu-label">Gestion Reflectivo</span>
+                                @if($conteoReflectivoInsumos > 0)
+                                    <span style="margin-left: auto; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #ef4444; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1;">
+                                        {{ $conteoReflectivoInsumos }}
+                                    </span>
+                                @endif
                             </a>
                         </li>
                         <li class="menu-item">
