@@ -184,6 +184,7 @@ class OperarioController extends Controller
             'prendasConRecibos' => $dashboardData->prendasConRecibos,
             'usuario' => $dashboardData->usuario,
             'tab' => $dashboardData->tab,
+            'recibosCompletados' => $dashboardData->recibosCompletados,
             'conteoControlCalidadCostura' => $conteoControlCalidadCostura,
             'conteoControlCalidadReflectivo' => $conteoControlCalidadReflectivo,
         ]);

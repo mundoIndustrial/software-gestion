@@ -76,64 +76,31 @@ class ObtenerPedidosOperarioService implements OperarioPedidosReadService
      * 1. CUALQUIER proceso donde el usuario sea el encargado (sin restricción de área ni estado)
      * 2. O procesos del área "Costura" en estado "En Ejecución"
      */
+    /**
+     * Obtener pedidos especiales para Costura-Reflectivo
+     * 
+     * Filtra pedidos que:
+     * 1. CUALQUIER proceso donde el usuario sea el encargado
+     */
     private function obtenerPedidosCosturaReflectivo(User $usuario): ObtenerPedidosOperarioDTO
     {
-        \Log::info('=== INICIO obtenerPedidosCosturaReflectivo ===', [
-            'usuario' => $usuario->name,
-            'usuario_id' => $usuario->id
-        ]);
-        
         $usuarioNormalizado = strtolower(trim($usuario->name));
         
-        // Obtener TODOS los pedidos
-        $todosPedidos = PedidoProduccion::with(['prendas'])
-            ->orderBy('created_at', 'desc')
+        // Obtener pedidos filtrando directamente en BD
+        $pedidos = PedidoProduccion::with(['prendas'])
+            ->whereHas('procesos', function ($query) use ($usuarioNormalizado) {
+                $query->whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNormalizado]);
+            })
             ->orderBy('created_at', 'desc')
             ->get();
         
-        \Log::info('Total de pedidos en BD:', ['total' => $todosPedidos->count()]);
-        
-        // Filtrar: procesos donde el usuario es el encargado
-        $pedidos = $todosPedidos->filter(function ($pedido) use ($usuarioNormalizado) {
-            $procesos = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
-                ->get();
-            
-            if ($procesos->isEmpty()) {
-                return false;
-            }
-            
-            // Buscar CUALQUIER proceso donde el usuario sea el encargado
-            $tieneProcesoDelUsuario = $procesos->contains(function ($proceso) use ($usuarioNormalizado) {
-                if (!$proceso->encargado) {
-                    return false;
-                }
-                
-                $encargadoNormalizado = strtolower(trim($proceso->encargado));
-                return $encargadoNormalizado === $usuarioNormalizado;
-            });
-            
-            return $tieneProcesoDelUsuario;
-        });
-        
-        \Log::info('Pedidos asignados al usuario:', [
-            'usuario' => $usuario->name,
-            'total' => $pedidos->count(),
-            'pedidos' => $pedidos->map(fn($p) => $p->numero_pedido)->toArray()
-        ]);
-        
+        // El ordenamiento por fecha de inicio del proceso se mantiene en memoria si es necesario, 
+        // pero ahora sobre un set mucho más pequeño de datos.
         $pedidos = $pedidos->sortByDesc(function ($pedido) use ($usuarioNormalizado) {
-            // Obtener fecha de inicio del primer proceso del usuario
-            $procesoDelUsuario = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
-                ->get()
-                ->first(function ($proceso) use ($usuarioNormalizado) {
-                    if (!$proceso->encargado) {
-                        return false;
-                    }
-                    return strtolower(trim($proceso->encargado)) === $usuarioNormalizado;
-                });
-            
-            $fechaOrden = $procesoDelUsuario?->fecha_inicio ?? $pedido->created_at ?? $pedido->created_at;
-            return $fechaOrden;
+            $procesoDelUsuario = $pedido->procesos->first(function ($proceso) use ($usuarioNormalizado) {
+                return $proceso->encargado && strtolower(trim($proceso->encargado)) === $usuarioNormalizado;
+            });
+            return $procesoDelUsuario?->fecha_inicio ?? $pedido->created_at;
         })->values();
 
         // Contar estados
@@ -200,65 +167,17 @@ class ObtenerPedidosOperarioService implements OperarioPedidosReadService
      */
     private function obtenerPedidosPorArea(string $area, User $usuario): Collection
     {
-        return PedidoProduccion::with(['prendas'])
+        $usuarioNormalizado = strtolower(trim($usuario->name));
+
+        return PedidoProduccion::with(['prendas', 'procesos'])
+            ->whereHas('procesos', function ($query) use ($usuarioNormalizado) {
+                $query->whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNormalizado]);
+            })
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->filter(function ($pedido) use ($area, $usuario) {
-                return $this->pedidoPertenecealArea($pedido, $area, $usuario);
-            });
-    }
-
-    /**
-     * Verificar si el pedido está asignado al operario actual
-     * 
-     * Lógica:
-     * 1. Busca procesos del área del operario (Corte/Costura) donde el usuario sea el encargado
-     * 2. O, SI NO ENCUENTRA, busca CUALQUIER proceso donde el usuario sea el encargado
-     *    (para permitir que el operario vea pedidos asignados a él directamente)
-     */
-    private function pedidoPertenecealArea($pedido, string $area, $usuarioActual): bool
-    {
-        // Obtener procesos del pedido (por numero_pedido)
-        $procesos = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
             ->get();
-
-        if ($procesos->isEmpty()) {
-            return false;
-        }
-
-        $usuarioNormalizado = strtolower(trim($usuarioActual->name));
-
-        // PASO 1: Buscar procesos del área específica donde el usuario sea el encargado
-        $procesoDelArea = $procesos->contains(function ($proceso) use ($usuarioNormalizado, $area) {
-            if (!$proceso->encargado) {
-                return false;
-            }
-            
-            $encargadoNormalizado = strtolower(trim($proceso->encargado));
-            $procesNormalizado = strtolower(trim($proceso->proceso));
-            
-            // Validar que sea del área correcta
-            $areaEsperada = strtolower(trim($area));
-            return $procesNormalizado === $areaEsperada && $encargadoNormalizado === $usuarioNormalizado;
-        });
-
-        if ($procesoDelArea) {
-            return true;
-        }
-
-        // PASO 2: Si no hay procesos del área, buscar CUALQUIER proceso donde el usuario sea el encargado
-        // Esto permite que aparezcan pedidos asignados directamente al usuario
-        $cualquierProcesoDelUsuario = $procesos->contains(function ($proceso) use ($usuarioNormalizado) {
-            if (!$proceso->encargado) {
-                return false;
-            }
-            
-            $encargadoNormalizado = strtolower(trim($proceso->encargado));
-            return $encargadoNormalizado === $usuarioNormalizado;
-        });
-
-        return $cualquierProcesoDelUsuario;
     }
+
+
 
     /**
      * Formatear pedidos para respuesta
@@ -287,10 +206,10 @@ class ObtenerPedidosOperarioService implements OperarioPedidosReadService
             
             $descripcionPrendas = $prendas->pluck('nombre_prenda')->unique()->join(', ');
 
-            // Obtener fecha de inicio del proceso en el área
-            $procesoArea = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+            // Obtener fecha de inicio del proceso en el área (desde la relación ya cargada)
+            $procesoArea = $pedido->procesos
                 ->where('estado_proceso', '!=', 'Completado')
-                ->orderBy('created_at', 'asc')
+                ->sortBy('created_at')
                 ->first();
 
             $fechaInicioProceso = $procesoArea?->fecha_inicio?->format('d/m/Y') ?? '-';
@@ -305,9 +224,9 @@ class ObtenerPedidosOperarioService implements OperarioPedidosReadService
                 'descripcion' => $descripcionPrendas ?: 'Sin descripción',
                 'descripcion_prendas' => $descripcionCompleta,
                 'cantidad' => $totalPrendas,
-                'estado' => $this->obtenerEstadoActual($pedido->numero_pedido, $tipoOperario),
-                'area' => $this->obtenerAreaActual($pedido->numero_pedido, $tipoOperario),
-                'fecha_creacion' => $pedido->created_at?->format('d/m/Y') ?? $pedido->created_at?->format('d/m/Y'),
+                'estado' => $this->obtenerEstadoDesdeRelacion($pedido, $tipoOperario),
+                'area' => $this->obtenerAreaDesdeRelacion($pedido),
+                'fecha_creacion' => $pedido->created_at?->format('d/m/Y'),
                 'fecha_inicio_proceso' => $fechaInicioProceso,
                 'dia_entrega' => $pedido->dia_de_entrega ?? '-',
                 'fecha_estimada' => $pedido->fecha_estimada_de_entrega?->format('d/m/Y') ?? '-',
@@ -319,89 +238,51 @@ class ObtenerPedidosOperarioService implements OperarioPedidosReadService
         })->filter()->values()->toArray();
     }
 
-    /**
-     * Obtener estado actual del proceso del pedido
-     */
-    private function obtenerEstadoActual(string $numeroPedido, string $tipoOperario = null): string
+    private function obtenerEstadoDesdeRelacion($pedido, $tipoOperario): string
     {
-        // Si es bodeguero, verificar recibo COSTURA-BODEGA en lugar de procesos
         if ($tipoOperario === 'bodeguero') {
-            $pedido = \App\Models\PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
-            
-            if ($pedido) {
-                $tieneCosturaBodega = \Illuminate\Support\Facades\DB::table('consecutivos_recibos_pedidos')
-                    ->where('pedido_produccion_id', $pedido->id)
-                    ->where('tipo_recibo', 'COSTURA-BODEGA')
-                    ->where('activo', 1)
-                    ->exists();
-                
-                if ($tieneCosturaBodega) {
-                    return 'En Ejecución';
-                }
-            }
-            
-            return 'Desconocida';
+            $tieneCosturaBodega = DB::table('consecutivos_recibos_pedidos')
+                ->where('pedido_produccion_id', $pedido->id)
+                ->where('tipo_recibo', 'COSTURA-BODEGA')
+                ->where('activo', 1)
+                ->exists();
+            return $tieneCosturaBodega ? 'En Ejecución' : 'Desconocida';
         }
-        
-        // Para otros roles, buscar procesos como antes
-        // Primero buscar procesos activos (no completados)
-        $procesoActivo = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
+
+        $procesoActivo = $pedido->procesos
             ->where('estado_proceso', '!=', 'Completado')
-            ->orderBy('created_at', 'asc')
+            ->sortBy('created_at')
             ->first();
 
-        if ($procesoActivo) {
-            return $procesoActivo->estado_proceso;
-        }
+        if ($procesoActivo) return $procesoActivo->estado_proceso;
 
-        // Si todos los procesos están completados, buscar el último completado
-        $procesoCompletado = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
+        $procesoCompletado = $pedido->procesos
             ->where('estado_proceso', 'Completado')
-            ->orderBy('created_at', 'desc')
+            ->sortByDesc('created_at')
             ->first();
 
-        if ($procesoCompletado) {
-            return 'Completado';
-        }
-
-        return 'Desconocida';
+        return $procesoCompletado ? 'Completado' : 'Desconocida';
     }
 
-    /**
-     * Obtener área actual del pedido
-     */
-    private function obtenerAreaActual(string $numeroPedido): string
+    private function obtenerAreaDesdeRelacion($pedido): string
     {
-        // Si es bodeguero, verificar recibo COSTURA-BODEGA en lugar de procesos
         if (auth()->check() && auth()->user()->hasRole('bodeguero')) {
-            $pedido = \App\Models\PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
-            
-            if ($pedido) {
-                $tieneCosturaBodega = \Illuminate\Support\Facades\DB::table('consecutivos_recibos_pedidos')
-                    ->where('pedido_produccion_id', $pedido->id)
-                    ->where('tipo_recibo', 'COSTURA-BODEGA')
-                    ->where('activo', 1)
-                    ->exists();
-                
-                if ($tieneCosturaBodega) {
-                    return 'EN BODEGA';
-                }
-            }
-            
-            return 'Desconocida';
+            $tieneCosturaBodega = DB::table('consecutivos_recibos_pedidos')
+                ->where('pedido_produccion_id', $pedido->id)
+                ->where('tipo_recibo', 'COSTURA-BODEGA')
+                ->where('activo', 1)
+                ->exists();
+            return $tieneCosturaBodega ? 'EN BODEGA' : 'Desconocida';
         }
-        
-        // Para otros roles, buscar procesos como antes
-        $procesos = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
+
+        $procesoActivo = $pedido->procesos
             ->where('estado_proceso', '!=', 'Completado')
-            ->orderBy('created_at', 'asc')
+            ->sortBy('created_at')
             ->first();
 
-        if ($procesos) {
-            return $procesos->proceso;
-        }
-
-        return 'Desconocida';
+        return $procesoActivo ? $procesoActivo->proceso : 'Desconocida';
     }
+
+
 }
 

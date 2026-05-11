@@ -30,9 +30,18 @@ export function initDashboardSearch() {
         }
 
         const obtenerFiltroPrincipalActivo = () => {
-            return window.__dashboardFiltroPrincipalActivo
-                || document.querySelector('.badge-filtro[data-filtro].badge-filtro-active')?.dataset?.filtro
-                || 'costura';
+            const filtroActivo = window.__dashboardFiltroPrincipalActivo
+                || document.querySelector('.badge-filtro[data-filtro].badge-filtro-active')?.dataset?.filtro;
+            
+            if (filtroActivo) return filtroActivo;
+            
+            // Si no hay filtro activo pero existen botones con data-filtro, el default es costura
+            if (document.querySelector('.badge-filtro[data-filtro]')) {
+                return 'costura';
+            }
+            
+            // Si no hay botones de filtro por tipo, mostrar todos
+            return 'todos';
         };
 
         const obtenerFiltroEncargadoActivo = () => {
@@ -92,6 +101,9 @@ export function initDashboardSearch() {
                 const mostrar = coincideTipo && coincideEncargado && coincideTexto;
                 card.style.display = mostrar ? '' : 'none';
             });
+
+            // Actualizar paginación después de filtrar por búsqueda
+            window.__resetDashboardPagination?.();
         };
 
         window.__dashboardClearHandler = function () {

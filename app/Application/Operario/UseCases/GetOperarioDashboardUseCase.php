@@ -22,136 +22,141 @@ class GetOperarioDashboardUseCase
         $usuario = Auth::user();
 
         $verTodas = $request->boolean('todas');
-        $tab = (string) $request->query('tab', 'costura');
+        $defaultTab = $usuario->hasRole('cortador') ? 'pendientes' : 'costura';
+        $tab = (string) $request->query('tab', $defaultTab);
 
-        // Obtener prendas con recibos del operario
-        $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario);
+        $prendasConRecibos = collect();
+        $recibosCompletados = collect();
 
-        if ($verTodas || $usuario->hasRole('administrador-costura')) {
-            $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibosTodosCostura();
-        }
-        // NOTA: vista-costura ya incluye REFLECTIVO en obtenerPrendasConRecibos(), no reemplazar
+        // Optimización: Solo cargar los datos necesarios para la pestaña actual
+        if ($usuario->hasRole('cortador') && $tab === 'completados') {
+            $recibosCompletados = $this->dashboardReadService->obtenerRecibosCompletadosPorOperario($usuario->name);
+        } else {
+            // Obtener prendas con recibos del operario (Pendientes / Otros tabs)
+            $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario);
 
-        if ($usuario->hasRole('administrador-costura') && in_array($tab, ['costura', 'sobremedida'], true)) {
-            $usuariosSobremedida = $this->dashboardReadService->obtenerUsuariosSobremedidaNormalizados();
+            if ($verTodas || $usuario->hasRole('administrador-costura')) {
+                $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibosTodosCostura();
+            }
 
-            if ($tab === 'sobremedida') {
-                $prendasConRecibos = $prendasConRecibos
-                    ->map(function ($prenda) use ($usuariosSobremedida) {
-                        $prenda['recibos'] = array_values(array_filter($prenda['recibos'] ?? [], function ($recibo) use ($usuariosSobremedida) {
-                            $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
-                            $area = strtolower(trim((string) ($recibo['area'] ?? '')));
-                            
-                            // Incluir recibos de COSTURA y CORTE asignados a usuarios confeccion-sobremedida
-                            if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA', 'PARCIAL'], true)) {
+            if ($usuario->hasRole('administrador-costura') && in_array($tab, ['costura', 'sobremedida'], true)) {
+                $usuariosSobremedida = $this->dashboardReadService->obtenerUsuariosSobremedidaNormalizados();
+
+                if ($tab === 'sobremedida') {
+                    $prendasConRecibos = $prendasConRecibos
+                        ->map(function ($prenda) use ($usuariosSobremedida) {
+                            $prenda['recibos'] = array_values(array_filter($prenda['recibos'] ?? [], function ($recibo) use ($usuariosSobremedida) {
+                                $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
+                                $area = strtolower(trim((string) ($recibo['area'] ?? '')));
+                                
+                                if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA', 'PARCIAL'], true)) {
+                                    return false;
+                                }
+
+                                if ($area === 'costura') {
+                                    $encargado = strtolower(trim((string) ($recibo['encargado_costura'] ?? '')));
+                                    return $encargado !== '' && $usuariosSobremedida->contains($encargado);
+                                }
+                                
+                                if ($area === 'corte') {
+                                    $encargado = strtolower(trim((string) ($recibo['encargado_corte'] ?? '')));
+                                    return $encargado !== '' && $usuariosSobremedida->contains($encargado);
+                                }
+
                                 return false;
-                            }
+                            }));
 
-                            // Para recibos de área Costura, verificar encargado_costura
-                            if ($area === 'costura') {
+                            return $prenda;
+                        })
+                        ->filter(function ($prenda) {
+                            return !empty($prenda['recibos']);
+                        })
+                        ->values();
+                }
+
+                if ($tab === 'costura') {
+                    $prendasConRecibos = $prendasConRecibos
+                        ->map(function ($prenda) use ($usuariosSobremedida) {
+                            $prenda['recibos'] = array_values(array_filter($prenda['recibos'] ?? [], function ($recibo) use ($usuariosSobremedida) {
+                                $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
+                                $area = strtolower(trim((string) ($recibo['area'] ?? '')));
+                                
+                                if ($area !== 'costura') {
+                                    return false;
+                                }
+                                
+                                if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA', 'PARCIAL'], true)) {
+                                    return false;
+                                }
+
                                 $encargado = strtolower(trim((string) ($recibo['encargado_costura'] ?? '')));
-                                return $encargado !== '' && $usuariosSobremedida->contains($encargado);
-                            }
-                            
-                            // Para recibos de área Corte, verificar encargado_corte
-                            if ($area === 'corte') {
-                                $encargado = strtolower(trim((string) ($recibo['encargado_corte'] ?? '')));
-                                return $encargado !== '' && $usuariosSobremedida->contains($encargado);
-                            }
+                                if ($encargado !== '' && $usuariosSobremedida->contains($encargado)) {
+                                    return false;
+                                }
 
-                            return false;
-                        }));
+                                return true;
+                            }));
 
-                        return $prenda;
-                    })
-                    ->filter(function ($prenda) {
-                        return !empty($prenda['recibos']);
-                    })
-                    ->values();
+                            return $prenda;
+                        })
+                        ->filter(function ($prenda) {
+                            return !empty($prenda['recibos']);
+                        })
+                        ->values();
+                }
             }
 
-            if ($tab === 'costura') {
-                $prendasConRecibos = $prendasConRecibos
-                    ->map(function ($prenda) use ($usuariosSobremedida) {
-                        $prenda['recibos'] = array_values(array_filter($prenda['recibos'] ?? [], function ($recibo) use ($usuariosSobremedida) {
-                            $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
-                            $area = strtolower(trim((string) ($recibo['area'] ?? '')));
-                            
-                            // En pestaña costura: solo mostrar recibos del área Costura
-                            if ($area !== 'costura') {
-                                return false;
-                            }
-                            
-                            if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA', 'PARCIAL'], true)) {
-                                return false;
-                            }
+            $areaOperario = $usuario->hasRole('cortador')
+                ? 'Corte'
+                : ($usuario->hasAnyRole(['costurero', 'confeccion-sobremedida']) ? 'Costura' : null);
+            
+            if ($areaOperario) {
+                $idsRecibos = $prendasConRecibos
+                    ->flatMap(fn($p) => collect($p['recibos'] ?? [])->pluck('id'))
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
 
-                            $encargado = strtolower(trim((string) ($recibo['encargado_costura'] ?? '')));
-                            if ($encargado !== '' && $usuariosSobremedida->contains($encargado)) {
-                                return false;
-                            }
+                $completadosPorId = $this->dashboardReadService->obtenerCompletadosPorArea($idsRecibos, $areaOperario);
 
-                            return true;
-                        }));
+                $prendasConRecibos = $prendasConRecibos->map(function ($prenda) use ($completadosPorId) {
+                    $prenda['recibos'] = array_map(function ($recibo) use ($completadosPorId) {
+                        $idRecibo = $recibo['id'] ?? null;
+                        $recibo['completado_area'] = $idRecibo ? $completadosPorId->has($idRecibo) : false;
+                        return $recibo;
+                    }, $prenda['recibos'] ?? []);
 
-                        return $prenda;
-                    })
-                    ->filter(function ($prenda) {
-                        return !empty($prenda['recibos']);
-                    })
-                    ->values();
+                    return $prenda;
+                });
+            }
+
+            if ($usuario->hasRole('vista-costura')) {
+                $idsRecibos = $prendasConRecibos
+                    ->flatMap(fn($p) => collect($p['recibos'] ?? [])->pluck('id'))
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                $completadosCortePorId = $this->dashboardReadService->obtenerCompletadosPorArea($idsRecibos, 'Corte');
+                $completadosCosturaPorId = $this->dashboardReadService->obtenerCompletadosPorArea($idsRecibos, 'Costura');
+                $completadosControlCalidadPorId = $this->dashboardReadService->obtenerCompletadosPorArea($idsRecibos, 'Control de Calidad');
+
+                $prendasConRecibos = $prendasConRecibos->map(function ($prenda) use ($completadosCortePorId, $completadosCosturaPorId, $completadosControlCalidadPorId) {
+                    $prenda['recibos'] = array_map(function ($recibo) use ($completadosCortePorId, $completadosCosturaPorId, $completadosControlCalidadPorId) {
+                        $idRecibo = $recibo['id'] ?? null;
+                        $recibo['completado_corte'] = $idRecibo ? $completadosCortePorId->has($idRecibo) : false;
+                        $recibo['completado_costura'] = $idRecibo ? $completadosCosturaPorId->has($idRecibo) : false;
+                        $recibo['completado_control_calidad'] = $idRecibo ? $completadosControlCalidadPorId->has($idRecibo) : false;
+                        return $recibo;
+                    }, $prenda['recibos'] ?? []);
+
+                    return $prenda;
+                });
             }
         }
 
-        $areaOperario = $usuario->hasRole('cortador')
-            ? 'Corte'
-            : ($usuario->hasAnyRole(['costurero', 'confeccion-sobremedida']) ? 'Costura' : null);
-        if ($areaOperario) {
-            $idsRecibos = $prendasConRecibos
-                ->flatMap(fn($p) => collect($p['recibos'] ?? [])->pluck('id'))
-                ->filter()
-                ->unique()
-                ->values()
-                ->all();
-
-            $completadosPorId = $this->dashboardReadService->obtenerCompletadosPorArea($idsRecibos, $areaOperario);
-
-            $prendasConRecibos = $prendasConRecibos->map(function ($prenda) use ($completadosPorId) {
-                $prenda['recibos'] = array_map(function ($recibo) use ($completadosPorId) {
-                    $idRecibo = $recibo['id'] ?? null;
-                    $recibo['completado_area'] = $idRecibo ? $completadosPorId->has($idRecibo) : false;
-                    return $recibo;
-                }, $prenda['recibos'] ?? []);
-
-                return $prenda;
-            });
-        }
-
-        if ($usuario->hasRole('vista-costura')) {
-            $idsRecibos = $prendasConRecibos
-                ->flatMap(fn($p) => collect($p['recibos'] ?? [])->pluck('id'))
-                ->filter()
-                ->unique()
-                ->values()
-                ->all();
-
-            $completadosCortePorId = $this->dashboardReadService->obtenerCompletadosPorArea($idsRecibos, 'Corte');
-            $completadosCosturaPorId = $this->dashboardReadService->obtenerCompletadosPorArea($idsRecibos, 'Costura');
-            $completadosControlCalidadPorId = $this->dashboardReadService->obtenerCompletadosPorArea($idsRecibos, 'Control de Calidad');
-
-            $prendasConRecibos = $prendasConRecibos->map(function ($prenda) use ($completadosCortePorId, $completadosCosturaPorId, $completadosControlCalidadPorId) {
-                $prenda['recibos'] = array_map(function ($recibo) use ($completadosCortePorId, $completadosCosturaPorId, $completadosControlCalidadPorId) {
-                    $idRecibo = $recibo['id'] ?? null;
-                    $recibo['completado_corte'] = $idRecibo ? $completadosCortePorId->has($idRecibo) : false;
-                    $recibo['completado_costura'] = $idRecibo ? $completadosCosturaPorId->has($idRecibo) : false;
-                    $recibo['completado_control_calidad'] = $idRecibo ? $completadosControlCalidadPorId->has($idRecibo) : false;
-                    return $recibo;
-                }, $prenda['recibos'] ?? []);
-
-                return $prenda;
-            });
-        }
-        
         // También obtener los pedidos para mantener compatibilidad
         $datosOperario = $this->obtenerPedidosService->obtenerPedidosDelOperario($usuario);
 
@@ -160,6 +165,7 @@ class GetOperarioDashboardUseCase
             prendasConRecibos: $prendasConRecibos,
             usuario: $usuario,
             tab: $tab,
+            recibosCompletados: $recibosCompletados,
         );
     }
 }

@@ -13,7 +13,7 @@ class VariantesPrendaAuditoriaService
             ->where('prenda_pedido_id', $prendaId)
             ->first();
 
-        $nombrePrenda = DB::table('prenda_pedido')
+        $nombrePrenda = DB::table('prendas_pedido')
             ->where('id', $prendaId)
             ->value('nombre_prenda') ?? 'PRENDA';
 

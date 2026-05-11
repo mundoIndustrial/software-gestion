@@ -231,8 +231,84 @@
                 </div>
             @endif
 
+            @if(auth()->user()->hasRole('cortador'))
+                <div class="filtros-badges filtros-badges-principales">
+                    <button type="button" class="badge-filtro {{ ($tab ?? 'pendientes') === 'pendientes' ? 'badge-filtro-active' : '' }}" onclick="window.location.href='{{ route('operario.dashboard', ['tab' => 'pendientes']) }}'">
+                        <span class="material-symbols-rounded">pending_actions</span>
+                        Pendientes
+                    </button>
+                    <button type="button" class="badge-filtro {{ ($tab ?? 'pendientes') === 'completados' ? 'badge-filtro-active' : '' }}" onclick="window.location.href='{{ route('operario.dashboard', ['tab' => 'completados']) }}'">
+                        <span class="material-symbols-rounded">task_alt</span>
+                        Completados
+                    </button>
+                </div>
+            @endif
+
             <div class="ordenes-list" id="ordenesList">
-                @if($prendasOrdenadas->count() > 0)
+                @if(auth()->user()->hasRole('cortador') && ($tab ?? 'pendientes') === 'completados')
+                    @if(isset($recibosCompletados) && $recibosCompletados->count() > 0)
+                        @foreach($recibosCompletados as $recibo)
+                            @php
+                                $fechaCompletado = \Carbon\Carbon::parse($recibo['fecha_completado'])->format('d/m/Y H:i');
+                            @endphp
+                            <div class="orden-card-simple card-completado-area" 
+                                 data-numero="{{ $recibo['numero_pedido'] }}" 
+                                 data-prenda="{{ strtolower($recibo['nombre_prenda']) }}"
+                                 data-cliente="{{ strtolower($recibo['cliente']) }}"
+                                 data-tipo-recibo="{{ strtolower($recibo['tipo_recibo'] ?? 'costura') }}"
+                                 data-sin-encargado-costura="0"
+                                 data-sin-encargado-reflectivo="0"
+                                 data-completado-costura="1"
+                                 data-completado-reflectivo="1"
+                                 data-numero-recibo="{{ $recibo['consecutivo_actual'] }}">
+
+                                <div class="orden-body recibo-completado-area">
+                                    <div class="orden-left">
+                                        <div class="orden-top">
+                                            <div class="orden-numero-section">
+                                                <h4 class="orden-numero">#{{ $recibo['consecutivo_actual'] }}</h4>
+                                                <span class="badge-completado-costura is-on">COMPLETADO</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="orden-cliente">
+                                            <p class="cliente-label">CLIENTE</p>
+                                            <p class="cliente-name">{{ $recibo['cliente'] }}</p>
+                                        </div>
+
+                                        <div class="orden-prendas">
+                                            <p class="prendas-label">
+                                                <strong>{{ $recibo['nombre_prenda'] }}</strong>
+                                                @if($recibo['descripcion'])
+                                                    <br>{!! nl2br(e($recibo['descripcion'])) !!}
+                                                @endif
+                                            </p>        
+                                        </div>
+
+                                        <div style="margin-top: 1rem; font-size: 0.85rem; color: #10b981; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                                            <span class="material-symbols-rounded" style="font-size: 1.1rem;">event_available</span>
+                                            Completado el {{ $fechaCompletado }}
+                                        </div>
+                                    </div>
+
+                                    <div class="orden-right">
+                                        <div class="orden-right-center">
+                                            <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $recibo['numero_pedido'] }}', {{ $recibo['prenda_id'] }}, '{{ $recibo['nombre_prenda'] }}', '{{ $recibo['tipo_recibo'] }}', {{ $recibo['id_parcial'] ?: 'null' }}, '{{ $recibo['consecutivo_actual'] }}'); return false;">
+                                                <span class="material-symbols-rounded">arrow_forward</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="empty-state">
+                            <span class="material-symbols-rounded">history</span>
+                            <p>No tienes recibos completados aún.</p>
+                        </div>
+                    @endif
+                @else
+                    @if($prendasOrdenadas->count() > 0)
                     @foreach($prendasOrdenadas as $prenda)
                         @php
                             $estadoClass = 'pendiente'; // Siempre pendiente, eliminar en-proceso
@@ -1309,11 +1385,12 @@
                             </div>
                         </div>
                     @endforeach
-                @else
-                    <div class="empty-state">
-                        <span class="material-symbols-rounded">inbox</span>
-                        <p>No hay prendas con recibos de costura asignadas</p>
-                    </div>
+                    @else
+                        <div class="empty-state">
+                            <span class="material-symbols-rounded">inbox</span>
+                            <p>No hay prendas con recibos de costura asignadas</p>
+                        </div>
+                    @endif
                 @endif
             </div>
         </div>

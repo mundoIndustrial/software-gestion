@@ -41,8 +41,18 @@ export function initReciboFilters() {
     }
 
     function obtenerFiltroPrincipalActivo() {
-        const btnActivo = document.querySelector('.badge-filtro[data-filtro].badge-filtro-active');
-        return btnActivo?.dataset?.filtro || 'costura';
+        const filtroActivo = window.__dashboardFiltroPrincipalActivo
+            || document.querySelector('.badge-filtro[data-filtro].badge-filtro-active')?.dataset?.filtro;
+        
+        if (filtroActivo) return filtroActivo;
+        
+        // Si no hay filtro activo pero existen botones con data-filtro, el default es costura
+        if (document.querySelector('.badge-filtro[data-filtro]')) {
+            return 'costura';
+        }
+        
+        // Si no hay botones de filtro por tipo, mostrar todos
+        return 'todos';
     }
 
     // Exponer obtenerFiltroPrincipalActivo globalmente
@@ -166,6 +176,9 @@ export function initReciboFilters() {
                 ocultadas++;
             }
         });
+
+        // Actualizar paginación después de aplicar filtros
+        window.__resetDashboardPagination?.();
 
         console.log(` [FILTRO] Filtro completado: ${mostradas} mostradas, ${ocultadas} ocultadas`);
     }

@@ -9,5 +9,7 @@ interface OperarioDashboardReadService
     public function obtenerUsuariosSobremedidaNormalizados(): Collection;
 
     public function obtenerCompletadosPorArea(array $idsRecibo, string $area): Collection;
+
+    public function obtenerRecibosCompletadosPorOperario(string $nombreOperario): Collection;
 }
 

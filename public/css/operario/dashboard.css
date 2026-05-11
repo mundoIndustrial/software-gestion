@@ -507,6 +507,26 @@ body[data-dashboard-theme="reflectivo"] .operario-dashboard.is-vista-costura .ba
     color: var(--primary-color);
 }
 
+.operario-dashboard .badge-completado-costura {
+    font-size: 0.625rem;
+    font-weight: 700;
+    background: var(--slate-100);
+    color: var(--slate-600);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.operario-dashboard .badge-completado-costura.is-on {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+}
+
+.operario-dashboard .card-completado-area {
+    border-left-color: var(--success-color) !important;
+}
+
 .operario-dashboard .label-encargado {
     font-size: 0.625rem;
     font-weight: 700;

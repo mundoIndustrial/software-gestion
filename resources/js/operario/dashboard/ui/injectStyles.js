@@ -16,6 +16,15 @@ export function injectDashboardStyles() {
             100% { opacity: 0; transform: translateX(100px) scale(0.9); max-height: 0; padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; overflow: hidden; }
         }
 
+        @keyframes fadeInCard {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .orden-card-simple:not(.page-hidden) {
+            animation: fadeInCard 0.4s ease-out forwards;
+        }
+
         .card-animate-remove {
             animation: cardRemove 0.6s forwards ease-in-out;
             pointer-events: none;
@@ -173,6 +182,70 @@ export function injectDashboardStyles() {
             .btn-deshacer-costura span {
                 font-size: 1.2rem;
             }
+        }
+
+        /* Paginación */
+        .page-hidden {
+            display: none !important;
+        }
+
+        .dashboard-pagination-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            margin: 2rem 0;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(8px);
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .pagination-info {
+            color: #64748b;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .pagination-btn {
+            min-width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #1e293b;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pagination-btn:hover:not(.disabled):not(.active) {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+
+        .pagination-btn.active {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .pagination-btn.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: #f8fafc;
         }
     `;
 

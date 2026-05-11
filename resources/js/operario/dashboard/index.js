@@ -1,7 +1,9 @@
-﻿import { initDashboardUser } from './state/user';
+import { initDashboardUser } from './state/user';
 import { initAdminTabs } from './tabs/adminTabs';
+import { initOperarioTabs } from './tabs/operarioTabs';
 import { initDashboardSearch } from './ui/search';
 import { initReciboFilters } from './ui/filters';
+import { initDashboardPagination } from './ui/pagination';
 import { initGlobalModalClosers } from './ui/modalClosers';
 import { injectDashboardStyles } from './ui/injectStyles';
 import { registerDashboardGlobals } from './globals/registerGlobals';
@@ -21,8 +23,10 @@ function initOperarioDashboard() {
     registerDashboardGlobals();
 
     initAdminTabs();
+    initOperarioTabs();
     initDashboardSearch();
     initReciboFilters();
+    initDashboardPagination();
     initGlobalModalClosers();
 
     initRealtimeListeners();
