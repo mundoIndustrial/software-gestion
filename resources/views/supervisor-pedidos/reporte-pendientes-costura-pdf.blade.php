@@ -102,7 +102,21 @@
             <tbody>
                 @php $contador = 1; @endphp
                 @foreach($rows as $row)
-                    <tr>
+                    @php
+                        $diasEnArea = data_get($row, 'dias_en_area');
+                        $tieneEncargado = data_get($row, 'tiene_encargado', false);
+                        $colorFondo = '';
+                        if ($diasEnArea !== null) {
+                            if ($tieneEncargado && $diasEnArea >= 3) {
+                                $colorFondo = '#fee2e2';
+                            } elseif ($tieneEncargado && $diasEnArea >= 1 && $diasEnArea <= 2) {
+                                $colorFondo = '#fef3c7';
+                            } elseif (!$tieneEncargado && $diasEnArea >= 1) {
+                                $colorFondo = '#f3e8ff';
+                            }
+                        }
+                    @endphp
+                    <tr style="{{ $colorFondo ? 'background-color: ' . $colorFondo . ';' : '' }}">
                         <td>{{ $contador++ }}</td>
                         <td><span class="area-badge">{{ data_get($row, 'area', '') }}</span></td>
                         <td>{{ data_get($row, 'numero_recibo', '') }}</td>
@@ -158,7 +172,7 @@
                                 @php $fechaLlegadaArea = data_get($row, 'fecha_llegada_area'); @endphp
                                 {{ $fechaLlegadaArea ? \Carbon\Carbon::parse((string) $fechaLlegadaArea)->format('d/m/Y H:i') : '-' }}
                             </div>
-                            <div><strong>Dias:</strong> {{ data_get($row, 'dias_en_area') !== null ? data_get($row, 'dias_en_area') : '-' }}</div>
+                            <div><strong>Dias:</strong> {{ $diasEnArea !== null ? $diasEnArea : '-' }}</div>
                         </td>
                     </tr>
                 @endforeach

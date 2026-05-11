@@ -561,8 +561,8 @@ class SupervisorReceiptsController extends Controller
                     $item['fecha_llegada_area'] = $fechaReferenciaArea
                         ? $fechaReferenciaArea->toDateTimeString()
                         : null;
-                    $item['dias_en_area'] = $fechaAsignacionEncargado
-                        ? $this->calcularDiasHabiles($fechaAsignacionEncargado->copy(), now())
+                    $item['dias_en_area'] = $fechaReferenciaArea
+                        ? $this->calcularDiasHabiles($fechaReferenciaArea->copy(), now())
                         : null;
                     $item['tiene_encargado'] = false;
                     return $item;
