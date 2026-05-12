@@ -59,7 +59,7 @@
                                 </div>
                                 <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                     <span>N° Recibo</span>
-                                    <button type="button" class="btn-filter-column" data-col="numero_recibo" title="Filtrar NÂ° Recibo" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                                    <button type="button" class="btn-filter-column" data-col="numero_recibo" title="Filtrar N° Recibo" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;">
                                         <span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span>
                                     </button>
                                 </div>

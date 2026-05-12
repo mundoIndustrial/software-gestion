@@ -1,4 +1,4 @@
-@extends('layouts.app-without-sidebar')
+﻿@extends('layouts.app-without-sidebar')
 
 @section('title', "Gestión de Despacho - Pedido {$pedido['numero_pedido']}")
 
@@ -40,7 +40,7 @@
                             ← Volver al Historial
                         </a>
                     @else
-                        <a href="{{ route('despacho.pendientes') }}"
+                        <a href="{{ route('despacho.pendientes', request()->only(['page', 'search', 'filter'])) }}"
                            class="px-4 py-2 border border-slate-300 text-black hover:text-black font-medium rounded transition-colors">
                             ← Volver a Pendientes
                         </a>
@@ -620,3 +620,4 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
 
 <script src="{{ asset('js/bodega-pedidos.js') }}?v={{ time() }}"></script>
 @endsection
+

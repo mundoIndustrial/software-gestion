@@ -1,4 +1,4 @@
-@extends('layouts.despacho-standalone')
+﻿@extends('layouts.despacho-standalone')
 
 @section('title', 'Despacho - Pendientes Unificados')
 @section('page-title', 'Pendientes de Costura y EPP')
@@ -521,8 +521,8 @@
     <!-- Filtros -->
     <div class="filtros-bar">
         <div class="search-box">
-            <input type="text" 
-                   id="searchInput" 
+            <input type="text"
+                   id="searchInput"
                    placeholder="Buscar por cliente o número de pedido..."
                    value="{{ $search }}">
         </div>
@@ -597,7 +597,7 @@
         </div>
         <div class="filter-modal-body">
             <div id="filterContent">
-                <!-- El contenido se cargará dinámicamente -->
+                <!-- El contenido se cargara dinamicamente -->
             </div>
         </div>
         <div class="filter-modal-footer">
@@ -613,13 +613,37 @@
 let searchActual = '{{ $search }}' || '';
 let currentPage = 1;
 let paginationData = null;
+let currentFilterValue = '';
+
+function readStateFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const pageParam = parseInt(params.get('page') || '1', 10);
+    const searchParam = params.get('search');
+    const filterParam = params.get('filter');
+
+    if (!Number.isNaN(pageParam) && pageParam > 0) currentPage = pageParam;
+    if (searchParam !== null) searchActual = searchParam;
+    if (filterParam !== null) currentFilterValue = filterParam;
+}
+
+function syncUrlState() {
+    const params = new URLSearchParams();
+    if (searchActual) params.set('search', searchActual);
+    if (currentFilterValue) params.set('filter', currentFilterValue);
+    if (currentPage > 1) params.set('page', String(currentPage));
+    const query = params.toString();
+    window.history.replaceState({}, '', `${window.location.pathname}${query ? `?${query}` : ''}`);
+}
 
 // Cargar pedidos al iniciar
 document.addEventListener('DOMContentLoaded', function() {
+    readStateFromUrl();
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.value = searchActual;
+
     cargarPedidos();
 
-    // Configurar búsqueda en tiempo real
-    const searchInput = document.getElementById('searchInput');
+    // Configurar busqueda en tiempo real
     let timeout;
     searchInput.addEventListener('input', function() {
         clearTimeout(timeout);
@@ -657,6 +681,7 @@ async function cargarPedidos() {
         const data = await response.json();
         
         if (data.success) {
+            syncUrlState();
             // Convertir a array para asegurar que funcione con .map()
             const pedidosArray = Array.isArray(data.data) ? data.data : [];
             renderizarPedidos(pedidosArray);
@@ -693,7 +718,7 @@ function renderizarPedidos(pedidos) {
         container.innerHTML = pedidosArray.map(pedido => `
             <div class="table-row">
                 <div>
-                    <a href="/despacho/pendientes/${pedido.id}" class="btn-action btn-primary">
+                    <a href="/despacho/pendientes/${pedido.numero_pedido || pedido.id}?${new URLSearchParams({ page: String(currentPage), ...(searchActual ? { search: searchActual } : {}), ...(currentFilterValue ? { filter: currentFilterValue } : {}) }).toString()}" class="btn-action btn-primary">
                         <span class="material-symbols-rounded">visibility</span>
                         Ver
                     </a>
@@ -768,7 +793,6 @@ function mostrarError(mensaje) {
 
 // Funciones para el Modal de Filtros
 let currentFilterType = '';
-let currentFilterValue = '';
 
 function toggleFilterModal(type) {
     currentFilterType = type;
@@ -776,7 +800,7 @@ function toggleFilterModal(type) {
     const title = document.getElementById('filterTitle');
     const content = document.getElementById('filterContent');
     
-    // Configurar título según el tipo
+    // Configurar ti­tulo segun el tipo
     const titles = {
         'cliente': 'Filtrar por Cliente',
         'pedido': 'Filtrar por N° Pedido',
@@ -786,10 +810,10 @@ function toggleFilterModal(type) {
     
     title.textContent = titles[type] || 'Filtrar';
     
-    // Obtener datos únicos de la tabla actual
+    // Obtener datos unicos de la tabla actual
     const tableData = getUniqueTableData(type);
     
-    // Generar contenido del modal según el tipo y datos
+    // Generar contenido del modal segun el tipo y datos
     let contentHTML = generateFilterContent(type, tableData);
     
     content.innerHTML = contentHTML;
@@ -854,7 +878,7 @@ function generateFilterContent(type, data) {
                 <input type="text" class="filter-search" id="filterSearch" placeholder="Buscar..." value="">
                 <div class="filter-options" style="max-height: 300px; overflow-y: auto;">
                     ${data.length > 0 ? data.map(value => {
-                        // Extraer solo el número del pedido (quitar el #)
+                        // Extraer solo el numero del pedido (quitar el #)
                         const numeroPedido = value.replace('#', '');
                         return `
                         <div class="filter-option">
@@ -922,7 +946,7 @@ function setCurrentFilterValues(type, filterValue) {
     switch(type) {
         case 'cliente':
         case 'pedido':
-            // Configurar búsqueda de texto
+            // Configurar busqueda de texto
             const searchInput = document.getElementById('filterSearch');
             if (searchInput) searchInput.value = filterValue;
             
@@ -962,7 +986,7 @@ function closeFilterModal() {
 function clearFilter() {
     currentFilterValue = '';
     
-    // Limpiar búsqueda de texto
+    // Limpiar busqueda de texto
     const searchInput = document.getElementById('filterSearch');
     if (searchInput) searchInput.value = '';
     
@@ -1008,7 +1032,7 @@ function formatEstado(estado) {
 function clearFilter() {
     currentFilterValue = '';
     
-    // Limpiar búsqueda de texto
+    // Limpiar busqueda de texto
     const searchInput = document.getElementById('filterSearch');
     if (searchInput) searchInput.value = '';
     
@@ -1031,7 +1055,7 @@ function applyFilter() {
     switch (currentFilterType) {
         case 'cliente':
         case 'pedido':
-            // Obtener valor del input de búsqueda
+            // Obtener valor del input de busqueda
             const searchInput = document.getElementById('filterSearch');
             const searchValue = searchInput ? searchInput.value.trim() : '';
             
@@ -1039,7 +1063,7 @@ function applyFilter() {
             const checkboxes = document.querySelectorAll('#filterContent input[type="checkbox"]:checked');
             const selectedValues = Array.from(checkboxes).map(cb => cb.value);
             
-            // Combinar búsqueda y selección
+            // Combinar busqueda y seleccion
             if (searchValue && selectedValues.length > 0) {
                 filterValue = searchValue + ',' + selectedValues.join(',');
             } else if (searchValue) {
@@ -1093,24 +1117,24 @@ function formatEstado(estado) {
 </script>
 
 <script>
-// Función para cambiar de página
+// Funcion para cambiar de pagina
 function cambiarPagina(direction) {
     const nuevaPagina = currentPage + direction;
     
-    // Validar que la página esté dentro de los límites
+    // Validar que la pagina este dentro de los limites
     if (paginationData && nuevaPagina >= 1 && nuevaPagina <= paginationData.last_page) {
         currentPage = nuevaPagina;
         cargarPedidos();
     }
 }
 
-// Función para actualizar los controles de paginación
+// Funcion para actualizar los controles de paginacion
 function actualizarPaginacion(pagination) {
     if (!pagination) return;
     
     paginationData = pagination;
     
-    // Actualizar texto de información
+    // Actualizar texto de informacion
     const paginationText = document.getElementById('paginationText');
     if (paginationText) {
         const from = pagination.from || 0;
@@ -1119,7 +1143,7 @@ function actualizarPaginacion(pagination) {
         paginationText.textContent = `Mostrando ${from} a ${to} de ${total} resultados`;
     }
     
-    // Actualizar números de página
+    // Actualizar numeros de pagina
     const currentPageSpan = document.getElementById('currentPage');
     const totalPagesSpan = document.getElementById('totalPages');
     if (currentPageSpan) currentPageSpan.textContent = pagination.current_page;
@@ -1226,7 +1250,7 @@ function actualizarPaginacion(pagination) {
 
 @push('scripts')
 <script>
-console.log(' SCRIPT PENDIENTES-UNIFICADOS CARGADO - Iniciando configuración...');
+console.log(' SCRIPT PENDIENTES-UNIFICADOS CARGADO - Iniciando configuracion...');
 
 // WebSocket para actualizaciones en tiempo real
 let socket = null;
@@ -1234,12 +1258,12 @@ let reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
 
 function connectWebSocket() {
-    console.log(' Iniciando conexión WebSocket para despacho...');
+    console.log(' Iniciando conexion WebSocket para despacho...');
     
     try {
         // Usar la instancia existente de Echo en lugar de crear una nueva
         if (!window.EchoInstance) {
-            console.error(' EchoInstance no está disponible');
+            console.error(' EchoInstance no esta disponible');
             return;
         }
         
@@ -1248,7 +1272,7 @@ function connectWebSocket() {
         console.log(' Usando EchoInstance existente');
         console.log(' Creando canal pedidos.general...');
         
-        // Escuchar eventos de pedidos en el canal público de despacho
+        // Escuchar eventos de pedidos en el canal pablico de despacho
         const despachoChannel = socket.channel('pedidos.general');
         
         if (!despachoChannel) {
@@ -1272,7 +1296,7 @@ function connectWebSocket() {
                 'timestamp': event.timestamp
             });
             
-            // Mostrar notificación de que se recibió un evento
+            // Mostrar notificacion de que se recibio un evento
             console.log(' Evento recibido - Verificando si hay que actualizar la lista...');
             
             // Si hay cambios relevantes, recargar la lista
@@ -1295,36 +1319,36 @@ function connectWebSocket() {
     }
 }
 
-// Esperar a que waitForEcho esté disponible (definido en bootstrap.js)
+// Esperar a que waitForEcho esta disponible (definido en bootstrap.js)
 function initializeWebSocket() {
-    // Verificar si waitForEcho está disponible
+    // Verificar si waitForEcho esta disponible
     if (typeof window.waitForEcho === 'function') {
         console.log(' waitForEcho disponible, iniciando...');
-        // Usar el sistema waitForEcho para asegurar que Echo esté disponible
+        // Usar el sistema waitForEcho para asegurar que Echo esta disponible
         window.waitForEcho(function() {
-            console.log(' Echo está listo, conectando WebSocket para lista de despacho...');
+            console.log(' Echo esta listo, conectando WebSocket para lista de despacho...');
             connectWebSocket();
         });
     } else {
-        console.log(' waitForEcho aún no disponible, reintentando en 100ms...');
+        console.log(' waitForEcho aun no disponible, reintentando en 100ms...');
         setTimeout(initializeWebSocket, 100);
     }
 }
 
-// Inicializar cuando se carga la página
+// Inicializar cuando se carga la pagina
 document.addEventListener('DOMContentLoaded', function() {
     console.log(' DOM cargado - Iniciando WebSocket de despacho...');
     console.log(' URL actual:', window.location.href);
     console.log(' Pathname:', window.location.pathname);
     
-    // Verificar si estamos en la página correcta
+    // Verificar si estamos en la pagina correcta
     if (window.location.pathname.includes('/despacho/pendientes')) {
-        console.log(' Estamos en la página de despacho pendientes');
+        console.log(' Estamos en la pagina de despacho pendientes');
     } else {
         console.log(' No estamos en /despacho/pendientes, estamos en:', window.location.pathname);
     }
     
-    // Intentar inicializar WebSocket (con reintentos si waitForEcho no está listo)
+    // Intentar inicializar WebSocket (con reintentos si waitForEcho no esta listo)
     initializeWebSocket();
 });
 </script>
