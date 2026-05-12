@@ -23,7 +23,7 @@
         color: #6b7280;
     }
 </style>
-<!-- Tabla de Ã“rdenes - DiseÃ±o asesores/pedidos -->
+<!-- Tabla de ordenes - Diseno asesores/pedidos -->
 <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
     <!-- Contenedor con Scroll -->
     <div class="table-scroll-container" style="overflow-x: auto; overflow-y: auto; width: 100%; max-width: 100%; max-height: 800px; border-radius: 6px; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9;">
@@ -47,10 +47,10 @@
             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                 <span>Aprob. Cartera</span></div>
             <div class="th-wrapper" style="display: flex; align-items: center;">
-                <span>DÃ­as Restantes</span>
+                <span>Días Restantes</span>
             </div>
             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
-                <span>NÃºmero</span></div>
+                <span>Número</span></div>
             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                 <span>Cliente</span></div>
             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
@@ -69,14 +69,14 @@
                 <span>Fecha</span></div>
         </div>
 
-        <!-- Filas - Se cargan dinÃ¡micamente con JavaScript -->
+        <!-- Filas - Se cargan dinamicamente con JavaScript -->
         <div data-ordenes-body style="display: flex; flex-direction: column;">
-            <!-- Las Ã³rdenes se cargarÃ¡n aquÃ­ vÃ­a API -->
+            <!-- Las Ordenes se cargaran aqui vía API -->
             @if($ordenes->isEmpty())
             <div style="padding: 2rem; text-align: center; color: #9ca3af;">
                 <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
                     <div style="width: 20px; height: 20px; border: 2px solid #e5e7eb; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                    Cargando Ã³rdenes...
+                    Cargando Órdenes...
                 </div>
             </div>
             @endif
@@ -153,14 +153,14 @@
                 data-pedido-id="{{ $orden->id }}"
                 >
 
-                    <!-- Checkbox de selecciÃ³n -->
+                    <!-- Checkbox de seleccion -->
                     <div style="display: flex; align-items: center; justify-content: center;">
                         <input type="checkbox" class="pedido-checkbox" data-pedido-id="{{ $orden->id }}" title="Seleccionar pedido" style="width: 18px; height: 18px; cursor: pointer;" {{ $estaSeleccionado ? 'checked' : '' }}>
                     </div>
 
                     <!-- Acciones -->
                     <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
-                        <!-- BotÃ³n Ver (con dropdown) -->
+                        <!-- Boton Ver (con dropdown) -->
                         @php
                             $numeroPedido = $orden->numero_pedido ?? 'sin-numero';
                             $pedidoId = $orden->id;
@@ -182,7 +182,7 @@
                             <span class="btn-ver-bodega-badge" data-bodega-button-badge style="display:none; position:absolute; top:-7px; right:-7px; min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:#dc2626; color:#fff; font-size:10px; font-weight:700; line-height:18px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,.25);">0</span>
                         </button>
 
-                        <!-- BotÃ³n Aprobar (solo si estÃ¡ pendiente de aprobaciÃ³n Y no es solo EPP) -->
+                        <!-- Boton Aprobar (solo si esta pendiente de aprobacion Y no es solo EPP) -->
                         @if($estado === 'PENDIENTE_SUPERVISOR')
                             @if(!$orden->es_solo_epp)
                             <button class="btn-accion btn-accion--aprobar"
@@ -195,14 +195,14 @@
                             @endif
                         @endif
 
-                        <!-- BotÃ³n Anular (solo si estÃ¡ pendiente de aprobaciÃ³n Y no es solo EPP) -->
+                        <!-- Boton Anular (solo si esta pendiente de aprobacion Y no es solo EPP) -->
                         @if($estado === 'PENDIENTE_SUPERVISOR')
                             @if(!$orden->es_solo_epp)
                             <button class="btn-accion btn-accion--anular"
                                 data-action="anular"
                                 data-pedido-id="{{ $orden->id }}"
                                 data-pedido-numero="{{ $numeroPedido }}"
-                                title="Pasar a RevisiÃ³n">
+                                title="Pasar a Revisión">
                                 <i class="fas fa-ban"></i>
                             </button>
                             @endif
@@ -218,7 +218,7 @@
                             <i class="fas fa-check-double"></i>
                         </button>
 
-                        <!-- BotÃ³n Ocultar -->
+                        <!-- Boton Ocultar -->
                         <button class="btn-accion btn-accion--ocultar"
                             data-action="ocultar"
                             data-pedido-id="{{ $orden->id }}"
@@ -235,12 +235,12 @@
                         </span>
                     </div>
 
-                    <!-- DÃ­as restantes (desde Aprob. Cartera) -->
+                    <!-- Di­as restantes (desde Aprob. Cartera) -->
                     <div>
                         @if($diasRestantes !== null)
                         <span style="display: inline-flex; flex-direction: column; line-height: 1.1; color: #dc2626; font-weight: 700; font-size: 0.78rem;">
-                            <span>{{ $diasRestantes }} dÃ­as</span>
-                            <span>hÃ¡biles restantes</span>
+                            <span>{{ $diasRestantes }} dí­as</span>
+                            <span>hábiles restantes</span>
                             <span style="margin-top: 0.2rem; color: #6b7280; font-weight: 600; font-size: 0.72rem;">Est.: {{ $fechaEstimadaEntrega ?? '-' }}</span>
                         </span>
                     @else
@@ -272,7 +272,7 @@
                             $estadoColors = [
                                 'PENDIENTE_SUPERVISOR' => ['bg' => '#fff3cd', 'text' => '#856404', 'label' => 'Pendiente Supervisor'],
                                 'PENDIENTE_INSUMOS' => ['bg' => '#d1ecf1', 'text' => '#0c5460', 'label' => 'Pendiente Insumos'],
-                                'En EjecuciÃ³n' => ['bg' => '#d4edda', 'text' => '#155724', 'label' => 'En EjecuciÃ³n'],
+                                'En Ejecución' => ['bg' => '#d4edda', 'text' => '#155724', 'label' => 'En Ejecución'],
                                 'No iniciado' => ['bg' => '#e2e3e5', 'text' => '#383d41', 'label' => 'No Iniciado'],
                                 'Entregado' => ['bg' => '#d4edda', 'text' => '#155724', 'label' => 'Entregado'],
                                 'Finalizada' => ['bg' => '#d4edda', 'text' => '#155724', 'label' => 'Finalizada'],
@@ -325,14 +325,14 @@
     </div>
 </div>
 
-<!-- PaginaciÃ³n - Se actualiza dinÃ¡micamente con JavaScript -->
+<!-- Paginacion - Se actualiza dinamicamente con JavaScript -->
 <div data-ordenes-pagination style="margin-top: 1.5rem; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap;">
-    <!-- Los botones de paginaciÃ³n se cargarÃ¡n aquÃ­ vÃ­a JavaScript -->
+    <!-- Los botones de paginacion se cargarán aquí vía JavaScript -->
 </div>
 
 @if(false)
     <div style="margin-top: 1.5rem; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <!-- BotÃ³n Primera PÃ¡gina (<<) -->
+        <!-- Boton Primera Pagina (<<) -->
         @if($ordenes->onFirstPage())
             <button disabled style="min-width: 36px; height: 36px; padding: 0 12px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; cursor: not-allowed; color: #999; font-weight: 600;">
                 &laquo;&laquo;
@@ -343,7 +343,7 @@
             </a>
         @endif
 
-        <!-- BotÃ³n Anterior -->
+        <!-- Boton Anterior -->
         @if($ordenes->onFirstPage())
             <button disabled style="min-width: 36px; height: 36px; padding: 0 12px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; cursor: not-allowed; color: #999; font-weight: 600;">
                 â† Anterior
@@ -354,7 +354,7 @@
             </a>
         @endif
 
-        <!-- NÃºmeros de PÃ¡gina -->
+        <!-- Números de Página -->
         @if($ordenes->lastPage() > 1)
             @foreach($ordenes->getUrlRange(1, $ordenes->lastPage()) as $page => $url)
                 @if($page == $ordenes->currentPage())
@@ -369,7 +369,7 @@
             @endforeach
         @endif
 
-        <!-- BotÃ³n Siguiente -->
+        <!-- Boton Siguiente -->
         @if($ordenes->hasMorePages())
             <a href="{{ $ordenes->nextPageUrl() }}" style="min-width: 36px; height: 36px; padding: 0 12px; background: #ffffff; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; color: #333; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.3s ease;" onmouseover="this.style.background='#e9ecef'; this.style.borderColor='#adb5bd';" onmouseout="this.style.background='#ffffff'; this.style.borderColor='#ddd';">
                 Siguiente â†’
@@ -380,7 +380,7 @@
             </button>
         @endif
 
-        <!-- BotÃ³n Ãšltima PÃ¡gina (>>) -->
+        <!-- Boton Última Página (>>) -->
         @if($ordenes->currentPage() == $ordenes->lastPage())
             <button disabled style="min-width: 36px; height: 36px; padding: 0 12px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; cursor: not-allowed; color: #999; font-weight: 600;">
                 &raquo;&raquo;
@@ -391,14 +391,14 @@
             </a>
         @endif
 
-        <!-- Info de PÃ¡gina -->
+        <!-- Info de Página -->
         <span style="margin-left: 1rem; color: #666; font-size: 14px; font-weight: 500;">
-            PÃ¡gina {{ $ordenes->currentPage() }} de {{ $ordenes->lastPage() }} | Total: {{ $ordenes->total() }} registros
+            Página {{ $ordenes->currentPage() }} de {{ $ordenes->lastPage() }} | Total: {{ $ordenes->total() }} registros
         </span>
     </div>
 @endif
 
-<!-- Estilos para animaciÃ³n de carga y paginaciÃ³n -->
+<!-- Estilos para animación de carga y paginación -->
 <style>
     @keyframes spin {
         to { transform: rotate(360deg); }

@@ -959,14 +959,15 @@ function formatDateLabel(yyyyMmDd) {
 
 function leerValorColumnaFila(fila, col) {
     const map = {
-        fecha_aprobacion: 0,
-        numero_recibo: 1,
-        cliente: 2,
-        cantidad: 3,
-        asesor: 4,
-        logo: 5,
-        fecha_creacion: 6,
-        fecha_llegada: 7,
+        // Indices considerando que la primera columna es "Actions"
+        fecha_aprobacion: 1,
+        numero_recibo: 2,
+        cliente: 3,
+        cantidad: 4,
+        asesor: 5,
+        logo: 6,
+        fecha_creacion: 7,
+        color: 8,
     };
 
     const idx = map[col];
@@ -1251,6 +1252,5 @@ window.addEventListener('popstate', function() {
 });
 </script>
 @endpush
-
 
 

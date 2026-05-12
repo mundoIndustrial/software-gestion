@@ -8,10 +8,10 @@ export function initReciboFilters() {
     // Guardar HTML original de recibos normales
     let htmlRecibosOriginal = null;
     
-    // Guardar el HTML original cuando la pÃ¡gina carga
+    // Guardar el HTML original cuando la pagina carga
     const ordenesList = document.getElementById('ordenesList');
     if (ordenesList) {
-        // Esperar a que el DOM estÃ© completamente listo
+        // Esperar a que el DOM esta completamente listo
         setTimeout(() => {
             htmlRecibosOriginal = ordenesList.innerHTML;
             console.log('[INIT] HTML de recibos originales guardado');
@@ -177,17 +177,17 @@ export function initReciboFilters() {
             }
         });
 
-        // Actualizar paginaciÃ³n despuÃ©s de aplicar filtros
+        // Actualizar paginacion despues de aplicar filtros
         window.__resetDashboardPagination?.();
 
-        // Ordenar tarjetas segÃºn el filtro activo (especialmente para vista-costura)
+        // Ordenar tarjetas segun el filtro activo (especialmente para vista-costura)
         ordenarTarjetas(filtroPrincipal);
 
         console.log(` [FILTRO] Filtro completado: ${mostradas} mostradas, ${ocultadas} ocultadas`);
     }
 
     /**
-     * Ordena las tarjetas en el DOM segÃºn el filtro activo
+     * Ordena las tarjetas en el DOM segun el filtro activo
      */
     function ordenarTarjetas(filtro) {
         const ordenesList = document.getElementById('ordenesList');
@@ -258,7 +258,7 @@ export function initReciboFilters() {
         window.__applyDashboardSearchFilter?.();
     };
 
-    // FunciÃ³n para recargar recibos normales sin recargar la pÃ¡gina
+    // Funcion para recargar recibos normales sin recargar la pagina
     function recargarRecibosNormales() {
         const ordenesList = document.getElementById('ordenesList');
         if (!ordenesList) return;
@@ -275,13 +275,13 @@ export function initReciboFilters() {
         ordenesList.innerHTML = htmlOriginal;
         console.log('[RECARGAR RECIBOS] Recibos normales restaurados');
 
-        // Aplicar los filtros despuÃ©s de restaurar
+        // Aplicar los filtros despues de restaurar
         aplicarTemaDashboard(obtenerFiltroPrincipalActivo());
         aplicarFiltrosDashboard(obtenerFiltroPrincipalActivo());
         window.__applyDashboardSearchFilter?.();
     }
 
-    // Exponer funciÃ³n para reaplicar filtros (usada por realtime.js)
+    // Exponer funcion para reaplicar filtros (usada por realtime.js)
     window.reaplicarFiltrosDashboard = function () {
         const filtro = obtenerFiltroPrincipalActivo();
         aplicarTemaDashboard(filtro);
@@ -319,7 +319,7 @@ export function initReciboFilters() {
     window.__dashboardFiltroPrincipalActivo = obtenerFiltroPrincipalActivo();
     aplicarTemaDashboard(obtenerFiltroPrincipalActivo());
 
-    // FunciÃ³n para cargar recibos en Control de Calidad
+    // Funcion para cargar recibos en Control de Calidad
     window.filtrarControlCalidad = function() {
         const filtroPrincipal = obtenerFiltroPrincipalActivo();
         const tipoRecibo = filtroPrincipal === 'reflectivo' ? 'REFLECTIVO' : 'COSTURA';
@@ -327,7 +327,7 @@ export function initReciboFilters() {
         cargarRecibosControlCalidad(tipoRecibo);
     };
 
-    // Manejar click en botÃ³n "Control de calidad"
+    // Manejar click en boton "Control de calidad"
     window.cargarRecibosControlCalidad = function(tipoRecibo) {
         console.log('[CONTROL_CALIDAD_FILTRO] Cargando recibos en CC para tipo:', tipoRecibo);
         window.__enModoControlCalidad = true;
@@ -364,7 +364,7 @@ export function initReciboFilters() {
         });
     };
 
-    // FunciÃ³n para mostrar recibos en Control de Calidad
+    // Funcion para mostrar recibos en Control de Calidad
     function mostrarRecibosControlCalidad(recibos, tipoRecibo) {
         const ordenesList = document.getElementById('ordenesList');
         if (!ordenesList) return;
@@ -393,7 +393,7 @@ export function initReciboFilters() {
                         data-numero-recibo="${recibo.consecutivo_actual}"
                         data-tipo-recibo="${tipoRecibo}">
                         <span class="material-symbols-rounded">share</span>
-                        VER DISTRIBUCIÃ“N
+                        VER DISTRIBUCIÓN
                   </button>`
                 : '';
 
@@ -441,37 +441,37 @@ export function initReciboFilters() {
         ordenesList.innerHTML = htmlRecibos;
     }
 
-    // FunciÃ³n para abrir distribuciÃ³n de recibos en CC
+    // Funcion para abrir distribucion de recibos en CC
     window.abrirDistribucionReciboCC = function(btn, tipoRecibo) {
         const reciboId = btn.dataset.reciboId;
         const prendaId = btn.dataset.prendaId;
         const numeroRecibo = btn.dataset.numeroRecibo;
         const ordenCard = btn.closest('.orden-card-simple');
 
-        console.log('[DISTRIBUCION_CC] Abriendo distribuciÃ³n CC:', { reciboId, tipoRecibo });
+        console.log('[DISTRIBUCION_CC] Abriendo distribucion CC:', { reciboId, tipoRecibo });
 
         if (!reciboId) {
             console.error('[DISTRIBUCION_CC] No se pudo determinar el ID del recibo');
             return;
         }
 
-        // Buscar si ya existe la secciÃ³n de distribuciÃ³n (como hermano de la orden-card)
+        // Buscar si ya existe la sección de distribución (como hermano de la orden-card)
         let distribucionSection = ordenCard?.nextElementSibling;
         
-        // Validar que sea la secciÃ³n de distribuciÃ³n correcta
+        // Validar que sea la sección de distribución correcta
         if (distribucionSection && !distribucionSection.classList.contains('distribucion-parciales-cc-section')) {
             distribucionSection = null;
         }
         
         if (distribucionSection) {
-            console.log('[DISTRIBUCION_CC] SecciÃ³n encontrada, iniciando toggle');
+            console.log('[DISTRIBUCION_CC] Sección encontrada, iniciando toggle');
             
             // Si ya existe, toggle (mostrar/ocultar)
             const isHidden = distribucionSection.style.display === 'none';
             distribucionSection.style.display = isHidden ? 'block' : 'none';
             
-            // Cambiar el texto del botÃ³n
-            btn.innerHTML = isHidden ? '<span class="material-symbols-rounded">visibility_off</span> OCULTAR' : '<span class="material-symbols-rounded">share</span> VER DISTRIBUCIÃ“N';
+            // Cambiar el texto del botón
+            btn.innerHTML = isHidden ? '<span class="material-symbols-rounded">visibility_off</span> OCULTAR' : '<span class="material-symbols-rounded">share</span> VER DISTRIBUCIÓN';
             
             console.log('[DISTRIBUCION_CC] Toggle completado');
             return;
@@ -508,7 +508,7 @@ export function initReciboFilters() {
         })
         .catch(error => {
             console.error('[DISTRIBUCION_CC] Error en fetch:', error);
-            alert('Error al cargar distribuciÃ³n');
+            alert('Error al cargar distribución');
         });
     }
 
@@ -519,22 +519,22 @@ export function initReciboFilters() {
         console.log('[DISTRIBUCION_CC CARDS] Preparando cards con', totalParciales, 'parciales');
 
         if (!ordenCard) {
-            console.error('[DISTRIBUCION_CC CARDS] No se encontrÃ³ orden card');
+            console.error('[DISTRIBUCION_CC CARDS] No se encontró orden card');
             return;
         }
 
         // Crear el HTML de las tarjetas
         const cardsHTML = crearHTMLDistribucionCards_CC(parciales, numeroRecibo, totalParciales);
 
-        // Crear contenedor de distribuciÃ³n
+        // Crear contenedor de distribución
         const distribucionSection = document.createElement('div');
         distribucionSection.className = 'distribucion-parciales-cc-section';
         distribucionSection.innerHTML = cardsHTML;
 
-        // Insertar despuÃ©s de la orden-card
+        // Insertar despues de la orden-card
         ordenCard.insertAdjacentElement('afterend', distribucionSection);
 
-        // Cambiar el texto del botÃ³n a "OCULTAR"
+        // Cambiar el texto del botón a "OCULTAR"
         if (btn) {
             btn.innerHTML = '<span class="material-symbols-rounded">visibility_off</span> OCULTAR';
         }
