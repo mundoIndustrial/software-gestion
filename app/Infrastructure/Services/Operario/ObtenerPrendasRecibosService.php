@@ -389,10 +389,24 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 ->unique()
                 ->values();
 
+            $totalAntesFiltro = $recibos->count();
+
             $recibos = $recibos->filter(function ($recibo) use ($prendasDelCortador) {
-                // Área Corte: incluir siempre
-                return true;
+                // Para cortador solo se permiten recibos asociados a prendas
+                // donde el usuario actual es el encargado del proceso Corte.
+                if (empty($recibo->prenda_id)) {
+                    return false;
+                }
+
+                return $prendasDelCortador->contains($recibo->prenda_id);
             })->values();
+
+            \Log::info(' [Filtro CORTADOR] Recibos filtrados por prendas asignadas en Corte', [
+                'usuario' => $usuario->name,
+                'total_antes' => $totalAntesFiltro,
+                'total_despues' => $recibos->count(),
+                'prendas_asignadas' => $prendasDelCortador->count(),
+            ]);
         }
 
         // Para visualizador_plooter: mostrar solo recibos del área Corte que estén asignados a él
