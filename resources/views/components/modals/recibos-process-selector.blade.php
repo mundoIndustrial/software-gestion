@@ -981,7 +981,8 @@
                 //  RECIBO BASE - SOLO EN OTRAS VISTAS
                 const reciboCosturaActual = prenda?.recibos?.COSTURA || prenda?.consecutivos?.COSTURA || null;
                 const reciboCosturaBodegaActual = prenda?.recibos?.['COSTURA-BODEGA'] || prenda?.consecutivos?.['COSTURA-BODEGA'] || null;
-                const reciboBaseActual = reciboCosturaActual || reciboCosturaBodegaActual || null;
+                const esPrendaBodega = prenda.de_bodega == 1;
+                const reciboBaseActual = esPrendaBodega ? reciboCosturaBodegaActual : reciboCosturaActual;
                 
                 // Determinar el estado correcto usando el campo 'activo' de la BD
                 let estadoRecibo = 'PENDIENTE';

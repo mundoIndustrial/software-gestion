@@ -19,8 +19,9 @@ export class ReceiptBuilder {
         
         // CONDICIÓN ESPECIAL: No mostrar recibo de COSTURA-BODEGA solo en registros.
         // En /recibos-costura sí debe poder abrirse el recibo base COSTURA (incluyendo legacy COSTURA-BODEGA).
+        const esSupervisorPedidos = window.location.pathname.includes('/supervisor-pedidos');
         const esRegistros = window.location.pathname.includes('/registros');
-        const excluirCosturaBodega = esRegistros && prenda.de_bodega == 1;
+        const excluirCosturaBodega = (esSupervisorPedidos || esRegistros) && prenda.de_bodega == 1;
         
         if (excluirCosturaBodega) {
             console.log(' [ReceiptBuilder] COSTURA-BODEGA EXCLUIDO para prenda:', prenda.nombre);
@@ -36,7 +37,10 @@ export class ReceiptBuilder {
             // Si en BD solo existe COSTURA-BODEGA, se usa como fuente de datos legacy.
             const tipoBase = "costura";
             const nombreBase = "Costura";
-            const datosReciboBase = recibosMap.COSTURA || recibosMap['COSTURA-BODEGA'] || null;
+            const permitirFallbackLegacyBodega = !esSupervisorPedidos && !esRegistros;
+            const datosReciboBase = permitirFallbackLegacyBodega
+                ? (recibosMap.COSTURA || recibosMap['COSTURA-BODEGA'] || null)
+                : (recibosMap.COSTURA || null);
                 
             // Aplanar tallas: convertir {dama: {L: 30, S: 20}} a {dama-L: 30, dama-S: 20}
             let tallasObj = {};
