@@ -238,7 +238,7 @@
                                         <input
                                             type="date"
                                             class="fecha-pedido-input w-full px-2 py-1 border border-slate-300 text-xs text-black focus:ring-1 focus:ring-slate-500 focus:border-slate-700 outline-none transition rounded bg-slate-50"
-                                            value="{{ !empty($item['fecha_pedido'] ?? null) ? \Carbon\Carbon::parse($item['fecha_pedido'])->format('Y-m-d') : '' }}"
+                                            value="{{ !empty($item['fecha_pendiente'] ?? null) ? \Carbon\Carbon::parse($item['fecha_pendiente'])->format('Y-m-d') : (!empty($item['fecha_pedido'] ?? null) ? \Carbon\Carbon::parse($item['fecha_pedido'])->format('Y-m-d') : '') }}"
                                             data-numero-pedido="{{ $item['numero_pedido'] }}"
                                             data-talla="{{ $item['talla'] }}"
                                         >
@@ -620,4 +620,3 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
 
 <script src="{{ asset('js/bodega-pedidos.js') }}?v={{ time() }}"></script>
 @endsection
-

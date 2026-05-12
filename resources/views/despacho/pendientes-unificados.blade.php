@@ -356,6 +356,35 @@
     background-color: #f9fafb !important;
 }
 
+.fecha-multi-detalle {
+    margin-top: 4px;
+}
+
+.fecha-multi-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    background: #dbeafe;
+    color: #1d4ed8;
+    cursor: pointer;
+    user-select: none;
+}
+
+.fecha-multi-lista {
+    margin-top: 6px;
+    padding: 6px 8px;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    background: #eff6ff;
+    font-size: 11px;
+    color: #1e3a8a;
+    line-height: 1.4;
+}
+
 .tipo-badge {
     padding: 4px 8px;
     border-radius: 12px;
@@ -733,7 +762,15 @@ function renderizarPedidos(pedidos) {
                     <span class="estado-badge estado-pendiente">Pendiente</span>
                 </div>
                 <div>
-                    ${pedido.fecha_creacion}
+                    <span>${pedido.fecha_pendiente_min || pedido.fecha_creacion || ''}</span>
+                    ${pedido.fechas_pendiente_distintas_count > 1 ? `
+                        <details class="fecha-multi-detalle">
+                            <summary class="fecha-multi-summary">Ver +${pedido.fechas_pendiente_distintas_count - 1}</summary>
+                            <div class="fecha-multi-lista">
+                                ${(pedido.fechas_pendiente_distintas || []).join('<br>')}
+                            </div>
+                        </details>
+                    ` : ''}
                 </div>
             </div>
         `).join('');
@@ -1353,4 +1390,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endpush
-

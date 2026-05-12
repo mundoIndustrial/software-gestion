@@ -17,6 +17,62 @@ class DespachoPendientesApplicationService
     ) {
     }
 
+    /**
+     * @param array<int,int|string> $pedidoIds
+     * @return array<int,array{fecha_pendiente_min:?string,fechas_pendiente_distintas:array<int,string>,fechas_pendiente_distintas_count:int}>
+     */
+    private function obtenerResumenFechasPendientePorPedido(array $pedidoIds): array
+    {
+        $ids = collect($pedidoIds)->map(fn ($id) => (int) $id)->filter(fn ($id) => $id > 0)->unique()->values();
+        if ($ids->isEmpty()) {
+            return [];
+        }
+
+        $rows = DB::table('bodega_detalles_talla')
+            ->select('pedido_produccion_id', 'fecha_pendiente')
+            ->whereIn('pedido_produccion_id', $ids->all())
+            ->where('estado_bodega', 'Pendiente')
+            ->whereNotNull('fecha_pendiente')
+            ->get();
+
+        $resumen = [];
+        foreach ($rows as $row) {
+            $pedidoId = (int) $row->pedido_produccion_id;
+            $fechaRaw = (string) $row->fecha_pendiente;
+            $fechaSolo = substr($fechaRaw, 0, 10);
+
+            if (!isset($resumen[$pedidoId])) {
+                $resumen[$pedidoId] = [
+                    'min_raw' => $fechaRaw,
+                    'fechas_raw' => [],
+                ];
+            }
+
+            if ($fechaRaw < $resumen[$pedidoId]['min_raw']) {
+                $resumen[$pedidoId]['min_raw'] = $fechaRaw;
+            }
+
+            $resumen[$pedidoId]['fechas_raw'][$fechaSolo] = true;
+        }
+
+        $output = [];
+        foreach ($resumen as $pedidoId => $data) {
+            $fechas = array_keys($data['fechas_raw']);
+            sort($fechas);
+
+            $output[$pedidoId] = [
+                'fecha_pendiente_min' => \Carbon\Carbon::parse($data['min_raw'])->format('d/m/Y'),
+                'fechas_pendiente_distintas' => array_map(
+                    fn ($fecha) => \Carbon\Carbon::parse($fecha)->format('d/m/Y'),
+                    $fechas
+                ),
+                'fechas_pendiente_distintas_count' => count($fechas),
+            ];
+        }
+
+        return $output;
+    }
+
     public function obtenerPendientesBodegaSinProcesosData(string $search = ''): array
     {
         $query = PedidoProduccion::query()
@@ -53,14 +109,19 @@ class DespachoPendientesApplicationService
         }
 
         $pedidos = $query->orderBy('created_at', 'desc')->get();
+        $resumenFechas = $this->obtenerResumenFechasPendientePorPedido($pedidos->pluck('id')->all());
 
-        return $pedidos->map(function ($pedido) {
+        return $pedidos->map(function ($pedido) use ($resumenFechas) {
+            $fechasPedido = $resumenFechas[(int) $pedido->id] ?? null;
             return [
                 'id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'cliente' => $pedido->cliente,
                 'estado' => $pedido->estado,
                 'fecha_creacion' => $pedido->created_at->format('d/m/Y'),
+                'fecha_pendiente_min' => $fechasPedido['fecha_pendiente_min'] ?? null,
+                'fechas_pendiente_distintas' => $fechasPedido['fechas_pendiente_distintas'] ?? [],
+                'fechas_pendiente_distintas_count' => $fechasPedido['fechas_pendiente_distintas_count'] ?? 0,
                 'tipo' => 'costura',
             ];
         })->toArray();
@@ -134,14 +195,19 @@ class DespachoPendientesApplicationService
         }
 
         $pedidos = $query->orderBy('created_at', 'desc')->get();
+        $resumenFechas = $this->obtenerResumenFechasPendientePorPedido($pedidos->pluck('id')->all());
 
-        return $pedidos->map(function ($pedido) {
+        return $pedidos->map(function ($pedido) use ($resumenFechas) {
+            $fechasPedido = $resumenFechas[(int) $pedido->id] ?? null;
             return [
                 'id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'cliente' => $pedido->cliente,
                 'estado' => $pedido->estado,
                 'fecha_creacion' => $pedido->created_at->format('d/m/Y'),
+                'fecha_pendiente_min' => $fechasPedido['fecha_pendiente_min'] ?? null,
+                'fechas_pendiente_distintas' => $fechasPedido['fechas_pendiente_distintas'] ?? [],
+                'fechas_pendiente_distintas_count' => $fechasPedido['fechas_pendiente_distintas_count'] ?? 0,
                 'tipo' => 'costura',
             ];
         })->all();
@@ -199,14 +265,19 @@ class DespachoPendientesApplicationService
         }
 
         $pedidos = $query->orderBy('created_at', 'desc')->get();
+        $resumenFechas = $this->obtenerResumenFechasPendientePorPedido($pedidos->pluck('id')->all());
 
-        return $pedidos->map(function ($pedido) {
+        return $pedidos->map(function ($pedido) use ($resumenFechas) {
+            $fechasPedido = $resumenFechas[(int) $pedido->id] ?? null;
             return [
                 'id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'cliente' => $pedido->cliente,
                 'estado' => $pedido->estado,
                 'fecha_creacion' => $pedido->created_at->format('d/m/Y'),
+                'fecha_pendiente_min' => $fechasPedido['fecha_pendiente_min'] ?? null,
+                'fechas_pendiente_distintas' => $fechasPedido['fechas_pendiente_distintas'] ?? [],
+                'fechas_pendiente_distintas_count' => $fechasPedido['fechas_pendiente_distintas_count'] ?? 0,
                 'tipo' => 'epp',
             ];
         })->toArray();

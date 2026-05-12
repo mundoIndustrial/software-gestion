@@ -548,7 +548,7 @@
                                                                 @else
                                                                     bg-slate-50
                                                                 @endif"
-                                                            value="{{ $baseItem['fecha_pedido'] ? $baseItem['fecha_pedido'] : '' }}"
+                                                            value="{{ !empty($baseItem['fecha_pendiente']) ? \Carbon\Carbon::parse($baseItem['fecha_pendiente'])->format('Y-m-d') : (!empty($baseItem['fecha_pedido']) ? \Carbon\Carbon::parse($baseItem['fecha_pedido'])->format('Y-m-d') : '') }}"
                                                             data-row-hash="{{ $rowHash }}"
                                                             data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
                                                             data-talla="{{ $baseItem['talla'] }}"
@@ -963,7 +963,7 @@
                                                             @else
                                                                 bg-slate-50
                                                             @endif"
-                                                        value="{{ $item['fecha_pedido'] ? $item['fecha_pedido'] : '' }}"
+                                                        value="{{ !empty($item['fecha_pendiente']) ? \Carbon\Carbon::parse($item['fecha_pendiente'])->format('Y-m-d') : (!empty($item['fecha_pedido']) ? \Carbon\Carbon::parse($item['fecha_pedido'])->format('Y-m-d') : '') }}"
                                                         data-row-hash="{{ $rowHashSimple }}"
                                                         data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                         data-talla="{{ $item['talla'] }}"
