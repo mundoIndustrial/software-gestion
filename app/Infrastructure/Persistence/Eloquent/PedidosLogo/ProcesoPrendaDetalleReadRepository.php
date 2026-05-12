@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleReadRepositoryInterface
 {
-    public function paginarRecibosAprobados(array $tipoProcesoIds, ?string $search, bool $soloMinimalRole, ?string $areaFija, int $perPage = 20, ?array $columnFilters = null): LengthAwarePaginator
+    public function paginarRecibosAprobados(array $tipoProcesoIds, ?string $search, bool $soloMinimalRole, ?string $areaFija, int $perPage = 20, ?array $columnFilters = null, bool $incluirEntregados = false): LengthAwarePaginator
     {
         $tipoReciboCase = "CASE pedidos_procesos_prenda_detalles.tipo_proceso_id "
             . "WHEN 2 THEN 'BORDADO' "
@@ -94,6 +94,9 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
         if ($areaFija) {
             $queryProcesos->having('area', '=', $areaFija);
         }
+        if (!$incluirEntregados) {
+            $queryProcesos->havingRaw("(MAX(palp.area) IS NULL OR MAX(palp.area) <> 'ENTREGADO')");
+        }
 
         // Query 2: Todos los parciales individuales
         $queryParciales = DB::table('pedidos_parciales as ppar')
@@ -163,6 +166,9 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
         // Aplicar filtro de área fija si se proporciona
         if ($areaFija) {
             $queryParciales->having('area', '=', $areaFija);
+        }
+        if (!$incluirEntregados) {
+            $queryParciales->havingRaw("(MAX(palp.area) IS NULL OR MAX(palp.area) <> 'ENTREGADO')");
         }
 
         // Combinar queries

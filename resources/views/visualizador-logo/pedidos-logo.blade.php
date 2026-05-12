@@ -248,6 +248,7 @@ window.__isDisenadorLogos = {{ $isMinimalLogoRole ? 'true' : 'false' }};
 window.__isDisenadorLogosRole = {{ $isDisenadorLogos ? 'true' : 'false' }};
 window.__isBordadorRole = {{ $isBordador ? 'true' : 'false' }};
 window.__isVisualizadorCotizacionesLogoRole = {{ $isVisualizadorLogo ? 'true' : 'false' }};
+window.__incluirEntregadosLogo = {{ request()->query('vista') === 'todos' ? 'true' : 'false' }};
 
 window.__festivosLogo = @json(\App\Models\Festivo::pluck('fecha')->toArray());
 
@@ -825,6 +826,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         params.append('filtro', window.__filtroRecibosLogo || 'bordado');
+        params.append('incluir_entregados', window.__incluirEntregadosLogo ? '1' : '0');
         
         // Enviar filtros de columnas al backend
         if (window.__logoColumnFilters && Object.keys(window.__logoColumnFilters).length > 0) {
@@ -1053,8 +1055,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const filtroActual = window.__filtroRecibosLogo || 'bordado';
             const areasBase = Array.isArray(window.__areasPermitidasLogo) ? window.__areasPermitidasLogo : [];
             const areasPermitidas = areasBase.filter((a) => {
-                if (filtroActual === 'estampado') {
-                    // En estampado: mostrar ESTAMPANDO y ocultar CORTE_Y_APLIQUE
+                if (filtroActual === 'estampado' || filtroActual === 'dtf' || filtroActual === 'sublimado') {
+                    // En estampado/dtf/sublimado: permitir ESTAMPANDO
+                    // y ocultar áreas específicas de bordado.
                     if (a === 'CORTE_Y_APLIQUE') return false;
                     if (a === 'BORD_POR_FUERA') return false;
                     if (a === 'BORDANDO') return false;

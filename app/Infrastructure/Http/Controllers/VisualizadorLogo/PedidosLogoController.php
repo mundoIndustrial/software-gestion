@@ -35,7 +35,8 @@ final class PedidosLogoController extends Controller
             }
         }
 
-        $recibos = $this->listPedidosLogoUseCase->execute($search, $filtro, 20, $columnFilters);
+        $incluirEntregados = $request->boolean('incluir_entregados', false);
+        $recibos = $this->listPedidosLogoUseCase->execute($search, $filtro, 20, $columnFilters, $incluirEntregados);
 
         return response()->json([
             'success' => true,

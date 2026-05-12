@@ -15,7 +15,7 @@ final class ListPedidosLogoUseCase
         private ProcesoPrendaDetalleReadRepositoryInterface $procesoReadRepository
     ) {}
 
-    public function execute(?string $search, string $filtro, int $perPage = 20, ?array $columnFilters = null): LengthAwarePaginator
+    public function execute(?string $search, string $filtro, int $perPage = 20, ?array $columnFilters = null, bool $incluirEntregados = false): LengthAwarePaginator
     {
         $user = Auth::user();
         $isDisenadorLogos = $user && $user->hasRole('diseñador-logos');
@@ -48,7 +48,8 @@ final class ListPedidosLogoUseCase
             $soloMinimalRole,
             $areaFija,
             $perPage,
-            $columnFilters
+            $columnFilters,
+            $incluirEntregados
         );
 
         // Obtener IDs de recibos completados para bordador

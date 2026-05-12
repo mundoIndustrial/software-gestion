@@ -35,9 +35,16 @@
             <ul class="menu-list" role="navigation">
                 <li class="menu-item">
                     <a href="{{ route('visualizador-logo.pedidos-logo') }}"
-                       class="menu-link {{ request()->routeIs('visualizador-logo.pedidos-logo') ? 'active' : '' }}">
+                       class="menu-link {{ request()->routeIs('visualizador-logo.pedidos-logo') && request()->query('vista') !== 'todos' ? 'active' : '' }}">
                         <span class="material-symbols-rounded">edit</span>
                         <span class="menu-label">Pedidos Logo</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{ route('visualizador-logo.pedidos-logo', ['vista' => 'todos']) }}"
+                       class="menu-link {{ request()->routeIs('visualizador-logo.pedidos-logo') && request()->query('vista') === 'todos' ? 'active' : '' }}">
+                        <span class="material-symbols-rounded">list_alt</span>
+                        <span class="menu-label">Todos</span>
                     </a>
                 </li>
                 <li class="menu-item">

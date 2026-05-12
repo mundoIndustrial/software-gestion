@@ -18,6 +18,9 @@ final class AreasPermitidasPolicy
                 AreaProcesoLogo::PENDIENTE_CONFIRMAR,
                 AreaProcesoLogo::HACIENDO_MUESTRA,
                 AreaProcesoLogo::ESTAMPANDO,
+                // En DTF/Sublimado el selector permite mover a BORDADO también.
+                // Se incluye para evitar 422 al guardar un valor visible en UI.
+                AreaProcesoLogo::BORDADO,
                 AreaProcesoLogo::ENTREGADO,
                 AreaProcesoLogo::ANULADO,
                 AreaProcesoLogo::PENDIENTE,
