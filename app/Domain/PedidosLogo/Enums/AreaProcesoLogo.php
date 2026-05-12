@@ -9,6 +9,7 @@ final class AreaProcesoLogo
     public const DISENO = 'DISENO';
     public const PENDIENTE_CONFIRMAR = 'PENDIENTE_CONFIRMAR';
     public const CORTE_Y_APLIQUE = 'CORTE_Y_APLIQUE';
+    public const BORD_POR_FUERA = 'BORD_POR_FUERA';
     public const HACIENDO_MUESTRA = 'HACIENDO_MUESTRA';
     public const ESTAMPANDO = 'ESTAMPANDO';
     public const BORDANDO = 'BORDANDO';
@@ -25,6 +26,7 @@ final class AreaProcesoLogo
             self::DISENO,
             self::PENDIENTE_CONFIRMAR,
             self::CORTE_Y_APLIQUE,
+            self::BORD_POR_FUERA,
             self::HACIENDO_MUESTRA,
             self::ESTAMPANDO,
             self::BORDANDO,

@@ -234,6 +234,7 @@ window.__areasPermitidasLogo = [
     'DISENO',
     'PENDIENTE_CONFIRMAR',
     'CORTE_Y_APLIQUE',
+    'BORD_POR_FUERA',
     'HACIENDO_MUESTRA',
     'ESTAMPANDO',
     'BORDANDO',
@@ -328,11 +329,13 @@ window.__programarActualizacionDiariaLogo = function() {
     }, ms);
 };
 
-window.__guardarAreaNovedadLogo = async function(procesoPrendaDetalleId, area, novedades) {
-    // Extract pedido_parcial_id from the DOM
-    const row = document.querySelector(`[data-recibo-row="1"][data-proceso-id="${procesoPrendaDetalleId}"]`);
-    const pedidoParcialId = row ? row.dataset.pedidoParcialId : null;
-    
+window.__guardarAreaNovedadLogo = async function(procesoPrendaDetalleId, area, novedades, pedidoParcialId = null) {
+    // If not explicitly provided, fallback to first matching row (legacy behavior).
+    const pedidoParcialResolved = pedidoParcialId ?? (() => {
+        const row = document.querySelector(`[data-recibo-row="1"][data-proceso-id="${procesoPrendaDetalleId}"]`);
+        return row ? row.dataset.pedidoParcialId : null;
+    })();
+
     const response = await fetch(`{{ route('visualizador-logo.pedidos-logo.area-novedad') }}`, {
         method: 'POST',
         headers: {
@@ -344,7 +347,7 @@ window.__guardarAreaNovedadLogo = async function(procesoPrendaDetalleId, area, n
             proceso_prenda_detalle_id: procesoPrendaDetalleId,
             area,
             novedades,
-            pedido_parcial_id: pedidoParcialId ? parseInt(pedidoParcialId) : null,
+            pedido_parcial_id: pedidoParcialResolved ? parseInt(pedidoParcialResolved) : null,
         }),
     });
 
@@ -385,6 +388,7 @@ window.__getEstiloAreaDropdownLogo = function(area) {
         'DISENO': { bg: '#fdba74', color: '#7c2d12', border: '#f97316' },
         'PENDIENTE_CONFIRMAR': { bg: '#fde68a', color: '#92400e', border: '#f59e0b' },
         'CORTE_Y_APLIQUE': { bg: '#d4a574', color: '#78350f', border: '#92400e' },
+        'BORD_POR_FUERA': { bg: '#f5d0fe', color: '#701a75', border: '#c026d3' },
         'HACIENDO_MUESTRA': { bg: '#e9d5ff', color: '#6b21a8', border: '#a855f7' },
         'BORDANDO': { bg: '#f97316', color: '#ffffff', border: '#ea580c' },
         'BORDADO': { bg: '#10b981', color: '#ffffff', border: '#059669' },
@@ -1052,6 +1056,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (filtroActual === 'estampado') {
                     // En estampado: mostrar ESTAMPANDO y ocultar CORTE_Y_APLIQUE
                     if (a === 'CORTE_Y_APLIQUE') return false;
+                    if (a === 'BORD_POR_FUERA') return false;
                     if (a === 'BORDANDO') return false;
                     return true;
                 }
@@ -1062,7 +1067,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const optionsArea = areasPermitidas.map((a) => {
                 const selected = a === area ? 'selected' : '';
-                const label = a.replace(/_/g, ' ');
+                const label = a === 'BORD_POR_FUERA' ? 'Bord. Por Fuera' : a.replace(/_/g, ' ');
                 return `<option value="${a}" ${selected}>${label}</option>`;
             }).join('');
 
@@ -1129,7 +1134,11 @@ document.addEventListener('DOMContentLoaded', function() {
             el.addEventListener('change', async function() {
                 const procesoId = parseInt(this.dataset.procesoId);
                 const areaValue = this.value;
-                const novedadesInput = tbody.querySelector(`input[data-proceso-id="${procesoId}"][data-field="novedades"]`);
+                const row = this.closest('[data-recibo-row="1"]');
+                const pedidoParcialId = row ? row.dataset.pedidoParcialId : null;
+                const novedadesInput = row
+                    ? row.querySelector(`input[data-proceso-id="${procesoId}"][data-field="novedades"]`)
+                    : tbody.querySelector(`input[data-proceso-id="${procesoId}"][data-field="novedades"]`);
                 const novedadesValue = novedadesInput ? novedadesInput.value : '';
 
                 // Aplicar color inmediatamente (sin esperar recarga)
@@ -1138,9 +1147,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 this.disabled = true;
                 try {
-                    const resp = await window.__guardarAreaNovedadLogo(procesoId, areaValue, novedadesValue);
-
-                    const row = document.querySelector(`[data-recibo-row="1"][data-proceso-id="${procesoId}"]`);
+                    const resp = await window.__guardarAreaNovedadLogo(procesoId, areaValue, novedadesValue, pedidoParcialId);
                     if (row && resp && resp.fecha_entrega) {
                         row.dataset.fechaEntrega = resp.fecha_entrega;
                         const entregaCell = row.querySelector('[data-field="fecha_entrega"]');
@@ -1162,12 +1169,16 @@ document.addEventListener('DOMContentLoaded', function() {
             el.addEventListener('blur', async function() {
                 const procesoId = parseInt(this.dataset.procesoId);
                 const novedadesValue = this.value;
-                const areaSelect = tbody.querySelector(`select[data-proceso-id="${procesoId}"][data-field="area"]`);
+                const row = this.closest('[data-recibo-row="1"]');
+                const pedidoParcialId = row ? row.dataset.pedidoParcialId : null;
+                const areaSelect = row
+                    ? row.querySelector(`select[data-proceso-id="${procesoId}"][data-field="area"]`)
+                    : tbody.querySelector(`select[data-proceso-id="${procesoId}"][data-field="area"]`);
                 const areaValue = areaSelect ? areaSelect.value : 'PENDIENTE';
 
                 this.disabled = true;
                 try {
-                    await window.__guardarAreaNovedadLogo(procesoId, areaValue, novedadesValue);
+                    await window.__guardarAreaNovedadLogo(procesoId, areaValue, novedadesValue, pedidoParcialId);
                     window.__aplicarColoresFilaReciboLogo(procesoId);
                 } catch (e) {
                     alert('Error guardando Área/Novedad. Intenta de nuevo.');
