@@ -32,6 +32,8 @@ use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use \App\Application\SupervisorPedidos\DTOs\ApproveReceiptRequest;
 use App\Domain\SupervisorPedidos\Repositories\ReceiptRepository;
+use App\Domain\SupervisorPedidos\Exceptions\ReceiptNotFoundException;
+use App\Domain\SupervisorPedidos\Exceptions\InvalidOperationException;
 use Carbon\CarbonInterface;
 use App\Services\DiasHabilesService;
 use App\Jobs\GenerarReporteCosturaJob;
@@ -118,16 +120,39 @@ class SupervisorReceiptsController extends Controller
      */
     public function anularReciboCostura(Request $request, int $pedidoId, int $prendaId): JsonResponse
     {
-        // Crear DTO de request
-        $cancelRequest = new CancelReceiptRequest(
-            $pedidoId,
-            $prendaId,
-            "ANULADO desde supervisor"
-        );
-        
-        $response = $this->cancelSewingReceiptUseCase->execute($cancelRequest);
+        try {
+            $cancelRequest = new CancelReceiptRequest(
+                $pedidoId,
+                $prendaId,
+                "ANULADO desde supervisor"
+            );
 
-        return response()->json($response->toArray());
+            $response = $this->cancelSewingReceiptUseCase->execute($cancelRequest);
+
+            return response()->json($response->toArray());
+        } catch (ReceiptNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 404);
+        } catch (InvalidOperationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (\Throwable $e) {
+            \Log::error('[SupervisorReceiptsController::anularReciboCostura] Error inesperado', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno al anular recibo de costura.',
+            ], 500);
+        }
     }
 
     /**

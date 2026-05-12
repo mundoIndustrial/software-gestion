@@ -1709,6 +1709,7 @@
                 const response = await fetch(`/api/supervisor-pedidos/ordenes/${pedidoId}/costura/${prendaId}/anular-recibo`, {
                     method: 'POST',
                     headers: {
+                        'Accept': 'application/json',
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
                     }
@@ -1752,6 +1753,7 @@
                 const response = await fetch(`/procesos/${procesoId}/anular-recibo`, {
                     method: 'POST',
                     headers: {
+                        'Accept': 'application/json',
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
                     }

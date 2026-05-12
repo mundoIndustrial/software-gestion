@@ -74,8 +74,12 @@ class EloquentReceiptRepository implements ReceiptRepository
         $receipt = DB::table('consecutivos_recibos_pedidos')
             ->where('pedido_produccion_id', $orderId)
             ->where('prenda_id', $prendaId)
-            ->where('tipo_recibo', 'COSTURA')
-            ->where('origen_recibo', 'BASE')
+            ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
+            ->where(function ($q) {
+                $q->where('origen_recibo', 'BASE')
+                    ->orWhereNull('origen_recibo')
+                    ->orWhere('origen_recibo', '');
+            })
             ->where('activo', 1)
             ->orderByDesc('id')
             ->first();
