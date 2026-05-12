@@ -356,16 +356,16 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                 <div class="sp-orders-grid" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 0.75rem 1rem; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 6px;">
                     <div class="th-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><span>Listo</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><span>Acciones</span></div>
-                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Aprob. Cartera</span><button type="button" class="btn-filter-column" data-col="aprobacion_cartera" title="Filtrar Aprob. Cartera" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Aprob. Cartera</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center;"><span>Días Restantes</span></div>
-                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Nºmero</span><button type="button" class="btn-filter-column" data-col="numero" title="Filtrar Numero" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
-                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Cliente</span><button type="button" class="btn-filter-column" data-col="cliente" title="Filtrar Cliente" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
-                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Asesora</span><button type="button" class="btn-filter-column" data-col="asesora" title="Filtrar Asesora" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
-                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Estado</span><button type="button" class="btn-filter-column" data-col="estado" title="Filtrar Estado" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Nºmero</span></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Cliente</span></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Asesora</span></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Estado</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Novedades</span></div>
-                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Forma Pago</span><button type="button" class="btn-filter-column" data-col="forma_pago" title="Filtrar Forma Pago" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Forma Pago</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center;"><span>Aprob. Supervisor</span></div>
-                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Fecha</span><button type="button" class="btn-filter-column" data-col="fecha" title="Filtrar Fecha" style="display: flex; align-items: center; background: none; border: none; color: white; cursor: pointer; padding: 0;"><span class="material-symbols-rounded" style="font-size: 1rem;">filter_alt</span></button></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Fecha</span></div>
                 </div>
     `;
 
@@ -1813,4 +1813,3 @@ async function editarPedido(pedidoId) {
         window.edicionEnProgreso = false;
     }
 }
-
