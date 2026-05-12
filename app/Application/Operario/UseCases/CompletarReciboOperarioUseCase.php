@@ -46,6 +46,26 @@ class CompletarReciboOperarioUseCase
                 $parcial = $this->workflow->findParcialById((int) $idRecibo, true);
 
                 if (!$parcial || !$parcial->pedido || !$parcial->prenda) {
+                    // Fallback defensivo: en algunos casos la UI envía es_parcial=1
+                    // con id de recibo normal. Si existe recibo activo, continuar
+                    // como flujo normal para evitar 404 falsos.
+                    $reciboFallback = $this->recibos->findActiveById((int) $idRecibo);
+                    if (!$reciboFallback) {
+                        return new ReciboCommandResultDTO(false, 'Parcial no encontrado', 404);
+                    }
+
+                    \Log::warning('[CompletarReciboOperarioUseCase] Fallback de parcial a recibo normal', [
+                        'id_recibo' => (int) $idRecibo,
+                        'user_id' => (int) (Auth::id() ?? 0),
+                    ]);
+
+                    $esParcial = false;
+                }
+            }
+
+            if ($esParcial) {
+                $parcial = $this->workflow->findParcialById((int) $idRecibo, true);
+                if (!$parcial || !$parcial->pedido || !$parcial->prenda) {
                     return new ReciboCommandResultDTO(false, 'Parcial no encontrado', 404);
                 }
 

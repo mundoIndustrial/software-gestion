@@ -687,8 +687,8 @@
                                                 $reciboPrincipal = $prenda['recibos'][0] ?? null;
                                                 $areaRecibo = strtolower(trim((string) ($reciboPrincipal['area'] ?? '')));
                                                 $esCosturaRecibo = $areaRecibo === 'costura';
-                                                $reciboAccionId = $reciboPrincipal['pedido_parcial_id'] ?? ($reciboPrincipal['id'] ?? null);
-                                                $esReciboParcial = !empty($reciboPrincipal['pedido_parcial_id']);
+                                                $reciboAccionId = $reciboPrincipal['id'] ?? null;
+                                                $esReciboParcial = false;
                                                 $reciboCompletadoCostura = (bool) ($reciboPrincipal['completado_costura'] ?? false);
                                             @endphp
 
@@ -876,10 +876,10 @@
                                             {{-- Botón PASAR A COSTURA/DESHACER COSTURA para vista-costura --}}
                                                 @if($tieneReciboReflectivo && auth()->user()->hasRole('vista-costura'))
                                                     @php
-                                                        $pedidoParcialId = $reciboReflectivo['pedido_parcial_id'] ?? null;
+                                                        $pedidoParcialId = isset($reciboReflectivo['pedido_parcial_id']) ? (int) $reciboReflectivo['pedido_parcial_id'] : 0;
                                                         $consecutivoParcial = $reciboReflectivo['consecutivo_parcial'] ?? ($reciboReflectivo['consecutivo_actual'] ?? null);
-                                                        $reciboReflectivoAccionId = $pedidoParcialId ?: $reciboReflectivoId;
-                                                        $esReciboReflectivoParcial = !empty($pedidoParcialId);
+                                                        $esReciboReflectivoParcial = false;
+                                                        $reciboReflectivoAccionId = $reciboReflectivoId;
                                                     @endphp
 
                                                     {{-- Botón VER RECIBO para vista-costura --}}
@@ -978,10 +978,10 @@
                                                     }
 
                                                     $tipoReciboNormalizado = strtolower('REFLECTIVO');
-                                                    $pedidoParcialId = $reciboReflectivo['pedido_parcial_id'] ?? null;
+                                                    $pedidoParcialId = isset($reciboReflectivo['pedido_parcial_id']) ? (int) $reciboReflectivo['pedido_parcial_id'] : 0;
                                                     $consecutivoParcial = $reciboReflectivo['consecutivo_parcial'] ?? ($reciboReflectivo['consecutivo_actual'] ?? null);
-                                                    $reciboReflectivoAccionId = $pedidoParcialId ?: $reciboId;
-                                                    $esReciboReflectivoParcial = !empty($pedidoParcialId);
+                                                    $esReciboReflectivoParcial = false;
+                                                    $reciboReflectivoAccionId = $reciboId;
                                                 @endphp
 
                                                 {{-- Botón VER RECIBO para REFLECTIVO --}}
@@ -1069,10 +1069,8 @@
                                                             (string) $tipoReciboUnico,
                                                             auth()->user()->hasAnyRole(['vista-costura', 'administrador-costura'])
                                                         );
-                                                        $reciboId = $reciboTipo['id'] ?? null;
-                                                        $pedidoParcialId = $reciboTipo['pedido_parcial_id'] ?? null;
-                                                        $reciboAccionId = $pedidoParcialId ?: $reciboId;
-                                                        $esReciboParcial = !empty($pedidoParcialId);
+                                                        $reciboAccionId = $reciboTipo['id'] ?? null;
+                                                        $esReciboParcial = false;
                                                         $areaRecibo = strtolower(trim((string) ($reciboTipo['area'] ?? '')));
                                                         $esCosturaArea = $areaRecibo === 'costura';
                                                         $reciboCompletadoArea = false;
@@ -1189,8 +1187,8 @@
                                                 $reciboPrincipal = $prenda['recibos'][0] ?? null;
                                                 $areaRecibo = strtolower(trim((string) ($reciboPrincipal['area'] ?? '')));
                                                 $esCosturaRecibo = $areaRecibo === 'costura';
-                                                $reciboAccionId = $reciboPrincipal['pedido_parcial_id'] ?? ($reciboPrincipal['id'] ?? null);
-                                                $esReciboParcial = !empty($reciboPrincipal['pedido_parcial_id']);
+                                                $reciboAccionId = $reciboPrincipal['id'] ?? null;
+                                                $esReciboParcial = false;
                                                 $reciboCompletadoCostura = (bool) ($reciboPrincipal['completado_costura'] ?? false);
                                             @endphp
 
@@ -1237,10 +1235,8 @@
                                                         (string) $tipoReciboUnico,
                                                         auth()->user()->hasAnyRole(['vista-costura', 'administrador-costura'])
                                                     );
-                                                    $reciboId = $reciboTipo['id'] ?? null;
-                                                    $pedidoParcialId = $reciboTipo['pedido_parcial_id'] ?? null;
-                                                    $reciboAccionId = $pedidoParcialId ?: $reciboId;
-                                                    $esReciboParcial = !empty($pedidoParcialId);
+                                                    $reciboAccionId = $reciboTipo['id'] ?? null;
+                                                    $esReciboParcial = false;
                                                     $areaRecibo = strtolower(trim((string) ($reciboTipo['area'] ?? '')));
                                                     $esCosturaArea = $areaRecibo === 'costura';
                                                     $reciboCompletadoArea = false;
