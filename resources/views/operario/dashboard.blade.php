@@ -304,17 +304,26 @@
 
                                         <!-- Botón Ver Recibo (debajo del estado para mobile) -->
                                         <div class="mobile-ver-recibo-section">
-                                            <button class="btn-ver-recibos mobile-under-state" onclick="abrirDetallesRecibos('{{ $recibo['numero_pedido'] }}', {{ $recibo['prenda_id'] }}, '{{ $recibo['nombre_prenda'] }}', '{{ $recibo['tipo_recibo'] }}', {{ $recibo['id_parcial'] ?: 'null' }}, '{{ $recibo['consecutivo_actual'] }}'); return false;">
-                                                <span class="material-symbols-rounded">visibility</span>
-                                                VER RECIBO
-                                            </button>
+                                            @component('components.botones.ver-recibo', [
+                                                'numeroPedido' => $recibo['numero_pedido'],
+                                                'prendaId' => $recibo['prenda_id'],
+                                                'nombrePrenda' => $recibo['nombre_prenda'],
+                                                'tipoRecibo' => $recibo['tipo_recibo'],
+                                                'idParcial' => $recibo['id_parcial'] ?: null,
+                                                'consecutivo' => $recibo['consecutivo_actual'],
+                                                'clase' => 'mobile-under-state',
+                                            ])@endcomponent
                                         </div>
 
                                         <div class="orden-buttons" style="margin-top: 1rem;">
-                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $recibo['numero_pedido'] }}', {{ $recibo['prenda_id'] }}, '{{ $recibo['nombre_prenda'] }}', '{{ $recibo['tipo_recibo'] }}', {{ $recibo['id_parcial'] ?: 'null' }}, '{{ $recibo['consecutivo_actual'] }}'); return false;">
-                                                <span class="material-symbols-rounded">visibility</span>
-                                                VER RECIBO
-                                            </button>
+                                            @component('components.botones.ver-recibo', [
+                                                'numeroPedido' => $recibo['numero_pedido'],
+                                                'prendaId' => $recibo['prenda_id'],
+                                                'nombrePrenda' => $recibo['nombre_prenda'],
+                                                'tipoRecibo' => $recibo['tipo_recibo'],
+                                                'idParcial' => $recibo['id_parcial'] ?: null,
+                                                'consecutivo' => $recibo['consecutivo_actual'],
+                                            ])@endcomponent
                                         </div>
                                     </div>
 
@@ -621,10 +630,15 @@
 
                                     <!-- Botón Ver Recibo (debajo del estado para mobile) -->
                                     <div class="mobile-ver-recibo-section">
-                                        <button class="btn-ver-recibos mobile-under-state" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $tipoReciboPreferido }}', {{ $parcialIdPreferido }}, '{{ $consecutivoPreferido }}')">
-                                            <span class="material-symbols-rounded">visibility</span>
-                                            VER RECIBO
-                                        </button>
+                                        @component('components.botones.ver-recibo', [
+                                            'numeroPedido' => $prenda['numero_pedido'],
+                                            'prendaId' => $prenda['prenda_id'],
+                                            'nombrePrenda' => $prenda['nombre_prenda'],
+                                            'tipoRecibo' => $tipoReciboPreferido,
+                                            'idParcial' => $parcialIdPreferido,
+                                            'consecutivo' => $consecutivoPreferido,
+                                            'clase' => 'mobile-under-state',
+                                        ])@endcomponent
                                     </div>
 
                                     <div class="orden-prendas">
@@ -650,7 +664,11 @@
                                                 $areaRecibo = strtolower(trim((string) ($reciboPrincipal['area'] ?? '')));
                                                 $esCorteRecibo = $areaRecibo === 'corte';
                                                 $esCosturaRecibo = $areaRecibo === 'costura';
-                                                $reciboId = $reciboPrincipal['id'] ?? null;
+                                                // Usar 'id' como clave principal, pero si no existe, intentar con otras claves
+                                                $reciboId = $reciboPrincipal['id'] 
+                                                    ?? $reciboPrincipal['recibo_id'] 
+                                                    ?? $reciboPrincipal['consecutivo_actual'] 
+                                                    ?? null;
                                             @endphp
 
                                             {{-- Botón para cortadores: Marcar como completado (pasa a Costura) --}}
@@ -731,7 +749,10 @@
                                                 $reciboPrincipal = $prenda['recibos'][0] ?? null;
                                                 $areaRecibo = strtolower(trim((string) ($reciboPrincipal['area'] ?? '')));
                                                 $esCorteRecibo = $areaRecibo === 'corte';
-                                                $reciboId = $reciboPrincipal['id'] ?? null;
+                                                $reciboId = $reciboPrincipal['id'] 
+                                                    ?? $reciboPrincipal['recibo_id'] 
+                                                    ?? $reciboPrincipal['consecutivo_actual'] 
+                                                    ?? null;
                                                 $reciboCompletadoCorte = (bool) ($reciboPrincipal['completado_corte'] ?? false);
                                             @endphp
 
@@ -824,38 +845,33 @@
 
                                                 {{-- Botón "Ver Distribución" para vista-costura (solo si hay parciales) --}}
                                                 @if($reciboId && $tieneParciales)
-                                                    <button class="btn-ver-distribucion"
-                                                            data-visible-filtro="costura"
-                                                            id="btn-distribucion-{{ $prenda['prenda_id'] }}-{{ $consecutivoActual }}"
-                                                            data-recibo-id="{{ $reciboId }}"
-                                                            data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                            data-numero-recibo="{{ $consecutivoActual }}"
-                                                            onclick="abrirDistribucionRecibo(this)">
-                                                        <span class="material-symbols-rounded">share</span>
-                                                        VER DISTRIBUCIÓN
-                                                    </button>
-                                                    <button class="btn-ver-distribucion"
-                                                            data-visible-filtro="costura"
-                                                            id="btn-editar-encargados-{{ $prenda['prenda_id'] }}-{{ $consecutivoActual }}"
-                                                            data-recibo-id="{{ $reciboId }}"
-                                                            data-pedido-id="{{ $prenda['pedido_id'] }}"
-                                                            data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                            data-numero-recibo="{{ $consecutivoActual }}"
-                                                            data-numero-pedido="{{ $prenda['numero_pedido'] }}"
-                                                            data-nombre="{{ $prenda['nombre_prenda'] }}"
-                                                            data-tipo-recibo="COSTURA"
-                                                            onclick="abrirEditarEncargados(this)">
-                                                        <span class="material-symbols-rounded">edit</span>
-                                                        EDITAR ENCARGADOS
-                                                    </button>
+                                                    @component('components.botones.ver-distribucion', [
+                                                        'filtro' => 'costura',
+                                                        'prendaId' => $prenda['prenda_id'],
+                                                        'reciboId' => $reciboId,
+                                                        'numeroRecibo' => $consecutivoActual,
+                                                        'tipoRecibo' => 'COSTURA',
+                                                    ])@endcomponent
+                                                    @component('components.botones.editar-encargados', [
+                                                        'filtro' => 'costura',
+                                                        'prendaId' => $prenda['prenda_id'],
+                                                        'reciboId' => $reciboId,
+                                                        'pedidoId' => $prenda['pedido_id'],
+                                                        'numeroPedido' => $prenda['numero_pedido'],
+                                                        'numeroRecibo' => $consecutivoActual,
+                                                        'nombrePrenda' => $prenda['nombre_prenda'],
+                                                        'tipoRecibo' => 'COSTURA',
+                                                    ])@endcomponent
                                                 @endif
                                             @endforeach
                                         @endif
 
-                                        <button class="btn-agregar-novedad" onclick="abrirModalNovedad('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', {{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }})">
-                                            <span class="material-symbols-rounded">comment</span>
-                                            AGREGAR NOVEDAD
-                                        </button>
+                                        @component('components.botones.agregar-novedad', [
+                                            'numeroPedido' => $prenda['numero_pedido'],
+                                            'prendaId' => $prenda['prenda_id'],
+                                            'nombrePrenda' => $prenda['nombre_prenda'],
+                                            'consecutivo' => isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'],
+                                        ])@endcomponent
                                         @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('vista-costura'))
                                             @php
                                                 $reciboReflectivo = seleccionarReciboParaVistaOperario(
@@ -883,36 +899,33 @@
                                                     @endphp
 
                                                     {{-- Botón VER RECIBO para vista-costura --}}
-                                                    <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'REFLECTIVO', {{ $pedidoParcialId ? (int) $pedidoParcialId : 'null' }}, '{{ $consecutivoParcial ?? '' }}')">
-                                                        <span class="material-symbols-rounded">visibility</span>
-                                                        VER RECIBO
-                                                    </button>
+                                                    @component('components.botones.ver-recibo', [
+                                                        'numeroPedido' => $prenda['numero_pedido'],
+                                                        'prendaId' => $prenda['prenda_id'],
+                                                        'nombrePrenda' => $prenda['nombre_prenda'],
+                                                        'tipoRecibo' => 'REFLECTIVO',
+                                                        'idParcial' => $pedidoParcialId ? (int) $pedidoParcialId : null,
+                                                        'consecutivo' => $consecutivoParcial ?? '',
+                                                    ])@endcomponent
 
                                                     @if($reciboReflectivoId && $tieneParcialesReflectivo)
-                                                        <button class="btn-ver-distribucion"
-                                                                data-visible-filtro="reflectivo"
-                                                                id="btn-distribucion-reflectivo-{{ $prenda['prenda_id'] }}"
-                                                                data-recibo-id="{{ $reciboReflectivoId }}"
-                                                                data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                                data-numero-recibo="{{ $reciboReflectivo['consecutivo_actual'] ?? $prenda['numero_pedido'] }}"
-                                                                onclick="abrirDistribucionRecibo(this)">
-                                                            <span class="material-symbols-rounded">share</span>
-                                                            VER DISTRIBUCIÓN
-                                                        </button>
-                                                        <button class="btn-ver-distribucion"
-                                                                data-visible-filtro="reflectivo"
-                                                                id="btn-editar-encargados-reflectivo-{{ $prenda['prenda_id'] }}"
-                                                                data-recibo-id="{{ $reciboReflectivoId }}"
-                                                                data-pedido-id="{{ $prenda['pedido_id'] }}"
-                                                                data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                                data-numero-recibo="{{ $reciboReflectivo['consecutivo_actual'] ?? $prenda['numero_pedido'] }}"
-                                                                data-numero-pedido="{{ $prenda['numero_pedido'] }}"
-                                                                data-nombre="{{ $prenda['nombre_prenda'] }}"
-                                                                data-tipo-recibo="REFLECTIVO"
-                                                                onclick="abrirEditarEncargados(this)">
-                                                            <span class="material-symbols-rounded">edit</span>
-                                                            EDITAR ENCARGADOS
-                                                        </button>
+                                                        @component('components.botones.ver-distribucion', [
+                                                            'filtro' => 'reflectivo',
+                                                            'prendaId' => $prenda['prenda_id'],
+                                                            'reciboId' => $reciboReflectivoId,
+                                                            'numeroRecibo' => $reciboReflectivo['consecutivo_actual'] ?? $prenda['numero_pedido'],
+                                                            'tipoRecibo' => 'REFLECTIVO',
+                                                        ])@endcomponent
+                                                        @component('components.botones.editar-encargados', [
+                                                            'filtro' => 'reflectivo',
+                                                            'prendaId' => $prenda['prenda_id'],
+                                                            'reciboId' => $reciboReflectivoId,
+                                                            'pedidoId' => $prenda['pedido_id'],
+                                                            'numeroPedido' => $prenda['numero_pedido'],
+                                                            'numeroRecibo' => $reciboReflectivo['consecutivo_actual'] ?? $prenda['numero_pedido'],
+                                                            'nombrePrenda' => $prenda['nombre_prenda'],
+                                                            'tipoRecibo' => 'REFLECTIVO',
+                                                        ])@endcomponent
                                                     @endif
 
                                                     @if(!$tieneParcialesReflectivo)
@@ -985,10 +998,14 @@
                                                 @endphp
 
                                                 {{-- Botón VER RECIBO para REFLECTIVO --}}
-                                                <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', 'REFLECTIVO', {{ $pedidoParcialId ? (int) $pedidoParcialId : 'null' }}, '{{ $consecutivoParcial ?? '' }}')">
-                                                    <span class="material-symbols-rounded">visibility</span>
-                                                    VER RECIBO
-                                                </button>
+                                                @component('components.botones.ver-recibo', [
+                                                    'numeroPedido' => $prenda['numero_pedido'],
+                                                    'prendaId' => $prenda['prenda_id'],
+                                                    'nombrePrenda' => $prenda['nombre_prenda'],
+                                                    'tipoRecibo' => 'REFLECTIVO',
+                                                    'idParcial' => $pedidoParcialId ? (int) $pedidoParcialId : null,
+                                                    'consecutivo' => $consecutivoParcial ?? '',
+                                                ])@endcomponent
 
                                                 @if($reciboReflectivoAccionId && $esCosturaAreaRef && $tieneEncargadoAsignado)
                                                     @if(!$reciboCompletadoArea)
@@ -1046,10 +1063,14 @@
                                                     $pedidoParcialId = $reciboTipo['pedido_parcial_id'] ?? null;
                                                     $consecutivoParcial = $reciboTipo['consecutivo_parcial'] ?? ($reciboTipo['consecutivo_actual'] ?? null);
                                                 @endphp
-                                                <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ strtoupper((string) $tipoReciboUnico) }}', {{ $pedidoParcialId ? (int) $pedidoParcialId : 'null' }}, '{{ $consecutivoParcial ?? '' }}')">
-                                                    <span class="material-symbols-rounded">visibility</span>
-                                                    VER RECIBO
-                                                </button>
+                                                @component('components.botones.ver-recibo', [
+                                                    'numeroPedido' => $prenda['numero_pedido'],
+                                                    'prendaId' => $prenda['prenda_id'],
+                                                    'nombrePrenda' => $prenda['nombre_prenda'],
+                                                    'tipoRecibo' => strtoupper((string) $tipoReciboUnico),
+                                                    'idParcial' => $pedidoParcialId ? (int) $pedidoParcialId : null,
+                                                    'consecutivo' => $consecutivoParcial ?? '',
+                                                ])@endcomponent
                                             @endforeach
 
                                             {{-- Botones de completar/deshacer para costura-reflectivo, lider-reflectivo y administrador-costura --}}
@@ -1137,10 +1158,15 @@
                                             @endif
                                         @else
                                             {{-- Para otros operarios, un solo botón con tipo de recibo --}}
-                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $tipoReciboPreferido }}', {{ $parcialIdPreferido }}, '{{ $consecutivoPreferido }}')">
-                                                <span class="material-symbols-rounded">visibility</span>
-                                                VER RECIBOS
-                                            </button>
+                                            @component('components.botones.ver-recibo', [
+                                                'numeroPedido' => $prenda['numero_pedido'],
+                                                'prendaId' => $prenda['prenda_id'],
+                                                'nombrePrenda' => $prenda['nombre_prenda'],
+                                                'tipoRecibo' => $tipoReciboPreferido,
+                                                'idParcial' => $parcialIdPreferido,
+                                                'consecutivo' => $consecutivoPreferido,
+                                                'texto' => 'VER RECIBOS',
+                                            ])@endcomponent
                                         @endif
                                     </div>
 
@@ -1152,7 +1178,10 @@
                                                 $areaRecibo = strtolower(trim((string) ($reciboPrincipal['area'] ?? '')));
                                                 $esCorteRecibo = $areaRecibo === 'corte';
                                                 $esCosturaRecibo = $areaRecibo === 'costura';
-                                                $reciboId = $reciboPrincipal['id'] ?? null;
+                                                $reciboId = $reciboPrincipal['id'] 
+                                                    ?? $reciboPrincipal['recibo_id'] 
+                                                    ?? $reciboPrincipal['consecutivo_actual'] 
+                                                    ?? null;
                                             @endphp
 
                                             {{-- Botón para cortadores: Marcar como completado (pasa a Costura) --}}
@@ -1353,16 +1382,25 @@
                                                     $pedidoParcialId = $reciboTipo['pedido_parcial_id'] ?? null;
                                                     $consecutivoParcial = $reciboTipo['consecutivo_parcial'] ?? ($reciboTipo['consecutivo_actual'] ?? null);
                                                 @endphp
-                                                <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ strtoupper((string) $tipoReciboUnico) }}', {{ $pedidoParcialId ? (int) $pedidoParcialId : 'null' }}, '{{ $consecutivoParcial ?? '' }}')">
-                                                    <span class="material-symbols-rounded">visibility</span>
-                                                    VER RECIBO
-                                                </button>
+                                                @component('components.botones.ver-recibo', [
+                                                    'numeroPedido' => $prenda['numero_pedido'],
+                                                    'prendaId' => $prenda['prenda_id'],
+                                                    'nombrePrenda' => $prenda['nombre_prenda'],
+                                                    'tipoRecibo' => strtoupper((string) $tipoReciboUnico),
+                                                    'idParcial' => $pedidoParcialId ? (int) $pedidoParcialId : null,
+                                                    'consecutivo' => $consecutivoParcial ?? '',
+                                                ])@endcomponent
                                             @endforeach
                                         @else
-                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $tipoReciboPreferido }}', {{ $parcialIdPreferido }}, '{{ $consecutivoPreferido }}')">
-                                                <span class="material-symbols-rounded">visibility</span>
-                                                VER RECIBOS
-                                            </button>
+                                            @component('components.botones.ver-recibo', [
+                                                'numeroPedido' => $prenda['numero_pedido'],
+                                                'prendaId' => $prenda['prenda_id'],
+                                                'nombrePrenda' => $prenda['nombre_prenda'],
+                                                'tipoRecibo' => $tipoReciboPreferido,
+                                                'idParcial' => $parcialIdPreferido,
+                                                'consecutivo' => $consecutivoPreferido,
+                                                'texto' => 'VER RECIBOS',
+                                            ])@endcomponent
                                         @endif
 
                                         @if(auth()->user()->hasRole('cortador'))
@@ -1371,7 +1409,10 @@
                                                 $areaRecibo = strtolower(trim((string) ($reciboPrincipal['area'] ?? '')));
                                                 $esCorteRecibo = $areaRecibo === 'corte';
                                                 $esCosturaRecibo = $areaRecibo === 'costura';
-                                                $reciboId = $reciboPrincipal['id'] ?? null;
+                                                $reciboId = $reciboPrincipal['id'] 
+                                                    ?? $reciboPrincipal['recibo_id'] 
+                                                    ?? $reciboPrincipal['consecutivo_actual'] 
+                                                    ?? null;
                                             @endphp
 
                                             @if($esCorteRecibo && $reciboId)
@@ -1395,16 +1436,20 @@
                                                     DESHACER
                                                 </button>
                                             @else
-                                                <button class="btn-agregar-novedad" onclick="abrirModalNovedad('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', {{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }})">
-                                                    <span class="material-symbols-rounded">comment</span>
-                                                    AGREGAR NOVEDAD
-                                                </button>
+                                                @component('components.botones.agregar-novedad', [
+                                                    'numeroPedido' => $prenda['numero_pedido'],
+                                                    'prendaId' => $prenda['prenda_id'],
+                                                    'nombrePrenda' => $prenda['nombre_prenda'],
+                                                    'consecutivo' => isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'],
+                                                ])@endcomponent
                                             @endif
                                         @else
-                                        <button class="btn-agregar-novedad" onclick="abrirModalNovedad('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', {{ isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'] }})">
-                                            <span class="material-symbols-rounded">comment</span>
-                                            AGREGAR NOVEDAD
-                                        </button>
+                                        @component('components.botones.agregar-novedad', [
+                                            'numeroPedido' => $prenda['numero_pedido'],
+                                            'prendaId' => $prenda['prenda_id'],
+                                            'nombrePrenda' => $prenda['nombre_prenda'],
+                                            'consecutivo' => isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'],
+                                        ])@endcomponent
                                     @endif
                                         <button class="mobile-actions-toggle" onclick="toggleMobileActions({{ $prenda['prenda_id'] }})">
                                             <span class="material-symbols-rounded">more_horiz</span>
