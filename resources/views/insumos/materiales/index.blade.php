@@ -9,6 +9,8 @@
     $tipoReciboActivo = strtoupper((string) ($tipoReciboActivo ?? 'COSTURA'));
     $esTabBodega = $tipoReciboActivo === 'CORTE-PARA-BODEGA';
     $mostrarColumnaPedido = !$esTabBodega;
+    $mostrarColumnaEstado = !$esGestionReflectivo;
+    $totalColumnas = 7 + ($mostrarColumnaPedido ? 1 : 0) + ($mostrarColumnaEstado ? 1 : 0);
     $assetVersion = static fn (string $path): int => is_file(public_path($path))
         ? filemtime(public_path($path))
         : time();
@@ -193,6 +195,9 @@
                                     </button>
                                 </div>
                             </th>
+                            <th class="text-center py-4 px-6 font-bold">
+                                Dias restantes
+                            </th>
                             @unless($esGestionReflectivo)
                             <th class="text-center py-4 px-6 font-bold" style="min-width: 220px;">
                                 <div class="flex items-center justify-center gap-2">
@@ -365,6 +370,27 @@
                                 <td class="py-4 px-6">
                                     <span class="font-medium text-gray-800">{{ $orden->cliente ?? 'N/A' }}</span>
                                 </td>
+                                <td class="py-4 px-6 text-center">
+                                    @php
+                                        $diasRestantes = null;
+                                        if (isset($orden->dia_de_entrega) && is_numeric($orden->dia_de_entrega) && isset($orden->dias_calculados) && is_numeric($orden->dias_calculados)) {
+                                            $diasRestantes = max(0, ((int) $orden->dia_de_entrega) - ((int) $orden->dias_calculados));
+                                        }
+                                        $fechaEstimadaEntrega = $orden->fecha_estimada_de_entrega ?? null;
+                                    @endphp
+                                    @if($diasRestantes !== null)
+                                        <span style="display: inline-flex; flex-direction: column; line-height: 1.1; color: #dc2626; font-weight: 700; font-size: 0.78rem;">
+                                            <span>{{ $diasRestantes }} dias</span>
+                                            <span>habiles restantes</span>
+                                            <span style="margin-top: 0.2rem; color: #6b7280; font-weight: 600; font-size: 0.72rem;">Est.: {{ $fechaEstimadaEntrega ?? '-' }}</span>
+                                        </span>
+                                    @else
+                                        <span style="display: inline-flex; flex-direction: column; line-height: 1.1; color: #6b7280; font-weight: 600; font-size: 0.78rem;">
+                                            <span>-</span>
+                                            <span style="margin-top: 0.2rem; font-size: 0.72rem;">Est.: {{ $fechaEstimadaEntrega ?? '-' }}</span>
+                                        </span>
+                                    @endif
+                                </td>
                                 @unless($esGestionReflectivo)
                                 <td class="py-6 px-6 text-center min-h-20" style="min-width: 220px;">
                                     @php
@@ -481,7 +507,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="py-12 px-6 text-center">
+                                <td colspan="{{ $totalColumnas }}" class="py-12 px-6 text-center">
                                     <p class="text-xl text-gray-500">No hay órdenes disponibles</p>
                                 </td>
                             </tr>
