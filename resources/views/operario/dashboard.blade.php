@@ -970,6 +970,8 @@
                                             @if($tieneReciboReflectivo && (auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo')))
                                                 @php
                                                     $reciboId = $reciboReflectivo['id'] ?? null;
+                                                    $pedidoParcialId = isset($reciboReflectivo['pedido_parcial_id']) ? (int) $reciboReflectivo['pedido_parcial_id'] : 0;
+                                                    $consecutivoParcial = $reciboReflectivo['consecutivo_parcial'] ?? ($reciboReflectivo['consecutivo_actual'] ?? null);
                                                     $reciboCompletadoArea = false;
 
                                                     // Verificar si está completado según el área
