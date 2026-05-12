@@ -41,6 +41,18 @@ class OperarioDashboardReadServiceImpl implements OperarioDashboardReadService
             ->pluck('fecha_completado', 'id_recibo');
     }
 
+    public function obtenerCompletadosParcialesPorArea(array $idsParcial, string $area): Collection
+    {
+        if (empty($idsParcial)) {
+            return collect();
+        }
+
+        return DB::table('prenda_recibo_completado')
+            ->where('area', $area)
+            ->whereIn('id_parcial', $idsParcial)
+            ->pluck('fecha_completado', 'id_parcial');
+    }
+
     public function obtenerRecibosCompletadosPorOperario(string $nombreOperario): Collection
     {
         $nombreNormalizado = strtolower(trim($nombreOperario));

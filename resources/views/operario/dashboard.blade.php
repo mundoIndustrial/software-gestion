@@ -29,6 +29,7 @@
                 ?? ($prenda['fecha_creacion'] ?? null);
         } elseif ($ordenarPorFechaAsignacionProceso) {
             $fechaOrden = $reciboPrincipal['fecha_asignacion_costura']
+                ?? $reciboPrincipal['fecha_asignacion_corte']
                 ?? $reciboPrincipal['fecha_proceso_costura_created_at']
                 ?? ($prenda['fecha_creacion'] ?? null);
         } else {
@@ -54,7 +55,7 @@
         return 0;
     };
 
-    if (auth()->user()->hasRole('cortador') || auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('lider-reflectivo')) {
+    if (auth()->user()->hasRole('cortador') || auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('administrador-costura')) {
         $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortByDesc($callbackOrdenamiento)->values();
     } else {
         $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortBy($callbackOrdenamiento)->values();
@@ -991,10 +992,8 @@
                                                     }
 
                                                     $tipoReciboNormalizado = strtolower('REFLECTIVO');
-                                                    $pedidoParcialId = isset($reciboReflectivo['pedido_parcial_id']) ? (int) $reciboReflectivo['pedido_parcial_id'] : 0;
-                                                    $consecutivoParcial = $reciboReflectivo['consecutivo_parcial'] ?? ($reciboReflectivo['consecutivo_actual'] ?? null);
-                                                    $esReciboReflectivoParcial = false;
-                                                    $reciboReflectivoAccionId = $reciboId;
+                                                    $reciboReflectivoAccionId = $reciboReflectivo['id'] ?? ($reciboReflectivo['pedido_parcial_id'] ?? null);
+                                                    $esReciboReflectivoParcial = !empty($reciboReflectivo['es_parcial']);
                                                 @endphp
 
                                                 {{-- Botón VER RECIBO para REFLECTIVO --}}
@@ -1090,8 +1089,8 @@
                                                             (string) $tipoReciboUnico,
                                                             auth()->user()->hasAnyRole(['vista-costura', 'administrador-costura'])
                                                         );
-                                                        $reciboAccionId = $reciboTipo['id'] ?? null;
-                                                        $esReciboParcial = false;
+                                                        $reciboAccionId = $reciboTipo['id'] ?? ($reciboTipo['pedido_parcial_id'] ?? null);
+                                                        $esReciboParcial = !empty($reciboTipo['es_parcial']);
                                                         $areaRecibo = strtolower(trim((string) ($reciboTipo['area'] ?? '')));
                                                         $esCosturaArea = $areaRecibo === 'costura';
                                                         $reciboCompletadoArea = false;

@@ -42,8 +42,8 @@ final class ProcesoSeguimientoBroadcastService
                 $this->broadcastCorte($area, $encargado, $encargadoNormalizado, $accion, $numeroPedido, $prendaId, $procesoId);
             }
 
-            if ($areaNormalizada === 'costura' && $encargadoNormalizado !== '') {
-                $this->broadcastCostura($area, $encargadoNormalizado, $accion, $numeroPedido, $prendaId, $procesoId);
+            if ($areaNormalizada === 'costura') {
+                $this->broadcastCostura($area, $encargado, $encargadoNormalizado, $accion, $numeroPedido, $prendaId, $procesoId);
             }
         } catch (\Exception $e) {
             // El fallo de broadcast no debe interrumpir la operación principal.
@@ -103,12 +103,35 @@ final class ProcesoSeguimientoBroadcastService
 
     private function broadcastCostura(
         string $area,
+        string $encargado,
         string $encargadoNormalizado,
         string $accion,
         int    $numeroPedido,
         int    $prendaId,
         int    $procesoId,
     ): void {
+        // Cargar el proceso con sus relaciones para obtener datos necesarios para el evento global
+        $proceso = \App\Models\ProcesoPrenda::with(['prenda', 'pedido'])->find($procesoId);
+        
+        if ($proceso && $proceso->pedido && $proceso->prenda) {
+            // Este evento es el que escucha el dashboard del administrador-costura para actualizar en tiempo real
+            broadcast(new \App\Events\EncargadoCosturaAsignado(
+                $proceso->pedido->id,
+                $proceso->prenda_pedido_id,
+                $proceso->numero_recibo,
+                $encargado,
+                $proceso->id,
+                $proceso->prenda->nombre_prenda ?? 'Prenda',
+                optional($proceso->updated_at)->toIso8601String(),
+                null,
+                $proceso->pedido->cliente ?? '-'
+            ));
+        }
+
+        if ($encargadoNormalizado === '') {
+            return;
+        }
+
         $operario = User::query()
             ->whereRaw('LOWER(TRIM(name)) = ?', [$encargadoNormalizado])
             ->first();

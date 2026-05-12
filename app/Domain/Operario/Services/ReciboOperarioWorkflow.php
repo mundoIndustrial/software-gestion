@@ -9,7 +9,10 @@ use Illuminate\Support\Collection;
 
 interface ReciboOperarioWorkflow
 {
-    public function findParcialById(int $id, bool $withRelations = false): ?ReciboPorPartes;
+    /**
+     * @return \App\Models\ReciboPorPartes|\App\Models\PedidoParcial|null
+     */
+    public function findParcialById(int $id, bool $withRelations = false): ?object;
 
     public function upsertCompletado(?int $idRecibo, ?int $idParcial, string $area, string $numeroRecibo, string $nombreOperario): void;
 
@@ -21,13 +24,13 @@ interface ReciboOperarioWorkflow
 
     public function findNumeroPedidoByPrendaId(int $prendaId): ?int;
 
-    public function findProcesoCosturaParcial(ReciboPorPartes $parcial): ?ProcesoPrenda;
+    public function findProcesoCosturaParcial(object $parcial): ?ProcesoPrenda;
 
-    public function findParcialIdsForOriginal(ReciboPorPartes $parcial): array;
+    public function findParcialIdsForOriginal(object $parcial): array;
 
     public function countCompletadosParcialesByArea(array $parcialIds, string $area): int;
 
-    public function findReciboOriginalActivoDesdeParcial(ReciboPorPartes $parcial): ?ConsecutivoReciboPedido;
+    public function findReciboOriginalActivoDesdeParcial(object $parcial): ?ConsecutivoReciboPedido;
 
     public function findVistaCosturaUsers(): Collection;
 }

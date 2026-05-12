@@ -211,7 +211,7 @@ class CompletarReciboOperarioUseCase
         }
     }
 
-    private function buscarProcesoCosturaParcial(ReciboPorPartes $parcial): ?\App\Models\ProcesoPrenda
+    private function buscarProcesoCosturaParcial(object $parcial): ?\App\Models\ProcesoPrenda
     {
         $numeroPedido = (int) ($parcial->pedido?->numero_pedido ?? 0);
         if ($numeroPedido <= 0) {
@@ -221,7 +221,7 @@ class CompletarReciboOperarioUseCase
         return $this->workflow->findProcesoCosturaParcial($parcial);
     }
 
-    private function sincronizarCompletadoOriginalDesdeParciales(ReciboPorPartes $parcial, string $areaOperario, string $nombreOperario): array
+    private function sincronizarCompletadoOriginalDesdeParciales(object $parcial, string $areaOperario, string $nombreOperario): array
     {
         $parcialIds = $this->workflow->findParcialIdsForOriginal($parcial);
 
@@ -257,7 +257,7 @@ class CompletarReciboOperarioUseCase
     }
 
     private function notificarVistaCosturaCompletadoParcial(
-        ReciboPorPartes $parcial,
+        object $parcial,
         string $areaOperario,
         string $nombreOperario,
         array $estadoOriginal

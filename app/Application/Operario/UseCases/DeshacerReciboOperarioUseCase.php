@@ -147,7 +147,7 @@ class DeshacerReciboOperarioUseCase
         }
     }
 
-    private function sincronizarCompletadoOriginalDesdeParciales(ReciboPorPartes $parcial, string $areaOperario): array
+    private function sincronizarCompletadoOriginalDesdeParciales(object $parcial, string $areaOperario): array
     {
         $parcialIds = $this->workflow->findParcialIdsForOriginal($parcial);
 
@@ -169,7 +169,7 @@ class DeshacerReciboOperarioUseCase
         ];
     }
 
-    private function notificarVistaCosturaDeshacerParcial(ReciboPorPartes $parcial, string $areaOperario, array $estadoOriginal): void
+    private function notificarVistaCosturaDeshacerParcial(object $parcial, string $areaOperario, array $estadoOriginal): void
     {
         $usuariosVistaCostura = $this->workflow->findVistaCosturaUsers();
 

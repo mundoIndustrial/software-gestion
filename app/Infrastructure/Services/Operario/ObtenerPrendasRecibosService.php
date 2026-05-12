@@ -1144,15 +1144,6 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             return $resultados;
         })->values();
 
-        if ($tipoOperario === 'vista-costura') {
-            return $prendasAgrupadas
-                ->sortByDesc(function ($item) {
-                    return $item['fecha_creacion'] ?? null;
-                })
-                ->values();
-        }
-
-
         $resultadoFinal = $prendasAgrupadas
             ->concat($this->obtenerPrendasParcialesCostura($usuario, false))
             ->unique(function ($item) {
@@ -1162,7 +1153,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 return $item['prenda_id'] . ($parcialId ? '_' . $prefix . $parcialId : '');
             });
 
-        if ($tipoOperario === 'cortador') {
+        if ($tipoOperario === 'vista-costura' || $tipoOperario === 'cortador') {
             return $resultadoFinal
                 ->sortByDesc(function ($item) {
                     return $item['fecha_creacion'] ?? null;
@@ -1322,23 +1313,47 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             $tipoParcial = strtoupper(trim((string) ($parcial->tipo_recibo ?? '')));
             $procesoObjetivo = 'costura';
 
-            // Para ReciboPorPartes (parciales de costura), buscar procesos con numero_recibo_parcial
-            $proceso = ProcesoPrenda::query()
+            // Buscar el proceso de costura para obtener el encargado
+            $procesoCostura = ProcesoPrenda::query()
                 ->where('numero_pedido', $pedido->numero_pedido)
                 ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
-                ->whereRaw('LOWER(TRIM(proceso)) = ?', [$procesoObjetivo])
+                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
                 ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
                 ->whereNull('deleted_at')
                 ->latest('created_at')
                 ->first();
 
+            // Buscar el proceso más reciente para determinar el área actual
+            $procesoReciente = ProcesoPrenda::query()
+                ->where('numero_pedido', $pedido->numero_pedido)
+                ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+                ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                ->whereNull('deleted_at')
+                ->latest('created_at')
+                ->first();
+
+            // Buscar si ya fue completado en Corte
+            $completadoCorte = \DB::table('prenda_recibo_completado')
+                ->where('id_parcial', $parcial->id)
+                ->where('area', 'Corte')
+                ->exists();
+
+            $areaActual = 'Corte'; // Default para parciales es Corte hasta que se complete o pase a Costura
+            if ($completadoCorte) {
+                $areaActual = 'Costura';
+            } elseif ($procesoReciente && strtolower(trim($procesoReciente->proceso)) === 'costura') {
+                $areaActual = 'Costura';
+            }
+
             $todasLasParciales->push([
                 'parcial' => $parcial,
                 'pedido' => $pedido,
                 'prenda' => $prenda,
-                'proceso' => $proceso,
-                'encargado_normalizado' => strtolower(trim((string) ($proceso->encargado ?? $parcial->encargado ?? ''))),
+                'proceso' => $procesoCostura,
+                'proceso_reciente' => $procesoReciente,
+                'encargado_normalizado' => strtolower(trim((string) ($procesoCostura->encargado ?? $parcial->encargado ?? ''))),
                 'es_anexo' => false,
+                'area_detectada' => $areaActual,
             ]);
         });
 
@@ -1354,11 +1369,11 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             $tipoParcial = strtoupper(trim((string) ($anexo->tipo_recibo ?? '')));
             $procesoObjetivo = 'costura';
 
-            // Para pedidos_parciales (anexos), buscar procesos con numero_recibo (que es el consecutivo_actual del anexo)
-            $proceso = ProcesoPrenda::query()
+            // Buscar el proceso de costura para obtener el encargado
+            $procesoCostura = ProcesoPrenda::query()
                 ->where('numero_pedido', $pedido->numero_pedido)
                 ->where('prenda_pedido_id', $anexo->prenda_pedido_id)
-                ->whereRaw('LOWER(TRIM(proceso)) = ?', [$procesoObjetivo])
+                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
                 ->where('numero_recibo', $anexo->consecutivo_actual)
                 ->where(function ($query) {
                     $query->whereNull('numero_recibo_parcial')
@@ -1369,13 +1384,42 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 ->latest('created_at')
                 ->first();
 
+            // Buscar el proceso más reciente para determinar el área actual
+            $procesoReciente = ProcesoPrenda::query()
+                ->where('numero_pedido', $pedido->numero_pedido)
+                ->where('prenda_pedido_id', $anexo->prenda_pedido_id)
+                ->where('numero_recibo', $anexo->consecutivo_actual)
+                ->where(function ($query) {
+                    $query->whereNull('numero_recibo_parcial')
+                          ->orWhere('numero_recibo_parcial', '')
+                          ->orWhere('numero_recibo_parcial', 0);
+                })
+                ->whereNull('deleted_at')
+                ->latest('created_at')
+                ->first();
+
+            // Buscar si ya fue completado en Corte
+            $completadoCorte = \DB::table('prenda_recibo_completado')
+                ->where('id_parcial', $anexo->id)
+                ->where('area', 'Corte')
+                ->exists();
+
+            $areaActual = 'Corte'; // Default para anexos es Corte hasta que se complete o pase a Costura
+            if ($completadoCorte) {
+                $areaActual = 'Costura';
+            } elseif ($procesoReciente && strtolower(trim($procesoReciente->proceso)) === 'costura') {
+                $areaActual = 'Costura';
+            }
+
             $todasLasParciales->push([
                 'parcial' => $anexo,
                 'pedido' => $pedido,
                 'prenda' => $prenda,
-                'proceso' => $proceso,
-                'encargado_normalizado' => strtolower(trim((string) ($proceso->encargado ?? $anexo->encargado ?? ''))),
+                'proceso' => $procesoCostura,
+                'proceso_reciente' => $procesoReciente,
+                'encargado_normalizado' => strtolower(trim((string) ($procesoCostura->encargado ?? $anexo->encargado ?? ''))),
                 'es_anexo' => true,
+                'area_detectada' => $areaActual,
             ]);
         });
 
@@ -1386,7 +1430,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             ->filter(function (array $item) use ($modoTodosCostura, $tipoOperario, $encargadoNormalizado, $esLiderReflectivo) {
                 $encargado = $item['encargado_normalizado'];
                 $tipoParcial = strtoupper(trim((string) ($item['parcial']->tipo_recibo ?? '')));
-                $area = strtolower(trim((string) ($item['parcial']->area ?? '')));
+                $area = strtolower(trim((string) ($item['area_detectada'] ?? $item['parcial']->area ?? '')));
                 
                 // Para costura-reflectivo, solo mostrar parciales del área Costura
                 if ($tipoOperario === 'costura-reflectivo' && $area !== 'costura') {
@@ -1394,6 +1438,11 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 }
                 
                 if ($encargado === '') {
+                    // Para vista-costura o modo todos: mostrar siempre
+                    if ($modoTodosCostura || $tipoOperario === 'vista-costura') {
+                        return true;
+                    }
+
                     // Para reflectivo en dashboard costura-reflectivo/lider-reflectivo:
                     // mostrar también anexos sin encargado para que sean visibles.
                     if ($tipoOperario === 'costura-reflectivo' && $tipoParcial === 'REFLECTIVO') {
@@ -1437,6 +1486,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 $pedido = $item['pedido'];
                 $prenda = $item['prenda'];
                 $proceso = $item['proceso'];
+                $procesoReciente = $item['proceso_reciente'] ?? null;
                 $esAnexo = $item['es_anexo'] ?? false;
 
                 // Obtener tallas según el tipo
@@ -1491,6 +1541,12 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                     $encargadoCostura = $parcial->encargado;
                 }
 
+                // Si está en Corte, buscar el encargado de Corte
+                $encargadoCorte = null;
+                if ($item['area_detectada'] === 'Corte') {
+                    $encargadoCorte = $procesoReciente?->encargado;
+                }
+
                 return [
                     'prenda_id' => $prenda->id,
                     'pedido_id' => $pedido->id,
@@ -1514,11 +1570,11 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                         'fecha_inicio_proceso' => $proceso?->fecha_inicio ?? null,
                         'fecha_asignacion_costura' => $proceso?->fecha_de_asignacion_encargado ?? null,
                         'fecha_proceso_costura_created_at' => $proceso?->created_at ?? null,
-                        'area' => 'Costura',
+                        'area' => $item['area_detectada'] ?? 'Costura',
                         'proceso_id' => $proceso?->id,
                         'proceso_id_costura' => $proceso?->id,
                         'encargado_costura' => $encargadoCostura,
-                        'encargado_corte' => null,
+                        'encargado_corte' => $encargadoCorte,
                         'encargado_control_calidad' => null,
                         'completado_area' => $completadoCostura,
                         'completado_corte' => false,

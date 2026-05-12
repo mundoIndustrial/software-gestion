@@ -94,7 +94,14 @@ class GetOperarioDashboardUseCase
                                 }
 
                                 $encargado = strtolower(trim((string) ($recibo['encargado_costura'] ?? '')));
-                                if ($encargado !== '' && $usuariosSobremedida->contains($encargado)) {
+                                
+                                // Si no tiene encargado asignado, no mostrar en la pestaña de costura para el admin
+                                if ($encargado === '') {
+                                    return false;
+                                }
+
+                                // Si el encargado es de sobremedida, no mostrar aquí (va a la pestaña sobremedida)
+                                if ($usuariosSobremedida->contains($encargado)) {
                                     return false;
                                 }
 
@@ -122,12 +129,23 @@ class GetOperarioDashboardUseCase
                     ->values()
                     ->all();
 
-                $completadosPorId = $this->dashboardReadService->obtenerCompletadosPorArea($idsRecibos, $areaOperario);
+                $idsParciales = $prendasConRecibos
+                    ->flatMap(fn($p) => collect($p['recibos'] ?? [])->pluck('pedido_parcial_id'))
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
 
-                $prendasConRecibos = $prendasConRecibos->map(function ($prenda) use ($completadosPorId) {
-                    $prenda['recibos'] = array_map(function ($recibo) use ($completadosPorId) {
+                $completadosPorId = $this->dashboardReadService->obtenerCompletadosPorArea($idsRecibos, $areaOperario);
+                $completadosParcialesPorId = $this->dashboardReadService->obtenerCompletadosParcialesPorArea($idsParciales, $areaOperario);
+
+                $prendasConRecibos = $prendasConRecibos->map(function ($prenda) use ($completadosPorId, $completadosParcialesPorId) {
+                    $prenda['recibos'] = array_map(function ($recibo) use ($completadosPorId, $completadosParcialesPorId) {
                         $idRecibo = $recibo['id'] ?? null;
-                        $recibo['completado_area'] = $idRecibo ? $completadosPorId->has($idRecibo) : false;
+                        $idParcial = $recibo['pedido_parcial_id'] ?? null;
+
+                        $recibo['completado_area'] = ($idRecibo && $completadosPorId->has($idRecibo))
+                            || ($idParcial && $completadosParcialesPorId->has($idParcial));
                         return $recibo;
                     }, $prenda['recibos'] ?? []);
 
@@ -143,16 +161,41 @@ class GetOperarioDashboardUseCase
                     ->values()
                     ->all();
 
+                $idsParciales = $prendasConRecibos
+                    ->flatMap(fn($p) => collect($p['recibos'] ?? [])->pluck('pedido_parcial_id'))
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
+
                 $completadosCortePorId = $this->dashboardReadService->obtenerCompletadosPorArea($idsRecibos, 'Corte');
                 $completadosCosturaPorId = $this->dashboardReadService->obtenerCompletadosPorArea($idsRecibos, 'Costura');
                 $completadosControlCalidadPorId = $this->dashboardReadService->obtenerCompletadosPorArea($idsRecibos, 'Control de Calidad');
 
-                $prendasConRecibos = $prendasConRecibos->map(function ($prenda) use ($completadosCortePorId, $completadosCosturaPorId, $completadosControlCalidadPorId) {
-                    $prenda['recibos'] = array_map(function ($recibo) use ($completadosCortePorId, $completadosCosturaPorId, $completadosControlCalidadPorId) {
+                $completadosParcialesCortePorId = $this->dashboardReadService->obtenerCompletadosParcialesPorArea($idsParciales, 'Corte');
+                $completadosParcialesCosturaPorId = $this->dashboardReadService->obtenerCompletadosParcialesPorArea($idsParciales, 'Costura');
+                $completadosParcialesControlCalidadPorId = $this->dashboardReadService->obtenerCompletadosParcialesPorArea($idsParciales, 'Control de Calidad');
+
+                $prendasConRecibos = $prendasConRecibos->map(function ($prenda) use (
+                    $completadosCortePorId, $completadosCosturaPorId, $completadosControlCalidadPorId,
+                    $completadosParcialesCortePorId, $completadosParcialesCosturaPorId, $completadosParcialesControlCalidadPorId
+                ) {
+                    $prenda['recibos'] = array_map(function ($recibo) use (
+                        $completadosCortePorId, $completadosCosturaPorId, $completadosControlCalidadPorId,
+                        $completadosParcialesCortePorId, $completadosParcialesCosturaPorId, $completadosParcialesControlCalidadPorId
+                    ) {
                         $idRecibo = $recibo['id'] ?? null;
-                        $recibo['completado_corte'] = $idRecibo ? $completadosCortePorId->has($idRecibo) : false;
-                        $recibo['completado_costura'] = $idRecibo ? $completadosCosturaPorId->has($idRecibo) : false;
-                        $recibo['completado_control_calidad'] = $idRecibo ? $completadosControlCalidadPorId->has($idRecibo) : false;
+                        $idParcial = $recibo['pedido_parcial_id'] ?? null;
+
+                        $recibo['completado_corte'] = ($idRecibo && $completadosCortePorId->has($idRecibo))
+                            || ($idParcial && $completadosParcialesCortePorId->has($idParcial));
+
+                        $recibo['completado_costura'] = ($idRecibo && $completadosCosturaPorId->has($idRecibo))
+                            || ($idParcial && $completadosParcialesCosturaPorId->has($idParcial));
+
+                        $recibo['completado_control_calidad'] = ($idRecibo && $completadosControlCalidadPorId->has($idRecibo))
+                            || ($idParcial && $completadosParcialesControlCalidadPorId->has($idParcial));
+
                         return $recibo;
                     }, $prenda['recibos'] ?? []);
 
