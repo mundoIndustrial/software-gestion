@@ -215,7 +215,14 @@ export function initReciboFilters() {
                 return valB - valA;
             }
 
-            // Costura: mantener mas reciente primero
+            if (esLiderReflectivo) {
+                // lider-reflectivo (costura): ordenar por fecha_de_asignacion_encargado
+                valA = parseInt(a.dataset.fechaAsignacionCostura || a.dataset.fechaCreacionCostura || '0');
+                valB = parseInt(b.dataset.fechaAsignacionCostura || b.dataset.fechaCreacionCostura || '0');
+                return valB - valA;
+            }
+
+            // Costura (otros roles): mantener mas reciente primero
             valA = parseInt(a.dataset.fechaAsignacionCostura || '0');
             valB = parseInt(b.dataset.fechaAsignacionCostura || '0');
             return valB - valA;
