@@ -301,6 +301,21 @@
                                             <span class="material-symbols-rounded" style="font-size: 1.1rem;">event_available</span>
                                             Completado el {{ $fechaCompletado }}
                                         </div>
+
+                                        <!-- Botón Ver Recibo (debajo del estado para mobile) -->
+                                        <div class="mobile-ver-recibo-section">
+                                            <button class="btn-ver-recibos mobile-under-state" onclick="abrirDetallesRecibos('{{ $recibo['numero_pedido'] }}', {{ $recibo['prenda_id'] }}, '{{ $recibo['nombre_prenda'] }}', '{{ $recibo['tipo_recibo'] }}', {{ $recibo['id_parcial'] ?: 'null' }}, '{{ $recibo['consecutivo_actual'] }}'); return false;">
+                                                <span class="material-symbols-rounded">visibility</span>
+                                                VER RECIBO
+                                            </button>
+                                        </div>
+
+                                        <div class="orden-buttons" style="margin-top: 1rem;">
+                                            <button class="btn-ver-recibos" onclick="abrirDetallesRecibos('{{ $recibo['numero_pedido'] }}', {{ $recibo['prenda_id'] }}, '{{ $recibo['nombre_prenda'] }}', '{{ $recibo['tipo_recibo'] }}', {{ $recibo['id_parcial'] ?: 'null' }}, '{{ $recibo['consecutivo_actual'] }}'); return false;">
+                                                <span class="material-symbols-rounded">visibility</span>
+                                                VER RECIBO
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div class="orden-right">
