@@ -460,6 +460,7 @@
                              data-completado-reflectivo="{{ $reciboCompletadoReflectivo ? '1' : '0' }}"
                              data-numero-recibo="{{ $numeroReciboBusqueda }}"
                              data-fecha-completado-reflectivo="{{ ($reciboReflectivoFiltroCard && isset($reciboReflectivoFiltroCard['fecha_completado_costura'])) ? strtotime($reciboReflectivoFiltroCard['fecha_completado_costura']) : 0 }}"
+                             data-fecha-creacion-reflectivo="{{ ($reciboReflectivoFiltroCard['creado_en'] ?? ($reciboReflectivoFiltroCard['created_at'] ?? '')) ? strtotime($reciboReflectivoFiltroCard['creado_en'] ?? $reciboReflectivoFiltroCard['created_at']) : 0 }}"
                              data-fecha-creacion-costura="{{ ($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? '')) ? strtotime($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? '')) : 0 }}"
                              data-fecha-asignacion-costura="{{ ($reciboCosturaFiltroCard['fecha_asignacion_costura'] ?? ($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? ''))) ? strtotime($reciboCosturaFiltroCard['fecha_asignacion_costura'] ?? ($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? ''))) : 0 }}"
                              style="display: {{ $displayInicial }}">

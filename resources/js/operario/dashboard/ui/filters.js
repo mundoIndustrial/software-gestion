@@ -1,4 +1,4 @@
-import { crearBotonAgregarNovedad } from './novedadButtons';
+﻿import { crearBotonAgregarNovedad } from './novedadButtons';
 
 export function initReciboFilters() {
     // Flag para saber si estamos en modo Control de Calidad
@@ -8,10 +8,10 @@ export function initReciboFilters() {
     // Guardar HTML original de recibos normales
     let htmlRecibosOriginal = null;
     
-    // Guardar el HTML original cuando la página carga
+    // Guardar el HTML original cuando la pÃ¡gina carga
     const ordenesList = document.getElementById('ordenesList');
     if (ordenesList) {
-        // Esperar a que el DOM esté completamente listo
+        // Esperar a que el DOM estÃ© completamente listo
         setTimeout(() => {
             htmlRecibosOriginal = ordenesList.innerHTML;
             console.log('[INIT] HTML de recibos originales guardado');
@@ -177,17 +177,17 @@ export function initReciboFilters() {
             }
         });
 
-        // Actualizar paginación después de aplicar filtros
+        // Actualizar paginaciÃ³n despuÃ©s de aplicar filtros
         window.__resetDashboardPagination?.();
 
-        // Ordenar tarjetas según el filtro activo (especialmente para vista-costura)
+        // Ordenar tarjetas segÃºn el filtro activo (especialmente para vista-costura)
         ordenarTarjetas(filtroPrincipal);
 
         console.log(` [FILTRO] Filtro completado: ${mostradas} mostradas, ${ocultadas} ocultadas`);
     }
 
     /**
-     * Ordena las tarjetas en el DOM según el filtro activo
+     * Ordena las tarjetas en el DOM segÃºn el filtro activo
      */
     function ordenarTarjetas(filtro) {
         const ordenesList = document.getElementById('ordenesList');
@@ -195,20 +195,29 @@ export function initReciboFilters() {
 
         const cards = Array.from(ordenesList.querySelectorAll('.orden-card-simple'));
         if (cards.length === 0) return;
+        const userRole = document.querySelector('.operario-dashboard')?.dataset?.userRole || '';
+        const esLiderReflectivo = userRole === 'lider-reflectivo';
 
         console.log(` [ORDENAMIENTO] Ordenando tarjetas para filtro: ${filtro}`);
 
         cards.sort((a, b) => {
             let valA, valB;
             if (filtro === 'reflectivo') {
-                // Ordenar por fecha de completado reflectivo (descendente)
+                if (esLiderReflectivo) {
+                    // lider-reflectivo: ordenar por created_at (mas viejo primero)
+                    valA = parseInt(a.dataset.fechaCreacionReflectivo || '0');
+                    valB = parseInt(b.dataset.fechaCreacionReflectivo || '0');
+                    return valA - valB;
+                }
+                // Otros roles: mantener orden original por fecha de completado reflectivo
                 valA = parseInt(a.dataset.fechaCompletadoReflectivo || '0');
                 valB = parseInt(b.dataset.fechaCompletadoReflectivo || '0');
-            } else {
-                // Ordenar por fecha de asignación costura (descendente - más reciente primero)
-                valA = parseInt(a.dataset.fechaAsignacionCostura || '0');
-                valB = parseInt(b.dataset.fechaAsignacionCostura || '0');
+                return valB - valA;
             }
+
+            // Costura: mantener mas reciente primero
+            valA = parseInt(a.dataset.fechaAsignacionCostura || '0');
+            valB = parseInt(b.dataset.fechaAsignacionCostura || '0');
             return valB - valA;
         });
 
@@ -242,7 +251,7 @@ export function initReciboFilters() {
         window.__applyDashboardSearchFilter?.();
     };
 
-    // Función para recargar recibos normales sin recargar la página
+    // FunciÃ³n para recargar recibos normales sin recargar la pÃ¡gina
     function recargarRecibosNormales() {
         const ordenesList = document.getElementById('ordenesList');
         if (!ordenesList) return;
@@ -259,13 +268,13 @@ export function initReciboFilters() {
         ordenesList.innerHTML = htmlOriginal;
         console.log('[RECARGAR RECIBOS] Recibos normales restaurados');
 
-        // Aplicar los filtros después de restaurar
+        // Aplicar los filtros despuÃ©s de restaurar
         aplicarTemaDashboard(obtenerFiltroPrincipalActivo());
         aplicarFiltrosDashboard(obtenerFiltroPrincipalActivo());
         window.__applyDashboardSearchFilter?.();
     }
 
-    // Exponer función para reaplicar filtros (usada por realtime.js)
+    // Exponer funciÃ³n para reaplicar filtros (usada por realtime.js)
     window.reaplicarFiltrosDashboard = function () {
         const filtro = obtenerFiltroPrincipalActivo();
         aplicarTemaDashboard(filtro);
@@ -303,7 +312,7 @@ export function initReciboFilters() {
     window.__dashboardFiltroPrincipalActivo = obtenerFiltroPrincipalActivo();
     aplicarTemaDashboard(obtenerFiltroPrincipalActivo());
 
-    // Función para cargar recibos en Control de Calidad
+    // FunciÃ³n para cargar recibos en Control de Calidad
     window.filtrarControlCalidad = function() {
         const filtroPrincipal = obtenerFiltroPrincipalActivo();
         const tipoRecibo = filtroPrincipal === 'reflectivo' ? 'REFLECTIVO' : 'COSTURA';
@@ -311,7 +320,7 @@ export function initReciboFilters() {
         cargarRecibosControlCalidad(tipoRecibo);
     };
 
-    // Manejar click en botón "Control de calidad"
+    // Manejar click en botÃ³n "Control de calidad"
     window.cargarRecibosControlCalidad = function(tipoRecibo) {
         console.log('[CONTROL_CALIDAD_FILTRO] Cargando recibos en CC para tipo:', tipoRecibo);
         window.__enModoControlCalidad = true;
@@ -348,7 +357,7 @@ export function initReciboFilters() {
         });
     };
 
-    // Función para mostrar recibos en Control de Calidad
+    // FunciÃ³n para mostrar recibos en Control de Calidad
     function mostrarRecibosControlCalidad(recibos, tipoRecibo) {
         const ordenesList = document.getElementById('ordenesList');
         if (!ordenesList) return;
@@ -377,7 +386,7 @@ export function initReciboFilters() {
                         data-numero-recibo="${recibo.consecutivo_actual}"
                         data-tipo-recibo="${tipoRecibo}">
                         <span class="material-symbols-rounded">share</span>
-                        VER DISTRIBUCIÓN
+                        VER DISTRIBUCIÃ“N
                   </button>`
                 : '';
 
@@ -425,37 +434,37 @@ export function initReciboFilters() {
         ordenesList.innerHTML = htmlRecibos;
     }
 
-    // Función para abrir distribución de recibos en CC
+    // FunciÃ³n para abrir distribuciÃ³n de recibos en CC
     window.abrirDistribucionReciboCC = function(btn, tipoRecibo) {
         const reciboId = btn.dataset.reciboId;
         const prendaId = btn.dataset.prendaId;
         const numeroRecibo = btn.dataset.numeroRecibo;
         const ordenCard = btn.closest('.orden-card-simple');
 
-        console.log('[DISTRIBUCION_CC] Abriendo distribución CC:', { reciboId, tipoRecibo });
+        console.log('[DISTRIBUCION_CC] Abriendo distribuciÃ³n CC:', { reciboId, tipoRecibo });
 
         if (!reciboId) {
             console.error('[DISTRIBUCION_CC] No se pudo determinar el ID del recibo');
             return;
         }
 
-        // Buscar si ya existe la sección de distribución (como hermano de la orden-card)
+        // Buscar si ya existe la secciÃ³n de distribuciÃ³n (como hermano de la orden-card)
         let distribucionSection = ordenCard?.nextElementSibling;
         
-        // Validar que sea la sección de distribución correcta
+        // Validar que sea la secciÃ³n de distribuciÃ³n correcta
         if (distribucionSection && !distribucionSection.classList.contains('distribucion-parciales-cc-section')) {
             distribucionSection = null;
         }
         
         if (distribucionSection) {
-            console.log('[DISTRIBUCION_CC] Sección encontrada, iniciando toggle');
+            console.log('[DISTRIBUCION_CC] SecciÃ³n encontrada, iniciando toggle');
             
             // Si ya existe, toggle (mostrar/ocultar)
             const isHidden = distribucionSection.style.display === 'none';
             distribucionSection.style.display = isHidden ? 'block' : 'none';
             
-            // Cambiar el texto del botón
-            btn.innerHTML = isHidden ? '<span class="material-symbols-rounded">visibility_off</span> OCULTAR' : '<span class="material-symbols-rounded">share</span> VER DISTRIBUCIÓN';
+            // Cambiar el texto del botÃ³n
+            btn.innerHTML = isHidden ? '<span class="material-symbols-rounded">visibility_off</span> OCULTAR' : '<span class="material-symbols-rounded">share</span> VER DISTRIBUCIÃ“N';
             
             console.log('[DISTRIBUCION_CC] Toggle completado');
             return;
@@ -492,7 +501,7 @@ export function initReciboFilters() {
         })
         .catch(error => {
             console.error('[DISTRIBUCION_CC] Error en fetch:', error);
-            alert('Error al cargar distribución');
+            alert('Error al cargar distribuciÃ³n');
         });
     }
 
@@ -503,22 +512,22 @@ export function initReciboFilters() {
         console.log('[DISTRIBUCION_CC CARDS] Preparando cards con', totalParciales, 'parciales');
 
         if (!ordenCard) {
-            console.error('[DISTRIBUCION_CC CARDS] No se encontró orden card');
+            console.error('[DISTRIBUCION_CC CARDS] No se encontrÃ³ orden card');
             return;
         }
 
         // Crear el HTML de las tarjetas
         const cardsHTML = crearHTMLDistribucionCards_CC(parciales, numeroRecibo, totalParciales);
 
-        // Crear contenedor de distribución
+        // Crear contenedor de distribuciÃ³n
         const distribucionSection = document.createElement('div');
         distribucionSection.className = 'distribucion-parciales-cc-section';
         distribucionSection.innerHTML = cardsHTML;
 
-        // Insertar después de la orden-card
+        // Insertar despuÃ©s de la orden-card
         ordenCard.insertAdjacentElement('afterend', distribucionSection);
 
-        // Cambiar el texto del botón a "OCULTAR"
+        // Cambiar el texto del botÃ³n a "OCULTAR"
         if (btn) {
             btn.innerHTML = '<span class="material-symbols-rounded">visibility_off</span> OCULTAR';
         }
@@ -613,3 +622,4 @@ export function initReciboFilters() {
         return parcialCards;
     }
 }
+
