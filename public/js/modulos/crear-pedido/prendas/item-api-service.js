@@ -28,6 +28,35 @@ class ItemAPIService {
         return document.querySelector('meta[name="csrf-token"]')?.content || '';
     }
 
+    async refrescarCSRFToken() {
+        try {
+            const resp = await fetch('/refresh-csrf', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' },
+                credentials: 'same-origin'
+            });
+
+            if (!resp.ok) {
+                return '';
+            }
+
+            const data = await resp.json();
+            const nuevoToken = data?.token || '';
+
+            if (nuevoToken) {
+                const meta = document.querySelector('meta[name="csrf-token"]');
+                if (meta) {
+                    meta.setAttribute('content', nuevoToken);
+                }
+                this.csrfToken = nuevoToken;
+            }
+
+            return nuevoToken;
+        } catch (error) {
+            return '';
+        }
+    }
+
     _crearFirmaImagen(img) {
         const file = img instanceof File ? img : (img?.file instanceof File ? img.file : null);
         if (file) {
@@ -72,23 +101,33 @@ class ItemAPIService {
      * Realizar petición HTTP genérica
      * @private
      */
-    async realizarPeticion(url, opciones = {}) {
+    async realizarPeticion(url, opciones = {}, yaReintento = false) {
         // IMPORTANTE: Si el body es FormData, NO establecer Content-Type
         // FormData establece su propia cabecera con boundary
         const tieneFormData = opciones.body instanceof FormData;
+        const csrfTokenActual = this.obtenerCSRFToken() || this.csrfToken || '';
+        this.csrfToken = csrfTokenActual;
         
         const configuracion = {
+            credentials: 'same-origin',
             headers: {
                 'Accept': 'application/json',
                 // Solo establecer Content-Type si NO es FormData
                 ...(tieneFormData ? {} : { 'Content-Type': 'application/json' }),
-                'X-CSRF-TOKEN': this.csrfToken,
+                'X-CSRF-TOKEN': csrfTokenActual,
                 ...opciones.headers
             },
             ...opciones
         };
 
         const respuesta = await fetch(url, configuracion);
+
+        if (respuesta.status === 419 && !yaReintento) {
+            const tokenRefrescado = await this.refrescarCSRFToken();
+            if (tokenRefrescado) {
+                return await this.realizarPeticion(url, opciones, true);
+            }
+        }
         
         if (!respuesta.ok) {
             // Intentar obtener el texto de error (puede ser HTML o JSON)

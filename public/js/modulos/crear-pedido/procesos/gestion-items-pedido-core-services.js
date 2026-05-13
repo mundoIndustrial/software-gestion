@@ -205,7 +205,18 @@ class PedidoSubmitController {
         console.error('[gestion-items-pedido]  Message:', error.message);
         this.ui.ocultarCargando?.();
         if (this.notificationService) {
-            const mensajeError = error.message || 'Error desconocido al crear el pedido';
+            const mensajeErrorRaw = error?.message || '';
+            const esErrorCSRF419 = /status:\s*419/i.test(mensajeErrorRaw)
+                || /csrf token mismatch/i.test(mensajeErrorRaw);
+
+            if (esErrorCSRF419) {
+                this.notificationService.error(
+                    'Tu sesión cambió mientras enviábamos el pedido. Vuelve a intentar en unos segundos. Si persiste, recarga la página.'
+                );
+                return;
+            }
+
+            const mensajeError = mensajeErrorRaw || 'Error desconocido al crear el pedido';
             this.notificationService.error('Error: ' + mensajeError);
         }
     }
