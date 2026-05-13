@@ -11,6 +11,15 @@ function normalizarColorDistribucion(color) {
     return colorLimpio.replace(/\s+/g, '_');
 }
 
+function normalizarGeneroDistribucion(genero) {
+    const generoLimpio = String(genero || '').trim().toLowerCase();
+    if (!generoLimpio || generoLimpio === 'sin género') {
+        return 'sin_genero';
+    }
+
+    return generoLimpio.replace(/\s+/g, '_');
+}
+
 function esperarDatosDistribucion(timeoutMs = 10000) {
     if (window.datosDistribucion) {
         return Promise.resolve(window.datosDistribucion);
@@ -91,38 +100,230 @@ function abrirModalCosturaConDatos(pedidoId, prendaId, nombre, tipoRecibo, recib
         window.datosModalCostura.esEdicion = true;
     }
     
-    // Esperar a que el modal esté listo y seleccionar automáticamente la opción de distribución
+    // Detectar el tipo de asignación original
+    const tipoAsignacionOriginal = datosDistribucion?.tipo_asignacion_original || 'modulos';
+    console.log('[EDITAR ENCARGADOS] Tipo de asignación original detectado:', tipoAsignacionOriginal);
+    
+    // Esperar a que el modal esté listo y seleccionar automáticamente la opción correcta
     setTimeout(() => {
-        // Seleccionar automáticamente la opción de distribuir
-        if (typeof window.seleccionarOpcionAsignacion === 'function') {
-            window.seleccionarOpcionAsignacion('distribuir');
+        // Seleccionar la opción correcta según el tipo de asignación original
+        let opcionASeleccionar = 'distribuir'; // Por defecto
+        
+        if (tipoAsignacionOriginal === 'taller') {
+            opcionASeleccionar = 'taller';
+            console.log('[EDITAR ENCARGADOS] Seleccionando opción: Distribuir a Taller');
+        } else {
+            console.log('[EDITAR ENCARGADOS] Seleccionando opción: Distribuir por Módulos');
         }
         
-        // Esperar a que mostrarContenidoDistribuirModulos se ejecute y establezca window.datosDistribucion
+        if (typeof window.seleccionarOpcionAsignacion === 'function') {
+            window.seleccionarOpcionAsignacion(opcionASeleccionar);
+        }
+        
+        // Esperar a que se cargue el contenido
         setTimeout(() => {
-            console.log('[EDITAR ENCARGADOS] Verificando si window.datosDistribucion está disponible...');
-            console.log('[EDITAR ENCARGADOS] window.datosDistribucion:', window.datosDistribucion);
+            console.log('[EDITAR ENCARGADOS] Verificando si estamos en modo edición...');
             
-            if (window.datosDistribucion) {
-                // Ahora que los datos de distribución están disponibles, cargar los datos existentes
-                if (datosDistribucion && datosDistribucion.parciales) {
-                    console.log('[EDITAR ENCARGADOS] Cargando datos existentes...');
-                    cargarDatosDistribucionExistente(datosDistribucion.parciales);
+            // Si es tipo taller, ir directamente a múltiples talleres
+            if (tipoAsignacionOriginal === 'taller') {
+                console.log('[EDITAR ENCARGADOS] Saltando selección de tipo taller, yendo a múltiples talleres...');
+                if (typeof window.seleccionarTipoTaller === 'function') {
+                    window.seleccionarTipoTaller('multiple');
                 }
-            } else {
-                console.warn('[EDITAR ENCARGADOS] window.datosDistribucion no está disponible después de esperar');
-                // Intentar de nuevo después de un tiempo
+                
+                // Esperar a que se cargue la interfaz de múltiples talleres
                 setTimeout(() => {
-                    if (window.datosDistribucion && datosDistribucion && datosDistribucion.parciales) {
-                        console.log('[EDITAR ENCARGADOS] Reintentando cargar datos existentes...');
-                        cargarDatosDistribucionExistente(datosDistribucion.parciales);
-                    } else {
-                        esperarDatosDistribucion(10000).then(() => { if (datosDistribucion && datosDistribucion.parciales) { console.log('[EDITAR ENCARGADOS] Datos de distribucion recibidos tras espera extendida'); cargarDatosDistribucionExistente(datosDistribucion.parciales); } }).catch(() => { console.error('[EDITAR ENCARGADOS] No se pudo cargar window.datosDistribucion dentro del tiempo esperado'); });
+                    console.log('[EDITAR ENCARGADOS] Cargando datos existentes de talleres...');
+                    if (datosDistribucion && datosDistribucion.parciales) {
+                        cargarDatosDistribucionExistenteTaller(datosDistribucion.parciales);
                     }
                 }, 500);
+            } else {
+                // Para módulos, usar la lógica existente
+                if (window.datosDistribucion) {
+                    if (datosDistribucion && datosDistribucion.parciales) {
+                        console.log('[EDITAR ENCARGADOS] Cargando datos existentes de módulos...');
+                        cargarDatosDistribucionExistente(datosDistribucion.parciales);
+                    }
+                } else {
+                    console.warn('[EDITAR ENCARGADOS] window.datosDistribucion no está disponible');
+                    setTimeout(() => {
+                        if (window.datosDistribucion && datosDistribucion && datosDistribucion.parciales) {
+                            console.log('[EDITAR ENCARGADOS] Reintentando cargar datos existentes...');
+                            cargarDatosDistribucionExistente(datosDistribucion.parciales);
+                        }
+                    }, 500);
+                }
             }
-        }, 500); // Aumentar el tiempo para esperar a que mostrarContenidoDistribuirModulos termine
+        }, 500);
     }, 100);
+}
+
+function cargarDatosDistribucionExistenteTaller(parciales) {
+    console.log('[CARGAR DATOS TALLER] Iniciando carga de datos para talleres');
+    console.log('[CARGAR DATOS TALLER] Parciales recibidos:', parciales);
+    
+    if (!parciales || parciales.length === 0) {
+        console.warn('[CARGAR DATOS TALLER] No hay parciales para cargar');
+        return;
+    }
+    
+    // Guardar los datos de parciales para usarlos después de renderizar
+    window.parcialesParaCargar = parciales;
+    
+    // Esperar a que talleresDisponibles esté disponible
+    const esperarTalleresDisponibles = () => {
+        if (window.talleresDisponibles && window.talleresDisponibles.length > 0) {
+            procesarCargarDatosExistenteTaller(parciales);
+        } else {
+            console.log('[CARGAR DATOS TALLER] Esperando a que talleresDisponibles esté disponible...');
+            setTimeout(esperarTalleresDisponibles, 100);
+        }
+    };
+    
+    esperarTalleresDisponibles();
+}
+
+function procesarCargarDatosExistenteTaller(parciales) {
+    // Agrupar parciales por encargado (taller)
+    const talleresAgrupados = {};
+    parciales.forEach(parcial => {
+        const encargado = parcial.encargado || 'SIN ASIGNAR';
+        if (!talleresAgrupados[encargado]) {
+            talleresAgrupados[encargado] = [];
+        }
+        talleresAgrupados[encargado].push(parcial);
+    });
+    
+    console.log('[CARGAR DATOS TALLER] Talleres agrupados:', Object.keys(talleresAgrupados));
+    
+    // Primero, agregar todos los talleres a talleresSeleccionadosDistribucion
+    if (!window.talleresSeleccionadosDistribucion) {
+        window.talleresSeleccionadosDistribucion = [];
+    }
+    
+    Object.keys(talleresAgrupados).forEach(tallerNombre => {
+        // Buscar el taller en talleresDisponibles para obtener su ID
+        const tallerDisponible = window.talleresDisponibles?.find(t => t.name === tallerNombre);
+        
+        if (tallerDisponible && !window.talleresSeleccionadosDistribucion.find(t => t.id === tallerDisponible.id)) {
+            console.log(`[CARGAR DATOS TALLER] Agregando taller: ${tallerNombre} (ID: ${tallerDisponible.id})`);
+            window.talleresSeleccionadosDistribucion.push({
+                id: tallerDisponible.id,
+                nombre: tallerDisponible.name
+            });
+        }
+    });
+    
+    console.log('[CARGAR DATOS TALLER] Talleres seleccionados:', window.talleresSeleccionadosDistribucion);
+    
+    // Esperar a que la interfaz esté lista y renderizar las cards
+    setTimeout(() => {
+        console.log('[CARGAR DATOS TALLER] Renderizando cards de talleres...');
+        console.log('[CARGAR DATOS TALLER] talleresSeleccionadosDistribucion:', window.talleresSeleccionadosDistribucion);
+        
+        // Actualizar la lista de talleres seleccionados en la UI
+        if (typeof window.actualizarListaTalleresSeleccionados === 'function') {
+            window.actualizarListaTalleresSeleccionados();
+        }
+        
+        // Cargar la interfaz de distribución y esperar a que se complete
+        if (typeof window.cargarInterfazDistribucionTallerMultiple === 'function') {
+            Promise.resolve(window.cargarInterfazDistribucionTallerMultiple(window.talleresSeleccionadosDistribucion))
+                .then(() => {
+                    // Después de que se renderice, cargar las tallas pre-seleccionadas
+                    console.log('[CARGAR DATOS TALLER] Interfaz renderizada, cargando tallas pre-seleccionadas...');
+                    cargarTallasPreSeleccionadas(window.parcialesParaCargar);
+                })
+                .catch(error => {
+                    console.error('[CARGAR DATOS TALLER] Error cargando interfaz:', error);
+                });
+        }
+    }, 300);
+}
+
+function cargarTallasPreSeleccionadas(parciales) {
+    console.log('[CARGAR TALLAS] Iniciando carga de tallas pre-seleccionadas');
+    console.log('[CARGAR TALLAS] Parciales:', parciales);
+    
+    // Esperar un poco más para asegurar que el DOM esté completamente renderizado
+    setTimeout(() => {
+        // Procesar cada parcial
+        parciales.forEach(parcial => {
+            const encargado = parcial.encargado || 'SIN ASIGNAR';
+            const tallerSeleccionado = window.talleresSeleccionadosDistribucion?.find(t => t.nombre === encargado);
+            const tallerId = tallerSeleccionado?.id;
+            
+            console.log(`[CARGAR TALLAS] Procesando taller: ${encargado} (ID: ${tallerId})`);
+            
+            // Procesar cada talla del parcial
+            (parcial.tallas || []).forEach(tallaDelParcial => {
+                const tallaOriginal = tallaDelParcial.talla;
+                const cantidadParcial = tallaDelParcial.cantidad || 0;
+                const generoDelParcial = tallaDelParcial.genero || 'Sin género';
+                const colorDelParcial = tallaDelParcial.color_nombre || 'Sin color';
+                
+                console.log(`[CARGAR TALLAS] Buscando talla: ${tallaOriginal}, Género: ${generoDelParcial}, Color: ${colorDelParcial}, Cantidad: ${cantidadParcial}`);
+                
+                // Construir el tallaIdUnico esperado (igual a como se construye en modal-asignacion.js)
+                const tallaIdEsperado = `${tallaOriginal}_${normalizarColorDistribucion(colorDelParcial)}_${normalizarGeneroDistribucion(generoDelParcial)}`;
+                console.log(`[CARGAR TALLAS] TallaIdEsperado: ${tallaIdEsperado}`);
+                
+                // Buscar todos los checkboxes para esta talla en este taller
+                // Buscar primero con data-tallerid (para talleres) y luego con data-moduloid (para módulos)
+                let checkboxes = document.querySelectorAll(`input[type="checkbox"].dist-talla-check[data-tallerid]`);
+                if (checkboxes.length === 0) {
+                    checkboxes = document.querySelectorAll(`input[type="checkbox"].dist-talla-check[data-moduloid]`);
+                }
+                console.log(`[CARGAR TALLAS] Total de checkboxes encontrados: ${checkboxes.length}`);
+                
+                let encontrado = false;
+                checkboxes.forEach(checkbox => {
+                    const tallaId = checkbox.dataset.tallaid;
+                    // Intentar obtener el ID del taller o módulo
+                    const tallerModuloId = checkbox.dataset.tallerid || checkbox.dataset.moduloid;
+                    
+                    console.log(`[CARGAR TALLAS] Comparando: tallaId=${tallaId}===${tallaIdEsperado}, taller/modulo=${tallerModuloId}===${tallerId}`);
+                    
+                    // Comparar: si el tallaId coincide y el taller/módulo es el correcto
+                    if (tallaId === tallaIdEsperado && tallerModuloId == tallerId) {
+                        encontrado = true;
+                        console.log(`[CARGAR TALLAS] ✓ Encontrado checkbox para: ${tallaId} en taller/módulo ${tallerModuloId}`);
+                        
+                        // Buscar el input de cantidad
+                        // Intentar ambos formatos: taller y módulo
+                        let inputCantidad = document.querySelector(`input[id="talla_${tallaId}_taller_${tallerModuloId}"]`);
+                        if (!inputCantidad) {
+                            inputCantidad = document.querySelector(`input[id="talla_${tallaId}_modulo_${tallerModuloId}"]`);
+                        }
+                        
+                        // Marcar el checkbox
+                        checkbox.checked = true;
+                        
+                        // Establecer la cantidad
+                        if (inputCantidad) {
+                            inputCantidad.value = cantidadParcial;
+                            inputCantidad.disabled = false;
+                            console.log(`[CARGAR TALLAS] ✓ Establecida cantidad: ${cantidadParcial} para ${tallaId}`);
+                            
+                            // Disparar eventos para actualizar la UI
+                            inputCantidad.dispatchEvent(new Event('input', { bubbles: true }));
+                            inputCantidad.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                        
+                        // Disparar evento del checkbox
+                        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                });
+                
+                if (!encontrado) {
+                    console.warn(`[CARGAR TALLAS] ✗ No se encontró checkbox para talla: ${tallaIdEsperado} en taller ${tallerId}`);
+                }
+            });
+        });
+        
+        console.log('[CARGAR TALLAS] Carga de tallas pre-seleccionadas completada');
+    }, 2000); // Esperar 2 segundos para asegurar que el DOM esté listo
 }
 
 function cargarDatosDistribucionExistente(parciales) {
@@ -507,24 +708,68 @@ function generarTallasHTML(tallas) {
 
     console.log('[TALLAS] Procesando tallas:', tallas);
 
-    // Agrupar por talla y sumar cantidades
-    const tallasSumadas = tallas.reduce((acc, talla) => {
-        const key = talla.talla.toUpperCase();
-        if (!acc[key]) {
-            acc[key] = 0;
+    // Agrupar por género, luego por color, luego sumar cantidades por talla
+    const gruposGenero = {};
+    
+    tallas.forEach(talla => {
+        const genero = talla.genero || 'Sin género';
+        const color = talla.color_nombre || 'Sin color';
+        const nombreTalla = talla.talla.toUpperCase();
+        const cantidad = talla.cantidad || 0;
+        
+        if (!gruposGenero[genero]) {
+            gruposGenero[genero] = {};
         }
-        acc[key] += talla.cantidad || 0;
-        return acc;
-    }, {});
+        
+        if (!gruposGenero[genero][color]) {
+            gruposGenero[genero][color] = {};
+        }
+        
+        if (!gruposGenero[genero][color][nombreTalla]) {
+            gruposGenero[genero][color][nombreTalla] = 0;
+        }
+        
+        gruposGenero[genero][color][nombreTalla] += cantidad;
+    });
 
-    console.log('[TALLAS] Tallas sumadas:', tallasSumadas);
+    console.log('[TALLAS] Grupos por género y color:', gruposGenero);
 
-    // Generar HTML con formato: S: 23, M: 1, L: 20
-    const tallasHTML = Object.entries(tallasSumadas)
-        .map(([talla, cantidad]) => `<span class="talla-item">${talla}: <strong>${cantidad}</strong></span>`)
-        .join('');
+    // Generar HTML agrupado por género y color
+    let html = '';
+    
+    Object.entries(gruposGenero).forEach(([genero, colores]) => {
+        html += `<div class="tallas-genero-group">`;
+        html += `<div class="tallas-genero-header">${genero}</div>`;
+        
+        Object.entries(colores).forEach(([color, tallasCantidades]) => {
+            // Mostrar color solo si no es "Sin color"
+            const colorDisplay = color !== 'Sin color' ? color : null;
+            const colorStyle = colorDisplay ? `background: ${colorDisplay}; border: 1px solid #d1d5db;` : 'background: #f3f4f6; border: 1px solid #d1d5db;';
+            
+            html += `<div class="tallas-color-group">`;
+            
+            if (colorDisplay) {
+                html += `
+                    <div class="tallas-color-header">
+                        <span style="display: inline-block; width: 14px; height: 14px; ${colorStyle} border-radius: 3px; margin-right: 0.5rem;"></span>
+                        <span>${color}</span>
+                    </div>
+                `;
+            }
+            
+            // Generar items de tallas para este color
+            const tallasItems = Object.entries(tallasCantidades)
+                .map(([talla, cantidad]) => `<span class="talla-item">${talla}: <strong>${cantidad}</strong></span>`)
+                .join('');
+            
+            html += `<div class="tallas-items">${tallasItems}</div>`;
+            html += `</div>`;
+        });
+        
+        html += `</div>`;
+    });
 
-    return tallasHTML;
+    return html;
 }
 
 /**

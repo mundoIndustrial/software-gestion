@@ -30,10 +30,10 @@ class ReciboCosturaController extends Controller
 {
     public function __construct(
         private readonly CambiarAreaControlCalidadUseCase $cambiarAreaControlCalidadUseCase,
-        private readonly DeshacerControlCalidadUseCase    $deshacerControlCalidadUseCase,
-        private readonly PasarACosturaUseCase             $pasarACosturaUseCase,
-        private readonly DeshacerCosturaUseCase           $deshacerCosturaUseCase,
-        private readonly LimpiarEncargadoCosturaUseCase    $limpiarEncargadoCosturaUseCase,
+        private readonly DeshacerControlCalidadUseCase $deshacerControlCalidadUseCase,
+        private readonly PasarACosturaUseCase $pasarACosturaUseCase,
+        private readonly DeshacerCosturaUseCase $deshacerCosturaUseCase,
+        private readonly LimpiarEncargadoCosturaUseCase $limpiarEncargadoCosturaUseCase,
     ) {
         $this->middleware('auth');
     }
@@ -57,6 +57,7 @@ class ReciboCosturaController extends Controller
                 'asignaciones.*.tallas.*.talla' => 'required|string|max:50',
                 'asignaciones.*.tallas.*.cantidad' => 'required|integer|min:1',
                 'asignaciones.*.tallas.*.color_nombre' => 'nullable|string|max:191',
+                'asignaciones.*.tallas.*.genero' => 'nullable|string|max:50',
             ]);
 
             $pedido = PedidoProduccion::findOrFail((int) $pedidoId);
@@ -100,7 +101,7 @@ class ReciboCosturaController extends Controller
                     ->where(function ($query) {
                         // El proceso padre NO debe tener numero_recibo_parcial
                         $query->whereNull('numero_recibo_parcial')
-                              ->orWhere('numero_recibo_parcial', 0);
+                            ->orWhere('numero_recibo_parcial', 0);
                     })
                     ->whereNull('deleted_at')
                     ->orderByDesc('created_at')
@@ -137,7 +138,7 @@ class ReciboCosturaController extends Controller
                     // Si ya existe, asegurarse de que el área del recibo esté en Costura
                     $recibo->area = 'Costura';
                     $recibo->save();
-                    
+
                     Log::info('[COSTURA][DISTRIBUIR] Proceso padre ya existía, reutilizado', [
                         'proceso_padre_id' => $procesoPadre->id,
                         'numero_pedido' => $pedido->numero_pedido,
@@ -211,6 +212,7 @@ class ReciboCosturaController extends Controller
                             'talla' => $talla,
                             'cantidad' => $cantidad,
                             'color_nombre' => $colorNombre,
+                            'genero' => isset($t['genero']) ? (string) $t['genero'] : null,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);
@@ -870,7 +872,7 @@ class ReciboCosturaController extends Controller
         $totalParciales = $parcialesRelacionados->count();
         $consecutivosParciales = $parcialesRelacionados
             ->pluck('consecutivo_parcial')
-            ->filter(fn ($valor) => $valor !== null && $valor !== '')
+            ->filter(fn($valor) => $valor !== null && $valor !== '')
             ->values();
 
         $parcialesEnCc = $consecutivosParciales->isEmpty()
@@ -954,7 +956,7 @@ class ReciboCosturaController extends Controller
                 ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
                 ->where(function ($query) {
                     $query->whereNull('numero_recibo_parcial')
-                          ->orWhere('numero_recibo_parcial', 0);
+                        ->orWhere('numero_recibo_parcial', 0);
                 })
                 ->whereNull('deleted_at')
                 ->first();
@@ -1192,6 +1194,9 @@ class ReciboCosturaController extends Controller
                 'asignaciones.*.tallas' => 'required|array|min:1',
                 'asignaciones.*.tallas.*.talla' => 'required|string|max:50',
                 'asignaciones.*.tallas.*.cantidad' => 'required|integer|min:1',
+                'asignaciones.*.tallas.*.genero' => 'nullable|string|max:50',
+                'asignaciones.*.tallas.*.color_nombre' => 'nullable|string|max:191',
+                'es_edicion' => 'nullable|boolean',
             ]);
 
             $pedido = PedidoProduccion::findOrFail((int) $pedidoId);
@@ -1199,6 +1204,7 @@ class ReciboCosturaController extends Controller
             $tipoRecibo = (string) $request->tipo_recibo;
             $consecutivoOriginal = (int) $numeroRecibo;
             $subtipoTaller = (string) $request->subtipo_taller;
+            $esEdicion = (bool) $request->es_edicion;
 
             Log::info('[TALLER] Procesando distribución', [
                 'pedido_id' => (int) $pedidoId,
@@ -1206,6 +1212,7 @@ class ReciboCosturaController extends Controller
                 'prenda_id' => $prendaId,
                 'tipo_recibo' => $tipoRecibo,
                 'subtipo_taller' => $subtipoTaller,
+                'es_edicion' => $esEdicion,
             ]);
 
             $recibo = ConsecutivoReciboPedido::query()
@@ -1228,7 +1235,7 @@ class ReciboCosturaController extends Controller
             if ($subtipoTaller === 'unico') {
                 // Un solo taller - actualizar el encargado del proceso de costura existente
                 $encargado = (string) $request->encargado;
-                
+
                 // Verificar que el usuario existe y tiene rol 'taller'
                 $taller = User::where('name', $encargado)
                     ->get()
@@ -1236,11 +1243,30 @@ class ReciboCosturaController extends Controller
                         return $user->hasRole('taller');
                     });
 
+                // Si no existe, crear el taller
                 if (!$taller) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'El taller seleccionado no existe o no está disponible'
-                    ], 404);
+                    $taller = DB::transaction(function () use ($encargado) {
+                        // Crear el usuario con rol 'taller'
+                        $nuevoTaller = User::create([
+                            'name' => $encargado,
+                            'email' => strtolower(str_replace(' ', '.', $encargado)) . '@taller.local',
+                            'password' => bcrypt('password123'), // Contraseña temporal
+                            'email_verified_at' => now(),
+                        ]);
+
+                        // Asignar rol 'taller'
+                        $tallerRole = \App\Models\Role::where('name', 'taller')->first();
+                        if ($tallerRole) {
+                            $nuevoTaller->roles()->attach($tallerRole->id);
+                        }
+
+                        \Log::info('[TALLER] Nuevo taller creado', [
+                            'taller_id' => $nuevoTaller->id,
+                            'taller_nombre' => $nuevoTaller->name,
+                        ]);
+
+                        return $nuevoTaller;
+                    });
                 }
 
                 // Actualizar el proceso de costura existente
@@ -1253,7 +1279,7 @@ class ReciboCosturaController extends Controller
                         ->where('numero_recibo', $consecutivoOriginal)
                         ->where(function ($query) {
                             $query->whereNull('numero_recibo_parcial')
-                                  ->orWhere('numero_recibo_parcial', 0);
+                                ->orWhere('numero_recibo_parcial', 0);
                         })
                         ->whereNull('deleted_at')
                         ->orderByDesc('created_at')
@@ -1284,7 +1310,7 @@ class ReciboCosturaController extends Controller
                 return response()->json($resultado, 200);
 
             } else {
-                // Múltiples talleres - crear parciales exactamente como "Distribuir por Módulos"
+                // Múltiples talleres
                 $asignaciones = (array) $request->asignaciones;
 
                 if (empty($asignaciones)) {
@@ -1294,142 +1320,19 @@ class ReciboCosturaController extends Controller
                     ], 400);
                 }
 
-                $resultado = DB::transaction(function () use ($pedido, $recibo, $pedidoId, $prendaId, $tipoReciboReal, $consecutivoOriginal, $asignaciones) {
-                    // Buscar el proceso padre de Costura
-                    $procesoPadre = ProcesoPrenda::query()
-                        ->where('numero_pedido', $pedido->numero_pedido)
-                        ->where('prenda_pedido_id', $prendaId)
-                        ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                        ->where('numero_recibo', $consecutivoOriginal)
-                        ->where(function ($query) {
-                            $query->whereNull('numero_recibo_parcial')
-                                  ->orWhere('numero_recibo_parcial', 0);
-                        })
-                        ->whereNull('deleted_at')
-                        ->orderByDesc('created_at')
-                        ->first();
-
-                    if (!$procesoPadre) {
-                        // Si no existe, crear el proceso padre
-                        $procesoPadre = ProcesoPrenda::create([
-                            'numero_pedido' => $pedido->numero_pedido,
-                            'prenda_pedido_id' => $prendaId,
-                            'numero_recibo' => $consecutivoOriginal,
-                            'numero_recibo_parcial' => null,
-                            'proceso' => 'Costura',
-                            'fecha_inicio' => now(),
-                            'encargado' => null,
-                            'estado_proceso' => 'Pendiente',
-                            'codigo_referencia' => 'COS-' . $consecutivoOriginal . '-' . date('YmdHis'),
-                        ]);
-                    }
-
-                    // Calcular el siguiente índice de parcial
-                    $maxParcialExistente = ProcesoPrenda::query()
-                        ->where('numero_pedido', $pedido->numero_pedido)
-                        ->where('prenda_pedido_id', $prendaId)
-                        ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                        ->whereNotNull('numero_recibo_parcial')
-                        ->where('numero_recibo_parcial', '>=', $consecutivoOriginal)
-                        ->where('numero_recibo_parcial', '<', $consecutivoOriginal + 1)
-                        ->whereNull('deleted_at')
-                        ->max('numero_recibo_parcial');
-
-                    $nextIndex = 1;
-                    if ($maxParcialExistente !== null) {
-                        $maxFloat = (float) $maxParcialExistente;
-                        $parteDecimal = $maxFloat - floor($maxFloat);
-                        $nextIndex = (int) round($parteDecimal * 10) + 1;
-                    }
-
-                    $creados = [];
-
-                    foreach ($asignaciones as $asig) {
-                        $encargado = trim((string) ($asig['encargado'] ?? ''));
-                        $tallas = (array) ($asig['tallas'] ?? []);
-                        
-                        if ($encargado === '' || empty($tallas)) {
-                            continue;
-                        }
-
-                        // Verificar que el usuario existe y tiene rol 'taller'
-                        $taller = User::where('name', $encargado)
-                            ->get()
-                            ->first(function ($user) {
-                                return $user->hasRole('taller');
-                            });
-
-                        if (!$taller) {
-                            continue;
-                        }
-
-                        // Calcular número de parcial
-                        $consecutivoParcial = (float) ($consecutivoOriginal + ($nextIndex / 10));
-                        $consecutivoParcialDb = number_format($consecutivoParcial, 2, '.', '');
-                        $nextIndex++;
-
-                        // Crear proceso hijo para el taller (igual a distribuir por módulos)
-                        $procesoHijo = ProcesoPrenda::create([
-                            'numero_pedido' => $pedido->numero_pedido,
-                            'prenda_pedido_id' => $prendaId,
-                            'numero_recibo' => null,
-                            'numero_recibo_parcial' => $consecutivoParcialDb,
-                            'proceso' => 'Costura',
-                            'fecha_inicio' => now(),
-                            'encargado' => $encargado,
-                            'fecha_de_asignacion_encargado' => now(),
-                            'estado_proceso' => 'En Progreso',
-                            'codigo_referencia' => 'COS-' . $consecutivoParcialDb . '-' . date('YmdHis'),
-                        ]);
-
-                        // Crear registro en recibo_por_partes
-                        $reciboParteId = DB::table('recibo_por_partes')->insertGetId([
-                            'pedido_produccion_id' => (int) $pedidoId,
-                            'prenda_pedido_id' => $prendaId,
-                            'tipo_recibo' => $tipoReciboReal,
-                            'consecutivo_original' => $consecutivoOriginal,
-                            'consecutivo_parcial' => $consecutivoParcialDb,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-
-                        // Crear registros de tallas para el parcial
-                        foreach ($tallas as $t) {
-                            $talla = trim((string) ($t['talla'] ?? ''));
-                            $cantidad = (int) ($t['cantidad'] ?? 0);
-                            
-                            if ($talla === '' || $cantidad <= 0) {
-                                continue;
-                            }
-
-                            DB::table('recibos_por_partes_tallas')->insert([
-                                'recibo_por_partes_id' => $reciboParteId,
-                                'talla' => $talla,
-                                'cantidad' => $cantidad,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                        }
-
-                        $creados[] = [
-                            'proceso_id' => (int) $procesoHijo->id,
-                            'numero_recibo' => null,
-                            'numero_recibo_parcial' => $consecutivoParcialDb,
-                            'parcial_id' => (int) $reciboParteId,
-                            'encargado' => $encargado,
-                        ];
-                    }
-
-                    if (empty($creados)) {
-                        throw new \Exception('No se pudieron crear procesos para los talleres especificados');
-                    }
-
-                    return [
-                        'proceso_padre_id' => (int) $procesoPadre->id,
-                        'hijos' => $creados,
-                        'recibo_id' => (int) $recibo->id,
-                    ];
-                });
+                // Si es edición, eliminar parciales existentes y recrearlos
+                if ($esEdicion) {
+                    $resultado = $this->procesarEdicionDistribucionTaller(
+                        $pedido, $recibo, $pedidoId, $prendaId, $tipoReciboReal, 
+                        $consecutivoOriginal, $asignaciones
+                    );
+                } else {
+                    // Crear nuevos parciales (flujo original)
+                    $resultado = $this->procesarNuevaDistribucionTaller(
+                        $pedido, $recibo, $pedidoId, $prendaId, $tipoReciboReal, 
+                        $consecutivoOriginal, $asignaciones
+                    );
+                }
 
                 return response()->json([
                     'success' => true,
@@ -1456,5 +1359,342 @@ class ReciboCosturaController extends Controller
                 'message' => 'Error al pasar a Taller: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Procesar edición de distribución a talleres
+     */
+    private function procesarEdicionDistribucionTaller($pedido, $recibo, $pedidoId, $prendaId, $tipoReciboReal, $consecutivoOriginal, $asignaciones)
+    {
+        return DB::transaction(function () use ($pedido, $recibo, $pedidoId, $prendaId, $tipoReciboReal, $consecutivoOriginal, $asignaciones) {
+            // Buscar y eliminar parciales existentes
+            $parcialesExistentes = DB::table('recibo_por_partes')
+                ->where('pedido_produccion_id', (int) $pedidoId)
+                ->where('prenda_pedido_id', $prendaId)
+                ->where('tipo_recibo', $tipoReciboReal)
+                ->where('consecutivo_original', $consecutivoOriginal)
+                ->get();
+
+            foreach ($parcialesExistentes as $parcial) {
+                // Eliminar tallas del parcial
+                DB::table('recibos_por_partes_tallas')
+                    ->where('recibo_por_partes_id', $parcial->id)
+                    ->delete();
+
+                // Eliminar procesos hijos asociados
+                ProcesoPrenda::query()
+                    ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                    ->where('numero_pedido', $pedido->numero_pedido)
+                    ->where('prenda_pedido_id', $prendaId)
+                    ->delete();
+
+                // Eliminar el parcial
+                DB::table('recibo_por_partes')
+                    ->where('id', $parcial->id)
+                    ->delete();
+            }
+
+            // Buscar el proceso padre de Costura
+            $procesoPadre = ProcesoPrenda::query()
+                ->where('numero_pedido', $pedido->numero_pedido)
+                ->where('prenda_pedido_id', $prendaId)
+                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                ->where('numero_recibo', $consecutivoOriginal)
+                ->where(function ($query) {
+                    $query->whereNull('numero_recibo_parcial')
+                        ->orWhere('numero_recibo_parcial', 0);
+                })
+                ->whereNull('deleted_at')
+                ->orderByDesc('created_at')
+                ->first();
+
+            if (!$procesoPadre) {
+                // Si no existe, crear el proceso padre
+                $procesoPadre = ProcesoPrenda::create([
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'prenda_pedido_id' => $prendaId,
+                    'numero_recibo' => $consecutivoOriginal,
+                    'numero_recibo_parcial' => null,
+                    'proceso' => 'Costura',
+                    'fecha_inicio' => now(),
+                    'encargado' => null,
+                    'estado_proceso' => 'Pendiente',
+                    'codigo_referencia' => 'COS-' . $consecutivoOriginal . '-' . date('YmdHis'),
+                ]);
+            }
+
+            // Crear nuevos parciales
+            $nextIndex = 1;
+            $creados = [];
+
+            foreach ($asignaciones as $asig) {
+                $encargado = trim((string) ($asig['encargado'] ?? ''));
+                $tallas = (array) ($asig['tallas'] ?? []);
+
+                if ($encargado === '' || empty($tallas)) {
+                    continue;
+                }
+
+                // Verificar que el usuario existe y tiene rol 'taller'
+                $taller = User::where('name', $encargado)
+                    ->get()
+                    ->first(function ($user) {
+                        return $user->hasRole('taller');
+                    });
+
+                // Si no existe, crear el taller
+                if (!$taller) {
+                    $taller = User::create([
+                        'name' => $encargado,
+                        'email' => strtolower(str_replace(' ', '.', $encargado)) . '@taller.local',
+                        'password' => bcrypt('password123'),
+                        'email_verified_at' => now(),
+                    ]);
+
+                    $tallerRole = \App\Models\Role::where('name', 'taller')->first();
+                    if ($tallerRole) {
+                        $taller->roles()->attach($tallerRole->id);
+                    }
+
+                    \Log::info('[TALLER] Nuevo taller creado en edición', [
+                        'taller_id' => $taller->id,
+                        'taller_nombre' => $taller->name,
+                    ]);
+                }
+
+                // Calcular número de parcial
+                $consecutivoParcial = (float) ($consecutivoOriginal + ($nextIndex / 10));
+                $consecutivoParcialDb = number_format($consecutivoParcial, 2, '.', '');
+                $nextIndex++;
+
+                // Crear proceso hijo para el taller
+                $procesoHijo = ProcesoPrenda::create([
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'prenda_pedido_id' => $prendaId,
+                    'numero_recibo' => null,
+                    'numero_recibo_parcial' => $consecutivoParcialDb,
+                    'proceso' => 'Costura',
+                    'fecha_inicio' => now(),
+                    'encargado' => $encargado,
+                    'fecha_de_asignacion_encargado' => now(),
+                    'estado_proceso' => 'En Progreso',
+                    'codigo_referencia' => 'COS-' . $consecutivoParcialDb . '-' . date('YmdHis'),
+                ]);
+
+                // Crear registro en recibo_por_partes
+                $reciboParteId = DB::table('recibo_por_partes')->insertGetId([
+                    'pedido_produccion_id' => (int) $pedidoId,
+                    'prenda_pedido_id' => $prendaId,
+                    'tipo_recibo' => $tipoReciboReal,
+                    'consecutivo_original' => $consecutivoOriginal,
+                    'consecutivo_parcial' => $consecutivoParcialDb,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                // Crear registros de tallas para el parcial
+                foreach ($tallas as $t) {
+                    $talla = trim((string) ($t['talla'] ?? ''));
+                    $cantidad = (int) ($t['cantidad'] ?? 0);
+                    $genero = isset($t['genero']) ? (string) $t['genero'] : null;
+                    $colorNombre = isset($t['color_nombre']) ? (string) $t['color_nombre'] : null;
+
+                    if ($talla === '' || $cantidad <= 0) {
+                        continue;
+                    }
+
+                    DB::table('recibos_por_partes_tallas')->insert([
+                        'recibo_por_partes_id' => $reciboParteId,
+                        'talla' => $talla,
+                        'cantidad' => $cantidad,
+                        'genero' => $genero,
+                        'color_nombre' => $colorNombre,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+
+                $creados[] = [
+                    'proceso_id' => (int) $procesoHijo->id,
+                    'numero_recibo' => null,
+                    'numero_recibo_parcial' => $consecutivoParcialDb,
+                    'parcial_id' => (int) $reciboParteId,
+                    'encargado' => $encargado,
+                ];
+            }
+
+            if (empty($creados)) {
+                throw new \Exception('No se pudieron crear procesos para los talleres especificados');
+            }
+
+            return [
+                'proceso_padre_id' => (int) $procesoPadre->id,
+                'hijos' => $creados,
+                'recibo_id' => (int) $recibo->id,
+            ];
+        });
+    }
+
+    /**
+     * Procesar nueva distribución a talleres
+     */
+    private function procesarNuevaDistribucionTaller($pedido, $recibo, $pedidoId, $prendaId, $tipoReciboReal, $consecutivoOriginal, $asignaciones)
+    {
+        return DB::transaction(function () use ($pedido, $recibo, $pedidoId, $prendaId, $tipoReciboReal, $consecutivoOriginal, $asignaciones) {
+            // Buscar el proceso padre de Costura
+            $procesoPadre = ProcesoPrenda::query()
+                ->where('numero_pedido', $pedido->numero_pedido)
+                ->where('prenda_pedido_id', $prendaId)
+                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                ->where('numero_recibo', $consecutivoOriginal)
+                ->where(function ($query) {
+                    $query->whereNull('numero_recibo_parcial')
+                        ->orWhere('numero_recibo_parcial', 0);
+                })
+                ->whereNull('deleted_at')
+                ->orderByDesc('created_at')
+                ->first();
+
+            if (!$procesoPadre) {
+                // Si no existe, crear el proceso padre
+                $procesoPadre = ProcesoPrenda::create([
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'prenda_pedido_id' => $prendaId,
+                    'numero_recibo' => $consecutivoOriginal,
+                    'numero_recibo_parcial' => null,
+                    'proceso' => 'Costura',
+                    'fecha_inicio' => now(),
+                    'encargado' => null,
+                    'estado_proceso' => 'Pendiente',
+                    'codigo_referencia' => 'COS-' . $consecutivoOriginal . '-' . date('YmdHis'),
+                ]);
+            }
+
+            // Calcular el siguiente índice de parcial
+            $maxParcialExistente = ProcesoPrenda::query()
+                ->where('numero_pedido', $pedido->numero_pedido)
+                ->where('prenda_pedido_id', $prendaId)
+                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                ->whereNotNull('numero_recibo_parcial')
+                ->where('numero_recibo_parcial', '>=', $consecutivoOriginal)
+                ->where('numero_recibo_parcial', '<', $consecutivoOriginal + 1)
+                ->whereNull('deleted_at')
+                ->max('numero_recibo_parcial');
+
+            $nextIndex = 1;
+            if ($maxParcialExistente !== null) {
+                $maxFloat = (float) $maxParcialExistente;
+                $parteDecimal = $maxFloat - floor($maxFloat);
+                $nextIndex = (int) round($parteDecimal * 10) + 1;
+            }
+
+            $creados = [];
+
+            foreach ($asignaciones as $asig) {
+                $encargado = trim((string) ($asig['encargado'] ?? ''));
+                $tallas = (array) ($asig['tallas'] ?? []);
+
+                if ($encargado === '' || empty($tallas)) {
+                    continue;
+                }
+
+                // Verificar que el usuario existe y tiene rol 'taller'
+                $taller = User::where('name', $encargado)
+                    ->get()
+                    ->first(function ($user) {
+                        return $user->hasRole('taller');
+                    });
+
+                // Si no existe, crear el taller
+                if (!$taller) {
+                    $taller = User::create([
+                        'name' => $encargado,
+                        'email' => strtolower(str_replace(' ', '.', $encargado)) . '@taller.local',
+                        'password' => bcrypt('password123'),
+                        'email_verified_at' => now(),
+                    ]);
+
+                    $tallerRole = \App\Models\Role::where('name', 'taller')->first();
+                    if ($tallerRole) {
+                        $taller->roles()->attach($tallerRole->id);
+                    }
+
+                    \Log::info('[TALLER] Nuevo taller creado en múltiples talleres', [
+                        'taller_id' => $taller->id,
+                        'taller_nombre' => $taller->name,
+                    ]);
+                }
+
+                // Calcular número de parcial
+                $consecutivoParcial = (float) ($consecutivoOriginal + ($nextIndex / 10));
+                $consecutivoParcialDb = number_format($consecutivoParcial, 2, '.', '');
+                $nextIndex++;
+
+                // Crear proceso hijo para el taller
+                $procesoHijo = ProcesoPrenda::create([
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'prenda_pedido_id' => $prendaId,
+                    'numero_recibo' => null,
+                    'numero_recibo_parcial' => $consecutivoParcialDb,
+                    'proceso' => 'Costura',
+                    'fecha_inicio' => now(),
+                    'encargado' => $encargado,
+                    'fecha_de_asignacion_encargado' => now(),
+                    'estado_proceso' => 'En Progreso',
+                    'codigo_referencia' => 'COS-' . $consecutivoParcialDb . '-' . date('YmdHis'),
+                ]);
+
+                // Crear registro en recibo_por_partes
+                $reciboParteId = DB::table('recibo_por_partes')->insertGetId([
+                    'pedido_produccion_id' => (int) $pedidoId,
+                    'prenda_pedido_id' => $prendaId,
+                    'tipo_recibo' => $tipoReciboReal,
+                    'consecutivo_original' => $consecutivoOriginal,
+                    'consecutivo_parcial' => $consecutivoParcialDb,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                // Crear registros de tallas para el parcial
+                foreach ($tallas as $t) {
+                    $talla = trim((string) ($t['talla'] ?? ''));
+                    $cantidad = (int) ($t['cantidad'] ?? 0);
+                    $genero = isset($t['genero']) ? (string) $t['genero'] : null;
+                    $colorNombre = isset($t['color_nombre']) ? (string) $t['color_nombre'] : null;
+
+                    if ($talla === '' || $cantidad <= 0) {
+                        continue;
+                    }
+
+                    DB::table('recibos_por_partes_tallas')->insert([
+                        'recibo_por_partes_id' => $reciboParteId,
+                        'talla' => $talla,
+                        'cantidad' => $cantidad,
+                        'genero' => $genero,
+                        'color_nombre' => $colorNombre,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+
+                $creados[] = [
+                    'proceso_id' => (int) $procesoHijo->id,
+                    'numero_recibo' => null,
+                    'numero_recibo_parcial' => $consecutivoParcialDb,
+                    'parcial_id' => (int) $reciboParteId,
+                    'encargado' => $encargado,
+                ];
+            }
+
+            if (empty($creados)) {
+                throw new \Exception('No se pudieron crear procesos para los talleres especificados');
+            }
+
+            return [
+                'proceso_padre_id' => (int) $procesoPadre->id,
+                'hijos' => $creados,
+                'recibo_id' => (int) $recibo->id,
+            ];
+        });
     }
 }

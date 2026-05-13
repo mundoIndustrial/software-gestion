@@ -29,6 +29,25 @@ class OperarioDashboardReadServiceImpl implements OperarioDashboardReadService
             ->values();
     }
 
+    public function obtenerUsuariosTallerNormalizados(): Collection
+    {
+        $rolTallerId = Role::where('name', 'taller')->value('id');
+        if (empty($rolTallerId)) {
+            return collect();
+        }
+
+        return User::query()
+            ->where(function ($q) use ($rolTallerId) {
+                $q->whereJsonContains('roles_ids', (int) $rolTallerId)
+                    ->orWhere('role_id', (int) $rolTallerId);
+            })
+            ->pluck('name')
+            ->map(fn ($n) => strtolower(trim((string) $n)))
+            ->filter()
+            ->unique()
+            ->values();
+    }
+
     public function obtenerCompletadosPorArea(array $idsRecibo, string $area): Collection
     {
         if (empty($idsRecibo)) {

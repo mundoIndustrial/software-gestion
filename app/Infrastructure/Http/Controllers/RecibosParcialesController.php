@@ -225,6 +225,16 @@ class RecibosParcialesController extends Controller
                 ->where('id', $id)
                 ->first();
 
+            $isReciboPorPartes = false;
+            if (!$parcial) {
+                $parcial = DB::table('recibo_por_partes')
+                    ->where('id', $id)
+                    ->first();
+                if ($parcial) {
+                    $isReciboPorPartes = true;
+                }
+            }
+
             if (!$parcial) {
                 return response()->json([
                     'success' => false,
@@ -233,14 +243,23 @@ class RecibosParcialesController extends Controller
             }
 
             $parcialArray = (array) $parcial;
+            
+            // Normalizar campos si viene de recibo_por_partes
+            if ($isReciboPorPartes) {
+                $parcialArray['consecutivo_actual'] = $parcialArray['consecutivo_parcial'] ?? 0;
+            }
+
             $parcialArray['ubicaciones'] = $this->decodeJsonField($parcialArray['ubicaciones'] ?? null, []);
             $parcialArray['datos_adicionales'] = $this->decodeJsonField($parcialArray['datos_adicionales'] ?? null, []);
             $parcialArray['observaciones'] = isset($parcialArray['observaciones'])
                 ? (string) $parcialArray['observaciones']
                 : null;
 
-            $tallas = DB::table('pedidos_parciales_tallas')
-                ->where('pedido_parcial_id', $id)
+            $tallasTable = $isReciboPorPartes ? 'recibos_por_partes_tallas' : 'pedidos_parciales_tallas';
+            $foreignKey = $isReciboPorPartes ? 'recibo_por_partes_id' : 'pedido_parcial_id';
+
+            $tallas = DB::table($tallasTable)
+                ->where($foreignKey, $id)
                 ->get();
 
             // Transformar tallas al formato para mostrar en descripción

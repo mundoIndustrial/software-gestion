@@ -79,8 +79,8 @@ class ObtenerDistribucionReciboOperarioUseCase
                 );
             }
 
-            $encargado = $proceso->encargado ?? $parcial->encargado ?? 'SIN ASIGNAR';
-            $area = $proceso->proceso ?? $parcial->area ?? 'SIN ASIGNAR';
+            $encargado = ($proceso ? $proceso->encargado : null) ?? $parcial->encargado ?? 'SIN ASIGNAR';
+            $area = ($proceso ? $proceso->proceso : null) ?? $parcial->area ?? 'SIN ASIGNAR';
 
             $estaCompletado = $this->readRepository->estaCompletadoParcialEnCostura((int) $parcial->id);
 
@@ -93,9 +93,9 @@ class ObtenerDistribucionReciboOperarioUseCase
                 'consecutivo_original' => (float) $parcial->consecutivo_original,
                 'proceso_estado' => $estaCompletado
                     ? 'COMPLETADO'
-                    : (($proceso->estado_proceso ?? 'En Progreso') ?: 'En Progreso'),
-                'fecha_asignacion' => $proceso->fecha_de_asignacion_encargado ?? null,
-                'observaciones' => $proceso->observaciones ?? '',
+                    : (($proceso && $proceso->estado_proceso ? $proceso->estado_proceso : 'En Progreso') ?: 'En Progreso'),
+                'fecha_asignacion' => ($proceso ? $proceso->fecha_de_asignacion_encargado : null) ?? null,
+                'observaciones' => ($proceso ? $proceso->observaciones : null) ?? '',
                 'pedido_produccion_id' => $parcial->pedido_produccion_id,
                 'prenda_pedido_id' => $parcial->prenda_pedido_id,
                 'numero_pedido' => $numeroPedido,
@@ -105,10 +105,14 @@ class ObtenerDistribucionReciboOperarioUseCase
                         'talla' => $talla->talla,
                         'cantidad' => $talla->cantidad,
                         'color_nombre' => $talla->color_nombre,
+                        'genero' => $talla->genero,
                     ];
                 })->toArray(),
             ];
         })->sortBy('area')->values();
+
+        // Detectar el tipo de asignación original
+        $tipoAsignacionOriginal = $this->detectarTipoAsignacion($parcialesInfo->toArray());
 
         return [
             'status' => 200,
@@ -123,8 +127,53 @@ class ObtenerDistribucionReciboOperarioUseCase
                 ],
                 'parciales' => $parcialesInfo,
                 'total_parciales' => $parcialesInfo->count(),
+                'tipo_asignacion_original' => $tipoAsignacionOriginal,
             ],
         ];
+    }
+
+    /**
+     * Detecta si la asignación original fue a múltiples talleres o a módulos
+     * Retorna 'taller' si los encargados tienen rol 'taller', 'modulos' en caso contrario
+     */
+    private function detectarTipoAsignacion(array $parcialesInfo): string
+    {
+        if (empty($parcialesInfo)) {
+            return 'modulos'; // Por defecto
+        }
+
+        // Obtener todos los encargados únicos
+        $encargados = array_unique(array_map(function ($parcial) {
+            return trim((string) ($parcial['encargado'] ?? ''));
+        }, $parcialesInfo));
+
+        $encargados = array_filter($encargados, fn($e) => $e !== '' && $e !== 'SIN ASIGNAR');
+
+        if (empty($encargados)) {
+            return 'modulos';
+        }
+
+        // Verificar si alguno de los encargados tiene rol 'taller'
+        $usuariosConRolTaller = \App\Models\User::whereIn('name', $encargados)
+            ->get()
+            ->filter(function ($user) {
+                return $user->hasRole('taller');
+            })
+            ->count();
+
+        // Si al menos uno tiene rol 'taller', fue asignado a múltiples talleres
+        if ($usuariosConRolTaller > 0) {
+            \Log::info('[ObtenerDistribucionReciboOperarioUseCase] Tipo de asignación detectado: taller', [
+                'encargados_con_rol_taller' => $usuariosConRolTaller,
+                'total_encargados' => count($encargados),
+            ]);
+            return 'taller';
+        }
+
+        \Log::info('[ObtenerDistribucionReciboOperarioUseCase] Tipo de asignación detectado: modulos', [
+            'total_encargados' => count($encargados),
+        ]);
+        return 'modulos';
     }
 }
 

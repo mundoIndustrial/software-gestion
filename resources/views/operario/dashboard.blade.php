@@ -412,7 +412,7 @@
                             }
                         @endphp
 
-                        @if(auth()->user()->hasRole('vista-costura') && $areaReciboFiltro === 'corte' && !$tieneReflectivo)
+                        @if(auth()->user()->hasRole('vista-costura') && ($areaReciboFiltro === 'corte' && !$tieneReflectivo || !empty($reciboPrincipalFiltro['pedido_parcial_id'])))
                             @continue
                         @endif
 

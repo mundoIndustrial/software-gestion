@@ -11,6 +11,8 @@ export function abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo
     
     // Resetear selección
     window.opcionAsignacionSeleccionada = null;
+    window.talleresSeleccionadosDistribucion = []; // Inicializar talleres seleccionados
+    window.asignacionesPorTaller = {}; // Inicializar asignaciones por taller
     document.getElementById('contenidoAsignacion').innerHTML = '<div style="text-align: center; padding: 2rem; color: #6b7280;"><p>Seleccione un tipo de asignación para continuar</p></div>';
     document.getElementById('btnConfirmarAsignacion').disabled = true;
     
@@ -1197,6 +1199,24 @@ function getColorParaTallaId(tallaId) {
 
     return item?.color || null;
 }
+function getGeneroParaTallaId(tallaId) {
+    const { base, colorNorm, generoNorm } = parseTallaIdUnico(tallaId);
+    const tallas = window?.datosDistribucion?.tallas || [];
+    const colorObjetivo = colorNorm || 'sin_color';
+
+    const item = tallas.find((t) => {
+        const baseT = (t.tallaOriginal || (String(t.talla || '').split(' ')[0])) || '';
+        if (String(baseT) !== String(base)) return false;
+        
+        const c = normalizarColor(t.color);
+        if (c !== colorObjetivo) return false;
+        
+        const g = normalizarGenero(t.genero);
+        return g === generoNorm;
+    });
+
+    return item?.genero || null;
+}
 
 function getDisponibleRestanteGlobal(tallaId) {
     const totalOriginal = getTotalOriginalTallaId(tallaId);
@@ -1372,11 +1392,18 @@ export function confirmarAsignacion() {
                             cantidad = parseInt(datos) || 0;
                             color = null;
                         }
-                        
+
+                        const { base, colorNorm, generoNorm } = parseTallaIdUnico(tallaRaw);
+                        const itemTalla = window.datosDistribucion.tallas.find(t => {
+                            const baseT = (t.tallaOriginal || (String(t.talla || '').split(' ')[0])) || '';
+                            return baseT === base && normalizarColor(t.color) === colorNorm && normalizarGenero(t.genero) === generoNorm;
+                        });
+
                         return {
-                            talla: parseTallaBase(tallaRaw),
+                            talla: base,
                             cantidad: cantidad,
                             color_nombre: color,
+                            genero: itemTalla ? itemTalla.genero : null,
                         };
                     })
                     .filter((t) => t.talla && t.cantidad > 0);
@@ -1456,7 +1483,7 @@ function confirmarDistribucionTaller() {
     const btnConfirmar = document.getElementById('btnConfirmarAsignacion');
     const originalText = btnConfirmar ? btnConfirmar.innerHTML : null;
     
-    const { pedidoId, prendaId, tipoRecibo, recibo } = window.datosModalCostura;
+    const { pedidoId, prendaId, tipoRecibo, recibo, esEdicion } = window.datosModalCostura;
     
     if (!pedidoId || !prendaId || !tipoRecibo || !recibo) {
         mostrarError('Error', 'Faltan datos necesarios para procesar la solicitud');
@@ -1488,20 +1515,26 @@ function confirmarDistribucionTaller() {
         const asignaciones = Object.entries(window.asignacionesPorTaller)
             .map(([tallerIdStr, asignacionesTallas]) => {
                 const tallerId = parseInt(tallerIdStr);
-                const taller = window.talleresSeleccionadosDistribucion?.find(t => parseInt(t.id) === tallerId);
+                const taller = window.talleresSeleccionadosDistribucion?.find(t => {
+                    // Comparar por ID (puede ser negativo si es nuevo)
+                    return parseInt(t.id) === tallerId;
+                });
                 const encargado = taller?.nombre || '';
                 
                 const tallas = Object.entries(asignacionesTallas || {})
                     .map(([tallaRaw, cantidad]) => {
                         const cantidadNum = parseInt(cantidad) || 0;
-                        const { base } = parseTallaIdUnico(tallaRaw);
-                        const s = String(base || '').trim();
-                        const m = s.match(/^(.+?)\s*\((.+)\)$/);
-                        const tallaNombre = m ? m[1].trim() : s;
+                        const { base, colorNorm, generoNorm } = parseTallaIdUnico(tallaRaw);
+                        const itemTalla = window.datosDistribucion.tallas.find(t => {
+                            const baseT = (t.tallaOriginal || (String(t.talla || '').split(' ')[0])) || '';
+                            return baseT === base && normalizarColor(t.color) === colorNorm && normalizarGenero(t.genero) === generoNorm;
+                        });
                         
                         return {
-                            talla: tallaNombre,
+                            talla: base,
                             cantidad: cantidadNum,
+                            color_nombre: itemTalla ? itemTalla.color : null,
+                            genero: itemTalla ? itemTalla.genero : null,
                         };
                     })
                     .filter((t) => t.talla && t.cantidad > 0);
@@ -1522,6 +1555,7 @@ function confirmarDistribucionTaller() {
             tipo_distribucion: 'taller',
             subtipo_taller: 'multiple',
             asignaciones,
+            es_edicion: esEdicion || false,
         };
     }
     
@@ -1801,11 +1835,17 @@ function cargarTalleresParaDistribucion() {
                 // Guardar datos de talleres
                 window.talleresDisponibles = data.usuarios;
                 
-                // Llenar datalist
+                // Obtener IDs de talleres ya seleccionados
+                const talleresSeleccionadosIds = (window.talleresSeleccionadosDistribucion || []).map(t => t.id);
+                
+                // Llenar datalist solo con talleres no seleccionados
                 data.usuarios.forEach((usuario) => {
-                    const option = document.createElement('option');
-                    option.value = usuario.name;
-                    datalist.appendChild(option);
+                    // No agregar si ya está seleccionado
+                    if (!talleresSeleccionadosIds.includes(usuario.id)) {
+                        const option = document.createElement('option');
+                        option.value = usuario.name;
+                        datalist.appendChild(option);
+                    }
                 });
             }
         })
@@ -1825,17 +1865,24 @@ window.agregarTallerSeleccionado = function() {
     }
     
     // Verificar que el taller existe
-    const taller = window.talleresDisponibles?.find(t => t.name === tallerNombre);
+    let taller = window.talleresDisponibles?.find(t => t.name === tallerNombre);
+    
+    // Si no existe, crear un objeto temporal para el nuevo taller
     if (!taller) {
-        mostrarError('Error', 'El taller seleccionado no existe');
-        input.value = ''; // Limpiar input
-        return;
+        // Generar un ID temporal (negativo para indicar que es nuevo)
+        const nuevoId = -(Math.random() * 10000 | 0);
+        taller = {
+            id: nuevoId,
+            name: tallerNombre,
+            esNuevo: true // Marcar como nuevo
+        };
+        
+        console.log('[AGREGAR TALLER] Nuevo taller creado localmente:', taller);
     }
     
-    // Verificar que no esté duplicado
+    // Verificar que no esté duplicado - si ya está seleccionado, simplemente no hacer nada
     if (window.talleresSeleccionadosDistribucion?.find(t => t.id === taller.id)) {
-        mostrarError('Error', 'Este taller ya está seleccionado');
-        input.value = ''; // Limpiar input
+        input.value = ''; // Limpiar input sin mostrar error
         return;
     }
     
@@ -1846,7 +1893,8 @@ window.agregarTallerSeleccionado = function() {
     
     window.talleresSeleccionadosDistribucion.push({
         id: taller.id,
-        nombre: taller.name
+        nombre: taller.name,
+        esNuevo: taller.esNuevo || false
     });
     
     // Limpiar input
@@ -1855,6 +1903,9 @@ window.agregarTallerSeleccionado = function() {
     // Actualizar UI
     actualizarListaTalleresSeleccionados();
     
+    // Recargar la datalist para ocultar el taller que acaba de ser agregado
+    cargarTalleresParaDistribucion();
+    
     // Cargar interfaz de distribución
     if (window.talleresSeleccionadosDistribucion.length > 0) {
         cargarInterfazDistribucionTallerMultiple(window.talleresSeleccionadosDistribucion);
@@ -1862,7 +1913,7 @@ window.agregarTallerSeleccionado = function() {
 };
 
 // Función para actualizar lista de talleres seleccionados
-function actualizarListaTalleresSeleccionados() {
+window.actualizarListaTalleresSeleccionados = function() {
     const listaTalleres = document.getElementById('listaTalleresSeleccionados');
     if (!listaTalleres) return;
     
@@ -1881,12 +1932,14 @@ function actualizarListaTalleresSeleccionados() {
     
     let html = '';
     window.talleresSeleccionadosDistribucion.forEach((taller, index) => {
+        const esNuevo = taller.esNuevo;
         html += `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: ${esNuevo ? '#fef3c7' : '#f3f4f6'}; border: 1px solid ${esNuevo ? '#fcd34d' : '#d1d5db'}; border-radius: 8px;">
                 <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
-                    <span class="material-symbols-rounded" style="color: #6366f1; font-size: 1.25rem;">apartment</span>
+                    <span class="material-symbols-rounded" style="color: ${esNuevo ? '#f59e0b' : '#6366f1'}; font-size: 1.25rem;">apartment</span>
                     <div>
                         <div style="font-weight: 600; font-size: 0.875rem; color: #1e293b;">${taller.nombre}</div>
+                        ${esNuevo ? '<div style="font-size: 0.75rem; color: #b45309;">Nuevo taller (se creará al confirmar)</div>' : ''}
                     </div>
                 </div>
                 <button type="button" onclick="removerTallerSeleccionado(${index})" style="background: #fee2e2; border: none; border-radius: 6px; padding: 0.5rem; cursor: pointer; color: #dc2626; transition: all 0.2s;">
@@ -1897,13 +1950,16 @@ function actualizarListaTalleresSeleccionados() {
     });
     
     listaTalleres.innerHTML = html;
-}
+};
 
 // Función para remover taller seleccionado
 window.removerTallerSeleccionado = function(index) {
     if (window.talleresSeleccionadosDistribucion) {
         window.talleresSeleccionadosDistribucion.splice(index, 1);
         actualizarListaTalleresSeleccionados();
+        
+        // Recargar la datalist para mostrar el taller removido
+        cargarTalleresParaDistribucion();
         
         // Actualizar interfaz de distribución
         if (window.talleresSeleccionadosDistribucion.length > 0) {
@@ -1918,16 +1974,16 @@ window.removerTallerSeleccionado = function(index) {
 };
 
 // Función para cargar la interfaz de distribución para múltiples talleres
-function cargarInterfazDistribucionTallerMultiple(talleresSeleccionados) {
+window.cargarInterfazDistribucionTallerMultiple = function(talleresSeleccionados) {
     if (!window.datosModalCostura) {
         console.error('No hay datos de la prenda disponibles');
-        return;
+        return Promise.reject(new Error('No hay datos de la prenda disponibles'));
     }
     
     const { prendaId, tipoRecibo } = window.datosModalCostura;
     
     // Cargar tallas de la prenda
-    cargarTallasPrenda(prendaId, tipoRecibo)
+    return cargarTallasPrenda(prendaId, tipoRecibo)
         .then((tallas) => {
             console.log('Tallas cargadas para distribución a taller:', tallas);
             
@@ -1936,6 +1992,8 @@ function cargarInterfazDistribucionTallerMultiple(talleresSeleccionados) {
             
             // Cargar interfaz con datos reales
             cargarInterfazDistribucionTallerConDatos(tallasProcesadas, talleresSeleccionados);
+            
+            return tallasProcesadas;
         })
         .catch(error => {
             console.error('Error cargando datos de distribución a taller:', error);
@@ -1948,6 +2006,7 @@ function cargarInterfazDistribucionTallerMultiple(talleresSeleccionados) {
                     </div>
                 `;
             }
+            throw error;
         });
 }
 
@@ -1968,10 +2027,16 @@ function cargarInterfazDistribucionTallerConDatos(tallas, talleres) {
     // Guardar datos de distribución para usar en actualizarDisponibilidad()
     window.datosDistribucion = { tallas, talleres };
     
-    // Inicializar asignaciones por taller
-    window.asignacionesPorTaller = {};
+    // Inicializar asignaciones por taller SOLO si no existen
+    if (!window.asignacionesPorTaller) {
+        window.asignacionesPorTaller = {};
+    }
+    
+    // Agregar nuevos talleres sin borrar los existentes
     talleres.forEach(taller => {
-        window.asignacionesPorTaller[taller.id] = {};
+        if (!window.asignacionesPorTaller[taller.id]) {
+            window.asignacionesPorTaller[taller.id] = {};
+        }
     });
     
     // Generar HTML para cada taller como card
@@ -2012,6 +2077,46 @@ function generarHtmlTallasParaTaller(tallas, tallerId) {
     let html = '';
     
     Object.entries(grupos).forEach(([genero, colores]) => {
+        // Primero, verificar si hay al menos una talla visible en este género
+        let tieneAlgunaTallaVisible = false;
+        
+        Object.entries(colores).forEach(([color, tallasColor]) => {
+            tallasColor.forEach(talla => {
+                const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, color, talla.genero);
+                const cantidadTotal = talla.cantidad;
+                
+                let asignado = 0;
+                if (window.asignacionesPorTaller && window.asignacionesPorTaller[tallerId]) {
+                    asignado = window.asignacionesPorTaller[tallerId][tallaIdUnico] || 0;
+                }
+                
+                // Calcular cuánto se ha asignado en otros talleres
+                let asignadoEnOtrosTalleres = 0;
+                if (window.asignacionesPorTaller) {
+                    Object.entries(window.asignacionesPorTaller).forEach(([otroTallerId, asignaciones]) => {
+                        if (parseInt(otroTallerId) !== parseInt(tallerId)) {
+                            asignadoEnOtrosTalleres += asignaciones[tallaIdUnico] || 0;
+                        }
+                    });
+                }
+                
+                // Calcular disponible inicial
+                const disponibleInicial = cantidadTotal - asignado - asignadoEnOtrosTalleres;
+                const isSelected = asignado > 0;
+                
+                // Verificar si esta talla es visible
+                if (disponibleInicial > 0 || isSelected) {
+                    tieneAlgunaTallaVisible = true;
+                }
+            });
+        });
+        
+        // Si no hay ninguna talla visible en este género, no mostrar la sección
+        if (!tieneAlgunaTallaVisible) {
+            return;
+        }
+        
+        // Si hay tallas visibles, generar la sección del género
         html += `
             <div style="margin-bottom: 1.5rem;">
                 <h6 style="margin: 0 0 0.75rem 0; font-size: 0.875rem; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.05em;">
@@ -2024,18 +2129,9 @@ function generarHtmlTallasParaTaller(tallas, tallerId) {
             const colorDisplay = color === 'Sin color' ? null : color;
             const colorStyle = colorDisplay ? `background: ${colorDisplay}; border: 1px solid #d1d5db;` : 'background: #f3f4f6; border: 1px solid #d1d5db;';
             
-            html += `
-                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem;">
-                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-                        ${colorDisplay ? `
-                            <span style="display: inline-block; width: 16px; height: 16px; ${colorStyle} border-radius: 4px; margin-right: 0.5rem;"></span>
-                            <span style="font-size: 0.875rem; font-weight: 500; color: #374151;">${color}</span>
-                        ` : `
-                            <span style="font-size: 0.875rem; font-weight: 500; color: #6b7280;">Sin color</span>
-                        `}
-                    </div>
-                    <div style="display: grid; gap: 0.5rem;">
-            `;
+            // Verificar si hay al menos una talla visible en este color
+            let tieneAlgunaTallaVisibleEnColor = false;
+            let htmlTallasColor = '';
             
             tallasColor.forEach(talla => {
                 const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, color, talla.genero);
@@ -2065,7 +2161,9 @@ function generarHtmlTallasParaTaller(tallas, tallerId) {
                 // NO MOSTRAR si no hay disponibilidad Y no está seleccionada en este taller
                 if (disponibleInicial <= 0 && !isSelected) return;
                 
-                html += `
+                tieneAlgunaTallaVisibleEnColor = true;
+                
+                htmlTallasColor += `
                     <div class="dist-talla-row ${isSelected ? 'is-selected' : ''}" style="padding: 0.5rem; border: 1px solid #f3f4f6; border-radius: 6px;">
                         <div style="display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 0.75rem;">
                             <input
@@ -2101,10 +2199,22 @@ function generarHtmlTallasParaTaller(tallas, tallerId) {
                 `;
             });
             
-            html += `
+            // Solo mostrar el color si hay al menos una talla visible
+            if (tieneAlgunaTallaVisibleEnColor) {
+                html += `
+                    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem;">
+                        <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                            ${colorDisplay ? `
+                                <span style="display: inline-block; width: 16px; height: 16px; ${colorStyle} border-radius: 4px; margin-right: 0.5rem;"></span>
+                                <span style="font-size: 0.875rem; font-weight: 500; color: #374151;">${color}</span>
+                            ` : ''}
+                        </div>
+                        <div style="display: grid; gap: 0.5rem;">
+                            ${htmlTallasColor}
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
         });
         
         html += `
@@ -2125,19 +2235,17 @@ window.toggleTallaSeleccionTaller = function(tallaId, tallerId, isChecked) {
             // Al hacer check, establecer valor a la cantidad máxima disponible
             const maxDisponible = parseInt(input.max) || 0;
             input.value = maxDisponible;
-            actualizarAsignacionTaller(tallaId, tallerId, maxDisponible);
-            actualizarDisponibilidad(tallaId, tallerId);
+            actualizarAsignacionTallerConRegeneracion(tallaId, tallerId, maxDisponible, true);
         } else {
             // Al desmarcar, establecer a 0
             input.value = 0;
-            actualizarAsignacionTaller(tallaId, tallerId, 0);
-            actualizarDisponibilidad(tallaId, tallerId);
+            actualizarAsignacionTallerConRegeneracion(tallaId, tallerId, 0, true);
         }
     }
 };
 
-// Función para actualizar asignación de talla en taller
-window.actualizarAsignacionTaller = function(tallaId, tallerId, cantidad) {
+// Función auxiliar para actualizar asignación con regeneración de todos los talleres
+function actualizarAsignacionTallerConRegeneracion(tallaId, tallerId, cantidad, regenerarTodos = false) {
     if (!window.asignacionesPorTaller) {
         window.asignacionesPorTaller = {};
     }
@@ -2156,8 +2264,11 @@ window.actualizarAsignacionTaller = function(tallaId, tallerId, cantidad) {
     // Actualizar disponibilidad
     actualizarDisponibilidad(tallaId, tallerId);
     
-    // Regenerar interfaz de todos los talleres para mostrar/ocultar tallas según disponibilidad
+    // Siempre regenerar todos los talleres cuando se hace toggle (check/uncheck)
     if (window.datosDistribucion && window.datosDistribucion.talleres) {
+        console.log(`[TOGGLE TALLA] Regenerando todos los talleres después de toggle de ${tallaId}`);
+        
+        // Regenerar todos los talleres
         window.datosDistribucion.talleres.forEach(taller => {
             const container = document.getElementById(`tallas-taller-${taller.id}`);
             if (container) {
@@ -2174,6 +2285,104 @@ window.actualizarAsignacionTaller = function(tallaId, tallerId, cantidad) {
                 });
             });
         }, 50);
+    }
+}
+
+// Función para actualizar asignación de talla en taller
+window.actualizarAsignacionTaller = function(tallaId, tallerId, cantidad) {
+    if (!window.asignacionesPorTaller) {
+        window.asignacionesPorTaller = {};
+    }
+    
+    if (!window.asignacionesPorTaller[tallerId]) {
+        window.asignacionesPorTaller[tallerId] = {};
+    }
+    
+    // Guardar la cantidad anterior para detectar cambios
+    const cantidadAnterior = window.asignacionesPorTaller[tallerId][tallaId] || 0;
+    
+    const cantidadNum = parseInt(cantidad) || 0;
+    if (cantidadNum > 0) {
+        window.asignacionesPorTaller[tallerId][tallaId] = cantidadNum;
+    } else {
+        delete window.asignacionesPorTaller[tallerId][tallaId];
+    }
+    
+    // Actualizar disponibilidad
+    actualizarDisponibilidad(tallaId, tallerId);
+    
+    // Verificar si la talla se agotó completamente o si volvió a tener disponibilidad
+    const tallaOriginal = window.datosDistribucion?.tallas?.find(t => {
+        const id = construirTallaIdUnico(t.tallaOriginal, t.color, t.genero);
+        return id === tallaId;
+    });
+    
+    if (tallaOriginal) {
+        const cantidadTotal = tallaOriginal.cantidad;
+        
+        // Calcular cuánto se ha asignado en TODOS los talleres
+        let asignadoTotal = 0;
+        if (window.asignacionesPorTaller) {
+            Object.entries(window.asignacionesPorTaller).forEach(([otroTallerId, asignaciones]) => {
+                asignadoTotal += asignaciones[tallaId] || 0;
+            });
+        }
+        
+        // Calcular disponibilidad actual
+        const disponibilidadActual = cantidadTotal - asignadoTotal;
+        
+        // Calcular disponibilidad anterior
+        const asignadoTotalAnterior = asignadoTotal + (cantidadAnterior - cantidadNum);
+        const disponibilidadAnterior = cantidadTotal - asignadoTotalAnterior;
+        
+        // Regenerar TODOS los talleres si:
+        // 1. La talla se agotó completamente (disponibilidadActual === 0)
+        // 2. La talla volvió a tener disponibilidad (disponibilidadAnterior === 0 && disponibilidadActual > 0)
+        const debeRegenerarTodos = 
+            (disponibilidadActual === 0 && disponibilidadAnterior > 0) || // Se agotó
+            (disponibilidadAnterior === 0 && disponibilidadActual > 0);   // Volvió a haber disponibilidad
+        
+        if (debeRegenerarTodos) {
+            console.log(`[ACTUALIZAR ASIGNACIÓN] Cambio en disponibilidad de ${tallaId}. Anterior: ${disponibilidadAnterior}, Actual: ${disponibilidadActual}. Regenerando todos los talleres...`);
+            
+            if (window.datosDistribucion && window.datosDistribucion.talleres) {
+                // Regenerar todos los talleres
+                window.datosDistribucion.talleres.forEach(taller => {
+                    const container = document.getElementById(`tallas-taller-${taller.id}`);
+                    if (container) {
+                        container.innerHTML = generarHtmlTallasParaTaller(window.datosDistribucion.tallas, taller.id);
+                    }
+                });
+                
+                // Recalcular disponibilidad para todas las tallas después de regenerar
+                setTimeout(() => {
+                    window.datosDistribucion.tallas.forEach(talla => {
+                        window.datosDistribucion.talleres.forEach(taller => {
+                            const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, talla.color, talla.genero);
+                            actualizarDisponibilidad(tallaIdUnico, taller.id);
+                        });
+                    });
+                }, 50);
+            }
+        } else {
+            // Si no hay cambio crítico en disponibilidad, solo regenerar el taller actual
+            if (window.datosDistribucion && window.datosDistribucion.talleres) {
+                const container = document.getElementById(`tallas-taller-${tallerId}`);
+                if (container) {
+                    container.innerHTML = generarHtmlTallasParaTaller(window.datosDistribucion.tallas, tallerId);
+                }
+                
+                // Recalcular disponibilidad para todas las tallas después de regenerar
+                setTimeout(() => {
+                    window.datosDistribucion.tallas.forEach(talla => {
+                        window.datosDistribucion.talleres.forEach(taller => {
+                            const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, talla.color, talla.genero);
+                            actualizarDisponibilidad(tallaIdUnico, taller.id);
+                        });
+                    });
+                }, 50);
+            }
+        }
     }
     
     console.log('Asignaciones por taller actualizadas:', window.asignacionesPorTaller);

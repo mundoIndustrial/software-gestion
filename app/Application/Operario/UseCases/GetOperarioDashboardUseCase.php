@@ -45,6 +45,7 @@ class GetOperarioDashboardUseCase
 
             if ($usuario->hasRole('administrador-costura') && in_array($tab, ['costura', 'sobremedida'], true)) {
                 $usuariosSobremedida = $this->dashboardReadService->obtenerUsuariosSobremedidaNormalizados();
+                $usuariosTaller = $this->dashboardReadService->obtenerUsuariosTallerNormalizados();
 
                 if ($tab === 'sobremedida') {
                     $prendasConRecibos = $prendasConRecibos
@@ -80,8 +81,8 @@ class GetOperarioDashboardUseCase
 
                 if ($tab === 'costura') {
                     $prendasConRecibos = $prendasConRecibos
-                        ->map(function ($prenda) use ($usuariosSobremedida) {
-                            $prenda['recibos'] = array_values(array_filter($prenda['recibos'] ?? [], function ($recibo) use ($usuariosSobremedida) {
+                        ->map(function ($prenda) use ($usuariosSobremedida, $usuariosTaller) {
+                            $prenda['recibos'] = array_values(array_filter($prenda['recibos'] ?? [], function ($recibo) use ($usuariosSobremedida, $usuariosTaller) {
                                 $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
                                 $area = strtolower(trim((string) ($recibo['area'] ?? '')));
                                 
@@ -102,6 +103,11 @@ class GetOperarioDashboardUseCase
 
                                 // Si el encargado es de sobremedida, no mostrar aquí (va a la pestaña sobremedida)
                                 if ($usuariosSobremedida->contains($encargado)) {
+                                    return false;
+                                }
+
+                                // Si el encargado es de taller, no mostrar aquí (administrador-costura no debe ver recibos de taller)
+                                if ($usuariosTaller->contains($encargado)) {
                                     return false;
                                 }
 
