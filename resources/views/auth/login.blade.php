@@ -116,14 +116,23 @@
                 const email = document.getElementById('email')?.value ?? '';
                 const password = document.getElementById('password')?.value ?? '';
                 const remember = document.getElementById('remember_me')?.checked ?? false;
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
                 try {
-                    await fetch('/api/v1/auth/csrf', {
+                    const csrfResponse = await fetch('/api/v1/auth/csrf', {
                         method: 'GET',
                         credentials: 'same-origin',
                         headers: { Accept: 'application/json' },
                     });
+                    const csrfPayload = await csrfResponse.json().catch(() => null);
+                    const freshCsrfToken = csrfPayload?.data?.csrf_token;
+                    if (freshCsrfToken) {
+                        csrfToken = freshCsrfToken;
+                        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                        if (csrfMeta) {
+                            csrfMeta.setAttribute('content', freshCsrfToken);
+                        }
+                    }
 
                     const response = await fetch('/api/v1/auth/login', {
                         method: 'POST',

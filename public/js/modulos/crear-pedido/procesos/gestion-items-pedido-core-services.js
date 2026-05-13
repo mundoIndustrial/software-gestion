@@ -118,7 +118,7 @@ class PedidoSubmitController {
                 console.warn('[gestion-items-pedido]  resultado.success es FALSE o undefined');
             }
         } catch (error) {
-            this._manejarErrorSubmit(error);
+            await this._manejarErrorSubmit(error);
         } finally {
             globalThis.__pedidoSubmitInFlight = false;
             this.setSubmitDisabled(false);
@@ -199,20 +199,47 @@ class PedidoSubmitController {
         }
     }
 
-    _manejarErrorSubmit(error) {
+    async _manejarErrorSubmit(error) {
         console.error('[gestion-items-pedido]  ERROR CAPTURADO:', error);
         console.error('[gestion-items-pedido]  Stack:', error.stack);
         console.error('[gestion-items-pedido]  Message:', error.message);
         this.ui.ocultarCargando?.();
+
         if (this.notificationService) {
             const mensajeErrorRaw = error?.message || '';
             const esErrorCSRF419 = /status:\s*419/i.test(mensajeErrorRaw)
                 || /csrf token mismatch/i.test(mensajeErrorRaw);
 
             if (esErrorCSRF419) {
-                this.notificationService.error(
-                    'Tu sesión cambió mientras enviábamos el pedido. Vuelve a intentar en unos segundos. Si persiste, recarga la página.'
+                console.warn('[gestion-items-pedido]  Detectado error CSRF 419, verificando si pedido ya existe...');
+
+                // PASO 1: Verificar si pedido ya fue creado en el servidor
+                if (this.apiService && typeof this.apiService.verificarSiPedidoYaCreado === 'function') {
+                    const verificacion = await this.apiService.verificarSiPedidoYaCreado();
+
+                    if (verificacion.existe && verificacion.pedido_id) {
+                        console.log('[gestion-items-pedido]  ✓ Pedido YA FUE CREADO, ID:', verificacion.pedido_id);
+                        // El pedido ya existe en el servidor, mostrar éxito
+                        this.ui.setDatosPedidoCreado?.({
+                            pedido_id: verificacion.pedido_id,
+                            numero_pedido: verificacion.numero_pedido
+                        });
+                        this.notificationService.exito('✓ ¡Pedido creado correctamente!');
+                        setTimeout(() => {
+                            this.ui.mostrarModalExito?.();
+                        }, 300);
+                        return;
+                    }
+                }
+
+                // PASO 2: Si no existe en servidor, mostrar mensaje AMIGABLE para reintentar
+                console.log('[gestion-items-pedido]  Pedido NO fue creado, permitiendo reintentar');
+                this.notificationService.advertencia(
+                    'La página cargó lentamente. No se envió el pedido. ' +
+                    'Por favor, intenta nuevamente haciendo click en Enviar.'
                 );
+                // Asegurar que el botón está habilitado para reintentar
+                this.setSubmitDisabled(false);
                 return;
             }
 

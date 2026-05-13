@@ -177,7 +177,10 @@ class ItemOrchestrator {
                 }, 500);
             }
         } catch (error) {
-            this.notificationService.error('Error: ' + error.message);
+            const fueManejado = await this.manejarErrorCreacionConContingencia(error);
+            if (!fueManejado) {
+                this.notificationService.error('Error: ' + error.message);
+            }
 
         } finally {
             globalThis.__pedidoSubmitInFlight = false;
@@ -285,6 +288,68 @@ class ItemOrchestrator {
      */
     obtenerNotificationService() {
         return this.notificationService;
+    }
+
+    async manejarErrorCreacionConContingencia(error) {
+        const status = Number(error?.status || 0);
+        const code = String(error?.code || '');
+        const esErrorInciertoCreacion =
+            status === 419 ||
+            status >= 500 ||
+            code === 'network_error' ||
+            code === 'abort_error';
+
+        if (!esErrorInciertoCreacion) {
+            return false;
+        }
+
+        const html = `
+            <p style="margin-bottom: 12px;">
+                No pudimos confirmar si el pedido se creo correctamente.
+            </p>
+            <p style="margin-bottom: 0;">
+                Guarda como borrador y revisa en Seguimiento antes de volver a crear.
+            </p>
+        `;
+
+        if (window.Swal) {
+            const result = await window.Swal.fire({
+                icon: 'warning',
+                title: 'Verifica antes de reintentar',
+                html,
+                showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonText: 'Guardar borrador',
+                denyButtonText: 'Ir a Seguimiento',
+                cancelButtonText: 'Cerrar',
+                allowOutsideClick: false,
+            });
+
+            if (result.isConfirmed) {
+                this.redirigirAGuardarBorrador();
+            } else if (result.isDenied) {
+                this.abrirSeguimientoPedidos();
+            }
+        } else {
+            const irBorrador = confirm(
+                'No pudimos confirmar si el pedido se creo. Presiona Aceptar para ir a guardar borrador. Presiona Cancelar para revisar Seguimiento.'
+            );
+            if (irBorrador) {
+                this.redirigirAGuardarBorrador();
+            } else {
+                this.abrirSeguimientoPedidos();
+            }
+        }
+
+        return true;
+    }
+
+    redirigirAGuardarBorrador() {
+        window.location.href = '/asesores/pedidos/borradores';
+    }
+
+    abrirSeguimientoPedidos() {
+        window.location.href = '/asesores/pedidos';
     }
 }
 

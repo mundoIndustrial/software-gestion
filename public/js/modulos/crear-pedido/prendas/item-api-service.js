@@ -37,6 +37,12 @@ class ItemAPIService {
             });
 
             if (!resp.ok) {
+                console.warn('[refrescarCSRFToken] Endpoint /refresh-csrf no disponible, usando token del DOM');
+                const tokenDelDOM = document.querySelector('meta[name="csrf-token"]')?.content;
+                if (tokenDelDOM) {
+                    this.csrfToken = tokenDelDOM;
+                    return tokenDelDOM;
+                }
                 return '';
             }
 
@@ -49,10 +55,17 @@ class ItemAPIService {
                     meta.setAttribute('content', nuevoToken);
                 }
                 this.csrfToken = nuevoToken;
+                console.debug('[refrescarCSRFToken] Token refrescado exitosamente');
             }
 
             return nuevoToken;
         } catch (error) {
+            console.warn('[refrescarCSRFToken] Error al refrescar token, usando del DOM:', error.message);
+            const tokenDelDOM = document.querySelector('meta[name="csrf-token"]')?.content;
+            if (tokenDelDOM) {
+                this.csrfToken = tokenDelDOM;
+                return tokenDelDOM;
+            }
             return '';
         }
     }
@@ -101,37 +114,52 @@ class ItemAPIService {
      * Realizar petición HTTP genérica
      * @private
      */
-    async realizarPeticion(url, opciones = {}, yaReintento = false) {
+    async realizarPeticion(url, opciones = {}, yaReintento = false, intentoCSRF = 0) {
         // IMPORTANTE: Si el body es FormData, NO establecer Content-Type
         // FormData establece su propia cabecera con boundary
         const tieneFormData = opciones.body instanceof FormData;
         const csrfTokenActual = this.obtenerCSRFToken() || this.csrfToken || '';
         this.csrfToken = csrfTokenActual;
-        
+
         const configuracion = {
+            ...opciones,
             credentials: 'same-origin',
             headers: {
                 'Accept': 'application/json',
                 // Solo establecer Content-Type si NO es FormData
                 ...(tieneFormData ? {} : { 'Content-Type': 'application/json' }),
                 'X-CSRF-TOKEN': csrfTokenActual,
-                ...opciones.headers
-            },
-            ...opciones
+                ...(opciones.headers || {})
+            }
         };
 
         const respuesta = await fetch(url, configuracion);
 
-        if (respuesta.status === 419 && !yaReintento) {
+        if (respuesta.status === 419 && intentoCSRF < 2) {
+            console.warn(`[realizarPeticion] Intento ${intentoCSRF + 1}: Token CSRF inválido, intentando refrescar...`);
             const tokenRefrescado = await this.refrescarCSRFToken();
             if (tokenRefrescado) {
-                return await this.realizarPeticion(url, opciones, true);
+                // Recrear opciones sin body para poder reutilizar si es necesario
+                const opcionesReintento = { ...opciones };
+
+                // Si el body es FormData, necesitamos ser cuidadosos
+                if (tieneFormData && opciones.body instanceof FormData) {
+                    // FormData no puede ser leído dos veces, así que solo reintentar con el nuevo token
+                    return await this.realizarPeticion(url, opcionesReintento, yaReintento, intentoCSRF + 1);
+                } else {
+                    return await this.realizarPeticion(url, opcionesReintento, yaReintento, intentoCSRF + 1);
+                }
             }
         }
-        
+
         if (!respuesta.ok) {
             // Intentar obtener el texto de error (puede ser HTML o JSON)
             const textoError = await respuesta.text();
+
+            // Para 419, incluir contexto de CSRF
+            if (respuesta.status === 419) {
+                throw new Error(`HTTP error! status: ${respuesta.status}\nCSRF token mismatch.`);
+            }
 
             throw new Error(`HTTP error! status: ${respuesta.status}\n${textoError}`);
         }
@@ -209,15 +237,15 @@ class ItemAPIService {
             console.log('[validarPedido]  Datos recibidos:', pedidoData);
             console.log('[validarPedido]  Prendas:', pedidoData.prendas?.length || 0);
             console.log('[validarPedido]  EPPs:', pedidoData.epps?.length || 0);
-            
+
             // PASO 0: Registrar todos los archivos File con sus UIDs ANTES de serializar
             console.debug('[validarPedido] 🗂️ Registrando archivos File en fileRegistry...');
             this.registrarArchivosEnGlobal(pedidoData);
-            
+
             // PASO 1: Preparar datos para envío (JSON limpio + FormData para imágenes)
             console.debug('[validarPedido]  Preparando datos para envío...');
             let datosParaEnvio;
-            
+
             // Verificar si existe la función prepararDatosEppParaFormData (nuestro sistema EPP)
             if (typeof window.prepararDatosEppParaFormData === 'function') {
                 datosParaEnvio = window.prepararDatosEppParaFormData([pedidoData]);
@@ -230,31 +258,39 @@ class ItemAPIService {
                 };
                 console.debug('[validarPedido]  Fallback para prendas sin imágenes');
             }
-            
+
             // PASO 2: Serializar JSON limpio
             const jsonString = JSON.stringify(datosParaEnvio.jsonData[0]);
             console.debug(`[validarPedido] JSON serializado: ${jsonString.length} bytes`);
             console.log('[validarPedido] JSON String que se enviará:', jsonString);
-            
+
             // PASO 3: Enviar en FormData con campo "pedido" + archivos de imágenes
             const formData = datosParaEnvio.formData;
             formData.append('pedido', jsonString);
-            
+
+            // NUEVO: Usar misma idempotency key para validación que para creación
+            // Esto evita validaciones duplicadas si hay reintentos
+            const idempotencyKey = this.obtenerIdempotencyKeyParaEnvio();
+
             console.debug('[validarPedido]  Enviando a /validar con FormData...');
             console.debug('[validarPedido]  Archivos en FormData:', formData.getAll('files').length);
-            
+            console.debug('[validarPedido]  Idempotency Key:', idempotencyKey);
+
             const respuesta = await this.realizarPeticion(`${this.baseUrl}/validar`, {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: {
+                    'X-Idempotency-Key': idempotencyKey
+                }
             });
-            
+
             console.debug('[validarPedido] Respuesta:', respuesta);
-            
+
             //  NO limpiar registry aquí porque crearPedido() necesita los archivos
             // El registry se limpiará después de crearPedido()
-            
+
             return respuesta;
-            
+
         } catch (error) {
             console.error('[validarPedido]  Error:', error);
             //  Limpiar registry en caso de error de validación
@@ -268,6 +304,7 @@ class ItemAPIService {
      */
     async crearPedido(pedidoData) {
         const idempotencyKey = this.obtenerIdempotencyKeyParaEnvio();
+        let creacionExitosa = false;
         try {
             console.debug('[crearPedido]  INICIO');
 
@@ -488,10 +525,18 @@ class ItemAPIService {
                     const mensajesError = Object.entries(errorData.errors)
                         .map(([campo, mensajes]) => `${campo}: ${mensajes.join(', ')}`)
                         .join('\n');
-                    throw new Error(`Validación fallida:\n${mensajesError}`);
+                    const validationError = new Error(`Validacion fallida:\n${mensajesError}`);
+                    validationError.status = 422;
+                    validationError.code = 'validation_error';
+                    validationError.responseData = errorData;
+                    throw validationError;
                 }
 
-                throw new Error(errorData.message || `HTTP error! status: ${respuesta.status}`);
+                const requestError = new Error(errorData.message || `HTTP error! status: ${respuesta.status}`);
+                requestError.status = respuesta.status;
+                requestError.code = errorData.code || null;
+                requestError.responseData = errorData;
+                throw requestError;
             }
 
             const resultado = await respuesta.json();
@@ -503,6 +548,7 @@ class ItemAPIService {
             
             //  Limpiar registry después de envío exitoso
             this.limpiarFileRegistry();
+            creacionExitosa = true;
 
             return resultado;
 
@@ -512,7 +558,11 @@ class ItemAPIService {
             this.limpiarFileRegistry();
             throw error;
         } finally {
-            this.limpiarIdempotencyKeyFormulario();
+            // Conservar key cuando hay error para reintentos seguros (sin duplicar).
+            // Rotar solo al exito para el siguiente pedido.
+            if (creacionExitosa) {
+                this.limpiarIdempotencyKeyFormulario();
+            }
         }
     }
 
@@ -1618,6 +1668,53 @@ class ItemAPIService {
         const form = this.obtenerFormPedido();
         if (form && form.dataset.idempotencyKey) {
             delete form.dataset.idempotencyKey;
+        }
+    }
+
+    /**
+     * Verificar en el servidor si el pedido ya fue creado
+     * Esto previene doble-creación cuando hay errores CSRF
+     * @returns {Promise<{existe: boolean, pedido_id?: number, numero_pedido?: string}>}
+     */
+    async verificarSiPedidoYaCreado() {
+        try {
+            const idempotencyKey = this.obtenerIdempotencyKeyParaEnvio();
+
+            console.debug('[verificarSiPedidoYaCreado] Verificando si pedido ya fue creado con key:', idempotencyKey);
+
+            let respuesta = await fetch(`${this.baseUrl}/verificar-ya-creado`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Idempotency-Key': idempotencyKey
+                },
+                credentials: 'same-origin'
+            });
+
+            // Fallback para instalaciones donde la ruta está en /api/pedidos/*
+            if (respuesta.status === 404) {
+                respuesta = await fetch('/api/pedidos/verificar-ya-creado', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Idempotency-Key': idempotencyKey
+                    },
+                    credentials: 'same-origin'
+                });
+            }
+
+            if (!respuesta.ok) {
+                console.warn('[verificarSiPedidoYaCreado] Error al verificar:', respuesta.status);
+                return { existe: false };
+            }
+
+            const data = await respuesta.json();
+            console.debug('[verificarSiPedidoYaCreado] Respuesta:', data);
+
+            return data;
+        } catch (error) {
+            console.error('[verificarSiPedidoYaCreado] Error:', error.message);
+            return { existe: false };
         }
     }
 }

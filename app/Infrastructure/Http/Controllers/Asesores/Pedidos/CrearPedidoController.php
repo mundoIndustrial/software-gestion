@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
 class CrearPedidoController extends Controller
 {
     private const IDEMPOTENCY_PROCESSING_TTL_SECONDS = 60;
-    private const IDEMPOTENCY_RESULT_TTL_SECONDS = 300;
+    private const IDEMPOTENCY_RESULT_TTL_SECONDS = 3600; // 1 hora (balance: seguridad vs memoria)
     private const IDEMPOTENCY_WAIT_MAX_ITERATIONS = 20;
     private const IDEMPOTENCY_WAIT_SLEEP_MICROSECONDS = 200000; // 200ms
 
@@ -22,64 +22,158 @@ class CrearPedidoController extends Controller
         private CrearPedidoCompleteUseCase $crearPedidoUseCase,
     ) {}
 
+    /**
+     * Verificar si un pedido ya fue creado basado en idempotency key
+     * Esto previene doble-creación cuando hay errores de conexión
+     */
+    public function verificarPedidoYaCreado(Request $request): JsonResponse
+    {
+        try {
+            $idempotencyKey = trim((string) $request->header('X-Idempotency-Key', ''));
+            $userId = Auth::id() ?? 0;
+
+            if (empty($idempotencyKey)) {
+                return response()->json([
+                    'existe' => false,
+                    'mensaje' => 'Sin idempotency key',
+                ], 400);
+            }
+
+            $fingerprint = $this->buildIdempotencyFingerprint($request, $userId);
+            $baseKey = "pedidos:crear:idempotency:{$fingerprint}";
+            $resultKey = "{$baseKey}:result";
+
+            // IMPORTANTE: Usar try-catch por si el cache falla
+            try {
+                $cachedResult = Cache::get($resultKey);
+            } catch (\Exception $e) {
+                Log::warning('cache_read_error_verificar', [
+                    'error' => $e->getMessage(),
+                    'user_id' => $userId,
+                    'fingerprint' => $fingerprint,
+                ]);
+                // Si cache falla, asumir que no existe (mejor que doble-creación)
+                return response()->json([
+                    'existe' => false,
+                    'mensaje' => 'No se pudo verificar (cache error)',
+                ], 200);
+            }
+
+            if (is_array($cachedResult)) {
+                Log::info('pedido_ya_existe_cache', [
+                    'user_id' => $userId,
+                    'idempotency_key' => $idempotencyKey,
+                    'fingerprint' => $fingerprint,
+                    'pedido_id' => $cachedResult['pedido_id'] ?? null,
+                    'numero_pedido' => $cachedResult['numero_pedido'] ?? null,
+                ]);
+
+                return response()->json([
+                    'existe' => true,
+                    'pedido_id' => $cachedResult['pedido_id'] ?? null,
+                    'numero_pedido' => $cachedResult['numero_pedido'] ?? null,
+                    'mensaje' => 'Pedido ya fue creado exitosamente',
+                ], 200);
+            }
+
+            return response()->json([
+                'existe' => false,
+                'mensaje' => 'Pedido no encontrado en cache',
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('verificar_pedido_error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'existe' => false,
+                'mensaje' => 'Error al verificar pedido',
+            ], 500);
+        }
+    }
+
     public function crearPedido(Request $request): JsonResponse
     {
+        $startedAt = microtime(true);
         $userId = Auth::id() ?? 0;
+        $idempotencyKey = trim((string) $request->header('X-Idempotency-Key', ''));
+        $payloadHash = $this->buildPayloadHash($request);
         $fingerprint = $this->buildIdempotencyFingerprint($request, $userId);
+        $auditContext = $this->buildAuditContext($request, $userId, $idempotencyKey, $fingerprint, $payloadHash);
         $baseKey = "pedidos:crear:idempotency:{$fingerprint}";
         $processingKey = "{$baseKey}:processing";
         $resultKey = "{$baseKey}:result";
 
         try {
-            $cachedResult = Cache::get($resultKey);
-            if (is_array($cachedResult)) {
-                Log::warning('[CrearPedidoController::crearPedido] Replay idempotente (cache directa)', [
-                    'usuario_id' => $userId,
-                    'pedido_id' => $cachedResult['pedido_id'] ?? null,
-                    'fingerprint' => $fingerprint,
+            Log::info('pedido_create_attempt', $auditContext);
+
+            try {
+                $cachedResult = Cache::get($resultKey);
+            } catch (\Exception $e) {
+                Log::warning('cache_read_error_inicio', [
+                    'error' => $e->getMessage(),
+                    'user_id' => $userId,
                 ]);
+                $cachedResult = null;
+            }
+
+            if (is_array($cachedResult)) {
+                Log::warning('pedido_create_replay', array_merge($auditContext, [
+                    'replay_source' => 'direct_cache',
+                    'pedido_id' => $cachedResult['pedido_id'] ?? null,
+                    'numero_pedido' => $cachedResult['numero_pedido'] ?? null,
+                ]));
 
                 return response()->json($cachedResult, 200);
             }
 
-            $processingAcquired = Cache::add(
-                $processingKey,
-                now()->timestamp,
-                now()->addSeconds(self::IDEMPOTENCY_PROCESSING_TTL_SECONDS)
-            );
+            try {
+                $processingAcquired = Cache::add(
+                    $processingKey,
+                    now()->timestamp,
+                    now()->addSeconds(self::IDEMPOTENCY_PROCESSING_TTL_SECONDS)
+                );
+            } catch (\Exception $e) {
+                Log::warning('cache_lock_error', [
+                    'error' => $e->getMessage(),
+                    'user_id' => $userId,
+                ]);
+                // Si el lock falla, permitir proceder (mejor que bloquear)
+                $processingAcquired = true;
+            }
 
             if (!$processingAcquired) {
                 for ($i = 0; $i < self::IDEMPOTENCY_WAIT_MAX_ITERATIONS; $i++) {
                     usleep(self::IDEMPOTENCY_WAIT_SLEEP_MICROSECONDS);
 
-                    $cachedResult = Cache::get($resultKey);
+                    try {
+                        $cachedResult = Cache::get($resultKey);
+                    } catch (\Exception $e) {
+                        $cachedResult = null;
+                    }
+
                     if (is_array($cachedResult)) {
-                        Log::warning('[CrearPedidoController::crearPedido] Replay idempotente (espera)', [
-                            'usuario_id' => $userId,
+                        Log::warning('pedido_create_replay', array_merge($auditContext, [
+                            'replay_source' => 'wait_cache',
                             'pedido_id' => $cachedResult['pedido_id'] ?? null,
-                            'fingerprint' => $fingerprint,
+                            'numero_pedido' => $cachedResult['numero_pedido'] ?? null,
                             'iteracion' => $i + 1,
-                        ]);
+                        ]));
 
                         return response()->json($cachedResult, 200);
                     }
                 }
 
-                Log::warning('[CrearPedidoController::crearPedido] Solicitud duplicada en curso', [
-                    'usuario_id' => $userId,
-                    'fingerprint' => $fingerprint,
-                ]);
+                Log::warning('pedido_create_blocked', array_merge($auditContext, [
+                    'reason' => 'in_progress_lock',
+                ]));
 
                 return response()->json([
                     'success' => false,
                     'message' => 'Ya estamos procesando este pedido. Espera unos segundos e intenta nuevamente.',
                 ], 429);
             }
-
-            Log::info('[CrearPedidoController::crearPedido] Iniciado', [
-                'usuario_id' => $userId,
-                'fingerprint' => $fingerprint,
-            ]);
 
             $input = CrearPedidoInput::fromRequest($request, $userId);
             $output = $this->crearPedidoUseCase->ejecutar($input);
@@ -88,27 +182,43 @@ class CrearPedidoController extends Controller
             $statusCode = $output->success ? 200 : 500;
 
             if ($output->success) {
-                Cache::put(
-                    $resultKey,
-                    $payload,
-                    now()->addSeconds(self::IDEMPOTENCY_RESULT_TTL_SECONDS)
-                );
+                try {
+                    Cache::put(
+                        $resultKey,
+                        $payload,
+                        now()->addSeconds(self::IDEMPOTENCY_RESULT_TTL_SECONDS)
+                    );
+                } catch (\Exception $cacheError) {
+                    // Si cache falla, el pedido ya se creó (en BD)
+                    // Log el error pero devuelve éxito al cliente
+                    Log::warning('cache_write_error_pedido_creado', [
+                        'error' => $cacheError->getMessage(),
+                        'pedido_id' => $output->pedido_id,
+                        'user_id' => $userId,
+                        'fingerprint' => $fingerprint,
+                    ]);
+                    // El pedido se creó pero el cache falló
+                    // Devolvemos éxito porque el pedido está en BD
+                }
             }
 
-            Log::info('[CrearPedidoController::crearPedido] Completado', [
-                'usuario_id' => $userId,
+            Log::info('pedido_create_result', array_merge($auditContext, [
                 'success' => $output->success,
                 'pedido_id' => $output->pedido_id ?? null,
-                'fingerprint' => $fingerprint,
-            ]);
+                'numero_pedido' => $output->numero_pedido ?? null,
+                'status_code' => $statusCode,
+                'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
+            ]));
 
             return response()->json($payload, $statusCode);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning('[CrearPedidoController::crearPedido] Validacion fallida', [
-                'usuario_id' => $userId,
+            Log::warning('pedido_create_result', array_merge($auditContext, [
+                'success' => false,
+                'status_code' => 422,
+                'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
                 'errors' => $e->errors(),
-                'fingerprint' => $fingerprint,
-            ]);
+                'reason' => 'validation_error',
+            ]));
 
             return response()->json([
                 'success' => false,
@@ -116,12 +226,14 @@ class CrearPedidoController extends Controller
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
-            Log::error('[CrearPedidoController::crearPedido] Error', [
-                'usuario_id' => $userId,
+            Log::error('pedido_create_result', array_merge($auditContext, [
+                'success' => false,
+                'status_code' => 500,
+                'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'fingerprint' => $fingerprint,
-            ]);
+                'reason' => 'exception',
+            ]));
 
             return response()->json([
                 'success' => false,
@@ -130,6 +242,38 @@ class CrearPedidoController extends Controller
         } finally {
             Cache::forget($processingKey);
         }
+    }
+
+    private function buildAuditContext(
+        Request $request,
+        int $userId,
+        string $idempotencyKey,
+        string $fingerprint,
+        string $payloadHash
+    ): array {
+        return [
+            'user_id' => $userId,
+            'idempotency_key' => $idempotencyKey !== '' ? $idempotencyKey : null,
+            'request_fingerprint' => $fingerprint,
+            'payload_hash' => $payloadHash,
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'method' => $request->method(),
+            'path' => $request->path(),
+            'route_name' => optional($request->route())->getName(),
+            'url' => $request->fullUrl(),
+        ];
+    }
+
+    private function buildPayloadHash(Request $request): string
+    {
+        $pedidoPayload = $this->normalizePedidoPayload($request->input('pedido'));
+        $filesMeta = $this->extractFilesMeta($request->allFiles());
+
+        return hash('sha256', json_encode([
+            'pedido' => $pedidoPayload,
+            'files' => $filesMeta,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 
     private function buildIdempotencyFingerprint(Request $request, int $userId): string
