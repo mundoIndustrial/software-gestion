@@ -356,12 +356,20 @@ class SupervisorReceiptsController extends Controller
      */
     public function pendientesBordadoEstampado(Request $request)
     {
+        $verTodos = filter_var($request->query('ver_todos', false), FILTER_VALIDATE_BOOLEAN);
+
         $requestDTO = new GetPendingEmbroideryStampingReceiptsRequest(
             busqueda: $request->input('busqueda')
         );
         $response = $this->getPendingEmbroideryStampingReceiptsUseCase->execute($requestDTO);
 
         $allProcesses = collect($response->getProcesses())
+            ->when(!$verTodos, function ($collection) {
+                return $collection->filter(function ($proceso) {
+                    $color = mb_strtolower(trim((string) data_get($proceso, 'color_bordado_estampado', '')));
+                    return $color !== '#e0f2fe';
+                });
+            })
             ->sortByDesc(function ($proceso) {
                 $fechaAprobacion = data_get($proceso, 'fecha_aprobacion');
                 if (empty($fechaAprobacion)) {
@@ -395,6 +403,7 @@ class SupervisorReceiptsController extends Controller
      */
     public function pendientesCostura(Request $request)
     {
+        $verTodos = filter_var($request->query('ver_todos', false), FILTER_VALIDATE_BOOLEAN);
         $areaParam = $request->input('area');
         \Log::info('[DEBUG] Parámetro area en controlador', ['area' => $areaParam, 'type' => gettype($areaParam)]);
 
@@ -409,7 +418,13 @@ class SupervisorReceiptsController extends Controller
         );
 
         $response = $this->getPendingSewingReceiptsUseCase->execute($requestDTO);
-        $allReceipts = collect($response->getReceipts());
+        $allReceipts = collect($response->getReceipts())
+            ->when(!$verTodos, function ($collection) {
+                return $collection->filter(function ($proceso) {
+                    $color = mb_strtolower(trim((string) data_get($proceso, 'color_costura', '')));
+                    return $color !== '#e0f2fe';
+                });
+            });
         $perPage = (int) $request->query('per_page', 25);
         $perPage = max(10, min($perPage, 100));
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
@@ -661,6 +676,7 @@ class SupervisorReceiptsController extends Controller
      */
     public function pendientesReflectivo(Request $request)
     {
+        $verTodos = filter_var($request->query('ver_todos', false), FILTER_VALIDATE_BOOLEAN);
         $requestDTO = new GetPendingSewingReceiptsRequest(
             numeroRecibo: $request->filled('numero_recibo') ? $request->numero_recibo : null,
             cliente: $request->filled('cliente') ? $request->cliente : null,
@@ -671,7 +687,13 @@ class SupervisorReceiptsController extends Controller
         );
 
         $response = $this->getPendingReflectiveReceiptsUseCase->execute($requestDTO);
-        $allReceipts = collect($response->getReceipts());
+        $allReceipts = collect($response->getReceipts())
+            ->when(!$verTodos, function ($collection) {
+                return $collection->filter(function ($proceso) {
+                    $color = mb_strtolower(trim((string) data_get($proceso, 'color_reflectivo', '')));
+                    return $color !== '#e0f2fe';
+                });
+            });
         $perPage = (int) $request->query('per_page', 25);
         $perPage = max(10, min($perPage, 100));
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
@@ -696,6 +718,7 @@ class SupervisorReceiptsController extends Controller
      */
     public function pendientesControlCalidad(Request $request)
     {
+        $verTodos = filter_var($request->query('ver_todos', false), FILTER_VALIDATE_BOOLEAN);
         $requestDTO = new GetPendingSewingReceiptsRequest(
             numeroRecibo: $request->filled('numero_recibo') ? $request->numero_recibo : null,
             cliente: $request->filled('cliente') ? $request->cliente : null,
@@ -706,7 +729,13 @@ class SupervisorReceiptsController extends Controller
         );
 
         $response = $this->getPendingQualityControlReceiptsUseCase->execute($requestDTO);
-        $allReceipts = collect($response->getReceipts());
+        $allReceipts = collect($response->getReceipts())
+            ->when(!$verTodos, function ($collection) {
+                return $collection->filter(function ($proceso) {
+                    $color = mb_strtolower(trim((string) data_get($proceso, 'color_control_calidad', '')));
+                    return $color !== '#e0f2fe';
+                });
+            });
         $perPage = (int) $request->query('per_page', 25);
         $perPage = max(10, min($perPage, 100));
         $currentPage = LengthAwarePaginator::resolveCurrentPage();

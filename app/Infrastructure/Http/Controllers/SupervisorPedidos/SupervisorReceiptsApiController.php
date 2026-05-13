@@ -24,21 +24,36 @@ class SupervisorReceiptsApiController extends Controller
 
     public function pendingEmbroideryStamping(Request $request): JsonResponse
     {
+        $verTodos = filter_var($request->query('ver_todos', false), FILTER_VALIDATE_BOOLEAN);
+
         $response = $this->getPendingEmbroideryStampingReceiptsUseCase->execute(
             new GetPendingEmbroideryStampingReceiptsRequest(
                 busqueda: $request->input('busqueda')
             )
         );
 
+        $procesos = collect($response->getProcesses())
+            ->when(!$verTodos, function ($collection) {
+                return $collection->filter(function ($proceso) {
+                    $color = mb_strtolower(trim((string) data_get($proceso, 'color_bordado_estampado', '')));
+                    return $color !== '#e0f2fe';
+                });
+            })
+            ->values()
+            ->all();
+
         return response()->json([
             'success' => true,
             'message' => 'Pendientes de bordado/estampado recuperados correctamente',
-            'data' => $response->toArray(),
+            'data' => [
+                'procesosConCantidad' => $procesos,
+            ],
         ]);
     }
 
     public function pendingSewing(Request $request): JsonResponse
     {
+        $verTodos = filter_var($request->query('ver_todos', false), FILTER_VALIDATE_BOOLEAN);
         $requestDTO = new GetPendingSewingReceiptsRequest(
             numeroRecibo: $request->filled('numero_recibo') ? $request->input('numero_recibo') : null,
             cliente: $request->filled('cliente') ? $request->input('cliente') : null,
@@ -50,16 +65,28 @@ class SupervisorReceiptsApiController extends Controller
         );
 
         $response = $this->getPendingSewingReceiptsUseCase->execute($requestDTO);
+        $procesos = collect($response->getReceipts())
+            ->when(!$verTodos, function ($collection) {
+                return $collection->filter(function ($proceso) {
+                    $color = mb_strtolower(trim((string) data_get($proceso, 'color_costura', '')));
+                    return $color !== '#e0f2fe';
+                });
+            })
+            ->values()
+            ->all();
 
         return response()->json([
             'success' => true,
             'message' => 'Pendientes de costura recuperados correctamente',
-            'data' => $response->toArray(),
+            'data' => [
+                'procesosConCantidad' => $procesos,
+            ],
         ]);
     }
 
     public function pendingReflective(Request $request): JsonResponse
     {
+        $verTodos = filter_var($request->query('ver_todos', false), FILTER_VALIDATE_BOOLEAN);
         $requestDTO = new GetPendingSewingReceiptsRequest(
             numeroRecibo: $request->filled('numero_recibo') ? $request->input('numero_recibo') : null,
             cliente: $request->filled('cliente') ? $request->input('cliente') : null,
@@ -71,16 +98,28 @@ class SupervisorReceiptsApiController extends Controller
         );
 
         $response = $this->getPendingReflectiveReceiptsUseCase->execute($requestDTO);
+        $procesos = collect($response->getReceipts())
+            ->when(!$verTodos, function ($collection) {
+                return $collection->filter(function ($proceso) {
+                    $color = mb_strtolower(trim((string) data_get($proceso, 'color_reflectivo', '')));
+                    return $color !== '#e0f2fe';
+                });
+            })
+            ->values()
+            ->all();
 
         return response()->json([
             'success' => true,
             'message' => 'Pendientes de reflectivo recuperados correctamente',
-            'data' => $response->toArray(),
+            'data' => [
+                'procesosConCantidad' => $procesos,
+            ],
         ]);
     }
 
     public function pendingQualityControl(Request $request): JsonResponse
     {
+        $verTodos = filter_var($request->query('ver_todos', false), FILTER_VALIDATE_BOOLEAN);
         $requestDTO = new GetPendingSewingReceiptsRequest(
             numeroRecibo: $request->filled('numero_recibo') ? $request->input('numero_recibo') : null,
             cliente: $request->filled('cliente') ? $request->input('cliente') : null,
@@ -92,11 +131,22 @@ class SupervisorReceiptsApiController extends Controller
         );
 
         $response = $this->getPendingQualityControlReceiptsUseCase->execute($requestDTO);
+        $procesos = collect($response->getReceipts())
+            ->when(!$verTodos, function ($collection) {
+                return $collection->filter(function ($proceso) {
+                    $color = mb_strtolower(trim((string) data_get($proceso, 'color_control_calidad', '')));
+                    return $color !== '#e0f2fe';
+                });
+            })
+            ->values()
+            ->all();
 
         return response()->json([
             'success' => true,
             'message' => 'Pendientes de control de calidad recuperados correctamente',
-            'data' => $response->toArray(),
+            'data' => [
+                'procesosConCantidad' => $procesos,
+            ],
         ]);
     }
 

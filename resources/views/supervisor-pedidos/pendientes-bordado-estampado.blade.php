@@ -9,7 +9,7 @@
     <div class="row">
         <div class="col-12">
             <div class="supervisor-pedidos-container">
-                <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+                <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                     <button type="button" onclick="abrirModalGenerarReporte('logo')" style="
                         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
                         color: white;
@@ -25,6 +25,22 @@
                     " onmouseover="this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.4)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.boxShadow='none'; this.style.transform='translateY(0)';">
                         <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
                         Generar Reporte
+                    </button>
+                    <button type="button" id="btnToggleAzules" onclick="toggleFiltroAzulesTabla()" style="
+                        background: #1d4ed8;
+                        color: white;
+                        border: none;
+                        padding: 0.75rem 1.25rem;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                    ">
+                        <i class="fas fa-eye" style="font-size: 0.95rem;"></i>
+                        Ver todos
                     </button>
                 </div>
 
@@ -622,8 +638,12 @@ async function recargarTablaPendientes() {
     try {
         const apiUrl = new URL('/api/supervisor-pedidos/recibos/pendientes-bordado-estampado', window.location.origin);
         const busquedaActual = (document.getElementById('busqueda')?.value || '').trim();
+        const verTodos = new URLSearchParams(window.location.search).get('ver_todos');
         if (busquedaActual !== '') {
             apiUrl.searchParams.set('busqueda', busquedaActual);
+        }
+        if (verTodos === '1') {
+            apiUrl.searchParams.set('ver_todos', '1');
         }
 
         const resp = await fetch(apiUrl.toString(), {
@@ -746,6 +766,7 @@ function ejecutarBusquedaGeneralPendientes() {
 
 let filtroActual = null;
 const filtrosPendientes = {};
+let mostrarAzulesEnTabla = new URLSearchParams(window.location.search).get('ver_todos') === '1';
 
 function hayFiltrosActivosPendientes() {
     return Object.values(filtrosPendientes).some((regla) => {
@@ -905,9 +926,16 @@ function aplicarFiltroColumna(event) {
 function aplicarFiltrosEnVista() {
     const filas = document.querySelectorAll('[data-row="proceso"]');
     const textoBusqueda = (document.getElementById('busqueda')?.value || '').trim().toLowerCase();
+    actualizarContadorAzules();
 
     filas.forEach((fila) => {
         let visible = true;
+        const colorGuardado = String(fila.getAttribute('data-color-guardado') || '').trim().toLowerCase();
+        const esAzul = colorGuardado === '#e0f2fe';
+
+        if (!mostrarAzulesEnTabla && esAzul) {
+            visible = false;
+        }
 
         for (const [col, regla] of Object.entries(filtrosPendientes)) {
             if (!regla) continue;
@@ -935,6 +963,28 @@ function aplicarFiltrosEnVista() {
 
         fila.style.display = visible ? 'grid' : 'none';
     });
+}
+
+function actualizarContadorAzules() {
+    const totalAzules = document.querySelectorAll('[data-row="proceso"][data-color-guardado="#e0f2fe"]').length;
+    const btn = document.getElementById('btnToggleAzules');
+
+    if (btn) {
+        const icono = mostrarAzulesEnTabla ? 'fa-eye-slash' : 'fa-eye';
+        const texto = mostrarAzulesEnTabla ? 'Ocultar azules' : 'Ver todos';
+        btn.innerHTML = `<i class="fas ${icono}" style="font-size: 0.95rem;"></i> ${texto}`;
+    }
+}
+
+function toggleFiltroAzulesTabla() {
+    const url = new URL(window.location.href);
+    if (mostrarAzulesEnTabla) {
+        url.searchParams.delete('ver_todos');
+    } else {
+        url.searchParams.set('ver_todos', '1');
+    }
+    url.searchParams.delete('page');
+    window.navegarPendientesBordadoEstampado(url.toString());
 }
 
 function obtenerOpcionesDesdeFilas(col) {
@@ -1089,6 +1139,9 @@ function inicializarSelectorColores() {
     });
 
     document.querySelectorAll('.color-btn').forEach((btn) => {
+        if (btn.dataset.colorBound === '1') return;
+        btn.dataset.colorBound = '1';
+
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             const wrapper = this.closest('.color-selector-wrapper');
@@ -1107,6 +1160,7 @@ function inicializarSelectorColores() {
                 fila.style.background = color;
                 fila.setAttribute('data-color-guardado', color);
             }
+            aplicarFiltrosEnVista();
             
             // Guardar en BD
             guardarColorBordadoEstampado(reciboId, tipoRecibo, color);
@@ -1175,61 +1229,40 @@ window.navegarPendientesBordadoEstampado = async function navegarPendientesBorda
         rows.style.pointerEvents = 'none';
 
         const source = new URL(urlString, window.location.origin);
-        const apiUrl = `/api/supervisor-pedidos/recibos/pendientes-bordado-estampado${source.search || ''}`;
-
-        const res = await fetch(apiUrl, {
+        mostrarAzulesEnTabla = source.searchParams.get('ver_todos') === '1';
+        const htmlRes = await fetch(source.toString(), {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
+                'Accept': 'text/html'
             },
             cache: 'no-store'
         });
 
-        const payload = await res.json();
-        const procesos = payload?.data?.procesosConCantidad;
-        if (!res.ok || !Array.isArray(procesos)) {
+        if (!htmlRes.ok) {
             window.location.href = urlString;
             return;
         }
 
-        if (procesos.length === 0) {
-            rows.innerHTML = window.SupervisorReceiptsRenderers.emptyStateHtml();
-        } else {
-            rows.innerHTML = procesos.map((proceso) => window.SupervisorReceiptsRenderers.renderEmbroideryRow(proceso, escapeHtml, {
-                gridTemplate: '110px 160px 110px 200px 150px 140px 130px 170px 130px 100px',
-                showActions: true,
-                actionHandlerName: 'openReceiptFromLogoPendingRow',
-                showRemainingDays: false
-            })).join('');
+        const htmlText = await htmlRes.text();
+        const tempDoc = new DOMParser().parseFromString(htmlText, 'text/html');
+        const newRows = tempDoc.querySelector('#pendientesRows');
+        const newPagination = tempDoc.querySelector('.pendientes-logo-pagination');
+
+        if (!newRows) {
+            window.location.href = urlString;
+            return;
         }
 
+        rows.innerHTML = newRows.innerHTML;
         if (pagination) {
-            try {
-                const htmlRes = await fetch(urlString, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'text/html'
-                    },
-                    cache: 'no-store'
-                });
-
-                if (htmlRes.ok) {
-                    const htmlText = await htmlRes.text();
-                    const tempDoc = new DOMParser().parseFromString(htmlText, 'text/html');
-                    const newPagination = tempDoc.querySelector('.pendientes-logo-pagination');
-                    if (newPagination) {
-                        pagination.innerHTML = newPagination.innerHTML;
-                    }
-                }
-            } catch (paginationError) {
-                console.warn('No se pudo sincronizar la paginación:', paginationError);
+            if (newPagination) {
+                pagination.innerHTML = newPagination.innerHTML;
             }
         }
 
         if (pushState) {
-            window.history.pushState({ url: urlString }, '', urlString);
+            window.history.pushState({ url: source.toString() }, '', source.toString());
         }
 
         inicializarPendientesUI();
@@ -1248,9 +1281,8 @@ window.navegarPendientesBordadoEstampado = async function navegarPendientesBorda
 }
 
 window.addEventListener('popstate', function() {
+    mostrarAzulesEnTabla = new URLSearchParams(window.location.search).get('ver_todos') === '1';
     navegarPendientesBordadoEstampado(window.location.href, { pushState: false });
 });
 </script>
 @endpush
-
-

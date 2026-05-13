@@ -209,7 +209,7 @@
     <div class="row">
         <div class="col-12">
             <div class="supervisor-pedidos-container">
-                <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+                <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                     <button type="button" onclick="abrirModalGenerarReporte('reflectivo')" style="
                         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
                         color: white;
@@ -225,6 +225,22 @@
                     " onmouseover="this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.4)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.boxShadow='none'; this.style.transform='translateY(0)';">
                         <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
                         Generar Reporte
+                    </button>
+                    <button type="button" id="btnToggleAzulesReflectivo" onclick="toggleFiltroAzulesReflectivo()" style="
+                        background: #1d4ed8;
+                        color: white;
+                        border: none;
+                        padding: 0.75rem 1.25rem;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                    ">
+                        <i class="fas fa-eye" style="font-size: 0.95rem;"></i>
+                        Ver todos
                     </button>
                 </div>
                 <div id="supervisorPendientesReflectivoContent">
@@ -710,7 +726,29 @@ function inicializarBusquedaGeneralReflectivo() {
     }
 }
 
+let mostrarAzulesReflectivo = new URLSearchParams(window.location.search).get('ver_todos') === '1';
+
+function actualizarBotonAzulesReflectivo() {
+    const btn = document.getElementById('btnToggleAzulesReflectivo');
+    if (!btn) return;
+    const icono = mostrarAzulesReflectivo ? 'fa-eye-slash' : 'fa-eye';
+    const texto = mostrarAzulesReflectivo ? 'Ocultar azules' : 'Ver todos';
+    btn.innerHTML = `<i class="fas ${icono}" style="font-size: 0.95rem;"></i> ${texto}`;
+}
+
+function toggleFiltroAzulesReflectivo() {
+    const url = new URL(window.location.href);
+    if (mostrarAzulesReflectivo) {
+        url.searchParams.delete('ver_todos');
+    } else {
+        url.searchParams.set('ver_todos', '1');
+    }
+    url.searchParams.delete('page');
+    window.navegarPendientesReflectivo(url.toString());
+}
+
 inicializarBusquedaGeneralReflectivo();
+actualizarBotonAzulesReflectivo();
 
 function construirUrlApiPendientesReflectivo(urlString) {
     const source = new URL(urlString, window.location.origin);
@@ -862,6 +900,7 @@ window.navegarPendientesReflectivo = async function navegarPendientesReflectivo(
     const { pushState = true } = options;
     const container = document.getElementById('supervisorPendientesReflectivoContent');
     const rows = document.getElementById('costurasRows');
+    const pagination = document.querySelector('.costura-pagination');
     if (!container) {
         window.location.href = urlString;
         return;
@@ -871,8 +910,11 @@ window.navegarPendientesReflectivo = async function navegarPendientesReflectivo(
     try {
         container.style.opacity = '0.6';
         container.style.pointerEvents = 'none';
+        const source = new URL(urlString, window.location.origin);
+        mostrarAzulesReflectivo = source.searchParams.get('ver_todos') === '1';
+        actualizarBotonAzulesReflectivo();
 
-        const apiUrl = construirUrlApiPendientesReflectivo(urlString);
+        const apiUrl = construirUrlApiPendientesReflectivo(source.toString());
         const res = await fetch(apiUrl, {
             method: 'GET',
             headers: {
@@ -901,8 +943,32 @@ window.navegarPendientesReflectivo = async function navegarPendientesReflectivo(
             })).join('');
         }
 
+        if (pagination) {
+            try {
+                const htmlRes = await fetch(source.toString(), {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'text/html'
+                    },
+                    cache: 'no-store'
+                });
+
+                if (htmlRes.ok) {
+                    const htmlText = await htmlRes.text();
+                    const tempDoc = new DOMParser().parseFromString(htmlText, 'text/html');
+                    const newPagination = tempDoc.querySelector('.costura-pagination');
+                    if (newPagination) {
+                        pagination.innerHTML = newPagination.innerHTML;
+                    }
+                }
+            } catch (paginationError) {
+                console.warn('[navegarPendientesReflectivo] No se pudo sincronizar la paginación:', paginationError);
+            }
+        }
+
         if (pushState) {
-            window.history.pushState({ url: urlString }, '', urlString);
+            window.history.pushState({ url: source.toString() }, '', source.toString());
         }
 
         actualizarIndicadoresFiltros();
@@ -919,6 +985,8 @@ window.navegarPendientesReflectivo = async function navegarPendientesReflectivo(
 }
 
 window.addEventListener('popstate', function() {
+    mostrarAzulesReflectivo = new URLSearchParams(window.location.search).get('ver_todos') === '1';
+    actualizarBotonAzulesReflectivo();
     navegarPendientesReflectivo(window.location.href, { pushState: false });
 });
 
@@ -984,6 +1052,9 @@ function inicializarSelectorColores() {
 
     // Configurar manejadores de clic para los botones de color
     document.querySelectorAll('.color-btn').forEach((btn) => {
+        if (btn.dataset.colorBound === '1') return;
+        btn.dataset.colorBound = '1';
+
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             const wrapper = this.closest('.color-selector-wrapper');
@@ -998,6 +1069,10 @@ function inicializarSelectorColores() {
             // Retroalimentacion visual
             wrapper.querySelectorAll('.color-btn').forEach(b => b.style.boxShadow = '');
             this.style.boxShadow = '0 0 0 2px #1e40af';
+
+            if (!mostrarAzulesReflectivo && String(color).toLowerCase() === '#e0f2fe') {
+                filaBg.style.display = 'none';
+            }
             
             // Guardar en BD
             guardarColorReflectivo(reciboId, color);
@@ -1053,6 +1128,7 @@ function limpiarTodosFiltros() {
     url.searchParams.delete('prendas');
     url.searchParams.delete('fecha_creacion');
     url.searchParams.delete('busqueda');
+    url.searchParams.delete('ver_todos');
     url.searchParams.delete('page');
 
     window.navegarPendientesReflectivo(url.toString());

@@ -706,6 +706,7 @@ window.navegarPendientesControlCalidad = async function navegarPendientesControl
     const { pushState = true } = options;
     const container = document.getElementById('supervisorPendientesControlCalidadContent');
     const rows = document.getElementById('controlCalidadRows');
+    const pagination = document.querySelector('.control-calidad-pagination');
     if (!container) {
         window.location.href = urlString;
         return;
@@ -715,8 +716,9 @@ window.navegarPendientesControlCalidad = async function navegarPendientesControl
     try {
         container.style.opacity = '0.6';
         container.style.pointerEvents = 'none';
+        const source = new URL(urlString, window.location.origin);
 
-        const apiUrl = construirUrlApiPendientesControlCalidad(urlString);
+        const apiUrl = construirUrlApiPendientesControlCalidad(source.toString());
         const res = await fetch(apiUrl, {
             method: 'GET',
             headers: {
@@ -746,8 +748,32 @@ window.navegarPendientesControlCalidad = async function navegarPendientesControl
             })).join('');
         }
 
+        if (pagination) {
+            try {
+                const htmlRes = await fetch(source.toString(), {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'text/html'
+                    },
+                    cache: 'no-store'
+                });
+
+                if (htmlRes.ok) {
+                    const htmlText = await htmlRes.text();
+                    const tempDoc = new DOMParser().parseFromString(htmlText, 'text/html');
+                    const newPagination = tempDoc.querySelector('.control-calidad-pagination');
+                    if (newPagination) {
+                        pagination.innerHTML = newPagination.innerHTML;
+                    }
+                }
+            } catch (paginationError) {
+                console.warn('[navegarPendientesControlCalidad] No se pudo sincronizar la paginación:', paginationError);
+            }
+        }
+
         if (pushState) {
-            window.history.pushState({ url: urlString }, '', urlString);
+            window.history.pushState({ url: source.toString() }, '', source.toString());
         }
 
         actualizarIndicadoresFiltros();
@@ -814,6 +840,9 @@ function inicializarSelectorColores() {
 
     // Configurar manejadores de clic para los botones de color
     document.querySelectorAll('.color-btn').forEach((btn) => {
+        if (btn.dataset.colorBound === '1') return;
+        btn.dataset.colorBound = '1';
+
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             const wrapper = this.closest('.color-selector-wrapper');
@@ -828,7 +857,7 @@ function inicializarSelectorColores() {
             // Retroalimentacion visual
             wrapper.querySelectorAll('.color-btn').forEach(b => b.style.boxShadow = '');
             this.style.boxShadow = '0 0 0 2px #1e40af';
-            
+
             // Guardar en BD
             guardarColorCostura(reciboId, color);
         });
