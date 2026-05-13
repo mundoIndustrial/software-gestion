@@ -11,6 +11,23 @@
         window.dispatchEvent(new CustomEvent('asesores:notificaciones:refrescar'));
     }
 
+    function __formatFechaHumana(fechaIso) {
+        if (!fechaIso) return '';
+        const d = new Date(fechaIso);
+        if (Number.isNaN(d.getTime())) return String(fechaIso);
+
+        const dia = String(d.getDate()).padStart(2, '0');
+        const mes = String(d.getMonth() + 1).padStart(2, '0');
+        const anio = d.getFullYear();
+        const hora = d.toLocaleTimeString('es-CO', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+        });
+
+        return `${dia}-${mes}-${anio} ${hora}`;
+    }
+
     function __renderTotalBadgeOnEyeButton(pedidoId) {
         const totals = window.__asesoresBadgeTotals || { obs: {}, entregas: {} };
         const obs = parseInt(totals.obs?.[pedidoId] ?? '0', 10) || 0;
@@ -322,9 +339,14 @@
                     <button onclick="eliminarObservacionDespachoAsesores('${item.id}')" style="border:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:4px  8px;cursor:pointer;font-size:12px;" title="Eliminar"></button>
                 ` : '';
 
-                const fecha = item.updated_at || item.created_at || '';
+                const fecha = __formatFechaHumana(item.updated_at || item.created_at || '');
                 const rol = item.usuario_rol ? ` <span style="color:#64748b;font-weight:600;">(${item.usuario_rol})</span>` : '';
-                const talla = item.talla ? ` <span style="background:#eef2ff;color:#3730a3;border-radius:9999px;padding:2px 8px;font-size:11px;font-weight:700;">Talla: ${item.talla}</span>` : '';
+                const esEpp = String(item.area || '').toUpperCase() === 'EPP';
+                const tallaStr = String(item.talla || '').trim();
+                const tallaEsHash = /^[a-f0-9]{32}$/i.test(tallaStr);
+                const talla = (!esEpp && !tallaEsHash && tallaStr) ? ` <span style="background:#eef2ff;color:#3730a3;border-radius:9999px;padding:2px 8px;font-size:11px;font-weight:700;">Talla: ${tallaStr}</span>` : '';
+                const itemNombre = item.item_nombre || item.prenda_nombre || item.nombre_prenda || '';
+                const prenda = itemNombre ? ` <span style="background:#ecfdf5;color:#065f46;border-radius:9999px;padding:2px 8px;font-size:11px;font-weight:700;">Prenda: ${itemNombre}</span>` : '';
                 const badgeOrigen = source === 'bodega'
                     ? '<span style="background:#fef3c7;color:#92400e;border-radius:9999px;padding:2px 8px;font-size:11px;font-weight:700;">Bodega</span>'
                     : '<span style="background:#dbeafe;color:#1e40af;border-radius:9999px;padding:2px 8px;font-size:11px;font-weight:700;">Despacho</span>';
@@ -335,7 +357,7 @@
                             <div>
                                 <div style="font-weight:700;color:#0f172a;font-size:13px;">${item.usuario_nombre ?? ''}${rol}</div>
                                 <div style="color:#64748b;font-size:12px;">${fecha}</div>
-                                <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">${badgeOrigen}${talla}</div>
+                                <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">${badgeOrigen}${prenda}${talla}</div>
                             </div>
                             <div style="display:flex;gap:8px;align-items:center;">${botones}</div>
                         </div>
@@ -828,4 +850,3 @@
 
     window.refrescarBadgesObservacionesDespachoAsesores = refrescarBadgesObservacionesDespachoAsesores;
 })();
-

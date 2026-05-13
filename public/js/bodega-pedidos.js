@@ -59,12 +59,23 @@ if (typeof window.usuarioActualId === 'undefined' || window.usuarioActualId === 
 }
 
 if (typeof window.abrirModalNotas !== 'function') {
-    window.abrirModalNotas = function(numeroPedido, talla, nombreItem, tipoItem, tallaReal, tallaColorId) {
+    window.abrirModalNotas = function(numeroPedido, talla, nombreItem, tipoItem, tallaReal, tallaColorId, rowHash, prendaId, pedidoEppId, bodegaDetalleTallaId) {
         try {
+            const limpiarNombreArticulo = (valor) => {
+                const texto = String(valor || '').trim();
+                // Limpia sufijos técnicos tipo " - 44c4c7e8015f09d6dca05753784b56c2"
+                return texto.replace(/\s*-\s*[a-f0-9]{32}$/i, '').trim();
+            };
+            const esHashTecnico = (valor) => /^[a-f0-9]{32}$/i.test(String(valor || '').trim());
+
             window.__notasContext = {
                 numero_pedido: numeroPedido || '',
                 talla: talla || '',
                 talla_color_id: (tallaColorId !== undefined && tallaColorId !== null && String(tallaColorId).trim() !== '') ? Number(tallaColorId) : null,
+                row_hash: String(rowHash || '').trim() || null,
+                prenda_id: (prendaId !== undefined && prendaId !== null && String(prendaId).trim() !== '') ? Number(prendaId) : null,
+                pedido_epp_id: (pedidoEppId !== undefined && pedidoEppId !== null && String(pedidoEppId).trim() !== '') ? Number(pedidoEppId) : null,
+                bodega_detalle_talla_id: (bodegaDetalleTallaId !== undefined && bodegaDetalleTallaId !== null && String(bodegaDetalleTallaId).trim() !== '') ? Number(bodegaDetalleTallaId) : null,
             };
 
             const modal = document.getElementById('modalNotas');
@@ -78,9 +89,10 @@ if (typeof window.abrirModalNotas !== 'function') {
 
             const articuloSpan = document.getElementById('modalNotasArticulo');
             if (articuloSpan) {
-                let textoArticulo = nombreItem || '';
-                if (tipoItem === 'prenda' && tallaReal) {
-                    textoArticulo += ` - ${tallaReal}`;
+                let textoArticulo = limpiarNombreArticulo(nombreItem);
+                const tallaVisual = String(tallaReal || '').trim();
+                if (tipoItem === 'prenda' && tallaVisual && !esHashTecnico(tallaVisual)) {
+                    textoArticulo += ` - ${tallaVisual}`;
                 }
                 articuloSpan.textContent = textoArticulo;
             }
@@ -501,7 +513,8 @@ if (typeof window.eliminarNota !== 'function') {
                 return;
             }
             if (typeof window.cargarNotas === 'function') {
-                window.cargarNotas(numeroPedido, talla);
+                const ctx = window.__notasContext || {};
+                window.cargarNotas(numeroPedido, talla, ctx.talla_color_id ?? null);
             }
         })
         .catch(err => {
@@ -559,6 +572,10 @@ if (typeof window.guardarNota !== 'function') {
             const numeroPedido = ctx.numero_pedido || document.getElementById('modalNotasNumeroPedido')?.textContent || '';
             const talla = ctx.talla || '';
             const tallaColorId = ctx.talla_color_id ?? null;
+            const rowHash = ctx.row_hash ?? null;
+            const prendaId = ctx.prenda_id ?? null;
+            const pedidoEppId = ctx.pedido_epp_id ?? null;
+            const bodegaDetalleTallaId = ctx.bodega_detalle_talla_id ?? null;
 
             const baseNotas = (window.location && window.location.pathname && window.location.pathname.startsWith('/despacho'))
                 ? '/despacho/notas'
@@ -589,6 +606,10 @@ if (typeof window.guardarNota !== 'function') {
                     numero_pedido: numeroPedido,
                     talla: talla,
                     talla_color_id: tallaColorId,
+                    row_hash: rowHash,
+                    prenda_id: prendaId,
+                    pedido_epp_id: pedidoEppId,
+                    bodega_detalle_talla_id: bodegaDetalleTallaId,
                     contenido: contenido,
                 })
             });

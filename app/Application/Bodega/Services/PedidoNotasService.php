@@ -18,6 +18,10 @@ class PedidoNotasService
                 'numero_pedido' => 'required|string',
                 'talla' => 'required|string',
                 'talla_color_id' => 'nullable|integer',
+                'row_hash' => 'nullable|string|max:32',
+                'pedido_epp_id' => 'nullable|integer',
+                'prenda_id' => 'nullable|integer',
+                'bodega_detalle_talla_id' => 'nullable|integer',
                 'contenido' => 'required|string|max:5000',
             ]);
 

@@ -11,9 +11,13 @@ class BodegaNota extends Model
     
     protected $fillable = [
         'pedido_produccion_id',
+        'bodega_detalle_talla_id',
         'numero_pedido',
         'talla',
         'talla_color_id',
+        'pedido_epp_id',
+        'prenda_id',
+        'row_hash',
         'contenido',
         'usuario_id',
         'usuario_nombre',

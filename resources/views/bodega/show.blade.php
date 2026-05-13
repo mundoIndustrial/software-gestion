@@ -529,7 +529,7 @@
                                                             >{{ $baseItem['observaciones'] ?? '' }}</textarea>
                                                             <button
                                                                 type="button"
-                                                                onclick="abrirModalNotas('{{ $baseItem['numero_pedido'] }}', '{{ $baseItem['talla'] }}', '{{ addslashes($nombre) }}', 'prenda', '{{ $baseItem['talla'] }}', '{{ $t['tallaColorId'] ?? '' }}')"
+                                                            onclick="abrirModalNotas('{{ $baseItem['numero_pedido'] }}', '{{ $baseItem['talla'] }}', '{{ addslashes($nombre) }}', 'prenda', '{{ $baseItem['talla'] }}', '{{ $t['tallaColorId'] ?? '' }}', '{{ $rowHash }}', '{{ $baseItem['prenda_id'] ?? '' }}', '{{ $baseItem['pedido_epp_id'] ?? '' }}', '')"
                                                                 class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded transition whitespace-nowrap"
                                                                 title="Ver/agregar notas"
                                                             >
@@ -944,7 +944,7 @@
                                                         >{{ $item['observaciones'] ?? '' }}</textarea>
                                                         <button
                                                             type="button"
-                                                            onclick="abrirModalNotas('{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}', '{{ addslashes($nombre) }}', 'prenda', '{{ $item['talla'] }}')"
+                                                            onclick="abrirModalNotas('{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}', '{{ addslashes($nombre) }}', 'prenda', '{{ $item['talla'] }}', '', '{{ $rowHashSimple }}', '{{ $item['prenda_id'] ?? '' }}', '{{ $item['pedido_epp_id'] ?? '' }}', '')"
                                                             class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded transition whitespace-nowrap"
                                                             title="Ver/agregar notas"
                                                         >
@@ -1121,6 +1121,9 @@
             <button onclick="cerrarModalNotas()" class="text-white hover:text-slate-200 text-2xl leading-none">✕</button>
         </div>
         <div class="px-6 py-6">
+            <div class="mb-4 p-3 bg-slate-50 rounded border border-slate-200 text-sm text-slate-700">
+                <span class="font-semibold">Artículo:</span> <span id="modalNotasArticulo">—</span>
+            </div>
             <div id="notasHistorial" class="mb-6" style="max-height: 350px; overflow-y: auto;">
                 <div class="flex justify-center items-center py-8">
                     <span class="text-slate-500"> Cargando notas...</span>
