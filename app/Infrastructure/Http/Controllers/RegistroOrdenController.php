@@ -1668,7 +1668,7 @@ class RegistroOrdenController extends Controller
         // Tomar solo el último estado de área por proceso (técnica) para evitar mezclar
         // BORDADO/ESTAMPADO/DTF/SUBLIMADO dentro de la misma prenda.
         $ultimasAreasLogo = DB::table('prenda_areas_logo_pedido as p1')
-            ->select('p1.proceso_prenda_detalle_id', DB::raw('MAX(p1.id) as max_id'))
+            ->select('p1.proceso_prenda_detalle_id', DB::raw('MAX(p1.updated_at) as max_updated_at'))
             ->groupBy('p1.proceso_prenda_detalle_id');
 
         $tipoReciboCase = "CASE ppd.tipo_proceso_id "
@@ -1683,12 +1683,19 @@ class RegistroOrdenController extends Controller
             ->joinSub($ultimasAreasLogo, 'ultima_area', function ($join) {
                 $join->on('ultima_area.proceso_prenda_detalle_id', '=', 'ppd.id');
             })
-            ->join('prenda_areas_logo_pedido as palo', 'palo.id', '=', 'ultima_area.max_id')
+            ->join('prenda_areas_logo_pedido as palo', function ($join) {
+                $join->on('palo.proceso_prenda_detalle_id', '=', 'ppd.id')
+                    ->on('palo.updated_at', '=', 'ultima_area.max_updated_at');
+            })
             ->join('pedidos_produccion as pedprod', 'pp.pedido_produccion_id', '=', 'pedprod.id')
             ->leftJoin('users as asesor_user', 'pedprod.asesor_id', '=', 'asesor_user.id')
             ->join('consecutivos_recibos_pedidos as crp', function ($join) use ($tipoReciboCase) {
                 $join->on('pp.id', '=', 'crp.prenda_id')
                     ->on('pp.pedido_produccion_id', '=', 'crp.pedido_produccion_id')
+                    ->where(function ($q) {
+                        $q->whereColumn('palo.consecutivo_recibo_id', 'crp.id')
+                            ->orWhereNull('palo.consecutivo_recibo_id');
+                    })
                     ->whereRaw("crp.tipo_recibo = ({$tipoReciboCase})");
             })
             ->select([

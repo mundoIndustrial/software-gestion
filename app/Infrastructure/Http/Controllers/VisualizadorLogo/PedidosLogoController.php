@@ -171,6 +171,7 @@ final class PedidosLogoController extends Controller
         $request->validate([
             'id_recibo' => 'required|integer',
             'numero_recibo' => 'required|integer',
+            'consecutivo_recibo_id' => 'nullable|integer|min:1',
         ]);
 
         $user = Auth::user();
@@ -191,6 +192,7 @@ final class PedidosLogoController extends Controller
                 'area' => 'BORDANDO',
                 'novedades' => null,
                 'pedido_parcial_id' => null,
+                'consecutivo_recibo_id' => $request->input('consecutivo_recibo_id'),
             ]);
             
             return response()->json([
@@ -215,6 +217,7 @@ final class PedidosLogoController extends Controller
             'area' => 'BORDADO',
             'novedades' => 'Completado por bordador: ' . ($user->name ?? 'Bordador'),
             'pedido_parcial_id' => null,
+            'consecutivo_recibo_id' => $request->input('consecutivo_recibo_id'),
         ]);
 
         return response()->json([

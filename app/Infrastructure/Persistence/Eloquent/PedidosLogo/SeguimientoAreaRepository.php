@@ -33,10 +33,11 @@ final class SeguimientoAreaRepository implements SeguimientoAreaRepositoryInterf
             'novedades' => $row->novedades,
             'fechas_areas' => $row->fechas_areas,
             'pedido_parcial_id' => $row->pedido_parcial_id,
+            'consecutivo_recibo_id' => $row->consecutivo_recibo_id ?? null,
         ];
     }
 
-    public function upsertSeguimiento(int $procesoPrendaDetalleId, int $prendaPedidoId, string $area, ?string $novedades, array $fechasAreas, string $timestamp, ?int $pedidoParcialId = null): void
+    public function upsertSeguimiento(int $procesoPrendaDetalleId, int $prendaPedidoId, string $area, ?string $novedades, array $fechasAreas, string $timestamp, ?int $pedidoParcialId = null, ?int $consecutivoReciboId = null): void
     {
         // Build the where clause - search by both proceso and pedido_parcial_id
         $query = DB::table('prenda_areas_logo_pedido')
@@ -67,6 +68,7 @@ final class SeguimientoAreaRepository implements SeguimientoAreaRepositoryInterf
                 'novedades' => $novedades,
                 'fechas_areas' => json_encode($fechasAreas),
                 'pedido_parcial_id' => $pedidoParcialId,
+                'consecutivo_recibo_id' => $consecutivoReciboId,
                 'updated_at' => $timestamp,
             ]);
             return;
@@ -79,6 +81,7 @@ final class SeguimientoAreaRepository implements SeguimientoAreaRepositoryInterf
             'novedades' => $novedades,
             'fechas_areas' => json_encode($fechasAreas),
             'pedido_parcial_id' => $pedidoParcialId,
+            'consecutivo_recibo_id' => $consecutivoReciboId,
             'created_at' => $timestamp,
             'updated_at' => $timestamp,
         ]);

@@ -40,6 +40,7 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                 MAX(palp.novedades) as novedades,
                 MAX(palp.fechas_areas) as fechas_areas,
                 COALESCE(crp.consecutivo_actual, pedidos_procesos_prenda_detalles.numero_recibo) as numero_recibo_consecutivo,
+                crp.id as consecutivo_recibo_id,
                 COALESCE(crp.created_at, pedidos_procesos_prenda_detalles.created_at) as fecha_creacion_recibo,
                 NULL as fecha_activacion,
                 0 as es_parcial,
@@ -74,7 +75,7 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
             })
             ->whereNull('ppar.id')
             ->whereIn('pedidos_procesos_prenda_detalles.tipo_proceso_id', $tipoProcesoIds)
-            ->groupBy('pedidos_procesos_prenda_detalles.id', 'crp.consecutivo_actual', 'crp.created_at', 'pp.pedido_produccion_id');
+            ->groupBy('pedidos_procesos_prenda_detalles.id', 'crp.id', 'crp.consecutivo_actual', 'crp.created_at', 'pp.pedido_produccion_id');
 
         $this->aplicarBusqueda(
             $queryProcesos,
@@ -119,6 +120,7 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                 MAX(palp.novedades) as novedades,
                 MAX(palp.fechas_areas) as fechas_areas,
                 ppar.consecutivo_actual as numero_recibo_consecutivo,
+                crp.id as consecutivo_recibo_id,
                 MAX(crp.created_at) as fecha_creacion_recibo,
                 ppar.fecha_activacion,
                 1 as es_parcial,
@@ -146,7 +148,7 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
             ->where('ppar.estado', 'APROBADO')
             ->where('ppar.activo', 1)
             ->whereNull('ppar.deleted_at')
-            ->groupBy('ppar.id', 'pedidos_procesos_prenda_detalles.id');
+            ->groupBy('ppar.id', 'pedidos_procesos_prenda_detalles.id', 'crp.id');
 
         $this->aplicarBusqueda(
             $queryParciales,

@@ -330,12 +330,14 @@ window.__programarActualizacionDiariaLogo = function() {
     }, ms);
 };
 
-window.__guardarAreaNovedadLogo = async function(procesoPrendaDetalleId, area, novedades, pedidoParcialId = null) {
+window.__guardarAreaNovedadLogo = async function(procesoPrendaDetalleId, area, novedades, pedidoParcialId = null, consecutivoReciboId = null) {
     // If not explicitly provided, fallback to first matching row (legacy behavior).
-    const pedidoParcialResolved = pedidoParcialId ?? (() => {
+    const rowResolved = (() => {
         const row = document.querySelector(`[data-recibo-row="1"][data-proceso-id="${procesoPrendaDetalleId}"]`);
-        return row ? row.dataset.pedidoParcialId : null;
+        return row || null;
     })();
+    const pedidoParcialResolved = pedidoParcialId ?? (rowResolved ? rowResolved.dataset.pedidoParcialId : null);
+    const consecutivoReciboResolved = consecutivoReciboId ?? (rowResolved ? rowResolved.dataset.consecutivoReciboId : null);
 
     const response = await fetch(`{{ route('visualizador-logo.pedidos-logo.area-novedad') }}`, {
         method: 'POST',
@@ -349,6 +351,7 @@ window.__guardarAreaNovedadLogo = async function(procesoPrendaDetalleId, area, n
             area,
             novedades,
             pedido_parcial_id: pedidoParcialResolved ? parseInt(pedidoParcialResolved) : null,
+            consecutivo_recibo_id: consecutivoReciboResolved ? parseInt(consecutivoReciboResolved) : null,
         }),
     });
 
@@ -920,6 +923,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const tipoProceso = recibo.tipo_proceso;
             const esParcial = !!recibo.es_parcial;
             const pedidoParcialId = recibo.pedido_parcial_id || null;
+            const consecutivoReciboId = recibo.consecutivo_recibo_id || null;
             const nombreProceso = recibo.nombre_proceso || recibo.tipo_proceso || '';
             const procesoPrendaDetalleId = recibo.id;
             const completado = Boolean(recibo.completado || window.__estaCompletadoLocalmenteLogo(procesoPrendaDetalleId));
@@ -936,7 +940,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const btnTitle = completado ? 'Click para deshacer completado' : 'Marcar como completado';
                 
                 return `
-                    <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-completado="${completado ? '1' : '0'}" data-pedido-parcial-id="${pedidoParcialId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
+                    <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-completado="${completado ? '1' : '0'}" data-pedido-parcial-id="${pedidoParcialId || ''}" data-consecutivo-recibo-id="${consecutivoReciboId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
                         min-width: 900px;
                         display: grid;
                         grid-template-columns: 100px 200px 120px 340px 180px 140px;
@@ -977,7 +981,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div style="color: #64748b; font-size: 0.95rem;">${formatearFecha(fechaCreacion)}</div>
                         <div style="display: flex; justify-content: center;">
                             <button 
-                               onclick="marcarReciboCompletado(${procesoPrendaDetalleId}, '${escapeJsAttr(numeroReciboValor)}', this)"
+                               onclick="marcarReciboCompletado(${procesoPrendaDetalleId}, '${escapeJsAttr(numeroReciboValor)}', ${consecutivoReciboId ? Number(consecutivoReciboId) : 'null'}, this)"
                                title="${btnTitle}"
                                style="
                                    background: ${btnBg};
@@ -1004,7 +1008,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (window.__isDisenadorLogos) {
                 return `
-                    <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-pedido-parcial-id="${pedidoParcialId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
+                    <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-pedido-parcial-id="${pedidoParcialId || ''}" data-consecutivo-recibo-id="${consecutivoReciboId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
                         min-width: 900px;
                         display: grid;
                         grid-template-columns: 100px 200px 340px 180px 140px;
@@ -1075,7 +1079,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }).join('');
 
             return `
-                <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-area="${area}" data-total-dias="${totalDias}" data-fecha-creacion-recibo="${fechaCreacionRecibo || ''}" data-fecha-entrega="${fechaEntrega || ''}" data-pedido-parcial-id="${pedidoParcialId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
+                <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-area="${area}" data-total-dias="${totalDias}" data-fecha-creacion-recibo="${fechaCreacionRecibo || ''}" data-fecha-entrega="${fechaEntrega || ''}" data-pedido-parcial-id="${pedidoParcialId || ''}" data-consecutivo-recibo-id="${consecutivoReciboId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
                     min-width: 1860px;
                     display: grid;
                     grid-template-columns: 100px 120px 200px 300px 170px 230px 190px 260px 160px;
@@ -1139,6 +1143,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const areaValue = this.value;
                 const row = this.closest('[data-recibo-row="1"]');
                 const pedidoParcialId = row ? row.dataset.pedidoParcialId : null;
+                const consecutivoReciboId = row ? row.dataset.consecutivoReciboId : null;
                 const novedadesInput = row
                     ? row.querySelector(`input[data-proceso-id="${procesoId}"][data-field="novedades"]`)
                     : tbody.querySelector(`input[data-proceso-id="${procesoId}"][data-field="novedades"]`);
@@ -1150,7 +1155,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 this.disabled = true;
                 try {
-                    const resp = await window.__guardarAreaNovedadLogo(procesoId, areaValue, novedadesValue, pedidoParcialId);
+                    const resp = await window.__guardarAreaNovedadLogo(procesoId, areaValue, novedadesValue, pedidoParcialId, consecutivoReciboId);
                     if (row && resp && resp.fecha_entrega) {
                         row.dataset.fechaEntrega = resp.fecha_entrega;
                         const entregaCell = row.querySelector('[data-field="fecha_entrega"]');
@@ -1174,6 +1179,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const novedadesValue = this.value;
                 const row = this.closest('[data-recibo-row="1"]');
                 const pedidoParcialId = row ? row.dataset.pedidoParcialId : null;
+                const consecutivoReciboId = row ? row.dataset.consecutivoReciboId : null;
                 const areaSelect = row
                     ? row.querySelector(`select[data-proceso-id="${procesoId}"][data-field="area"]`)
                     : tbody.querySelector(`select[data-proceso-id="${procesoId}"][data-field="area"]`);
@@ -1181,7 +1187,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 this.disabled = true;
                 try {
-                    await window.__guardarAreaNovedadLogo(procesoId, areaValue, novedadesValue, pedidoParcialId);
+                    await window.__guardarAreaNovedadLogo(procesoId, areaValue, novedadesValue, pedidoParcialId, consecutivoReciboId);
                     window.__aplicarColoresFilaReciboLogo(procesoId);
                 } catch (e) {
                     alert('Error guardando Área/Novedad. Intenta de nuevo.');
@@ -1196,7 +1202,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Función para marcar/desmarcar recibo como completado (bordador)
-    window.marcarReciboCompletado = async function(idRecibo, numeroRecibo, buttonElement) {
+    window.marcarReciboCompletado = async function(idRecibo, numeroRecibo, consecutivoReciboId, buttonElement) {
         const row = buttonElement.closest('[data-recibo-row="1"]');
         const estaCompletado = row && row.dataset.completado === '1';
         
@@ -1214,6 +1220,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({
                     id_recibo: idRecibo,
                     numero_recibo: numeroRecibo,
+                    consecutivo_recibo_id: consecutivoReciboId,
                 }),
             });
             

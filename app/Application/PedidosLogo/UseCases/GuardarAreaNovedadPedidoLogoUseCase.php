@@ -24,6 +24,7 @@ final class GuardarAreaNovedadPedidoLogoUseCase
             'area' => ['required', 'string'],
             'novedades' => ['nullable', 'string'],
             'pedido_parcial_id' => ['nullable', 'integer', 'min:1'],
+            'consecutivo_recibo_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $response = null;
@@ -39,6 +40,7 @@ final class GuardarAreaNovedadPedidoLogoUseCase
             $area = (string) $payload['area'];
             $novedades = isset($payload['novedades']) ? (string) $payload['novedades'] : null;
             $pedidoParcialId = isset($payload['pedido_parcial_id']) ? (int) $payload['pedido_parcial_id'] : null;
+            $consecutivoReciboId = isset($payload['consecutivo_recibo_id']) ? (int) $payload['consecutivo_recibo_id'] : null;
 
             $validacion = $this->validarContextoProceso($procesoId, $area);
             if ($validacion['error'] !== null) {
@@ -47,7 +49,7 @@ final class GuardarAreaNovedadPedidoLogoUseCase
                 $prendaPedidoId = (int) $validacion['prenda_pedido_id'];
                 $timestamp = now()->toDateTimeString();
 
-                $this->transactionManager->run(function () use ($procesoId, $prendaPedidoId, $area, $novedades, $pedidoParcialId, $timestamp): void {
+                $this->transactionManager->run(function () use ($procesoId, $prendaPedidoId, $area, $novedades, $pedidoParcialId, $timestamp, $consecutivoReciboId): void {
                     $existente = $this->seguimientoAreaRepository->obtenerPorProceso($procesoId, $pedidoParcialId);
                     $fechasAreas = $this->extraerFechasAreas($existente);
                     $fechasAreas[$area] = $timestamp;
@@ -59,7 +61,8 @@ final class GuardarAreaNovedadPedidoLogoUseCase
                         $novedades,
                         $fechasAreas,
                         $timestamp,
-                        $pedidoParcialId
+                        $pedidoParcialId,
+                        $consecutivoReciboId
                     );
                 });
 
