@@ -93,7 +93,6 @@
 
 @section('content')
 <div class="supervisor-pedidos-container" style="position: relative;">
-
     <!-- Overlay de carga -->
     <div id="sp-loading-overlay" role="status" aria-live="polite" aria-label="Cargando pedidos">
         <div style="text-align: center;">

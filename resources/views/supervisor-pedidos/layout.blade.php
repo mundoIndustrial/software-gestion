@@ -519,6 +519,28 @@
                                placeholder="Buscar por pedido o cliente..."
                                value="{{ request('busqueda') }}"
                                style="flex: 1; padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 20px; font-size: 0.9rem; background: var(--bg-color);">
+                        @if(request()->routeIs('supervisor-pedidos.index'))
+                            <button type="button"
+                                    id="btnToggleDespachoSupervisor"
+                                    title="Mostrar/ocultar pedidos de despacho"
+                                    aria-label="Mostrar/ocultar pedidos de despacho"
+                                    style="
+                                        width: 38px;
+                                        height: 38px;
+                                        border-radius: 999px;
+                                        border: 1px solid #cbd5e1;
+                                        background: #ffffff;
+                                        color: #1e40af;
+                                        display: inline-flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        cursor: pointer;
+                                        transition: all 0.2s ease;
+                                        flex: 0 0 auto;
+                                    ">
+                                <i class="fas fa-eye" style="font-size: 0.95rem;"></i>
+                            </button>
+                        @endif
                     </div>
                 </form>
             </div>

@@ -89,6 +89,27 @@ function _spSetCurrentListUrl(urlString) {
     }
 }
 
+function _spIncludeDespachoEnabled(urlString = window.location.href) {
+    try {
+        const parsed = new URL(urlString, window.location.origin);
+        return parsed.searchParams.get('ver_todos_despacho') === '1';
+    } catch (_) {
+        return false;
+    }
+}
+
+function _spUpdateDespachoToggleButton(urlString = window.location.href) {
+    const btn = document.getElementById('btnToggleDespachoSupervisor');
+    if (!btn) return;
+
+    const includeDespacho = _spIncludeDespachoEnabled(urlString);
+    const icon = includeDespacho ? 'fa-eye-slash' : 'fa-eye';
+    const title = includeDespacho ? 'Ocultar despacho' : 'Ver todos (incluye despacho)';
+    btn.setAttribute('title', title);
+    btn.setAttribute('aria-label', title);
+    btn.innerHTML = `<i class="fas ${icon}" style="font-size: 0.95rem;"></i>`;
+}
+
 function _spEscapeHtml(value) {
     return String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -1472,10 +1493,12 @@ function aplicarFiltroColumna(event) {
 
 async function navegarSupervisorPedidos(urlString, options = {}) {
     _spSetCurrentListUrl(urlString);
+    _spUpdateDespachoToggleButton(urlString);
     const success = await _spFilter.navigateAjax(urlString, options);
 
     if (success) {
         _spSetCurrentListUrl(urlString);
+        _spUpdateDespachoToggleButton(urlString);
         actualizarIndicadoresFiltros();
         window.dispatchEvent(new Event('supervisorPedidos:filtersUpdated'));
 
@@ -1489,8 +1512,29 @@ async function navegarSupervisorPedidos(urlString, options = {}) {
 
 window.addEventListener('popstate', function() {
     _spSetCurrentListUrl(window.location.href);
+    _spUpdateDespachoToggleButton(window.location.href);
     navegarSupervisorPedidos(window.location.href, { pushState: false });
     window.dispatchEvent(new Event('supervisorPedidos:filtersUpdated'));
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    _spUpdateDespachoToggleButton(window.location.href);
+    const btn = document.getElementById('btnToggleDespachoSupervisor');
+    if (!btn) return;
+
+    btn.addEventListener('click', function() {
+        const url = new URL(window.location.href);
+        const includeDespacho = _spIncludeDespachoEnabled(url.toString());
+
+        if (includeDespacho) {
+            url.searchParams.delete('ver_todos_despacho');
+        } else {
+            url.searchParams.set('ver_todos_despacho', '1');
+        }
+
+        url.searchParams.delete('page');
+        navegarSupervisorPedidos(url.toString());
+    });
 });
 
 document.addEventListener('click', function(e) {

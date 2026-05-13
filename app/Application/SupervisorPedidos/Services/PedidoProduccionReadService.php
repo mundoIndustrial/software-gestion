@@ -61,6 +61,7 @@ class PedidoProduccionReadService
 
         $this->applyStatusFilters($query, $request);
         $this->applyHiddenFilter($query, $request);
+        $this->applyDespachoVisibilityFilter($query, $request);
         $this->applyPendingNumberFilter($query);
         $this->applyEppOnlyFilter($query);
         $this->applyApprovalFilter($query, $request);
@@ -686,6 +687,18 @@ class PedidoProduccionReadService
     {
         $query->whereNotNull('numero_pedido')
             ->where('numero_pedido', '!=', '');
+    }
+
+    private function applyDespachoVisibilityFilter($query, ListOrdersRequest $request): void
+    {
+        if ($request->shouldIncludeDespacho()) {
+            return;
+        }
+
+        $query->where(function ($q) {
+            $q->whereNull('area')
+                ->orWhereRaw("LOWER(TRIM(area)) <> 'despacho'");
+        });
     }
 
     private function applyEppOnlyFilter($query): void
