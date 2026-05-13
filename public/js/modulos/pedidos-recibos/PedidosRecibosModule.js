@@ -1084,6 +1084,13 @@ if (typeof window.printReceiptModal !== 'function') {
                     .replace(/'/g, '&#039;');
             };
 
+            const stripHtml = (html) => {
+                if (!html) return '';
+                const temp = document.createElement('div');
+                temp.innerHTML = html;
+                return (temp.textContent || temp.innerText || '').trim();
+            };
+
             const normalizarLista = (raw) => {
                 if (!raw) return [];
                 if (Array.isArray(raw)) return raw.map(x => String(x)).filter(Boolean);
@@ -1383,7 +1390,7 @@ if (typeof window.printReceiptModal !== 'function') {
 
             const prendaNombre = String(prendaData?.nombre || prendaData?.nombre_prenda || extra.prendaNombre || '').trim();
             const prendaColor = String(prendaData?.color || extra.prendaColor || '').trim();
-            const prendaDescripcion = String(prendaData?.descripcion || '').trim();
+            const prendaDescripcion = stripHtml(String(prendaData?.descripcion || ''));
             // Prioridad: endpoint dedicado de observacion del proceso (como supervisor-pedidos).
             // Fallback: datos del estado/DOM para no romper impresion si el endpoint falla.
             let observacionProcesoApi = '';
