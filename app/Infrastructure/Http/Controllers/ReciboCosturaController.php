@@ -1257,7 +1257,7 @@ class ReciboCosturaController extends Controller
                         // Asignar rol 'taller'
                         $tallerRole = \App\Models\Role::where('name', 'taller')->first();
                         if ($tallerRole) {
-                            $nuevoTaller->roles()->attach($tallerRole->id);
+                            $nuevoTaller->addRole($tallerRole->id);
                         }
 
                         \Log::info('[TALLER] Nuevo taller creado', [
