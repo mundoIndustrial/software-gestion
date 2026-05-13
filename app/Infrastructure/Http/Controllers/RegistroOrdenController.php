@@ -1665,30 +1665,52 @@ class RegistroOrdenController extends Controller
         $tiposRecibo = ['BORDADO', 'ESTAMPADO', 'DTF', 'SUBLIMADO'];
         $desde = now()->subDays($diasAntiguedad);
 
-        $recibos = DB::table('prenda_areas_logo_pedido as palo')
-            ->join('prendas_pedido as pp', 'palo.prenda_pedido_id', '=', 'pp.id')
+        // Tomar solo el último estado de área por proceso (técnica) para evitar mezclar
+        // BORDADO/ESTAMPADO/DTF/SUBLIMADO dentro de la misma prenda.
+        $ultimasAreasLogo = DB::table('prenda_areas_logo_pedido as p1')
+            ->select('p1.proceso_prenda_detalle_id', DB::raw('MAX(p1.id) as max_id'))
+            ->groupBy('p1.proceso_prenda_detalle_id');
+
+        $tipoReciboCase = "CASE ppd.tipo_proceso_id "
+            . "WHEN 2 THEN 'BORDADO' "
+            . "WHEN 3 THEN 'ESTAMPADO' "
+            . "WHEN 4 THEN 'DTF' "
+            . "WHEN 5 THEN 'SUBLIMADO' "
+            . "ELSE NULL END";
+
+        $recibos = DB::table('prendas_pedido as pp')
+            ->join('pedidos_procesos_prenda_detalles as ppd', 'ppd.prenda_pedido_id', '=', 'pp.id')
+            ->joinSub($ultimasAreasLogo, 'ultima_area', function ($join) {
+                $join->on('ultima_area.proceso_prenda_detalle_id', '=', 'ppd.id');
+            })
+            ->join('prenda_areas_logo_pedido as palo', 'palo.id', '=', 'ultima_area.max_id')
             ->join('pedidos_produccion as pedprod', 'pp.pedido_produccion_id', '=', 'pedprod.id')
             ->leftJoin('users as asesor_user', 'pedprod.asesor_id', '=', 'asesor_user.id')
-            ->join('consecutivos_recibos_pedidos as crp', function ($join) {
-                $join->on('pp.id', '=', 'crp.prenda_id');
+            ->join('consecutivos_recibos_pedidos as crp', function ($join) use ($tipoReciboCase) {
+                $join->on('pp.id', '=', 'crp.prenda_id')
+                    ->on('pp.pedido_produccion_id', '=', 'crp.pedido_produccion_id')
+                    ->whereRaw("crp.tipo_recibo = ({$tipoReciboCase})");
             })
             ->select([
                 'crp.consecutivo_actual as numero_recibo',
                 'palo.area',
-                'palo.created_at as fecha_creacion',
+                'crp.created_at as fecha_creacion',
                 'pedprod.cliente',
                 'pp.id as prenda_id',
                 'pp.nombre_prenda',
                 'asesor_user.name as asesor',
+                'crp.tipo_recibo',
             ])
             ->where('palo.area', '<>', 'ANULADO')
             ->where('palo.area', '<>', 'ENTREGADO')
             ->whereIn('palo.area', $areasLogo)
             ->whereIn('crp.tipo_recibo', $tiposRecibo)
+            ->whereRaw("UPPER(COALESCE(crp.estado, '')) NOT LIKE '%ANULAD%'")
+            ->whereRaw("UPPER(COALESCE(crp.area, '')) NOT LIKE '%ANULAD%'")
             ->when($diasAntiguedad > 0, function ($q) use ($desde) {
-                return $q->where('palo.created_at', '>=', $desde);
+                return $q->where('crp.created_at', '>=', $desde);
             })
-            ->orderBy('palo.created_at', 'asc')
+            ->orderBy('crp.created_at', 'asc')
             ->get();
 
         $receipts = collect($recibos)
@@ -1811,6 +1833,8 @@ class RegistroOrdenController extends Controller
             ->where('crp.tipo_recibo', 'REFLECTIVO')
             ->where('crp.activo', true)
             ->whereIn('crp.area', $areasReflectivo)
+            ->whereRaw("UPPER(COALESCE(crp.estado, '')) NOT LIKE '%ANULAD%'")
+            ->whereRaw("UPPER(COALESCE(crp.area, '')) NOT LIKE '%ANULAD%'")
             ->when($diasAntiguedad > 0, function ($q) use ($desde) {
                 return $q->where('crp.created_at', '>=', $desde);
             })
@@ -1930,7 +1954,3 @@ class RegistroOrdenController extends Controller
     }
 
 }
-
-
-
-

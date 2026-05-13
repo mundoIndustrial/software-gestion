@@ -341,7 +341,8 @@ class EloquentReceiptRepository implements ReceiptRepository
                 'p.cliente',
                 'p.numero_pedido',
                 'p.id as pedido_id',
-                'p.estado as estado',
+                'crp.estado as estado',
+                'p.estado as pedido_estado',
                 'p.aprobado_por_cartera_en',
                 'p.dia_de_entrega',
                 'p.fecha_estimada_de_entrega',
@@ -659,6 +660,10 @@ class EloquentReceiptRepository implements ReceiptRepository
      */
     private function applyPendingReceiptFilters($query, array $filters, string $fechaCreacionColumn = 'p.created_at'): void
     {
+        // Regla base para reportes/listados pendientes: nunca incluir recibos anulados.
+        $query->whereRaw("UPPER(COALESCE(crp.estado, '')) NOT LIKE '%ANULAD%'")
+            ->whereRaw("UPPER(COALESCE(crp.area, '')) NOT LIKE '%ANULAD%'");
+
         $busqueda = trim((string) ($filters['busqueda'] ?? ''));
         if ($busqueda !== '') {
             $like = '%' . $busqueda . '%';
@@ -750,7 +755,9 @@ class EloquentReceiptRepository implements ReceiptRepository
                             });
                     });
             })
-            ->where('crp.activo', 1);
+            ->where('crp.activo', 1)
+            ->whereRaw("UPPER(COALESCE(crp.estado, '')) NOT LIKE '%ANULAD%'")
+            ->whereRaw("UPPER(COALESCE(crp.area, '')) NOT LIKE '%ANULAD%'");
     }
 
     private function buildQualityControlFiltersBaseQuery()

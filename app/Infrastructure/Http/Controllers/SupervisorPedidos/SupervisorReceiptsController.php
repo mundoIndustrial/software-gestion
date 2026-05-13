@@ -465,6 +465,11 @@ class SupervisorReceiptsController extends Controller
                     return false;
                 }
 
+                // Excluir anulados aunque vengan con texto extendido (ej: "ANULADO desde supervisor")
+                if (str_contains($estado, 'anulad') || str_contains($area, 'anulad')) {
+                    return false;
+                }
+
                 return true;
             })
             ->map(function ($item) {
