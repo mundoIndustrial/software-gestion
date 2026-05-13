@@ -1,4 +1,4 @@
-﻿export function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda, tipoRecibo, pedidoParcialId = null, consecutivoParcial = null) {
+﻿export function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda, tipoRecibo, pedidoParcialId = null, consecutivoParcial = null, reciboId = null) {
     console.log(' [ABRIR DETALLES RECIBOS] ===== INICIANDO =====');
     console.log(' Parámetros recibidos:', {
         numeroPedido: numeroPedido,
@@ -7,6 +7,7 @@
         tipoRecibo: tipoRecibo,
         pedidoParcialId: pedidoParcialId,
         consecutivoParcial: consecutivoParcial,
+        reciboId: reciboId,
     });
 
     if (!numeroPedido || numeroPedido === '' || numeroPedido === null || numeroPedido === undefined) {
@@ -29,6 +30,11 @@
     if (tipoRecibo) {
         params.append('tipo_recibo', tipoRecibo);
         console.log(' Tipo de recibo:', tipoRecibo);
+    }
+
+    if (reciboId) {
+        params.append('recibo_id', reciboId);
+        console.log(' Recibo ID:', reciboId);
     }
 
     if (pedidoParcialId) {

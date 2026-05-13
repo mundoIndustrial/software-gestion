@@ -26,12 +26,14 @@ class ObtenerDatosRecibosOperarioUseCase
         $tipoRecibo = (string) $request->query('tipo_recibo', 'COSTURA');
         $parcialId = $request->query('parcial_id');
         $consecutivoParcial = $request->query('consecutivo_parcial');
+        $reciboId = $request->query('recibo_id');
 
         \Log::info('[ObtenerDatosRecibosOperarioUseCase] INICIO', [
             'numero_pedido' => $numeroPedido,
             'tipo_recibo' => $tipoRecibo,
             'parcial_id' => $parcialId,
             'consecutivo_parcial' => $consecutivoParcial,
+            'recibo_id' => $reciboId,
             'query_params_completos' => $request->query(),
             'url_actual' => $request->fullUrl(),
         ]);
@@ -45,6 +47,7 @@ class ObtenerDatosRecibosOperarioUseCase
             'pedido_id' => $pedido->id ?? null,
             'tipo_recibo' => $tipoRecibo,
             'parcial_id' => $parcialId,
+            'recibo_id' => $reciboId,
         ]);
 
         if (!$pedido) {
@@ -60,6 +63,28 @@ class ObtenerDatosRecibosOperarioUseCase
                     'message' => 'Pedido no encontrado',
                 ],
             ];
+        }
+
+        // Si se proporciona recibo_id, filtrar por ese recibo específico
+        if ($reciboId) {
+            $reciboEspecifico = DB::table('consecutivos_recibos_pedidos')
+                ->where('id', (int) $reciboId)
+                ->where('pedido_produccion_id', (int) $pedido->id)
+                ->first(['prenda_id', 'tipo_recibo']);
+
+            if ($reciboEspecifico) {
+                // Actualizar los parámetros para filtrar por este recibo específico
+                $tipoRecibo = (string) $reciboEspecifico->tipo_recibo;
+                if ($reciboEspecifico->prenda_id) {
+                    $request->merge(['prenda_id' => (int) $reciboEspecifico->prenda_id]);
+                }
+                
+                \Log::info('[ObtenerDatosRecibosOperarioUseCase] Recibo específico encontrado', [
+                    'recibo_id' => $reciboId,
+                    'prenda_id' => $reciboEspecifico->prenda_id,
+                    'tipo_recibo' => $tipoRecibo,
+                ]);
+            }
         }
 
         if ($tipoRecibo === 'PARCIAL' && $parcialId) {
@@ -830,6 +855,30 @@ class ObtenerDatosRecibosOperarioUseCase
         \Log::info('[ObtenerDatosRecibosOperarioUseCase] Datos obtenidos del UseCase');
 
         $responseData = $datosPedido->toArray();
+
+        // Si se proporcionó recibo_id, filtrar las prendas para mostrar solo la del recibo específico
+        $prendaIdParam = $request->query('prenda_id');
+        if ($reciboId && $prendaIdParam) {
+            $prendaIdParam = (int) $prendaIdParam;
+            
+            \Log::info('[ObtenerDatosRecibosOperarioUseCase] Filtrando prendas por recibo_id', [
+                'recibo_id' => $reciboId,
+                'prenda_id' => $prendaIdParam,
+                'prendas_antes' => count($responseData['prendas'] ?? []),
+            ]);
+            
+            // Filtrar prendas para mostrar solo la del recibo específico
+            if (isset($responseData['prendas']) && is_array($responseData['prendas'])) {
+                $responseData['prendas'] = array_values(array_filter(
+                    $responseData['prendas'],
+                    fn($prenda) => (int) ($prenda['id'] ?? $prenda['prenda_id'] ?? 0) === $prendaIdParam
+                ));
+            }
+            
+            \Log::info('[ObtenerDatosRecibosOperarioUseCase] Prendas después del filtro', [
+                'prendas_despues' => count($responseData['prendas'] ?? []),
+            ]);
+        }
 
         \Log::info('[ObtenerDatosRecibosOperarioUseCase] Respuesta enviada', [
             'keys' => array_keys($responseData),

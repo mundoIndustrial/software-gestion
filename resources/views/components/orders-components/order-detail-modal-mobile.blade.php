@@ -990,6 +990,17 @@ window.llenarReciboCosturaMobile = function(data) {
         
         console.log(' [FILTRO PROCESOS] tieneCostu:', tieneCostu);
         console.log(' [FILTRO PROCESOS] tieneReflectivo:', tieneReflectivo);
+        
+        // Si se solicita un tipo_recibo específico, ajustar el índice
+        if (tipoReciboUpper === 'REFLECTIVO' && tieneReflectivo) {
+            window.procesoCarouselIndex = procesosFiltrados.indexOf('REFLECTIVO');
+            window.procesoActualSeleccionado = 'REFLECTIVO';
+            console.log(' [FILTRO PROCESOS] Ajustando índice a REFLECTIVO:', window.procesoCarouselIndex);
+        } else if (tipoReciboUpper === 'COSTURA' && tieneCostu) {
+            window.procesoCarouselIndex = procesosFiltrados.indexOf('COSTURA');
+            window.procesoActualSeleccionado = 'COSTURA';
+            console.log(' [FILTRO PROCESOS] Ajustando índice a COSTURA:', window.procesoCarouselIndex);
+        }
     } else if (esVistaControlCalidad || esRolControlCalidad) {
         // Para control de calidad: mostrar COSTURA y REFLECTIVO (mismos tipos que costura-reflectivo)
         const tieneCostu = todosProcesos.includes('COSTURA');
@@ -1082,8 +1093,12 @@ window.llenarReciboCosturaMobile = function(data) {
             window.procesoCarouselIndex = 0;
             window.procesoActualSeleccionado = tipoReciboUpper;
             console.log(' [FILTRO PROCESOS] Vista operario - mostrando tipo_recibo solicitado:', tipoReciboUpper);
+            console.log(' [FILTRO PROCESOS] tipoReciboUpper:', tipoReciboUpper, 'está en todosProcesos:', todosProcesos);
         } else {
             console.log(' [FILTRO PROCESOS] Vista operario - por defecto COSTURA:', tieneCostu, 'COSTURA-BODEGA:', tieneCosturaBodega);
+            console.log(' [FILTRO PROCESOS] tipoReciboUpper:', tipoReciboUpper, 'NO está en todosProcesos:', todosProcesos);
+            console.log(' [FILTRO PROCESOS] tipoReciboUpper es truthy?:', !!tipoReciboUpper);
+            console.log(' [FILTRO PROCESOS] todosProcesos.includes(tipoReciboUpper)?:', todosProcesos.includes(tipoReciboUpper));
         }
     }
     
@@ -1091,8 +1106,12 @@ window.llenarReciboCosturaMobile = function(data) {
     console.log(' [FILTRO PROCESOS] Índice actual (procesoCarouselIndex):', window.procesoCarouselIndex);
     console.log(' [FILTRO PROCESOS] Proceso que se debe mostrar:', procesosFiltrados[window.procesoCarouselIndex || 0]);
     
-    // Mostrar navegación de procesos si hay al menos 1 proceso
-    if (!disableNavigation && procesosFiltrados.length >= 1) {
+    // Verificar si se pasó recibo_id en la URL (significa que se abrió un recibo específico)
+    const reciboIdParam = urlParams.get('recibo_id');
+    const tieneReciboIdEspecifico = reciboIdParam !== null && reciboIdParam !== '';
+    
+    // Mostrar navegación de procesos si hay al menos 2 procesos Y no se pasó recibo_id específico
+    if (!disableNavigation && procesosFiltrados.length >= 2 && !tieneReciboIdEspecifico) {
         const processNavContainer = document.getElementById('process-navigation-mobile');
         if (processNavContainer) {
             processNavContainer.innerHTML = '';

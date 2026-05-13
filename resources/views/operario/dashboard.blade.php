@@ -312,6 +312,7 @@
                                                 'tipoRecibo' => $recibo['tipo_recibo'],
                                                 'idParcial' => $recibo['id_parcial'] ?: null,
                                                 'consecutivo' => $recibo['consecutivo_actual'],
+                                                'reciboId' => $recibo['id'] ?? null,
                                                 'clase' => 'mobile-under-state',
                                             ])@endcomponent
                                         </div>
@@ -324,13 +325,14 @@
                                                 'tipoRecibo' => $recibo['tipo_recibo'],
                                                 'idParcial' => $recibo['id_parcial'] ?: null,
                                                 'consecutivo' => $recibo['consecutivo_actual'],
+                                                'reciboId' => $recibo['id'] ?? null,
                                             ])@endcomponent
                                         </div>
                                     </div>
 
                                     <div class="orden-right">
                                         <div class="orden-right-center">
-                                            <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $recibo['numero_pedido'] }}', {{ $recibo['prenda_id'] }}, '{{ $recibo['nombre_prenda'] }}', '{{ $recibo['tipo_recibo'] }}', {{ $recibo['id_parcial'] ?: 'null' }}, '{{ $recibo['consecutivo_actual'] }}'); return false;">
+                                            <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $recibo['numero_pedido'] }}', {{ $recibo['prenda_id'] }}, '{{ $recibo['nombre_prenda'] }}', '{{ $recibo['tipo_recibo'] }}', {{ $recibo['id_parcial'] ?: 'null' }}, '{{ $recibo['consecutivo_actual'] }}', {{ $recibo['id'] ?? 'null' }}); return false;">
                                                 <span class="material-symbols-rounded">arrow_forward</span>
                                             </a>
                                         </div>
@@ -639,6 +641,7 @@
                                             'tipoRecibo' => $tipoReciboPreferido,
                                             'idParcial' => $parcialIdPreferido,
                                             'consecutivo' => $consecutivoPreferido,
+                                            'reciboId' => $reciboParaBusqueda['id'] ?? null,
                                             'clase' => 'mobile-under-state',
                                         ])@endcomponent
                                     </div>
@@ -908,6 +911,7 @@
                                                         'tipoRecibo' => 'REFLECTIVO',
                                                         'idParcial' => $pedidoParcialId ? (int) $pedidoParcialId : null,
                                                         'consecutivo' => $consecutivoParcial ?? '',
+                                                        'reciboId' => $reciboReflectivo['id'] ?? null,
                                                     ])@endcomponent
 
                                                     @if($reciboReflectivoId && $tieneParcialesReflectivo)
@@ -1007,6 +1011,7 @@
                                                     'tipoRecibo' => 'REFLECTIVO',
                                                     'idParcial' => $pedidoParcialId ? (int) $pedidoParcialId : null,
                                                     'consecutivo' => $consecutivoParcial ?? '',
+                                                    'reciboId' => $reciboReflectivo['id'] ?? null,
                                                 ])@endcomponent
 
                                                 @if($reciboReflectivoAccionId && $esCosturaAreaRef && $tieneEncargadoAsignado)
@@ -1072,6 +1077,7 @@
                                                     'tipoRecibo' => strtoupper((string) $tipoReciboUnico),
                                                     'idParcial' => $pedidoParcialId ? (int) $pedidoParcialId : null,
                                                     'consecutivo' => $consecutivoParcial ?? '',
+                                                    'reciboId' => $reciboTipo['id'] ?? null,
                                                 ])@endcomponent
                                             @endforeach
 
@@ -1167,6 +1173,7 @@
                                                 'tipoRecibo' => $tipoReciboPreferido,
                                                 'idParcial' => $parcialIdPreferido,
                                                 'consecutivo' => $consecutivoPreferido,
+                                                'reciboId' => $reciboParaBusqueda['id'] ?? null,
                                                 'texto' => 'VER RECIBOS',
                                             ])@endcomponent
                                         @endif
@@ -1391,6 +1398,7 @@
                                                     'tipoRecibo' => strtoupper((string) $tipoReciboUnico),
                                                     'idParcial' => $pedidoParcialId ? (int) $pedidoParcialId : null,
                                                     'consecutivo' => $consecutivoParcial ?? '',
+                                                    'reciboId' => $reciboTipo['id'] ?? null,
                                                 ])@endcomponent
                                             @endforeach
                                         @else
@@ -1401,6 +1409,7 @@
                                                 'tipoRecibo' => $tipoReciboPreferido,
                                                 'idParcial' => $parcialIdPreferido,
                                                 'consecutivo' => $consecutivoPreferido,
+                                                'reciboId' => $reciboParaBusqueda['id'] ?? null,
                                                 'texto' => 'VER RECIBOS',
                                             ])@endcomponent
                                         @endif
@@ -1462,7 +1471,7 @@
                                 <!-- Contenido Derecho -->
                                 <div class="orden-right">
                                     <div class="orden-right-center">
-                                        <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $tipoReciboPreferido }}', {{ $parcialIdPreferido }}, '{{ $consecutivoPreferido }}'); return false;">
+                                        <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $tipoReciboPreferido }}', {{ $parcialIdPreferido }}, '{{ $consecutivoPreferido }}', {{ $reciboParaBusqueda['id'] ?? 'null' }}); return false;">
                                             <span class="material-symbols-rounded">arrow_forward</span>
                                         </a>
                                     </div>
