@@ -50,14 +50,18 @@ class ObtenerRecibosControlCalidadUseCase
 
             $recibosEnCC = [];
 
-            // ==================== PARTE 1: RECIBOS NORMALES ====================
-            // Obtener recibos normales desde consecutivos_recibos_pedidos
-            // donde area IN ('Control Calidad', 'Control de Calidad')
-            $recibosNormales = DB::table('consecutivos_recibos_pedidos as crp')
+            // Fuente de verdad de "completado":
+            // prenda_recibo_completado (área Control Calidad / Control de Calidad)
+            // No depender de procesos_prenda para decidir visibilidad.
+
+            // ==================== PARTE 1: RECIBOS NORMALES COMPLETADOS ====================
+            $recibosNormales = DB::table('prenda_recibo_completado as prc')
+                ->join('consecutivos_recibos_pedidos as crp', 'prc.id_recibo', '=', 'crp.id')
                 ->join('pedidos_produccion as pp', 'crp.pedido_produccion_id', '=', 'pp.id')
-                ->whereRaw('LOWER(TRIM(crp.area)) IN (?, ?)', ['control calidad', 'control de calidad'])
-                ->where('crp.activo', 1)
+                ->whereNull('prc.id_parcial')
+                ->whereRaw('LOWER(TRIM(prc.area)) IN (?, ?)', ['control calidad', 'control de calidad'])
                 ->where('crp.tipo_recibo', $tipoRecibo)
+                ->where('crp.activo', 1)
                 ->select(
                     'crp.id',
                     'crp.pedido_produccion_id',
@@ -68,6 +72,7 @@ class ObtenerRecibosControlCalidadUseCase
                     'crp.notas',
                     'pp.cliente'
                 )
+                ->distinct()
                 ->get();
 
             \Log::info('[ObtenerRecibosControlCalidadUseCase] Recibos normales encontrados', [
@@ -108,18 +113,12 @@ class ObtenerRecibosControlCalidadUseCase
                 }
             }
 
-            // ==================== PARTE 2: PARCIALES ====================
-            // Obtener parciales desde procesos_prenda
-            // donde proceso IN ('Control Calidad', 'Control de Calidad')
-            $parciales = DB::table('procesos_prenda as pp')
-                ->join('pedidos_produccion as pedprod', 'pp.numero_pedido', '=', 'pedprod.numero_pedido')
-                ->leftJoin('recibo_por_partes as rbp', function ($join) {
-                    $join->on('pedprod.id', '=', 'rbp.pedido_produccion_id')
-                        ->on('pp.prenda_pedido_id', '=', 'rbp.prenda_pedido_id')
-                        ->on('pp.numero_recibo_parcial', '=', 'rbp.consecutivo_parcial');
-                })
-                ->whereRaw('LOWER(TRIM(pp.proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
-                ->where('pp.deleted_at', null)
+            // ==================== PARTE 2: PARCIALES COMPLETADOS ====================
+            $parciales = DB::table('prenda_recibo_completado as prc')
+                ->join('recibo_por_partes as rbp', 'prc.id_parcial', '=', 'rbp.id')
+                ->join('pedidos_produccion as pedprod', 'rbp.pedido_produccion_id', '=', 'pedprod.id')
+                ->whereNotNull('prc.id_parcial')
+                ->whereRaw('LOWER(TRIM(prc.area)) IN (?, ?)', ['control calidad', 'control de calidad'])
                 ->where('rbp.tipo_recibo', $tipoRecibo)
                 ->select(
                     'rbp.id as recibo_id',

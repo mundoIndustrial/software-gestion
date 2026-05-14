@@ -158,14 +158,15 @@ class OperarioController extends Controller
         // Desde procesos_prenda donde proceso = 'Control Calidad' o 'Control de Calidad'
         // Optimizado: 1 query con JOIN en lugar de N+1 queries
         $parcialesCC = DB::table('procesos_prenda')
-            ->leftJoin('recibos_por_partes', function ($join) {
-                $join->on('recibos_por_partes.pedido_produccion_id', '=', 'procesos_prenda.pedido_produccion_id')
-                    ->on('recibos_por_partes.prenda_pedido_id', '=', 'procesos_prenda.prenda_pedido_id')
-                    ->on('recibos_por_partes.consecutivo_parcial', '=', 'procesos_prenda.numero_recibo_parcial');
+            ->leftJoin('pedidos_produccion as pp', 'pp.numero_pedido', '=', 'procesos_prenda.numero_pedido')
+            ->leftJoin('recibo_por_partes', function ($join) {
+                $join->on('recibo_por_partes.pedido_produccion_id', '=', 'pp.id')
+                    ->on('recibo_por_partes.prenda_pedido_id', '=', 'procesos_prenda.prenda_pedido_id')
+                    ->on('recibo_por_partes.consecutivo_parcial', '=', 'procesos_prenda.numero_recibo_parcial');
             })
             ->whereRaw('LOWER(TRIM(procesos_prenda.proceso)) IN (?, ?)', ['control de calidad', 'control calidad'])
             ->whereNull('procesos_prenda.deleted_at')
-            ->select('recibos_por_partes.tipo_recibo')
+            ->select('recibo_por_partes.tipo_recibo')
             ->get();
 
         foreach ($parcialesCC as $fila) {
@@ -928,4 +929,3 @@ class OperarioController extends Controller
     }
 
 }
-

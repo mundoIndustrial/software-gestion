@@ -218,7 +218,7 @@
                             Sin encargado
                             <span class="badge-filtro-contador" id="badgeSinEncargadoCount">0</span>
                         </button>
-                        <button class="badge-filtro" data-encargado-filtro="control-calidad" onclick="filtrarControlCalidad()">
+                        <button class="badge-filtro" data-encargado-filtro="control-calidad" onclick="document.querySelectorAll('#vistaCosturaEncargadoFilters .badge-filtro').forEach(btn => btn.classList.remove('badge-filtro-active')); this.classList.add('badge-filtro-active'); filtrarControlCalidad();">
                             <span class="material-symbols-rounded">check_circle</span>
                             Control de calidad
                             <span class="badge-filtro-contador" id="badgeControlCalidadCount" data-contador-costura="{{ $conteoControlCalidadCostura ?? 0 }}" data-contador-reflectivo="{{ $conteoControlCalidadReflectivo ?? 0 }}" style="display: none;">{{ $conteoControlCalidadCostura ?? 0 }}</span>
@@ -414,11 +414,6 @@
                             }
                         @endphp
 
-                        @if(auth()->user()->hasRole('vista-costura') && ($areaReciboFiltro === 'corte' && !$tieneReflectivo || !empty($reciboPrincipalFiltro['pedido_parcial_id'])))
-                            @continue
-                        @endif
-
-
                         @php
                             // Definir variables necesarias para el card
                             $reciboPrincipalCard = $prenda['recibos'][0] ?? null;
@@ -441,9 +436,29 @@
                             $numeroReciboBusqueda = $reciboParaBusqueda['consecutivo_parcial']
                                 ?? $reciboParaBusqueda['consecutivo_actual']
                                 ?? $prenda['numero_pedido'];
-                            $sinEncargadoCosturaCard = $reciboCosturaFiltroCard
-                                && empty(trim((string) ($reciboCosturaFiltroCard['encargado_costura'] ?? '')))
-                                && !((bool) ($reciboCosturaFiltroCard['tiene_parciales'] ?? false));
+                            $numerosRecibosBusqueda = collect($prenda['recibos'] ?? [])
+                                ->flatMap(function ($recibo) {
+                                    return [
+                                        $recibo['consecutivo_actual'] ?? null,
+                                        $recibo['consecutivo_parcial'] ?? null,
+                                    ];
+                                })
+                                ->filter(fn ($valor) => $valor !== null && $valor !== '')
+                                ->map(fn ($valor) => (string) $valor)
+                                ->unique()
+                                ->values()
+                                ->implode(' ');
+                            $sinEncargadoCosturaCard = collect($prenda['recibos'] ?? [])->contains(function ($recibo) {
+                                $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
+                                if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA', 'PARCIAL'], true)) {
+                                    return false;
+                                }
+
+                                $sinEncargado = empty(trim((string) ($recibo['encargado_costura'] ?? '')));
+                                $completadoCorte = (bool) ($recibo['completado_corte'] ?? false);
+
+                                return $sinEncargado && $completadoCorte;
+                            });
                             $sinEncargadoReflectivoCard = $reciboReflectivoFiltroCard
                                 && empty(trim((string) ($reciboReflectivoFiltroCard['encargado_costura'] ?? '')))
                                 && !((bool) ($reciboReflectivoFiltroCard['tiene_parciales'] ?? false));
@@ -460,7 +475,7 @@
                              data-sin-encargado-reflectivo="{{ $sinEncargadoReflectivoCard ? '1' : '0' }}"
                              data-completado-costura="{{ $reciboCompletadoCostura ? '1' : '0' }}"
                              data-completado-reflectivo="{{ $reciboCompletadoReflectivo ? '1' : '0' }}"
-                             data-numero-recibo="{{ $numeroReciboBusqueda }}"
+                             data-numero-recibo="{{ trim($numeroReciboBusqueda . ' ' . $numerosRecibosBusqueda) }}"
                              data-fecha-completado-reflectivo="{{ ($reciboReflectivoFiltroCard && isset($reciboReflectivoFiltroCard['fecha_completado_costura'])) ? strtotime($reciboReflectivoFiltroCard['fecha_completado_costura']) : 0 }}"
                              data-fecha-creacion-reflectivo="{{ ($reciboReflectivoFiltroCard['creado_en'] ?? ($reciboReflectivoFiltroCard['created_at'] ?? '')) ? strtotime($reciboReflectivoFiltroCard['creado_en'] ?? $reciboReflectivoFiltroCard['created_at']) : 0 }}"
                              data-fecha-creacion-costura="{{ ($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? '')) ? strtotime($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? '')) : 0 }}"

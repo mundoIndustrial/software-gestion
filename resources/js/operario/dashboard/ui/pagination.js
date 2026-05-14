@@ -1,12 +1,14 @@
-export function initDashboardPagination() {
-    const PER_PAGE = 12; // Número de tarjetas por página
+﻿export function initDashboardPagination() {
+    const userRole = document.querySelector('.operario-dashboard')?.dataset?.userRole || '';
+    const isVistaCostura = userRole === 'vista-costura';
+    const PER_PAGE = isVistaCostura ? 5000 : 12; // vista-costura: sin paginacion efectiva
     let currentPage = 1;
     let visibleCards = [];
 
     const ordenesList = document.getElementById('ordenesList');
     if (!ordenesList) return;
 
-    // Crear el contenedor de paginación si no existe
+    // Crear el contenedor de paginaciÃ³n si no existe
     let paginationContainer = document.getElementById('dashboardPagination');
     if (!paginationContainer) {
         paginationContainer = document.createElement('div');
@@ -18,7 +20,7 @@ export function initDashboardPagination() {
     function updatePagination() {
         const ordenCards = Array.from(ordenesList.querySelectorAll('.orden-card-simple'));
         
-        // Obtenemos solo las tarjetas que no están ocultas por otros filtros (tipo_recibo, búsqueda, etc)
+        // Obtenemos solo las tarjetas que no estÃ¡n ocultas por otros filtros (tipo_recibo, bÃºsqueda, etc)
         // NOTA: Usamos getComputedStyle o simplemente verificamos que display no sea 'none'
         visibleCards = ordenCards.filter(card => card.style.display !== 'none');
 
@@ -36,7 +38,7 @@ export function initDashboardPagination() {
         // Ocultar todas las tarjetas visibles inicialmente
         visibleCards.forEach(card => card.classList.add('page-hidden'));
 
-        // Mostrar solo las de la página actual
+        // Mostrar solo las de la pÃ¡gina actual
         const start = (currentPage - 1) * PER_PAGE;
         const end = start + PER_PAGE;
         const cardsToShow = visibleCards.slice(start, end);
@@ -64,7 +66,7 @@ export function initDashboardPagination() {
                 </button>
         `;
 
-        // Lógica de páginas (simplificada para mostrar hasta 5 números)
+        // LÃ³gica de pÃ¡ginas (simplificada para mostrar hasta 5 nÃºmeros)
         let startPage = Math.max(1, currentPage - 2);
         let endPage = Math.min(totalPages, startPage + 4);
         if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
@@ -105,3 +107,4 @@ export function initDashboardPagination() {
     // Inicializar
     updatePagination();
 }
+

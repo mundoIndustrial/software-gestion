@@ -55,10 +55,10 @@ export function initDashboardSearch() {
 
             const tipos = String(card.dataset.tipoRecibo || '')
                 .split(',')
-                .map((valor) => valor.trim())
+                .map((valor) => valor.trim().toLowerCase())
                 .filter(Boolean);
 
-            return tipos.includes(filtroPrincipal);
+            return tipos.includes(String(filtroPrincipal || '').toLowerCase());
         };
 
         const coincideConFiltroEncargado = (card, filtroPrincipal) => {
@@ -80,16 +80,17 @@ export function initDashboardSearch() {
         window.__applyDashboardSearchFilter = function () {
             const busqueda = String(searchInput.value || '').toLowerCase().trim();
             const filtroPrincipal = obtenerFiltroPrincipalActivo();
+            const enModoControlCalidad = window.__enModoControlCalidad === true;
             const ordenesListActual = document.getElementById('ordenesList');
             const cardsActuales = ordenesListActual ? ordenesListActual.querySelectorAll('.orden-card-simple') : [];
 
             cardsActuales.forEach((card) => {
-                const coincideTipo = coincideConFiltroPrincipal(card, filtroPrincipal);
-                const coincideEncargado = coincideConFiltroEncargado(card, filtroPrincipal);
+                const coincideTipo = enModoControlCalidad ? true : coincideConFiltroPrincipal(card, filtroPrincipal);
+                const coincideEncargado = enModoControlCalidad ? true : coincideConFiltroEncargado(card, filtroPrincipal);
                 const numeroRecibo = String(card.dataset.numeroRecibo || '').toLowerCase();
                 const cliente = String(card.dataset.cliente || '').toLowerCase();
                 const nombrePrenda = String(card.dataset.prenda || '').toLowerCase();
-                const numeroPedido = '';
+                const numeroPedido = String(card.dataset.numero || '').toLowerCase();
 
                 const coincideTexto =
                     busqueda === '' ||

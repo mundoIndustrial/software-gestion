@@ -400,10 +400,11 @@ export function initReciboFilters() {
             return `
                 <div class="orden-card-simple" 
                      data-numero="${recibo.numero_pedido}"
+                     data-numero-recibo="${recibo.consecutivo_actual}"
                      data-prenda="${recibo.nombre_prenda.toLowerCase()}"
                      data-prenda-id="${recibo.prenda_id}"
                      data-cliente="${recibo.cliente.toLowerCase()}"
-                     data-tipo-recibo="${tipoRecibo}">
+                     data-tipo-recibo="${String(tipoRecibo).toLowerCase()}">
                     
                     <div class="orden-body">
                         <div class="orden-left">
@@ -629,4 +630,3 @@ export function initReciboFilters() {
         return parcialCards;
     }
 }
-
