@@ -1250,31 +1250,29 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
     {
         $usuarioNormalizado = strtolower(trim($usuario->name));
 
-        // OPTIMIZACIÓN: Traer TODOS los procesos de una sola query (no por cada pedido)
-        $procesosGrouped = ProcesoPrenda::query()
-            ->select('numero_pedido', 'encargado')
+        // OPTIMIZACIÓN: Usar SQL para filtrar pedidos en lugar de PHP
+        // Obtener solo los numeros_pedido donde este usuario es encargado
+        $pedidosAsignados = ProcesoPrenda::query()
+            ->select('numero_pedido')
             ->whereNotNull('encargado')
-            ->get()
-            ->groupBy('numero_pedido')
-            ->map(function ($grupo) {
-                return $grupo->pluck('encargado')->map(fn($e) => strtolower(trim($e)))->unique();
-            });
+            ->whereRaw("LOWER(TRIM(encargado)) = ?", [$usuarioNormalizado])
+            ->distinct()
+            ->pluck('numero_pedido')
+            ->all();
 
-        // Obtener todos los pedidos que tengan proceso de Corte asignado al usuario
+        // Si no hay pedidos asignados al usuario, retornar colección vacía
+        if (empty($pedidosAsignados)) {
+            \Log::info('[ObtenerPrendasRecibosService] Cortador - Sin pedidos asignados', [
+                'usuario' => $usuario->name,
+            ]);
+            return collect();
+        }
+
+        // Obtener solo los pedidos asignados al usuario (en SQL, no en PHP)
         $pedidos = PedidoProduccion::with(['prendas', 'prendas.tallas'])
+            ->whereIn('numero_pedido', $pedidosAsignados)
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->filter(function ($pedido) use ($usuarioNormalizado, $procesosGrouped) {
-                // Buscar en el mapa precargado en lugar de hacer query
-                $encargadosPedido = $procesosGrouped->get($pedido->numero_pedido);
-
-                if (!$encargadosPedido) {
-                    return false;
-                }
-
-                // Verificar si el usuario es encargado de este pedido
-                return $encargadosPedido->contains($usuarioNormalizado);
-            });
+            ->get();
 
         \Log::info('[ObtenerPrendasRecibosService] Cortador - Pedidos encontrados', [
             'usuario' => $usuario->name,
@@ -1727,32 +1725,28 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
     {
         if (!$recibo) return null;
 
+        // OPTIMIZACIÓN: Detectar parcial una sola vez
+        $notas = (string) ($recibo->notas ?? '');
+        $esParcial = str_contains($notas, 'parcial_id:');
+        $consecutivo = $recibo->consecutivo_actual;
+
         // Si la relacion ya esta cargada en la prenda, usarla
         if ($recibo->prenda && $recibo->prenda->relationLoaded('procesosPrenda')) {
-            $consecutivo = $recibo->consecutivo_actual;
-            $esParcial = false;
-            $notas = (string) ($recibo->notas ?? '');
-            if (preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
-                $esParcial = true;
+            // Búsqueda directa sin filtro (más rápida)
+            if ($esParcial) {
+                $procesoCostura = $recibo->prenda->procesosPrenda
+                    ->where('numero_recibo_parcial', $consecutivo)
+                    ->where('proceso', 'COSTURA')
+                    ->sortByDesc('created_at')
+                    ->first();
+            } else {
+                $procesoCostura = $recibo->prenda->procesosPrenda
+                    ->where('numero_recibo', $consecutivo)
+                    ->where('proceso', 'COSTURA')
+                    ->whereIn('numero_recibo_parcial', [null, '', 0])
+                    ->sortByDesc('created_at')
+                    ->first();
             }
-
-            $procesoCostura = $recibo->prenda->procesosPrenda
-                ->filter(function ($p) use ($consecutivo, $esParcial) {
-                    $procName = strtolower(trim((string) $p->proceso));
-                    if ($procName !== 'costura') {
-                        return false;
-                    }
-
-                    if ($esParcial) {
-                        return (string) $p->numero_recibo_parcial === (string) $consecutivo;
-                    } else {
-                        $nrp = $p->numero_recibo_parcial ?? null;
-                        return (string) $p->numero_recibo === (string) $consecutivo && 
-                               ($nrp === null || trim((string)$nrp) === '' || (float) $nrp === 0.0);
-                    }
-                })
-                ->sortByDesc('created_at')
-                ->first();
 
             if ($procesoCostura) {
                 return $procesoCostura->created_at;
@@ -1763,18 +1757,17 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
         $query = ProcesoPrenda::query()
             ->where('numero_pedido', $recibo->pedido_produccion_id)
             ->where('prenda_pedido_id', $recibo->prenda_id)
-            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+            ->where('proceso', 'COSTURA')
             ->whereNull('deleted_at');
 
-        $notas = (string) ($recibo->notas ?? '');
-        $consecutivo = $recibo->consecutivo_actual;
-        if (preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+        if ($esParcial) {
             $query->where('numero_recibo_parcial', $consecutivo);
         } else {
             $query->where('numero_recibo', $consecutivo)
                   ->where(function($q) {
                       $q->whereNull('numero_recibo_parcial')
-                        ->orWhere('numero_recibo_parcial', '');
+                        ->orWhere('numero_recibo_parcial', '')
+                        ->orWhere('numero_recibo_parcial', 0);
                   });
         }
 
@@ -1783,30 +1776,29 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
     }
 
     private function obtenerFechaLlegadaACorte($recibo): mixed
-
     {
+        // OPTIMIZACIÓN: Detectar parcial una sola vez
+        $notas = (string) ($recibo->notas ?? '');
+        $esParcial = str_contains($notas, 'parcial_id:');
+        $consecutivo = $recibo->consecutivo_actual;
+
         // Si la relacion ya esta cargada, usarla para evitar consulta SQL
         if ($recibo->prenda && $recibo->prenda->relationLoaded('procesosPrenda')) {
-            $notas = (string) ($recibo->notas ?? '');
-            $esParcial = $notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas) === 1;
-            $consecutivo = $recibo->consecutivo_actual;
-
-            $procesoCorte = $recibo->prenda->procesosPrenda
-                ->filter(function ($p) use ($esParcial, $consecutivo) {
-                    if (strtolower(trim((string) ($p->proceso ?? ''))) !== 'corte') {
-                        return false;
-                    }
-
-                    if ($esParcial) {
-                        return (string) $p->numero_recibo_parcial === (string) $consecutivo;
-                    } else {
-                        $nrp = $p->numero_recibo_parcial ?? null;
-                        return (string) $p->numero_recibo === (string) $consecutivo && 
-                               ($nrp === null || trim((string)$nrp) === '' || (float) $nrp === 0.0);
-                    }
-                })
-                ->sortByDesc('created_at')
-                ->first();
+            // Búsqueda directa sin filtro (más rápida)
+            if ($esParcial) {
+                $procesoCorte = $recibo->prenda->procesosPrenda
+                    ->where('numero_recibo_parcial', $consecutivo)
+                    ->where('proceso', 'CORTE')
+                    ->sortByDesc('created_at')
+                    ->first();
+            } else {
+                $procesoCorte = $recibo->prenda->procesosPrenda
+                    ->where('numero_recibo', $consecutivo)
+                    ->where('proceso', 'CORTE')
+                    ->whereIn('numero_recibo_parcial', [null, '', 0])
+                    ->sortByDesc('created_at')
+                    ->first();
+            }
 
             if ($procesoCorte) {
                 // Priorizar fecha de asignacion del encargado
@@ -1818,16 +1810,13 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
         $query = ProcesoPrenda::query()
             ->where('numero_pedido', $recibo->pedido_produccion_id)
             ->where('prenda_pedido_id', $recibo->prenda_id)
-            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
+            ->where('proceso', 'CORTE')
             ->whereNull('deleted_at');
 
-        $notas = (string) ($recibo->notas ?? '');
-        $esParcial = $notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas) === 1;
-
         if ($esParcial) {
-            $query->where('numero_recibo_parcial', $recibo->consecutivo_actual);
+            $query->where('numero_recibo_parcial', $consecutivo);
         } else {
-            $query->where('numero_recibo', $recibo->consecutivo_actual)
+            $query->where('numero_recibo', $consecutivo)
                 ->where(function ($subQuery) {
                     $subQuery->whereNull('numero_recibo_parcial')
                         ->orWhere('numero_recibo_parcial', 0);
