@@ -134,7 +134,7 @@ class ObtenerPedidoDetalleTransformadorService
         $asignaciones = [];
         foreach ($tallaColores as $color) {
             $tipoTalla = preg_match('/^\d+$/', $color->talla) ? 'Número' : 'Letra';
-            $generoLower = strtolower($color->genero);
+            $generoLower = $this->normalizarGeneroClave($color->genero ?? null);
             $clave = $generoLower . '-' . $tipoTalla . '-' . $color->talla;
             $claveRelacion = ($color->color_id ?? '') . ':' . ($color->tela_id ?? '');
             $colorTelaId = $mapaColorTelaId[$claveRelacion] ?? null;
@@ -299,7 +299,7 @@ class ObtenerPedidoDetalleTransformadorService
         )->get();
 
         foreach ($tallasRelacionales as $tallaRecord) {
-            $genero = strtolower($tallaRecord->genero);
+            $genero = $this->normalizarGeneroClave($tallaRecord->genero ?? null);
             $tallas[$genero] = $tallas[$genero] ?? [];
             $datosExtendidos[$genero] = $datosExtendidos[$genero] ?? [];
             $this->agregarDatosTallaRelacional($tallaRecord, $tallas[$genero], $datosExtendidos[$genero]);
@@ -409,5 +409,15 @@ class ObtenerPedidoDetalleTransformadorService
             $ruta = self::STORAGE_WEB_PREFIX . ltrim($ruta, '/');
         }
         return $ruta;
+    }
+
+    private function normalizarGeneroClave(mixed $genero): string
+    {
+        $valor = trim((string) ($genero ?? ''));
+        if ($valor === '') {
+            return 'generico';
+        }
+
+        return strtolower($valor);
     }
 }
