@@ -649,6 +649,19 @@ class ReciboCosturaController extends Controller
                 ->first();
 
             if ($procesoExistente) {
+                DB::table('prenda_recibo_completado')->updateOrInsert(
+                    [
+                        'id_parcial' => (int) $parcial->id,
+                        'area' => 'Control Calidad',
+                    ],
+                    [
+                        'id_recibo' => null,
+                        'numero_recibo' => (int) ($parcial->consecutivo_parcial ?? 0),
+                        'nombre_operario' => (string) (auth()->user()->name ?? 'control'),
+                        'fecha_completado' => now(),
+                    ]
+                );
+
                 $estadoParcialesCc = $this->sincronizarProcesoControlCalidadOriginal($pedido, $parcial);
                 DB::commit();
 
@@ -682,6 +695,19 @@ class ReciboCosturaController extends Controller
             ]);
 
             $estadoParcialesCc = $this->sincronizarProcesoControlCalidadOriginal($pedido, $parcial);
+
+            DB::table('prenda_recibo_completado')->updateOrInsert(
+                [
+                    'id_parcial' => (int) $parcial->id,
+                    'area' => 'Control Calidad',
+                ],
+                [
+                    'id_recibo' => null,
+                    'numero_recibo' => (int) ($parcial->consecutivo_parcial ?? 0),
+                    'nombre_operario' => (string) (auth()->user()->name ?? 'control'),
+                    'fecha_completado' => now(),
+                ]
+            );
 
             DB::commit();
 

@@ -80,6 +80,21 @@ class CambiarAreaControlCalidadUseCase
                 $recibo->area = 'Control Calidad';
                 $this->recibos->save($recibo);
 
+            // Fuente de verdad de completado por área:
+            // registrar explícitamente el paso a Control Calidad.
+            DB::table('prenda_recibo_completado')->updateOrInsert(
+                [
+                    'id_recibo' => (int) $recibo->id,
+                    'area' => 'Control Calidad',
+                ],
+                [
+                    'numero_recibo' => (int) ($recibo->consecutivo_actual ?? $cmd->numeroRecibo),
+                    'nombre_operario' => (string) (auth()->user()->name ?? 'control'),
+                    'fecha_completado' => now(),
+                    'id_parcial' => null,
+                ]
+            );
+
             try {
                 broadcast(new \App\Events\ReciboPasadoControlCalidad(
                     $pedido->id,
