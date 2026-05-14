@@ -147,7 +147,7 @@ class OperarioController extends Controller
 
         foreach ($recibosNormalesCC as $recibo) {
             $tipoRecibo = strtoupper(trim((string) $recibo->tipo_recibo));
-            if ($tipoRecibo === 'COSTURA' || $tipoRecibo === 'COSTURA-BODEGA') {
+            if ($tipoRecibo === 'COSTURA') {
                 $conteoControlCalidadCostura++;
             } elseif ($tipoRecibo === 'REFLECTIVO') {
                 $conteoControlCalidadReflectivo++;
@@ -172,7 +172,7 @@ class OperarioController extends Controller
         foreach ($parcialesCC as $fila) {
             if ($fila->tipo_recibo) {
                 $tipoRecibo = strtoupper(trim((string) $fila->tipo_recibo));
-                if ($tipoRecibo === 'COSTURA' || $tipoRecibo === 'COSTURA-BODEGA') {
+                if ($tipoRecibo === 'COSTURA') {
                     $conteoControlCalidadCostura++;
                 } elseif ($tipoRecibo === 'REFLECTIVO') {
                     $conteoControlCalidadReflectivo++;
