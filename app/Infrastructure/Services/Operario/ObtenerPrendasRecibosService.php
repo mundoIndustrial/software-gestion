@@ -208,7 +208,17 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             ->map(fn($id) => (int) $id)
                             ->flip();
 
-                        return $recibosConEncargado->map(function ($recibo) use ($completadosCorte, $completadosCostura, $completadosControlCalidad) {
+                        return $recibosConEncargado
+                            ->filter(function ($recibo) {
+                                // Si el usuario es vista-costura, solo mostramos el padre en la lista de recibos
+                                // de la card para evitar duplicidad de acciones.
+                                if (auth()->check() && auth()->user()->hasRole('vista-costura')) {
+                                    $notas = (string) ($recibo->notas ?? '');
+                                    return !preg_match('/parcial_id:(\d+)/i', $notas);
+                                }
+                                return true;
+                            })
+                            ->map(function ($recibo) use ($completadosCorte, $completadosCostura, $completadosControlCalidad) {
                         $procesos = $recibo->prenda && $recibo->prenda->relationLoaded('procesosPrenda')
                             ? $recibo->prenda->procesosPrenda
                             : collect();
@@ -307,8 +317,14 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             return $resultados;
         })->values();
 
-        return $prendasAgrupadas
-            ->concat($this->obtenerPrendasParcialesCostura(null, true))
+        $resultadoFinal = $prendasAgrupadas;
+
+        // Para vista-costura no agregamos los parciales como tarjetas independientes
+        if (!(auth()->check() && auth()->user()->hasRole('vista-costura'))) {
+            $resultadoFinal = $resultadoFinal->concat($this->obtenerPrendasParcialesCostura(null, true));
+        }
+
+        return $resultadoFinal
             ->sortBy(function ($item) {
                 return $item['fecha_creacion'] ?? null;
             })
@@ -608,11 +624,15 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
         ]);
 
         // Agrupar por prenda (o por pedido si es REFLECTIVO sin prenda_id) e incluir ID de parcial si existe
-        $prendasAgrupadas = $recibos->groupBy(function ($recibo) {
+        $prendasAgrupadas = $recibos->groupBy(function ($recibo) use ($tipoOperario) {
             $parcialId = '';
-            $notas = (string) ($recibo->notas ?? '');
-            if (preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
-                $parcialId = '_' . $matches[1];
+            // Para vista-costura, agrupamos todos los parciales con su padre (no incluimos parcialId en el key)
+            // para que no se generen tarjetas independientes por cada parte.
+            if ($tipoOperario !== 'vista-costura') {
+                $notas = (string) ($recibo->notas ?? '');
+                if (preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+                    $parcialId = '_' . $matches[1];
+                }
             }
             
             // Si tiene prenda_id, agrupar por prenda
@@ -969,7 +989,18 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             'colores' => $talla->colores,
                         ];
                     })->toArray() : [],
-                    'recibos' => $recibosDelTipo->map(function ($recibo) use ($pedido) {
+                    'recibos' => $recibosDelTipo
+                        ->filter(function ($recibo) use ($tipoOperario) {
+                            if ($tipoOperario !== 'vista-costura') {
+                                return true;
+                            }
+                            // Para vista-costura, solo mostramos el recibo padre en la lista de recibos de la card
+                            // para evitar que aparezcan múltiples conjuntos de botones. Las partes se gestionan
+                            // a través del botón "Ver Distribución".
+                            $notas = (string) ($recibo->notas ?? '');
+                            return !preg_match('/parcial_id:(\d+)/i', $notas);
+                        })
+                        ->map(function ($recibo) use ($pedido) {
                         // Buscar el proceso de Control Calidad mas reciente para este recibo (desde relacion cargada)
                         $procesoCC = ($recibo->prenda && $recibo->prenda->relationLoaded('procesosPrenda'))
                             ? $recibo->prenda->procesosPrenda
@@ -1136,9 +1167,15 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             return $resultados;
         })->values();
 
-        $resultadoFinal = $prendasAgrupadas
-            ->concat($this->obtenerPrendasParcialesCostura($usuario, false))
-            ->unique(function ($item) {
+        $resultadoFinal = $prendasAgrupadas;
+
+        // Para vista-costura no agregamos los parciales como tarjetas independientes al final,
+        // ya que deben ser visibles únicamente dentro de su recibo padre.
+        if ($tipoOperario !== 'vista-costura') {
+            $resultadoFinal = $resultadoFinal->concat($this->obtenerPrendasParcialesCostura($usuario, false));
+        }
+
+        $resultadoFinal = $resultadoFinal->unique(function ($item) {
                 $parcialId = $item['pedido_parcial_id'] ?? null;
                 $isReciboPorPartes = $item['es_recibo_por_partes'] ?? false;
                 $prefix = $isReciboPorPartes ? 'rx_' : 'an_';
