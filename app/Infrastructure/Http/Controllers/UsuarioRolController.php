@@ -226,11 +226,18 @@ class UsuarioRolController extends Controller
                 ], 404);
             }
             
-            // Obtener usuarios con rol taller
-            $usuarios = User::select('id', 'name', 'email')
-                ->whereJsonContains('roles_ids', $rolTaller->id)
-                ->orWhere('role_id', $rolTaller->id)
-                ->orderBy('name')
+            // Obtener usuarios con rol taller que estén activos
+            $usuarios = User::select('users.id', 'users.name', 'users.email')
+                ->leftJoin('taller_config', 'users.id', '=', 'taller_config.user_id')
+                ->where(function($query) use ($rolTaller) {
+                    $query->whereJsonContains('roles_ids', $rolTaller->id)
+                          ->orWhere('role_id', $rolTaller->id);
+                })
+                ->where(function($query) {
+                    $query->whereNull('taller_config.activo')
+                          ->orWhere('taller_config.activo', '!=', 0);
+                })
+                ->orderBy('users.name')
                 ->distinct()
                 ->get();
 

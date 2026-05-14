@@ -11,7 +11,15 @@ class TalleresController extends Controller
     public function index()
     {
         $roleTaller = Role::where('name', 'taller')->first();
-        $talleres = $roleTaller ? $roleTaller->users() : collect([]);
+        if (!$roleTaller) {
+            $talleres = collect([]);
+        } else {
+            // Obtener talleres con su estado de activación
+            $talleres = \App\Models\User::whereJsonContains('roles_ids', $roleTaller->id)
+                ->leftJoin('taller_config', 'users.id', '=', 'taller_config.user_id')
+                ->select('users.*', \Illuminate\Support\Facades\DB::raw('IFNULL(taller_config.activo, 1) as activo'))
+                ->get();
+        }
         
         return view('admin.talleres.index', compact('talleres'));
     }
@@ -252,19 +260,29 @@ class TalleresController extends Controller
             return $r;
         });
 
-        // Calcular completados
+        // Calcular completados filtrando por nombre de operario y área
         $idsRecibosNormales = $recibosNormales->pluck('id')->toArray();
         $idsRecibosParciales = $recibosParciales->pluck('id')->toArray();
 
-        $completadosNormales = \Illuminate\Support\Facades\DB::table('prenda_recibo_completado')
-            ->whereIn('id_recibo', $idsRecibosNormales)
-            ->distinct('id_recibo')
-            ->count('id_recibo');
+        $completadosNormales = 0;
+        if (!empty($idsRecibosNormales)) {
+            $completadosNormales = \Illuminate\Support\Facades\DB::table('prenda_recibo_completado')
+                ->whereIn('id_recibo', $idsRecibosNormales)
+                ->where('nombre_operario', $nombreTaller)
+                ->where('area', 'Costura')
+                ->distinct('id_recibo')
+                ->count('id_recibo');
+        }
 
-        $completadosParciales = \Illuminate\Support\Facades\DB::table('prenda_recibo_completado')
-            ->whereIn('id_parcial', $idsRecibosParciales)
-            ->distinct('id_parcial')
-            ->count('id_parcial');
+        $completadosParciales = 0;
+        if (!empty($idsRecibosParciales)) {
+            $completadosParciales = \Illuminate\Support\Facades\DB::table('prenda_recibo_completado')
+                ->whereIn('id_parcial', $idsRecibosParciales)
+                ->where('nombre_operario', $nombreTaller)
+                ->where('area', 'Costura')
+                ->distinct('id_parcial')
+                ->count('id_parcial');
+        }
 
         $totalCompletados = $completadosNormales + $completadosParciales;
         $totalPendientes = $recibos->count() - $totalCompletados;
@@ -390,5 +408,48 @@ class TalleresController extends Controller
             'entregas' => $entregasFormateadas,
             'total' => $totalGeneral
         ]);
+    }
+
+    public function toggleStatus($id)
+    {
+        try {
+            $user = \App\Models\User::findOrFail($id);
+            
+            // Buscar si ya existe configuración
+            $config = \Illuminate\Support\Facades\DB::table('taller_config')
+                ->where('user_id', $id)
+                ->first();
+            
+            if ($config) {
+                $nuevoEstado = $config->activo ? 0 : 1;
+                \Illuminate\Support\Facades\DB::table('taller_config')
+                    ->where('user_id', $id)
+                    ->update([
+                        'activo' => $nuevoEstado,
+                        'updated_at' => now()
+                    ]);
+            } else {
+                // Si no existe, lo creamos como desactivado (0) 
+                // ya que si entró aquí es porque el default IFNULL(activo, 1) lo mostraba activo
+                $nuevoEstado = 0;
+                \Illuminate\Support\Facades\DB::table('taller_config')->insert([
+                    'user_id' => $id,
+                    'activo' => $nuevoEstado,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'activo' => (bool)$nuevoEstado,
+                'message' => $nuevoEstado ? 'Taller activado correctamente' : 'Taller desactivado correctamente'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cambiar el estado: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

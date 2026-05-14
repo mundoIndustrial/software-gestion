@@ -7,6 +7,72 @@
     <link rel="stylesheet" href="{{ asset('css/top-nav.css') }}">
     <link rel="stylesheet" href="{{ asset('css/modulos/talleres/talleres-admin.css') }}">
     <link rel="stylesheet" href="{{ asset('css/modulos/talleres/talleres-spa.css') }}">
+    <style>
+        .taller-status-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-label {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+        }
+        .status-label.active {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status-label.inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        /* Switch styling */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 34px;
+            height: 20px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #22c55e;
+        }
+        input:checked + .slider:before {
+            transform: translateX(14px);
+        }
+        .taller-card.inactive {
+            opacity: 0.7;
+            filter: grayscale(0.4);
+        }
+    </style>
 @endpush
 
 @section('body')
@@ -20,7 +86,6 @@
             <div class="page-header">
                 <div class="page-title-group">
                     <div class="subtitle">TALLERES ACTIVOS</div>
-                    <h1>Selección de Responsable</h1>
                 </div>
                 <div class="page-actions">
                     <div class="gooey-search-wrapper">
@@ -35,10 +100,20 @@
 
             <div class="cards-grid" id="talleresGrid">
                 @forelse($talleres as $taller)
-                    <div class="taller-card" data-name="{{ strtolower($taller->name) }}" data-taller-id="{{ $taller->id }}">
+                    <div class="taller-card {{ !$taller->activo ? 'inactive' : '' }}" data-name="{{ strtolower($taller->name) }}" data-taller-id="{{ $taller->id }}">
                         <div class="card-header-info">
                             <h2 class="taller-name">{{ $taller->name }}</h2>
-                            <span class="badge-active">ACTIVO</span>
+                            <div class="taller-status-toggle">
+                                <label class="switch">
+                                    <input type="checkbox" class="toggle-taller-status" 
+                                           data-id="{{ $taller->id }}" 
+                                           {{ $taller->activo ? 'checked' : '' }}>
+                                    <span class="slider round"></span>
+                                </label>
+                                <span class="status-label {{ $taller->activo ? 'active' : 'inactive' }}">
+                                    {{ $taller->activo ? 'ACTIVO' : 'INACTIVO' }}
+                                </span>
+                            </div>
                         </div>
                         <p class="taller-role">RESPONSABLE DE TALLER</p>
                         
@@ -79,16 +154,6 @@
                     </div>
                 </div>
                 
-                <div class="header-stats">
-                    <div class="stat-box blue">
-                        <span class="stat-label">TOTAL CARGA</span>
-                        <span class="stat-number" id="totalCargaValue">0</span>
-                    </div>
-                    <div class="stat-box green">
-                        <span class="stat-label">COMPLETADOS</span>
-                        <span class="stat-number" id="completadosValue">0</span>
-                    </div>
-                </div>
             </div>
 
             <div class="recibos-card">
@@ -160,7 +225,49 @@
             initTalleresSearch();
             initViewHandlers();
             loadTalleresStats();
+            initStatusToggles();
         });
+
+        function initStatusToggles() {
+            document.querySelectorAll('.toggle-taller-status').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const id = this.dataset.id;
+                    const label = this.closest('.taller-status-toggle').querySelector('.status-label');
+                    const card = this.closest('.taller-card');
+
+                    fetch(`/talleres/${id}/toggle-status`, {
+                        method: 'PATCH',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.success) {
+                            label.textContent = data.activo ? 'ACTIVO' : 'INACTIVO';
+                            label.className = `status-label ${data.activo ? 'active' : 'inactive'}`;
+                            
+                            if (data.activo) {
+                                card.classList.remove('inactive');
+                            } else {
+                                card.classList.add('inactive');
+                            }
+                        } else {
+                            // Revertir si hubo error
+                            this.checked = !this.checked;
+                            alert(data.message || 'Error al cambiar el estado');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        this.checked = !this.checked;
+                        alert('Error de conexión al cambiar el estado');
+                    });
+                });
+            });
+        }
 
         function loadTalleresStats() {
             const tallerCards = document.querySelectorAll('.taller-card');
@@ -271,9 +378,6 @@
             currentState.selectedTaller = { id: tallerId, name: tallerName };
             const recibosContent = document.getElementById('recibosContent');
             const recibosTitle = document.getElementById('recibosTitle');
-            const totalCargaValue = document.getElementById('totalCargaValue');
-            const completadosValue = document.getElementById('completadosValue');
-
             recibosTitle.textContent = tallerName;
             recibosContent.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Cargando recibos...</p></div>';
             switchView('recibos');
@@ -281,9 +385,6 @@
             fetch(`/talleres/api/${tallerId}/recibos`)
                 .then(response => response.json())
                 .then(data => {
-                    totalCargaValue.textContent = data.total;
-                    completadosValue.textContent = data.completados;
-
                     if (data.recibos.length === 0) {
                         recibosContent.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📦</div><p>No hay recibos asignados a este taller.</p></div>';
                         return;
