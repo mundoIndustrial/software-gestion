@@ -156,21 +156,21 @@ class OperarioController extends Controller
 
         // ==================== PARTE 2: CONTAR PARCIALES ====================
         // Desde procesos_prenda donde proceso = 'Control Calidad' o 'Control de Calidad'
-        $parcialesCC = ProcesoPrenda::query()
-            ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control de calidad', 'control calidad'])
-            ->whereNull('deleted_at')
+        // Optimizado: 1 query con JOIN en lugar de N+1 queries
+        $parcialesCC = DB::table('procesos_prenda')
+            ->leftJoin('recibos_por_partes', function ($join) {
+                $join->on('recibos_por_partes.pedido_produccion_id', '=', 'procesos_prenda.pedido_produccion_id')
+                    ->on('recibos_por_partes.prenda_pedido_id', '=', 'procesos_prenda.prenda_pedido_id')
+                    ->on('recibos_por_partes.consecutivo_parcial', '=', 'procesos_prenda.numero_recibo_parcial');
+            })
+            ->whereRaw('LOWER(TRIM(procesos_prenda.proceso)) IN (?, ?)', ['control de calidad', 'control calidad'])
+            ->whereNull('procesos_prenda.deleted_at')
+            ->select('recibos_por_partes.tipo_recibo')
             ->get();
 
-        foreach ($parcialesCC as $proceso) {
-            // Obtener el tipo_recibo del ReciboPorPartes asociado
-            $parcial = \App\Models\ReciboPorPartes::query()
-                ->where('pedido_produccion_id', $proceso->pedido_produccion_id ?? 0)
-                ->where('prenda_pedido_id', $proceso->prenda_pedido_id ?? 0)
-                ->where('consecutivo_parcial', $proceso->numero_recibo_parcial ?? 0)
-                ->first();
-
-            if ($parcial) {
-                $tipoRecibo = strtoupper(trim((string) $parcial->tipo_recibo));
+        foreach ($parcialesCC as $fila) {
+            if ($fila->tipo_recibo) {
+                $tipoRecibo = strtoupper(trim((string) $fila->tipo_recibo));
                 if ($tipoRecibo === 'COSTURA' || $tipoRecibo === 'COSTURA-BODEGA') {
                     $conteoControlCalidadCostura++;
                 } elseif ($tipoRecibo === 'REFLECTIVO') {
