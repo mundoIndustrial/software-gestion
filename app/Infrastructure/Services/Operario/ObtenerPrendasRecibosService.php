@@ -473,7 +473,22 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 'total_prendas_reflectivo_aprobadas' => count($prendasReflectivoAprobadas)
             ]);
 
-            // Para cada prenda con reflectivo aprobado, buscar si tiene recibo REFLECTIVO
+            // OPTIMIZACIÓN: Traer TODOS los recibos reflectivos de una sola query
+            $prendasIds = $prendasReflectivoAprobadas->pluck('id')->all();
+            $recibosReflectivosMap = [];
+            if (!empty($prendasIds)) {
+                $recibosReflectivos = ConsecutivoReciboPedido::query()
+                    ->whereIn('prenda_id', $prendasIds)
+                    ->where('tipo_recibo', 'REFLECTIVO')
+                    ->where('activo', 1)
+                    ->get();
+
+                foreach ($recibosReflectivos as $recibo) {
+                    $recibosReflectivosMap[$recibo->prenda_id] = $recibo;
+                }
+            }
+
+            // Para cada prenda con reflectivo aprobado, buscar si tiene recibo REFLECTIVO (desde el mapa, sin query)
             foreach ($prendasReflectivoAprobadas as $prendaAprobada) {
                 if (!$prendaAprobada || !$prendaAprobada->pedidoProduccion) {
                     \Log::info(' [REFLECTIVO] Prenda o pedido sin relacion', [
@@ -482,10 +497,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                     continue;
                 }
 
-                $reciboReflectivo = ConsecutivoReciboPedido::where('prenda_id', $prendaAprobada->id)
-                    ->where('tipo_recibo', 'REFLECTIVO')
-                    ->where('activo', 1)
-                    ->first();
+                $reciboReflectivo = $recibosReflectivosMap[$prendaAprobada->id] ?? null;
 
                 // Si existe recibo REFLECTIVO con proceso aprobado, agregarlo solo si esta en Area Costura (para costura-reflectivo)
                 if ($reciboReflectivo) {
@@ -1238,26 +1250,30 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
     {
         $usuarioNormalizado = strtolower(trim($usuario->name));
 
+        // OPTIMIZACIÓN: Traer TODOS los procesos de una sola query (no por cada pedido)
+        $procesosGrouped = ProcesoPrenda::query()
+            ->select('numero_pedido', 'encargado')
+            ->whereNotNull('encargado')
+            ->get()
+            ->groupBy('numero_pedido')
+            ->map(function ($grupo) {
+                return $grupo->pluck('encargado')->map(fn($e) => strtolower(trim($e)))->unique();
+            });
+
         // Obtener todos los pedidos que tengan proceso de Corte asignado al usuario
-        $pedidos = \App\Models\PedidoProduccion::with(['prendas', 'prendas.tallas'])
+        $pedidos = PedidoProduccion::with(['prendas', 'prendas.tallas'])
             ->orderBy('created_at', 'desc')
             ->get()
-            ->filter(function ($pedido) use ($usuarioNormalizado) {
-                $procesos = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)->get();
+            ->filter(function ($pedido) use ($usuarioNormalizado, $procesosGrouped) {
+                // Buscar en el mapa precargado en lugar de hacer query
+                $encargadosPedido = $procesosGrouped->get($pedido->numero_pedido);
 
-                if ($procesos->isEmpty()) {
+                if (!$encargadosPedido) {
                     return false;
                 }
 
-                return $procesos->contains(function ($proceso) use ($usuarioNormalizado) {
-                    if (!$proceso->encargado) {
-                        return false;
-                    }
-                    $encargadoNormalizado = strtolower(trim($proceso->encargado));
-
-                    // Buscar procesos asignados al usuario
-                    return $encargadoNormalizado === $usuarioNormalizado;
-                });
+                // Verificar si el usuario es encargado de este pedido
+                return $encargadosPedido->contains($usuarioNormalizado);
             });
 
         \Log::info('[ObtenerPrendasRecibosService] Cortador - Pedidos encontrados', [
@@ -1358,11 +1374,41 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             ->orderBy('pp.created_at', 'asc')
             ->get();
 
+        // OPTIMIZACIÓN: Traer TODOS los procesos de una sola query (en lugar de por cada parcial)
+        $parcialIds = $parciales->pluck('prenda_pedido_id')->unique()->all();
+        $procesosMap = [];
+        if (!empty($parcialIds)) {
+            $procesos = ProcesoPrenda::query()
+                ->whereIn('prenda_pedido_id', $parcialIds)
+                ->whereNull('deleted_at')
+                ->get();
+
+            foreach ($procesos as $proc) {
+                $key = $proc->prenda_pedido_id . '_' . $proc->numero_recibo_parcial;
+                if (!isset($procesosMap[$key])) {
+                    $procesosMap[$key] = [];
+                }
+                $procesosMap[$key][] = $proc;
+            }
+        }
+
+        // OPTIMIZACIÓN: Traer completados de una sola query
+        $parcialeIds = $parciales->pluck('id')->all();
+        $completadosMap = [];
+        if (!empty($parcialeIds)) {
+            $completados = \DB::table('prenda_recibo_completado')
+                ->whereIn('id_parcial', $parcialeIds)
+                ->where('area', 'Corte')
+                ->pluck('id_parcial')
+                ->all();
+            $completadosMap = array_flip($completados);
+        }
+
         // Combinar ambas colecciones
         $todasLasParciales = collect();
 
         // Procesar ReciboPorPartes
-        $parciales->each(function (ReciboPorPartes $parcial) use (&$todasLasParciales) {
+        $parciales->each(function (ReciboPorPartes $parcial) use (&$todasLasParciales, $procesosMap, $completadosMap) {
             $pedido = $parcial->pedido;
             $prenda = $parcial->prenda;
 
@@ -1370,35 +1416,23 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 return;
             }
 
-            $tipoParcial = strtoupper(trim((string) ($parcial->tipo_recibo ?? '')));
-            $procesoObjetivo = 'costura';
+            // Buscar procesos desde el mapa precargado (sin queries)
+            $key = $parcial->prenda_pedido_id . '_' . $parcial->consecutivo_parcial;
+            $procesosCostura = $procesosMap[$key] ?? [];
 
-            // Buscar el proceso de costura para obtener el encargado
-            $procesoCostura = ProcesoPrenda::query()
-                ->where('numero_pedido', $pedido->numero_pedido)
-                ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
-                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
-                ->whereNull('deleted_at')
-                ->latest('created_at')
+            $procesoCostura = collect($procesosCostura)
+                ->filter(fn($p) => strtolower(trim((string) $p->proceso)) === 'costura')
+                ->sortByDesc('created_at')
                 ->first();
 
-            // Buscar el proceso mas reciente para determinar el Area actual
-            $procesoReciente = ProcesoPrenda::query()
-                ->where('numero_pedido', $pedido->numero_pedido)
-                ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
-                ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
-                ->whereNull('deleted_at')
-                ->latest('created_at')
+            $procesoReciente = collect($procesosCostura)
+                ->sortByDesc('created_at')
                 ->first();
 
-            // Buscar si ya fue completado en Corte
-            $completadoCorte = \DB::table('prenda_recibo_completado')
-                ->where('id_parcial', $parcial->id)
-                ->where('area', 'Corte')
-                ->exists();
+            // Verificar completado desde el mapa precargado
+            $completadoCorte = isset($completadosMap[$parcial->id]);
 
-            $areaActual = 'Corte'; // Default para parciales es Corte hasta que se complete o pase a Costura
+            $areaActual = 'Corte';
             if ($completadoCorte) {
                 $areaActual = 'Costura';
             } elseif ($procesoReciente && strtolower(trim($procesoReciente->proceso)) === 'costura') {
@@ -1411,7 +1445,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 'prenda' => $prenda,
                 'proceso' => $procesoCostura,
                 'proceso_reciente' => $procesoReciente,
-                'encargado_normalizado' => strtolower(trim((string) ($procesoCostura->encargado ?? $parcial->encargado ?? ''))),
+                'encargado_normalizado' => strtolower(trim((string) ($procesoCostura?->encargado ?? $parcial->encargado ?? ''))),
                 'es_anexo' => false,
                 'area_detectada' => $areaActual,
             ]);
