@@ -440,6 +440,9 @@ export function initReciboFilters() {
         }).join('');
 
         ordenesList.innerHTML = htmlRecibos;
+        
+        // Reinicializar la paginación después de cargar los recibos de Control de Calidad
+        window.__updateDashboardPagination?.();
     }
 
     // Funcion para abrir distribucion de recibos en CC
