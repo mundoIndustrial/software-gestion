@@ -64,6 +64,11 @@ class DashboardController extends Controller
                 return redirect()->route('gestion-bodega.pedidos');
             }
 
+            if ($roleName === 'gestion-bodega') {
+                \Log::info(' Redirigiendo a registros.recibos-bodega');
+                return redirect()->route('registros.recibos-bodega');
+            }
+
             if ($roleName === 'insumos') {
                 \Log::info(' ðŸŽ¯ PREPARANDO redirect a insumos.materiales.index');
                 try {

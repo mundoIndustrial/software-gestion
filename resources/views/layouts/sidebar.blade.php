@@ -81,6 +81,22 @@
       </ul>
     </div>
 
+    @elseif(auth()->user()->hasRole('gestion-bodega'))
+    <!-- GESTION-BODEGA: Menú mínimo solo Recibos Bodega -->
+    <div class="menu-section">
+      <span class="menu-section-title">Gestión de Bodega</span>
+      <ul class="menu-list" role="navigation">
+      <li class="menu-item">
+        <a href="{{ route('registros.recibos-bodega') }}"
+           class="menu-link {{ request()->routeIs('registros.recibos-bodega') || request()->is('recibos-bodega') ? 'active' : '' }}"
+           aria-label="Recibos de bodega">
+          <span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+          <span class="menu-label">Pedidos</span>
+        </a>
+      </li>
+      </ul>
+    </div>
+
     @elseif(auth()->user()->hasRole('bodeguero'))
     <!-- BODEGUERO: Menú simplificado solo Gestión de Bodega -->
     <div class="menu-section">
@@ -456,7 +472,7 @@
               <span class="menu-label">Recibos de Logo</span>
             </a>
           </li>
-          @if(auth()->user()->hasRole('admin'))
+          @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('gestion-bodega'))
           <li class="submenu-item">
             <a href="/recibos-bodega"
                class="menu-link {{ request()->is('recibos-bodega') ? 'active' : '' }}"

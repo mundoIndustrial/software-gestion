@@ -45,7 +45,7 @@ class RecibosParcialesController extends Controller
                 'tallas.*.color_nombre' => 'nullable|string|max:100',
                 'notas' => 'nullable|string|max:1000',
                 'ubicaciones' => 'nullable|array',
-                'ubicaciones.*' => 'nullable|string|max:120',
+                'ubicaciones.*' => 'nullable|string',
                 'observaciones' => 'nullable|string|max:4000',
             ]);
 

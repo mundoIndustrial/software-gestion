@@ -55,8 +55,10 @@
         return 0;
     };
 
-    if (auth()->user()->hasRole('cortador') || auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('administrador-costura')) {
+    if (auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('administrador-costura')) {
         $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortByDesc($callbackOrdenamiento)->values();
+    } elseif (auth()->user()->hasRole('cortador')) {
+        $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortBy($callbackOrdenamiento)->values();
     } else {
         $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortBy($callbackOrdenamiento)->values();
     }
@@ -462,6 +464,11 @@
                             $sinEncargadoReflectivoCard = $reciboReflectivoFiltroCard
                                 && empty(trim((string) ($reciboReflectivoFiltroCard['encargado_costura'] ?? '')))
                                 && !((bool) ($reciboReflectivoFiltroCard['tiene_parciales'] ?? false));
+
+                            $recibosCorteAsignadosCortador = collect($prenda['recibos'] ?? [])->filter(function ($recibo) {
+                                $area = strtolower(trim((string) ($recibo['area'] ?? '')));
+                                return $area === 'corte';
+                            })->count();
                         @endphp
 
                         <div class="orden-card-simple {{ ((auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']) || auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('administrador-costura')) && $reciboCompletadoCostura) ? 'card-completado-costura' : '' }} {{ $tieneReflectivo ? 'borde-reflectivo' : '' }}" 
@@ -480,6 +487,7 @@
                              data-fecha-creacion-reflectivo="{{ ($reciboReflectivoFiltroCard['creado_en'] ?? ($reciboReflectivoFiltroCard['created_at'] ?? '')) ? strtotime($reciboReflectivoFiltroCard['creado_en'] ?? $reciboReflectivoFiltroCard['created_at']) : 0 }}"
                              data-fecha-creacion-costura="{{ ($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? '')) ? strtotime($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? '')) : 0 }}"
                              data-fecha-asignacion-costura="{{ ($reciboCosturaFiltroCard['fecha_asignacion_costura'] ?? ($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? ''))) ? strtotime($reciboCosturaFiltroCard['fecha_asignacion_costura'] ?? ($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? ''))) : 0 }}"
+                             data-recibos-corte-asignados="{{ $recibosCorteAsignadosCortador }}"
                              style="display: {{ $displayInicial }}">
 
                             <!-- Borde izquierdo eliminado -->

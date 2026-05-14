@@ -1,13 +1,14 @@
-﻿export function initDashboardPagination() {
+export function initDashboardPagination() {
     const userRole = document.querySelector('.operario-dashboard')?.dataset?.userRole || '';
-    const PER_PAGE = 12; // Paginación de 12 items por página para todos los roles
+    const isCortador = userRole === 'cortador';
+    const PER_PAGE = 12; // Paginacion de 12 items por pagina para todos los roles
     let currentPage = 1;
     let visibleCards = [];
 
     const ordenesList = document.getElementById('ordenesList');
     if (!ordenesList) return;
 
-    // Crear el contenedor de paginaciÃ³n si no existe
+    // Crear el contenedor de paginacion si no existe
     let paginationContainer = document.getElementById('dashboardPagination');
     if (!paginationContainer) {
         paginationContainer = document.createElement('div');
@@ -18,46 +19,78 @@
 
     function updatePagination() {
         const ordenCards = Array.from(ordenesList.querySelectorAll('.orden-card-simple'));
-        
-        // Obtenemos solo las tarjetas que no estÃ¡n ocultas por otros filtros (tipo_recibo, bÃºsqueda, etc)
-        // NOTA: Usamos getComputedStyle o simplemente verificamos que display no sea 'none'
+
+        // Obtenemos solo las tarjetas que no estan ocultas por otros filtros (tipo_recibo, busqueda, etc)
         visibleCards = ordenCards.filter(card => card.style.display !== 'none');
 
-        const totalPages = Math.ceil(visibleCards.length / PER_PAGE);
-        
+        const totalUnits = getTotalUnits();
+        const totalPages = Math.ceil(totalUnits / PER_PAGE);
+
         if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
 
-        renderPaginationControls(totalPages);
+        renderPaginationControls(totalPages, totalUnits);
         showPage(currentPage);
+    }
+
+    function getCardUnits(card) {
+        if (!isCortador) return 1;
+
+        const raw = parseInt(card.dataset.recibosCorteAsignados || '0', 10);
+        if (Number.isNaN(raw) || raw < 0) return 0;
+        return raw;
+    }
+
+    function getTotalUnits() {
+        if (!isCortador) return visibleCards.length;
+        return visibleCards.reduce((sum, card) => sum + getCardUnits(card), 0);
+    }
+
+    function getVisibleCardsForPage(page) {
+        if (!isCortador) {
+            const start = (page - 1) * PER_PAGE;
+            const end = start + PER_PAGE;
+            return visibleCards.slice(start, end);
+        }
+
+        const startUnit = (page - 1) * PER_PAGE + 1;
+        const endUnit = page * PER_PAGE;
+        let acumulado = 0;
+
+        return visibleCards.filter(card => {
+            const units = getCardUnits(card);
+            const inicioCard = acumulado + 1;
+            const finCard = acumulado + units;
+            acumulado = finCard;
+
+            if (units <= 0) return false;
+            return finCard >= startUnit && inicioCard <= endUnit;
+        });
     }
 
     function showPage(page) {
         currentPage = page;
-        
+
         // Ocultar todas las tarjetas visibles inicialmente
         visibleCards.forEach(card => card.classList.add('page-hidden'));
 
-        // Mostrar solo las de la pÃ¡gina actual
-        const start = (currentPage - 1) * PER_PAGE;
-        const end = start + PER_PAGE;
-        const cardsToShow = visibleCards.slice(start, end);
-
+        // Mostrar solo las de la pagina actual
+        const cardsToShow = getVisibleCardsForPage(currentPage);
         cardsToShow.forEach(card => card.classList.remove('page-hidden'));
     }
 
-    function renderPaginationControls(totalPages) {
+    function renderPaginationControls(totalPages, totalUnits) {
         if (totalPages <= 1) {
             paginationContainer.innerHTML = '';
             return;
         }
 
         const start = (currentPage - 1) * PER_PAGE + 1;
-        const end = Math.min(currentPage * PER_PAGE, visibleCards.length);
+        const end = Math.min(currentPage * PER_PAGE, totalUnits);
         const countInPage = end - start + 1;
 
         let html = `
             <div class="pagination-info">
-                Mostrando ${countInPage} de ${visibleCards.length} registros
+                Mostrando ${countInPage} de ${totalUnits} registros
             </div>
             <div class="pagination-buttons">
                 <button class="pagination-btn ${currentPage === 1 ? 'disabled' : ''}" data-page="${currentPage - 1}">
@@ -65,7 +98,7 @@
                 </button>
         `;
 
-        // LÃ³gica de pÃ¡ginas (simplificada para mostrar hasta 5 nÃºmeros)
+        // Logica de paginas (simplificada para mostrar hasta 5 numeros)
         let startPage = Math.max(1, currentPage - 2);
         let endPage = Math.min(totalPages, startPage + 4);
         if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
@@ -90,8 +123,8 @@
         // Listeners para botones
         paginationContainer.querySelectorAll('.pagination-btn:not(.disabled)').forEach(btn => {
             btn.addEventListener('click', () => {
-                showPage(parseInt(btn.dataset.page));
-                renderPaginationControls(totalPages);
+                showPage(parseInt(btn.dataset.page, 10));
+                renderPaginationControls(totalPages, totalUnits);
             });
         });
     }
@@ -106,4 +139,3 @@
     // Inicializar
     updatePagination();
 }
-

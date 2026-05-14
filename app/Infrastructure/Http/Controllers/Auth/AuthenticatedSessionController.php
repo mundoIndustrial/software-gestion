@@ -201,6 +201,11 @@ class AuthenticatedSessionController extends Controller
                 return redirect(route('gestion-bodega.pedidos', absolute: false));
             }
 
+            // Gestion Bodega - Recibos de bodega
+            if ($roleName === 'gestion-bodega') {
+                return redirect(route('registros.recibos-bodega', absolute: false));
+            }
+
             // Costura-Reflectivo - Dashboard de operario
             if ($roleName === 'costura-reflectivo') {
                 return redirect(route('operario.dashboard', absolute: false));

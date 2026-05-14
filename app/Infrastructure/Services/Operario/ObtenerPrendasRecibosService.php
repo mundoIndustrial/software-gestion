@@ -1145,9 +1145,40 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 return $item['prenda_id'] . ($parcialId ? '_' . $prefix . $parcialId : '');
             });
 
-        if ($tipoOperario === 'vista-costura' || $tipoOperario === 'cortador') {
+        if ($tipoOperario === 'vista-costura') {
             return $resultadoFinal
                 ->sortByDesc(function ($item) {
+                    return $item['fecha_creacion'] ?? null;
+                })
+                ->values();
+        }
+
+        if ($tipoOperario === 'cortador') {
+            return $resultadoFinal
+                ->map(function ($item) {
+                    $recibosCorte = collect($item['recibos'] ?? [])
+                        ->filter(function ($recibo) {
+                            $area = strtolower(trim((string) ($recibo['area'] ?? '')));
+                            return $area === 'corte';
+                        })
+                        ->values()
+                        ->all();
+
+                    $item['recibos'] = $recibosCorte;
+                    $item['total_recibos'] = count($recibosCorte);
+
+                    if (!empty($recibosCorte)) {
+                        $item['fecha_creacion'] = $recibosCorte[0]['fecha_asignacion_corte']
+                            ?? $recibosCorte[0]['fecha_proceso_corte_created_at']
+                            ?? ($item['fecha_creacion'] ?? null);
+                    }
+
+                    return $item;
+                })
+                ->filter(function ($item) {
+                    return !empty($item['recibos']);
+                })
+                ->sortBy(function ($item) {
                     return $item['fecha_creacion'] ?? null;
                 })
                 ->values();

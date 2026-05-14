@@ -6,11 +6,13 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <div class="mb-3 d-flex justify-content-end">
-                <button type="button" id="openReciboBodegaModalBtn" class="btn btn-primary">
-                    Registrar recibo
-                </button>
-            </div>
+            @unless(auth()->user()?->hasRole('admin'))
+                <div class="mb-3 d-flex justify-content-end">
+                    <button type="button" id="openReciboBodegaModalBtn" class="btn btn-primary">
+                        Registrar recibo
+                    </button>
+                </div>
+            @endunless
 
             <div id="recibo-corte-bodega-container">
                 <div class="table-scroll-container">
@@ -18,6 +20,7 @@
                         <thead class="table-header">
                             <tr>
                                 <th style="width: 60px; text-align: center;">Acciones</th>
+                                <th style="width: 140px; text-align: center;">Área</th>
                                 <th style="width: 120px; text-align: center;">N&deg; Recibo</th>
                                 <th>Descripción</th>
                                 <th style="width: 120px;">Tallas</th>
@@ -27,7 +30,7 @@
                         </thead>
                         <tbody id="recibo-corte-bodega-tbody">
                             <tr>
-                                <td colspan="6" class="text-center py-4 text-muted">Cargando recibos...</td>
+                                <td colspan="7" class="text-center py-4 text-muted">Cargando recibos...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -1171,7 +1174,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const rcbSuccessModal = document.getElementById('rcbSuccessModal');
     const rcbSuccessModalOkBtn = document.getElementById('rcbSuccessModalOkBtn');
 
-    if (!modal || !openBtn || !prendasContainer || !form || !tipoTallaModal || !tipoTallaModalText) return;
+    if (!modal || !prendasContainer || !form || !tipoTallaModal || !tipoTallaModalText) return;
 
     function showReciboSuccessModal() {
         if (!rcbSuccessModal) return;
@@ -1489,7 +1492,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (firstInput) setTimeout(() => firstInput.focus(), 100);
     };
 
-    openBtn.addEventListener('click', openModal);
+    openBtn?.addEventListener('click', openModal);
 
     modal.addEventListener('click', function (event) {
         if (event.target === modal || event.target.closest('[data-close-recibo-modal="true"]')) {
@@ -1873,6 +1876,9 @@ function loadRecibosCorteForBodega() {
                                 <i class="fas fa-eye"></i>
                             </button>
                         </td>
+                        <td style="text-align: center;">
+                            <span class="badge rounded-pill bg-info text-dark">${prenda.area || '-'}</span>
+                        </td>
                         <td style="text-align: center;"><strong>${prenda.numero_recibo || '-'}</strong></td>
                         <td>${prenda.descripcion || '-'}</td>
                         <td style="text-align: center;">${prenda.cantidad_tallas}</td>
@@ -1884,7 +1890,7 @@ function loadRecibosCorteForBodega() {
             } else {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="text-center py-4">
+                        <td colspan="7" class="text-center py-4">
                             <div class="alert alert-info mb-0">
                                 <i class="fas fa-info-circle"></i> No hay recibos de corte para bodega registrados aún.
                             </div>
@@ -1898,7 +1904,7 @@ function loadRecibosCorteForBodega() {
             const tbody = document.getElementById('recibo-corte-bodega-tbody');
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="text-center py-4">
+                    <td colspan="7" class="text-center py-4">
                         <div class="alert alert-danger mb-0">
                             Error al cargar los recibos de corte para bodega.
                         </div>

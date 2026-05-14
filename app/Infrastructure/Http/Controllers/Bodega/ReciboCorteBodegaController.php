@@ -32,9 +32,22 @@ class ReciboCorteBodegaController extends Controller
 
     public function index()
     {
-        $prendas = PrendaBodega::with('tallas')
-            ->orderBy('created_at', 'desc')
-            ->paginate(25);
+        $esAdmin = (bool) (auth()->user()?->hasRole('admin'));
+
+        $prendasQuery = PrendaBodega::with('tallas')
+            ->orderBy('created_at', 'desc');
+
+        if ($esAdmin) {
+            $prendasQuery->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('consecutivos_recibos_pedidos as crp')
+                    ->whereColumn('crp.prenda_bodega_id', 'prenda_bodega.id')
+                    ->where('crp.tipo_recibo', 'CORTE-PARA-BODEGA')
+                    ->whereRaw("LOWER(TRIM(COALESCE(crp.area, ''))) = 'insumos'");
+            });
+        }
+
+        $prendas = $prendasQuery->paginate(25);
 
         $prendaIds = $prendas->pluck('id')->all();
         $recibosMap = [];
@@ -45,7 +58,13 @@ class ReciboCorteBodegaController extends Controller
                 ->orderByDesc('id')
                 ->get()
                 ->groupBy('prenda_bodega_id')
-                ->map(fn($rows) => (int) ($rows->first()->consecutivo_actual ?? 0))
+                ->map(function ($rows) {
+                    $first = $rows->first();
+                    return [
+                        'numero_recibo' => isset($first->consecutivo_actual) ? (int) $first->consecutivo_actual : null,
+                        'area' => $first->area ?? null,
+                    ];
+                })
                 ->toArray();
         }
 
@@ -53,7 +72,8 @@ class ReciboCorteBodegaController extends Controller
             'success' => true,
             'data' => $prendas->map(fn($prenda) => [
                 'id' => $prenda->id,
-                'numero_recibo' => $recibosMap[$prenda->id] ?? null,
+                'numero_recibo' => $recibosMap[$prenda->id]['numero_recibo'] ?? null,
+                'area' => $recibosMap[$prenda->id]['area'] ?? null,
                 'nombre' => $prenda->nombre,
                 'descripcion' => $prenda->descripcion,
                 'total_cantidad' => $prenda->tallas->sum('cantidad'),
