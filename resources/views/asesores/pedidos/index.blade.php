@@ -1067,6 +1067,12 @@
 
                 // Crear nuevas filas con los resultados de búsqueda
                 data.data.forEach(pedido => {
+                    const estadoPedido = String(pedido.estado || '');
+                    const estadoPedidoEscapado = estadoPedido
+                        .replace(/\\/g, '\\\\')
+                        .replace(/'/g, "\\'");
+                    const puedeAnular = estadoPedido.toLowerCase().trim() !== 'anulada';
+
                     const rowDiv = document.createElement('div');
                     rowDiv.setAttribute('data-pedido-row', '');
                     rowDiv.setAttribute('data-pedido-id', pedido.id || pedido.pedido_id || '');
@@ -1100,6 +1106,10 @@
                             <button class="btn-ver-dropdown" data-menu-id="menu-ver-${pedido.id || pedido.pedido_id}" data-pedido="${pedido.id || pedido.pedido_id}" data-pedido-id="${pedido.id || pedido.pedido_id}" title="Ver Opciones" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; width: 36px; height: 36px;">
                                 <i class="fas fa-eye"></i>
                             </button>
+                            ${puedeAnular ? `
+                            <button onclick="confirmarAnularPedido(${pedido.id || pedido.pedido_id}, '#${pedido.numero_pedido}', '${estadoPedidoEscapado}')" title="Anular Pedido" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; width: 36px; height: 36px;">
+                                <i class="fas fa-ban"></i>
+                            </button>` : ''}
                             <button onclick="editarPedido(${pedido.id || pedido.pedido_id})" title="Editar Pedido" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; width: 36px; height: 36px;">
                                 <i class="fas fa-edit"></i>
                             </button>
