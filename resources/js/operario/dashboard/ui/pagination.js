@@ -1,7 +1,6 @@
 ﻿export function initDashboardPagination() {
     const userRole = document.querySelector('.operario-dashboard')?.dataset?.userRole || '';
-    const isVistaCostura = userRole === 'vista-costura';
-    const PER_PAGE = isVistaCostura ? 5000 : 12; // vista-costura: sin paginacion efectiva
+    const PER_PAGE = 12; // Paginación de 12 items por página para todos los roles
     let currentPage = 1;
     let visibleCards = [];
 

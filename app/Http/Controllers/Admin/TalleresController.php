@@ -252,12 +252,30 @@ class TalleresController extends Controller
             return $r;
         });
 
+        // Calcular completados
+        $idsRecibosNormales = $recibosNormales->pluck('id')->toArray();
+        $idsRecibosParciales = $recibosParciales->pluck('id')->toArray();
+
+        $completadosNormales = \Illuminate\Support\Facades\DB::table('prenda_recibo_completado')
+            ->whereIn('id_recibo', $idsRecibosNormales)
+            ->distinct('id_recibo')
+            ->count('id_recibo');
+
+        $completadosParciales = \Illuminate\Support\Facades\DB::table('prenda_recibo_completado')
+            ->whereIn('id_parcial', $idsRecibosParciales)
+            ->distinct('id_parcial')
+            ->count('id_parcial');
+
+        $totalCompletados = $completadosNormales + $completadosParciales;
+        $totalPendientes = $recibos->count() - $totalCompletados;
+
         return response()->json([
             'taller_id' => $id,
             'taller_name' => $nombreTaller,
             'recibos' => $recibos,
             'total' => $recibos->count(),
-            'completados' => 0
+            'completados' => $totalCompletados,
+            'pendientes' => $totalPendientes
         ]);
     }
 

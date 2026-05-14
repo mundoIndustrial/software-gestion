@@ -45,11 +45,11 @@
                         <div class="stats-container">
                             <div class="stat-row">
                                 <span>Completados:</span>
-                                <span class="stat-value stat-completed">0</span>
+                                <span class="stat-value stat-completed" data-taller-id="{{ $taller->id }}">-</span>
                             </div>
                             <div class="stat-row">
                                 <span>Pendientes:</span>
-                                <span class="stat-value stat-pending">0</span>
+                                <span class="stat-value stat-pending" data-taller-id="{{ $taller->id }}">-</span>
                             </div>
                         </div>
                         
@@ -159,7 +159,30 @@
         document.addEventListener('DOMContentLoaded', function() {
             initTalleresSearch();
             initViewHandlers();
+            loadTalleresStats();
         });
+
+        function loadTalleresStats() {
+            const tallerCards = document.querySelectorAll('.taller-card');
+            
+            tallerCards.forEach(card => {
+                const tallerId = card.getAttribute('data-taller-id');
+                const completadosSpan = card.querySelector('.stat-completed');
+                const pendientesSpan = card.querySelector('.stat-pending');
+                
+                fetch(`/talleres/api/${tallerId}/recibos`)
+                    .then(response => response.json())
+                    .then(data => {
+                        completadosSpan.textContent = data.completados;
+                        pendientesSpan.textContent = data.pendientes;
+                    })
+                    .catch(error => {
+                        console.error('Error loading stats for taller:', tallerId, error);
+                        completadosSpan.textContent = '0';
+                        pendientesSpan.textContent = '0';
+                    });
+            });
+        }
 
         function initTalleresSearch() {
             const searchInput = document.getElementById('searchInput');
