@@ -20,6 +20,9 @@ class EntregaReciboCostura extends Model
         'area',
         'cantidad_entregada',
         'detalle_tallas',
+        'talla',
+        'genero',
+        'color_nombre',
         'usuario_id',
     ];
 

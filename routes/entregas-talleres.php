@@ -13,4 +13,5 @@ Route::middleware(['auth', 'role:vista-costura,admin'])->prefix('entregas-taller
     // API routes for dynamic interactions
     Route::get('/api/search', [EntregasTalleresController::class, 'apiSearch'])->name('api.search');
     Route::get('/api/recibo/{id}/details', [EntregasTalleresController::class, 'apiReciboDetails'])->name('api.recibo.details');
+    Route::delete('/eliminar/{id}', [EntregasTalleresController::class, 'destroy'])->name('eliminar');
 });

@@ -9,7 +9,6 @@
     </span>
 @endsection
 
-
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/entregas-talleres.css') }}?v={{ time() }}">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -20,8 +19,6 @@
 <div class="entregas-container" id="entregas-app">
     <!-- View 1: Search -->
     <div id="view-search">
-
-
         <div class="entregas-content">
             <div class="content-title">
                 <h2>Registro de Entregas</h2>
@@ -36,29 +33,13 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn-primary">Siguiente</button>
+                <button type="submit" class="btn-primary" style="background: #94a3b8; opacity: 0.7;">Siguiente</button>
             </form>
-
         </div>
     </div>
 </div>
 @endsection
 
 @push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('main-search');
-        const nextBtn = document.querySelector('.btn-primary');
-
-        searchInput.addEventListener('input', function() {
-            if (this.value.trim().length > 0) {
-                nextBtn.style.background = '#2450ef';
-                nextBtn.style.opacity = '1';
-            } else {
-                nextBtn.style.background = '#94a3b8';
-                nextBtn.style.opacity = '0.7';
-            }
-        });
-    });
-</script>
+<script src="{{ asset('js/entregas-talleres.js') }}?v={{ time() }}"></script>
 @endpush
