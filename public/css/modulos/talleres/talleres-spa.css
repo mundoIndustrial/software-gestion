@@ -376,82 +376,122 @@
     margin-bottom: 24px;
 }
 
+.semana-group {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    margin-bottom: 30px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
 .semana-header {
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    padding: 12px 16px;
-    border-radius: 8px;
-    margin-bottom: 12px;
+    background: #1e40af; /* Azul corporativo */
+    color: #ffffff;
+    padding: 14px 20px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 12px;
+    gap: 12px;
+    font-size: 13px;
     font-weight: 700;
-    color: #2563eb;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
 }
 
 .semana-header .material-symbols-rounded {
-    font-size: 16px;
+    font-size: 18px;
+    color: #ffffff; /* Icono en blanco */
 }
 
 .table-entregas {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
-    margin-bottom: 24px;
-}
-
-.table-entregas thead {
-    background: #f1f5f9;
 }
 
 .table-entregas th {
-    padding: 12px 16px;
+    padding: 12px 20px;
     text-align: left;
     font-weight: 700;
     color: #64748b;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.table-entregas td {
-    padding: 12px 16px;
     border-bottom: 1px solid #f1f5f9;
-}
-
-.table-entregas tbody tr:hover {
     background: #f8fafc;
 }
 
-.badge-talla {
-    display: inline-flex;
+.table-entregas td {
+    padding: 14px 20px;
+    background: white;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    font-size: 13px;
+}
+
+.table-entregas tr:last-child td {
+    border-bottom: none;
+}
+
+/* Progress Bar Styles */
+.progress-container {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    min-width: 32px;
-    padding: 4px 8px;
-    background: #dbeafe;
-    color: #1e40af;
+    gap: 12px;
+    min-width: 160px;
+}
+
+.progress-bar-wrapper {
+    flex: 1;
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    border-radius: 10px;
+    transition: width 0.5s ease-in-out;
+}
+
+.progress-text {
+    font-size: 11px;
     font-weight: 700;
-    border-radius: 6px;
-    border: 1px solid #93c5fd;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+/* Columns styles */
+.col-fecha { color: #94a3b8; width: 100px; }
+.col-genero { font-weight: 600; color: #475569; text-transform: uppercase; width: 100px; }
+.col-talla { font-weight: 800; color: #1e293b; width: 60px; }
+
+.prenda-desc-limit {
+    max-width: 380px;
     font-size: 12px;
+    line-height: 1.4;
+    color: #334155;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .col-cantidad {
     text-align: right;
-    font-weight: 700;
+    font-weight: 800;
     color: #0f172a;
+    font-size: 14px;
+    width: 80px;
 }
 
 .col-cantidad small {
-    font-size: 11px;
-    color: #64748b;
-    font-weight: 600;
-    margin-left: 4px;
+    font-size: 10px;
+    color: #94a3b8;
+    margin-left: 3px;
 }
 
 /* ============================================
