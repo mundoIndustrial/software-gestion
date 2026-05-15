@@ -15,7 +15,7 @@ use Illuminate\Support\Collection;
 class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 {
 
-    public function obtenerPrendasConRecibosTodosCostura(): Collection
+    public function obtenerPrendasConRecibosTodosCostura(): \Illuminate\Support\Collection
     {
         // Vista global: listar todos los recibos COSTURA activos (incluye modulos 1/2/3)
         // Filtra por:
@@ -331,7 +331,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             ->values();
     }
 
-    public function obtenerPrendasConRecibos(User $usuario): Collection
+    public function obtenerPrendasConRecibos(\App\Models\User $usuario): \Illuminate\Support\Collection
     {
 
         $tipoOperario = $this->obtenerTipoOperario($usuario);
@@ -1897,5 +1897,85 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
         }
 
         return 'desconocido';
+    }
+    public function obtenerPrendasConRecibosBodegaCortador(\App\Models\User $usuario): \Illuminate\Support\Collection
+    {
+        $usuarioNombre = strtolower(trim((string) $usuario->name));
+
+        $recibos = ConsecutivoReciboPedido::query()
+            ->where('activo', 1)
+            ->where('tipo_recibo', 'CORTE-PARA-BODEGA')
+            ->whereRaw('LOWER(TRIM(area)) = ?', ['corte'])
+            ->whereNotNull('prenda_bodega_id')
+            ->with(['prenda', 'prenda.pedidoProduccion', 'pedido'])
+            ->get();
+
+        if ($recibos->isEmpty()) {
+            return collect();
+        }
+
+        $prendaBodegaIds = $recibos->pluck('prenda_bodega_id')->filter()->unique()->values()->all();
+
+        $procesos = ProcesoPrenda::query()
+            ->whereIn('prenda_bodega_id', $prendaBodegaIds)
+            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
+            ->whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNombre])
+            ->whereNull('deleted_at')
+            ->get()
+            ->groupBy('prenda_bodega_id');
+
+        $resultado = collect();
+
+        foreach ($procesos as $prendaBodegaId => $procesosPrenda) {
+            $recibo = $recibos->firstWhere('prenda_bodega_id', $prendaBodegaId);
+            if (!$recibo) {
+                continue;
+            }
+
+            $resultado->push([
+                'numero_pedido' => $recibo->pedido?->numero_pedido,
+                'nombre_prenda' => $recibo->prenda?->nombre_prenda ?? 'N/A',
+                'prenda_bodega_id' => $prendaBodegaId,
+                'tipo_recibo' => $recibo->tipo_recibo,
+                'total_recibos' => 1,
+                'recibos' => [
+                    [
+                        'tipo_recibo' => $recibo->tipo_recibo,
+                        'consecutivo_actual' => $recibo->consecutivo_actual,
+                        'area' => $recibo->area,
+                    ]
+                ]
+            ]);
+        }
+
+        return $resultado;
+    }
+
+    public function obtenerConteoPrendasConRecibosBodegaCortador(\App\Models\User $usuario): int
+    {
+        $usuarioNombre = strtolower(trim((string) $usuario->name));
+
+        $recibos = ConsecutivoReciboPedido::query()
+            ->where('activo', 1)
+            ->where('tipo_recibo', 'CORTE-PARA-BODEGA')
+            ->whereRaw('LOWER(TRIM(area)) = ?', ['corte'])
+            ->whereNotNull('prenda_bodega_id')
+            ->pluck('prenda_bodega_id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($recibos)) {
+            return 0;
+        }
+
+        return ProcesoPrenda::query()
+            ->whereIn('prenda_bodega_id', $recibos)
+            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
+            ->whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNombre])
+            ->whereNull('deleted_at')
+            ->distinct('prenda_bodega_id')
+            ->count();
     }
 }

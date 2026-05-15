@@ -1549,6 +1549,47 @@ body[data-dashboard-theme="reflectivo"] .operario-dashboard .badge-filtro.badge-
 }
 
 @media (max-width: 768px) {
+    /* Diseño de pestañas en bloques (Grilla 2x2) - Más compacto */
+    .operario-dashboard.is-modern-dashboard .filtros-badges-principales {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 1.25rem;
+        margin: 0.25rem 0 0.75rem;
+        background: #f1f5f9;
+        justify-content: stretch;
+    }
+
+    .operario-dashboard.is-modern-dashboard .filtros-badges-principales .badge-filtro {
+        flex: 1;
+        width: 100%;
+        min-width: 0;
+        padding: 0.5rem 0.6rem;
+        font-size: 0.7rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        border-radius: 0.85rem;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        height: 40px;
+        gap: 0.35rem;
+    }
+
+    .badge-filtro .material-symbols-rounded {
+        font-size: 1.1rem !important;
+    }
+
+    .operario-dashboard .badge-filtro-contador {
+        margin-left: 2px;
+        font-size: 0.65rem;
+        padding: 1px 6px;
+    }
+
     .mobile-actions-toggle {
         display: flex;
     }

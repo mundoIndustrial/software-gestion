@@ -2,13 +2,13 @@
 
 namespace App\Domain\Operario\Services;
 
-use App\Models\User;
-use Illuminate\Support\Collection;
-
 interface OperarioPrendasRecibosReadService
 {
-    public function obtenerPrendasConRecibos(User $usuario): Collection;
+    public function obtenerPrendasConRecibos(\App\Models\User $usuario): \Illuminate\Support\Collection;
 
-    public function obtenerPrendasConRecibosTodosCostura(): Collection;
+    public function obtenerPrendasConRecibosTodosCostura(): \Illuminate\Support\Collection;
+    
+    public function obtenerPrendasConRecibosBodegaCortador(\App\Models\User $usuario): \Illuminate\Support\Collection;
+    
+    public function obtenerConteoPrendasConRecibosBodegaCortador(\App\Models\User $usuario): int;
 }
-

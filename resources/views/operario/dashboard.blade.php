@@ -246,23 +246,35 @@
                 <div class="filtros-badges filtros-badges-principales">
                     <button type="button" class="badge-filtro {{ ($tab ?? 'pendientes') === 'pendientes' ? 'badge-filtro-active' : '' }}" onclick="window.location.href='{{ route('operario.dashboard', ['tab' => 'pendientes']) }}'">
                         <span class="material-symbols-rounded">pending_actions</span>
-                        Pendientes
-                        <span class="badge-filtro-contador" id="contadorPendientes">{{ $prendasConRecibos->count() }}</span>
+                        Pendiente pedidos
+                        <span class="badge-filtro-contador" id="contadorPendientes">{{ $pendientesPedidosCount ?? $prendasConRecibos->count() }}</span>
                     </button>
                     <button type="button" class="badge-filtro {{ ($tab ?? 'pendientes') === 'completados' ? 'badge-filtro-active' : '' }}" onclick="window.location.href='{{ route('operario.dashboard', ['tab' => 'completados']) }}'">
                         <span class="material-symbols-rounded">task_alt</span>
                         Completados
                         <span class="badge-filtro-contador" id="contadorCompletados">{{ $recibosCompletados->count() }}</span>
                     </button>
-
+                    <button type="button" class="badge-filtro {{ ($tab ?? 'pendientes') === 'pendiente-bodega' ? 'badge-filtro-active' : '' }}" onclick="window.location.href='{{ route('operario.dashboard', ['tab' => 'pendiente-bodega']) }}'">
+                        <span class="material-symbols-rounded">inventory_2</span>
+                        Pendiente Bodega
+                        <span class="badge-filtro-contador" id="contadorPendienteBodega">{{ $recibosBodegaPendientesCount ?? 0 }}</span>
+                    </button>
+                    <button type="button" class="badge-filtro {{ ($tab ?? 'pendientes') === 'completado-bodega' ? 'badge-filtro-active' : '' }}" onclick="window.location.href='{{ route('operario.dashboard', ['tab' => 'completado-bodega']) }}'">
+                        <span class="material-symbols-rounded">inventory</span>
+                        Completado Bodega
+                        <span class="badge-filtro-contador" id="contadorCompletadoBodega">{{ $recibosBodegaCompletados->count() }}</span>
+                    </button>
                 </div>
             @endif
 
 
             <div class="ordenes-list" id="ordenesList">
-                @if(auth()->user()->hasRole('cortador') && ($tab ?? 'pendientes') === 'completados')
-                    @if(isset($recibosCompletados) && $recibosCompletados->count() > 0)
-                        @foreach($recibosCompletados as $recibo)
+                @if(auth()->user()->hasRole('cortador') && in_array(($tab ?? 'pendientes'), ['completados', 'completado-bodega'], true))
+                    @php
+                        $coleccionMostrar = ($tab === 'completado-bodega') ? $recibosBodegaCompletados : $recibosCompletados;
+                    @endphp
+                    @if(isset($coleccionMostrar) && $coleccionMostrar->count() > 0)
+                        @foreach($coleccionMostrar as $recibo)
                             @php
                                 $fechaCompletado = \Carbon\Carbon::parse($recibo['fecha_completado'])->format('d/m/Y H:i');
                             @endphp
@@ -287,7 +299,7 @@
                                         </div>
 
                                         <div class="orden-cliente">
-                                            <p class="cliente-label">CLIENTE</p>
+                                            <p class="cliente-label">{{ strtoupper((string) ($recibo['tipo_recibo'] ?? '')) === 'CORTE-PARA-BODEGA' ? 'SERVICIO' : 'CLIENTE' }}</p>
                                             <p class="cliente-name">{{ $recibo['cliente'] }}</p>
                                         </div>
 
@@ -310,7 +322,7 @@
                                             @component('components.botones.ver-recibo', [
                                                 'numeroPedido' => $recibo['numero_pedido'],
                                                 'prendaId' => $recibo['prenda_id'],
-                                                'nombrePrenda' => $recibo['nombre_prenda'],
+                                                'nombrePrenda' => addslashes((string)$recibo['nombre_prenda']),
                                                 'tipoRecibo' => $recibo['tipo_recibo'],
                                                 'idParcial' => $recibo['id_parcial'] ?: null,
                                                 'consecutivo' => $recibo['consecutivo_actual'],
@@ -323,7 +335,7 @@
                                             @component('components.botones.ver-recibo', [
                                                 'numeroPedido' => $recibo['numero_pedido'],
                                                 'prendaId' => $recibo['prenda_id'],
-                                                'nombrePrenda' => $recibo['nombre_prenda'],
+                                                'nombrePrenda' => addslashes((string)$recibo['nombre_prenda']),
                                                 'tipoRecibo' => $recibo['tipo_recibo'],
                                                 'idParcial' => $recibo['id_parcial'] ?: null,
                                                 'consecutivo' => $recibo['consecutivo_actual'],
@@ -643,7 +655,7 @@
                                     </div>
 
                                     <div class="orden-cliente">
-                                        <p class="cliente-label">CLIENTE</p>
+                                        <p class="cliente-label">{{ (isset($prenda['recibos'][0]) && strtoupper((string)($prenda['recibos'][0]['tipo_recibo'] ?? '')) === 'CORTE-PARA-BODEGA') ? 'SERVICIO' : 'CLIENTE' }}</p>
                                         <p class="cliente-name">{{ $prenda['cliente'] }}</p>
                                     </div>
 
@@ -660,7 +672,7 @@
                                         @component('components.botones.ver-recibo', [
                                             'numeroPedido' => $prenda['numero_pedido'],
                                             'prendaId' => $prenda['prenda_id'],
-                                            'nombrePrenda' => $prenda['nombre_prenda'],
+                                            'nombrePrenda' => addslashes((string)$prenda['nombre_prenda']),
                                             'tipoRecibo' => $tipoReciboPreferido,
                                             'idParcial' => $parcialIdPreferido,
                                             'consecutivo' => $consecutivoPreferido,
