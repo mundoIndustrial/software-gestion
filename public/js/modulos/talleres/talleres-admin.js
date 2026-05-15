@@ -456,6 +456,7 @@ function showEntregas(tallerId, reciboId, esParcial, reciboNumero, cliente, pren
                                 <div class="precio-input-group">
                                     <span class="currency-symbol">$</span>
                                     <input type="number" step="0.01" class="input-precio" 
+                                           data-id="${entrega.id}" 
                                            value="${entrega.precio ? parseFloat(entrega.precio) : ''}" 
                                            placeholder="0">
                                 </div>
