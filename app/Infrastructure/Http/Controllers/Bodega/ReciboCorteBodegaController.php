@@ -64,24 +64,108 @@ class ReciboCorteBodegaController extends Controller
                     return [
                         'numero_recibo' => isset($first->consecutivo_actual) ? (int) $first->consecutivo_actual : null,
                         'area' => $first->area ?? null,
+                        'pedido_produccion_id' => isset($first->pedido_produccion_id) ? (int) $first->pedido_produccion_id : null,
+                        'prenda_id' => isset($first->prenda_id) ? (int) $first->prenda_id : null,
                     ];
                 })
                 ->toArray();
         }
 
+        // Fallback: cuando consecutivos no tenga pedido/prenda asociados,
+        // intentar resolverlos desde procesos_prenda por numero_recibo.
+        $fallbackProcesoMap = [];
+        $numerosRecibo = collect($recibosMap)
+            ->pluck('numero_recibo')
+            ->filter(fn($n) => !empty($n))
+            ->map(fn($n) => (int) $n)
+            ->unique()
+            ->values()
+            ->all();
+
+        if (!empty($numerosRecibo)) {
+            $hasPrendaBodegaColumn = Schema::hasColumn('procesos_prenda', 'prenda_bodega_id');
+
+            $queryProcesos = DB::table('procesos_prenda')
+                ->whereIn('numero_recibo', $numerosRecibo)
+                ->whereNotNull('numero_pedido')
+                ->whereNotNull('prenda_pedido_id')
+                ->orderByDesc('fecha_inicio')
+                ->orderByDesc('id');
+
+            if ($hasPrendaBodegaColumn) {
+                $queryProcesos->select([
+                    'numero_recibo',
+                    'numero_pedido',
+                    'prenda_pedido_id',
+                    'prenda_bodega_id',
+                ]);
+            } else {
+                $queryProcesos->select([
+                    'numero_recibo',
+                    'numero_pedido',
+                    'prenda_pedido_id',
+                ]);
+            }
+
+            $procesos = $queryProcesos->get();
+
+            foreach ($procesos as $proceso) {
+                $nr = (int) ($proceso->numero_recibo ?? 0);
+                if ($nr <= 0) {
+                    continue;
+                }
+
+                $prendaBodegaId = $hasPrendaBodegaColumn ? (int) ($proceso->prenda_bodega_id ?? 0) : 0;
+                $keyEspecifica = $prendaBodegaId > 0 ? ($nr . ':' . $prendaBodegaId) : null;
+                $keyGeneral = (string) $nr;
+
+                $payload = [
+                    'pedido_produccion_id' => (int) $proceso->numero_pedido,
+                    'prenda_id' => (int) $proceso->prenda_pedido_id,
+                ];
+
+                if ($keyEspecifica && !isset($fallbackProcesoMap[$keyEspecifica])) {
+                    $fallbackProcesoMap[$keyEspecifica] = $payload;
+                }
+
+                if (!isset($fallbackProcesoMap[$keyGeneral])) {
+                    $fallbackProcesoMap[$keyGeneral] = $payload;
+                }
+            }
+        }
+
         return response()->json([
             'success' => true,
-            'data' => $prendas->map(fn($prenda) => [
-                'id' => $prenda->id,
-                'numero_recibo' => $recibosMap[$prenda->id]['numero_recibo'] ?? null,
-                'area' => $recibosMap[$prenda->id]['area'] ?? null,
-                'nombre' => $prenda->nombre,
-                'descripcion' => $prenda->descripcion,
-                'total_cantidad' => $prenda->tallas->sum('cantidad'),
-                'cantidad_tallas' => $prenda->tallas->count(),
-                'fecha' => $prenda->created_at->format('Y-m-d H:i'),
-                'fecha_corta' => $prenda->created_at->format('d/m/Y'),
-            ])->toArray(),
+            'data' => $prendas->map(function ($prenda) use ($recibosMap, $fallbackProcesoMap) {
+                $numeroRecibo = $recibosMap[$prenda->id]['numero_recibo'] ?? null;
+                $pedidoProduccionId = $recibosMap[$prenda->id]['pedido_produccion_id'] ?? null;
+                $prendaId = $recibosMap[$prenda->id]['prenda_id'] ?? null;
+
+                if ((!$pedidoProduccionId || !$prendaId) && $numeroRecibo) {
+                    $keyEspecifica = ((int) $numeroRecibo) . ':' . ((int) $prenda->id);
+                    $keyGeneral = (string) ((int) $numeroRecibo);
+                    $fallback = $fallbackProcesoMap[$keyEspecifica] ?? $fallbackProcesoMap[$keyGeneral] ?? null;
+
+                    if ($fallback) {
+                        $pedidoProduccionId = $pedidoProduccionId ?: ($fallback['pedido_produccion_id'] ?? null);
+                        $prendaId = $prendaId ?: ($fallback['prenda_id'] ?? null);
+                    }
+                }
+
+                return [
+                    'id' => $prenda->id,
+                    'numero_recibo' => $numeroRecibo,
+                    'area' => $recibosMap[$prenda->id]['area'] ?? null,
+                    'pedido_produccion_id' => $pedidoProduccionId,
+                    'prenda_id' => $prendaId,
+                    'nombre' => $prenda->nombre,
+                    'descripcion' => $prenda->descripcion,
+                    'total_cantidad' => $prenda->tallas->sum('cantidad'),
+                    'cantidad_tallas' => $prenda->tallas->count(),
+                    'fecha' => $prenda->created_at->format('Y-m-d H:i'),
+                    'fecha_corta' => $prenda->created_at->format('d/m/Y'),
+                ];
+            })->toArray(),
             'pagination' => [
                 'current_page' => $prendas->currentPage(),
                 'per_page' => $prendas->perPage(),

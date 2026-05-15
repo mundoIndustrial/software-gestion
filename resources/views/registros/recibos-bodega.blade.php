@@ -1157,6 +1157,8 @@
 
 @push('scripts')
 <script>
+const isAdminBodega = @json((bool) (auth()->user()?->hasRole('admin')));
+
 document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('reciboBodegaCreateModal');
     const openBtn = document.getElementById('openReciboBodegaModalBtn');
@@ -1173,6 +1175,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const tipoTallaGrid = document.getElementById('tipoTallaGeneroGrid');
     const rcbSuccessModal = document.getElementById('rcbSuccessModal');
     const rcbSuccessModalOkBtn = document.getElementById('rcbSuccessModalOkBtn');
+    const addProcesoModal = document.getElementById('addProcesoModal');
+    const addProcesoOverlay = document.getElementById('addProcesoOverlay');
+    const closeAddProcesoBtn = document.getElementById('closeAddProcesoModal');
+    const cancelAddProcesoBtn = document.getElementById('btnCancelAddProceso');
+    const confirmAddProcesoBtn = document.getElementById('btnConfirmAddProceso');
+    const procesoAreaSelect = document.getElementById('procesoArea');
+    const procesoEncargadoInput = document.getElementById('procesoEncargado');
+    const procesoEncargadoGroup = procesoEncargadoInput?.closest('.add-proceso-form-group') || null;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    let adminBadgeContext = null;
 
     if (!modal || !prendasContainer || !form || !tipoTallaModal || !tipoTallaModalText) return;
 
@@ -1192,6 +1205,222 @@ document.addEventListener('DOMContentLoaded', function () {
             hideReciboSuccessModal();
         }
     });
+
+    function closeAdminAddProcesoModal() {
+        if (!addProcesoModal) return;
+        addProcesoModal.classList.remove('show');
+        addProcesoModal.style.display = 'none';
+        if (procesoAreaSelect) procesoAreaSelect.value = '';
+        if (procesoEncargadoInput) procesoEncargadoInput.value = '';
+        adminBadgeContext = null;
+    }
+
+    function openAdminAddProcesoModal(context) {
+        if (!addProcesoModal) return;
+        adminBadgeContext = context;
+        if (procesoAreaSelect) {
+            procesoAreaSelect.value = 'Corte';
+            procesoAreaSelect.setAttribute('disabled', 'disabled');
+        }
+        ensureEncargadoSelectForCorte().then(() => preselectEncargadoFromProceso(context));
+        if (procesoEncargadoInput) procesoEncargadoInput.value = '';
+        addProcesoModal.style.display = 'flex';
+        addProcesoModal.classList.add('show');
+    }
+
+    async function ensureEncargadoSelectForCorte() {
+        if (!procesoEncargadoGroup) return;
+        procesoEncargadoGroup.style.display = 'block';
+
+        let select = document.getElementById('procesoEncargadoSelect');
+        if (!select) {
+            select = document.createElement('select');
+            select.id = 'procesoEncargadoSelect';
+            select.className = 'add-proceso-select';
+            procesoEncargadoGroup.appendChild(select);
+        }
+
+        if (procesoEncargadoInput) {
+            procesoEncargadoInput.style.display = 'none';
+        }
+
+        select.innerHTML = '<option value="">Cargando encargados...</option>';
+        try {
+            const resp = await fetch('/api/areas/corte/encargados', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const data = await resp.json().catch(() => ({}));
+            const usuarios = Array.isArray(data?.encargados) ? data.encargados : [];
+
+            select.innerHTML = '<option value="">Seleccionar encargado...</option>';
+            usuarios.forEach((u) => {
+                const opt = document.createElement('option');
+                opt.value = String(u?.id ?? '');
+                opt.textContent = String(u?.nombre || u?.name || '').toUpperCase();
+                select.appendChild(opt);
+            });
+        } catch (e) {
+            select.innerHTML = '<option value="">No se pudieron cargar encargados</option>';
+        }
+    }
+
+    async function preselectEncargadoFromProceso(context) {
+        const select = document.getElementById('procesoEncargadoSelect');
+        if (!select) return;
+
+        const numeroRecibo = Number(context?.numero_recibo || 0);
+        const prendaBodegaId = Number(context?.prenda_bodega_id || 0);
+        if (!numeroRecibo) return;
+
+        try {
+            const qs = prendaBodegaId > 0 ? `?prenda_bodega_id=${encodeURIComponent(String(prendaBodegaId))}` : '';
+            const resp = await fetch(`/api/recibos-bodega/${numeroRecibo}/procesos${qs}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const procesos = await resp.json().catch(() => []);
+            if (!resp.ok || !Array.isArray(procesos) || procesos.length === 0) return;
+
+            const procesoCorte = procesos.find((p) => String(p?.proceso || '').toLowerCase().includes('corte')) || procesos[0];
+            const encargadoActual = String(procesoCorte?.encargado || '').trim().toUpperCase();
+            if (!encargadoActual) return;
+
+            let matched = false;
+            for (const option of select.options) {
+                if (String(option.textContent || '').trim().toUpperCase() === encargadoActual) {
+                    select.value = option.value;
+                    matched = true;
+                    break;
+                }
+            }
+
+            if (!matched && /^\d+$/.test(encargadoActual)) {
+                const byId = Array.from(select.options).find((o) => String(o.value) === encargadoActual);
+                if (byId) {
+                    select.value = byId.value;
+                }
+            }
+        } catch (e) {
+            // No bloquear apertura del modal.
+        }
+    }
+
+    async function saveAdminAddProceso() {
+        if (!isAdminBodega || !adminBadgeContext) return;
+
+        const area = 'Corte';
+        const selectEncargado = document.getElementById('procesoEncargadoSelect');
+        const encargado = selectEncargado
+            ? String(selectEncargado.options[selectEncargado.selectedIndex]?.text || '').trim().toUpperCase()
+            : (procesoEncargadoInput?.value || '').trim().toUpperCase();
+
+        if (!area) {
+            alert('Selecciona un área para continuar.');
+            return;
+        }
+
+        if (!encargado) {
+            alert('Ingresa el encargado para continuar.');
+            return;
+        }
+
+        if (confirmAddProcesoBtn) confirmAddProcesoBtn.disabled = true;
+        try {
+            const hasProduccionIds = Boolean(adminBadgeContext.pedido_produccion_id && adminBadgeContext.prenda_id);
+
+            if (hasProduccionIds) {
+                const response = await fetch('/seguimiento-proceso/guardar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({
+                        pedido_produccion_id: adminBadgeContext.pedido_produccion_id,
+                        prenda_id: adminBadgeContext.prenda_id,
+                        numero_recibo: adminBadgeContext.numero_recibo,
+                        area,
+                        encargado,
+                        estado: 'Pendiente',
+                    }),
+                });
+
+                const json = await response.json().catch(() => ({}));
+                if (!response.ok || !json?.success) {
+                    throw new Error(json?.message || 'No se pudo guardar el proceso');
+                }
+            } else {
+                const numeroRecibo = Number(adminBadgeContext.numero_recibo || 0);
+                const prendaBodegaId = Number(adminBadgeContext.prenda_bodega_id || 0);
+                if (!numeroRecibo) {
+                    throw new Error('No se encontró número de recibo para actualizar el proceso.');
+                }
+
+                const qs = prendaBodegaId > 0 ? `?prenda_bodega_id=${encodeURIComponent(String(prendaBodegaId))}` : '';
+                const procesosResp = await fetch(`/api/recibos-bodega/${numeroRecibo}/procesos${qs}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                const procesos = await procesosResp.json().catch(() => []);
+                if (!procesosResp.ok || !Array.isArray(procesos)) {
+                    throw new Error('No se pudieron consultar procesos del recibo en bodega.');
+                }
+
+                const procesoCorte = procesos.find((p) => String(p?.proceso || '').toLowerCase().includes('corte'))
+                    || procesos[0];
+                if (!procesoCorte?.id) {
+                    throw new Error('No existe un proceso para este recibo en bodega.');
+                }
+
+                const editarResp = await fetch(`/api/recibos-bodega/procesos/${procesoCorte.id}/encargado`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({
+                        encargado,
+                    }),
+                });
+
+                const editarJson = await editarResp.json().catch(() => ({}));
+                if (!editarResp.ok || editarJson?.success === false) {
+                    throw new Error(editarJson?.message || 'No se pudo actualizar el proceso de bodega.');
+                }
+            }
+
+            closeAdminAddProcesoModal();
+            loadRecibosCorteForBodega();
+            alert(`Encargado asignado correctamente: ${encargado}`);
+        } catch (error) {
+            alert(error.message || 'Error guardando proceso');
+        } finally {
+            if (confirmAddProcesoBtn) confirmAddProcesoBtn.disabled = false;
+        }
+    }
+
+    if (addProcesoOverlay) addProcesoOverlay.addEventListener('click', closeAdminAddProcesoModal);
+    if (closeAddProcesoBtn) closeAddProcesoBtn.addEventListener('click', closeAdminAddProcesoModal);
+    if (cancelAddProcesoBtn) cancelAddProcesoBtn.addEventListener('click', closeAdminAddProcesoModal);
+    if (confirmAddProcesoBtn) confirmAddProcesoBtn.addEventListener('click', saveAdminAddProceso);
+
+    window.openAddProcesoFromBodegaBadge = function (payload) {
+        if (!isAdminBodega) return;
+        const data = payload || {};
+        openAdminAddProcesoModal(data);
+    };
+
+    // Compatibilidad: mismo entrypoint usado en recibos-costura
+    window.abrirModalAgregarProcesoDesdeArea = function (areaSeleccionada, pedidoId, prendaId, numeroRecibo) {
+        window.openAddProcesoFromBodegaBadge({
+            area: areaSeleccionada || 'Corte',
+            pedido_produccion_id: pedidoId || null,
+            prenda_id: prendaId || null,
+            numero_recibo: numeroRecibo || null,
+        });
+    };
 
     const tipoTallaState = {
         isOpen: false,
@@ -1887,15 +2116,36 @@ function loadRecibosCorteForBodega() {
 
             if (data.success && data.data && data.data.length > 0) {
                 data.data.forEach(prenda => {
+                    const canAssignByBadge = Boolean(
+                        isAdminBodega &&
+                        prenda &&
+                        String(prenda.area || '').toLowerCase().includes('corte')
+                    );
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td style="text-align: center;">
-                            <button type="button" class="btn btn-sm btn-primary" onclick="openReciboCorteBodegaModal(${prenda.id})" title="Ver recibo">
+                        <td class="acciones-column" style="text-align: center; position: relative;">
+                            <button type="button"
+                                class="btn-ver-dropdown-bodega"
+                                title="Ver Opciones"
+                                data-menu-id="menu-recibo-bodega-${prenda.id}"
+                                data-pedido-id="${prenda.pedido_produccion_id || ''}"
+                                data-prenda-id="${prenda.prenda_id || ''}"
+                                data-numero-recibo="${prenda.numero_recibo || ''}"
+                                data-tipo-recibo="CORTE-PARA-BODEGA"
+                                data-es-parcial="false"
+                                data-pedido-parcial-id=""
+                                data-recibo-id="${prenda.id}"
+                                data-prenda-bodega-id="${prenda.id}"
+                                data-tiene-parciales="false"
+                                data-total-parciales="0">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </td>
                         <td style="text-align: center;">
-                            <span class="badge rounded-pill bg-info text-dark">${prenda.area || '-'}</span>
+                            <span class="badge rounded-pill bg-info text-dark"
+                                  style="${canAssignByBadge ? 'cursor:pointer;' : ''}"
+                                  title="${canAssignByBadge ? 'Click para asignar proceso' : ''}"
+                                  ${canAssignByBadge ? `onclick="openAddProcesoFromBodegaBadge({ area: '${String(prenda.area || 'Corte').replace(/'/g, "\\'")}', numero_recibo: ${prenda.numero_recibo || 'null'}, pedido_produccion_id: ${prenda.pedido_produccion_id || 'null'}, prenda_id: ${prenda.prenda_id || 'null'}, prenda_bodega_id: ${prenda.id || 'null'} })"` : ''}>${prenda.area || '-'}</span>
                         </td>
                         <td style="text-align: center;"><strong>${prenda.numero_recibo || '-'}</strong></td>
                         <td>${prenda.descripcion || '-'}</td>
@@ -1931,5 +2181,199 @@ function loadRecibosCorteForBodega() {
             `;
         });
 }
+
+function closeReciboBodegaDropdowns() {
+    document.querySelectorAll('.dropdown-menu-recibos').forEach((m) => m.remove());
+    document.querySelectorAll('.btn-ver-dropdown-bodega.dropdown-opening').forEach((b) => b.classList.remove('dropdown-opening'));
+}
+
+function openReciboBodegaDropdown(button) {
+    if (!button) return;
+
+    const existing = document.getElementById(button.getAttribute('data-menu-id'));
+    if (existing) {
+        closeReciboBodegaDropdowns();
+        return;
+    }
+
+    closeReciboBodegaDropdowns();
+    button.classList.add('dropdown-opening');
+
+    const menuId = button.getAttribute('data-menu-id') || `menu-recibo-bodega-${Date.now()}`;
+    const reciboId = Number(button.getAttribute('data-recibo-id') || 0);
+    const pedidoId = String(button.getAttribute('data-pedido-id') || '').trim();
+    const numeroRecibo = Number(button.getAttribute('data-numero-recibo') || 0);
+    const prendaBodegaId = Number(button.getAttribute('data-prenda-bodega-id') || 0);
+
+    const dropdown = document.createElement('div');
+    dropdown.id = menuId;
+    dropdown.className = 'dropdown-menu-recibos';
+    dropdown.style.display = 'block';
+    dropdown.style.pointerEvents = 'auto';
+    dropdown.innerHTML = `
+        <button class="dropdown-item-btn" type="button" data-action="ver-detalles">
+            <i class="fas fa-eye"></i> Ver Detalles
+        </button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item-btn" type="button" data-action="seguimiento">
+            <i class="fas fa-tasks"></i> Seguimiento
+        </button>
+    `;
+
+    dropdown.addEventListener('click', async function (event) {
+        const actionBtn = event.target.closest('.dropdown-item-btn');
+        if (!actionBtn) return;
+        const action = actionBtn.getAttribute('data-action');
+
+        if (action === 'ver-detalles') {
+            if (reciboId > 0) {
+                openReciboCorteBodegaModal(reciboId);
+            }
+            closeReciboBodegaDropdowns();
+            return;
+        }
+
+        if (action === 'seguimiento') {
+            await openReciboBodegaSeguimientoInterno(numeroRecibo, prendaBodegaId);
+            closeReciboBodegaDropdowns();
+        }
+    });
+
+    document.body.appendChild(dropdown);
+    const rect = button.getBoundingClientRect();
+    dropdown.style.top = `${window.scrollY + rect.bottom + 8}px`;
+    dropdown.style.left = `${window.scrollX + rect.left - 8}px`;
+}
+
+async function openReciboBodegaSeguimientoInterno(numeroRecibo, prendaBodegaId) {
+    const numero = Number(numeroRecibo || 0);
+    const prendaBodega = Number(prendaBodegaId || 0);
+
+    if (numero <= 0) {
+        alert('Este recibo no tiene número de recibo válido.');
+        return;
+    }
+
+    try {
+        const qs = prendaBodega > 0 ? `?prenda_bodega_id=${encodeURIComponent(String(prendaBodega))}` : '';
+        const resp = await fetch(`/api/recibos-bodega/${numero}/procesos${qs}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        const procesos = await resp.json().catch(() => []);
+
+        if (!resp.ok || !Array.isArray(procesos)) {
+            throw new Error('No se pudieron cargar los procesos del recibo interno.');
+        }
+
+        const modal = document.getElementById('orderTrackingModal');
+        const overlay = document.getElementById('trackingModalOverlay');
+        const closeBtn = document.getElementById('closeTrackingModal');
+        const reciboEl = document.getElementById('trackingOrderRecibo');
+        const pedidoEl = document.getElementById('trackingOrderNumber');
+        const clienteEl = document.getElementById('trackingOrderClient');
+        const estadoEl = document.getElementById('trackingOrderStatus');
+        const fechaEstimadaEl = document.getElementById('trackingEstimatedDate');
+        const subtitleEl = document.getElementById('trackingPrendaReciboHeader');
+        const timelineContainer = document.getElementById('trackingTimelineContainer');
+        const timelineSection = document.getElementById('trackingTimelineSection');
+
+        if (!modal || !timelineContainer) {
+            throw new Error('Modal de seguimiento unificado no disponible.');
+        }
+
+        if (reciboEl) reciboEl.textContent = String(numero);
+        if (pedidoEl) pedidoEl.textContent = '-';
+        if (clienteEl) clienteEl.textContent = 'RECIBO INTERNO BODEGA';
+        if (estadoEl) estadoEl.textContent = 'EN EJECUCIÓN';
+        if (fechaEstimadaEl) fechaEstimadaEl.textContent = 'No definida';
+        if (subtitleEl) subtitleEl.textContent = `CORTE-PARA-BODEGA #${numero}`;
+
+        const cards = procesos.length
+            ? procesos.map((p) => {
+                const estado = String(p?.estado_proceso || 'Pendiente');
+                const pendingClass = estado.toLowerCase() === 'completado' ? 'completed' : 'pending';
+                const inicio = p?.fecha_inicio ? String(p.fecha_inicio).slice(0, 10) : '---';
+                const fin = p?.fecha_fin ? String(p.fecha_fin).slice(0, 10) : '---';
+                return `
+                <div class="tracking-area-card tracking-area-card-v2 ${pendingClass}">
+                    <div class="tracking-area-v2-left">
+                        <div class="tracking-area-v2-name">${p?.proceso || '-'}</div>
+                    </div>
+                    <div class="tracking-area-v2-body">
+                        <div class="tracking-area-v2-row">
+                            <div class="tracking-area-v2-field">
+                                <div class="tracking-area-v2-label">Encargado:</div>
+                                <div class="tracking-area-v2-pill">${p?.encargado || '-'}</div>
+                            </div>
+                            <div class="tracking-area-v2-field">
+                                <div class="tracking-area-v2-label">Fecha inicio:</div>
+                                <div class="tracking-area-v2-pill">${inicio}</div>
+                            </div>
+                            <div class="tracking-area-v2-field tracking-area-v2-field-right">
+                                <div class="tracking-area-v2-label">Fecha fin:</div>
+                                <div class="tracking-area-v2-badge">${fin}</div>
+                            </div>
+                        </div>
+                        <div class="tracking-area-v2-footer">
+                            <div class="tracking-area-v2-status">
+                                <span class="tracking-days-badge">${estado}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('')
+            : `<div style="padding: 1rem; color:#64748b;">Sin procesos registrados para este recibo.</div>`;
+
+        timelineContainer.innerHTML = `
+            <div class="tracking-section tracking-section-areas">
+                <div class="tracking-section-header">
+                    <div class="tracking-section-title">Seguimiento por áreas:</div>
+                </div>
+                ${cards}
+            </div>
+        `;
+        if (timelineSection) timelineSection.style.display = 'block';
+
+        const closeUnified = () => {
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+            modal.style.visibility = 'hidden';
+            modal.style.opacity = '0';
+        };
+
+        if (overlay && overlay.dataset.bodegaCloseBound !== '1') {
+            overlay.dataset.bodegaCloseBound = '1';
+            overlay.addEventListener('click', closeUnified);
+        }
+        if (closeBtn && closeBtn.dataset.bodegaCloseBound !== '1') {
+            closeBtn.dataset.bodegaCloseBound = '1';
+            closeBtn.addEventListener('click', closeUnified);
+        }
+
+        modal.classList.add('show');
+        modal.style.display = 'flex';
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+    } catch (error) {
+        alert(error.message || 'Error cargando seguimiento interno de bodega.');
+    }
+}
+
+
+document.addEventListener('click', function (event) {
+    const btnVer = event.target.closest('.btn-ver-dropdown-bodega');
+    const inMenu = event.target.closest('.dropdown-menu-recibos');
+
+    if (btnVer) {
+        event.preventDefault();
+        event.stopPropagation();
+        openReciboBodegaDropdown(btnVer);
+        return;
+    }
+
+    if (!inMenu) {
+        closeReciboBodegaDropdowns();
+    }
+});
 </script>
 @endpush

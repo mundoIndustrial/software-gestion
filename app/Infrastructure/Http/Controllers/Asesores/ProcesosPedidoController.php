@@ -125,6 +125,62 @@ class ProcesosPedidoController
                 ->orderBy('fecha_inicio')
                 ->get($selectColumns);
 
+            // Fallback de contexto unificado:
+            // Si procesos_prenda no trae numero_pedido/prenda_pedido_id, intentar resolver
+            // desde consecutivos_recibos_pedidos por numero_recibo (+ prenda_bodega_id si existe).
+            $fallbackReciboQuery = DB::table('consecutivos_recibos_pedidos')
+                ->where('consecutivo_actual', $numeroReciboInt)
+                ->whereNotNull('pedido_produccion_id')
+                ->whereNotNull('prenda_id')
+                ->orderByDesc('id');
+
+            if ($prendaBodegaId > 0 && DB::getSchemaBuilder()->hasColumn('consecutivos_recibos_pedidos', 'prenda_bodega_id')) {
+                $fallbackReciboQuery->where('prenda_bodega_id', $prendaBodegaId);
+            }
+
+            $fallbackRecibo = $fallbackReciboQuery->first([
+                'pedido_produccion_id',
+                'prenda_id',
+            ]);
+
+            if ($fallbackRecibo && $procesos->count() > 0) {
+                $procesos = $procesos->map(function ($p) use ($fallbackRecibo) {
+                    if (empty($p->numero_pedido)) {
+                        $p->numero_pedido = (int) $fallbackRecibo->pedido_produccion_id;
+                    }
+                    if (empty($p->prenda_pedido_id)) {
+                        $p->prenda_pedido_id = (int) $fallbackRecibo->prenda_id;
+                    }
+                    return $p;
+                });
+            }
+
+            // Si no hay procesos pero sí hay contexto en consecutivos, devolver un registro mínimo
+            // para que el frontend pueda abrir seguimiento unificado.
+            if ($procesos->count() === 0 && $fallbackRecibo) {
+                $procesos = collect([
+                    (object) [
+                        'id' => null,
+                        'numero_pedido' => (int) $fallbackRecibo->pedido_produccion_id,
+                        'prenda_pedido_id' => (int) $fallbackRecibo->prenda_id,
+                        'numero_recibo' => $numeroReciboInt,
+                        'numero_recibo_parcial' => null,
+                        'proceso' => 'Corte',
+                        'fecha_inicio' => null,
+                        'fecha_fin' => null,
+                        'dias_duracion' => null,
+                        'encargado' => null,
+                        'fecha_de_asignacion_encargado' => null,
+                        'estado_proceso' => null,
+                        'observaciones' => null,
+                        'novedades' => null,
+                        'codigo_referencia' => null,
+                        'created_at' => null,
+                        'updated_at' => null,
+                    ],
+                ]);
+            }
+
             return $this->json($procesos, 200);
         } catch (\Throwable $e) {
             Log::error('[ProcesosPedidoController] Error en getProcesosPorNumeroReciboBodega', [
@@ -135,6 +191,57 @@ class ProcesosPedidoController
             return $this->json([
                 'error' => 'Error al obtener procesos de bodega',
             ], 500);
+        }
+    }
+
+    /**
+     * PUT /api/recibos-bodega/procesos/{id}/encargado
+     * Actualiza solo encargado para procesos de recibos de bodega.
+     */
+    public function actualizarEncargadoBodega(\Illuminate\Http\Request $request, int|string $id): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'encargado' => 'required|string|max:255',
+            ]);
+
+            $procesoId = (int) $id;
+            if ($procesoId <= 0) {
+                return $this->failure('ID de proceso inválido', 422);
+            }
+
+            $proceso = DB::table('procesos_prenda')->where('id', $procesoId)->first();
+            if (!$proceso) {
+                return $this->failure('Proceso no encontrado', 404);
+            }
+
+            DB::table('procesos_prenda')
+                ->where('id', $procesoId)
+                ->update([
+                    'encargado' => strtoupper(trim((string) $validated['encargado'])),
+                    'fecha_de_asignacion_encargado' => now(),
+                    'updated_at' => now(),
+                ]);
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Encargado actualizado correctamente',
+                'data' => [
+                    'id' => $procesoId,
+                    'encargado' => strtoupper(trim((string) $validated['encargado'])),
+                ],
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->failure('Validación fallida', 422, [
+                'errors' => $e->errors(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('[ProcesosPedidoController] Error en actualizarEncargadoBodega', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->failure('Error al actualizar encargado de bodega', 500);
         }
     }
 

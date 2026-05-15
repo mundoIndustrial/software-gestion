@@ -83,6 +83,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::post('/api/recibo-corte-bodega', [ReciboCorteBodegaController::class, 'store'])->name('api.recibo-corte-bodega.store');
     Route::get('/api/recibo-corte-bodega', [ReciboCorteBodegaController::class, 'index'])->name('api.recibo-corte-bodega.index');
     Route::get('/api/recibo-corte-bodega/{id}', [ReciboCorteBodegaController::class, 'show'])->name('api.recibo-corte-bodega.show');
+    Route::put('/api/recibos-bodega/procesos/{id}/encargado', [ProcesosPedidoController::class, 'actualizarEncargadoBodega'])->name('api.recibos-bodega.procesos.encargado');
 
     Route::put('/api/procesos/{id}/editar', [ProcesosPedidoController::class, 'editarProceso'])->name('api.procesos.editar');
     Route::delete('/api/procesos/{id}/eliminar', [ProcesosPedidoController::class, 'eliminarProceso'])->name('api.procesos.eliminar');
