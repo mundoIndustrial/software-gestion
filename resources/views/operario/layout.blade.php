@@ -323,6 +323,35 @@
         </main>
     </div>
 
+    <!-- Overlay de Carga Global -->
+    <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 1rem;">
+        <div class="spinner-modern" style="width: 48px; height: 48px; border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <span style="color: #1e293b; font-weight: 600; font-family: 'Inter', sans-serif;">Cargando...</span>
+    </div>
+
+    <script>
+        window.showLoadingOverlay = function() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.style.display = 'flex';
+                overlay.dataset.startTime = Date.now();
+            }
+        };
+        window.hideLoadingOverlay = function(options = {}) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                const minMs = options.minMs || 0;
+                const startTime = parseInt(overlay.dataset.startTime || 0);
+                const elapsed = Date.now() - startTime;
+                const remaining = Math.max(0, minMs - elapsed);
+                
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, remaining);
+            }
+        };
+    </script>
+
     <!-- Scripts -->
     @vite(['resources/js/app.js'])
     <script>

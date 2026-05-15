@@ -27,16 +27,70 @@ class GetOperarioDashboardUseCase
 
         $prendasConRecibos = collect();
         $recibosCompletados = collect();
+        $recibosBodegaPendientes = collect();
+        $recibosBodegaCompletados = collect();
 
-        // Para cortadores, siempre cargamos ambos para mostrar los contadores en los tabs
+        // Para cortadores, manejamos la lógica de carga perezosa para optimizar el rendimiento
         if ($usuario->hasRole('cortador')) {
-            $recibosCompletados = $this->dashboardReadService->obtenerRecibosCompletadosPorOperario($usuario->name);
+            // Recibos completados (se filtran luego según el tab)
+            $recibosCompletadosRaw = $this->dashboardReadService->obtenerRecibosCompletadosPorOperario($usuario->name);
+            if ($recibosCompletadosRaw->isEmpty()) {
+                $recibosCompletadosRaw = $this->dashboardReadService->obtenerRecibosCompletadosPorOperario('CORTADORES');
+            }
+
+            // Separar conteos de completados
+            $recibosBodegaCompletadosCount = $recibosCompletadosRaw->filter(function ($r) {
+                return strtoupper((string) ($r['tipo_recibo'] ?? '')) === 'CORTE-PARA-BODEGA';
+            })->count();
+
+            // Solo cargar la colección completa si el tab es bodega o completados general
+            if ($tab === 'completado-bodega') {
+                $recibosBodegaCompletados = $recibosCompletadosRaw->filter(function ($r) {
+                    return strtoupper((string) ($r['tipo_recibo'] ?? '')) === 'CORTE-PARA-BODEGA';
+                });
+            } elseif ($tab === 'completados') {
+                $recibosCompletados = $recibosCompletadosRaw->filter(function ($r) {
+                    return strtoupper((string) ($r['tipo_recibo'] ?? '')) !== 'CORTE-PARA-BODEGA';
+                });
+            }
+
+            // Pendientes Bodega: Solo cargar la colección completa si estamos en ese tab
+            if ($tab === 'pendiente-bodega') {
+                $recibosBodegaPendientes = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibosBodegaCortador($usuario);
+                $recibosBodegaPendientesCount = $recibosBodegaPendientes->count();
+            } else {
+                // Si no es el tab, solo traemos el conteo (más liviano)
+                $recibosBodegaPendientesCount = $this->obtenerPrendasRecibosService->obtenerConteoRecibosBodegaCortador($usuario);
+            }
         }
 
         // Obtener prendas con recibos del operario (Pendientes / Otros tabs)
-        // Se ejecuta si no es cortador O si es cortador (siempre cargamos pendientes para el contador)
-        if (!$usuario->hasRole('cortador') || $tab === 'pendientes' || $usuario->hasRole('cortador')) {
-            $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario);
+        if (!$usuario->hasRole('cortador') || in_array($tab, ['pendientes', 'pendiente-bodega'], true) || $usuario->hasRole('cortador')) {
+            // Solo cargar prendas con recibos si NO es un tab de bodega o si es específicamente el de pendientes
+            if ($tab === 'pendientes' || !$usuario->hasRole('cortador')) {
+                $prendasConRecibosRaw = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario);
+                
+                if ($usuario->hasRole('cortador')) {
+                    $prendasConRecibos = $prendasConRecibosRaw->filter(function ($p) {
+                        $reciboPrincipal = $p['recibos'][0] ?? null;
+                        $tipo = strtoupper(trim((string) ($reciboPrincipal['tipo_recibo'] ?? '')));
+                        return $tipo !== 'CORTE-PARA-BODEGA';
+                    });
+                    $pendientesPedidosCount = $prendasConRecibos->count();
+                } else {
+                    $prendasConRecibos = $prendasConRecibosRaw;
+                    $pendientesPedidosCount = $prendasConRecibos->count();
+                }
+            } elseif ($tab === 'pendiente-bodega') {
+                $prendasConRecibos = $recibosBodegaPendientes;
+                // Calculamos el contador de pedidos normales también para el badge
+                $prendasConRecibosRaw = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario);
+                $pendientesPedidosCount = $prendasConRecibosRaw->filter(function ($p) {
+                    $reciboPrincipal = $p['recibos'][0] ?? null;
+                    $tipo = strtoupper(trim((string) ($reciboPrincipal['tipo_recibo'] ?? '')));
+                    return $tipo !== 'CORTE-PARA-BODEGA';
+                })->count();
+            }
 
             if ($verTodas || $usuario->hasRole('administrador-costura')) {
                 $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibosTodosCostura();
@@ -218,7 +272,10 @@ class GetOperarioDashboardUseCase
             prendasConRecibos: $prendasConRecibos,
             usuario: $usuario,
             tab: $tab,
+            pendientesPedidosCount: $pendientesPedidosCount ?? 0,
             recibosCompletados: $recibosCompletados,
+            recibosBodegaCompletados: $recibosBodegaCompletados ?? collect(),
+            recibosBodegaPendientesCount: $recibosBodegaPendientesCount ?? 0,
         );
     }
 }

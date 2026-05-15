@@ -12,13 +12,23 @@ class ObtenerPrendasRecibosService
     {
     }
 
-    public function obtenerPrendasConRecibosTodosCostura(): Collection
+    public function obtenerPrendasConRecibosTodosCostura(): \Illuminate\Support\Collection
     {
         return $this->service->obtenerPrendasConRecibosTodosCostura();
     }
 
-    public function obtenerPrendasConRecibos(User $usuario): Collection
+    public function obtenerPrendasConRecibos(\App\Models\User $usuario): \Illuminate\Support\Collection
     {
         return $this->service->obtenerPrendasConRecibos($usuario);
+    }
+
+    public function obtenerPrendasConRecibosBodegaCortador(\App\Models\User $usuario): \Illuminate\Support\Collection
+    {
+        return $this->service->obtenerPrendasConRecibosBodegaCortador($usuario);
+    }
+
+    public function obtenerConteoRecibosBodegaCortador(\App\Models\User $usuario): int
+    {
+        return $this->service->obtenerConteoPrendasConRecibosBodegaCortador($usuario);
     }
 }

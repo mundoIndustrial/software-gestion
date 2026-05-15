@@ -90,6 +90,7 @@ class OperarioDashboardReadServiceImpl implements OperarioDashboardReadService
                 $join->on('crp.prenda_id', '=', 'prep.id')
                     ->orOn('rpp.prenda_pedido_id', '=', 'prep.id');
             })
+            ->leftJoin('prenda_bodega as pb', 'crp.prenda_bodega_id', '=', 'pb.id')
             ->whereRaw('LOWER(TRIM(prc.nombre_operario)) = ?', [$nombreNormalizado])
             ->select([
                 'prc.id',
@@ -103,6 +104,8 @@ class OperarioDashboardReadServiceImpl implements OperarioDashboardReadService
                 'prep.id as prenda_id',
                 'prep.nombre_prenda',
                 'prep.descripcion',
+                'pb.nombre as bodega_nombre',
+                'pb.descripcion as bodega_descripcion',
                 'crp.tipo_recibo as crp_tipo',
                 'rpp.tipo_recibo as pp_tipo',
                 'crp.consecutivo_actual as crp_consecutivo',
@@ -112,19 +115,22 @@ class OperarioDashboardReadServiceImpl implements OperarioDashboardReadService
             ->get();
 
         return $completados->map(function ($item) {
+            $tipoRecibo = $item->crp_tipo ?: ($item->pp_tipo ?: 'COSTURA');
+            $esBodega = strtoupper((string) $tipoRecibo) === 'CORTE-PARA-BODEGA';
+
             return [
                 'id' => $item->id,
-                'id_recibo' => $item->id_recibo,
+                'recibo_id' => $item->id_recibo,
                 'numero_recibo' => $item->numero_recibo,
                 'area' => $item->area,
                 'fecha_completado' => $item->fecha_completado,
                 'id_parcial' => $item->id_parcial,
                 'numero_pedido' => $item->numero_pedido,
-                'cliente' => $item->cliente,
+                'cliente' => $esBodega ? 'SERVICIO' : ($item->cliente ?? 'N/A'),
                 'prenda_id' => $item->prenda_id,
-                'nombre_prenda' => $item->nombre_prenda,
-                'descripcion' => $item->descripcion,
-                'tipo_recibo' => $item->crp_tipo ?: ($item->pp_tipo ?: 'COSTURA'),
+                'nombre_prenda' => $esBodega ? ($item->bodega_nombre ?? 'N/A') : ($item->nombre_prenda ?? 'N/A'),
+                'descripcion' => $esBodega ? ($item->bodega_descripcion ?? '') : ($item->descripcion ?? ''),
+                'tipo_recibo' => $tipoRecibo,
                 'consecutivo_actual' => $item->crp_consecutivo ?: ($item->pp_consecutivo ?: $item->numero_recibo),
             ];
         });
