@@ -1002,7 +1002,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                         ];
                     })->toArray() : [],
                     'recibos' => $recibosDelTipo
-                        ->filter(function ($recibo) use ($tipoOperario) {
+                        ->filter(function ($recibo) use ($tipoOperario, $recibosDelTipo) {
                             if ($tipoOperario !== 'vista-costura') {
                                 return true;
                             }
@@ -1010,7 +1010,17 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                             // para evitar que aparezcan múltiples conjuntos de botones. Las partes se gestionan
                             // a través del botón "Ver Distribución".
                             $notas = (string) ($recibo->notas ?? '');
-                            return !preg_match('/parcial_id:(\d+)/i', $notas);
+                            $esParcial = preg_match('/parcial_id:(\d+)/i', $notas) === 1;
+                            if (!$esParcial) {
+                                return true;
+                            }
+
+                            $hayPadre = $recibosDelTipo->contains(function ($r) {
+                                $notasR = (string) ($r->notas ?? '');
+                                return preg_match('/parcial_id:(\d+)/i', $notasR) !== 1;
+                            });
+
+                            return !$hayPadre;
                         })
                         ->map(function ($recibo) use ($pedido) {
                         // Buscar el proceso de Control Calidad mas reciente para este recibo (desde relacion cargada)
@@ -1889,4 +1899,3 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
         return 'desconocido';
     }
 }
-

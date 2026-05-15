@@ -1749,18 +1749,28 @@
 
                 // Resolver fecha de recibo (mobile):
                 // - PRIORIDAD: fecha de activación del recibo/proceso
-                // - NO usar fecha de creación del pedido como fallback
+                // - Si no existe, usar created_at disponible del recibo/proceso/pedido
                 const pedidoParcialIdParam = String(urlParams.get('pedido_parcial_id') || urlParams.get('parcial_id') || '').trim();
                 let fechaRecibo = 'N/A';
                 try {
                     const tipoReciboUpper = String(tipoRecibo || '').trim().toUpperCase();
+                    const normalizarFecha = (createdAt) => {
+                        if (!createdAt) return null;
+                        const createdAtStr = String(createdAt);
+                        return createdAtStr.includes('T')
+                            ? createdAtStr.split('T')[0]
+                            : createdAtStr.substring(0, 10);
+                    };
+                    const asignarFechaSiExiste = (valor) => {
+                        const fechaNormalizada = normalizarFecha(valor);
+                        if (fechaNormalizada) {
+                            fechaRecibo = fechaNormalizada;
+                            return true;
+                        }
+                        return false;
+                    };
 
-                    if (data.fecha_activacion_recibo) {
-                        const fechaActivacion = String(data.fecha_activacion_recibo);
-                        fechaRecibo = fechaActivacion.includes('T')
-                            ? fechaActivacion.split('T')[0]
-                            : fechaActivacion.substring(0, 10);
-                    }
+                    asignarFechaSiExiste(data.fecha_activacion_recibo);
 
                     if (data.prendas && Array.isArray(data.prendas) && data.prendas.length > 0) {
                         const prendaIdInt = prendaIdParam ? parseInt(prendaIdParam, 10) : null;
@@ -1772,13 +1782,6 @@
                         const procesos = (prendaParaBuscar && Array.isArray(prendaParaBuscar.procesos))
                             ? prendaParaBuscar.procesos
                             : [];
-
-                        const normalizarFecha = (createdAt) => {
-                            const createdAtStr = String(createdAt);
-                            return createdAtStr.includes('T')
-                                ? createdAtStr.split('T')[0]
-                                : createdAtStr.substring(0, 10);
-                        };
 
                         let procesoParcial = null;
                         let reciboCoincidente = null;
@@ -1795,11 +1798,8 @@
                             }
                         }
 
-                        if (reciboCoincidente?.fecha_activacion_recibo) {
-                            fechaRecibo = normalizarFecha(reciboCoincidente.fecha_activacion_recibo);
-                        } else if (reciboCoincidente?.created_at) {
-                            fechaRecibo = normalizarFecha(reciboCoincidente.created_at);
-                        }
+                        asignarFechaSiExiste(reciboCoincidente?.fecha_activacion_recibo);
+                        asignarFechaSiExiste(reciboCoincidente?.created_at);
 
                         if (pedidoParcialIdParam) {
                             procesoParcial = procesos.find(proc =>
@@ -1823,8 +1823,14 @@
                         const esTipoParcial = tipoReciboUpper === 'PARCIAL';
                         const yaHayFechaActivacionParcial = esTipoParcial && !!data.fecha_activacion_recibo;
                         if (!yaHayFechaActivacionParcial && procesoParcial && procesoParcial.created_at) {
-                            fechaRecibo = normalizarFecha(procesoParcial.created_at);
+                            asignarFechaSiExiste(procesoParcial.created_at);
                         }
+                    }
+
+                    if (fechaRecibo === 'N/A') {
+                        asignarFechaSiExiste(data.created_at);
+                        asignarFechaSiExiste(data.fecha_creacion);
+                        asignarFechaSiExiste(data.updated_at);
                     }
                 } catch (e) {
                     console.warn(' Error resolviendo fecha de anexo:', e);

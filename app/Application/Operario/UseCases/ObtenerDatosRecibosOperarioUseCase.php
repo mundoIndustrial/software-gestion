@@ -87,7 +87,7 @@ class ObtenerDatosRecibosOperarioUseCase
             }
         }
 
-        if ($tipoRecibo === 'PARCIAL' && $parcialId) {
+        if ($parcialId) {
             $prendaId = $request->query('prenda_id');
             $generoBase = 'CABALLERO';
 

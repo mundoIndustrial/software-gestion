@@ -622,13 +622,20 @@ window.llenarReciboCosturaMobile = function(data) {
         }
     }
 
+    const normalizarTituloRecibo = (valor, fallback = 'COSTURA') => {
+        const titulo = String(valor || '').trim().toUpperCase();
+        if (!titulo || titulo === 'PARCIAL') {
+            const fallbackUpper = String(fallback || '').trim().toUpperCase();
+            return fallbackUpper || 'COSTURA';
+        }
+        return titulo;
+    };
+
     const receiptTitleEl = document.getElementById('receipt-title-mobile');
     if (receiptTitleEl) {
-        if (tipoReciboUpper) {
-            receiptTitleEl.textContent = `RECIBO DE ${tipoReciboUpper}`;
-        } else {
-            receiptTitleEl.textContent = 'RECIBO DE COSTURA';
-        }
+        const fallbackTitulo = String(window.procesoActualSeleccionado || '').trim().toUpperCase();
+        const tituloRecibo = normalizarTituloRecibo(tipoReciboUpper, fallbackTitulo);
+        receiptTitleEl.textContent = `RECIBO DE ${tituloRecibo}`;
     }
 
     const normalizarUbicaciones = (raw) => {
@@ -2445,7 +2452,11 @@ window.llenarReciboCosturaMobile = function(data) {
     if (procesoActualSeleccionado) {
         const titleElement = document.querySelector('.receipt-title');
         if (titleElement) {
-            titleElement.textContent = 'RECIBO DE ' + procesoActualSeleccionado.toUpperCase();
+            const procesoTitulo = normalizarTituloRecibo(
+                procesoActualSeleccionado,
+                tipoReciboUpper
+            );
+            titleElement.textContent = 'RECIBO DE ' + procesoTitulo;
         }
         
         // ACTUALIZAR NÚMERO DE RECIBO CON EL CONSECUTIVO DEL PROCESO
