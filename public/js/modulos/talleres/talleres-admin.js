@@ -187,7 +187,7 @@ function showRecibos(tallerId, tallerName) {
                 return;
             }
 
-            let html = '<div class="table-container"><table class="table-recibos"><thead><tr><th>Nº RECIBO</th><th>CLIENTE</th><th>DESCRIPCIÓN PRENDA</th><th>ESTADO</th><th>ACCIONES</th></tr></thead><tbody>';
+            let html = '<div class="table-container"><table class="table-recibos"><thead><tr><th>Nº RECIBO</th><th>CLIENTE</th><th>DESCRIPCIÓN PRENDA</th><th>PROGRESO</th><th>ACCIONES</th></tr></thead><tbody>';
 
             data.recibos.forEach(recibo => {
                 html += `
@@ -198,7 +198,17 @@ function showRecibos(tallerId, tallerName) {
                             <div class="prenda-nombre">${recibo.nombre_prenda}</div>
                             <p class="prenda-desc">${recibo.descripcion_prenda || ''}</p>
                         </td>
-                        <td>-</td>
+                        <td class="col-progreso">
+                            <div class="progress-container">
+                                <div class="progress-info">
+                                    <span class="progress-text">Entregado: <b>${recibo.cantidad_entregada}</b> | Falta: <b>${recibo.cantidad_pendiente}</b></span>
+                                    <span class="progress-percentage">${recibo.porcentaje}%</span>
+                                </div>
+                                <div class="progress-bar-wrapper">
+                                    <div class="progress-bar-fill" style="width: ${recibo.porcentaje}%"></div>
+                                </div>
+                            </div>
+                        </td>
                         <td>
                             <button class="btn-action btn-ver-entregas" data-taller-id="${data.taller_id}" data-recibo-id="${recibo.id}" data-es-parcial="${recibo.es_parcial}" data-recibo-numero="${recibo.numero_recibo}" data-cliente="${recibo.cliente}" data-prenda="${recibo.nombre_prenda}">
                                 Ver Entregas <span style="font-size: 10px;">&#10095;</span>
@@ -265,7 +275,7 @@ function showEntregas(tallerId, reciboId, esParcial, reciboNumero, cliente, pren
                 const semana = semanaGroup[0].grupo;
                 html += '<div class="semana-group">';
                 html += '<div class="semana-header"><span class="material-symbols-rounded">calendar_month</span>' + semana + '</div>';
-                html += '<table class="table-entregas"><thead><tr><th class="col-fecha">FECHA</th><th>DESCRIPCIÓN</th><th class="col-genero">GÉNERO</th><th class="col-talla">TALLA</th><th class="col-cantidad">CANT.</th><th>PROGRESO</th></tr></thead><tbody>';
+                html += '<table class="table-entregas"><thead><tr><th class="col-fecha">FECHA</th><th>DESCRIPCIÓN</th><th class="col-genero">GÉNERO</th><th class="col-talla">TALLA</th><th class="col-cantidad">CANT.</th><th>PROGRESO</th><th>PRECIO</th></tr></thead><tbody>';
 
                 semanaGroup.forEach(entrega => {
                     const colorMsg = entrega.color ? `<br><small style="color:#64748b">Color: ${entrega.color}</small>` : '';
@@ -289,10 +299,21 @@ function showEntregas(tallerId, reciboId, esParcial, reciboNumero, cliente, pren
                             <td class="col-cantidad">${entrega.cantidad}<small>UND</small></td>
                             <td>
                                 <div class="progress-container">
+                                    <div class="progress-info">
+                                        <span class="progress-text">${totalEntregado} / ${totalAsignado}</span>
+                                        <span class="progress-percentage">${porcentaje}%</span>
+                                    </div>
                                     <div class="progress-bar-wrapper">
                                         <div class="progress-bar-fill" style="width: ${porcentaje}%"></div>
                                     </div>
-                                    <span class="progress-text">${totalEntregado}/${totalAsignado}</span>
+                                </div>
+                            </td>
+                            <td class="col-precio">
+                                <div class="precio-input-group">
+                                    <span class="currency-symbol">$</span>
+                                    <input type="number" step="0.01" class="input-precio" 
+                                           value="${entrega.precio ? parseFloat(entrega.precio) : ''}" 
+                                           placeholder="0">
                                 </div>
                             </td>
                         </tr>
@@ -303,9 +324,83 @@ function showEntregas(tallerId, reciboId, esParcial, reciboNumero, cliente, pren
             });
 
             entregasContent.innerHTML = html;
+
+            // Inicializar eventos para los inputs de precio
+            initPrecioInputs();
         })
         .catch(error => {
             console.error('Error:', error);
             entregasContent.innerHTML = '<div class="empty-state"><p>Error al cargar las entregas.</p></div>';
         });
+}
+
+function initPrecioInputs() {
+    const inputs = document.querySelectorAll('.input-precio');
+    const mainContainer = document.querySelector('.main-container');
+    const csrfToken = mainContainer.dataset.csrfToken;
+    const routeBase = mainContainer.dataset.routeActualizarPrecio;
+
+    const savePrecio = (input) => {
+        const id = input.dataset.id;
+        const precio = input.value;
+        const finalRoute = routeBase.replace(':id', id);
+        const group = input.closest('.precio-input-group');
+
+        // Estilo visual de "guardando"
+        group.style.opacity = '0.5';
+        group.style.borderColor = '#3b82f6';
+
+        fetch(finalRoute, {
+            method: 'PATCH',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ precio: precio })
+        })
+        .then(response => response.json())
+        .then(data => {
+            group.style.opacity = '1';
+            if (data.success) {
+                // Reformatear para quitar .00 si es entero
+                if (input.value) {
+                    input.value = parseFloat(input.value);
+                }
+                
+                // Feedback visual de éxito
+                group.classList.add('saved-success');
+                group.style.borderColor = '#10b981';
+                
+                setTimeout(() => { 
+                    group.classList.remove('saved-success');
+                    group.style.borderColor = ''; 
+                }, 1500);
+            } else {
+                group.style.borderColor = '#ef4444';
+                Swal.fire('Error', data.message || 'Error al guardar el precio', 'error');
+            }
+        })
+        .catch(error => {
+            group.style.opacity = '1';
+            group.style.borderColor = '#ef4444';
+            console.error('Error:', error);
+            Swal.fire('Error', 'Error de conexión', 'error');
+        });
+    };
+
+    inputs.forEach(input => {
+        // Guardar al cambiar (blur o enter)
+        input.addEventListener('change', function() {
+            savePrecio(this);
+        });
+
+        // Guardar explícitamente al presionar Enter y quitar foco
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.blur(); // Esto disparará el evento 'change'
+            }
+        });
+    });
 }

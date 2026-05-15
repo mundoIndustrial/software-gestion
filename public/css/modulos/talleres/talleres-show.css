@@ -180,8 +180,54 @@ body {
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
+.col-progreso {
+    min-width: 180px;
+}
+
+/* Progress Bar Styles */
+.progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.progress-bar-wrapper {
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #e2e8f0;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    border-radius: 10px;
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.progress-text {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.progress-percentage {
+    font-size: 11px;
+    font-weight: 800;
+    color: #2563eb;
+}
+
 .col-estado {
-    text-align: center;
+    display: none; /* Hide old state column if necessary, but we'll probably just replace it in blade */
 }
 .btn-action {
     color: #2563eb;

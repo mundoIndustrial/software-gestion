@@ -87,5 +87,18 @@ class TalleresController extends Controller
         $result = $useCase->execute($id);
         return response()->json($result);
     }
+
+    public function actualizarPrecio(Request $request, $id)
+    {
+        $request->validate([
+            'precio' => 'required|numeric|min:0'
+        ]);
+
+        $entrega = \App\Models\EntregaReciboCostura::findOrFail($id);
+        $entrega->precio = $request->precio;
+        $entrega->save();
+
+        return response()->json(['success' => true]);
+    }
 }
 

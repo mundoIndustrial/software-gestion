@@ -112,6 +112,7 @@ class ObtenerDetalleEntregasUseCase
                     'cantidad' => $item['cantidad'],
                     'total_entregado' => $acumulados[$key] ?? 0,
                     'total_asignado' => $mapaTotales[$key] ?? 0,
+                    'precio' => $entrega->precio,
                     'grupo' => $grupoSemana,
                     'orden_semana' => $startOfWeek->format('Ymd'),
                     'fecha_obj' => $fecha

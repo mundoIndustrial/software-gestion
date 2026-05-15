@@ -18,7 +18,8 @@
           data-csrf-token="{{ csrf_token() }}"
           data-route-toggle-status="{{ route('talleres.toggle-status', ':id') }}"
           data-route-api-recibos="{{ route('talleres.api.recibos', ':id') }}"
-          data-route-api-entregas="{{ route('talleres.api.entregas', [':taller_id', ':recibo_id', ':es_parcial']) }}">
+          data-route-api-entregas="{{ route('talleres.api.entregas', [':taller_id', ':recibo_id', ':es_parcial']) }}"
+          data-route-actualizar-precio="{{ route('talleres.actualizar-precio', ':id') }}">
           
         <!-- Vista 1: Grid de Talleres -->
         <div id="viewTalleres" class="view-container">

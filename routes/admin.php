@@ -72,4 +72,7 @@ Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion'])
     
     // Ruta para activar/desactivar taller
     Route::patch('/{id}/toggle-status', [App\Http\Controllers\Admin\TalleresController::class, 'toggleStatus'])->name('toggle-status');
+    
+    // Ruta para actualizar precio de entrega
+    Route::patch('/entrega/{id}/precio', [App\Http\Controllers\Admin\TalleresController::class, 'actualizarPrecio'])->name('actualizar-precio');
 });

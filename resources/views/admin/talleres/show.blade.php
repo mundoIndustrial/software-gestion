@@ -53,7 +53,7 @@
                             <th>N° RECIBO</th>
                             <th>CLIENTE</th>
                             <th>DESCRIPCIÓN PRENDA</th>
-                            <th class="col-estado">ESTADO</th>
+                            <th class="col-progreso">PROGRESO</th>
                             <th>ACCIONES</th>
                         </tr>
                     </thead>
@@ -66,8 +66,16 @@
                                     <div class="prenda-nombre">{{ $recibo->nombre_prenda }}</div>
                                     <p class="prenda-desc">{{ $recibo->descripcion_prenda }}</p>
                                 </td>
-                                <td class="col-estado">
-                                    -
+                                <td class="col-progreso">
+                                    <div class="progress-container">
+                                        <div class="progress-info">
+                                            <span class="progress-text">Entregado: <b>{{ $recibo->cantidad_entregada }}</b> | Falta: <b>{{ $recibo->cantidad_pendiente }}</b></span>
+                                            <span class="progress-percentage">{{ $recibo->porcentaje }}%</span>
+                                        </div>
+                                        <div class="progress-bar-wrapper">
+                                            <div class="progress-bar-fill" style="width: {{ $recibo->porcentaje }}%"></div>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td>
                                     <a href="{{ route('talleres.entregas', ['id' => $taller->id, 'recibo_id' => $recibo->id, 'es_parcial' => $recibo->es_parcial]) }}" class="btn-action">
