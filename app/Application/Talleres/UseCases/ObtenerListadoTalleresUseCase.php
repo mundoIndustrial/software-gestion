@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class ObtenerListadoTalleresUseCase
 {
-    public function execute()
+    public function execute($search = null, $perPage = 9)
     {
         $roleTaller = Role::where('name', 'taller')->first();
         
@@ -16,9 +16,14 @@ class ObtenerListadoTalleresUseCase
             return collect([]);
         }
 
-        return User::whereJsonContains('roles_ids', $roleTaller->id)
+        $query = User::whereJsonContains('roles_ids', $roleTaller->id)
             ->leftJoin('taller_config', 'users.id', '=', 'taller_config.user_id')
-            ->select('users.*', DB::raw('IFNULL(taller_config.activo, 1) as activo'))
-            ->get();
+            ->select('users.*', DB::raw('IFNULL(taller_config.activo, 1) as activo'));
+
+        if ($search) {
+            $query->where('users.name', 'like', '%' . $search . '%');
+        }
+
+        return $query->orderBy('users.name', 'asc')->paginate($perPage);
     }
 }

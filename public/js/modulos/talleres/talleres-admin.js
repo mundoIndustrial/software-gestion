@@ -13,7 +13,166 @@ document.addEventListener('DOMContentLoaded', function() {
     initViewHandlers();
     loadTalleresStats();
     initStatusToggles();
+    initNewTallerModal();
+    initEditTaller();
 });
+
+function initEditTaller() {
+    const editButtons = document.querySelectorAll('.btn-edit-taller');
+    const modal = document.getElementById('modalEditTaller');
+    const closeElements = document.querySelectorAll('.close-modal-talleres-edit, .close-modal-btn-edit');
+    const form = document.getElementById('formEditTaller');
+    const inputId = document.getElementById('editTallerId');
+    const inputName = document.getElementById('editTallerName');
+    
+    const mainContainer = document.querySelector('.main-container');
+    const csrfToken = mainContainer.dataset.csrfToken;
+    const updateRouteBase = mainContainer.dataset.routeUpdate;
+
+    editButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const id = this.dataset.id;
+            const name = this.dataset.name;
+            
+            inputId.value = id;
+            inputName.value = name;
+            modal.classList.add('show');
+        });
+    });
+
+    closeElements.forEach(el => {
+        el.addEventListener('click', () => {
+            modal.classList.remove('show');
+        });
+    });
+
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = inputId.value;
+            const newName = inputName.value;
+            const finalRoute = updateRouteBase.replace(':id', id);
+            const submitBtn = this.querySelector('button[type="submit"]');
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<div class="loading-spinner" style="width:16px; height:16px; margin:0; border-width:2px;"></div> Guardando...';
+
+            fetch(finalRoute, {
+                method: 'PATCH',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ name: newName })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    modal.classList.remove('show');
+                    Swal.fire({
+                        title: '¡Actualizado!',
+                        text: result.message,
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<span class="material-symbols-rounded">save</span> GUARDAR CAMBIOS';
+                    Swal.fire('Error', result.message || 'Error al actualizar', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span class="material-symbols-rounded">save</span> GUARDAR CAMBIOS';
+                Swal.fire('Error', 'Error de conexión', 'error');
+            });
+        });
+    }
+}
+
+function initNewTallerModal() {
+    const btnNewTaller = document.getElementById('btnNewTaller');
+    const modal = document.getElementById('modalNewTaller');
+    const closeModalElements = document.querySelectorAll('.close-modal-talleres, .close-modal-btn');
+    const form = document.getElementById('formNewTaller');
+    const mainContainer = document.querySelector('.main-container');
+    const csrfToken = mainContainer.dataset.csrfToken;
+    const storeRoute = mainContainer.dataset.routeStore;
+
+    if (btnNewTaller) {
+        btnNewTaller.addEventListener('click', () => {
+            modal.classList.add('show');
+        });
+    }
+
+    closeModalElements.forEach(el => {
+        el.addEventListener('click', () => {
+            modal.classList.remove('show');
+            form.reset();
+        });
+    });
+
+    // Cerrar al hacer clic fuera
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.remove('show');
+            form.reset();
+        }
+    });
+
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            const submitBtn = this.querySelector('button[type="submit"]');
+            
+            // Loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<div class="loading-spinner" style="width:16px; height:16px; margin:0; border-width:2px;"></div> Guardando...';
+
+            fetch(storeRoute, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    Swal.fire({
+                        title: '¡Éxito!',
+                        text: result.message,
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<span class="material-symbols-rounded">save</span> GUARDAR TALLER';
+                    Swal.fire('Error', result.message || 'Ocurrió un error al crear el taller', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span class="material-symbols-rounded">save</span> GUARDAR TALLER';
+                Swal.fire('Error', 'Error de conexión con el servidor', 'error');
+            });
+        });
+    }
+}
 
 function initStatusToggles() {
     const mainContainer = document.querySelector('.main-container');
@@ -88,33 +247,18 @@ function loadTalleresStats() {
 function initTalleresSearch() {
     const searchInput = document.getElementById('searchInput');
     const clearButton = document.getElementById('clearSearch');
-    const cards = document.querySelectorAll('.taller-card');
     
     if (searchInput) {
-        searchInput.addEventListener('input', function(e) {
-            const term = e.target.value.toLowerCase().trim();
-            
-            cards.forEach(card => {
-                const name = card.getAttribute('data-name');
-                if (name && name.includes(term)) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        });
+        const toggleClear = () => {
+            if (searchInput.value.length > 0) {
+                clearButton.style.display = 'flex';
+            } else {
+                clearButton.style.display = 'none';
+            }
+        };
 
-        if (clearButton) {
-            clearButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                searchInput.value = '';
-                searchInput.focus();
-                
-                cards.forEach(card => {
-                    card.style.display = 'block';
-                });
-            });
-        }
+        toggleClear();
+        searchInput.addEventListener('input', toggleClear);
     }
 }
 

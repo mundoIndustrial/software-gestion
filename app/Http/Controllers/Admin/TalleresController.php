@@ -8,10 +8,11 @@ use App\Models\Role;
 
 class TalleresController extends Controller
 {
-    public function index(\App\Application\Talleres\UseCases\ObtenerListadoTalleresUseCase $useCase)
+    public function index(Request $request, \App\Application\Talleres\UseCases\ObtenerListadoTalleresUseCase $useCase)
     {
-        $talleres = $useCase->execute();
-        return view('admin.talleres.index', compact('talleres'));
+        $search = $request->input('search');
+        $talleres = $useCase->execute($search);
+        return view('admin.talleres.index', compact('talleres', 'search'));
     }
 
     public function showRecibos($id, \App\Application\Talleres\UseCases\ObtenerDashboardTallerUseCase $useCase)
@@ -99,6 +100,30 @@ class TalleresController extends Controller
         $entrega->save();
 
         return response()->json(['success' => true]);
+    }
+
+    public function store(Request $request, \App\Application\Talleres\UseCases\CrearTallerUseCase $useCase)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255'
+        ]);
+
+        $result = $useCase->execute($request->all());
+
+        return response()->json($result);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255'
+        ]);
+
+        $user = \App\Models\User::findOrFail($id);
+        $user->name = $request->name;
+        $user->save();
+
+        return response()->json(['success' => true, 'message' => 'Taller actualizado correctamente.']);
     }
 }
 

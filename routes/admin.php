@@ -75,4 +75,10 @@ Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion'])
     
     // Ruta para actualizar precio de entrega
     Route::patch('/entrega/{id}/precio', [App\Http\Controllers\Admin\TalleresController::class, 'actualizarPrecio'])->name('actualizar-precio');
+
+    // Ruta para crear taller
+    Route::post('/', [App\Http\Controllers\Admin\TalleresController::class, 'store'])->name('store');
+
+    // Ruta para actualizar taller (nombre)
+    Route::patch('/{id}', [App\Http\Controllers\Admin\TalleresController::class, 'update'])->name('update');
 });

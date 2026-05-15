@@ -19,7 +19,9 @@
           data-route-toggle-status="{{ route('talleres.toggle-status', ':id') }}"
           data-route-api-recibos="{{ route('talleres.api.recibos', ':id') }}"
           data-route-api-entregas="{{ route('talleres.api.entregas', [':taller_id', ':recibo_id', ':es_parcial']) }}"
-          data-route-actualizar-precio="{{ route('talleres.actualizar-precio', ':id') }}">
+          data-route-actualizar-precio="{{ route('talleres.actualizar-precio', ':id') }}"
+          data-route-store="{{ route('talleres.store') }}"
+          data-route-update="{{ route('talleres.update', ':id') }}">
           
         <!-- Vista 1: Grid de Talleres -->
         <div id="viewTalleres" class="view-container">
@@ -28,13 +30,17 @@
                     <div class="subtitle">TALLERES ACTIVOS</div>
                 </div>
                 <div class="page-actions">
-                    <div class="gooey-search-wrapper">
+                    <form action="{{ route('talleres.index') }}" method="GET" class="gooey-search-wrapper">
                         <span class="material-symbols-rounded gooey-search-icon">search</span>
-                        <input type="text" class="gooey-search-input" placeholder="Buscar taller..." id="searchInput">
-                        <button class="gooey-search-clear" id="clearSearch" type="button">
+                        <input type="text" name="search" class="gooey-search-input" placeholder="Buscar taller..." id="searchInput" value="{{ $search ?? '' }}">
+                        <button class="gooey-search-clear" id="clearSearch" type="button" onclick="window.location.href='{{ route('talleres.index') }}'">
                             <span class="material-symbols-rounded">close</span>
                         </button>
-                    </div>
+                    </form>
+                    <button class="btn-primary-gradient btn-new-taller" id="btnNewTaller">
+                        <span class="material-symbols-rounded">add</span>
+                        NUEVO TALLER
+                    </button>
                 </div>
             </div>
 
@@ -68,9 +74,14 @@
                             </div>
                         </div>
                         
-                        <button class="btn-view btn-view-recibos" data-taller-id="{{ $taller->id }}">
-                            Ver Recibos <span style="font-size: 10px; margin-left: 5px;">&#10095;</span>
-                        </button>
+                        <div class="card-footer-actions">
+                            <button class="btn-edit-icon btn-edit-taller" data-id="{{ $taller->id }}" data-name="{{ $taller->name }}" title="Editar nombre">
+                                <span class="material-symbols-rounded">edit</span>
+                            </button>
+                            <button class="btn-view btn-view-recibos" data-taller-id="{{ $taller->id }}">
+                                Ver Recibos <span style="font-size: 10px; margin-left: 5px;">&#10095;</span>
+                            </button>
+                        </div>
                     </div>
                 @empty
                     <div style="width: 100%; padding: 40px; text-align: center; color: #64748b; background: white; border-radius: 12px; border: 1px dashed #cbd5e1;">
@@ -78,6 +89,11 @@
                         <p>No hay talleres disponibles en este momento.</p>
                     </div>
                 @endforelse
+            </div>
+
+            <!-- Paginación -->
+            <div class="pagination-container">
+                {{ $talleres->appends(['search' => $search])->links('vendor.pagination.simple-clean') }}
             </div>
         </div>
 
@@ -150,6 +166,62 @@
             </div>
         </div>
     </main>
+
+    <!-- Modal Nuevo Taller -->
+    <div id="modalNewTaller" class="modal-talleres">
+        <div class="modal-content-talleres">
+            <div class="modal-header-talleres">
+                <h2><span class="material-symbols-rounded">factory</span> Registrar Nuevo Taller</h2>
+                <span class="close-modal-talleres">&times;</span>
+            </div>
+            <form id="formNewTaller">
+                <div class="form-body-talleres">
+                    <div class="form-group-talleres">
+                        <label>Nombre del Taller</label>
+                        <div class="input-with-icon">
+                            <span class="material-symbols-rounded">person</span>
+                            <input type="text" name="name" required placeholder="Nombre completo o comercial">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer-talleres">
+                    <button type="button" class="btn-cancel close-modal-btn">Cancelar</button>
+                    <button type="submit" class="btn-submit">
+                        <span class="material-symbols-rounded">save</span>
+                        GUARDAR TALLER
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Modal Editar Taller -->
+    <div id="modalEditTaller" class="modal-talleres">
+        <div class="modal-content-talleres">
+            <div class="modal-header-talleres">
+                <h2><span class="material-symbols-rounded">edit</span> Editar Nombre del Taller</h2>
+                <span class="close-modal-talleres-edit">&times;</span>
+            </div>
+            <form id="formEditTaller">
+                <input type="hidden" name="taller_id" id="editTallerId">
+                <div class="form-body-talleres">
+                    <div class="form-group-talleres">
+                        <label>Nombre del Taller</label>
+                        <div class="input-with-icon">
+                            <span class="material-symbols-rounded">person</span>
+                            <input type="text" name="name" id="editTallerName" required placeholder="Nombre completo o comercial">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer-talleres">
+                    <button type="button" class="btn-cancel close-modal-btn-edit">Cancelar</button>
+                    <button type="submit" class="btn-submit">
+                        <span class="material-symbols-rounded">save</span>
+                        GUARDAR CAMBIOS
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
