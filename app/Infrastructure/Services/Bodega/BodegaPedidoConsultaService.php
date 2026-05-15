@@ -148,7 +148,9 @@ class BodegaPedidoConsultaService
                 ->first();
 
             $pedidosPorPagina[] = [
-                'id' => $numeroPedido,
+                // Debe ser el ID real de pedidos_produccion para que /gestion-bodega/pedidos/{id}
+                // no redirija a un pedido distinto cuando numero_pedido != id.
+                'id' => $targetPedidoId,
                 'numero_pedido' => $numeroPedido,
                 'cliente' => $primerPedido->cliente ?? WarehouseConstants::DEFAULT_NA,
                 'asesor' => $primerPedido->asesor?->nombre ?? $primerPedido->asesor?->name ?? WarehouseConstants::DEFAULT_NA,
