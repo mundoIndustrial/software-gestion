@@ -300,7 +300,7 @@ class ConsecutivoReciboPedidoRepository
 
         // Aplicar filtro de área
         if (isset($filtros['area']) && !empty($filtros['area'])) {
-            $query->whereIn('area', $filtros['area']);
+            $query->whereIn('consecutivos_recibos_pedidos.area', $filtros['area']);
         }
 
         // Aplicar filtro de cliente
@@ -313,13 +313,18 @@ class ConsecutivoReciboPedidoRepository
         // Aplicar filtro de encargado (solo procesos más recientes)
         if (isset($filtros['encargado']) && !empty($filtros['encargado'])) {
             \Log::info('[getConFiltros] Aplicando filtro de encargado', ['encargados' => $filtros['encargado']]);
+            $encargadosNormalizados = array_values(array_filter(array_map(
+                static fn ($encargado) => mb_strtolower(trim((string) $encargado)),
+                (array) $filtros['encargado']
+            ), static fn ($encargado) => $encargado !== ''));
+
             $query->join('procesos_prenda as pp_filter', function($join) {
                 $join->on('pp_filter.numero_recibo', '=', 'consecutivos_recibos_pedidos.consecutivo_actual')
                     ->on('pp_filter.prenda_pedido_id', '=', 'consecutivos_recibos_pedidos.prenda_id');
             })
             ->join('pedidos_produccion as pp_prod_filter', 'pp_prod_filter.id', '=', 'consecutivos_recibos_pedidos.pedido_produccion_id')
             ->whereColumn('pp_filter.numero_pedido', '=', 'pp_prod_filter.numero_pedido')
-            ->whereIn('pp_filter.encargado', $filtros['encargado'])
+            ->whereIn(DB::raw('LOWER(TRIM(pp_filter.encargado))'), $encargadosNormalizados)
             ->whereNull('pp_filter.deleted_at')
             // Solo procesos más recientes (mismo subquery que getEncargados)
             ->whereRaw('pp_filter.id IN (
@@ -331,6 +336,7 @@ class ConsecutivoReciboPedidoRepository
                 AND pp2.deleted_at IS NULL
                 GROUP BY pp2.numero_recibo, pp2.prenda_pedido_id, pp2.numero_pedido
             )')
+            ->select('consecutivos_recibos_pedidos.*')
             ->distinct();
             \Log::info('[getConFiltros] Filtro de encargado aplicado correctamente');
         }
