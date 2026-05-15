@@ -1509,6 +1509,10 @@ document.addEventListener('DOMContentLoaded', function () {
     form.addEventListener('submit', function (event) {
         event.preventDefault();
         console.log('[FORM] Submit iniciado');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn?.disabled) {
+            return;
+        }
 
         const formData = new FormData(form);
         const prendas = [];
@@ -1585,6 +1589,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const payload = { prendas: prendas };
         console.log('[FORM] Enviando payload:', JSON.stringify(payload));
 
+        const originalSubmitText = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Guardando...';
+        }
+
         fetch('/api/recibo-corte-bodega', {
             method: 'POST',
             headers: {
@@ -1616,10 +1626,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (data.success) {
                 closeModal();
                 form.reset();
-                showReciboSuccessModal();
-                loadRecibosCorteForBodega();
-                if (data.prendas && data.prendas.length > 0) {
-                    setTimeout(() => openReciboCorteBodegaModal(data.prendas[0].id), 500);
+                if (!data.duplicate) {
+                    showReciboSuccessModal();
+                    loadRecibosCorteForBodega();
+                    if (data.prendas && data.prendas.length > 0) {
+                        setTimeout(() => openReciboCorteBodegaModal(data.prendas[0].id), 500);
+                    }
                 }
             } else {
                 alert('Error: ' + (data.message || 'No se pudo guardar el recibo'));
@@ -1628,6 +1640,12 @@ document.addEventListener('DOMContentLoaded', function () {
         .catch(error => {
             console.error('[FETCH] Error:', error);
             alert('Error al guardar el recibo: ' + error.message);
+        })
+        .finally(() => {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalSubmitText;
+            }
         });
     });
 

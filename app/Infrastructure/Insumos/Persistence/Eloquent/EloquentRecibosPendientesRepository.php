@@ -43,6 +43,11 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
                 ]);
 
                 $recibo->refresh();
+                $area = $this->determinarAreaPorEstado($estadoReciboNormalizado);
+                $recibo->update([
+                    'area' => $area,
+                    'aprobado_insumos_en' => $recibo->aprobado_insumos_en ?? now(),
+                ]);
                 $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
                 $this->crearProcesoCorteSiNoExiste($recibo, $pedido, $estadoReciboNormalizado);
 
@@ -77,7 +82,7 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
 
 
             // Guardar fecha/hora exacta en que Insumos aprueba el recibo para Corte.
-            if (in_array($estadoReciboNormalizado, ['En EjecuciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n', 'En Ejecucion'], true)) {
+            if ($this->esEstadoEnEjecucion($estadoReciboNormalizado)) {
                 $dataUpdate['aprobado_insumos_en'] = now();
             }
 
@@ -94,16 +99,16 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
                 ->whereIn('estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER', 'INSUMOS_PEDIDOS'])
                 ->count();
 
-            // Solo actualizar pedidos_produccion si el recibo se aprueba para producciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n (En EjecuciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n)
+            // Solo actualizar pedidos_produccion si el recibo se aprueba para producciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n (En EjecuciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n)
             // En otros estados intermedios NO se toca pedidos_produccion
-            if (in_array($estadoReciboNormalizado, ['En EjecuciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n', 'En Ejecucion'], true)) {
+            if ($this->esEstadoEnEjecucion($estadoReciboNormalizado)) {
                 $pedido = PedidoProduccion::find($recibo->pedido_produccion_id);
                 if ($pedido) {
                     $pedido->update([
-                        'estado' => 'En EjecuciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n',
+                        'estado' => 'En Ejecucion',
                         'area' => 'CORTE',
                     ]);
-                    Log::info('[cambiarEstadoRecibo] Pedido actualizado a En EjecuciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n', [
+                    Log::info('[cambiarEstadoRecibo] Pedido actualizado a En Ejecucion', [
                         'pedido_id' => $pedido->id,
                         'numero_pedido' => $pedido->numero_pedido,
                     ]);
@@ -263,11 +268,11 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
 
     private function determinarAreaPorEstado(string $estado): string
     {
-        return match ($estado) {
-            'No iniciado' => 'TRAZO',
-            'En EjecuciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n', 'En Ejecucion' => 'CORTE',
-            default => 'INSUMOS',
-        };
+        if (trim($estado) === 'No iniciado') {
+            return 'TRAZO';
+        }
+
+        return $this->esEstadoEnEjecucion($estado) ? 'CORTE' : 'INSUMOS';
     }
     private function normalizarEstadoRecibo(string $estado): string
     {
@@ -333,7 +338,7 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
             return;
         }
 
-        $estadoProceso = in_array($nuevoEstado, ['En Ejecucion', 'En EjecuciÃƒÆ’Ã‚Â³n'], true)
+        $estadoProceso = $this->esEstadoEnEjecucion($nuevoEstado)
             ? 'En Progreso'
             : 'Pendiente';
 
@@ -363,6 +368,13 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
             'numero_recibo' => $recibo->consecutivo_actual,
         ]);
     }
+
+    private function esEstadoEnEjecucion(string $estado): bool
+    {
+        return strtolower(trim(Str::ascii($estado))) === 'en ejecucion';
+    }
 }
+
+
 
 

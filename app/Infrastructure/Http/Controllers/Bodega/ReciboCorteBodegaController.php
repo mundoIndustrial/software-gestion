@@ -5,6 +5,7 @@ namespace App\Infrastructure\Http\Controllers\Bodega;
 use App\Models\PrendaBodega;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -110,6 +111,19 @@ class ReciboCorteBodegaController extends Controller
         }
 
         try {
+            $userId = (int) (auth()->id() ?? 0);
+            $fingerprint = hash('sha256', json_encode($validated, JSON_UNESCAPED_UNICODE));
+            $dedupeKey = sprintf('recibo_corte_bodega:store:%d:%s', $userId, $fingerprint);
+
+            if (!Cache::add($dedupeKey, now()->timestamp, now()->addSeconds(12))) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Solicitud duplicada detectada. Ya fue procesada.',
+                    'prendas' => [],
+                    'duplicate' => true,
+                ], 200);
+            }
+
             $prendas = DB::transaction(function () use ($validated) {
                 $registroMaestro = DB::table('consecutivos_recibos')
                     ->where('tipo_recibo', 'CORTE-PARA-BODEGA')
