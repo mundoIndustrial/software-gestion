@@ -200,25 +200,49 @@ class ConsecutivoReciboPedidoRepository
     }
 
     /**
-     * Obtener todos los encargados únicos de los procesos asociados a recibos de costura
-     * 
+     * Obtener todos los encargados únicos de los recibos de costura
+     * Devuelve SOLO los encargados que se muestran en la tabla (proceso más reciente de cada recibo)
+     * Sincronizado con la lógica de recibos-costura-table.blade.php línea 350-386
+     *
      * @return array
      */
     public function getEncargados(): array
     {
-        return DB::table('procesos_prenda')
-            ->join('consecutivos_recibos_pedidos', function($join) {
-                $join->on('procesos_prenda.numero_recibo', '=', 'consecutivos_recibos_pedidos.consecutivo_actual')
-                    ->on('procesos_prenda.prenda_pedido_id', '=', 'consecutivos_recibos_pedidos.prenda_id');
+        \Log::info('[ConsecutivoReciboPedidoRepository::getEncargados] Iniciando obtención de encargados');
+
+        $query = DB::table('procesos_prenda as pp')
+            ->join('consecutivos_recibos_pedidos as crp', function($join) {
+                $join->on('pp.numero_recibo', '=', 'crp.consecutivo_actual')
+                    ->on('pp.prenda_pedido_id', '=', 'crp.prenda_id');
             })
-            ->where('consecutivos_recibos_pedidos.tipo_recibo', 'COSTURA')
-            ->where('consecutivos_recibos_pedidos.activo', true)
-            ->whereNull('procesos_prenda.deleted_at')
-            ->distinct()
-            ->pluck('procesos_prenda.encargado')
+            ->join('pedidos_produccion as pp_prod', 'pp_prod.id', '=', 'crp.pedido_produccion_id')
+            ->whereColumn('pp.numero_pedido', '=', 'pp_prod.numero_pedido')
+            ->where('crp.tipo_recibo', 'COSTURA')
+            ->where('crp.activo', true)
+            ->whereNull('pp.deleted_at')
+            // Solo obtener el proceso más reciente por recibo (basado en el ID más alto)
+            ->whereRaw('pp.id IN (
+                SELECT MAX(pp2.id)
+                FROM procesos_prenda pp2
+                WHERE pp2.numero_recibo = pp.numero_recibo
+                AND pp2.prenda_pedido_id = pp.prenda_pedido_id
+                AND pp2.numero_pedido = pp.numero_pedido
+                AND pp2.deleted_at IS NULL
+                GROUP BY pp2.numero_recibo, pp2.prenda_pedido_id, pp2.numero_pedido
+            )')
+            ->distinct();
+
+        \Log::info('[ConsecutivoReciboPedidoRepository::getEncargados] SQL Query: ' . $query->toSql());
+        \Log::info('[ConsecutivoReciboPedidoRepository::getEncargados] Query Bindings: ' . json_encode($query->getBindings()));
+
+        $encargados = $query->pluck('pp.encargado')
             ->filter()
             ->values()
             ->toArray();
+
+        \Log::info('[ConsecutivoReciboPedidoRepository::getEncargados] Encargados obtenidos: ' . json_encode($encargados));
+
+        return $encargados;
     }
 
     /**
@@ -242,7 +266,7 @@ class ConsecutivoReciboPedidoRepository
 
         // Excluir INSUMOS solo para COSTURA (no aplica a REFLECTIVO u otros)
         if ($tipoRecibo === 'COSTURA') {
-            $query->where('area', '!=', 'INSUMOS');
+            $query->where('consecutivos_recibos_pedidos.area', '!=', 'INSUMOS');
         }
 
         // Filtros especiales para revisor_entregas
@@ -284,6 +308,31 @@ class ConsecutivoReciboPedidoRepository
             $query->whereHas('pedido', function($q) use ($filtros) {
                 $q->whereIn('cliente', $filtros['cliente']);
             });
+        }
+
+        // Aplicar filtro de encargado (solo procesos más recientes)
+        if (isset($filtros['encargado']) && !empty($filtros['encargado'])) {
+            \Log::info('[getConFiltros] Aplicando filtro de encargado', ['encargados' => $filtros['encargado']]);
+            $query->join('procesos_prenda as pp_filter', function($join) {
+                $join->on('pp_filter.numero_recibo', '=', 'consecutivos_recibos_pedidos.consecutivo_actual')
+                    ->on('pp_filter.prenda_pedido_id', '=', 'consecutivos_recibos_pedidos.prenda_id');
+            })
+            ->join('pedidos_produccion as pp_prod_filter', 'pp_prod_filter.id', '=', 'consecutivos_recibos_pedidos.pedido_produccion_id')
+            ->whereColumn('pp_filter.numero_pedido', '=', 'pp_prod_filter.numero_pedido')
+            ->whereIn('pp_filter.encargado', $filtros['encargado'])
+            ->whereNull('pp_filter.deleted_at')
+            // Solo procesos más recientes (mismo subquery que getEncargados)
+            ->whereRaw('pp_filter.id IN (
+                SELECT MAX(pp2.id)
+                FROM procesos_prenda pp2
+                WHERE pp2.numero_recibo = pp_filter.numero_recibo
+                AND pp2.prenda_pedido_id = pp_filter.prenda_pedido_id
+                AND pp2.numero_pedido = pp_filter.numero_pedido
+                AND pp2.deleted_at IS NULL
+                GROUP BY pp2.numero_recibo, pp2.prenda_pedido_id, pp2.numero_pedido
+            )')
+            ->distinct();
+            \Log::info('[getConFiltros] Filtro de encargado aplicado correctamente');
         }
 
         // Aplicar filtro de novedades

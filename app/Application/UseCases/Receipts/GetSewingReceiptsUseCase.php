@@ -27,7 +27,12 @@ class GetSewingReceiptsUseCase
      */
     public function execute(Request $request): array
     {
+        \Log::info('[GetSewingReceiptsUseCase] Iniciando ejecución');
+        \Log::info('[GetSewingReceiptsUseCase] Request query params: ' . json_encode($request->query()));
+
         $filtros = $this->procesarFiltros($request);
+        \Log::info('[GetSewingReceiptsUseCase] Filtros procesados: ' . json_encode($filtros));
+
         $perPage = 25;
         $currentPage = max(1, (int) $request->input('page', 1));
         $hasTotalDiasFilter = isset($filtros['total_dias']) && is_array($filtros['total_dias']) && count($filtros['total_dias']) >= 1;
@@ -71,7 +76,16 @@ class GetSewingReceiptsUseCase
         }
 
         // Obtener recibos del repositorio (con filtros aplicados y paginacion)
+        \Log::info('[GetSewingReceiptsUseCase] Llamando a getConFiltros con filtros: ' . json_encode($filtros));
         $recibosCostura = $this->recibosRepository->getConFiltros('COSTURA', $filtros, $perPage);
+
+        $countRecibos = count($recibosCostura instanceof LengthAwarePaginator ? $recibosCostura->items() : $recibosCostura);
+        \Log::info('[GetSewingReceiptsUseCase] Recibos obtenidos del repositorio: ' . $countRecibos);
+
+        // Si hay filtro de encargado, log adicional
+        if (isset($filtros['encargado']) && !empty($filtros['encargado'])) {
+            \Log::info('[GetSewingReceiptsUseCase] FILTRO ENCARGADO ACTIVO - Esperando menos registros pero obtuvo: ' . $countRecibos, ['filtros' => $filtros]);
+        }
 
         // Verificar si es paginacion o coleccion
         $esPaginado = $recibosCostura instanceof LengthAwarePaginator;
