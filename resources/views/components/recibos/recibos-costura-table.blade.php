@@ -66,10 +66,6 @@
                 <th style="width: 100px;">
                     <div class="th-wrapper">
                         <span>Cantidad</span>
-                        <button class="btn-filter-column" type="button" data-column="cantidad" onclick="openColumnFilter('cantidad', 'Cantidad')">
-                            <i class="fas fa-filter"></i>
-                            <span class="filter-badge" data-badge="cantidad">0</span>
-                        </button>
                     </div>
                 </th>
                 <th style="width: 120px;">
