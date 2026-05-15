@@ -575,6 +575,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <td class="px-2 lg:px-4 py-3 text-center">
                                             @if(auth()->user()->hasRole('supervisor_gerencia'))
                                                 <button type="button" 
+                                                        data-action="entrega"
                                                         class="px-3 py-1 bg-gray-400 text-white text-xs font-medium rounded cursor-not-allowed opacity-60"
                                                         disabled
                                                         title="Solo usuarios autorizados pueden marcar como entregado">
@@ -582,6 +583,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 </button>
                                             @else
                                                 <button type="button" 
+                                                        data-action="entrega"
                                                         class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded transition-colors"
                                                         onclick="marcarEntregado(this)">
                                                     Entregar
@@ -720,6 +722,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             <td class="px-2 lg:px-4 py-3 text-center">
                                                 @if(auth()->user()->hasRole('supervisor_gerencia'))
                                                     <button type="button" 
+                                                            data-action="entrega"
                                                             class="px-3 py-1 bg-gray-400 text-white text-xs font-medium rounded cursor-not-allowed opacity-60"
                                                             disabled
                                                             title="Solo usuarios autorizados pueden marcar como entregado">
@@ -727,6 +730,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                     </button>
                                                 @else
                                                     <button type="button" 
+                                                            data-action="entrega"
                                                             class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded transition-colors"
                                                             onclick="marcarEntregado(this)">
                                                         Entregar
@@ -818,6 +822,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <td class="px-2 lg:px-4 py-3 text-center">
                                         @if(auth()->user()->hasRole('supervisor_gerencia'))
                                             <button type="button" 
+                                                    data-action="entrega"
                                                     class="px-3 py-1 bg-gray-400 text-white text-xs font-medium rounded cursor-not-allowed opacity-60"
                                                     disabled
                                                     title="Solo usuarios autorizados pueden marcar como entregado">
@@ -825,6 +830,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             </button>
                                         @else
                                             <button type="button" 
+                                                    data-action="entrega"
                                                     class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded transition-colors"
                                                     onclick="marcarEntregado(this)">
                                                 Entregado
@@ -1267,7 +1273,7 @@ async function cargarEstadoEntregas() {
                 
                 const fila = document.querySelector(selector);
                 if (fila) {
-                    const button = fila.querySelector('button');
+                    const button = fila.querySelector('button[data-action="entrega"]');
                     if (button) {
                         // Marcar como entregado visualmente con opción de deshacer
                         button.innerHTML = '✓ Entregado <span class="ml-1 text-xs">(↶)</span>';

@@ -12,7 +12,7 @@ class ProcesoPrendaObserver
      */
     public function created(ProcesoPrenda $procesoPrenda): void
     {
-        // Actualizar el Ã¡rea del pedido basado en el Ãºltimo proceso registrado
+        // Actualizar el area del pedido basado en el ultimo proceso registrado
         $this->actualizarAreaPedido($procesoPrenda);
     }
 
@@ -21,7 +21,7 @@ class ProcesoPrendaObserver
      */
     public function updated(ProcesoPrenda $procesoPrenda): void
     {
-        // Si cambiÃ³ estado_proceso, created_at, fecha_inicio o fecha_fin, actualizar el Ã¡rea
+        // Si cambio estado_proceso, created_at, fecha_inicio o fecha_fin, actualizar el Area
         if ($procesoPrenda->isDirty(['estado_proceso', 'created_at', 'fecha_inicio', 'fecha_fin', 'proceso'])) {
             \Log::info(' [Observer] Cambio detectado en proceso', [
                 'proceso_id' => $procesoPrenda->id,
@@ -35,16 +35,16 @@ class ProcesoPrendaObserver
 
     /**
      * Handle the ProcesoPrenda "deleting" event.
-     * Actualizar el Ã¡rea del pedido cuando se elimina un proceso
+     * Actualizar el Area del pedido cuando se elimina un proceso
      */
     public function deleting(ProcesoPrenda $procesoPrenda): void
     {
-        // Actualizar el Ã¡rea del pedido al prÃ³ximo proceso disponible
+        // Actualizar el Area del pedido al proximo proceso disponible
         $this->actualizarAreaAlEliminar($procesoPrenda);
     }
 
     /**
-     * Actualizar el Ã¡rea del pedido basado en el proceso actual activo
+     * Actualizar el Area del pedido basado en el proceso actual activo
      */
     private function actualizarAreaPedido(ProcesoPrenda $procesoPrenda): void
     {
@@ -55,8 +55,8 @@ class ProcesoPrendaObserver
                 return;
             }
 
-            // Si el proceso es 'Entrega', no recalcular el Ã¡rea (es un estado final)
-            // Se mantiene como 'Entrega' explÃ­citamente
+            // Si el proceso es 'Entrega', no recalcular el Area (es un estado final)
+            // Se mantiene como 'Entrega' explicitamente
             if ($procesoPrenda->proceso && strtolower(trim($procesoPrenda->proceso)) === 'entrega') {
                 \Log::info(' [Observer] Ignorando Entrega - es un estado final', [
                     'numero_pedido' => $numeroPedido,
@@ -72,7 +72,7 @@ class ProcesoPrendaObserver
                 return;
             }
 
-            \Log::info(' [Observer] Actualizando Ã¡rea del pedido', [
+            \Log::info(' [Observer] Actualizando Area del pedido', [
                 'numero_pedido' => $numeroPedido,
                 'area_actual' => $pedido->area,
             ]);
@@ -93,7 +93,7 @@ class ProcesoPrendaObserver
                 'Costura',
                 'Corte',
                 'Control Calidad',
-                'CreaciÃ³n de Orden',
+                'Creación de Orden',
                 'tcc'
             ];
 
@@ -130,13 +130,13 @@ class ProcesoPrendaObserver
                         'fecha_ultimo_proceso' => $proceso->fecha_fin ?? $proceso->created_at
                     ]);
                     
-                    \Log::info(' [Observer] Ãrea actualizada (En Progreso)', [
+                    \Log::info(' [Observer] Area actualizada (En Progreso)', [
                         'numero_pedido' => $numeroPedido,
                         'area_nueva' => $proceso->proceso,
                         'estado_proceso' => $proceso->estado_proceso,
                     ]);
 
-                    // Actualizar el Ã¡rea en consecutivos_recibos_pedidos
+                    // Actualizar el Area en consecutivos_recibos_pedidos
                     if ($procesoPrenda->prenda_pedido_id) {
                         $this->actualizarAreaEnConsecutivos($pedido->id, $procesoPrenda->prenda_pedido_id, $proceso->proceso, $proceso->proceso, $procesoPrenda->numero_recibo);
                     } else {
@@ -160,13 +160,13 @@ class ProcesoPrendaObserver
                         'fecha_ultimo_proceso' => $proceso->fecha_fin ?? $proceso->created_at
                     ]);
                     
-                    \Log::info(' [Observer] Ãrea actualizada (Pendiente)', [
+                    \Log::info(' [Observer] Area actualizada (Pendiente)', [
                         'numero_pedido' => $numeroPedido,
                         'area_nueva' => $proceso->proceso,
                         'estado_proceso' => $proceso->estado_proceso,
                     ]);
 
-                    // Actualizar el Ã¡rea en consecutivos_recibos_pedidos
+                    // Actualizar el Area en consecutivos_recibos_pedidos
                     if ($procesoPrenda->prenda_pedido_id) {
                         $this->actualizarAreaEnConsecutivos($pedido->id, $procesoPrenda->prenda_pedido_id, $proceso->proceso, $proceso->proceso, $procesoPrenda->numero_recibo);
                     } else {
@@ -177,7 +177,7 @@ class ProcesoPrendaObserver
                 }
             }
 
-            // Prioridad 3: Ãšltimo proceso creado
+            // Prioridad 3: Ultimo proceso creado
             $ultimoProceso = $procesos->sortByDesc('created_at')->first();
             
             if ($ultimoProceso) {
@@ -186,30 +186,30 @@ class ProcesoPrendaObserver
                     'fecha_ultimo_proceso' => $ultimoProceso->fecha_fin ?? $ultimoProceso->created_at
                 ]);
                 
-                \Log::info(' [Observer] Ãrea actualizada (Ãšltimo proceso)', [
+                \Log::info(' [Observer] Area actualizada (Ultimo proceso)', [
                     'numero_pedido' => $numeroPedido,
                     'area_nueva' => $ultimoProceso->proceso,
                     'estado_proceso' => $ultimoProceso->estado_proceso,
                 ]);
 
-                // NUEVO: Actualizar el Ã¡rea en consecutivos_recibos_pedidos
+                // NUEVO: Actualizar el Area en consecutivos_recibos_pedidos
                 if ($procesoPrenda->prenda_pedido_id) {
                     $this->actualizarAreaEnConsecutivos($pedido->id, $procesoPrenda->prenda_pedido_id, $ultimoProceso->proceso, $ultimoProceso->proceso, $procesoPrenda->numero_recibo);
                 } else {
-                    // Si no tiene prenda especÃ­fica, actualizar todos los consecutivos del pedido
+                    // Si no tiene prenda especifica, actualizar todos los consecutivos del pedido
                     $this->actualizarAreaEnConsecutivos($pedido->id, null, $ultimoProceso->proceso, $ultimoProceso->proceso, $procesoPrenda->numero_recibo);
                 }
             }
         } catch (\Exception $e) {
-            \Log::error(' Error actualizando Ã¡rea del pedido: ' . $e->getMessage(), [
+            \Log::error(' Error actualizando Area del pedido: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
         }
     }
 
     /**
-     * Actualizar el Ã¡rea del pedido cuando se elimina un proceso
-     * Busca el ÃšLTIMO proceso por fecha_inicio (sin importar estado)
+     * Actualizar el Area del pedido cuando se elimina un proceso
+     * Busca el Ultimo proceso por fecha_inicio (sin importar estado)
      */
     private function actualizarAreaAlEliminar(ProcesoPrenda $procesoPrenda): void
     {
@@ -228,24 +228,24 @@ class ProcesoPrendaObserver
                 return;
             }
 
-            \Log::info(" Buscando Ãºltimo proceso despuÃ©s de eliminar", [
+            \Log::info(" Buscando Ultimo proceso despues de eliminar", [
                 'numero_pedido' => $numeroPedido,
                 'proceso_eliminado' => $procesoEliminado,
                 'area_actual' => $pedido->area
             ]);
 
-            // Obtener el ÃšLTIMO proceso por fecha_inicio (sin importar estado)
+            // Obtener el Ultimo proceso por fecha_inicio (sin importar estado)
             // IMPORTANTE: Usar whereNull('deleted_at') para excluir procesos eliminados (soft delete)
             // IMPORTANTE: Excluir procesos 'Entrega' pues es un estado final
             $ultimoProceso = ProcesoPrenda::where('numero_pedido', $numeroPedido)
-                ->where('id', '!=', $procesoPrenda->id)  // Excluir el que se estÃ¡ eliminando
+                ->where('id', '!=', $procesoPrenda->id)  // Excluir el que se esta eliminando
                 ->whereNull('deleted_at')  // Excluir procesos ya eliminados (soft delete)
                 ->whereRaw('LOWER(TRIM(proceso)) != ?', ['entrega'])  // Excluir Entrega
-                ->orderBy('fecha_inicio', 'DESC')  // MÃ¡s reciente primero
+                ->orderBy('fecha_inicio', 'DESC')  // Mas reciente primero
                 ->orderBy('id', 'DESC')
                 ->first();
 
-            \Log::info(" Procesos disponibles despuÃ©s de eliminar", [
+            \Log::info(" Procesos disponibles despues de eliminar", [
                 'numero_pedido' => $numeroPedido,
                 'procesos_totales' => ProcesoPrenda::where('numero_pedido', $numeroPedido)->whereNull('deleted_at')->count(),
                 'ultimo_proceso' => $ultimoProceso ? $ultimoProceso->proceso : 'NINGUNO',
@@ -261,7 +261,7 @@ class ProcesoPrendaObserver
                     'fecha_ultimo_proceso' => $ultimoProceso->fecha_fin ?? $ultimoProceso->fecha_inicio
                 ]);
                 
-                \Log::info(" Ãrea actualizada al eliminar proceso", [
+                \Log::info(" Area actualizada al eliminar proceso", [
                     'numero_pedido' => $numeroPedido,
                     'proceso_eliminado' => $procesoEliminado,
                     'area_anterior' => $pedido->area,
@@ -269,36 +269,36 @@ class ProcesoPrendaObserver
                     'estado_nuevo' => $ultimoProceso->estado_proceso
                 ]);
 
-                // NUEVO: Actualizar el Ã¡rea en consecutivos_recibos_pedidos
+                // NUEVO: Actualizar el Area en consecutivos_recibos_pedidos
                 if ($procesoPrenda->prenda_pedido_id) {
                     $this->actualizarAreaEnConsecutivos($pedido->id, $procesoPrenda->prenda_pedido_id, $nuevaArea, $procesoPrenda->proceso, $procesoPrenda->numero_recibo);
                 } else {
-                    // Si no tiene prenda especÃ­fica, actualizar todos los consecutivos del pedido
+                    // Si no tiene prenda especifica, actualizar todos los consecutivos del pedido
                     $this->actualizarAreaEnConsecutivos($pedido->id, null, $nuevaArea, $procesoPrenda->proceso, $procesoPrenda->numero_recibo);
                 }
             } else {
-                \Log::warning(" No hay procesos restantes despuÃ©s de eliminar", [
+                \Log::warning(" No hay procesos restantes despues de eliminar", [
                     'numero_pedido' => $numeroPedido,
                     'proceso_eliminado' => $procesoEliminado
                 ]);
             }
         } catch (\Exception $e) {
-            \Log::error(' Error actualizando Ã¡rea al eliminar proceso: ' . $e->getMessage(), [
+            \Log::error(' Error actualizando Area al eliminar proceso: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
         }
     }
 
     /**
-     * Actualizar el Ã¡rea en la tabla consecutivos_recibos_pedidos
+     * Actualizar el Area en la tabla consecutivos_recibos_pedidos
      */
     private function actualizarAreaEnConsecutivos($pedidoProduccionId, $prendaId = null, $nuevaArea, $proceso = null, $numeroRecibo = null): void
     {
         try {
             // NO actualizar cuando el proceso es "Control de Calidad" 
-            // porque el ReciboCosturaController ya lo hace de forma especÃ­fica
+            // porque el ReciboCosturaController ya lo hace de forma especifica
             if ($proceso && strtolower(trim($proceso)) === 'control de calidad') {
-                \Log::info(" Observer ignorando Control de Calidad - serÃ¡ actualizado especÃ­ficamente por el controlador", [
+                \Log::info(" Observer ignorando Control de Calidad - sera actualizado especificamente por el controlador", [
                     'pedido_produccion_id' => $pedidoProduccionId,
                     'prenda_id' => $prendaId,
                     'proceso' => $proceso
@@ -307,9 +307,9 @@ class ProcesoPrendaObserver
             }
 
             // NO actualizar cuando el proceso es "Entrega"
-            // porque es un estado final y el ControlCalidadController ya lo hace explÃ­citamente
+            // porque es un estado final y el ControlCalidadController ya lo hace explicitamente
             if ($proceso && strtolower(trim($proceso)) === 'entrega') {
-                \Log::info(" Observer ignorando Entrega - serÃ¡ actualizado especÃ­ficamente por el controlador de Control de Calidad", [
+                \Log::info(" Observer ignorando Entrega - sera actualizado especificamente por el controlador de Control de Calidad", [
                     'pedido_produccion_id' => $pedidoProduccionId,
                     'prenda_id' => $prendaId,
                     'proceso' => $proceso
@@ -330,7 +330,7 @@ class ProcesoPrendaObserver
             
             $actualizado = $query->update(['area' => $nuevaArea]);
             
-            \Log::info(" Ãrea actualizada en consecutivos_recibos_pedidos", [
+            \Log::info(" Area actualizada en consecutivos_recibos_pedidos", [
                 'pedido_produccion_id' => $pedidoProduccionId,
                 'prenda_id' => $prendaId,
                 'numero_recibo' => $numeroRecibo,
@@ -339,7 +339,7 @@ class ProcesoPrendaObserver
                 'registros_actualizados' => $actualizado
             ]);
         } catch (\Exception $e) {
-            \Log::error(' Error actualizando Ã¡rea en consecutivos: ' . $e->getMessage());
+            \Log::error(' Error actualizando Area en consecutivos: ' . $e->getMessage());
         }
     }
 }
