@@ -135,25 +135,20 @@ class OperarioController extends Controller
         $conteoControlCalidadReflectivo = 0;
 
         // ==================== PARTE 1: CONTAR RECIBOS NORMALES ====================
-        // Desde consecutivos_recibos_pedidos donde area = 'Control Calidad' o 'Control de Calidad'
-        $recibosNormalesCC = ConsecutivoReciboPedido::query()
+        $conteoControlCalidadCostura = ConsecutivoReciboPedido::query()
             ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
             ->where('activo', 1)
-            ->get();
+            ->where('tipo_recibo', 'COSTURA')
+            ->count();
 
-        foreach ($recibosNormalesCC as $recibo) {
-            $tipoRecibo = strtoupper(trim((string) $recibo->tipo_recibo));
-            if ($tipoRecibo === 'COSTURA') {
-                $conteoControlCalidadCostura++;
-            } elseif ($tipoRecibo === 'REFLECTIVO') {
-                $conteoControlCalidadReflectivo++;
-            }
-        }
+        $conteoControlCalidadReflectivo = ConsecutivoReciboPedido::query()
+            ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
+            ->where('activo', 1)
+            ->where('tipo_recibo', 'REFLECTIVO')
+            ->count();
 
         // ==================== PARTE 2: CONTAR PARCIALES ====================
-        // Desde procesos_prenda donde proceso = 'Control Calidad' o 'Control de Calidad'
-        // Optimizado: 1 query con JOIN en lugar de N+1 queries
-        $parcialesCC = DB::table('procesos_prenda')
+        $parcialesCCCounts = DB::table('procesos_prenda')
             ->leftJoin('pedidos_produccion as pp', 'pp.numero_pedido', '=', 'procesos_prenda.numero_pedido')
             ->leftJoin('recibo_por_partes', function ($join) {
                 $join->on('recibo_por_partes.pedido_produccion_id', '=', 'pp.id')
@@ -162,16 +157,17 @@ class OperarioController extends Controller
             })
             ->whereRaw('LOWER(TRIM(procesos_prenda.proceso)) IN (?, ?)', ['control de calidad', 'control calidad'])
             ->whereNull('procesos_prenda.deleted_at')
-            ->select('recibo_por_partes.tipo_recibo')
+            ->select('recibo_por_partes.tipo_recibo', DB::raw('count(*) as total'))
+            ->groupBy('recibo_por_partes.tipo_recibo')
             ->get();
 
-        foreach ($parcialesCC as $fila) {
+        foreach ($parcialesCCCounts as $fila) {
             if ($fila->tipo_recibo) {
                 $tipoRecibo = strtoupper(trim((string) $fila->tipo_recibo));
                 if ($tipoRecibo === 'COSTURA') {
-                    $conteoControlCalidadCostura++;
+                    $conteoControlCalidadCostura += $fila->total;
                 } elseif ($tipoRecibo === 'REFLECTIVO') {
-                    $conteoControlCalidadReflectivo++;
+                    $conteoControlCalidadReflectivo += $fila->total;
                 }
             }
         }

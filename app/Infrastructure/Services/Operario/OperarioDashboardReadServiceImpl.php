@@ -135,5 +135,30 @@ class OperarioDashboardReadServiceImpl implements OperarioDashboardReadService
             ];
         });
     }
+
+    public function contarRecibosCompletadosPorOperario(string $nombreOperario): array
+    {
+        $nombreNormalizado = strtolower(trim($nombreOperario));
+
+        $counts = DB::table('prenda_recibo_completado as prc')
+            ->leftJoin('consecutivos_recibos_pedidos as crp', function ($join) {
+                $join->on('prc.id_recibo', '=', 'crp.id')
+                    ->whereNull('prc.id_parcial');
+            })
+            ->leftJoin('recibo_por_partes as rpp', 'prc.id_parcial', '=', 'rpp.id')
+            ->whereRaw('LOWER(TRIM(prc.nombre_operario)) = ?', [$nombreNormalizado])
+            ->select(DB::raw("
+                COUNT(*) as total,
+                SUM(CASE WHEN (crp.tipo_recibo = 'CORTE-PARA-BODEGA' OR rpp.tipo_recibo = 'CORTE-PARA-BODEGA') THEN 1 ELSE 0 END) as bodega,
+                SUM(CASE WHEN (COALESCE(crp.tipo_recibo, rpp.tipo_recibo, 'COSTURA') != 'CORTE-PARA-BODEGA') THEN 1 ELSE 0 END) as normales
+            "))
+            ->first();
+
+        return [
+            'total' => (int) ($counts->total ?? 0),
+            'bodega' => (int) ($counts->bodega ?? 0),
+            'normales' => (int) ($counts->normales ?? 0),
+        ];
+    }
 }
 
