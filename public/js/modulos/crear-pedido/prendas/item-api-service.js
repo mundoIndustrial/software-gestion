@@ -242,31 +242,25 @@ class ItemAPIService {
             console.debug('[validarPedido] 🗂️ Registrando archivos File en fileRegistry...');
             this.registrarArchivosEnGlobal(pedidoData);
 
-            // PASO 1: Preparar datos para envío (JSON limpio + FormData para imágenes)
-            console.debug('[validarPedido]  Preparando datos para envío...');
-            let datosParaEnvio;
+            // PASO 1: Extraer archivos
+            const filesExtraidos = await this.extraerFilesDelPedido(pedidoData);
 
-            // Verificar si existe la función prepararDatosEppParaFormData (nuestro sistema EPP)
-            if (typeof window.prepararDatosEppParaFormData === 'function') {
-                datosParaEnvio = window.prepararDatosEppParaFormData([pedidoData]);
-                console.debug('[validarPedido]  Usando prepararDatosEppParaFormData para EPPs');
-            } else {
-                // Fallback para prendas (sin imágenes)
-                datosParaEnvio = {
-                    jsonData: [pedidoData],
-                    formData: new FormData()
-                };
-                console.debug('[validarPedido]  Fallback para prendas sin imágenes');
+            // PASO 1.5: Inyectar identificadores para normalización
+            if (Array.isArray(filesExtraidos.epps)) {
+                filesExtraidos.epps.forEach((eppExtraida, eppIdx) => {
+                    if (pedidoData.epps && pedidoData.epps[eppIdx]) {
+                        pedidoData.epps[eppIdx]._epp_form_identifier = eppExtraida.uid || eppIdx;
+                    }
+                });
             }
 
-            // PASO 2: Serializar JSON limpio
-            const jsonString = JSON.stringify(datosParaEnvio.jsonData[0]);
-            console.debug(`[validarPedido] JSON serializado: ${jsonString.length} bytes`);
-            console.log('[validarPedido] JSON String que se enviará:', jsonString);
+            // PASO 2: Normalizar y construir FormData
+            const pedidoNormalizado = window.PayloadNormalizer.normalizar(pedidoData);
+            const formData = window.PayloadNormalizer.buildFormData(pedidoNormalizado, filesExtraidos);
 
-            // PASO 3: Enviar en FormData con campo "pedido" + archivos de imágenes
-            const formData = datosParaEnvio.formData;
-            formData.append('pedido', jsonString);
+            // PASO 3: Registrar para debug
+            console.debug(`[validarPedido] JSON serializado: ${JSON.stringify(pedidoNormalizado).length} bytes`);
+            console.log('[validarPedido] Pedido normalizado:', pedidoNormalizado);
 
             // NUEVO: Usar misma idempotency key para validación que para creación
             // Esto evita validaciones duplicadas si hay reintentos
@@ -429,6 +423,10 @@ class ItemAPIService {
             filesExtraidos.epps.forEach((eppExtraida, eppIdx) => {
                 if (pedidoData.epps && pedidoData.epps[eppIdx]) {
                     const epp = pedidoData.epps[eppIdx];
+                    
+                    // Asegurar que tenga el identificador para que PayloadNormalizer lo incluya
+                    epp._epp_form_identifier = eppExtraida.uid || eppIdx;
+                    
                     eppExtraida.imagenes.forEach((imgEnriquecida, imgIdx) => {
                         if (epp.imagenes && epp.imagenes[imgIdx]) {
                             epp.imagenes[imgIdx] = {
@@ -1210,15 +1208,17 @@ class ItemAPIService {
             pedidoData.epps.forEach((epp, eppIdx) => {
                 const eppData = {
                     idx: eppIdx,
+                    uid: epp.uid || null,
                     imagenes: []
                 };
 
                 // Extraer imágenes de EPP
                 if (Array.isArray(epp.imagenes)) {
                     epp.imagenes.forEach((img, imgIdx) => {
+                        const eppIdentifier = epp.uid || eppIdx;
                         if (img instanceof File) {
-                            // Backend espera clave con guiones bajos: epps_0_imagenes_0
-                            const formdataKey = `epps_${eppIdx}_imagenes_${imgIdx}`;
+                            // Backend espera clave con guiones bajos: epps_..._imagenes_0
+                            const formdataKey = `epps_${eppIdentifier}_imagenes_${imgIdx}`;
                             eppData.imagenes.push({
                                 file: img,
                                 formdata_key: formdataKey,
@@ -1230,8 +1230,8 @@ class ItemAPIService {
                             //  RECUPERAR File desde el registro global por UID
                             const fileOriginal = this.fileRegistry.get(img.file.uid);
                             console.log(`[extraerFiles]  Recuperando File de EPP desde registry para uid:`, img.file.uid);
-                            // Backend espera clave con guiones bajos: epps_0_imagenes_0
-                            const formdataKey = `epps_${eppIdx}_imagenes_${imgIdx}`;
+                            // Backend espera clave con guiones bajos: epps_..._imagenes_0
+                            const formdataKey = `epps_${eppIdentifier}_imagenes_${imgIdx}`;
                             eppData.imagenes.push({
                                 file: fileOriginal,
                                 formdata_key: formdataKey,
