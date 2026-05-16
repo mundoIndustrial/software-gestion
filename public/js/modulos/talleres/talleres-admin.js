@@ -248,6 +248,8 @@ function loadTalleresStats() {
 function initTalleresSearch() {
     const searchInput = document.getElementById('searchInput');
     const clearButton = document.getElementById('clearSearch');
+    const mainContainer = document.querySelector('.main-container');
+    const apiRoute = mainContainer.dataset.routeApiSearch;
     
     if (searchInput) {
         const toggleClear = () => {
@@ -259,8 +261,302 @@ function initTalleresSearch() {
         };
 
         toggleClear();
-        searchInput.addEventListener('input', toggleClear);
+        
+        // Búsqueda en tiempo real con debounce
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            toggleClear();
+            clearTimeout(searchTimeout);
+            
+            const searchTerm = this.value.trim();
+            
+            // Si está vacío, recargar la página
+            if (searchTerm === '') {
+                window.location.href = window.location.pathname;
+                return;
+            }
+            
+            // Debounce de 300ms
+            searchTimeout = setTimeout(() => {
+                performRealtimeSearch(searchTerm, apiRoute);
+            }, 300);
+        });
+        
+        // Limpiar búsqueda
+        clearButton.addEventListener('click', () => {
+            searchInput.value = '';
+            toggleClear();
+            window.location.href = window.location.pathname;
+        });
     }
+}
+
+/**
+ * Realizar búsqueda en tiempo real
+ */
+function performRealtimeSearch(searchTerm, apiRoute) {
+    const talleresGrid = document.getElementById('talleresGrid');
+    const paginationContainer = document.querySelector('.pagination-container');
+    
+    // Mostrar estado de carga
+    talleresGrid.innerHTML = '<div class="loading" style="grid-column: 1/-1; padding: 40px; text-align: center;"><div class="loading-spinner"></div><p>Buscando talleres...</p></div>';
+    
+    // Construir URL con parámetros
+    const url = new URL(apiRoute, window.location.origin);
+    url.searchParams.append('search', searchTerm);
+    url.searchParams.append('per_page', 15);
+    
+    fetch(url.toString())
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success || !data.data || data.data.length === 0) {
+                talleresGrid.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #64748b; background: white; border-radius: 12px; border: 1px dashed #cbd5e1;"><span class="material-symbols-rounded" style="font-size: 40px; color: #cbd5e1; margin-bottom: 10px; display: block;">search_off</span><p>No se encontraron talleres que coincidan con "<strong>' + escapeHtml(searchTerm) + '</strong>"</p></div>';
+                paginationContainer.innerHTML = '';
+                return;
+            }
+            
+            // Renderizar resultados
+            let html = '';
+            data.data.forEach(taller => {
+                html += `
+                    <div class="taller-card ${!taller.activo ? 'inactive' : ''}" data-name="${escapeHtml(taller.name.toLowerCase())}" data-taller-id="${taller.id}">
+                        <div class="card-header-info">
+                            <h2 class="taller-name">${escapeHtml(taller.name)}</h2>
+                            <div class="taller-status-toggle">
+                                <label class="switch">
+                                    <input type="checkbox" class="toggle-taller-status" 
+                                           data-id="${taller.id}" 
+                                           ${taller.activo ? 'checked' : ''}>
+                                    <span class="slider round"></span>
+                                </label>
+                                <span class="status-label ${taller.activo ? 'active' : 'inactive'}">
+                                    ${taller.activo ? 'ACTIVO' : 'INACTIVO'}
+                                </span>
+                            </div>
+                        </div>
+                        <p class="taller-role">RESPONSABLE DE TALLER</p>
+                        
+                        <div class="stats-container">
+                            <div class="stat-row">
+                                <span>Completados:</span>
+                                <span class="stat-value stat-completed" data-taller-id="${taller.id}">-</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Pendientes:</span>
+                                <span class="stat-value stat-pending" data-taller-id="${taller.id}">-</span>
+                            </div>
+                        </div>
+                        
+                        <div class="card-footer-actions">
+                            <button class="btn-edit-icon btn-edit-taller" data-id="${taller.id}" data-name="${escapeHtml(taller.name)}" title="Editar nombre">
+                                <span class="material-symbols-rounded">edit</span>
+                            </button>
+                            <button class="btn-view btn-view-recibos" data-taller-id="${taller.id}">
+                                Ver Recibos <span style="font-size: 10px;">&#10095;</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            talleresGrid.innerHTML = html;
+            
+            // Renderizar paginación
+            let paginationHtml = '';
+            if (data.pagination.last_page > 1) {
+                paginationHtml = renderTalleresPagination(data.pagination, searchTerm);
+            }
+            paginationContainer.innerHTML = paginationHtml;
+            
+            // Reinicializar eventos
+            loadTalleresStats();
+            initStatusToggles();
+            initViewHandlers();
+            initEditTaller();
+            initTalleresPaginationEvents(searchTerm);
+        })
+        .catch(error => {
+            console.error('Error en búsqueda:', error);
+            talleresGrid.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #ef4444;"><span class="material-symbols-rounded" style="font-size: 40px; margin-bottom: 10px; display: block;">error</span><p>Error al buscar talleres. Intenta de nuevo.</p></div>';
+            paginationContainer.innerHTML = '';
+        });
+}
+
+/**
+ * Renderizar paginación para búsqueda de talleres
+ */
+function renderTalleresPagination(pagination, search) {
+    const { current_page, last_page, total, per_page } = pagination;
+    
+    let html = '<div class="pagination-controls">';
+    html += `<div class="pagination-info">Mostrando ${(current_page - 1) * per_page + 1} - ${Math.min(current_page * per_page, total)} de ${total} talleres</div>`;
+    html += '<div class="pagination-buttons">';
+    
+    // Botón anterior
+    if (current_page > 1) {
+        html += `<button class="btn-pagination btn-prev" data-page="${current_page - 1}" data-search="${escapeHtml(search)}">
+                    <span class="material-symbols-rounded">chevron_left</span>
+                    Anterior
+                </button>`;
+    } else {
+        html += `<button class="btn-pagination btn-prev" disabled>
+                    <span class="material-symbols-rounded">chevron_left</span>
+                    Anterior
+                </button>`;
+    }
+    
+    // Números de página
+    html += '<div class="pagination-numbers">';
+    for (let i = 1; i <= last_page; i++) {
+        if (i === current_page) {
+            html += `<span class="page-number active">${i}</span>`;
+        } else if (i === 1 || i === last_page || (i >= current_page - 1 && i <= current_page + 1)) {
+            html += `<button class="page-number" data-page="${i}" data-search="${escapeHtml(search)}">${i}</button>`;
+        } else if (i === 2 || i === last_page - 1) {
+            html += `<span class="page-number">...</span>`;
+        }
+    }
+    html += '</div>';
+    
+    // Botón siguiente
+    if (current_page < last_page) {
+        html += `<button class="btn-pagination btn-next" data-page="${current_page + 1}" data-search="${escapeHtml(search)}">
+                    Siguiente
+                    <span class="material-symbols-rounded">chevron_right</span>
+                </button>`;
+    } else {
+        html += `<button class="btn-pagination btn-next" disabled>
+                    Siguiente
+                    <span class="material-symbols-rounded">chevron_right</span>
+                </button>`;
+    }
+    
+    html += '</div></div>';
+    return html;
+}
+
+/**
+ * Inicializar eventos de paginación para búsqueda de talleres
+ */
+function initTalleresPaginationEvents(search) {
+    const paginationButtons = document.querySelectorAll('.pagination-container .btn-pagination, .pagination-container .page-number:not(.active)');
+    const mainContainer = document.querySelector('.main-container');
+    const apiRoute = mainContainer.dataset.routeApiSearch;
+    
+    paginationButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const page = this.dataset.page;
+            const searchTerm = this.dataset.search || '';
+            performTalleresPaginationSearch(searchTerm, page, apiRoute);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
+}
+
+/**
+ * Realizar búsqueda paginada de talleres
+ */
+function performTalleresPaginationSearch(searchTerm, page, apiRoute) {
+    const talleresGrid = document.getElementById('talleresGrid');
+    const paginationContainer = document.querySelector('.pagination-container');
+    
+    // Mostrar estado de carga
+    talleresGrid.innerHTML = '<div class="loading" style="grid-column: 1/-1; padding: 40px; text-align: center;"><div class="loading-spinner"></div><p>Cargando página...</p></div>';
+    
+    // Construir URL con parámetros
+    const url = new URL(apiRoute, window.location.origin);
+    url.searchParams.append('search', searchTerm);
+    url.searchParams.append('per_page', 15);
+    url.searchParams.append('page', page);
+    
+    fetch(url.toString())
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success || !data.data || data.data.length === 0) {
+                talleresGrid.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #64748b;"><p>No hay resultados en esta página.</p></div>';
+                paginationContainer.innerHTML = '';
+                return;
+            }
+            
+            // Renderizar resultados
+            let html = '';
+            data.data.forEach(taller => {
+                html += `
+                    <div class="taller-card ${!taller.activo ? 'inactive' : ''}" data-name="${escapeHtml(taller.name.toLowerCase())}" data-taller-id="${taller.id}">
+                        <div class="card-header-info">
+                            <h2 class="taller-name">${escapeHtml(taller.name)}</h2>
+                            <div class="taller-status-toggle">
+                                <label class="switch">
+                                    <input type="checkbox" class="toggle-taller-status" 
+                                           data-id="${taller.id}" 
+                                           ${taller.activo ? 'checked' : ''}>
+                                    <span class="slider round"></span>
+                                </label>
+                                <span class="status-label ${taller.activo ? 'active' : 'inactive'}">
+                                    ${taller.activo ? 'ACTIVO' : 'INACTIVO'}
+                                </span>
+                            </div>
+                        </div>
+                        <p class="taller-role">RESPONSABLE DE TALLER</p>
+                        
+                        <div class="stats-container">
+                            <div class="stat-row">
+                                <span>Completados:</span>
+                                <span class="stat-value stat-completed" data-taller-id="${taller.id}">-</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Pendientes:</span>
+                                <span class="stat-value stat-pending" data-taller-id="${taller.id}">-</span>
+                            </div>
+                        </div>
+                        
+                        <div class="card-footer-actions">
+                            <button class="btn-edit-icon btn-edit-taller" data-id="${taller.id}" data-name="${escapeHtml(taller.name)}" title="Editar nombre">
+                                <span class="material-symbols-rounded">edit</span>
+                            </button>
+                            <button class="btn-view btn-view-recibos" data-taller-id="${taller.id}">
+                                Ver Recibos <span style="font-size: 10px;">&#10095;</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            talleresGrid.innerHTML = html;
+            
+            // Renderizar paginación
+            let paginationHtml = '';
+            if (data.pagination.last_page > 1) {
+                paginationHtml = renderTalleresPagination(data.pagination, searchTerm);
+            }
+            paginationContainer.innerHTML = paginationHtml;
+            
+            // Reinicializar eventos
+            loadTalleresStats();
+            initStatusToggles();
+            initViewHandlers();
+            initEditTaller();
+            initTalleresPaginationEvents(searchTerm);
+        })
+        .catch(error => {
+            console.error('Error en búsqueda paginada:', error);
+            talleresGrid.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #ef4444;"><p>Error al cargar la página. Intenta de nuevo.</p></div>';
+            paginationContainer.innerHTML = '';
+        });
+}
+
+/**
+ * Escapar HTML para evitar XSS
+ */
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
 }
 
 function initViewHandlers() {

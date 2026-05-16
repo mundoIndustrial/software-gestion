@@ -37,6 +37,7 @@
     <main class="main-container" 
           data-csrf-token="{{ csrf_token() }}"
           data-route-toggle-status="{{ route('talleres.toggle-status', ':id') }}"
+          data-route-api-search="{{ route('talleres.api.search') }}"
           data-route-api-recibos="{{ route('talleres.api.recibos', ':id') }}"
           data-route-api-entregas="{{ route('talleres.api.entregas', [':taller_id', ':recibo_id', ':es_parcial']) }}"
           data-route-actualizar-precio="{{ route('talleres.actualizar-precio', ':id') }}"
@@ -114,7 +115,7 @@
 
             <!-- Paginación -->
             <div class="pagination-container">
-                @if($talleres instanceof \Illuminate\Pagination\Paginator)
+                @if($talleres instanceof \Illuminate\Pagination\LengthAwarePaginator)
                     {{ $talleres->appends(['search' => $search])->links('vendor.pagination.simple-clean') }}
                 @endif
             </div>

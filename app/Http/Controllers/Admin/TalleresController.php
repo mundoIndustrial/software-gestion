@@ -53,6 +53,35 @@ class TalleresController extends Controller
     }
 
     // API endpoints para SPA
+    public function apiSearch(Request $request, \App\Application\Talleres\UseCases\ObtenerListadoTalleresUseCase $useCase)
+    {
+        try {
+            $search = $request->input('search', '');
+            $perPage = $request->input('per_page', 15);
+
+            $talleres = $useCase->execute($search, $perPage);
+
+            return response()->json([
+                'success' => true,
+                'data' => $talleres->items(),
+                'pagination' => [
+                    'current_page' => $talleres->currentPage(),
+                    'last_page' => $talleres->lastPage(),
+                    'per_page' => $talleres->perPage(),
+                    'total' => $talleres->total(),
+                    'from' => $talleres->firstItem(),
+                    'to' => $talleres->lastItem(),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en apiSearch: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al buscar talleres'
+            ], 500);
+        }
+    }
+
     public function apiRecibos($id, \App\Application\Talleres\UseCases\ObtenerDashboardTallerUseCase $useCase)
     {
         $data = $useCase->execute($id);

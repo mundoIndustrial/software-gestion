@@ -67,6 +67,7 @@ Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion'])
     Route::get('/{id}/recibos/{recibo_id}/{es_parcial}/entregas', [App\Http\Controllers\Admin\TalleresController::class, 'showEntregas'])->name('entregas');
     
     // API endpoints para SPA
+    Route::get('/api/search', [App\Http\Controllers\Admin\TalleresController::class, 'apiSearch'])->name('api.search');
     Route::get('/api/{id}/recibos', [App\Http\Controllers\Admin\TalleresController::class, 'apiRecibos'])->name('api.recibos');
     Route::get('/api/{taller_id}/recibos/{recibo_id}/{es_parcial}/entregas', [App\Http\Controllers\Admin\TalleresController::class, 'apiEntregas'])->name('api.entregas');
     Route::get('/api/ordenes/todas', [App\Http\Controllers\Admin\TalleresController::class, 'apiOrdenes'])->name('api.ordenes');
