@@ -193,7 +193,7 @@ window.__ensurePedidosRecibosModule = async function() {
 };
 
 // Función global para ver recibo directamente (sin selector)
-window.verRecibo = async function(pedidoId, prendaId, tipoProceso, esParcial = false, pedidoParcialId = null, nombreProceso = null) {
+window.verRecibo = async function(pedidoId, prendaId, tipoProceso, esParcial = false, pedidoParcialId = null, nombreProceso = null, numeroRecibo = null) {
     const moduloListo = await window.__ensurePedidosRecibosModule();
     if (!moduloListo) {
         console.error('El módulo de recibos no está disponible');
@@ -217,11 +217,13 @@ window.verRecibo = async function(pedidoId, prendaId, tipoProceso, esParcial = f
 
     // Caso normal: abrir recibo base
     if (typeof window.openOrderDetailModalWithProcess === 'function') {
-        return window.openOrderDetailModalWithProcess(pedidoId, prendaId, tipo);
+        return window.openOrderDetailModalWithProcess(pedidoId, prendaId, tipo, null, numeroRecibo);
     }
 
     if (window.pedidosRecibosModule && typeof window.pedidosRecibosModule.abrirRecibo === 'function') {
-        return window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, tipo);
+        return window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, tipo, null, {
+            targetConsecutivo: numeroRecibo || null
+        });
     }
 
     console.error('La función openOrderDetailModalWithProcess no está disponible');
@@ -954,7 +956,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     ">
                         <div style="display: flex; justify-content: center; gap: 0.5rem;">
                             <button 
-                               onclick="verRecibo(${pedidoId}, ${prendaId}, '${String(tipoProceso || '').replace(/'/g, "\\'")}', ${esParcial ? 'true' : 'false'}, ${pedidoParcialId ? Number(pedidoParcialId) : 'null'}, '${String(nombreProceso || '').replace(/'/g, "\\'")}')"
+                               onclick="verRecibo(${pedidoId}, ${prendaId}, '${String(tipoProceso || '').replace(/'/g, "\\'")}', ${esParcial ? 'true' : 'false'}, ${pedidoParcialId ? Number(pedidoParcialId) : 'null'}, '${String(nombreProceso || '').replace(/'/g, "\\'")}', '${escapeJsAttr(numeroReciboValor)}')"
                                title="Ver detalles"
                                style="
                                    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
@@ -1022,7 +1024,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     ">
                         <div style="display: flex; justify-content: center; gap: 0.5rem;">
                             <button 
-                               onclick="verRecibo(${pedidoId}, ${prendaId}, '${String(tipoProceso || '').replace(/'/g, "\\'")}', ${esParcial ? 'true' : 'false'}, ${pedidoParcialId ? Number(pedidoParcialId) : 'null'}, '${String(nombreProceso || '').replace(/'/g, "\\'")}')"
+                               onclick="verRecibo(${pedidoId}, ${prendaId}, '${String(tipoProceso || '').replace(/'/g, "\\'")}', ${esParcial ? 'true' : 'false'}, ${pedidoParcialId ? Number(pedidoParcialId) : 'null'}, '${String(nombreProceso || '').replace(/'/g, "\\'")}', '${escapeJsAttr(numeroReciboValor)}')"
                                title="Ver detalles"
                                style="
                                    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
@@ -1094,7 +1096,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     <div style="display: flex; justify-content: center; gap: 0.5rem;">
                         <button 
-                           onclick="verRecibo(${pedidoId}, ${prendaId}, '${String(tipoProceso || '').replace(/'/g, "\\'")}', ${esParcial ? 'true' : 'false'}, ${pedidoParcialId ? Number(pedidoParcialId) : 'null'}, '${String(nombreProceso || '').replace(/'/g, "\\'")}')"
+                           onclick="verRecibo(${pedidoId}, ${prendaId}, '${String(tipoProceso || '').replace(/'/g, "\\'")}', ${esParcial ? 'true' : 'false'}, ${pedidoParcialId ? Number(pedidoParcialId) : 'null'}, '${String(nombreProceso || '').replace(/'/g, "\\'")}', '${escapeJsAttr(numeroReciboValor)}')"
                            title="Ver detalles"
                            style="
                                background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
