@@ -1,4 +1,4 @@
-﻿export function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda, tipoRecibo, pedidoParcialId = null, consecutivoParcial = null, reciboId = null) {
+export function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda, tipoRecibo, pedidoParcialId = null, consecutivoParcial = null, reciboId = null) {
     console.log(' [ABRIR DETALLES RECIBOS] ===== INICIANDO =====');
     console.log(' Parámetros recibidos:', {
         numeroPedido: numeroPedido,
@@ -10,13 +10,20 @@
         reciboId: reciboId,
     });
 
-    if (!numeroPedido || numeroPedido === '' || numeroPedido === null || numeroPedido === undefined) {
-        console.error(' ERROR: numeroPedido está vacío o undefined', numeroPedido);
-        alert('Error: No se pudo determinar el número de pedido');
-        return false;
+    let finalNumeroPedido = numeroPedido;
+    
+    // Si es bodega y no hay número de pedido, usamos '0' como placeholder
+    if (!finalNumeroPedido || finalNumeroPedido === '' || finalNumeroPedido === null || finalNumeroPedido === undefined) {
+        if (tipoRecibo === 'CORTE-PARA-BODEGA' || tipoRecibo === 'BODEGA') {
+            finalNumeroPedido = '0';
+        } else {
+            console.error(' ERROR: numeroPedido está vacío o undefined', finalNumeroPedido);
+            alert('Error: No se pudo determinar el número de pedido');
+            return false;
+        }
     }
 
-    const numeroPedidoStr = String(numeroPedido).trim();
+    const numeroPedidoStr = String(finalNumeroPedido).trim();
     console.log(' numeroPedido normalizado:', numeroPedidoStr);
 
     let url = '/operario/pedido/' + numeroPedidoStr;

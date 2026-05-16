@@ -14,6 +14,7 @@ class ConsecutivoReciboPedido extends Model
     protected $fillable = [
         'pedido_produccion_id',
         'prenda_id',
+        'prenda_bodega_id',
         'tipo_recibo',
         'consecutivo_actual',
         'consecutivo_inicial',
@@ -56,6 +57,14 @@ class ConsecutivoReciboPedido extends Model
     public function prenda(): BelongsTo
     {
         return $this->belongsTo(PrendaPedido::class, 'prenda_id');
+    }
+
+    /**
+     * Relación: Un consecutivo pertenece a una prenda de bodega (opcional)
+     */
+    public function prendaBodega(): BelongsTo
+    {
+        return $this->belongsTo(PrendaBodega::class, 'prenda_bodega_id');
     }
 
     /**

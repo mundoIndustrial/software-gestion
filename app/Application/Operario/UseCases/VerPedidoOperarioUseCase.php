@@ -27,9 +27,46 @@ class VerPedidoOperarioUseCase
 
         $usuario = Auth::user();
 
-        $pedidoDB = $this->pedidos->findByNumeroWithPrendas((int) $numeroPedido);
+        $pedidoDB = null;
+        $isBodegaOnly = ($numeroPedido === 0 && $request->has('recibo_id'));
 
-        \Log::info('[VerPedidoOperarioUseCase] Búsqueda directa en BD', [
+        \Log::info('[VerPedidoOperarioUseCase] Verificando tipo de pedido', [
+            'numero_pedido' => $numeroPedido,
+            'recibo_id' => $request->query('recibo_id'),
+            'is_bodega_only' => $isBodegaOnly,
+        ]);
+
+        if ($isBodegaOnly) {
+            $reciboId = (int) $request->query('recibo_id');
+            $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega'])->find($reciboId);
+            
+            \Log::info('[VerPedidoOperarioUseCase] Recibo de bodega encontrado?', [
+                'encontrado' => !!$reciboBodega,
+                'tipo_recibo' => $reciboBodega->tipo_recibo ?? 'N/A',
+            ]);
+
+            if ($reciboBodega && ($reciboBodega->tipo_recibo === 'CORTE-PARA-BODEGA' || $reciboBodega->tipo_recibo === 'BODEGA')) {
+                // Crear un objeto pedido virtual
+                $pedidoDB = (object)[
+                    'id' => null,
+                    'numero_pedido' => 'BODEGA',
+                    'cliente' => 'SERVICIO',
+                    'asesor_id' => 'SISTEMA',
+                    'forma_de_pago' => 'N/A',
+                    'estado' => $reciboBodega->estado ?? 'En Ejecución',
+                    'created_at' => $reciboBodega->created_at,
+                    'fecha_estimada' => null,
+                    'descripcion' => $reciboBodega->prendaBodega?->descripcion ?? 'Recibo de Bodega',
+                    'total_prendas' => 1,
+                    'novedades' => $reciboBodega->notas ?? 'Sin novedades',
+                    'nombre_prenda_bodega' => $reciboBodega->prendaBodega?->nombre ?? 'N/A'
+                ];
+            }
+        } else {
+            $pedidoDB = $this->pedidos->findByNumeroWithPrendas((int) $numeroPedido);
+        }
+
+        \Log::info('[VerPedidoOperarioUseCase] Búsqueda directa en BD finalizada', [
             'numero_pedido' => $numeroPedido,
             'encontrado_en_bd' => !!$pedidoDB,
             'pedido_id' => $pedidoDB->id ?? null,

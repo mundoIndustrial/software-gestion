@@ -1241,6 +1241,12 @@ window.llenarReciboCosturaMobile = function(data) {
     if (cliente) cliente.textContent = data.cliente || 'N/A';
     if (numeroPedido) numeroPedido.textContent = '#' + (data.numeroPedido || '');
     
+    // Ocultar campos innecesarios para recibos de bodega
+    const isBodega = data.cliente === 'SERVICIO' && data.asesor === 'SISTEMA' || data.asesora === 'SISTEMA';
+    if (document.getElementById('order-asesora')) document.getElementById('order-asesora').style.display = isBodega ? 'none' : 'block';
+    if (document.getElementById('order-forma-pago')) document.getElementById('order-forma-pago').style.display = isBodega ? 'none' : 'block';
+    if (document.getElementById('order-cliente')) document.getElementById('order-cliente').style.display = isBodega ? 'none' : 'block';
+    
     // VALIDAR CONDICIONES PARA MOSTRAR ENCARGADO
     // Solo mostrar si:
     // 1. Area es "costura"
@@ -1827,7 +1833,12 @@ window.llenarReciboCosturaMobile = function(data) {
             let html = '';
             
             // 1. Nombre de la prenda (con estilo consistente)
-            html += `<strong style="font-size: 13.4px;">PRENDA ${prenda.numero || prenda.numero_prenda || (startIndex + index + 1)}: ${(prenda.nombre || prenda.nombre_prenda || 'SIN NOMBRE').toUpperCase()}</strong><br>`;
+            const isPrendaBodega = data.cliente === 'SERVICIO' && (data.asesor === 'SISTEMA' || data.asesora === 'SISTEMA');
+            if (isPrendaBodega) {
+                html += `<strong style="font-size: 13.4px;">PRENDA ${prenda.numero || prenda.numero_prenda || (startIndex + index + 1)}</strong><br>`;
+            } else {
+                html += `<strong style="font-size: 13.4px;">PRENDA ${prenda.numero || prenda.numero_prenda || (startIndex + index + 1)}: ${(prenda.nombre || prenda.nombre_prenda || 'SIN NOMBRE').toUpperCase()}</strong><br>`;
+            }
 
             // 2. Telas completas con referencia (colores_telas tiene toda la info)
             if (prenda.colores_telas && Array.isArray(prenda.colores_telas) && prenda.colores_telas.length > 0) {
