@@ -252,7 +252,7 @@
                     <button type="button" class="badge-filtro {{ ($tab ?? 'pendientes') === 'completados' ? 'badge-filtro-active' : '' }}" onclick="window.location.href='{{ route('operario.dashboard', ['tab' => 'completados']) }}'">
                         <span class="material-symbols-rounded">task_alt</span>
                         Completados
-                        <span class="badge-filtro-contador" id="contadorCompletados">{{ $recibosCompletados->count() }}</span>
+                        <span class="badge-filtro-contador" id="contadorCompletados">{{ $recibosCompletadosCount ?? $recibosCompletados->count() }}</span>
                     </button>
                     <button type="button" class="badge-filtro {{ ($tab ?? 'pendientes') === 'pendiente-bodega' ? 'badge-filtro-active' : '' }}" onclick="window.location.href='{{ route('operario.dashboard', ['tab' => 'pendiente-bodega']) }}'">
                         <span class="material-symbols-rounded">inventory_2</span>
@@ -262,7 +262,7 @@
                     <button type="button" class="badge-filtro {{ ($tab ?? 'pendientes') === 'completado-bodega' ? 'badge-filtro-active' : '' }}" onclick="window.location.href='{{ route('operario.dashboard', ['tab' => 'completado-bodega']) }}'">
                         <span class="material-symbols-rounded">inventory</span>
                         Completado Bodega
-                        <span class="badge-filtro-contador" id="contadorCompletadoBodega">{{ $recibosBodegaCompletados->count() }}</span>
+                        <span class="badge-filtro-contador" id="contadorCompletadoBodega">{{ $recibosBodegaCompletadosCount ?? $recibosBodegaCompletados->count() }}</span>
                     </button>
                 </div>
             @endif
