@@ -25,11 +25,7 @@ use App\Application\Operario\UseCases\ObtenerRecibosControlCalidadUseCase;
 use App\Application\Operario\UseCases\ObtenerDistribucionControlCalidadUseCase;
 use App\Domain\Operario\Repositories\OperarioRepository;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
-use App\Models\PrendaPedido;
-use App\Models\PedidoAnchoGeneral;
-use App\Models\PedidoMetrajeColor;
 use App\Models\ConsecutivoReciboPedido;
-use App\Models\ProcesoPrenda;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -340,8 +336,8 @@ class OperarioController extends Controller
         $resultados = collect($datosOperario->pedidos)
             ->filter(function ($pedido) use ($busqueda) {
                 return str_contains(strtolower($pedido['numero_pedido']), $busqueda) ||
-                       str_contains(strtolower($pedido['cliente']), $busqueda) ||
-                       str_contains(strtolower($pedido['descripcion']), $busqueda);
+                    str_contains(strtolower($pedido['cliente']), $busqueda) ||
+                    str_contains(strtolower($pedido['descripcion']), $busqueda);
             })
             ->values()
             ->toArray();
@@ -362,7 +358,7 @@ class OperarioController extends Controller
             // Obtener novedades de procesos_prenda
             $proceso = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)->first();
             $novedades = $proceso?->novedades ?? '';
-            
+
             return response()->json([
                 'success' => true,
                 'novedades' => $novedades
@@ -407,24 +403,24 @@ class OperarioController extends Controller
     public function getPedidoData($numeroPedido)
     {
         $result = $this->getPedidoDataOperarioUseCase->execute((int) $numeroPedido, request());
-        
+
         // FILTRAR POR PRENDA_ID si se proporciona
         $prendaIdParam = request()->query('prenda_id');
         if ($prendaIdParam !== null && isset($result['payload']['data']['prendas'])) {
             $prendaIdParam = (int) $prendaIdParam;
-            
+
             // Filtrar solo la prenda especificada
             $prendasFiltradas = array_filter(
                 $result['payload']['data']['prendas'],
                 fn($prenda) => (int) ($prenda['id'] ?? 0) === $prendaIdParam
             );
-            
+
             // Si encontramos la prenda, dejarla como única
             if (!empty($prendasFiltradas)) {
                 $result['payload']['data']['prendas'] = array_values($prendasFiltradas);
             }
         }
-        
+
         return response()->json($result['payload'] ?? [], (int) ($result['status'] ?? 200));
     }
 
@@ -432,24 +428,24 @@ class OperarioController extends Controller
     {
         try {
             $usuario = Auth::user();
-            
+
             // Obtener prendas con recibos usando el servicio
             $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario);
-            
+
             // Obtener información de la BD sin filtros
             $todosPedidos = \App\Models\PedidoProduccion::where('area', 'costura')
                 ->select('id', 'numero_pedido', 'estado', 'area')
                 ->get();
-            
+
             $receptivos = \App\Models\ConsecutivoReciboPedido::where('activo', 1)
                 ->whereIn('tipo_recibo', ['REFLECTIVO', 'COSTURA', 'COSTURA-BODEGA'])
                 ->with(['pedido:id,numero_pedido,estado', 'prenda:id,nombre_prenda'])
                 ->get();
-            
+
             $detallesProcesos = \App\Models\PedidosProcesosPrendaDetalle::select('id', 'prenda_pedido_id', 'estado', 'tipo_recibo')
                 ->whereIn('estado', ['APROBADO', 'PENDIENTE'])
                 ->get();
-            
+
             return response()->json([
                 'success' => true,
                 'usuario' => [
@@ -459,7 +455,7 @@ class OperarioController extends Controller
                 ],
                 'prendas_con_recibos_filtradas' => [
                     'total' => $prendasConRecibos->count(),
-                    'datos' => $prendasConRecibos->map(function($p) {
+                    'datos' => $prendasConRecibos->map(function ($p) {
                         return [
                             'numero_pedido' => $p['numero_pedido'],
                             'nombre_prenda' => $p['nombre_prenda'],
@@ -470,7 +466,7 @@ class OperarioController extends Controller
                 ],
                 'todos_pedidos_costura' => [
                     'total' => $todosPedidos->count(),
-                    'datos' => $todosPedidos->map(function($p) {
+                    'datos' => $todosPedidos->map(function ($p) {
                         return [
                             'numero_pedido' => $p->numero_pedido,
                             'estado' => $p->estado,
@@ -479,7 +475,7 @@ class OperarioController extends Controller
                 ],
                 'recibos_si_filtros' => [
                     'total' => $receptivos->count(),
-                    'datos' => $receptivos->map(function($r) {
+                    'datos' => $receptivos->map(function ($r) {
                         return [
                             'tipo_recibo' => $r->tipo_recibo,
                             'pedido_numero' => $r->pedido?->numero_pedido,

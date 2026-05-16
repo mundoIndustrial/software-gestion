@@ -327,7 +327,7 @@
                                                 'tipoRecibo' => $recibo['tipo_recibo'],
                                                 'idParcial' => $recibo['id_parcial'] ?: null,
                                                 'consecutivo' => $recibo['consecutivo_actual'],
-                                                'reciboId' => $recibo['id'] ?? null,
+                                                'reciboId' => $recibo['recibo_id'] ?? null,
                                                 'clase' => 'mobile-under-state',
                                             ])@endcomponent
                                         </div>
@@ -340,14 +340,14 @@
                                                 'tipoRecibo' => $recibo['tipo_recibo'],
                                                 'idParcial' => $recibo['id_parcial'] ?: null,
                                                 'consecutivo' => $recibo['consecutivo_actual'],
-                                                'reciboId' => $recibo['id'] ?? null,
+                                                'reciboId' => $recibo['recibo_id'] ?? null,
                                             ])@endcomponent
                                         </div>
                                     </div>
 
                                     <div class="orden-right">
                                         <div class="orden-right-center">
-                                            <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $recibo['numero_pedido'] }}', {{ $recibo['prenda_id'] }}, '{{ $recibo['nombre_prenda'] }}', '{{ $recibo['tipo_recibo'] }}', {{ $recibo['id_parcial'] ?: 'null' }}, '{{ $recibo['consecutivo_actual'] }}', {{ $recibo['id'] ?? 'null' }}); return false;">
+                                            <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $recibo['numero_pedido'] }}', {{ $recibo['prenda_id'] ?? 'null' }}, '{{ $recibo['nombre_prenda'] }}', '{{ $recibo['tipo_recibo'] }}', {{ $recibo['id_parcial'] ?: 'null' }}, '{{ $recibo['consecutivo_actual'] }}', {{ $recibo['recibo_id'] ?? 'null' }}); return false;">
                                                 <span class="material-symbols-rounded">arrow_forward</span>
                                             </a>
                                         </div>
@@ -1498,7 +1498,7 @@
                                             'consecutivo' => isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'],
                                         ])@endcomponent
                                     @endif
-                                        <button class="mobile-actions-toggle" onclick="toggleMobileActions({{ $prenda['prenda_id'] }})">
+                                        <button class="mobile-actions-toggle" onclick="toggleMobileActions({{ $prenda['prenda_id'] ?? 'null' }})">
                                             <span class="material-symbols-rounded">more_horiz</span>
                                         </button>
                                     </div>
@@ -1507,7 +1507,7 @@
                                 <!-- Contenido Derecho -->
                                 <div class="orden-right">
                                     <div class="orden-right-center">
-                                        <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ $prenda['nombre_prenda'] }}', '{{ $tipoReciboPreferido }}', {{ $parcialIdPreferido }}, '{{ $consecutivoPreferido }}', {{ $reciboParaBusqueda['id'] ?? 'null' }}); return false;">
+                                        <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] ?? 'null' }}, '{{ $prenda['nombre_prenda'] }}', '{{ $tipoReciboPreferido }}', {{ $parcialIdPreferido ?? 'null' }}, '{{ $consecutivoPreferido }}', {{ $reciboParaBusqueda['id'] ?? 'null' }}); return false;">
                                             <span class="material-symbols-rounded">arrow_forward</span>
                                         </a>
                                     </div>

@@ -21,9 +21,12 @@ class GetPedidoDataOperarioUseCase
     {
         $tipoRecibo = strtoupper(trim((string) $request->query('tipo_recibo', '')));
         $parcialId = $request->query('parcial_id');
-        if ($parcialId) {
+        $isBodegaOnly = ($numeroPedido === 0 && $request->has('recibo_id'));
+
+        if ($parcialId || $isBodegaOnly) {
             // Si llega parcial_id, el flujo parcial debe resolverse por el ID del parcial
             // y conservar el tipo_recibo real (REFLECTIVO, COSTURA, etc.) cuando exista.
+            // Si es un recibo de bodega (numero_pedido = 0), también debe resolverse aquí.
             return $this->obtenerDatosRecibosOperarioUseCase->execute((int) $numeroPedido, $request);
         }
 

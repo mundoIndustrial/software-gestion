@@ -1907,7 +1907,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             ->where('tipo_recibo', 'CORTE-PARA-BODEGA')
             ->whereRaw('LOWER(TRIM(area)) = ?', ['corte'])
             ->whereNotNull('prenda_bodega_id')
-            ->with(['prenda', 'prenda.pedidoProduccion', 'pedido'])
+            ->with(['prendaBodega'])
             ->get();
 
         if ($recibos->isEmpty()) {
@@ -1933,13 +1933,16 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             }
 
             $resultado->push([
-                'numero_pedido' => $recibo->pedido?->numero_pedido,
-                'nombre_prenda' => $recibo->prenda?->nombre_prenda ?? 'N/A',
+                'id' => $recibo->id,
+                'numero_pedido' => '',
+                'prenda_id' => null,
+                'nombre_prenda' => $recibo->prendaBodega?->nombre ?? 'N/A',
                 'prenda_bodega_id' => $prendaBodegaId,
                 'tipo_recibo' => $recibo->tipo_recibo,
                 'total_recibos' => 1,
                 'recibos' => [
                     [
+                        'id' => $recibo->id,
                         'tipo_recibo' => $recibo->tipo_recibo,
                         'consecutivo_actual' => $recibo->consecutivo_actual,
                         'area' => $recibo->area,
