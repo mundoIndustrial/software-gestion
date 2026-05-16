@@ -11,8 +11,16 @@ class TalleresController extends Controller
     public function index(Request $request, \App\Application\Talleres\UseCases\ObtenerListadoTalleresUseCase $useCase)
     {
         $search = $request->input('search');
-        $talleres = $useCase->execute($search);
-        return view('admin.talleres.index', compact('talleres', 'search'));
+        $view = $request->input('view', 'talleres');
+        
+        // Solo cargar talleres si estamos en la vista de talleres
+        if ($view === 'talleres') {
+            $talleres = $useCase->execute($search);
+        } else {
+            $talleres = collect(); // Colección vacía
+        }
+        
+        return view('admin.talleres.index', compact('talleres', 'search', 'view'));
     }
 
     public function showRecibos($id, \App\Application\Talleres\UseCases\ObtenerDashboardTallerUseCase $useCase)
@@ -81,6 +89,26 @@ class TalleresController extends Controller
             'entregas' => $entregasFormateadas,
             'total' => $data['totalGeneral']
         ]);
+    }
+
+    public function apiOrdenes(
+        Request $request,
+        \App\Application\Talleres\UseCases\ObtenerOrdenesAsignadasUseCase $useCase
+    ) {
+        try {
+            $search = $request->input('search', '');
+            $page = $request->input('page', 1);
+
+            $resultado = $useCase->execute($search, $page);
+
+            return response()->json($resultado);
+        } catch (\Exception $e) {
+            \Log::error('Error en apiOrdenes: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
+            return response()->json([
+                'error' => 'Error al cargar las órdenes',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function toggleStatus($id, \App\Application\Talleres\UseCases\ToggleEstadoTallerUseCase $useCase)

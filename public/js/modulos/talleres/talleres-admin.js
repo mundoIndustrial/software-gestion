@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initStatusToggles();
     initNewTallerModal();
     initEditTaller();
+    initSidebarNavigation();
 });
 
 function initEditTaller() {
@@ -292,11 +293,13 @@ function switchView(newView) {
     const viewTalleres = document.getElementById('viewTalleres');
     const viewRecibos = document.getElementById('viewRecibos');
     const viewEntregas = document.getElementById('viewEntregas');
+    const viewOrdenes = document.getElementById('viewOrdenes');
 
     // Ocultar todas las vistas
     if (viewTalleres) viewTalleres.style.display = 'none';
     if (viewRecibos) viewRecibos.style.display = 'none';
     if (viewEntregas) viewEntregas.style.display = 'none';
+    if (viewOrdenes) viewOrdenes.style.display = 'none';
 
     // Mostrar la nueva vista
     const target = document.getElementById('view' + newView.charAt(0).toUpperCase() + newView.slice(1));
@@ -546,6 +549,353 @@ function initPrecioInputs() {
                 e.preventDefault();
                 this.blur(); // Esto disparará el evento 'change'
             }
+        });
+    });
+}
+
+/**
+ * Inicializar navegación del sidebar
+ */
+function initSidebarNavigation() {
+    const sidebarItems = document.querySelectorAll('.sidebar-item');
+
+    sidebarItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const viewName = this.getAttribute('data-view');
+            
+            // Remover clase active de todos los items
+            sidebarItems.forEach(i => i.classList.remove('active'));
+            
+            // Agregar clase active al item clickeado
+            this.classList.add('active');
+            
+            // Cambiar URL según la vista
+            if (viewName === 'viewTalleres') {
+                window.history.pushState({ view: 'talleres' }, 'Gestión Talleres', window.location.pathname);
+                showTalleres();
+            } else if (viewName === 'viewOrdenes') {
+                window.history.pushState({ view: 'ordenes' }, 'Órdenes', window.location.pathname + '?view=ordenes');
+                showOrdenes();
+            }
+        });
+    });
+
+    // Manejar el botón atrás del navegador
+    window.addEventListener('popstate', function(event) {
+        if (event.state && event.state.view === 'ordenes') {
+            document.querySelector('[data-view="viewOrdenes"]').classList.add('active');
+            document.querySelector('[data-view="viewTalleres"]').classList.remove('active');
+            showOrdenes();
+        } else {
+            document.querySelector('[data-view="viewTalleres"]').classList.add('active');
+            document.querySelector('[data-view="viewOrdenes"]').classList.remove('active');
+            showTalleres();
+        }
+    });
+
+    // Verificar si hay parámetro view en la URL al cargar
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('view') === 'ordenes') {
+        document.querySelector('[data-view="viewOrdenes"]').classList.add('active');
+        document.querySelector('[data-view="viewTalleres"]').classList.remove('active');
+        showOrdenes();
+    }
+}
+
+/**
+ * Obtener color de progreso basado en porcentaje
+ */
+function getProgressColor(percentage) {
+    if (percentage <= 33) {
+        return '#ef4444'; // Rojo
+    } else if (percentage <= 66) {
+        return '#f59e0b'; // Amarillo
+    } else {
+        return '#10b981'; // Verde
+    }
+}
+
+/**
+ * Inicializar búsqueda en Órdenes
+ */
+function initOrdenesSearch() {
+    const searchInput = document.getElementById('searchOrdenesInput');
+    const clearButton = document.getElementById('clearSearchOrdenes');
+    
+    if (searchInput) {
+        const toggleClear = () => {
+            if (searchInput.value.length > 0) {
+                clearButton.style.display = 'flex';
+            } else {
+                clearButton.style.display = 'none';
+            }
+        };
+
+        toggleClear();
+        
+        // Buscar al escribir (con debounce)
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            toggleClear();
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                showOrdenes(this.value, 1);
+            }, 300);
+        });
+        
+        // Limpiar búsqueda
+        clearButton.addEventListener('click', () => {
+            searchInput.value = '';
+            toggleClear();
+            showOrdenes('', 1);
+        });
+    }
+}
+
+/**
+ * Mostrar vista de Órdenes
+ */
+function showOrdenes(search = '', page = 1) {
+    switchView('ordenes');
+    const mainContainer = document.querySelector('.main-container');
+    const ordenesContent = document.getElementById('ordenesContent');
+    const apiRoute = mainContainer.dataset.routeApiOrdenes;
+
+    if (ordenesContent) {
+        ordenesContent.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Cargando órdenes...</p></div>';
+    }
+
+    // Construir URL con parámetros
+    const url = new URL(apiRoute, window.location.origin);
+    if (search) url.searchParams.append('search', search);
+    url.searchParams.append('page', page);
+
+    fetch(url.toString())
+        .then(response => response.json())
+        .then(data => {
+            if (!data.ordenes || data.ordenes.length === 0) {
+                let html = '<div class="empty-state"><div class="empty-state-icon">📦</div><p>No hay órdenes asignadas a talleres.</p></div>';
+                
+                // Agregar controles de paginación si hay búsqueda
+                if (search || page > 1) {
+                    html += renderPaginationControls(data.pagination, search);
+                }
+                
+                ordenesContent.innerHTML = html;
+                return;
+            }
+
+            let html = '<div class="table-container"><table class="table-ordenes"><thead><tr><th class="col-numero">Nº ORDEN</th><th>DESCRIPCIÓN</th><th class="col-cantidad">CANT. TOTAL</th><th>PROGRESO TOTAL</th><th>ENCARGADO</th><th>DISTRIBUCIÓN</th></tr></thead><tbody>';
+
+            data.ordenes.forEach(orden => {
+                const rowClass = orden.es_dividido ? 'orden-dividida' : '';
+                
+                // Fila principal
+                html += `
+                    <tr class="${rowClass}" data-orden-id="${orden.id}">
+                        <td class="col-numero"><strong>${orden.numero_recibo}</strong></td>
+                        <td>
+                            <div class="prenda-nombre">${orden.descripcion}</div>
+                            <p class="prenda-desc">${orden.cliente}</p>
+                        </td>
+                        <td class="col-cantidad">${orden.cantidad_total}</td>
+                        <td>
+                            <div class="progress-container">
+                                <div class="progress-info">
+                                    <span class="progress-text">${orden.cantidad_entregada} / ${orden.cantidad_total}</span>
+                                    <span class="progress-percentage">${orden.porcentaje}%</span>
+                                </div>
+                                <div class="progress-bar-wrapper">
+                                    <div class="progress-bar-fill" style="width: ${orden.porcentaje}%; background: ${getProgressColor(orden.porcentaje)}"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="col-encargado">
+                            <span class="encargado-badge">${orden.encargado_display}</span>
+                        </td>
+                        <td class="col-distribucion">
+                            ${orden.es_dividido ? 
+                                `<button class="btn-ver-distribucion" data-orden-id="${orden.id}">
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                    Ver Distribución
+                                </button>` 
+                                : 
+                                `<span class="distribucion-badge completa">${orden.distribucion}</span>`
+                            }
+                        </td>
+                    </tr>
+                `;
+
+                // Si está dividida, agregar fila expandible con distribución
+                if (orden.es_dividido) {
+                    html += `<tr class="distribucion-expandible" id="distribucion-${orden.id}" style="display: none;">
+                        <td colspan="6">
+                            <div class="distribucion-container">
+                                <div class="distribucion-titulo">
+                                    <span class="material-symbols-rounded">call_split</span>
+                                    DISTRIBUCIÓN TÉCNICA DEL RECIBO ${orden.numero_recibo}
+                                </div>
+                                <div class="distribucion-ramas">`;
+                    
+                    // Agrupar por número de parte
+                    const partesPorNumero = {};
+                    orden.distribucion_detalles.forEach(detalle => {
+                        if (!partesPorNumero[detalle.numero_recibo_parte]) {
+                            partesPorNumero[detalle.numero_recibo_parte] = [];
+                        }
+                        partesPorNumero[detalle.numero_recibo_parte].push(detalle);
+                    });
+                    
+                    // Renderizar cada parte con sus tallas como ramas
+                    Object.keys(partesPorNumero).forEach(numeroParte => {
+                        const tallas = partesPorNumero[numeroParte];
+                        html += `
+                            <div class="rama-parte">
+                                <div class="rama-parte-header">
+                                    <span class="rama-parte-numero">${numeroParte}</span>
+                                </div>
+                                <div class="rama-tallas">`;
+                        
+                        tallas.forEach((detalle, index) => {
+                            html += `
+                                <div class="rama-talla-item">
+                                    <div class="rama-talla-content">
+                                        <span class="talla-nombre">${detalle.talla}</span>
+                                        <span class="talla-cantidad">${detalle.cantidad}</span>
+                                        <div class="talla-progreso">
+                                            <span class="progreso-text">${detalle.cantidad_entregada} / ${detalle.cantidad}</span>
+                                            <span class="progreso-percentage">${detalle.porcentaje}%</span>
+                                            <div class="progress-bar-wrapper">
+                                                <div class="progress-bar-fill" style="width: ${detalle.porcentaje}%; background: ${getProgressColor(detalle.porcentaje)}"></div>
+                                            </div>
+                                        </div>
+                                        <span class="talla-encargado">${detalle.taller_nombre}</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        html += `
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `
+                                </div>
+                            </div>
+                        </td>
+                    </tr>`;
+                }
+            });
+
+            html += '</tbody></table></div>';
+            
+            // Agregar controles de paginación
+            html += renderPaginationControls(data.pagination, search);
+            
+            ordenesContent.innerHTML = html;
+
+            // Inicializar eventos de distribución
+            initDistribucionEvents();
+            
+            // Inicializar eventos de paginación
+            initPaginationEvents(search);
+            
+            // Inicializar búsqueda
+            initOrdenesSearch();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            ordenesContent.innerHTML = '<div class="empty-state"><p>Error al cargar las órdenes.</p></div>';
+        });
+}
+
+/**
+ * Inicializar eventos de distribución
+ */
+function initDistribucionEvents() {
+    const expandButtons = document.querySelectorAll('.btn-ver-distribucion');
+    
+    expandButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const ordenId = this.dataset.ordenId;
+            const expandibleRow = document.getElementById(`distribucion-${ordenId}`);
+            
+            if (expandibleRow) {
+                const isVisible = expandibleRow.style.display !== 'none';
+                expandibleRow.style.display = isVisible ? 'none' : 'table-row';
+                this.classList.toggle('expanded');
+            }
+        });
+    });
+}
+
+/**
+ * Renderizar controles de paginación
+ */
+function renderPaginationControls(pagination, search) {
+    const { current_page, last_page, total, per_page } = pagination;
+    
+    let html = '<div class="pagination-controls">';
+    html += `<div class="pagination-info">Mostrando ${(current_page - 1) * per_page + 1} - ${Math.min(current_page * per_page, total)} de ${total} órdenes</div>`;
+    html += '<div class="pagination-buttons">';
+    
+    // Botón anterior
+    if (current_page > 1) {
+        html += `<button class="btn-pagination btn-prev" data-page="${current_page - 1}" data-search="${search}">
+                    <span class="material-symbols-rounded">chevron_left</span>
+                    Anterior
+                </button>`;
+    } else {
+        html += `<button class="btn-pagination btn-prev" disabled>
+                    <span class="material-symbols-rounded">chevron_left</span>
+                    Anterior
+                </button>`;
+    }
+    
+    // Números de página
+    html += '<div class="pagination-numbers">';
+    for (let i = 1; i <= last_page; i++) {
+        if (i === current_page) {
+            html += `<span class="page-number active">${i}</span>`;
+        } else if (i === 1 || i === last_page || (i >= current_page - 1 && i <= current_page + 1)) {
+            html += `<button class="page-number" data-page="${i}" data-search="${search}">${i}</button>`;
+        } else if (i === 2 || i === last_page - 1) {
+            html += `<span class="page-number">...</span>`;
+        }
+    }
+    html += '</div>';
+    
+    // Botón siguiente
+    if (current_page < last_page) {
+        html += `<button class="btn-pagination btn-next" data-page="${current_page + 1}" data-search="${search}">
+                    Siguiente
+                    <span class="material-symbols-rounded">chevron_right</span>
+                </button>`;
+    } else {
+        html += `<button class="btn-pagination btn-next" disabled>
+                    Siguiente
+                    <span class="material-symbols-rounded">chevron_right</span>
+                </button>`;
+    }
+    
+    html += '</div></div>';
+    return html;
+}
+
+/**
+ * Inicializar eventos de paginación
+ */
+function initPaginationEvents(search) {
+    const paginationButtons = document.querySelectorAll('.btn-pagination, .page-number:not(.active)');
+    
+    paginationButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const page = this.dataset.page;
+            const searchTerm = this.dataset.search || '';
+            showOrdenes(searchTerm, page);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     });
 }

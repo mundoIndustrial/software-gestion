@@ -13,6 +13,26 @@
     <!-- Dashboard Top Nav -->
     @include('components.top-nav')
 
+    <!-- Sidebar Navigation -->
+    <aside class="talleres-sidebar">
+        <nav class="sidebar-nav">
+            <button class="sidebar-item active" data-view="viewTalleres" id="navTalleres">
+                <span class="material-symbols-rounded">factory</span>
+                <span class="nav-label">Gestión Talleres</span>
+            </button>
+            <button class="sidebar-item" data-view="viewOrdenes" id="navOrdenes">
+                <span class="material-symbols-rounded">assignment</span>
+                <span class="nav-label">Órdenes</span>
+            </button>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ route('dashboard') }}" class="btn-volver">
+                <span class="material-symbols-rounded">arrow_back</span>
+                <span class="nav-label">Volver</span>
+            </a>
+        </div>
+    </aside>
+
     <!-- Main Content -->
     <main class="main-container" 
           data-csrf-token="{{ csrf_token() }}"
@@ -21,7 +41,8 @@
           data-route-api-entregas="{{ route('talleres.api.entregas', [':taller_id', ':recibo_id', ':es_parcial']) }}"
           data-route-actualizar-precio="{{ route('talleres.actualizar-precio', ':id') }}"
           data-route-store="{{ route('talleres.store') }}"
-          data-route-update="{{ route('talleres.update', ':id') }}">
+          data-route-update="{{ route('talleres.update', ':id') }}"
+          data-route-api-ordenes="{{ route('talleres.api.ordenes') }}">
           
         <!-- Vista 1: Grid de Talleres -->
         <div id="viewTalleres" class="view-container">
@@ -93,7 +114,9 @@
 
             <!-- Paginación -->
             <div class="pagination-container">
-                {{ $talleres->appends(['search' => $search])->links('vendor.pagination.simple-clean') }}
+                @if($talleres instanceof \Illuminate\Pagination\Paginator)
+                    {{ $talleres->appends(['search' => $search])->links('vendor.pagination.simple-clean') }}
+                @endif
             </div>
         </div>
 
@@ -161,6 +184,40 @@
                     <div class="loading">
                         <div class="loading-spinner"></div>
                         <p>Cargando entregas...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vista 4: Órdenes (Todos los Recibos) -->
+        <div id="viewOrdenes" class="view-container" style="display: none;">
+            <div class="page-header">
+                <div class="page-title-group">
+                    <div class="subtitle">TODAS LAS ÓRDENES</div>
+                </div>
+                <div class="page-actions">
+                    <form action="{{ route('talleres.index') }}" method="GET" class="gooey-search-wrapper">
+                        <span class="material-symbols-rounded gooey-search-icon">search</span>
+                        <input type="text" name="search" class="gooey-search-input" placeholder="Buscar orden..." id="searchOrdenesInput">
+                        <button class="gooey-search-clear" id="clearSearchOrdenes" type="button">
+                            <span class="material-symbols-rounded">close</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="recibos-card">
+                <div class="card-header">
+                    <div class="icon">
+                        <span class="material-symbols-rounded" style="font-size: 18px;">assignment</span>
+                    </div>
+                    <h2>Listado de Órdenes Asignadas a Talleres</h2>
+                </div>
+                
+                <div id="ordenesContent" style="padding: 20px;">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Cargando órdenes...</p>
                     </div>
                 </div>
             </div>

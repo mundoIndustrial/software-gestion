@@ -69,6 +69,7 @@ Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion'])
     // API endpoints para SPA
     Route::get('/api/{id}/recibos', [App\Http\Controllers\Admin\TalleresController::class, 'apiRecibos'])->name('api.recibos');
     Route::get('/api/{taller_id}/recibos/{recibo_id}/{es_parcial}/entregas', [App\Http\Controllers\Admin\TalleresController::class, 'apiEntregas'])->name('api.entregas');
+    Route::get('/api/ordenes/todas', [App\Http\Controllers\Admin\TalleresController::class, 'apiOrdenes'])->name('api.ordenes');
     
     // Ruta para activar/desactivar taller
     Route::patch('/{id}/toggle-status', [App\Http\Controllers\Admin\TalleresController::class, 'toggleStatus'])->name('toggle-status');

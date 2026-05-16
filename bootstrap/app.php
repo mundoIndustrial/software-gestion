@@ -71,6 +71,7 @@ return Application::configure(basePath: dirname(__DIR__))
         \App\Infrastructure\Pedidos\Providers\PedidoServiceProvider::class,
         \App\Infrastructure\Procesos\Providers\ProcesosServiceProvider::class,
         \App\Providers\PrendaEditorServiceProvider::class,
+        \App\Providers\TalleresServiceProvider::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         // Importante para túneles/proxies (Cloudflare, localtunnel, ngrok):

@@ -35,6 +35,7 @@ class ObtenerDashboardTallerUseCase
                 'crp.tipo_recibo',
                 DB::raw('0 as es_parcial')
             )
+            ->groupBy('crp.id')
             ->get();
 
         // 2. Recibos parciales asignados al taller
@@ -59,6 +60,7 @@ class ObtenerDashboardTallerUseCase
                 'rpp.tipo_recibo',
                 DB::raw('1 as es_parcial')
             )
+            ->groupBy('rpp.id')
             ->get();
 
         $recibos = $recibosNormales->concat($recibosParciales);
@@ -97,7 +99,7 @@ class ObtenerDashboardTallerUseCase
             ->pluck('total', 'recibo_parcial_id');
 
         $recibosProcesados = $recibos->map(function($r) use ($totalesAsignadosNormales, $totalesAsignadosParciales, $entregasNormales, $entregasParciales) {
-            $r->numero_recibo = (int)$r->numero_recibo;
+            // No convertir a entero para preservar decimales (175.1, 187.2, etc.)
             
             if ($r->es_parcial) {
                 $r->cantidad_total = $totalesAsignadosParciales[$r->id] ?? 0;
