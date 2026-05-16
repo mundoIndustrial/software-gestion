@@ -11,7 +11,9 @@ readonly class OperarioDashboardDTO
         public string $tab,
         public int $pendientesPedidosCount = 0,
         public \Illuminate\Support\Collection $recibosCompletados = new \Illuminate\Support\Collection(),
+        public int $recibosCompletadosCount = 0,
         public \Illuminate\Support\Collection $recibosBodegaCompletados = new \Illuminate\Support\Collection(),
+        public int $recibosBodegaCompletadosCount = 0,
         public int $recibosBodegaPendientesCount = 0,
     ) {}
 }
