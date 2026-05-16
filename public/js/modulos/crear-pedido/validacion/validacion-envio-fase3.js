@@ -351,6 +351,40 @@
             // Usar FormData para enviar archivos correctamente
             const formData = new FormData();
             
+            // ========== PREPARAR EPPs CON IDENTIFICADORES ÚNICOS ==========
+            const eppsFinales = (datos.epps || []).map(e => {
+                // Identificador único para cada EPP: existentes usan pedido_epp_id, nuevos generan temporal
+                const eppId = e.pedido_epp_id || (e._local_epp_id = e._local_epp_id || `epp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
+                
+                let tieneArchivosNuevos = false;
+                if (Array.isArray(e.imagenes)) {
+                    tieneArchivosNuevos = e.imagenes.some(img => 
+                        img instanceof File || (img.file && img.file instanceof File) || (img.archivo && img.archivo instanceof File)
+                    );
+                }
+
+                return {
+                    epp_id: e.epp_id,
+                    pedido_epp_id: e.pedido_epp_id || null,
+                    cantidad: e.cantidad,
+                    observaciones: e.observaciones,
+                    _epp_form_identifier: eppId,
+                    // Si hay archivos nuevos, modo "upload"; si se editaron existentes, "reuse"
+                    modo_imagenes: tieneArchivosNuevos ? 'upload' : (e.imagenes_editadas ? 'reuse' : ''),
+                    imagenes: Array.isArray(e.imagenes)
+                        ? e.imagenes.map(img => {
+                            if (!img) return null;
+                            if (typeof img === 'string') return img;
+                            if (img.url) return img.url;
+                            if (img.preview) return img.preview;
+                            if (img.ruta_webp) return img.ruta_webp;
+                            if (img.ruta) return img.ruta;
+                            return null;
+                        }).filter(Boolean)
+                        : []
+                };
+            });
+
             // ========== AGREGAR JSON DEL PEDIDO SIN LAS IMÁGENES ==========
             const pedidoLimpio = {
                 cliente: datos.cliente || '',
@@ -374,23 +408,7 @@
                     cantidades: p.cantidades,
                     telas: (p.telas || []).map(t => ({tela: t.nombre_tela || t.tela, color: t.color, referencia: t.referencia}))
                 })),
-                epps: (datos.epps || []).map(e => ({
-                    epp_id: e.epp_id,
-                    cantidad: e.cantidad,
-                    observaciones: e.observaciones,
-                    // Importante: enviar URLs para que backend copie desde /storage
-                    imagenes: Array.isArray(e.imagenes)
-                        ? e.imagenes.map(img => {
-                            if (!img) return null;
-                            if (typeof img === 'string') return img;
-                            if (img.url) return img.url;
-                            if (img.preview) return img.preview;
-                            if (img.ruta_webp) return img.ruta_webp;
-                            if (img.ruta) return img.ruta;
-                            return null;
-                        }).filter(Boolean)
-                        : []
-                }))
+                epps: eppsFinales
             };
             formData.append('pedido', JSON.stringify(pedidoLimpio));
             console.debug('[enviarDatosAlServidor] JSON del pedido:', pedidoLimpio);
@@ -503,30 +521,28 @@
                 });
             }
 
-            // Agregar EPPs al FormData
-            if (datos.epps && Array.isArray(datos.epps)) {
-                datos.epps.forEach((epp, eppIndex) => {
-                    formData.append(`epps[${eppIndex}][epp_id]`, epp.epp_id || '');
-                    formData.append(`epps[${eppIndex}][cantidad]`, epp.cantidad || 1);
-                    if (epp.observaciones) {
-                        formData.append(`epps[${eppIndex}][observaciones]`, epp.observaciones);
-                    }
-                    
-                    //  Agregar imágenes de EPP al FormData
-                    if (epp.imagenes && Array.isArray(epp.imagenes)) {
-                        epp.imagenes.forEach((img, imgIdx) => {
-                            if (img instanceof File) {
-                                formData.append(`epps[${eppIndex}][imagenes][${imgIdx}]`, img);
-                                console.debug(`[enviarDatosAlServidor] Imagen EPP agregada: epps[${eppIndex}][imagenes][${imgIdx}]`, img.name);
-                            } else if (img && img.file instanceof File) {
-                                formData.append(`epps[${eppIndex}][imagenes][${imgIdx}]`, img.file);
-                                console.debug(`[enviarDatosAlServidor] Imagen EPP agregada: epps[${eppIndex}][imagenes][${imgIdx}]`, img.file.name);
-                            }
-                        });
-                    }
-                });
-                console.debug('[enviarDatosAlServidor] EPPs agregados al FormData:', datos.epps);
-            }
+            // Agregar imágenes de EPP al FormData usando formato plano compatible con el servidor
+            eppsFinales.forEach(epp => {
+                const eppId = epp._epp_form_identifier;
+                // Buscar el EPP original para obtener los archivos reales (Files)
+                const eppOriginal = (datos.epps || []).find(e => 
+                    (e.pedido_epp_id && e.pedido_epp_id === epp.pedido_epp_id) || 
+                    (e._local_epp_id && e._local_epp_id === eppId)
+                );
+
+                if (eppOriginal && Array.isArray(eppOriginal.imagenes)) {
+                    let imgIdx = 0;
+                    eppOriginal.imagenes.forEach(img => {
+                        const file = (img instanceof File) ? img : (img && img.file instanceof File ? img.file : (img && img.archivo instanceof File ? img.archivo : null));
+                        if (file) {
+                            const fieldName = `epps_${eppId}_imagenes_${imgIdx}`;
+                            formData.append(fieldName, file);
+                            console.debug(`[enviarDatosAlServidor] Imagen EPP agregada (formato plano): ${fieldName}`, file.name);
+                            imgIdx++;
+                        }
+                    });
+                }
+            });
 
             fetch(endpoint, {
                 method: 'POST',

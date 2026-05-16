@@ -44,6 +44,7 @@
 
         return {
             uid: eppRaw.uid || null,
+            _epp_form_identifier: eppRaw._epp_form_identifier || eppRaw.uid || null,
             epp_id: eppRaw.epp_id,
             nombre_epp: eppRaw.nombre_epp || '',
             categoria: eppRaw.categoria || '',
@@ -424,10 +425,11 @@
             // ==========================================
             if (Array.isArray(filesExtraidos.epps)) {
                 filesExtraidos.epps.forEach(function(epp, eppIdx) {
+                    const eppIdentifier = epp.uid || epp.identifier || eppIdx;
                     if (Array.isArray(epp.imagenes)) {
                         epp.imagenes.forEach(function(imgObj, imgIdx) {
                             const file = imgObj.file || imgObj;
-                            const formdataKey = `epps_${eppIdx}_imagenes_${imgIdx}`;
+                            const formdataKey = `epps_${eppIdentifier}_imagenes_${imgIdx}`;
                             if (file instanceof File) {
                                 formData.append(formdataKey, file);
                                 archivosAgregados++;

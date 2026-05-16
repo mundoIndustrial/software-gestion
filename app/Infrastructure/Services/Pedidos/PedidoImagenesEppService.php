@@ -72,11 +72,6 @@ class PedidoImagenesEppService
 
     public function procesarImagenesDeEpps($request, int $pedidoId, array $epps): void
     {
-        Log::info('[PedidoImagenesService] Procesando imagenes de EPPs', [
-            'pedido_id' => $pedidoId,
-            'epps_count' => count($epps),
-        ]);
-
         foreach ($epps as $eppData) {
             $eppIdentifier = $eppData['_epp_form_identifier'] ?? $eppData['pedido_epp_id'] ?? null;
             $pedidoEpp = $this->obtenerPedidoEppParaImagenes($eppData, $pedidoId);
