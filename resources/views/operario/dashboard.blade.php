@@ -287,6 +287,7 @@
                                  data-sin-encargado-reflectivo="0"
                                  data-completado-costura="1"
                                  data-completado-reflectivo="1"
+                                 data-recibos-corte-asignados="1"
                                  data-numero-recibo="{{ $recibo['consecutivo_actual'] }}">
 
                                 <div class="orden-body recibo-completado-area">
