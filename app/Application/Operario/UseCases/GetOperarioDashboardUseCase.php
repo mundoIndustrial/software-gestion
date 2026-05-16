@@ -32,30 +32,38 @@ class GetOperarioDashboardUseCase
 
         // Para cortadores, manejamos la lógica de carga perezosa para optimizar el rendimiento
         if ($usuario->hasRole('cortador')) {
-            // Recibos completados (siempre traemos el total para los contadores)
-            $recibosCompletadosRaw = $this->dashboardReadService->obtenerRecibosCompletadosPorOperario($usuario->name);
-            if ($recibosCompletadosRaw->isEmpty()) {
-                $recibosCompletadosRaw = $this->dashboardReadService->obtenerRecibosCompletadosPorOperario('CORTADORES');
-            }
-
-            // Conteo de completados (SIEMPRE disponibles para los badges)
-            $recibosCompletadosCount = $recibosCompletadosRaw->filter(function ($r) {
-                return strtoupper((string) ($r['tipo_recibo'] ?? '')) !== 'CORTE-PARA-BODEGA';
-            })->count();
-
-            $recibosBodegaCompletadosCount = $recibosCompletadosRaw->filter(function ($r) {
-                return strtoupper((string) ($r['tipo_recibo'] ?? '')) === 'CORTE-PARA-BODEGA';
-            })->count();
-
             // Solo cargar la colección completa si el tab es bodega o completados general
-            if ($tab === 'completado-bodega') {
-                $recibosBodegaCompletados = $recibosCompletadosRaw->filter(function ($r) {
-                    return strtoupper((string) ($r['tipo_recibo'] ?? '')) === 'CORTE-PARA-BODEGA';
-                });
-            } elseif ($tab === 'completados') {
-                $recibosCompletados = $recibosCompletadosRaw->filter(function ($r) {
+            if (in_array($tab, ['completados', 'completado-bodega'])) {
+                $recibosCompletadosRaw = $this->dashboardReadService->obtenerRecibosCompletadosPorOperario($usuario->name);
+                if ($recibosCompletadosRaw->isEmpty()) {
+                    $recibosCompletadosRaw = $this->dashboardReadService->obtenerRecibosCompletadosPorOperario('CORTADORES');
+                }
+
+                $recibosCompletadosCount = $recibosCompletadosRaw->filter(function ($r) {
                     return strtoupper((string) ($r['tipo_recibo'] ?? '')) !== 'CORTE-PARA-BODEGA';
-                });
+                })->count();
+
+                $recibosBodegaCompletadosCount = $recibosCompletadosRaw->filter(function ($r) {
+                    return strtoupper((string) ($r['tipo_recibo'] ?? '')) === 'CORTE-PARA-BODEGA';
+                })->count();
+
+                if ($tab === 'completado-bodega') {
+                    $recibosBodegaCompletados = $recibosCompletadosRaw->filter(function ($r) {
+                        return strtoupper((string) ($r['tipo_recibo'] ?? '')) === 'CORTE-PARA-BODEGA';
+                    });
+                } else {
+                    $recibosCompletados = $recibosCompletadosRaw->filter(function ($r) {
+                        return strtoupper((string) ($r['tipo_recibo'] ?? '')) !== 'CORTE-PARA-BODEGA';
+                    });
+                }
+            } else {
+                // Si NO estamos en una pestaña de completados, solo traemos los conteos (MUCHO más rápido)
+                $counts = $this->dashboardReadService->contarRecibosCompletadosPorOperario($usuario->name);
+                if ($counts['total'] === 0) {
+                    $counts = $this->dashboardReadService->contarRecibosCompletadosPorOperario('CORTADORES');
+                }
+                $recibosCompletadosCount = $counts['normales'];
+                $recibosBodegaCompletadosCount = $counts['bodega'];
             }
 
             // Pendientes Bodega: SIEMPRE traer el conteo para el badge
@@ -266,8 +274,9 @@ class GetOperarioDashboardUseCase
             }
         }
 
-        // También obtener los pedidos para mantener compatibilidad
-        $datosOperario = $this->obtenerPedidosService->obtenerPedidosDelOperario($usuario);
+        // Se eliminó la llamada a obtenerPedidosDelOperario por redundancia y alto costo de rendimiento
+        // Los datos necesarios ya se obtienen vía ObtenerPrendasRecibosService
+        $datosOperario = null;
 
         return new OperarioDashboardDTO(
             operario: $datosOperario,

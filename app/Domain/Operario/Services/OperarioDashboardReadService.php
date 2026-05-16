@@ -14,5 +14,6 @@ interface OperarioDashboardReadService
     public function obtenerCompletadosParcialesPorArea(array $idsParcial, string $area): Collection;
 
     public function obtenerRecibosCompletadosPorOperario(string $nombreOperario): Collection;
+    public function contarRecibosCompletadosPorOperario(string $nombreOperario): array;
 }
 

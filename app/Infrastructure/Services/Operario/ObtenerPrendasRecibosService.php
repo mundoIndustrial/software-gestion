@@ -361,14 +361,31 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
 
         // Obtener todos los recibos de costura activos con relaciones (incluyendo procesos)
         $query = ConsecutivoReciboPedido::where('activo', 1)
-            ->whereIn('tipo_recibo', $tiposRecibo)
-            ->whereIn('area', $tipoOperario === 'visualizador_plooter'
+            ->whereIn('tipo_recibo', $tiposRecibo);
+
+        // Optimización para CORTADORES: Filtrar por prendas asignadas en SQL antes de cargar relaciones
+        if ($tipoOperario === 'cortador') {
+            $usuarioNombre = strtolower(trim($usuario->name));
+            $prendasDelCortador = \App\Models\ProcesoPrenda::whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNombre])
+                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
+                ->pluck('prenda_pedido_id')
+                ->unique()
+                ->values()
+                ->all();
+
+            if (empty($prendasDelCortador)) {
+                return collect();
+            }
+
+            $query->whereIn('prenda_id', $prendasDelCortador);
+        }
+
+        $query->whereIn('area', $tipoOperario === 'visualizador_plooter'
                 ? ['Corte']
                 : ($tipoOperario === 'vista-costura'
                     ? ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad']
                     : ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad']))
-
-            ->with(['prenda', 'prenda.pedidoProduccion', 'prenda.procesosPrenda', 'prenda.tallas', 'pedido', 'pedido.prendas', 'pedido.prendas.tallas']);
+            ->with(['prenda', 'prenda.pedidoProduccion', 'prenda.procesosPrenda', 'prenda.tallas', 'prenda.coloresTelas', 'prenda.variantes', 'pedido']);
 
         // Para cortadores: excluir PENDIENTE_INSUMOS (misma logica que /recibos-costura)
         // y permitir ver recibos en Costura solo si aun NO hay encargado en proceso Costura
@@ -396,32 +413,9 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
         $recibos = $query->orderBy('created_at', 'asc')->get();
 
         if ($tipoOperario === 'cortador') {
-            $usuarioNombre = strtolower(trim($usuario->name));
-
-            // Obtener TODAS las prendas donde el usuario es encargado de Corte
-            $prendasDelCortador = \App\Models\ProcesoPrenda::whereRaw('LOWER(TRIM(encargado)) = ?', [$usuarioNombre])
-                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['corte'])
-                ->pluck('prenda_pedido_id')
-                ->unique()
-                ->values();
-
-            $totalAntesFiltro = $recibos->count();
-
-            $recibos = $recibos->filter(function ($recibo) use ($prendasDelCortador) {
-                // Para cortador solo se permiten recibos asociados a prendas
-                // donde el usuario actual es el encargado del proceso Corte.
-                if (empty($recibo->prenda_id)) {
-                    return false;
-                }
-
-                return $prendasDelCortador->contains($recibo->prenda_id);
-            })->values();
-
-            \Log::info(' [Filtro CORTADOR] Recibos filtrados por prendas asignadas en Corte', [
+            \Log::info(' [Filtro CORTADOR SQL] Recibos filtrados por prendas asignadas en Corte', [
                 'usuario' => $usuario->name,
-                'total_antes' => $totalAntesFiltro,
-                'total_despues' => $recibos->count(),
-                'prendas_asignadas' => $prendasDelCortador->count(),
+                'total' => $recibos->count(),
             ]);
         }
 
@@ -675,11 +669,14 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 return [];
             }
 
+            // Logging removido para mejorar performance en bucles grandes
+            /*
             \Log::info(' [Prenda Validada]', [
                 'numero_pedido' => $pedido->numero_pedido,
                 'nombre_prenda' => $prenda->nombre_prenda,
                 'area' => $pedido->area
             ]);
+            */
 
             // Separar recibos por tipo - crear una entrada para cada tipo
             $recibosPorTipo = $recibosDelaPrenda->groupBy('tipo_recibo');
