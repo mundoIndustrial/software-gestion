@@ -19,12 +19,8 @@
         Importante: estos CSS se cargan en modo "no render-blocking" para que el overlay
         inicial aparezca inmediatamente (evita pantalla blanca al entrar/después de login).
     -->
-    <link rel="preload" href="{{ asset('css/operario/layout.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" href="{{ asset('css/operario/dashboard.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript>
-        <link rel="stylesheet" href="{{ asset('css/operario/layout.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/operario/dashboard.css') }}">
-    </noscript>
+    <link rel="stylesheet" href="{{ asset('css/operario/layout.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/operario/dashboard.css') }}">
 
     <!-- Material Symbols para iconos -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" as="style" crossorigin onload="this.onload=null;this.rel='stylesheet'">
@@ -93,8 +89,13 @@
         : (auth()->user()->hasRole('bodeguero') ? 'bodeguero' : 'default')))))));
 @endphp
 <body data-user-role="{{ $rolOperarioLayout }}" data-module="operario">
+    @php
+        // No bloquear el primer paint: el overlay solo se usa en transiciones
+        // iniciadas desde el cliente (click/submit), no al cargar la página.
+        $mostrarOverlayInicial = false;
+    @endphp
     <!-- Loading overlay global -->
-    <div id="loading-overlay">
+    <div id="loading-overlay" class="{{ $mostrarOverlayInicial ? '' : 'hidden' }}" style="{{ $mostrarOverlayInicial ? 'display:flex;' : 'display:none;' }}">
         <!-- Spinner mejorado -->
         <div style="position: relative; width: 80px; height: 80px;">
             <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="animation: spin 2s linear infinite;">
@@ -184,6 +185,7 @@
                 const manual = !!window.__OVERLAY_MANUAL_HIDE;
                 let transition = false;
                 try { transition = sessionStorage.getItem(TRANSITION_KEY) === '1'; } catch (_) {}
+                const overlayVisible = overlay.style.display !== 'none';
 
                 if (manual) {
                     // Aunque el hide sea manual, limpiar la bandera de transición para no arrastrarla.
@@ -192,7 +194,9 @@
                 }
 
                 // Si venimos de transición, asegurar un mínimo de tiempo para evitar "parpadeos".
-                hideLoadingOverlay({ minMs: transition ? 300 : 0 });
+                if (overlayVisible) {
+                    hideLoadingOverlay({ minMs: transition ? 300 : 0 });
+                }
                 try { sessionStorage.removeItem(TRANSITION_KEY); } catch (_) {}
             });
         })();
@@ -244,7 +248,7 @@
                     <button class="user-btn" id="userBtn">
                         <div class="user-avatar">
                             @if(Auth::user()->avatar)
-                                <img src="{{ route('storage.serve', ['path' => 'avatars/' . Auth::user()->avatar]) }}" alt="{{ Auth::user()->name }}">
+                                <img src="{{ route('storage.serve', ['path' => 'avatars/' . Auth::user()->avatar]) }}" alt="{{ Auth::user()->name }}" width="40" height="40" style="width:40px;height:40px;object-fit:cover;">
                             @else
                                 <div class="avatar-placeholder">
                                     {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
@@ -260,7 +264,7 @@
                         <div class="user-menu-header">
                             <div class="user-avatar-large">
                                 @if(Auth::user()->avatar)
-                                    <img src="{{ route('storage.serve', ['path' => 'avatars/' . Auth::user()->avatar]) }}" alt="{{ Auth::user()->name }}">
+                                    <img src="{{ route('storage.serve', ['path' => 'avatars/' . Auth::user()->avatar]) }}" alt="{{ Auth::user()->name }}" width="56" height="56" style="width:56px;height:56px;object-fit:cover;">
                                 @else
                                     <div class="avatar-placeholder">
                                         {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
@@ -353,7 +357,7 @@
     </script>
 
     <!-- Scripts -->
-    @vite(['resources/js/app.js'])
+    @vite(['resources/js/operario/entry.js'])
     <script>
         // Configuración de rutas para JavaScript
         window.APP_ROUTES = {

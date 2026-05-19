@@ -238,6 +238,14 @@ export function initReciboFilters() {
 
 
     window.filtrarPrendasPorRecibo = function (filtro) {
+        const userRole = document.querySelector('.operario-dashboard')?.dataset?.userRole || '';
+        if (userRole === 'vista-costura') {
+            const url = new URL(window.location.href);
+            url.searchParams.set('filtro', filtro);
+            url.searchParams.delete('page');
+            window.location.href = url.toString();
+            return;
+        }
         window.__dashboardFiltroPrincipalActivo = filtro;
         document.querySelectorAll('.badge-filtro[data-filtro]').forEach((btn) => {
             btn.classList.remove('badge-filtro-active');
@@ -395,7 +403,7 @@ export function initReciboFilters() {
                         data-numero-recibo="${recibo.consecutivo_actual}"
                         data-tipo-recibo="${tipoRecibo}">
                         <span class="material-symbols-rounded">share</span>
-                        VER DISTRIBUCIÓN
+                        VER DISTRIBUCIï¿½N
                   </button>`
                 : '';
 
@@ -443,7 +451,7 @@ export function initReciboFilters() {
 
         ordenesList.innerHTML = htmlRecibos;
         
-        // Reinicializar la paginación después de cargar los recibos de Control de Calidad
+        // Reinicializar la paginaciï¿½n despuï¿½s de cargar los recibos de Control de Calidad
         window.__updateDashboardPagination?.();
     }
 
@@ -461,23 +469,23 @@ export function initReciboFilters() {
             return;
         }
 
-        // Buscar si ya existe la sección de distribución (como hermano de la orden-card)
+        // Buscar si ya existe la secciï¿½n de distribuciï¿½n (como hermano de la orden-card)
         let distribucionSection = ordenCard?.nextElementSibling;
         
-        // Validar que sea la sección de distribución correcta
+        // Validar que sea la secciï¿½n de distribuciï¿½n correcta
         if (distribucionSection && !distribucionSection.classList.contains('distribucion-parciales-cc-section')) {
             distribucionSection = null;
         }
         
         if (distribucionSection) {
-            if (DASHBOARD_DEBUG) console.log('[DISTRIBUCION_CC] Sección encontrada, iniciando toggle');
+            if (DASHBOARD_DEBUG) console.log('[DISTRIBUCION_CC] Secciï¿½n encontrada, iniciando toggle');
             
             // Si ya existe, toggle (mostrar/ocultar)
             const isHidden = distribucionSection.style.display === 'none';
             distribucionSection.style.display = isHidden ? 'block' : 'none';
             
-            // Cambiar el texto del botón
-            btn.innerHTML = isHidden ? '<span class="material-symbols-rounded">visibility_off</span> OCULTAR' : '<span class="material-symbols-rounded">share</span> VER DISTRIBUCIÓN';
+            // Cambiar el texto del botï¿½n
+            btn.innerHTML = isHidden ? '<span class="material-symbols-rounded">visibility_off</span> OCULTAR' : '<span class="material-symbols-rounded">share</span> VER DISTRIBUCIï¿½N';
             
             if (DASHBOARD_DEBUG) console.log('[DISTRIBUCION_CC] Toggle completado');
             return;
@@ -514,7 +522,7 @@ export function initReciboFilters() {
         })
         .catch(error => {
             console.error('[DISTRIBUCION_CC] Error en fetch:', error);
-            alert('Error al cargar distribución');
+            alert('Error al cargar distribuciï¿½n');
         });
     }
 
@@ -525,14 +533,14 @@ export function initReciboFilters() {
         if (DASHBOARD_DEBUG) console.log('[DISTRIBUCION_CC CARDS] Preparando cards con', totalParciales, 'parciales');
 
         if (!ordenCard) {
-            console.error('[DISTRIBUCION_CC CARDS] No se encontró orden card');
+            console.error('[DISTRIBUCION_CC CARDS] No se encontrï¿½ orden card');
             return;
         }
 
         // Crear el HTML de las tarjetas
         const cardsHTML = crearHTMLDistribucionCards_CC(parciales, numeroRecibo, totalParciales);
 
-        // Crear contenedor de distribución
+        // Crear contenedor de distribuciï¿½n
         const distribucionSection = document.createElement('div');
         distribucionSection.className = 'distribucion-parciales-cc-section';
         distribucionSection.innerHTML = cardsHTML;
@@ -540,7 +548,7 @@ export function initReciboFilters() {
         // Insertar despues de la orden-card
         ordenCard.insertAdjacentElement('afterend', distribucionSection);
 
-        // Cambiar el texto del botón a "OCULTAR"
+        // Cambiar el texto del botï¿½n a "OCULTAR"
         if (btn) {
             btn.innerHTML = '<span class="material-symbols-rounded">visibility_off</span> OCULTAR';
         }

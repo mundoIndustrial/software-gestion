@@ -24,6 +24,8 @@ class GetOperarioDashboardUseCase
         $verTodas = $request->boolean('todas');
         $defaultTab = $usuario->hasRole('cortador') ? 'pendientes' : 'costura';
         $tab = (string) $request->query('tab', $defaultTab);
+        $filtroRecibo = strtolower(trim((string) $request->query('filtro', '')));
+        $filtroRecibo = in_array($filtroRecibo, ['costura', 'reflectivo'], true) ? $filtroRecibo : null;
 
         $prendasConRecibos = collect();
         $recibosCompletados = collect();
@@ -79,7 +81,7 @@ class GetOperarioDashboardUseCase
         if (!$usuario->hasRole('cortador') || in_array($tab, ['pendientes', 'pendiente-bodega'], true) || $usuario->hasRole('cortador')) {
             // SIEMPRE calculamos el contador de pedidos normales para el badge (si es cortador)
             if ($usuario->hasRole('cortador')) {
-                $prendasConRecibosRaw = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario);
+                $prendasConRecibosRaw = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario, $filtroRecibo);
                 $pendientesPedidosCount = $prendasConRecibosRaw->filter(function ($p) {
                     $reciboPrincipal = $p['recibos'][0] ?? null;
                     $tipo = strtoupper(trim((string) ($reciboPrincipal['tipo_recibo'] ?? '')));
@@ -98,7 +100,7 @@ class GetOperarioDashboardUseCase
                 }
             } else {
                 // Para otros roles (costureros, etc.), lógica normal
-                $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario);
+                $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario, $filtroRecibo);
                 $pendientesPedidosCount = $prendasConRecibos->count();
             }
 

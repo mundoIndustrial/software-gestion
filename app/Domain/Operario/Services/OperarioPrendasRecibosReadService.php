@@ -4,7 +4,7 @@ namespace App\Domain\Operario\Services;
 
 interface OperarioPrendasRecibosReadService
 {
-    public function obtenerPrendasConRecibos(\App\Models\User $usuario): \Illuminate\Support\Collection;
+    public function obtenerPrendasConRecibos(\App\Models\User $usuario, ?string $filtroRecibo = null): \Illuminate\Support\Collection;
 
     public function obtenerPrendasConRecibosTodosCostura(): \Illuminate\Support\Collection;
     
