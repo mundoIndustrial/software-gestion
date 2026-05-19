@@ -891,8 +891,8 @@ CSS;
                 }
             }
 
-            // Fallback: logos adjuntados en logo_cotizacion (cuando no hay técnicas por prenda)
-            if (empty($imagenesPorTipo['Logo']) && $this->cotizacion->logoCotizacion && $this->cotizacion->logoCotizacion->fotos) {
+            // Fallback: logos adjuntados en logo_cotizacion (cuando la prenda sí tiene proceso de logo pero no tiene fotos específicas de la técnica)
+            if ($tecnicasPrendaArray->isNotEmpty() && empty($imagenesPorTipo['Logo']) && $this->cotizacion->logoCotizacion && $this->cotizacion->logoCotizacion->fotos) {
                 foreach ($this->cotizacion->logoCotizacion->fotos as $foto) {
                     if ($foto && ($foto->url ?? null)) {
                         $imagenesPorTipo['Logo'][] = [
