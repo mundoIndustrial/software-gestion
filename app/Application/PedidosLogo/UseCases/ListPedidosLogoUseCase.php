@@ -38,9 +38,9 @@ final class ListPedidosLogoUseCase
         // En filtro estampado respetamos el tipo de proceso para evitar mezclar bordado.
         $soloMinimalRole = $isMinimalLogoRole && !$esFiltroEstampado;
 
-        // No forzar área fija: permite mostrar recibos aunque aún no exista
-        // trazabilidad de área o proceso técnico asociado.
-        $areaFija = null;
+        // Para bordador, restringir siempre a pedidos en área BORDANDO.
+        // Otros roles mantienen la lógica flexible sin área fija.
+        $areaFija = $isBordador ? 'BORDANDO' : null;
 
         $recibos = $this->procesoReadRepository->paginarRecibosAprobados(
             $tipoProcesoIds,
