@@ -570,7 +570,7 @@ function mostrarDistribucionCards(datos, numeroRecibo, ordenCard, btn) {
     }
 
     // Crear el HTML de las tarjetas con el número de pedido correcto
-    const cardsHTML = crearHTMLDistribucionCards(parciales, numeroPedido, totalParciales);
+    const cardsHTML = crearHTMLDistribucionCards(parciales, numeroPedido, totalParciales, datos.recibo?.id || null);
 
     // Crear contenedor de distribución
     const distribucionSection = document.createElement('div');
@@ -588,7 +588,7 @@ function mostrarDistribucionCards(datos, numeroRecibo, ordenCard, btn) {
     console.log('[DISTRIBUCION CARDS] Cards insertadas en el DOM');
 }
 
-function crearHTMLDistribucionCards(parciales, numeroRecibo, totalParciales) {
+function crearHTMLDistribucionCards(parciales, numeroRecibo, totalParciales, reciboId = null) {
     if (totalParciales === 0) {
         return `
             <div class="parcial-card parcial-card-vacio">
@@ -614,6 +614,9 @@ function crearHTMLDistribucionCards(parciales, numeroRecibo, totalParciales) {
         const badgeClass = `badge-estado-${estadoParcial.toLowerCase().replace(/\s+/g, '-')}`;
         const areaParcial = String(parcial.area || 'SIN ASIGNAR');
         const estaEnControlCalidad = ['control calidad', 'control de calidad'].includes(areaParcial.trim().toLowerCase());
+        const esBodega = String(parcial.tipo_recibo || '').toUpperCase() === 'CORTE-PARA-BODEGA';
+        const numeroPedidoDetalle = esBodega ? '0' : numeroRecibo;
+        const reciboDetalleId = parcial.recibo_id || reciboId || null;
         
         // Generar el HTML de tallas (S: 23, M: 1, L: 20, etc.)
         const tallasHTML = generarTallasHTML(parcial.tallas || []);
@@ -681,7 +684,7 @@ function crearHTMLDistribucionCards(parciales, numeroRecibo, totalParciales) {
                         </button>
                         ` : ''}
                         <button class="btn-ver-recibo-parcial" 
-                                onclick="verReciboParcial(${parcial.id}, '${String(parcial.consecutivo_parcial).replace(/'/g, "\\'")}'  , '${numeroRecibo}', ${parcial.prenda_pedido_id || 'null'})">
+                                onclick="verReciboParcial(${parcial.id}, '${String(parcial.consecutivo_parcial).replace(/'/g, "\\'")}'  , '${numeroPedidoDetalle}', ${parcial.prenda_pedido_id || 'null'}, ${reciboDetalleId || 'null'})">
                             <span class="material-symbols-rounded">visibility</span>
                             VER RECIBO
                         </button>
@@ -856,19 +859,21 @@ function showSuccessMessage(message) {
  * Ver detalles del recibo parcial
  * Abre la página de detalles mostrando las tallas asignadas al parcial
  */
-async function verReciboParcial(parcialId, consecutivoParcial, numeroPedido, prendaPedidoId) {
+async function verReciboParcial(parcialId, consecutivoParcial, numeroPedido, prendaPedidoId, reciboId = null) {
     try {
         // Sanitizar y asegurar tipos correctos
         const sanitizedParcialId = parseInt(parcialId, 10);
         const sanitizedNumeroPedido = String(numeroPedido).trim();
         const sanitizedConsecutivoParcial = String(consecutivoParcial).trim().replace(/[^0-9.]/g, '');
         const sanitizedPrendaId = prendaPedidoId && prendaPedidoId !== 'null' ? parseInt(prendaPedidoId, 10) : null;
+        const sanitizedReciboId = reciboId && reciboId !== 'null' ? parseInt(reciboId, 10) : null;
 
         console.log('[VER RECIBO PARCIAL] Parámetros sanitizados', {
             parcialId: sanitizedParcialId,
             consecutivoParcial: sanitizedConsecutivoParcial,
             numeroPedido: sanitizedNumeroPedido,
-            prendaPedidoId: sanitizedPrendaId
+            prendaPedidoId: sanitizedPrendaId,
+            reciboId: sanitizedReciboId
         });
 
         if (!sanitizedNumeroPedido || isNaN(sanitizedNumeroPedido)) {
@@ -891,6 +896,10 @@ async function verReciboParcial(parcialId, consecutivoParcial, numeroPedido, pre
         // Parámetros de la prenda
         if (sanitizedPrendaId) {
             params.append('prenda_id', sanitizedPrendaId);
+        }
+
+        if (sanitizedReciboId) {
+            params.append('recibo_id', sanitizedReciboId);
         }
 
         // Parámetros del parcial
@@ -920,4 +929,3 @@ async function verReciboParcial(parcialId, consecutivoParcial, numeroPedido, pre
 window.abrirDistribucionRecibo = abrirDistribucionRecibo;
 window.deshacerParcial = deshacerParcial;
 window.verReciboParcial = verReciboParcial;
-

@@ -93,19 +93,32 @@ class ObtenerDistribucionReciboOperarioUseCase
 
         $prendaBodegaId = (int) ($recibo->prenda_bodega_id ?? 0);
 
-        $parcialesInfo = $parciales->map(function ($parcial) use ($numeroPedido, $generosPorTallaBodega, $prendaBodegaId) {
+        $parcialesInfo = $parciales->map(function ($parcial) use ($numeroPedido, $generosPorTallaBodega, $prendaBodegaId, $recibo) {
             $proceso = null;
-            if ($numeroPedido) {
+            if ($prendaBodegaId > 0) {
+                $proceso = \App\Models\ProcesoPrenda::query()
+                    ->where('prenda_bodega_id', $prendaBodegaId)
+                    ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                    ->whereNull('deleted_at')
+                    ->latest('created_at')
+                    ->first();
+            }
+
+            if (!$proceso && $numeroPedido) {
                 $proceso = $this->readRepository->findProcesoParcial(
                     numeroPedido: (int) $numeroPedido,
                     prendaId: (int) $parcial->prenda_pedido_id,
                     consecutivoParcial: $parcial->consecutivo_parcial
                 );
-            } elseif ($prendaBodegaId > 0) {
+            }
+
+            if ((!$proceso || empty(trim((string) ($proceso->encargado ?? '')))) && $prendaBodegaId > 0) {
                 $proceso = \App\Models\ProcesoPrenda::query()
                     ->where('prenda_bodega_id', $prendaBodegaId)
-                    ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
                     ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                    ->whereNotNull('encargado')
+                    ->whereRaw('TRIM(encargado) != ?', [''])
                     ->whereNull('deleted_at')
                     ->latest('created_at')
                     ->first();
@@ -120,6 +133,7 @@ class ObtenerDistribucionReciboOperarioUseCase
                 'id' => $parcial->id,
                 'area' => $area,
                 'encargado' => $encargado,
+                'recibo_id' => (int) $recibo->id,
                 'tipo_recibo' => $parcial->tipo_recibo,
                 'consecutivo_parcial' => (float) $parcial->consecutivo_parcial,
                 'consecutivo_original' => (float) $parcial->consecutivo_original,
