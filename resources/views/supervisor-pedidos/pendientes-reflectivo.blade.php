@@ -1,4 +1,4 @@
-﻿@extends('supervisor-pedidos.layout')
+@extends('supervisor-pedidos.layout')
 
 @section('title', 'Pendiente Reflectivo')
 @section('page-title', 'Pendiente Reflectivo')
@@ -873,7 +873,10 @@ window.openReciboReflectivoModalFromRow = async function(button) {
             return;
         }
 
-        window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, 'reflectivo');
+        window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, 'reflectivo', null, {
+            targetConsecutivo: numeroRecibo || null,
+            esParcial: false
+        });
         return;
     }
 

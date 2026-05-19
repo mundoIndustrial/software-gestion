@@ -1351,6 +1351,8 @@
                              data-tipo-string="${tipoString}"
                              data-es-parcial="${esParcial}"
                              data-pedido-parcial-id="${parcialId || ''}"
+                             data-numero-recibo="${recibo.numero_recibo || ''}"
+                             data-recibo-id="${recibo.consecutivo_recibo_id || ''}"
                              data-nombre-proceso="${(recibo.nombre || '').replace(/"/g, '&quot;')}"
                              onclick="seleccionarProcesoConDataAttributes(this)">
                             <div class="proceso-info">
@@ -1509,6 +1511,8 @@
             const tipoString = element.getAttribute('data-tipo-string');
             const esParcial = element.getAttribute('data-es-parcial') === 'true';
             const pedidoParcialId = element.getAttribute('data-pedido-parcial-id');
+            const numeroRecibo = element.getAttribute('data-numero-recibo') || '';
+            const reciboId = element.getAttribute('data-recibo-id') || '';
             const nombreProceso = element.getAttribute('data-nombre-proceso')?.replace(/&quot;/g, '"') || '';
 
             console.log(`[seleccionarProcesoConDataAttributes] Leyendo datos:`, {
@@ -1516,6 +1520,8 @@
                 tipoString,
                 esParcial,
                 pedidoParcialId,
+                numeroRecibo,
+                reciboId,
                 nombreProceso
             });
 
@@ -1523,6 +1529,8 @@
             const datosAdicionales = {
                 es_parcial: esParcial,
                 pedido_parcial_id: esParcial && pedidoParcialId ? parseInt(pedidoParcialId) : null,
+                numero_recibo: numeroRecibo,
+                recibo_id: reciboId,
                 nombre_proceso: nombreProceso
             };
 
@@ -1594,7 +1602,17 @@
             window.openOrderDetailModalWithParcial(datosAdicionales.pedido_parcial_id, prendaId, tipoString);
         } else {
             // Abrir modal de recibo normal
-            window.openOrderDetailModalWithProcess(pedidoId, prendaId, tipoString);
+            const targetConsecutivo = datosAdicionales?.numero_recibo || null;
+            const targetReciboId = datosAdicionales?.recibo_id || null;
+            window.openOrderDetailModalWithProcess(
+                pedidoId,
+                prendaId,
+                tipoString,
+                null,
+                targetConsecutivo,
+                targetReciboId,
+                { esParcial: false }
+            );
         }
         
         console.log(`[PRENDA-DEBUG] Proceso Click #${procesoClickCount} - Modal de recibo solicitado`);

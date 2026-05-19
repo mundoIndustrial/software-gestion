@@ -1,4 +1,4 @@
-﻿@extends('supervisor-pedidos.layout')
+@extends('supervisor-pedidos.layout')
 
 @section('title', 'Pendiente Costura')
 @section('page-title', 'Pendiente Costura')
@@ -938,7 +938,10 @@ window.openReciboCosturaModalFromRow = async function(button) {
             return;
         }
 
-        window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, 'costura');
+        window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, 'costura', null, {
+            targetConsecutivo: numeroRecibo || null,
+            esParcial: false
+        });
         return;
     }
 

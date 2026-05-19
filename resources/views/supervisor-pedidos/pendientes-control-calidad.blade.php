@@ -1,4 +1,4 @@
-﻿@extends('supervisor-pedidos.layout')
+@extends('supervisor-pedidos.layout')
 
 @section('title', 'Pendiente Control Calidad')
 @section('page-title', 'Pendiente Control Calidad')
@@ -583,6 +583,7 @@ window.openReciboControlCalidadModalFromRow = async function(button) {
     const pedidoId = Number(button?.getAttribute('data-pedido-id') || 0);
     const prendaId = Number(button?.getAttribute('data-prenda-id') || 0);
     const tipoRecibo = String(button?.getAttribute('data-tipo-recibo') || '').trim().toUpperCase();
+    const numeroRecibo = String(button?.getAttribute('data-numero-recibo') || '').trim();
     const tipoProceso = tipoRecibo === 'REFLECTIVO' ? 'reflectivo' : 'costura';
 
     if (!pedidoId || !prendaId) {
@@ -595,7 +596,10 @@ window.openReciboControlCalidadModalFromRow = async function(button) {
 
     const moduleReady = await esperarModuloRecibos();
     if (moduleReady) {
-        window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, tipoProceso);
+        window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, tipoProceso, null, {
+            targetConsecutivo: numeroRecibo || null,
+            esParcial: false
+        });
         return;
     }
 

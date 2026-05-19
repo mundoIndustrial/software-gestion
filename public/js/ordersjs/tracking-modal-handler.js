@@ -1378,9 +1378,19 @@ function initTrackingModalListeners() {
             console.log('[abrirReciboEspecial] Llamando a openOrderDetailModalWithProcess con:', {
               pedidoId: currentOrderData.id,
               prendaId: prenda.id,
-              tipoRecibo: recibo.tipo_recibo
+              tipoRecibo: recibo.tipo_recibo,
+              consecutivo: recibo.consecutivo || null,
+              reciboId: recibo.id || null
             });
-            window.openOrderDetailModalWithProcess(currentOrderData.id, prenda.id, recibo.tipo_recibo);
+            window.openOrderDetailModalWithProcess(
+              currentOrderData.id,
+              prenda.id,
+              recibo.tipo_recibo,
+              null,
+              recibo.consecutivo || null,
+              recibo.id || null,
+              { esParcial: false }
+            );
           } else {
             console.warn('[abrirReciboEspecial] openOrderDetailModalWithProcess no disponible');
             showError('Sistema de recibos no inicializado');

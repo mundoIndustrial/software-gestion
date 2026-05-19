@@ -33,14 +33,14 @@
     window.pedidosRecibosModule = module;
     window.Formatters = Formatters;
 
-    // Exponer API publica compatibilidad con codigo antiguo
     window.openOrderDetailModalWithProcess = (
         pedidoId,
         prendaId,
         tipoRecibo,
         prendaIndex = null,
         targetConsecutivo = null,
-        targetReciboId = null
+        targetReciboId = null,
+        options = {}
     ) => {
         return module.abrirRecibo(
             pedidoId,
@@ -49,7 +49,8 @@
             prendaIndex,
             {
                 targetConsecutivo,
-                targetReciboId
+                targetReciboId,
+                ...options
             }
         );
     };

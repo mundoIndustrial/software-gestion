@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Modal Handlers for Insumos/Materiales Module
  * Superficie estable minima para modales de materiales.
  */
@@ -34,8 +34,8 @@ async function resolveOpenOrderDetailModalHandler() {
     // Guardar la instancia globalmente para que otros scripts (como insumos-galeria.js) puedan acceder a ella
     window.PedidosRecibosModuleInstance = pedidosRecibosModuleInstance;
 
-    openOrderDetailModalHandler = (pedidoId, prendaId, tipoRecibo, prendaIndex = null) =>
-        pedidosRecibosModuleInstance.abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex);
+    openOrderDetailModalHandler = (pedidoId, prendaId, tipoRecibo, prendaIndex = null, options = {}) =>
+        pedidosRecibosModuleInstance.abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex, options);
 
     return openOrderDetailModalHandler;
 }
@@ -147,7 +147,7 @@ function abrirDetalleRecibo(pedidoId, prendaId, tipoRecibo, esParcial = false, p
                 );
             }
 
-            return handler(parsedPedidoId, parsedPrendaId, tipoRecibo);
+            return handler(parsedPedidoId, parsedPrendaId, tipoRecibo, null, { esParcial: false });
         })
         .catch((error) => {
             console.error('[modal-handlers-insumos] Error cargando PedidosRecibosModule:', error);

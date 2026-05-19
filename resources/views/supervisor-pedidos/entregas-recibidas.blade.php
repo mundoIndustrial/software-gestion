@@ -1,4 +1,4 @@
-﻿@extends('supervisor-pedidos.layout')
+@extends('supervisor-pedidos.layout')
 
 @section('title', 'Entregas y Recibidas')
 @section('page-title', 'Entregas y Recibidas')
@@ -432,7 +432,10 @@ window.openReciboCosturaModalFromRow = async function(button) {
             return;
         }
 
-        window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, 'costura');
+        window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, 'costura', null, {
+            targetConsecutivo: numeroRecibo || null,
+            esParcial: false
+        });
         return;
     }
 

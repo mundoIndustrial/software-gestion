@@ -24,7 +24,8 @@
             tipoRecibo,
             prendaIndex,
             targetConsecutivo,
-            targetReciboId
+            targetReciboId,
+            options = {}
         ) {
             const modulo = ensureModuleInstance();
             if (modulo) {
@@ -35,7 +36,8 @@
                     prendaIndex ?? null,
                     {
                         targetConsecutivo: targetConsecutivo ?? null,
-                        targetReciboId: targetReciboId ?? null
+                        targetReciboId: targetReciboId ?? null,
+                        ...options
                     }
                 );
             }

@@ -76,7 +76,7 @@ class TrackingModalController {
 
             // Abrir el recibo de costura usando el módulo
             if (window.pedidosRecibosModule) {
-                window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, 'costura');
+                window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, 'costura', null, { esParcial: false });
             } else {
                 console.error('[TrackingModalController] Módulo de recibos no disponible');
                 alert('Módulo de recibos no disponible. Por favor recargue la página.');

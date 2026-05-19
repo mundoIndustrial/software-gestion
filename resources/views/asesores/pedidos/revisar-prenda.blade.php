@@ -329,8 +329,8 @@
 
         const { PedidosRecibosModule } = await import('/js/modulos/pedidos-recibos/PedidosRecibosModule.js');
         const module = new PedidosRecibosModule();
-        _openOrderDetailModalHandler = (pedidoId, prendaId, tipoRecibo, prendaIndex = null) =>
-            module.abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex);
+        _openOrderDetailModalHandler = (pedidoId, prendaId, tipoRecibo, prendaIndex = null, options = {}) =>
+            module.abrirRecibo(pedidoId, prendaId, tipoRecibo, prendaIndex, options);
 
         return _openOrderDetailModalHandler;
     }
@@ -342,7 +342,7 @@
             : (parseInt(prendaId, 10) || null);
 
         _resolveOpenOrderDetailModalHandler()
-            .then((handler) => handler(parsedPedidoId, parsedPrendaId, tipoRecibo))
+            .then((handler) => handler(parsedPedidoId, parsedPrendaId, tipoRecibo, null, { esParcial: false }))
             .catch((error) => {
                 console.error('[revisar-prenda] Error abriendo recibo:', error);
                 alert('No se pudo abrir el recibo. Recarga la página e intenta de nuevo.');

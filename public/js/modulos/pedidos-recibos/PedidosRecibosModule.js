@@ -1,4 +1,4 @@
-﻿/**
+/**
  * PedidosRecibosModule.js
  * Modulo principal para gestion de recibos dinamicos en pedidos
  * 
@@ -79,7 +79,8 @@ export class PedidosRecibosModule {
         try {
             const targetConsecutivoOption = String(options?.targetConsecutivo ?? '').trim();
             const targetReciboIdOption = String(options?.targetReciboId ?? '').trim();
-            const esParcialForzado = Boolean(options?.esParcial);
+            const esParcialForzado = options?.esParcial === true || String(options?.esParcial || '').toLowerCase() === 'true';
+            const esParcialExplicitamenteFalso = options?.esParcial === false || String(options?.esParcial || '').toLowerCase() === 'false';
             const pedidoParcialIdForzado = Number(options?.pedidoParcialId || 0);
             const esVistaRecibosCostura = window.location.pathname.includes('/recibos-costura');
             if (esParcialForzado && pedidoParcialIdForzado > 0) {
@@ -383,7 +384,7 @@ export class PedidosRecibosModule {
             let esParcialDetectado = false;
             let pedidoParcialIdDetectado = 0;
 
-            if (prendaData.recibos && Array.isArray(prendaData.recibos.parciales)) {
+            if (!esParcialExplicitamenteFalso && prendaData.recibos && Array.isArray(prendaData.recibos.parciales)) {
                 const targetConsecutivoNormalizado = String(targetConsecutivo || '').trim();
                 // 1) Prioridad maxima: si tenemos consecutivo objetivo, buscar el parcial exacto.
                 // Esto garantiza cargar tallas/cantidades desde pedidos_parciales_tallas.
@@ -404,35 +405,34 @@ export class PedidosRecibosModule {
 
                 // 2) Fallback: detectar por tipo (comportamiento previo)
                 if (!esParcialDetectado) {
-                const parcialMatch = prendaData.recibos.parciales.find(p =>
-                    String(p.tipo_recibo || '').toUpperCase() === String(tipoRecibo || '').toUpperCase()
-                );
-                if (parcialMatch && parcialMatch.id) {
-                    const consecutivoParcialDetectado = String(
-                        parcialMatch.consecutivo_actual ?? parcialMatch.numero_recibo ?? ''
-                    ).trim();
-                    const hayConflictoConTarget =
-                        targetConsecutivoNormalizado !== '' &&
-                        consecutivoParcialDetectado !== '' &&
-                        consecutivoParcialDetectado !== targetConsecutivoNormalizado;
+                    const parcialMatch = prendaData.recibos.parciales.find(p =>
+                        String(p.tipo_recibo || '').toUpperCase() === String(tipoRecibo || '').toUpperCase()
+                    );
+                    if (parcialMatch && parcialMatch.id) {
+                        const consecutivoParcialDetectado = String(
+                            parcialMatch.consecutivo_actual ?? parcialMatch.numero_recibo ?? ''
+                        ).trim();
+                        const hayConflictoConTarget =
+                            targetConsecutivoNormalizado !== '' &&
+                            consecutivoParcialDetectado !== targetConsecutivoNormalizado;
 
-                    if (hayConflictoConTarget) {
-                        console.warn('[PedidosRecibosModule.abrirRecibo] Parcial detectado por tipo ignorado por conflicto con targetConsecutivo:', {
-                            tipoRecibo,
-                            parcialDetectadoId: parcialMatch.id,
-                            consecutivoParcialDetectado,
-                            targetConsecutivo: targetConsecutivoNormalizado
-                        });
-                    } else {
-                        esParcialDetectado = true;
-                        pedidoParcialIdDetectado = Number(parcialMatch.id || 0);
-                        console.log('[PedidosRecibosModule.abrirRecibo] Parcial detectado en prendaData.recibos.parciales:', {
-                            tipoRecibo,
-                            parcialId: pedidoParcialIdDetectado,
-                            parcial: parcialMatch
-                        });
+                        if (hayConflictoConTarget) {
+                            console.warn('[PedidosRecibosModule.abrirRecibo] Parcial detectado por tipo ignorado por conflicto con targetConsecutivo:', {
+                                tipoRecibo,
+                                parcialDetectadoId: parcialMatch.id,
+                                consecutivoParcialDetectado,
+                                targetConsecutivo: targetConsecutivoNormalizado
+                            });
+                        } else {
+                            esParcialDetectado = true;
+                            pedidoParcialIdDetectado = Number(parcialMatch.id || 0);
+                            console.log('[PedidosRecibosModule.abrirRecibo] Parcial detectado en prendaData.recibos.parciales:', {
+                                tipoRecibo,
+                                parcialId: pedidoParcialIdDetectado,
+                                parcial: parcialMatch
+                            });
+                        }
                     }
-                }
                 }
             }
 
@@ -1000,7 +1000,8 @@ window.openOrderDetailModalWithProcess = async function (
     tipoRecibo,
     prendaIndex = null,
     targetConsecutivo = null,
-    targetReciboId = null
+    targetReciboId = null,
+    options = {}
 ) {
     return window.pedidosRecibosModule.abrirRecibo(
         pedidoId,
@@ -1009,7 +1010,8 @@ window.openOrderDetailModalWithProcess = async function (
         prendaIndex,
         {
             targetConsecutivo,
-            targetReciboId
+            targetReciboId,
+            ...options
         }
     );
 };
