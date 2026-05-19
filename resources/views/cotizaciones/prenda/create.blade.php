@@ -544,15 +544,34 @@ class="prenda-search-input" style="font-size: 0.75rem; padding: 0.4rem;">
                 </div>
             </div>
 
-            <!-- SECCIÓN DE PRENDA DE BODEGA -->
+            <!-- SECCIÓN DE PRENDA DE BODEGA, DISPONIBILIDAD Y ÚLTIMA VENTA -->
             <div class="producto-section">
-                <div class="section-title"><i class="fas fa-warehouse"></i> PRENDA DE BODEGA</div>
-                <div class="form-row" style="display: flex; gap: 12px; align-items: center;">
-                    <div class="form-col full" style="flex: 1;">
-                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 0.85rem;">
+                <div class="section-title"><i class="fas fa-warehouse"></i> DETALLES DE INVENTARIO Y VENTA</div>
+                <div class="form-row" style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
+                    <!-- Bodega -->
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.85rem; margin: 0;">
                             <input type="checkbox" name="productos_prenda[][variantes][prenda_bodega]" class="prenda-bodega-checkbox" value="true" style="width: 18px; height: 18px; accent-color: #0066cc; cursor: pointer;">
                             <span style="color: #333; font-weight: 500;">Marcar si esta prenda viene de bodega</span>
                         </label>
+                    </div>
+                    
+                    <!-- Disponibilidad -->
+                    <div class="detalle-disponibilidad-container" style="flex: 1; min-width: 250px; display: flex; align-items: center; gap: 10px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.85rem; margin: 0; white-space: nowrap;">
+                            <input type="checkbox" class="disponibilidad-checkbox" style="width: 18px; height: 18px; accent-color: #0066cc; cursor: pointer;">
+                            <span style="color: #333; font-weight: 500;">Disponibilidad</span>
+                        </label>
+                        <input type="text" class="disponibilidad-input" placeholder="Escribe disponibilidad..." disabled style="flex: 1; font-size: 0.75rem; padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px; transition: border-color 0.2s; background-color: #f9f9f9; color: #333;">
+                    </div>
+
+                    <!-- Última Venta -->
+                    <div class="detalle-ultima-venta-container" style="flex: 1; min-width: 250px; display: flex; align-items: center; gap: 10px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.85rem; margin: 0; white-space: nowrap;">
+                            <input type="checkbox" class="ultima-venta-checkbox" style="width: 18px; height: 18px; accent-color: #0066cc; cursor: pointer;">
+                            <span style="color: #333; font-weight: 500;">Última venta</span>
+                        </label>
+                        <input type="text" class="ultima-venta-input" placeholder="Escribe última venta..." disabled style="flex: 1; font-size: 0.75rem; padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px; transition: border-color 0.2s; background-color: #f9f9f9; color: #333;">
                     </div>
                 </div>
             </div>
@@ -962,6 +981,26 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   document.addEventListener('change', function(e) {
     if (e.target.matches('.prenda-search-input')) mostrarSelectorVariantes(e.target);
+    
+    // Toggles para Disponibilidad y Última Venta
+    if (e.target.matches('.disponibilidad-checkbox')) {
+      const container = e.target.closest('.detalle-disponibilidad-container');
+      const input = container ? container.querySelector('.disponibilidad-input') : null;
+      if (input) {
+        input.disabled = !e.target.checked;
+        input.style.backgroundColor = e.target.checked ? '#ffffff' : '#f9f9f9';
+        if (!e.target.checked) input.value = '';
+      }
+    }
+    if (e.target.matches('.ultima-venta-checkbox')) {
+      const container = e.target.closest('.detalle-ultima-venta-container');
+      const input = container ? container.querySelector('.ultima-venta-input') : null;
+      if (input) {
+        input.disabled = !e.target.checked;
+        input.style.backgroundColor = e.target.checked ? '#ffffff' : '#f9f9f9';
+        if (!e.target.checked) input.value = '';
+      }
+    }
   });
 
   // Cerrar suggestions al click fuera

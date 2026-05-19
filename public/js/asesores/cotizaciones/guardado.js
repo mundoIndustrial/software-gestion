@@ -415,6 +415,12 @@ async function procederEnviarCotizacion(esBorrador = false) {
                 formData.append(`prendas[${index}][cantidad]`, producto.cantidad || 1);
                 formData.append(`prendas[${index}][tallas]`, producto.tallas || '');
 
+                // Detalles (disponibilidad y ultima_venta)
+                if (producto.detalles) {
+                    formData.append(`prendas[${index}][detalles][disponibilidad]`, producto.detalles.disponibilidad || '');
+                    formData.append(`prendas[${index}][detalles][ultima_venta]`, producto.detalles.ultima_venta || '');
+                }
+
                 // Tallas/variaciones avanzadas (modal "Asignar colores a tallas")
                 // Se envía como JSON string en prendas[i][tallas_color]
                 if (window.advancedVariationsByProductoId && producto.productoId && window.advancedVariationsByProductoId[producto.productoId]) {

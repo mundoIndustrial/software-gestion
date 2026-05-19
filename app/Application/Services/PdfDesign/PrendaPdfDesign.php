@@ -418,13 +418,36 @@ CSS;
 
         // Header del card con nombre y detalles
         $html .= '<div class="prenda-header">';
-        $html .= '<div class="prenda-nombre">' . htmlspecialchars($prenda->nombre_producto) . '</div>';
+        
+        $badgeBodega = '';
+        if (isset($prenda->prenda_bodega) && ($prenda->prenda_bodega === true || $prenda->prenda_bodega === 1 || $prenda->prenda_bodega === '1' || $prenda->prenda_bodega === 'true')) {
+            $badgeBodega = ' <span style="background-color: #10b981; color: #ffffff; padding: 2px 6px; font-size: 8px; font-weight: bold; border-radius: 3px; margin-left: 8px; text-transform: uppercase;">Prenda de Bodega</span>';
+        }
+        
+        $html .= '<div class="prenda-nombre">' . htmlspecialchars($prenda->nombre_producto) . $badgeBodega . '</div>';
 
         // Descripción consolidada justo debajo del nombre (incluye color/tela/referencia + variaciones)
         $html .= $this->renderDescripcion($prenda);
 
         // Tallas en rojo
         $html .= $this->renderPrendaTallas($prenda);
+
+        // Detalles de inventario (Disponibilidad y Última Venta)
+        if ($prenda->detalle) {
+            $disp = $prenda->detalle->disponibilidad ? trim($prenda->detalle->disponibilidad) : null;
+            $ultVenta = $prenda->detalle->ultima_venta ? trim($prenda->detalle->ultima_venta) : null;
+            
+            if ($disp || $ultVenta) {
+                $html .= '<div style="margin-top: 6px; padding: 6px; background: #ffffff; border: 1px solid #ddd; border-radius: 3px; font-size: 9px; line-height: 1.4;">';
+                if ($disp) {
+                    $html .= '<div><strong>DISPONIBILIDAD:</strong> ' . htmlspecialchars($disp) . '</div>';
+                }
+                if ($ultVenta) {
+                    $html .= '<div><strong>ÚLTIMA VENTA:</strong> ' . htmlspecialchars($ultVenta) . '</div>';
+                }
+                $html .= '</div>';
+            }
+        }
 
         $html .= '</div>';
 

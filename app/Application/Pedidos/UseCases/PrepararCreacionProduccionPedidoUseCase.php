@@ -19,7 +19,7 @@ class PrepararCreacionProduccionPedidoUseCase implements PrepararCreacionProducc
             $cotizacion = \App\Models\Cotizacion::with([
                 'cliente',
                 'prendas' => function($query) {
-                    $query->with(['fotos', 'telaFotos', 'tallas', 'variantes']);
+                    $query->with(['fotos', 'telaFotos', 'tallas', 'variantes', 'detalle']);
                 },
                 'prendas.logoCotizacionesTecnicas',
                 'logoCotizacion.fotos',

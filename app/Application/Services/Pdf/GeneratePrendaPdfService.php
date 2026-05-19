@@ -17,11 +17,12 @@ final class GeneratePrendaPdfService
             'cliente:id,nombre',
             'tipoCotizacion:id,codigo,nombre',
             'prendas' => function ($query) {
-                $query->select('id', 'cotizacion_id', 'nombre_producto', 'descripcion', 'texto_personalizado_tallas');
+                $query->select('id', 'cotizacion_id', 'nombre_producto', 'descripcion', 'texto_personalizado_tallas', 'prenda_bodega');
             },
             'prendas.fotos:id,prenda_cot_id,ruta_original,ruta_webp',
             'prendas.telaFotos:id,prenda_cot_id,ruta_original,ruta_webp',
             'prendas.tallas:id,prenda_cot_id,talla,color,genero_id,cantidad',
+            'prendas.detalle',
             'prendas.variantes:id,prenda_cot_id,color,tipo_manga_id,tipo_broche_id,tiene_reflectivo,obs_reflectivo,tiene_bolsillos,obs_bolsillos,aplica_manga,obs_manga,obs_broche,es_jean_pantalon,tipo_jean_pantalon,telas_multiples',
             'prendas.variantes.manga:id,nombre',
             'prendas.variantes.broche:id,nombre',

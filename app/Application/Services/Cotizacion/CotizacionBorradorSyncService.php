@@ -74,6 +74,19 @@ final class CotizacionBorradorSyncService
 
             $idsConservar[] = $prendaModel->id;
 
+            // Sincronizar detalles (disponibilidad y ultima_venta)
+            $detallesData = $prendaData['detalles'] ?? null;
+            if (is_string($detallesData)) {
+                $detallesData = json_decode($detallesData, true);
+            }
+            \App\Models\PrendaCotDetalle::updateOrCreate(
+                ['prenda_cot_id' => $prendaModel->id],
+                [
+                    'disponibilidad' => is_array($detallesData) ? ($detallesData['disponibilidad'] ?? null) : null,
+                    'ultima_venta' => is_array($detallesData) ? ($detallesData['ultima_venta'] ?? null) : null,
+                ]
+            );
+
             $this->sincronizarTallasPrenda($prendaModel, $prendaData);
             $this->sincronizarVarianteYTelasPrenda($prendaModel, $prendaData);
         }

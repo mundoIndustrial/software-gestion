@@ -1157,6 +1157,22 @@ function recopilarDatos() {
             'Todas las keys': Object.keys(variantes)
         });
         
+        // Capturar detalles (disponibilidad y ultima_venta)
+        const detalles = {
+            disponibilidad: null,
+            ultima_venta: null
+        };
+        const dispCheckbox = item.querySelector('.disponibilidad-checkbox');
+        const dispInput = item.querySelector('.disponibilidad-input');
+        if (dispCheckbox && dispCheckbox.checked && dispInput) {
+            detalles.disponibilidad = dispInput.value || '';
+        }
+        const uvCheckbox = item.querySelector('.ultima-venta-checkbox');
+        const uvInput = item.querySelector('.ultima-venta-input');
+        if (uvCheckbox && uvCheckbox.checked && uvInput) {
+            detalles.ultima_venta = uvInput.value || '';
+        }
+
         if (nombre.trim()) {
             const producto = {
                 productoId: productoId,
@@ -1166,7 +1182,8 @@ function recopilarDatos() {
                 tallas: tallasData,
                 fotos: fotos,
                 telas: telas,
-                variantes: variantes
+                variantes: variantes,
+                detalles: detalles
             };
             
             productos.push(producto);

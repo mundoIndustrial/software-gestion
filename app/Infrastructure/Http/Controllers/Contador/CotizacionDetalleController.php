@@ -44,6 +44,7 @@ final class CotizacionDetalleController extends Controller
                         'telas.tela',
                         'telaFotos',
                         'tallas',
+                        'detalle',
                         'variantes' => function ($q) {
                             $q->with(['manga', 'broche']);
                         },
@@ -91,6 +92,10 @@ final class CotizacionDetalleController extends Controller
                         'nombre_prenda' => $prenda->nombre_producto ?? 'Prenda sin nombre',
                         'cantidad' => $prenda->cantidad ?? 0,
                         'prenda_bodega' => (bool) ($prenda->prenda_bodega ?? false),
+                        'detalle' => $prenda->detalle ? [
+                            'disponibilidad' => $prenda->detalle->disponibilidad,
+                            'ultima_venta' => $prenda->detalle->ultima_venta,
+                        ] : null,
                         'logo_observacion' => $logoObservacionesPorPrenda[$prenda->id] ?? null,
                         'descripcion' => $prenda->descripcion ?? null,
                         'descripcion_formateada' => $descripcionFormateada,

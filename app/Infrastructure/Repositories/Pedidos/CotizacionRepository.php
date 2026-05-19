@@ -99,6 +99,7 @@ class CotizacionRepository
             'prendas.fotos',
             'prendas.telas',
             'prendas.telaFotos',
+            'prendas.detalle',
             'logoCotizacion.fotos',
             'logoCotizacion.prendas.tipoLogo',
             'logoCotizacion.prendas.fotos',

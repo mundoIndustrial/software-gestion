@@ -234,6 +234,7 @@ final class CotizacionController extends Controller
                 'prendas.variantes.manga',
                 'prendas.variantes.broche',
                 'prendas.logoCotizacionesTecnicas',
+                'prendas.detalle',
                 'logoCotizacion.fotos'
             ])->findOrFail($id);
 
@@ -390,6 +391,7 @@ final class CotizacionController extends Controller
                 'prendas.telaFotos',
                 'prendas.tallas',
                 'prendas.variantes',
+                'prendas.detalle',
                 'logoCotizacion.fotos'
             ])->findOrFail($cotizacionId);
 
@@ -436,6 +438,7 @@ final class CotizacionController extends Controller
                 'prendas.telaFotos',
                 'prendas.tallas',
                 'prendas.variantes',
+                'prendas.detalle',
                 'logoCotizacion.fotos'
             ])->findOrFail($id);
 

@@ -66,6 +66,16 @@ class CotizacionPrendaService
                     'prenda_id' => $prenda->id,
                     'nombre' => $nombre
                 ]);
+
+                // Guardar detalles (disponibilidad, ultima_venta) en prenda_cot_detalles
+                $detallesData = $productoData['detalles'] ?? null;
+                if (is_string($detallesData)) {
+                    $detallesData = json_decode($detallesData, true);
+                }
+                $prenda->detalle()->create([
+                    'disponibilidad' => is_array($detallesData) ? ($detallesData['disponibilidad'] ?? null) : null,
+                    'ultima_venta' => is_array($detallesData) ? ($detallesData['ultima_venta'] ?? null) : null,
+                ]);
                 
                 // 2. Guardar fotos en prenda_fotos_cot (múltiples fotos)
                 $fotos = $productoData['fotos_desde_prendaConIndice'] ?? $productoData['fotos'] ?? [];

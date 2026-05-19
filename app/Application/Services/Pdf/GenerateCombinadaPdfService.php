@@ -23,6 +23,7 @@ final class GenerateCombinadaPdfService
                     'fotos:id,prenda_cot_id,ruta_original,ruta_webp',
                     'telaFotos:id,prenda_cot_id,ruta_original,ruta_webp',
                     'tallas:id,prenda_cot_id,talla,color,genero_id,cantidad',
+                    'detalle',
                     'variantes:id,prenda_cot_id,color,tipo_manga_id,tipo_broche_id,tiene_reflectivo,obs_reflectivo,tiene_bolsillos,obs_bolsillos,aplica_manga,obs_manga,obs_broche,es_jean_pantalon,tipo_jean_pantalon,telas_multiples',
                     'variantes.manga:id,nombre',
                     'variantes.broche:id,nombre',

@@ -1294,6 +1294,28 @@ function eliminarFoto(productoId, index) {
         }
     });
 
+    document.addEventListener('change', function (e) {
+        // Toggles para Disponibilidad y Última Venta
+        if (e.target.matches('.disponibilidad-checkbox')) {
+            const container = e.target.closest('.detalle-disponibilidad-container');
+            const input = container ? container.querySelector('.disponibilidad-input') : null;
+            if (input) {
+                input.disabled = !e.target.checked;
+                input.style.backgroundColor = e.target.checked ? '#ffffff' : '#f9f9f9';
+                if (!e.target.checked) input.value = '';
+            }
+        }
+        if (e.target.matches('.ultima-venta-checkbox')) {
+            const container = e.target.closest('.detalle-ultima-venta-container');
+            const input = container ? container.querySelector('.ultima-venta-input') : null;
+            if (input) {
+                input.disabled = !e.target.checked;
+                input.style.backgroundColor = e.target.checked ? '#ffffff' : '#f9f9f9';
+                if (!e.target.checked) input.value = '';
+            }
+        }
+    });
+
     // ============ SECCIONES ============
 
     function toggleSeccion(btn) {

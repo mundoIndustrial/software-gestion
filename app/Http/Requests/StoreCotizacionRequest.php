@@ -80,6 +80,9 @@ class StoreCotizacionRequest extends FormRequest
             'observaciones_valor' => 'array',
 
             'prendas' => 'nullable|array',
+            'prendas.*.detalles' => 'nullable|array',
+            'prendas.*.detalles.disponibilidad' => 'nullable|string',
+            'prendas.*.detalles.ultima_venta' => 'nullable|string',
             'productos_friendly' => 'nullable|array',
         ];
     }

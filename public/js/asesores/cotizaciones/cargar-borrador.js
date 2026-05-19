@@ -540,6 +540,35 @@ function cargarBorrador(cotizacion) {
                     console.error('Error cargando prenda_bodega en Paso 2:', e);
                 }
 
+                // Cargar Disponibilidad y Última Venta (detalles)
+                try {
+                    const detalle = prenda.detalle || null;
+                    if (detalle) {
+                        if (detalle.disponibilidad) {
+                            const dispCheckbox = productoActual.querySelector('.disponibilidad-checkbox');
+                            const dispInput = productoActual.querySelector('.disponibilidad-input');
+                            if (dispCheckbox && dispInput) {
+                                dispCheckbox.checked = true;
+                                dispCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+                                dispInput.value = detalle.disponibilidad;
+                                dispInput.dispatchEvent(new Event('input', { bubbles: true }));
+                            }
+                        }
+                        if (detalle.ultima_venta) {
+                            const uvCheckbox = productoActual.querySelector('.ultima-venta-checkbox');
+                            const uvInput = productoActual.querySelector('.ultima-venta-input');
+                            if (uvCheckbox && uvInput) {
+                                uvCheckbox.checked = true;
+                                uvCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+                                uvInput.value = detalle.ultima_venta;
+                                uvInput.dispatchEvent(new Event('input', { bubbles: true }));
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error cargando detalles (disponibilidad/ultima_venta) en Paso 2:', e);
+                }
+
                 // Inferir género para tallas cuando la BD/JSON no trae genero_id por talla
                 // (la UI nueva construye botones por género; si no se marca género, no aparecen las tallas)
                 let varianteParaTallas = prenda.variantes;

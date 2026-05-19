@@ -38,6 +38,7 @@ class CotizacionPrendaController extends Controller
                 'prendas.variantes.manga',
                 'prendas.variantes.broche',
                 'prendas.logoCotizacionesTecnicas',
+                'prendas.detalle',
                 'logoCotizacion.fotos'
             ])->findOrFail($id);
 
@@ -159,6 +160,7 @@ class CotizacionPrendaController extends Controller
                     'prendas.tallas',
                     'prendas.variantes.manga',
                     'prendas.variantes.broche',
+                    'prendas.detalle',
                     'logoCotizacion.fotos'
                 ])->findOrFail($cotizacion->id);
 
@@ -219,6 +221,7 @@ class CotizacionPrendaController extends Controller
             'prendas.variantes.genero',
             'prendas.variantes.manga',
             'prendas.variantes.broche',
+            'prendas.detalle',
             'logoCotizacion.fotos'
         ])->findOrFail($id);
         

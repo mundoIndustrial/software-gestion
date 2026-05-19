@@ -75,6 +75,14 @@ class PrendaCot extends Model
     }
 
     /**
+     * Relación: Una prenda puede tener un detalle (disponibilidad/ultima venta)
+     */
+    public function detalle(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(PrendaCotDetalle::class, 'prenda_cot_id');
+    }
+
+    /**
      * Relación: Una prenda puede tener múltiples técnicas de logo
      */
     public function logoCotizacionesTecnicas(): HasMany

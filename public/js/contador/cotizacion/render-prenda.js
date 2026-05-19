@@ -725,15 +725,51 @@
         }
 
         // Construir HTML de la prenda
+        const badgeBodega = (prenda.prenda_bodega === true || prenda.prenda_bodega === 1 || prenda.prenda_bodega === '1')
+            ? `<span style="background: #10b981; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; vertical-align: middle;">Prenda de Bodega</span>`
+            : '';
+
         let html = `
                         <div class="prenda-card" style="background: #f5f5f5; border-left: 5px solid #1e5ba8; padding: 1rem 1.5rem; border-radius: 4px;">
-                            <h3 style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 1.1rem; font-weight: 700; text-transform: uppercase;">
-                                ${prenda.nombre_prenda || 'Sin nombre'}
+                            <h3 style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 1.1rem; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <span>${prenda.nombre_prenda || 'Sin nombre'}</span>
+                                ${badgeBodega}
                             </h3>
                             <div style="margin: 0 0 1rem 0; color: #333; font-size: 0.85rem; line-height: 1.6;">
                                 <span style="color: #1e5ba8; font-weight: 700;">DESCRIPCION:</span> ${renderDescripcionPrenda(payload, prenda, modo)}
                             </div>
                     `;
+
+        // Si hay detalles, agregarlos abajo de la descripción
+        if (prenda.detalle) {
+            const disp = prenda.detalle.disponibilidad ? prenda.detalle.disponibilidad : null;
+            const ultVenta = prenda.detalle.ultima_venta ? prenda.detalle.ultima_venta : null;
+            
+            if (disp || ultVenta) {
+                html += `
+                    <div style="margin: 0.5rem 0 1rem 0; display: flex; gap: 20px; font-size: 0.85rem; background: #fff; padding: 0.5rem 0.75rem; border-radius: 4px; border: 1px solid #e2e8f0; width: fit-content; max-width: 100%;">
+                `;
+                if (disp) {
+                    html += `
+                        <div style="display: flex; gap: 5px; align-items: center;">
+                            <span style="color: #1e5ba8; font-weight: 700;">Disponibilidad:</span>
+                            <span style="color: #333; font-weight: 500;">${disp}</span>
+                        </div>
+                    `;
+                }
+                if (ultVenta) {
+                    html += `
+                        <div style="display: flex; gap: 5px; align-items: center;">
+                            <span style="color: #1e5ba8; font-weight: 700;">Última Venta:</span>
+                            <span style="color: #333; font-weight: 500;">${ultVenta}</span>
+                        </div>
+                    `;
+                }
+                html += `
+                    </div>
+                `;
+            }
+        }
 
         // En vista LOGO el usuario solo quiere ver:
         // - Descripción (con ubicaciones ya agregadas arriba)
