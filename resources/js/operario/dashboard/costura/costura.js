@@ -77,6 +77,13 @@ export function deshacerCosturaVista(pedidoId, prendaId, tipoRecibo, btnId, pren
                 btn.dataset.encargadoCostura = '';
                 btn.dataset.procesoId = '';
                 btn.innerHTML = '<span class="material-symbols-rounded">checkroom</span> PASAR A COSTURA';
+                
+                // Prevenir que la actualización automática del realtime sobrescriba nuestros cambios
+                window.__skipNextDashboardUpdate = true;
+                setTimeout(() => {
+                    window.__skipNextDashboardUpdate = false;
+                }, 1000);
+                
                 mostrarExito('Éxito', 'Asignación a costura deshecha correctamente');
             } else {
                 btn.innerHTML = originalHTML;

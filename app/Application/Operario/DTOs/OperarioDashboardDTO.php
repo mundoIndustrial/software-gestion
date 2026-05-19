@@ -16,5 +16,7 @@ readonly class OperarioDashboardDTO
         public int $recibosBodegaCompletadosCount = 0,
         public int $recibosBodegaPendientesCount = 0,
         public int $vistaCosturaSinEncargadoCount = 0,
+        public int $vistaCosturaBodegaSinEncargadoCount = 0,
+        public int $vistaCosturaBodegaControlCalidadCount = 0,
     ) {}
 }

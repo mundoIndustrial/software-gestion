@@ -238,9 +238,20 @@ class GetOperarioDashboardUseCase
                     $prendasConRecibos = $this->filtrarPrendasVistaCosturaVisible($prendasConRecibos, $filtroRecibo);
                 }
                 $vistaCosturaSinEncargadoCount = $this->contarPrendasVistaCosturaSinEncargado($prendasConRecibos, $filtroRecibo);
+                $vistaCosturaBodegaSinEncargadoCount = $filtroRecibo === 'bodega'
+                    ? $this->contarPrendasVistaCosturaSinEncargadoBodega($prendasConRecibos)
+                    : 0;
+                $vistaCosturaBodegaControlCalidadCount = $filtroRecibo === 'bodega'
+                    ? $this->contarPrendasVistaCosturaControlCalidadBodega($prendasConRecibos)
+                    : 0;
 
-                if ($filtroRecibo !== 'bodega' && $filtroEncargadoVistaCostura === 'sin-encargado') {
+                if ($filtroRecibo === 'bodega' && $filtroEncargadoVistaCostura === 'sin-encargado') {
+                    $prendasConRecibos = $this->filtrarPrendasVistaCosturaSinEncargadoBodega($prendasConRecibos);
+                } elseif ($filtroRecibo !== 'bodega' && $filtroEncargadoVistaCostura === 'sin-encargado') {
                     $prendasConRecibos = $this->filtrarPrendasVistaCosturaSinEncargado($prendasConRecibos, $filtroRecibo);
+                }
+                if ($filtroRecibo === 'bodega' && $filtroEncargadoVistaCostura === 'control-calidad') {
+                    $prendasConRecibos = $this->filtrarPrendasVistaCosturaControlCalidadBodega($prendasConRecibos);
                 }
 
                 if ($busquedaVistaCostura !== '') {
@@ -268,6 +279,8 @@ class GetOperarioDashboardUseCase
                         recibosBodegaCompletadosCount: $recibosBodegaCompletadosCount ?? ($recibosBodegaCompletados ?? collect())->count(),
                         recibosBodegaPendientesCount: $recibosBodegaPendientesCount ?? 0,
                         vistaCosturaSinEncargadoCount: $vistaCosturaSinEncargadoCount ?? 0,
+                        vistaCosturaBodegaSinEncargadoCount: $vistaCosturaBodegaSinEncargadoCount ?? 0,
+                        vistaCosturaBodegaControlCalidadCount: $vistaCosturaBodegaControlCalidadCount ?? 0,
                     );
                 }
 
@@ -337,6 +350,8 @@ class GetOperarioDashboardUseCase
             recibosBodegaCompletadosCount: $recibosBodegaCompletadosCount ?? ($recibosBodegaCompletados ?? collect())->count(),
             recibosBodegaPendientesCount: $recibosBodegaPendientesCount ?? 0,
             vistaCosturaSinEncargadoCount: $vistaCosturaSinEncargadoCount ?? 0,
+            vistaCosturaBodegaSinEncargadoCount: $vistaCosturaBodegaSinEncargadoCount ?? 0,
+            vistaCosturaBodegaControlCalidadCount: $vistaCosturaBodegaControlCalidadCount ?? 0,
         );
     }
 
@@ -431,6 +446,45 @@ class GetOperarioDashboardUseCase
     private function contarPrendasVistaCosturaSinEncargado(Collection $prendas, ?string $filtroRecibo): int
     {
         return $this->filtrarPrendasVistaCosturaSinEncargado($prendas, $filtroRecibo)->count();
+    }
+
+    private function filtrarPrendasVistaCosturaSinEncargadoBodega(Collection $prendas): Collection
+    {
+        return $prendas->filter(function (array $prenda) {
+            return collect($prenda['recibos'] ?? [])->contains(function (array $recibo) {
+                $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
+                if ($tipo !== 'CORTE-PARA-BODEGA') {
+                    return false;
+                }
+
+                return empty(trim((string) ($recibo['encargado_costura'] ?? '')));
+            });
+        })->values();
+    }
+
+    private function contarPrendasVistaCosturaSinEncargadoBodega(Collection $prendas): int
+    {
+        return $this->filtrarPrendasVistaCosturaSinEncargadoBodega($prendas)->count();
+    }
+
+    private function filtrarPrendasVistaCosturaControlCalidadBodega(Collection $prendas): Collection
+    {
+        return $prendas->filter(function (array $prenda) {
+            return collect($prenda['recibos'] ?? [])->contains(function (array $recibo) {
+                $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
+                if ($tipo !== 'CORTE-PARA-BODEGA') {
+                    return false;
+                }
+
+                $area = strtolower(trim((string) ($recibo['area'] ?? '')));
+                return in_array($area, ['control calidad', 'control de calidad'], true);
+            });
+        })->values();
+    }
+
+    private function contarPrendasVistaCosturaControlCalidadBodega(Collection $prendas): int
+    {
+        return $this->filtrarPrendasVistaCosturaControlCalidadBodega($prendas)->count();
     }
 
     private function filtrarPrendasPorBusquedaVistaCostura(Collection $prendas, string $busqueda): Collection

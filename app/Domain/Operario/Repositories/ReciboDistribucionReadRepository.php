@@ -17,7 +17,8 @@ interface ReciboDistribucionReadRepository
         int $pedidoProduccionId,
         int $prendaId,
         string $tipoRecibo,
-        $consecutivoOriginal
+        $consecutivoOriginal,
+        ?int $prendaBodegaId = null
     ): Collection;
 
     public function findNumeroPedidoByPedidoProduccionId(int $pedidoProduccionId): ?int;
@@ -26,4 +27,3 @@ interface ReciboDistribucionReadRepository
 
     public function estaCompletadoParcialEnCostura(int $parcialId): bool;
 }
-
