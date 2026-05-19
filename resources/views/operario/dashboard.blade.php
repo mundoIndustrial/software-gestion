@@ -10,6 +10,8 @@
 
 @php
     $esVistaCostura = auth()->user()->hasRole('vista-costura');
+    $filtroReciboActual = strtolower((string) request()->query('filtro', 'costura'));
+    $filtroReciboActual = in_array($filtroReciboActual, ['costura', 'reflectivo'], true) ? $filtroReciboActual : 'costura';
     $perPageVistaCostura = 12;
     $paginaActualVistaCostura = max(1, (int) request()->query('page', 1));
 
@@ -156,11 +158,11 @@
             @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('vista-costura'))
                 <div class="filtros-badges filtros-badges-principales">
                     @if(auth()->user()->hasRole('vista-costura'))
-                        <button class="badge-filtro badge-filtro-active" data-filtro="costura" onclick="filtrarPrendasPorRecibo('costura')">
+                        <button class="badge-filtro {{ $filtroReciboActual === 'costura' ? 'badge-filtro-active' : '' }}" data-filtro="costura" onclick="filtrarPrendasPorRecibo('costura')">
                             <span class="material-symbols-rounded">checkroom</span>
                             Costura
                         </button>
-                        <button class="badge-filtro" data-filtro="reflectivo" onclick="filtrarPrendasPorRecibo('reflectivo')">
+                        <button class="badge-filtro {{ $filtroReciboActual === 'reflectivo' ? 'badge-filtro-active' : '' }}" data-filtro="reflectivo" onclick="filtrarPrendasPorRecibo('reflectivo')">
                             <span class="material-symbols-rounded">auto_awesome</span>
                             Reflectivo
                         </button>
@@ -365,8 +367,10 @@
                             $reciboPrincipalFiltro = $prenda['recibos'][0] ?? null;
                             $areaReciboFiltro = strtolower(trim((string) ($reciboPrincipalFiltro['area'] ?? '')));
 
-                            // Para vista-costura y costura-reflectivo, guardar ambos tipos en el atributo data
-                            if (auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo')) {
+                            // Para vista-costura en modo filtro server-side, fijar tipo explícito para evitar cards "vacías" en cliente
+                            if (auth()->user()->hasRole('vista-costura')) {
+                                $esReflectivo = $filtroReciboActual === 'reflectivo' ? 'reflectivo' : 'costura';
+                            } elseif (auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo')) {
                                 // Guardar tipos separados por comas para poder filtrar correctamente
                                 $tiposParaFiltro = [];
                                 if ($tieneCostura)
@@ -385,7 +389,10 @@
                             // - costurero: mostrar COSTURA por defecto
                             // - cortador: mostrar prendas con área "Corte" (independientemente del tipo de recibo)
                             $displayInicial = '';
-                            if (auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('vista-costura') || auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']) || auth()->user()->hasRole('administrador-costura')) {
+                            if (auth()->user()->hasRole('vista-costura')) {
+                                // En vista-costura con filtro server-side, mostrar siempre lo consultado por backend
+                                $displayInicial = '';
+                            } elseif (auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']) || auth()->user()->hasRole('administrador-costura')) {
                                 // Mostrar por defecto las que tienen costura (incluyendo las que tienen ambos)
                                 $displayInicial = $tieneCostura ? '' : 'none';
                             } elseif (auth()->user()->hasRole('cortador')) {

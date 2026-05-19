@@ -17,9 +17,9 @@ class ObtenerPrendasRecibosService
         return $this->service->obtenerPrendasConRecibosTodosCostura();
     }
 
-    public function obtenerPrendasConRecibos(\App\Models\User $usuario): \Illuminate\Support\Collection
+    public function obtenerPrendasConRecibos(\App\Models\User $usuario, ?string $filtroRecibo = null): \Illuminate\Support\Collection
     {
-        return $this->service->obtenerPrendasConRecibos($usuario);
+        return $this->service->obtenerPrendasConRecibos($usuario, $filtroRecibo);
     }
 
     public function obtenerPrendasConRecibosBodegaCortador(\App\Models\User $usuario): \Illuminate\Support\Collection

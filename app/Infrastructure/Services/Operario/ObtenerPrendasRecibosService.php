@@ -62,13 +62,13 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 'activo',
             ])
             ->with([
-                'prenda:id,pedido_id,nombre_prenda,descripcion,de_bodega,created_at',
+                'prenda:id,pedido_produccion_id,nombre_prenda,descripcion,de_bodega,created_at',
                 'prenda.pedidoProduccion:id,numero_pedido,cliente,created_at',
-                'prenda.procesosPrenda:id,numero_pedido,prenda_pedido_id,numero_recibo,numero_recibo_parcial,proceso,encargado,fecha_inicio,fecha_de_asignacion_encargado,created_at,deleted_at',
-                'prenda.tallas:id,prenda_id,genero,talla,cantidad,tipo_talla,es_sobremedida,tela,colores',
+                'prenda.procesosPrenda',
+                'prenda.tallas:id,prenda_pedido_id,genero,talla,cantidad,tipo_talla,es_sobremedida,tela,colores',
                 'pedido:id,numero_pedido,cliente,created_at',
-                'pedido.prendas:id,pedido_id,nombre_prenda,descripcion,de_bodega,created_at',
-                'pedido.prendas.tallas:id,prenda_id,genero,talla,cantidad,tipo_talla,es_sobremedida,tela,colores',
+                'pedido.prendas:id,pedido_produccion_id,nombre_prenda,descripcion,de_bodega,created_at',
+                'pedido.prendas.tallas:id,prenda_pedido_id,genero,talla,cantidad,tipo_talla,es_sobremedida,tela,colores',
             ])
             ->orderBy('created_at', 'asc')
             ->get();
@@ -351,7 +351,7 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             ->values();
     }
 
-    public function obtenerPrendasConRecibos(\App\Models\User $usuario): \Illuminate\Support\Collection
+    public function obtenerPrendasConRecibos(\App\Models\User $usuario, ?string $filtroRecibo = null): \Illuminate\Support\Collection
     {
 
         $tipoOperario = $this->obtenerTipoOperario($usuario);
@@ -379,7 +379,17 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             $tiposRecibo = ['COSTURA', 'COSTURA-BODEGA'];
         }
 
-        // Obtener todos los recibos de costura activos con relaciones (incluyendo procesos)
+        if ($filtroRecibo === 'reflectivo') {
+            $tiposRecibo = array_values(array_intersect($tiposRecibo, ['REFLECTIVO']));
+        } elseif ($filtroRecibo === 'costura') {
+            $tiposRecibo = array_values(array_intersect($tiposRecibo, ['COSTURA', 'COSTURA-BODEGA']));
+        }
+
+        if (empty($tiposRecibo)) {
+            return collect();
+        }
+
+        // Obtener todos los recibos activos con relaciones (incluyendo procesos)
         $query = ConsecutivoReciboPedido::where('activo', 1)
             ->whereIn('tipo_recibo', $tiposRecibo);
 
@@ -419,10 +429,10 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
                 'activo',
             ])
             ->with([
-                'prenda:id,pedido_id,nombre_prenda,descripcion,de_bodega,created_at',
+                'prenda:id,pedido_produccion_id,nombre_prenda,descripcion,de_bodega,created_at',
                 'prenda.pedidoProduccion:id,numero_pedido,cliente,created_at',
-                'prenda.procesosPrenda:id,numero_pedido,prenda_pedido_id,numero_recibo,numero_recibo_parcial,proceso,encargado,fecha_inicio,fecha_de_asignacion_encargado,created_at,deleted_at',
-                'prenda.tallas:id,prenda_id,genero,talla,cantidad,tipo_talla,es_sobremedida,tela,colores',
+                'prenda.procesosPrenda',
+                'prenda.tallas:id,prenda_pedido_id,genero,talla,cantidad,tipo_talla,es_sobremedida,tela,colores',
                 'pedido:id,numero_pedido,cliente,created_at',
             ]);
 
@@ -2066,5 +2076,3 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
             ->count();
     }
 }
-
-
