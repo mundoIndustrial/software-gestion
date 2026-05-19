@@ -183,6 +183,7 @@ class OperarioController extends Controller
             'recibosBodegaCompletadosCount' => $dashboardData->recibosBodegaCompletadosCount,
             'pendientesPedidosCount' => $dashboardData->pendientesPedidosCount,
             'recibosBodegaPendientesCount' => $dashboardData->recibosBodegaPendientesCount,
+            'vistaCosturaSinEncargadoCount' => $dashboardData->vistaCosturaSinEncargadoCount,
             'conteoControlCalidadCostura' => $conteoControlCalidadCostura,
             'conteoControlCalidadReflectivo' => $conteoControlCalidadReflectivo,
         ]);

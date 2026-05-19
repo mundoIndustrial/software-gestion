@@ -15,5 +15,6 @@ readonly class OperarioDashboardDTO
         public \Illuminate\Support\Collection $recibosBodegaCompletados = new \Illuminate\Support\Collection(),
         public int $recibosBodegaCompletadosCount = 0,
         public int $recibosBodegaPendientesCount = 0,
+        public int $vistaCosturaSinEncargadoCount = 0,
     ) {}
 }
