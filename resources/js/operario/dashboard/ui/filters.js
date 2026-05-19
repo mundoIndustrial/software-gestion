@@ -68,6 +68,12 @@ export function initReciboFilters() {
         const badgeCount = document.getElementById('badgeSinEncargadoCount');
         if (!badgeCount) return;
 
+        const totalGlobal = parseInt(badgeCount.dataset.totalGlobal || '0', 10);
+        if (document.querySelector('.operario-dashboard')?.dataset?.userRole === 'vista-costura') {
+            badgeCount.textContent = String(totalGlobal);
+            return;
+        }
+
         const ordenesList = document.getElementById('ordenesList');
         if (!ordenesList) {
             badgeCount.textContent = '0';
@@ -205,16 +211,15 @@ export function initReciboFilters() {
         cards.sort((a, b) => {
             let valA, valB;
             if (filtro === 'reflectivo') {
-                if (esLiderReflectivo) {
-                    // lider-reflectivo: ordenar por created_at (mas viejo primero)
-                    valA = parseInt(a.dataset.fechaCreacionReflectivo || '0');
-                    valB = parseInt(b.dataset.fechaCreacionReflectivo || '0');
-                    return valA - valB;
-                }
-                // Otros roles: mantener orden original por fecha de completado reflectivo
-                valA = parseInt(a.dataset.fechaCompletadoReflectivo || '0');
-                valB = parseInt(b.dataset.fechaCompletadoReflectivo || '0');
-                return valB - valA;
+                valA = parseInt(a.dataset.fechaCreacionReflectivo || '0');
+                valB = parseInt(b.dataset.fechaCreacionReflectivo || '0');
+                return valA - valB;
+            }
+
+            if (filtro === 'costura' && userRole === 'vista-costura') {
+                valA = parseInt(a.dataset.fechaCreacionCostura || '0');
+                valB = parseInt(b.dataset.fechaCreacionCostura || '0');
+                return valA - valB;
             }
 
             if (esLiderReflectivo) {
@@ -300,17 +305,35 @@ export function initReciboFilters() {
     };
 
     window.filtrarVistaCosturaEncargados = function (modo = 'todos') {
+        const userRole = document.querySelector('.operario-dashboard')?.dataset?.userRole || '';
         window.__vistaCosturaEncargadoFiltro = modo;
 
         document.querySelectorAll('.badge-filtro[data-encargado-filtro]').forEach((btn) => {
             btn.classList.toggle('badge-filtro-active', btn.dataset.encargadoFiltro === modo);
         });
 
-        // Si estamos en Control de Calidad y se intenta cambiar encargados, recargar
+        // Si estamos viendo Control de Calidad, cualquier cambio de encargado debe restaurar el HTML normal
         if (window.__enModoControlCalidad === true) {
-            if (DASHBOARD_DEBUG) console.log('[SALIENDO DE CC (VIA ENCARGADOS)] Reabilitando filtros normales');
             window.__enModoControlCalidad = false;
             recargarRecibosNormales();
+            return;
+        }
+
+        if (userRole === 'vista-costura') {
+            const url = new URL(window.location.href);
+            const current = url.searchParams.get('encargado') || 'todos';
+
+            if (modo === 'todos') {
+                url.searchParams.delete('encargado');
+            } else {
+                url.searchParams.set('encargado', modo);
+            }
+            url.searchParams.delete('page');
+            if (current === modo) {
+                actualizarBadgeSinEncargado(obtenerFiltroPrincipalActivo());
+                return;
+            }
+            window.location.href = url.toString();
             return;
         }
 
@@ -319,7 +342,8 @@ export function initReciboFilters() {
     };
 
     if (document.getElementById('vistaCosturaEncargadoFilters')) {
-        window.__vistaCosturaEncargadoFiltro = window.__vistaCosturaEncargadoFiltro || 'todos';
+        const encargadosQuery = new URL(window.location.href).searchParams.get('encargado') || 'todos';
+        window.__vistaCosturaEncargadoFiltro = window.__vistaCosturaEncargadoFiltro || encargadosQuery;
         window.filtrarVistaCosturaEncargados(window.__vistaCosturaEncargadoFiltro);
     } else {
         actualizarBadgeSinEncargado(obtenerFiltroPrincipalActivo());
@@ -643,4 +667,3 @@ export function initReciboFilters() {
         return parcialCards;
     }
 }
-

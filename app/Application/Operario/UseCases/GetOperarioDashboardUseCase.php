@@ -8,6 +8,7 @@ use App\Application\Operario\Services\ObtenerPrendasRecibosService;
 use App\Domain\Operario\Services\OperarioDashboardReadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Collection;
 
 class GetOperarioDashboardUseCase
 {
@@ -26,6 +27,10 @@ class GetOperarioDashboardUseCase
         $tab = (string) $request->query('tab', $defaultTab);
         $filtroRecibo = strtolower(trim((string) $request->query('filtro', '')));
         $filtroRecibo = in_array($filtroRecibo, ['costura', 'reflectivo'], true) ? $filtroRecibo : null;
+        $filtroEncargadoVistaCostura = strtolower(trim((string) $request->query('encargado', '')));
+        $filtroEncargadoVistaCostura = in_array($filtroEncargadoVistaCostura, ['todos', 'sin-encargado'], true)
+            ? $filtroEncargadoVistaCostura
+            : 'todos';
 
         $prendasConRecibos = collect();
         $recibosCompletados = collect();
@@ -226,6 +231,13 @@ class GetOperarioDashboardUseCase
             }
 
             if ($usuario->hasRole('vista-costura')) {
+                $prendasConRecibos = $this->filtrarPrendasVistaCosturaVisible($prendasConRecibos, $filtroRecibo);
+                $vistaCosturaSinEncargadoCount = $this->contarPrendasVistaCosturaSinEncargado($prendasConRecibos, $filtroRecibo);
+
+                if ($filtroEncargadoVistaCostura === 'sin-encargado') {
+                    $prendasConRecibos = $this->filtrarPrendasVistaCosturaSinEncargado($prendasConRecibos, $filtroRecibo);
+                }
+
                 $yaTieneCompletadosVista = $prendasConRecibos->contains(function ($prenda) {
                     $recibo = collect($prenda['recibos'] ?? [])->first();
                     return is_array($recibo)
@@ -246,6 +258,7 @@ class GetOperarioDashboardUseCase
                         recibosBodegaCompletados: $recibosBodegaCompletados ?? collect(),
                         recibosBodegaCompletadosCount: $recibosBodegaCompletadosCount ?? ($recibosBodegaCompletados ?? collect())->count(),
                         recibosBodegaPendientesCount: $recibosBodegaPendientesCount ?? 0,
+                        vistaCosturaSinEncargadoCount: $vistaCosturaSinEncargadoCount ?? 0,
                     );
                 }
 
@@ -314,6 +327,89 @@ class GetOperarioDashboardUseCase
             recibosBodegaCompletados: $recibosBodegaCompletados ?? collect(),
             recibosBodegaCompletadosCount: $recibosBodegaCompletadosCount ?? ($recibosBodegaCompletados ?? collect())->count(),
             recibosBodegaPendientesCount: $recibosBodegaPendientesCount ?? 0,
+            vistaCosturaSinEncargadoCount: $vistaCosturaSinEncargadoCount ?? 0,
         );
+    }
+
+    private function filtrarPrendasVistaCosturaSinEncargado(Collection $prendas, ?string $filtroRecibo): Collection
+    {
+        $esReflectivo = $filtroRecibo === 'reflectivo';
+
+        return $prendas->filter(function (array $prenda) use ($esReflectivo) {
+            foreach (($prenda['recibos'] ?? []) as $recibo) {
+                $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
+
+                if ($esReflectivo) {
+                    if ($tipo !== 'REFLECTIVO') {
+                        continue;
+                    }
+
+                    $sinEncargadoReflectivo = empty(trim((string) ($recibo['encargado_costura'] ?? '')));
+                    $sinParciales = !((bool) ($recibo['tiene_parciales'] ?? false));
+
+                    if ($sinEncargadoReflectivo && $sinParciales) {
+                        return true;
+                    }
+
+                    continue;
+                }
+
+                if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA', 'PARCIAL'], true)) {
+                    continue;
+                }
+
+                $sinEncargado = empty(trim((string) ($recibo['encargado_costura'] ?? '')));
+                $completadoCorte = (bool) ($recibo['completado_corte'] ?? false);
+
+                if ($sinEncargado && $completadoCorte) {
+                    return true;
+                }
+            }
+
+            return false;
+        })->values();
+    }
+
+    private function filtrarPrendasVistaCosturaVisible(Collection $prendas, ?string $filtroRecibo): Collection
+    {
+        $esReflectivo = $filtroRecibo === 'reflectivo';
+        $areasPermitidas = $esReflectivo
+            ? ['costura', 'control calidad', 'control de calidad']
+            : ['corte', 'costura', 'control calidad', 'control de calidad'];
+
+        return $prendas->filter(function (array $prenda) use ($esReflectivo, $areasPermitidas) {
+            $recibos = collect($prenda['recibos'] ?? []);
+            if ($recibos->isEmpty()) {
+                return false;
+            }
+
+            foreach ($recibos as $recibo) {
+                $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
+                $area = strtolower(trim((string) ($recibo['area'] ?? '')));
+                $completadoCorte = (bool) ($recibo['completado_corte'] ?? false);
+
+                if (!in_array($area, $areasPermitidas, true)) {
+                    continue;
+                }
+
+                if ($esReflectivo) {
+                    if ($tipo === 'REFLECTIVO') {
+                        return true;
+                    }
+                    continue;
+                }
+
+                if ($completadoCorte && in_array($tipo, ['COSTURA', 'COSTURA-BODEGA', 'PARCIAL'], true)) {
+                    return true;
+                }
+            }
+
+            return false;
+        })->values();
+    }
+
+    private function contarPrendasVistaCosturaSinEncargado(Collection $prendas, ?string $filtroRecibo): int
+    {
+        return $this->filtrarPrendasVistaCosturaSinEncargado($prendas, $filtroRecibo)->count();
     }
 }

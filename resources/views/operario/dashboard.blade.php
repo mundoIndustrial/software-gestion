@@ -12,22 +12,25 @@
     $esVistaCostura = auth()->user()->hasRole('vista-costura');
     $filtroReciboActual = strtolower((string) request()->query('filtro', 'costura'));
     $filtroReciboActual = in_array($filtroReciboActual, ['costura', 'reflectivo'], true) ? $filtroReciboActual : 'costura';
+    $filtroEncargadoActual = strtolower((string) request()->query('encargado', 'todos'));
+    $filtroEncargadoActual = in_array($filtroEncargadoActual, ['todos', 'sin-encargado'], true) ? $filtroEncargadoActual : 'todos';
     $perPageVistaCostura = 12;
-    $paginaActualVistaCostura = max(1, (int) request()->query('page', 1));
+    $pageNameVistaCostura = 'page_vc_' . str_replace('-', '_', $filtroReciboActual . '_' . $filtroEncargadoActual);
+    $paginaActualVistaCostura = max(1, (int) request()->query($pageNameVistaCostura, 1));
 
     $ordenarPorFechaAsignacionProceso = auth()->user()->hasAnyRole([
         'costurero',
         'lider-reflectivo',
         'administrador-costura',
     ]);
-    $ordenarPorFechaInicioProceso = auth()->user()->hasRole('vista-costura');
+    $ordenarPorFechaCreacion = auth()->user()->hasRole('vista-costura');
     $ordenarPorFechaAsignacionCorte = auth()->user()->hasRole('cortador');
 
-    $callbackOrdenamiento = function ($prenda) use ($ordenarPorFechaAsignacionProceso, $ordenarPorFechaInicioProceso, $ordenarPorFechaAsignacionCorte) {
+    $callbackOrdenamiento = function ($prenda) use ($ordenarPorFechaAsignacionProceso, $ordenarPorFechaCreacion, $ordenarPorFechaAsignacionCorte) {
         $reciboPrincipal = collect($prenda['recibos'] ?? [])->first();
-        if ($ordenarPorFechaInicioProceso) {
-            $fechaOrden = $reciboPrincipal['fecha_inicio_proceso']
-                ?? $reciboPrincipal['fecha_proceso_costura_created_at']
+        if ($ordenarPorFechaCreacion) {
+            $fechaOrden = $reciboPrincipal['created_at']
+                ?? $reciboPrincipal['creado_en']
                 ?? ($prenda['fecha_creacion'] ?? null);
         } elseif ($ordenarPorFechaAsignacionCorte) {
             $fechaOrden = $reciboPrincipal['fecha_asignacion_corte']
@@ -61,7 +64,9 @@
         return 0;
     };
 
-    if (auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('administrador-costura')) {
+    if (auth()->user()->hasRole('vista-costura')) {
+        $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortBy($callbackOrdenamiento)->values();
+    } elseif (auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('administrador-costura')) {
         $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortByDesc($callbackOrdenamiento)->values();
     } elseif (auth()->user()->hasRole('cortador')) {
         $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortBy($callbackOrdenamiento)->values();
@@ -84,6 +89,7 @@
             $paginaActualVistaCostura,
             [
                 'path' => request()->url(),
+                'pageName' => $pageNameVistaCostura,
                 'query' => request()->query(),
             ]
         );
@@ -178,16 +184,16 @@
                         </button>
                     @endif
                 </div>
-                @if(auth()->user()->hasRole('vista-costura'))
+                @if(auth()->user()->hasRole('vista-costura') && $filtroReciboActual === 'costura')
                     <div class="filtros-badges filtros-badges-secundarios" id="vistaCosturaEncargadoFilters">
-                        <button class="badge-filtro badge-filtro-active" data-encargado-filtro="todos" onclick="filtrarVistaCosturaEncargados('todos')">
+                        <button class="badge-filtro {{ $filtroEncargadoActual === 'todos' ? 'badge-filtro-active' : '' }}" data-encargado-filtro="todos" onclick="filtrarVistaCosturaEncargados('todos')">
                             <span class="material-symbols-rounded">apps</span>
                             Todos
                         </button>
-                        <button class="badge-filtro" data-encargado-filtro="sin-encargado" onclick="filtrarVistaCosturaEncargados('sin-encargado')">
+                        <button class="badge-filtro {{ $filtroEncargadoActual === 'sin-encargado' ? 'badge-filtro-active' : '' }}" data-encargado-filtro="sin-encargado" onclick="filtrarVistaCosturaEncargados('sin-encargado')">
                             <span class="material-symbols-rounded">person_off</span>
                             Sin encargado
-                            <span class="badge-filtro-contador" id="badgeSinEncargadoCount">0</span>
+                            <span class="badge-filtro-contador" id="badgeSinEncargadoCount" data-total-global="{{ $vistaCosturaSinEncargadoCount ?? 0 }}">{{ $vistaCosturaSinEncargadoCount ?? 0 }}</span>
                         </button>
                         <button class="badge-filtro" data-encargado-filtro="control-calidad" onclick="document.querySelectorAll('#vistaCosturaEncargadoFilters .badge-filtro').forEach(btn => btn.classList.remove('badge-filtro-active')); this.classList.add('badge-filtro-active'); filtrarControlCalidad();">
                             <span class="material-symbols-rounded">check_circle</span>
@@ -349,15 +355,7 @@
                             $mostrarReflectivoEnFiltro = $tieneReflectivo;
                             
                             if (auth()->user()->hasRole('vista-costura')) {
-                                if ($tieneReflectivo && $reciboReflectivoParaFiltro) {
-                                    $areaRef = strtolower(trim((string) ($reciboReflectivoParaFiltro['area'] ?? '')));
-                                    $compCostura = $reciboReflectivoParaFiltro['completado_costura'] ?? false;
-                                    
-                                    // Solo mostrar si es de área costura Y está completado en costura
-                                    if ($areaRef !== 'costura' || !$compCostura) {
-                                        $mostrarReflectivoEnFiltro = false;
-                                    }
-                                } else {
+                                if (!$tieneReflectivo || !$reciboReflectivoParaFiltro) {
                                     $mostrarReflectivoEnFiltro = false;
                                 }
                             }
@@ -471,8 +469,8 @@
                              data-completado-reflectivo="{{ $reciboCompletadoReflectivo ? '1' : '0' }}"
                              data-numero-recibo="{{ trim($numeroReciboBusqueda . ' ' . $numerosRecibosBusqueda) }}"
                              data-fecha-completado-reflectivo="{{ ($reciboReflectivoFiltroCard && isset($reciboReflectivoFiltroCard['fecha_completado_costura'])) ? strtotime($reciboReflectivoFiltroCard['fecha_completado_costura']) : 0 }}"
-                             data-fecha-creacion-reflectivo="{{ ($reciboReflectivoFiltroCard['creado_en'] ?? ($reciboReflectivoFiltroCard['created_at'] ?? '')) ? strtotime($reciboReflectivoFiltroCard['creado_en'] ?? $reciboReflectivoFiltroCard['created_at']) : 0 }}"
-                             data-fecha-creacion-costura="{{ ($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? '')) ? strtotime($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? '')) : 0 }}"
+                             data-fecha-creacion-reflectivo="{{ ($reciboReflectivoFiltroCard['created_at'] ?? ($reciboReflectivoFiltroCard['creado_en'] ?? '')) ? strtotime($reciboReflectivoFiltroCard['created_at'] ?? $reciboReflectivoFiltroCard['creado_en']) : 0 }}"
+                             data-fecha-creacion-costura="{{ ($reciboCosturaFiltroCard['created_at'] ?? ($prenda['fecha_creacion'] ?? '')) ? strtotime($reciboCosturaFiltroCard['created_at'] ?? ($prenda['fecha_creacion'] ?? '')) : 0 }}"
                              data-fecha-asignacion-costura="{{ ($reciboCosturaFiltroCard['fecha_asignacion_costura'] ?? ($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? ''))) ? strtotime($reciboCosturaFiltroCard['fecha_asignacion_costura'] ?? ($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? ''))) : 0 }}"
                              data-recibos-corte-asignados="{{ $recibosCorteAsignadosCortador }}"
                              style="display: {{ $displayInicial }}">
