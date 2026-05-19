@@ -9,6 +9,10 @@
 @endsection
 
 @php
+    $esVistaCostura = auth()->user()->hasRole('vista-costura');
+    $perPageVistaCostura = 12;
+    $paginaActualVistaCostura = max(1, (int) request()->query('page', 1));
+
     $ordenarPorFechaAsignacionProceso = auth()->user()->hasAnyRole([
         'costurero',
         'lider-reflectivo',
@@ -63,64 +67,27 @@
         $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortBy($callbackOrdenamiento)->values();
     }
 
+    $prendasPaginadasVistaCostura = null;
+    $prendasRenderizadas = $prendasOrdenadas;
+    if ($esVistaCostura) {
+        $totalVistaCostura = $prendasOrdenadas->count();
+        $itemsVistaCostura = $prendasOrdenadas
+            ->forPage($paginaActualVistaCostura, $perPageVistaCostura)
+            ->values();
 
+        $prendasPaginadasVistaCostura = new \Illuminate\Pagination\LengthAwarePaginator(
+            $itemsVistaCostura,
+            $totalVistaCostura,
+            $perPageVistaCostura,
+            $paginaActualVistaCostura,
+            [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]
+        );
 
-    if (auth()->user()->hasAnyRole(['lider-reflectivo', 'costurero', 'administrador-costura', 'cortador'])) {
-        $detalleOrden = $prendasOrdenadas->map(function ($prenda, $idx) use ($ordenarPorFechaAsignacionProceso, $ordenarPorFechaAsignacionCorte) {
-            $reciboPrincipal = collect($prenda['recibos'] ?? [])->first() ?? [];
-
-            if ($ordenarPorFechaAsignacionCorte) {
-                $fechaUsada = $reciboPrincipal['fecha_asignacion_corte']
-                    ?? $reciboPrincipal['fecha_proceso_corte_created_at']
-                    ?? ($prenda['fecha_creacion'] ?? null);
-                $regla = 'corte_asignacion_o_created_at_proceso';
-            } elseif ($ordenarPorFechaAsignacionProceso) {
-                $fechaUsada = $reciboPrincipal['fecha_asignacion_costura']
-                    ?? $reciboPrincipal['fecha_proceso_costura_created_at']
-                    ?? ($prenda['fecha_creacion'] ?? null);
-                $regla = 'costura_asignacion_o_created_at_proceso';
-            } else {
-                $fechaUsada = $reciboPrincipal['fecha_proceso_created_at']
-                    ?? ($prenda['fecha_creacion'] ?? null);
-                $regla = 'proceso_created_at';
-            }
-
-            $timestampOrden = null;
-            if ($fechaUsada instanceof \DateTimeInterface) {
-                $timestampOrden = $fechaUsada->getTimestamp();
-            } elseif (is_numeric($fechaUsada)) {
-                $timestampOrden = (int) $fechaUsada;
-            } elseif (is_string($fechaUsada) && trim($fechaUsada) !== '') {
-                $ts = strtotime($fechaUsada);
-                $timestampOrden = $ts !== false ? $ts : null;
-            }
-
-            return [
-                'posicion' => $idx + 1,
-                'prenda_id' => $prenda['prenda_id'] ?? null,
-                'pedido_id' => $prenda['pedido_id'] ?? null,
-                'numero_pedido' => $prenda['numero_pedido'] ?? null,
-                'consecutivo_card' => $reciboPrincipal['consecutivo_actual'] ?? null,
-                'pedido_parcial_id' => $reciboPrincipal['pedido_parcial_id'] ?? null,
-                'fecha_asignacion_costura' => $reciboPrincipal['fecha_asignacion_costura'] ?? null,
-                'fecha_proceso_costura_created_at' => $reciboPrincipal['fecha_proceso_costura_created_at'] ?? null,
-                'fecha_asignacion_corte' => $reciboPrincipal['fecha_asignacion_corte'] ?? null,
-                'fecha_proceso_corte_created_at' => $reciboPrincipal['fecha_proceso_corte_created_at'] ?? null,
-                'fecha_usada' => $fechaUsada,
-                'timestamp_orden' => $timestampOrden,
-                'regla' => $regla,
-            ];
-        })->values()->all();
-
-        \Log::info('[OPERARIO_DASHBOARD][DEBUG_ORDEN]', [
-            'usuario_id' => auth()->id(),
-            'usuario' => auth()->user()->name ?? null,
-            'roles' => auth()->user()->roles->pluck('name')->values()->all(),
-            'total_cards' => count($detalleOrden),
-            'detalle' => $detalleOrden,
-        ]);
+        $prendasRenderizadas = collect($prendasPaginadasVistaCostura->items());
     }
-
     // Helper para obtener clase de estado
     function getEstadoClass($estado)
     {
@@ -362,8 +329,8 @@
                         </div>
                     @endif
                 @else
-                    @if($prendasOrdenadas->count() > 0)
-                    @foreach($prendasOrdenadas as $prenda)
+                    @if($prendasRenderizadas->count() > 0)
+                    @foreach($prendasRenderizadas as $prenda)
                         @php
                             $estadoClass = 'pendiente'; // Siempre pendiente, eliminar en-proceso
                             // Determinar tipo de recibo para filtro
@@ -1523,6 +1490,40 @@
                     @endif
                 @endif
             </div>
+
+            @if($esVistaCostura && $prendasPaginadasVistaCostura && $prendasPaginadasVistaCostura->lastPage() > 1)
+                @php
+                    $desdeVistaCostura = (($prendasPaginadasVistaCostura->currentPage() - 1) * $prendasPaginadasVistaCostura->perPage()) + 1;
+                    $hastaVistaCostura = min($prendasPaginadasVistaCostura->currentPage() * $prendasPaginadasVistaCostura->perPage(), $prendasPaginadasVistaCostura->total());
+                    $conteoPaginaVistaCostura = max(0, $hastaVistaCostura - $desdeVistaCostura + 1);
+                    $inicioBotones = max(1, $prendasPaginadasVistaCostura->currentPage() - 2);
+                    $finBotones = min($prendasPaginadasVistaCostura->lastPage(), $inicioBotones + 4);
+                    if (($finBotones - $inicioBotones) < 4) {
+                        $inicioBotones = max(1, $finBotones - 4);
+                    }
+                @endphp
+                <div id="dashboardPagination" class="dashboard-pagination-container">
+                    <div class="pagination-info">
+                        Mostrando {{ $conteoPaginaVistaCostura }} de {{ $prendasPaginadasVistaCostura->total() }} registros
+                    </div>
+                    <div class="pagination-buttons">
+                        <a class="pagination-btn {{ $prendasPaginadasVistaCostura->onFirstPage() ? 'disabled' : '' }}"
+                           href="{{ $prendasPaginadasVistaCostura->onFirstPage() ? '#' : $prendasPaginadasVistaCostura->previousPageUrl() }}">
+                            <span class="material-symbols-rounded">chevron_left</span>
+                        </a>
+                        @for ($pagina = $inicioBotones; $pagina <= $finBotones; $pagina++)
+                            <a class="pagination-btn {{ $pagina === $prendasPaginadasVistaCostura->currentPage() ? 'active' : '' }}"
+                               href="{{ $prendasPaginadasVistaCostura->url($pagina) }}">
+                                {{ $pagina }}
+                            </a>
+                        @endfor
+                        <a class="pagination-btn {{ $prendasPaginadasVistaCostura->hasMorePages() ? '' : 'disabled' }}"
+                           href="{{ $prendasPaginadasVistaCostura->hasMorePages() ? $prendasPaginadasVistaCostura->nextPageUrl() : '#' }}">
+                            <span class="material-symbols-rounded">chevron_right</span>
+                        </a>
+                    </div>
+                </div>
+            @endif
         </div>
      </div>
 

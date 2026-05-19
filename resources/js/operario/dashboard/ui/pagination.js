@@ -1,5 +1,10 @@
 export function initDashboardPagination() {
     const userRole = document.querySelector('.operario-dashboard')?.dataset?.userRole || '';
+    if (userRole === 'vista-costura') {
+        // Vista-costura usa paginacion real del lado servidor.
+        return;
+    }
+
     const isCortador = userRole === 'cortador';
     const PER_PAGE = 12; // Paginacion de 12 items por pagina para todos los roles
     let currentPage = 1;
