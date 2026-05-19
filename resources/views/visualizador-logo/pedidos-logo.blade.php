@@ -19,6 +19,10 @@
         <div style="width: 100%; max-width: 1500px;">
             @if(!$isMinimalLogoRole)
                 <div style="display: flex; gap: 12px; align-items: center; justify-content: flex-start; margin-bottom: 14px; flex-wrap: wrap;">
+                    <button id="btn-filter-reflectivo" type="button" onclick="setFiltroRecibosLogo('reflectivo')" style="position: relative; padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; background: white; color: #334155; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
+                        PEDIDOS REFLECTIVO
+                        <span id="badge-reflectivo" class="conteo-pendiente-badge" style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; border: 2px solid white; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); display: none;">0</span>
+                    </button>
                     <button id="btn-filter-bordado" type="button" onclick="setFiltroRecibosLogo('bordado')" style="position: relative; padding: 10px 14px; border-radius: 10px; border: 2px solid #0ea5e9; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.18);">
                         PEDIDOS BORDADO
                         <span id="badge-bordado" class="conteo-pendiente-badge" style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; border: 2px solid white; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); display: none;">0</span>
@@ -459,9 +463,10 @@ window.__aplicarColoresFilaReciboLogo = function(procesoId) {
 window.__filtroRecibosLogo = 'bordado';
 
 window.setFiltroRecibosLogo = function(nuevoFiltro) {
-    const filtrosValidos = ['bordado', 'estampado', 'dtf', 'sublimado'];
+    const filtrosValidos = ['reflectivo', 'bordado', 'estampado', 'dtf', 'sublimado'];
     window.__filtroRecibosLogo = filtrosValidos.includes(nuevoFiltro) ? nuevoFiltro : 'bordado';
 
+    const btnReflectivo = document.getElementById('btn-filter-reflectivo');
     const btnBordado = document.getElementById('btn-filter-bordado');
     const btnEstampado = document.getElementById('btn-filter-estampado');
     const btnDtf = document.getElementById('btn-filter-dtf');
@@ -483,6 +488,7 @@ window.setFiltroRecibosLogo = function(nuevoFiltro) {
         }
     };
 
+    updateButtonStyle(btnReflectivo, filtroActual === 'reflectivo');
     updateButtonStyle(btnBordado, filtroActual === 'bordado');
     updateButtonStyle(btnEstampado, filtroActual === 'estampado');
     updateButtonStyle(btnDtf, filtroActual === 'dtf');
@@ -519,7 +525,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (data.success && data.conteos) {
                 const conteos = data.conteos;
-                const tiposFilters = ['bordado', 'estampado', 'dtf', 'sublimado'];
+                const tiposFilters = ['reflectivo', 'bordado', 'estampado', 'dtf', 'sublimado'];
 
                 tiposFilters.forEach(tipo => {
                     const cantidad = conteos[tipo] || 0;
@@ -1061,7 +1067,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const filtroActual = window.__filtroRecibosLogo || 'bordado';
             const areasBase = Array.isArray(window.__areasPermitidasLogo) ? window.__areasPermitidasLogo : [];
             const areasPermitidas = areasBase.filter((a) => {
-                if (filtroActual === 'estampado' || filtroActual === 'dtf' || filtroActual === 'sublimado') {
+                if (filtroActual === 'reflectivo' || filtroActual === 'estampado' || filtroActual === 'dtf' || filtroActual === 'sublimado') {
                     // En estampado/dtf/sublimado: permitir ESTAMPANDO
                     // y ocultar áreas específicas de bordado.
                     if (a === 'CORTE_Y_APLIQUE') return false;

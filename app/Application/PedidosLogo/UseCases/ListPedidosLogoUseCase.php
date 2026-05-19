@@ -24,6 +24,7 @@ final class ListPedidosLogoUseCase
 
         // Mapeo de filtros a IDs de tipo de proceso
         $filtroMap = [
+            'reflectivo' => [1],
             'bordado' => [2],
             'estampado' => [3],
             'dtf' => [4],
@@ -31,16 +32,15 @@ final class ListPedidosLogoUseCase
         ];
 
         $tipoProcesoIds = $filtroMap[$filtro] ?? [2]; // Por defecto: bordado
-        $esFiltroEstampado = in_array($filtro, ['estampado', 'dtf', 'sublimado']);
+        $esFiltroEstampado = in_array($filtro, ['reflectivo', 'estampado', 'dtf', 'sublimado']);
 
         // Para roles mínimos (diseñador/bordador), solo forzar vista reducida en filtro bordado.
         // En filtro estampado respetamos el tipo de proceso para evitar mezclar bordado.
         $soloMinimalRole = $isMinimalLogoRole && !$esFiltroEstampado;
 
+        // No forzar área fija: permite mostrar recibos aunque aún no exista
+        // trazabilidad de área o proceso técnico asociado.
         $areaFija = null;
-        if ($soloMinimalRole) {
-            $areaFija = $isBordador ? 'BORDANDO' : 'DISENO';
-        }
 
         $recibos = $this->procesoReadRepository->paginarRecibosAprobados(
             $tipoProcesoIds,
@@ -164,6 +164,7 @@ final class ListPedidosLogoUseCase
     public function obtenerAreasUnicas(string $filtro): array
     {
         $filtroMap = [
+            'reflectivo' => [1],
             'bordado' => [2],
             'estampado' => [3],
             'dtf' => [4],
@@ -178,6 +179,7 @@ final class ListPedidosLogoUseCase
     public function obtenerAsesorasUnicas(string $filtro): array
     {
         $filtroMap = [
+            'reflectivo' => [1],
             'bordado' => [2],
             'estampado' => [3],
             'dtf' => [4],
@@ -192,6 +194,7 @@ final class ListPedidosLogoUseCase
     public function buscarValoresColumna(string $columna, string $busqueda, string $filtro): array
     {
         $filtroMap = [
+            'reflectivo' => [1],
             'bordado' => [2],
             'estampado' => [3],
             'dtf' => [4],

@@ -12,10 +12,22 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
     public function paginarRecibosAprobados(array $tipoProcesoIds, ?string $search, bool $soloMinimalRole, ?string $areaFija, int $perPage = 20, ?array $columnFilters = null, bool $incluirEntregados = false): LengthAwarePaginator
     {
         $tipoReciboCase = "CASE pedidos_procesos_prenda_detalles.tipo_proceso_id "
-            . "WHEN 2 THEN 'BORDADO' "
+            . "WHEN 1 THEN 'REFLECTIVO' WHEN 2 THEN 'BORDADO' "
             . "WHEN 3 THEN 'ESTAMPADO' "
             . "WHEN 4 THEN 'DTF' "
             . "WHEN 5 THEN 'SUBLIMADO' "
+            . "ELSE NULL END";
+        $tipoProcesoCaseFromCrp = "CASE UPPER(TRIM(crp.tipo_recibo)) "
+            . "WHEN 'REFLECTIVO' THEN 1 WHEN 'BORDADO' THEN 2 "
+            . "WHEN 'ESTAMPADO' THEN 3 "
+            . "WHEN 'DTF' THEN 4 "
+            . "WHEN 'SUBLIMADO' THEN 5 "
+            . "ELSE NULL END";
+        $tipoProcesoCaseFromPpar = "CASE UPPER(TRIM(ppar.tipo_recibo)) "
+            . "WHEN 'REFLECTIVO' THEN 1 WHEN 'BORDADO' THEN 2 "
+            . "WHEN 'ESTAMPADO' THEN 3 "
+            . "WHEN 'DTF' THEN 4 "
+            . "WHEN 'SUBLIMADO' THEN 5 "
             . "ELSE NULL END";
         $searchTerm = $this->normalizarBusqueda($search);
 
@@ -129,8 +141,129 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
         if ($areaFija) $queryParciales->having('area', '=', $areaFija);
         if (!$incluirEntregados) $queryParciales->havingRaw("(MAX(palp.area) IS NULL OR MAX(palp.area) <> 'ENTREGADO')");
 
+        // Query 2B (fallback): parciales activos sin proceso técnico asociado.
+        // Permite listar recibos creados manualmente solo en pedidos_parciales.
+        $queryParcialesSinProceso = DB::table('pedidos_parciales as ppar')
+            ->selectRaw("
+                COALESCE(MIN(ppd_any.id), 0) as id,
+                ppar.prenda_pedido_id,
+                {$tipoProcesoCaseFromPpar} as tipo_proceso_id,
+                ppar.estado as estado,
+                ppar.consecutivo_actual as numero_recibo,
+                UPPER(TRIM(ppar.tipo_recibo)) as tipo_recibo,
+                NULL as etiqueta_proceso,
+                NULL as notas_rechazo,
+                NULL as fecha_aprobacion,
+                NULL as aprobado_por,
+                NULL as datos_adicionales,
+                COALESCE(MIN(ppd_any.created_at), ppar.created_at) as created_at,
+                COALESCE(MIN(ppd_any.updated_at), ppar.updated_at) as updated_at,
+                NULL as deleted_at,
+                COALESCE(MAX(palp_any.area), 'PENDIENTE') as area,
+                MAX(palp_any.novedades) as novedades,
+                MAX(palp_any.fechas_areas) as fechas_areas,
+                ppar.consecutivo_actual as numero_recibo_consecutivo,
+                crp.id as consecutivo_recibo_id,
+                COALESCE(MAX(crp.created_at), ppar.created_at) as fecha_creacion_recibo,
+                ppar.fecha_activacion,
+                1 as es_parcial,
+                ppar.id as pedido_parcial_id,
+                pp.pedido_produccion_id
+            ")
+            ->join('prendas_pedido as pp', 'pp.id', '=', 'ppar.prenda_pedido_id')
+            ->leftJoin('pedidos_produccion as ped', 'ped.id', '=', 'pp.pedido_produccion_id')
+            ->leftJoin('clientes as cli', 'cli.id', '=', 'ped.cliente_id')
+            ->leftJoin('pedidos_procesos_prenda_detalles as ppd_any', 'ppd_any.prenda_pedido_id', '=', 'pp.id')
+            ->leftJoin('prenda_areas_logo_pedido as palp_any', function ($join) {
+                $join->on('palp_any.proceso_prenda_detalle_id', '=', 'ppd_any.id')
+                    ->on('palp_any.pedido_parcial_id', '=', 'ppar.id');
+            })
+            ->leftJoin('consecutivos_recibos_pedidos as crp', function ($join) {
+                $join->on('crp.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
+                    ->on('crp.prenda_id', '=', 'pp.id')
+                    ->on('crp.consecutivo_actual', '=', 'ppar.consecutivo_actual')
+                    ->where('crp.activo', 1);
+            })
+            ->whereIn('ppar.estado', ['APROBADO', 'COMPLETADO'])
+            ->where('ppar.activo', 1)
+            ->whereNull('ppar.deleted_at')
+            ->whereRaw("{$tipoProcesoCaseFromPpar} IN (" . implode(',', array_map('intval', $tipoProcesoIds)) . ")")
+            ->whereNotExists(function ($sub) use ($tipoProcesoCaseFromPpar) {
+                $sub->select(DB::raw(1))
+                    ->from('pedidos_procesos_prenda_detalles as ppd')
+                    ->whereColumn('ppd.prenda_pedido_id', 'pp.id')
+                    ->whereColumn('ppd.tipo_proceso_id', DB::raw($tipoProcesoCaseFromPpar));
+            })
+            ->groupBy('ppar.id', 'ppar.prenda_pedido_id', 'pp.pedido_produccion_id', 'ppar.consecutivo_actual', 'ppar.tipo_recibo', 'ppar.estado', 'ppar.created_at', 'ppar.updated_at', 'ppar.fecha_activacion', 'crp.id');
+
+        $this->aplicarBusqueda($queryParcialesSinProceso, $searchTerm, ['ped.cliente', 'cli.nombre', 'ppar.consecutivo_actual']);
+        $this->aplicarFiltrosColumnas($queryParcialesSinProceso, $columnFilters);
+
+        if ($areaFija) $queryParcialesSinProceso->having('area', '=', $areaFija);
+        if (!$incluirEntregados) $queryParcialesSinProceso->havingRaw("(COALESCE(MAX(palp_any.area), 'PENDIENTE') <> 'ENTREGADO')");
+
+        // Query 3 (fallback): recibos activos en consecutivos sin proceso técnico asociado.
+        // Aplica para TODOS los tipos logo (BORDADO/ESTAMPADO/DTF/SUBLIMADO).
+        $queryCrpSinProceso = DB::table('consecutivos_recibos_pedidos as crp')
+            ->selectRaw("
+                COALESCE(MIN(ppd_any.id), 0) as id,
+                pp.id as prenda_pedido_id,
+                {$tipoProcesoCaseFromCrp} as tipo_proceso_id,
+                'APROBADO' as estado,
+                crp.consecutivo_actual as numero_recibo,
+                UPPER(TRIM(crp.tipo_recibo)) as tipo_recibo,
+                NULL as etiqueta_proceso,
+                NULL as notas_rechazo,
+                NULL as fecha_aprobacion,
+                NULL as aprobado_por,
+                NULL as datos_adicionales,
+                COALESCE(MIN(ppd_any.created_at), crp.created_at) as created_at,
+                COALESCE(MIN(ppd_any.updated_at), crp.updated_at) as updated_at,
+                NULL as deleted_at,
+                COALESCE(MAX(palp_any.area), 'PENDIENTE') as area,
+                MAX(palp_any.novedades) as novedades,
+                MAX(palp_any.fechas_areas) as fechas_areas,
+                crp.consecutivo_actual as numero_recibo_consecutivo,
+                crp.id as consecutivo_recibo_id,
+                crp.created_at as fecha_creacion_recibo,
+                NULL as fecha_activacion,
+                0 as es_parcial,
+                NULL as pedido_parcial_id,
+                pp.pedido_produccion_id
+            ")
+            ->join('prendas_pedido as pp', function ($join) {
+                $join->on('pp.id', '=', 'crp.prenda_id')
+                    ->on('pp.pedido_produccion_id', '=', 'crp.pedido_produccion_id');
+            })
+            ->leftJoin('pedidos_produccion as ped', 'ped.id', '=', 'pp.pedido_produccion_id')
+            ->leftJoin('clientes as cli', 'cli.id', '=', 'ped.cliente_id')
+            ->leftJoin('pedidos_procesos_prenda_detalles as ppd_any', 'ppd_any.prenda_pedido_id', '=', 'pp.id')
+            ->leftJoin('prenda_areas_logo_pedido as palp_any', function ($join) {
+                $join->on('palp_any.proceso_prenda_detalle_id', '=', 'ppd_any.id')
+                    ->whereNull('palp_any.pedido_parcial_id');
+            })
+            ->where('crp.activo', 1)
+            ->whereRaw("{$tipoProcesoCaseFromCrp} IN (" . implode(',', array_map('intval', $tipoProcesoIds)) . ")")
+            ->whereRaw("(crp.origen_recibo <> 'ANEXO' OR crp.origen_recibo IS NULL OR crp.origen_recibo = '')")
+            ->whereNotExists(function ($sub) use ($tipoProcesoCaseFromCrp) {
+                $sub->select(DB::raw(1))
+                    ->from('pedidos_procesos_prenda_detalles as ppd')
+                    ->whereColumn('ppd.prenda_pedido_id', 'pp.id')
+                    ->whereColumn('ppd.tipo_proceso_id', DB::raw($tipoProcesoCaseFromCrp));
+            })
+            ->groupBy('crp.id', 'pp.id', 'pp.pedido_produccion_id', 'crp.consecutivo_actual', 'crp.created_at', 'crp.updated_at', 'crp.tipo_recibo');
+
+        $this->aplicarBusqueda($queryCrpSinProceso, $searchTerm, ['ped.cliente', 'cli.nombre', 'crp.consecutivo_actual']);
+        $this->aplicarFiltrosColumnas($queryCrpSinProceso, $columnFilters);
+
+        if ($areaFija) $queryCrpSinProceso->having('area', '=', $areaFija);
+        if (!$incluirEntregados) $queryCrpSinProceso->havingRaw("(COALESCE(MAX(palp_any.area), 'PENDIENTE') <> 'ENTREGADO')");
+
         // Combinar queries
-        $results = $queryProcesos->unionAll($queryParciales)
+        $results = $queryProcesos
+            ->unionAll($queryParciales)
+            ->unionAll($queryParcialesSinProceso)
+            ->unionAll($queryCrpSinProceso)
             ->orderBy('fecha_creacion_recibo', 'DESC')
             ->orderBy('numero_recibo_consecutivo', 'DESC')
             ->paginate($perPage);
@@ -189,7 +322,7 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
 
     public function obtenerAreasUnicas(array $tipoProcesoIds): array
     {
-        $tipoReciboCase = "CASE ppd.tipo_proceso_id WHEN 2 THEN 'BORDADO' WHEN 3 THEN 'ESTAMPADO' WHEN 4 THEN 'DTF' WHEN 5 THEN 'SUBLIMADO' ELSE NULL END";
+        $tipoReciboCase = "CASE ppd.tipo_proceso_id WHEN 1 THEN 'REFLECTIVO' WHEN 2 THEN 'BORDADO' WHEN 3 THEN 'ESTAMPADO' WHEN 4 THEN 'DTF' WHEN 5 THEN 'SUBLIMADO' ELSE NULL END";
 
         $areasProcesos = DB::table('prenda_areas_logo_pedido as palp')
             ->join('pedidos_procesos_prenda_detalles as ppd', 'ppd.id', '=', 'palp.proceso_prenda_detalle_id')
@@ -222,7 +355,7 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
 
     public function obtenerAsesorasUnicas(array $tipoProcesoIds): array
     {
-        $tipoReciboCase = "CASE ppd.tipo_proceso_id WHEN 2 THEN 'BORDADO' WHEN 3 THEN 'ESTAMPADO' WHEN 4 THEN 'DTF' WHEN 5 THEN 'SUBLIMADO' ELSE NULL END";
+        $tipoReciboCase = "CASE ppd.tipo_proceso_id WHEN 1 THEN 'REFLECTIVO' WHEN 2 THEN 'BORDADO' WHEN 3 THEN 'ESTAMPADO' WHEN 4 THEN 'DTF' WHEN 5 THEN 'SUBLIMADO' ELSE NULL END";
 
         $asesorasProcesos = DB::table('pedidos_produccion as ped')
             ->join('prendas_pedido as pp', 'pp.pedido_produccion_id', '=', 'ped.id')
@@ -281,7 +414,7 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
 
     public function buscarValoresColumna(string $columna, string $busqueda, array $tipoProcesoIds): array
     {
-        $tipoReciboCase = "CASE ppd.tipo_proceso_id WHEN 2 THEN 'BORDADO' WHEN 3 THEN 'ESTAMPADO' WHEN 4 THEN 'DTF' WHEN 5 THEN 'SUBLIMADO' ELSE NULL END";
+        $tipoReciboCase = "CASE ppd.tipo_proceso_id WHEN 1 THEN 'REFLECTIVO' WHEN 2 THEN 'BORDADO' WHEN 3 THEN 'ESTAMPADO' WHEN 4 THEN 'DTF' WHEN 5 THEN 'SUBLIMADO' ELSE NULL END";
         $busqueda = trim($busqueda);
         if (empty($busqueda)) return [];
 
@@ -380,3 +513,4 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
         }
     }
 }
+

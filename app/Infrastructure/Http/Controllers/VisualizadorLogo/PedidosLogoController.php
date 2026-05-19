@@ -128,6 +128,7 @@ final class PedidosLogoController extends Controller
         $conteos = [];
 
         $tiposProcesoMap = [
+            'reflectivo' => 1,
             'bordado' => 2,
             'estampado' => 3,
             'dtf' => 4,
