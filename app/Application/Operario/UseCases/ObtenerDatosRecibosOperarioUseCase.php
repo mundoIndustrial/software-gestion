@@ -41,26 +41,32 @@ class ObtenerDatosRecibosOperarioUseCase
 
         // OJO: este endpoint recibe un NÚMERO de pedido, no un ID. Evitar ambigüedad con findByIdOrNumero.
         $pedido = null;
-        $isBodegaOnly = ($numeroPedido === 0 && $reciboId);
+        $reciboBodega = null;
 
-        if ($isBodegaOnly) {
+        if ($reciboId) {
             $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega'])->find((int) $reciboId);
-            if ($reciboBodega && $reciboBodega->tipo_recibo === 'CORTE-PARA-BODEGA') {
-                $pedido = (object) [
-                    'id' => null,
-                    'numero_pedido' => 'BODEGA',
-                    'cliente' => 'SERVICIO',
-                    'asesor_id' => 'SISTEMA',
-                    'forma_de_pago' => 'N/A',
-                    'estado' => $reciboBodega->estado ?? 'En Ejecución',
-                    'created_at' => $reciboBodega->created_at,
-                    'fecha_estimada' => null,
-                    'descripcion' => $reciboBodega->prendaBodega?->descripcion ?? 'Recibo de Bodega',
-                    'total_prendas' => 1,
-                    'novedades' => $reciboBodega->notas ?? 'Sin novedades',
-                    'nombre_prenda_bodega' => $reciboBodega->prendaBodega?->nombre ?? 'N/A'
-                ];
-            }
+        }
+
+        $isBodegaOnly = (bool) (
+            ($reciboBodega && strtoupper(trim((string) $reciboBodega->tipo_recibo)) === 'CORTE-PARA-BODEGA')
+            || ($numeroPedido === 0 && $reciboId)
+        );
+
+        if ($isBodegaOnly && $reciboBodega && strtoupper(trim((string) $reciboBodega->tipo_recibo)) === 'CORTE-PARA-BODEGA') {
+            $pedido = (object) [
+                'id' => null,
+                'numero_pedido' => 'BODEGA',
+                'cliente' => 'SERVICIO',
+                'asesor_id' => 'SISTEMA',
+                'forma_de_pago' => 'N/A',
+                'estado' => $reciboBodega->estado ?? 'En Ejecución',
+                'created_at' => $reciboBodega->created_at,
+                'fecha_estimada' => null,
+                'descripcion' => $reciboBodega->prendaBodega?->descripcion ?? 'Recibo de Bodega',
+                'total_prendas' => 1,
+                'novedades' => $reciboBodega->notas ?? 'Sin novedades',
+                'nombre_prenda_bodega' => $reciboBodega->prendaBodega?->nombre ?? 'N/A'
+            ];
         } else {
             $pedido = $this->pedidos->findByNumeroWithPrendas((int) $numeroPedido);
         }
@@ -88,12 +94,17 @@ class ObtenerDatosRecibosOperarioUseCase
                 ],
             ];
         }
+        $pedidoIdParaQuery = $isBodegaOnly
+            ? (int) ($reciboBodega->pedido_produccion_id ?? 0)
+            : (int) ($pedido->id ?? 0);
+
+
 
         // Si se proporciona recibo_id, filtrar por ese recibo específico
         if ($reciboId) {
             $reciboEspecifico = DB::table('consecutivos_recibos_pedidos')
                 ->where('id', (int) $reciboId)
-                ->where('pedido_produccion_id', (int) $pedido->id)
+                ->where('pedido_produccion_id', $pedidoIdParaQuery)
                 ->first(['prenda_id', 'tipo_recibo']);
 
             if ($reciboEspecifico) {
@@ -120,7 +131,7 @@ class ObtenerDatosRecibosOperarioUseCase
                 'parcial_id_type' => gettype($parcialId),
                 'consecutivo_parcial' => $consecutivoParcial,
                 'prenda_id' => $prendaId,
-                'pedido_id' => $pedido->id,
+                'pedido_id' => $pedidoIdParaQuery,
             ]);
 
             $parcial = $this->parciales->findByIdWithRelationsAndTallas((int) $parcialId);
@@ -139,7 +150,7 @@ class ObtenerDatosRecibosOperarioUseCase
                 if ($consecutivoParcial !== null && $consecutivoParcial !== '' && $prendaId !== null && $prendaId !== '') {
                     $parcial = ReciboPorPartes::query()
                         ->with(['tallas', 'pedido', 'prenda'])
-                        ->where('pedido_produccion_id', (int) $pedido->id)
+                        ->where('pedido_produccion_id', $pedidoIdParaQuery)
                         ->where('prenda_pedido_id', (int) $prendaId)
                         ->where('consecutivo_parcial', (float) $consecutivoParcial)
                         ->latest('id')
@@ -151,7 +162,7 @@ class ObtenerDatosRecibosOperarioUseCase
                 // Compatibilidad legacy: algunos parciales todavía viven en pedidos_parciales.
                 $parcialLegacy = DB::table('pedidos_parciales')
                     ->where('id', (int) $parcialId)
-                    ->where('pedido_produccion_id', (int) $pedido->id)
+                    ->where('pedido_produccion_id', $pedidoIdParaQuery)
                     ->when(
                         $prendaId !== null && $prendaId !== '',
                         fn($query) => $query->where('prenda_pedido_id', (int) $prendaId)
@@ -165,7 +176,7 @@ class ObtenerDatosRecibosOperarioUseCase
 
                 if (!$parcialLegacy && $consecutivoParcial !== null && $consecutivoParcial !== '' && $prendaId !== null && $prendaId !== '') {
                     $parcialLegacy = DB::table('pedidos_parciales')
-                        ->where('pedido_produccion_id', (int) $pedido->id)
+                        ->where('pedido_produccion_id', $pedidoIdParaQuery)
                         ->where('prenda_pedido_id', (int) $prendaId)
                         ->where('consecutivo_actual', (float) $consecutivoParcial)
                         ->whereNull('deleted_at')
@@ -198,7 +209,7 @@ class ObtenerDatosRecibosOperarioUseCase
                     'parcial_id' => (int) $parcialId,
                     'consecutivo_parcial' => $consecutivoParcial !== null && $consecutivoParcial !== '' ? (float) $consecutivoParcial : null,
                     'prenda_id' => $prendaId !== null && $prendaId !== '' ? (int) $prendaId : null,
-                    'pedido_id' => (int) $pedido->id,
+                    'pedido_id' => $pedidoIdParaQuery,
                     'tipo_recibo' => $tipoRecibo,
                 ]);
 
@@ -218,7 +229,7 @@ class ObtenerDatosRecibosOperarioUseCase
                     'parcial_id_resuelto' => (int) $parcial->id,
                     'consecutivo_parcial' => $consecutivoParcial !== null && $consecutivoParcial !== '' ? (float) $consecutivoParcial : null,
                     'prenda_id' => $prendaId !== null && $prendaId !== '' ? (int) $prendaId : null,
-                    'pedido_id' => (int) $pedido->id,
+                    'pedido_id' => $pedidoIdParaQuery,
                 ]);
             }
 
@@ -237,7 +248,7 @@ class ObtenerDatosRecibosOperarioUseCase
 
             // Prioridad 1: recibo del anexo identificado por parcial_id en notas.
             $baseReciboActivacionQuery = DB::table('consecutivos_recibos_pedidos')
-                ->where('pedido_produccion_id', (int) $pedido->id)
+                ->where('pedido_produccion_id', $pedidoIdParaQuery)
                 ->where('prenda_id', (int) $parcial->prenda_pedido_id)
                 ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [$tipoReciboParcial]);
 
@@ -266,7 +277,7 @@ class ObtenerDatosRecibosOperarioUseCase
                 ? (string) $reciboActivacion->created_at
                 : null;
 
-            $datosPedido = $this->obtenerPedidoUseCase->ejecutar((int) $pedido->id, false);
+            $datosPedido = $this->obtenerPedidoUseCase->ejecutar($pedidoIdParaQuery, false);
             $responseData = $datosPedido->toArray();
 
             if (isset($responseData['prendas']) && $parcial->prenda_pedido_id) {
@@ -924,7 +935,7 @@ class ObtenerDatosRecibosOperarioUseCase
             ];
         } else {
             \Log::info('[ObtenerDatosRecibosOperarioUseCase] Llamando ObtenerPedidoUseCase');
-            $datosPedido = $this->obtenerPedidoUseCase->ejecutar((int) $pedido->id, false);
+            $datosPedido = $this->obtenerPedidoUseCase->ejecutar($pedidoIdParaQuery, false);
             \Log::info('[ObtenerDatosRecibosOperarioUseCase] Datos obtenidos del UseCase');
 
             $responseData = $datosPedido->toArray();

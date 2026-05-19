@@ -19,8 +19,8 @@ class ReciboPorPartes extends Model
     ];
 
     protected $casts = [
-        'consecutivo_original' => 'decimal:2',
-        'consecutivo_parcial' => 'decimal:2',
+        'consecutivo_original' => 'decimal:1',
+        'consecutivo_parcial' => 'decimal:1',
     ];
 
     /**
