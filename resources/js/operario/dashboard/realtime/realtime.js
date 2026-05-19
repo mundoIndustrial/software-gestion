@@ -29,6 +29,12 @@ function shouldShowDashboardNotif(key) {
 }
 
 async function actualizarListaSinRecargar() {
+    // Prevenir actualización si el usuario acaba de deshacer costura
+    if (window.__skipNextDashboardUpdate) {
+        console.log('[Operario Dashboard] Saltando actualización - deshacer costura en progreso');
+        return;
+    }
+    
     try {
         const url = window.location.href;
         const resp = await fetch(url, {
@@ -259,7 +265,10 @@ function setupEchoFallbackListeners() {
                     console.log('[Operario Dashboard] Fallback privado operario.recibos.actualizados:', { rol, evento: e });
                     mostrarNotificacion(e);
                     actualizarEstadoVisual(e);
-                    await actualizarListaSinRecargar();
+                    // NO recargar lista para recibo_deshecho, confiar en JavaScript
+                    if (e?.accion !== 'recibo_deshecho') {
+                        await actualizarListaSinRecargar();
+                    }
                     ocultarOriginalReflectivoDistribuido(e);
                 });
         }
@@ -310,7 +319,10 @@ function setupPrivateUserChannel(ws) {
             ].join('|');
 
             if (!shouldShowDashboardNotif(dedupeKey)) {
-                actualizarListaSinRecargar();
+                // NO recargar lista para recibo_deshecho, confiar en JavaScript
+                if (e?.accion !== 'recibo_deshecho') {
+                    actualizarListaSinRecargar();
+                }
                 return;
             }
 
@@ -364,6 +376,8 @@ function setupPrivateUserChannel(ws) {
 
         if (e?.accion === 'recibo_deshecho' && e?.prenda_id) {
             revertirEstadoReciboEnDOM(e);
+            // NO recargar lista para recibo_deshecho, confiar en JavaScript
+            return;
         }
 
         await actualizarListaSinRecargar();

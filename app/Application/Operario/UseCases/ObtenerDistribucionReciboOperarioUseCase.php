@@ -4,6 +4,7 @@ namespace App\Application\Operario\UseCases;
 
 use App\Domain\Operario\Repositories\ReciboDistribucionReadRepository;
 use Illuminate\Support\Facades\Auth;
+use App\Models\ReciboPorPartes;
 
 class ObtenerDistribucionReciboOperarioUseCase
 {
@@ -48,14 +49,35 @@ class ObtenerDistribucionReciboOperarioUseCase
             ];
         }
 
+        $pedidoProduccionId = (int) ($recibo->pedido_produccion_id ?? 0);
+        if ($pedidoProduccionId <= 0 && !empty($recibo->prenda_bodega_id)) {
+            $pedidoProduccionId = (int) (\Illuminate\Support\Facades\DB::table('recibo_por_partes')
+                ->where('consecutivo_original', $recibo->consecutivo_actual)
+                ->where('prenda_pedido_id', (int) $recibo->prenda_bodega_id)
+                ->where('tipo_recibo', (string) $recibo->tipo_recibo)
+                ->orderByDesc('id')
+                ->value('pedido_produccion_id') ?? 0);
+        }
+
+        $generosPorTallaBodega = collect();
+        if (!empty($recibo->prenda_bodega_id)) {
+            $generosPorTallaBodega = \Illuminate\Support\Facades\DB::table('prenda_tallas_bodega')
+                ->where('prenda_bodega_id', (int) $recibo->prenda_bodega_id)
+                ->pluck('genero', 'talla')
+                ->mapWithKeys(fn ($genero, $talla) => [strtoupper(trim((string) $talla)) => strtoupper(trim((string) $genero))]);
+        }
+
         $parciales = $this->readRepository->findParcialesConTallasParaRecibo(
-            pedidoProduccionId: (int) $recibo->pedido_produccion_id,
+            pedidoProduccionId: $pedidoProduccionId,
             prendaId: (int) $recibo->prenda_id,
             tipoRecibo: (string) $recibo->tipo_recibo,
-            consecutivoOriginal: $recibo->consecutivo_actual
+            consecutivoOriginal: $recibo->consecutivo_actual,
+            prendaBodegaId: (int) ($recibo->prenda_bodega_id ?? 0)
         );
 
-        $numeroPedido = $this->readRepository->findNumeroPedidoByPedidoProduccionId((int) $recibo->pedido_produccion_id);
+        $numeroPedido = $pedidoProduccionId > 0
+            ? $this->readRepository->findNumeroPedidoByPedidoProduccionId($pedidoProduccionId)
+            : null;
 
         if ($parciales->isEmpty()) {
             return [
@@ -69,7 +91,9 @@ class ObtenerDistribucionReciboOperarioUseCase
             ];
         }
 
-        $parcialesInfo = $parciales->map(function ($parcial) use ($numeroPedido) {
+        $prendaBodegaId = (int) ($recibo->prenda_bodega_id ?? 0);
+
+        $parcialesInfo = $parciales->map(function ($parcial) use ($numeroPedido, $generosPorTallaBodega, $prendaBodegaId) {
             $proceso = null;
             if ($numeroPedido) {
                 $proceso = $this->readRepository->findProcesoParcial(
@@ -77,6 +101,14 @@ class ObtenerDistribucionReciboOperarioUseCase
                     prendaId: (int) $parcial->prenda_pedido_id,
                     consecutivoParcial: $parcial->consecutivo_parcial
                 );
+            } elseif ($prendaBodegaId > 0) {
+                $proceso = \App\Models\ProcesoPrenda::query()
+                    ->where('prenda_bodega_id', $prendaBodegaId)
+                    ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                    ->whereNull('deleted_at')
+                    ->latest('created_at')
+                    ->first();
             }
 
             $encargado = ($proceso ? $proceso->encargado : null) ?? $parcial->encargado ?? 'SIN ASIGNAR';
@@ -99,13 +131,18 @@ class ObtenerDistribucionReciboOperarioUseCase
                 'pedido_produccion_id' => $parcial->pedido_produccion_id,
                 'prenda_pedido_id' => $parcial->prenda_pedido_id,
                 'numero_pedido' => $numeroPedido,
-                'tallas' => ($parcial->tallas ?? collect())->map(function ($talla) {
+                'tallas' => ($parcial->tallas ?? collect())->map(function ($talla) use ($generosPorTallaBodega) {
+                    $genero = $talla->genero ?? null;
+                    if (($genero === null || $genero === '') && !empty($talla->talla)) {
+                        $genero = $generosPorTallaBodega[strtoupper(trim((string) $talla->talla))] ?? null;
+                    }
+
                     return [
                         'id' => $talla->id,
                         'talla' => $talla->talla,
                         'cantidad' => $talla->cantidad,
                         'color_nombre' => $talla->color_nombre,
-                        'genero' => $talla->genero,
+                        'genero' => $genero,
                     ];
                 })->toArray(),
             ];
@@ -176,4 +213,3 @@ class ObtenerDistribucionReciboOperarioUseCase
         return 'modulos';
     }
 }
-

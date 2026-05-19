@@ -127,6 +127,15 @@ class ObtenerPrendasRecibosListadoService
                 $reciboPrincipal = $recibosDePrenda->first();
                 $prendaBodega = $reciboPrincipal->prendaBodega;
                 $procesoCostura = $procesos->get($reciboPrincipal->prenda_bodega_id)?->first();
+                $pedidoIdBodega = (int) ($procesoCostura?->numero_pedido ?? 0);
+                $tieneParcialesBodega = $pedidoIdBodega > 0
+                    ? $this->operarioRecibosRepository->existeReciboPorPartes(
+                        $pedidoIdBodega,
+                        'CORTE-PARA-BODEGA',
+                        (string) ($reciboPrincipal->consecutivo_actual ?? ''),
+                        (int) ($reciboPrincipal->prenda_bodega_id ?? 0)
+                    )
+                    : false;
 
                 $consecutivoActual = (string) ($reciboPrincipal->consecutivo_actual ?? '');
                 $nombrePrenda = (string) ($prendaBodega->nombre ?? 'N/A');
@@ -134,13 +143,13 @@ class ObtenerPrendasRecibosListadoService
 
                 return [
                     'prenda_id' => (int) ($reciboPrincipal->prenda_bodega_id ?? 0),
-                    'pedido_id' => 0,
+                    'pedido_id' => null,
                     'numero_pedido' => $consecutivoActual,
                     'cliente' => 'BODEGA',
                     'nombre_prenda' => $nombrePrenda,
                     'descripcion' => $descripcion,
                     'de_bodega' => true,
-                    'tiene_parciales' => false,
+                    'tiene_parciales' => $tieneParcialesBodega,
                     'es_parcial' => false,
                     'parcial_id' => null,
                     'estado_pedido' => (string) ($reciboPrincipal->estado ?? 'PENDIENTE'),
@@ -159,6 +168,7 @@ class ObtenerPrendasRecibosListadoService
                         'prenda_bodega_id' => $reciboPrincipal->prenda_bodega_id,
                         'encargado_costura' => $procesoCostura?->encargado,
                         'proceso_id_costura' => $procesoCostura?->id,
+                        'tiene_parciales' => $tieneParcialesBodega,
                         'created_at' => $reciboPrincipal->created_at,
                         'creado_en' => $reciboPrincipal->created_at,
                         'pedido_parcial_id' => null,

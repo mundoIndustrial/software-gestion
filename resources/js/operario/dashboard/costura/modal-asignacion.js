@@ -282,7 +282,23 @@ function cargarTallasPrenda(prendaId, tipoRecibo) {
         return Promise.resolve([]);
     }
 
-    const { numeroPedido, recibo, parcialId } = window.datosModalCostura;
+    const { numeroPedido, recibo, parcialId, prendaBodegaId } = window.datosModalCostura;
+
+    if (prendaBodegaId) {
+        return httpJson(`/operario/api/prenda-bodega/${prendaBodegaId}`, {
+            method: 'GET'
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                console.log('[CARGAR TALLAS BODEGA] Datos recibidos:', data);
+
+                if (!data?.success) {
+                    throw new Error(data?.message || 'Error cargando prenda de bodega');
+                }
+
+                return data?.data?.tallas || [];
+            });
+    }
 
     const numeroPedidoCandidatos = [];
     if (numeroPedido !== undefined && numeroPedido !== null) numeroPedidoCandidatos.push(String(numeroPedido));
@@ -1355,7 +1371,7 @@ export function confirmarAsignacion() {
         const btnConfirmar = document.getElementById('btnConfirmarAsignacion');
         const originalText = btnConfirmar ? btnConfirmar.innerHTML : null;
 
-        const { pedidoId, prendaId, tipoRecibo, recibo } = window.datosModalCostura;
+        const { pedidoId, prendaId, prendaBodegaId, tipoRecibo, recibo } = window.datosModalCostura;
         if (!pedidoId || !prendaId || !tipoRecibo || !recibo) {
             mostrarError('Error', 'Faltan datos necesarios para procesar la solicitud');
             return;
@@ -1438,6 +1454,7 @@ export function confirmarAsignacion() {
             },
             body: JSON.stringify({
                 prenda_id: prendaId,
+                ...(prendaBodegaId ? { prenda_bodega_id: prendaBodegaId } : {}),
                 tipo_recibo: tipoRecibo,
                 asignaciones,
             }),
@@ -1483,7 +1500,7 @@ function confirmarDistribucionTaller() {
     const btnConfirmar = document.getElementById('btnConfirmarAsignacion');
     const originalText = btnConfirmar ? btnConfirmar.innerHTML : null;
     
-    const { pedidoId, prendaId, tipoRecibo, recibo, esEdicion } = window.datosModalCostura;
+    const { pedidoId, prendaId, prendaBodegaId, tipoRecibo, recibo, esEdicion } = window.datosModalCostura;
     
     if (!pedidoId || !prendaId || !tipoRecibo || !recibo) {
         mostrarError('Error', 'Faltan datos necesarios para procesar la solicitud');
@@ -1577,6 +1594,7 @@ function confirmarDistribucionTaller() {
         },
         body: JSON.stringify({
             prenda_id: prendaId,
+            ...(prendaBodegaId ? { prenda_bodega_id: prendaBodegaId } : {}),
             tipo_recibo: tipoRecibo,
             ...tallerData,
         }),

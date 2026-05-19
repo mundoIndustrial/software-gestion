@@ -26,6 +26,7 @@ use App\Application\Operario\UseCases\ObtenerDistribucionControlCalidadUseCase;
 use App\Domain\Operario\Repositories\OperarioRepository;
 use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Models\ConsecutivoReciboPedido;
+use App\Models\PrendaBodega;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -168,6 +169,7 @@ class OperarioController extends Controller
 
         $conteoControlCalidadCostura = 0;
         $conteoControlCalidadReflectivo = 0;
+        $conteoControlCalidadBodega = 0;
 
         // ==================== PARTE 1: CONTAR RECIBOS NORMALES ====================
         $conteoControlCalidadCostura = ConsecutivoReciboPedido::query()
@@ -180,6 +182,12 @@ class OperarioController extends Controller
             ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
             ->where('activo', 1)
             ->where('tipo_recibo', 'REFLECTIVO')
+            ->count();
+
+        $conteoControlCalidadBodega = ConsecutivoReciboPedido::query()
+            ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
+            ->where('activo', 1)
+            ->where('tipo_recibo', 'CORTE-PARA-BODEGA')
             ->count();
 
         // ==================== PARTE 2: CONTAR PARCIALES ====================
@@ -219,11 +227,14 @@ class OperarioController extends Controller
             'pendientesPedidosCount' => $dashboardData->pendientesPedidosCount,
             'recibosBodegaPendientesCount' => $dashboardData->recibosBodegaPendientesCount,
             'vistaCosturaSinEncargadoCount' => $dashboardData->vistaCosturaSinEncargadoCount,
+            'vistaCosturaBodegaSinEncargadoCount' => $dashboardData->vistaCosturaBodegaSinEncargadoCount,
+            'vistaCosturaBodegaControlCalidadCount' => $dashboardData->vistaCosturaBodegaControlCalidadCount,
             'prendasConRecibosControlCalidad' => $prendasConRecibosControlCalidad,
             'resultadosBusquedaFueraDeArea' => $resultadosBusquedaFueraDeArea,
             'mensajeBusquedaDashboard' => $mensajeBusquedaDashboard,
             'conteoControlCalidadCostura' => $conteoControlCalidadCostura,
             'conteoControlCalidadReflectivo' => $conteoControlCalidadReflectivo,
+            'conteoControlCalidadBodega' => $conteoControlCalidadBodega,
         ]);
     }
 
@@ -761,6 +772,49 @@ class OperarioController extends Controller
         }
 
         return response()->json($result['payload'] ?? [], (int) ($result['status'] ?? 200));
+    }
+
+    /**
+     * API: Obtener datos de una prenda de bodega para el modal de asignación.
+     * Endpoint: /operario/api/prenda-bodega/{prendaBodegaId}
+     */
+    public function obtenerDatosPrendaBodega($prendaBodegaId): JsonResponse
+    {
+        try {
+            $prenda = PrendaBodega::with([
+                'tallas' => function ($query) {
+                    $query->orderBy('genero')->orderBy('talla')->orderBy('color');
+                },
+            ])->findOrFail((int) $prendaBodegaId);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => (int) $prenda->id,
+                    'numero_recibo' => (int) $prenda->numero_recibo,
+                    'nombre' => (string) $prenda->nombre,
+                    'descripcion' => (string) $prenda->descripcion,
+                    'tallas' => $prenda->tallas->map(function ($talla) {
+                        return [
+                            'talla' => (string) $talla->talla,
+                            'genero' => $talla->genero ? (string) $talla->genero : null,
+                            'color' => $talla->color ? (string) $talla->color : null,
+                            'cantidad' => (int) $talla->cantidad,
+                        ];
+                    })->values(),
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('[OperarioController] Error obteniendo datos de prenda de bodega', [
+                'prenda_bodega_id' => $prendaBodegaId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo obtener la prenda de bodega',
+            ], 404);
+        }
     }
 
     public function debugPrendasRecibos()

@@ -21,11 +21,14 @@ class ReciboDistribucionReadRepositoryImpl implements ReciboDistribucionReadRepo
         int $pedidoProduccionId,
         int $prendaId,
         string $tipoRecibo,
-        $consecutivoOriginal
+        $consecutivoOriginal,
+        ?int $prendaBodegaId = null
     ): Collection {
+        $prendaKey = $prendaId > 0 ? $prendaId : (int) ($prendaBodegaId ?? 0);
+
         return ReciboPorPartes::query()
             ->where('pedido_produccion_id', (int) $pedidoProduccionId)
-            ->where('prenda_pedido_id', (int) $prendaId)
+            ->when($prendaKey > 0, fn ($query) => $query->where('prenda_pedido_id', $prendaKey))
             ->where('tipo_recibo', (string) $tipoRecibo)
             ->where('consecutivo_original', $consecutivoOriginal)
             ->with('tallas')
@@ -56,4 +59,3 @@ class ReciboDistribucionReadRepositoryImpl implements ReciboDistribucionReadRepo
             ->exists();
     }
 }
-

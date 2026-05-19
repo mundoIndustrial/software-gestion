@@ -111,6 +111,7 @@ export function initReciboFilters() {
 
         const contadorCostura = parseInt(badgeCount.dataset.contadorCostura || '0', 10);
         const contadorReflectivo = parseInt(badgeCount.dataset.contadorReflectivo || '0', 10);
+        const contadorBodega = parseInt(badgeCount.dataset.contadorBodega || '0', 10);
 
         let totalMostrar = 0;
 
@@ -118,6 +119,8 @@ export function initReciboFilters() {
             totalMostrar = contadorCostura;
         } else if (filtroPrincipal === 'reflectivo') {
             totalMostrar = contadorReflectivo;
+        } else if (filtroPrincipal === 'bodega') {
+            totalMostrar = contadorBodega;
         } else {
             // Para "todos", no mostrar contador
             badgeCount.style.display = 'none';

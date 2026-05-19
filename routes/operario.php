@@ -16,6 +16,7 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
     Route::post('/api/notificaciones/recibos/{id}/leer', [OperarioController::class, 'marcarNotificacionReciboLeida'])->name('api.notificaciones.recibos.leer');
     Route::post('/api/notificaciones/recibos/leer-todas', [OperarioController::class, 'marcarTodasNotificacionesRecibosLeidas'])->name('api.notificaciones.recibos.leer-todas');
     Route::get('/api/pedido/{numeroPedido}', [OperarioController::class, 'obtenerDatosRecibosOperario'])->name('api.pedido');
+    Route::get('/api/prenda-bodega/{prendaBodegaId}', [OperarioController::class, 'obtenerDatosPrendaBodega'])->name('api.prenda-bodega');
     Route::post('/api/novedades/crear', [OperarioController::class, 'crearNovedad'])->name('api.novedades.crear');
     Route::delete('/api/novedades/{id}', [OperarioController::class, 'eliminarNovedad'])->name('api.novedades.eliminar');
     Route::put('/api/novedades/{id}', [OperarioController::class, 'actualizarNovedad'])->name('api.novedades.actualizar');

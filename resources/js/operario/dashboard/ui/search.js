@@ -144,7 +144,7 @@ export function initDashboardSearch() {
         };
 
         const coincideConFiltroEncargado = (card, filtroPrincipal) => {
-            if (filtroPrincipal !== 'costura' && filtroPrincipal !== 'reflectivo') {
+            if (filtroPrincipal !== 'costura' && filtroPrincipal !== 'reflectivo' && filtroPrincipal !== 'bodega') {
                 return true;
             }
 

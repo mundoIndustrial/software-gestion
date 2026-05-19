@@ -123,25 +123,25 @@ class DeshacerCosturaUseCase
         }
 
         $procesoCostura = $this->workflowService->runInTransaction(function () use ($cmd, $recibo) {
-            $procesoCostura = $this->procesos->findLatestByProcesoAndNumeroRecibo(
-                numeroPedido: 0,
-                prendaId: 0,
-                proceso: 'Costura',
-                numeroRecibo: (int) $recibo->consecutivo_actual,
-                prendaBodegaId: (int) $cmd->prendaBodegaId,
-            );
+            $procesosCostura = \App\Models\ProcesoPrenda::query()
+                ->where('prenda_bodega_id', (int) $cmd->prendaBodegaId)
+                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                ->whereNull('deleted_at')
+                ->get();
 
-            if (!$procesoCostura) {
+            if ($procesosCostura->isEmpty()) {
                 return null;
             }
 
-            $this->procesos->update($procesoCostura, [
-                'encargado' => null,
-                'fecha_de_asignacion_encargado' => null,
-                'estado_proceso' => 'Pendiente',
-            ]);
+            foreach ($procesosCostura as $proceso) {
+                $this->procesos->update($proceso, [
+                    'encargado' => null,
+                    'fecha_de_asignacion_encargado' => null,
+                    'estado_proceso' => 'Pendiente',
+                ]);
+            }
 
-            return $procesoCostura;
+            return $procesosCostura->sortByDesc('created_at')->first();
         });
 
         if (!$procesoCostura) {
