@@ -1,4 +1,6 @@
-ï»¿import { crearBotonAgregarNovedad } from './novedadButtons';
+import { crearBotonAgregarNovedad } from './novedadButtons';
+
+const DASHBOARD_DEBUG = false;
 
 export function initReciboFilters() {
     // Flag para saber si estamos en modo Control de Calidad
@@ -14,7 +16,7 @@ export function initReciboFilters() {
         // Esperar a que el DOM esta completamente listo
         setTimeout(() => {
             htmlRecibosOriginal = ordenesList.innerHTML;
-            console.log('[INIT] HTML de recibos originales guardado');
+            if (DASHBOARD_DEBUG) console.log('[INIT] HTML de recibos originales guardado');
         }, 100);
     }
     
@@ -115,7 +117,7 @@ export function initReciboFilters() {
     }
 
     function aplicarFiltrosDashboard(filtroPrincipal) {
-        console.log(' [FILTRO] Iniciando filtro:', filtroPrincipal);
+        if (DASHBOARD_DEBUG) console.log(' [FILTRO] Iniciando filtro:', filtroPrincipal);
 
         const ordenesList = document.getElementById('ordenesList');
         if (!ordenesList) {
@@ -136,7 +138,7 @@ export function initReciboFilters() {
             const numeroPedido = card.dataset.numero;
             const nombrePrenda = card.dataset.prenda;
 
-            console.log(
+            if (DASHBOARD_DEBUG) console.log(
                 `Tarjeta ${index + 1}: Pedido=${numeroPedido}, Prenda=${nombrePrenda}, data-tipo-recibo="${tipoRecibo}"`
             );
 
@@ -158,7 +160,7 @@ export function initReciboFilters() {
                 filtroEncargado !== 'sin-encargado' || String(card.dataset[atributoSinEncargado] || '0') === '1';
 
             if (coincideFiltroPrincipal && coincideFiltroEncargado) {
-                console.log(`  Mostrando (contiene "${filtroPrincipal}" en [${tipos.join(', ')}])`);
+                if (DASHBOARD_DEBUG) console.log(`  Mostrando (contiene "${filtroPrincipal}" en [${tipos.join(', ')}])`);
                 card.style.display = '';
                 const elementosFiltrables = card.querySelectorAll('[data-visible-filtro]');
                 elementosFiltrables.forEach((elemento) => {
@@ -171,7 +173,7 @@ export function initReciboFilters() {
                 });
                 mostradas++;
             } else {
-                console.log(`  Ocultando (no coincide con filtros activos)`);
+                if (DASHBOARD_DEBUG) console.log(`  Ocultando (no coincide con filtros activos)`);
                 card.style.display = 'none';
                 ocultadas++;
             }
@@ -183,7 +185,7 @@ export function initReciboFilters() {
         // Ordenar tarjetas segun el filtro activo (especialmente para vista-costura)
         ordenarTarjetas(filtroPrincipal);
 
-        console.log(` [FILTRO] Filtro completado: ${mostradas} mostradas, ${ocultadas} ocultadas`);
+        if (DASHBOARD_DEBUG) console.log(` [FILTRO] Filtro completado: ${mostradas} mostradas, ${ocultadas} ocultadas`);
     }
 
     /**
@@ -198,7 +200,7 @@ export function initReciboFilters() {
         const userRole = document.querySelector('.operario-dashboard')?.dataset?.userRole || '';
         const esLiderReflectivo = userRole === 'lider-reflectivo';
 
-        console.log(` [ORDENAMIENTO] Ordenando tarjetas para filtro: ${filtro}`);
+        if (DASHBOARD_DEBUG) console.log(` [ORDENAMIENTO] Ordenando tarjetas para filtro: ${filtro}`);
 
         cards.sort((a, b) => {
             let valA, valB;
@@ -247,7 +249,7 @@ export function initReciboFilters() {
 
         // Si estamos saliendo de Control de Calidad, recargar los datos normales
         if (window.__enModoControlCalidad === true && filtro !== 'control-calidad') {
-            console.log('[SALIENDO DE CC] Reabilitando filtros normales');
+            if (DASHBOARD_DEBUG) console.log('[SALIENDO DE CC] Reabilitando filtros normales');
             window.__enModoControlCalidad = false;
             recargarRecibosNormales();
             return;
@@ -263,7 +265,7 @@ export function initReciboFilters() {
         const ordenesList = document.getElementById('ordenesList');
         if (!ordenesList) return;
 
-        console.log('[RECARGAR RECIBOS] Restaurando recibos normales...');
+        if (DASHBOARD_DEBUG) console.log('[RECARGAR RECIBOS] Restaurando recibos normales...');
         
         const htmlOriginal = window.__htmlRecibosOriginal?.();
         if (!htmlOriginal) {
@@ -273,7 +275,7 @@ export function initReciboFilters() {
 
         // Restaurar el HTML original
         ordenesList.innerHTML = htmlOriginal;
-        console.log('[RECARGAR RECIBOS] Recibos normales restaurados');
+        if (DASHBOARD_DEBUG) console.log('[RECARGAR RECIBOS] Recibos normales restaurados');
 
         // Aplicar los filtros despues de restaurar
         aplicarTemaDashboard(obtenerFiltroPrincipalActivo());
@@ -298,7 +300,7 @@ export function initReciboFilters() {
 
         // Si estamos en Control de Calidad y se intenta cambiar encargados, recargar
         if (window.__enModoControlCalidad === true) {
-            console.log('[SALIENDO DE CC (VIA ENCARGADOS)] Reabilitando filtros normales');
+            if (DASHBOARD_DEBUG) console.log('[SALIENDO DE CC (VIA ENCARGADOS)] Reabilitando filtros normales');
             window.__enModoControlCalidad = false;
             recargarRecibosNormales();
             return;
@@ -323,13 +325,13 @@ export function initReciboFilters() {
     window.filtrarControlCalidad = function() {
         const filtroPrincipal = obtenerFiltroPrincipalActivo();
         const tipoRecibo = filtroPrincipal === 'reflectivo' ? 'REFLECTIVO' : 'COSTURA';
-        console.log('[FILTRO_CC] Cargando recibos en Control de Calidad:', tipoRecibo);
+        if (DASHBOARD_DEBUG) console.log('[FILTRO_CC] Cargando recibos en Control de Calidad:', tipoRecibo);
         cargarRecibosControlCalidad(tipoRecibo);
     };
 
     // Manejar click en boton "Control de calidad"
     window.cargarRecibosControlCalidad = function(tipoRecibo) {
-        console.log('[CONTROL_CALIDAD_FILTRO] Cargando recibos en CC para tipo:', tipoRecibo);
+        if (DASHBOARD_DEBUG) console.log('[CONTROL_CALIDAD_FILTRO] Cargando recibos en CC para tipo:', tipoRecibo);
         window.__enModoControlCalidad = true;
         
         const urlApi = `/operario/api/recibos/control-calidad/${encodeURIComponent(tipoRecibo)}`;
@@ -344,7 +346,7 @@ export function initReciboFilters() {
         })
         .then(response => response.json())
         .then(data => {
-            console.log('[CONTROL_CALIDAD_FILTRO] Respuesta:', data);
+            if (DASHBOARD_DEBUG) console.log('[CONTROL_CALIDAD_FILTRO] Respuesta:', data);
             
             if (data.success && data.data) {
                 mostrarRecibosControlCalidad(data.data, tipoRecibo);
@@ -393,7 +395,7 @@ export function initReciboFilters() {
                         data-numero-recibo="${recibo.consecutivo_actual}"
                         data-tipo-recibo="${tipoRecibo}">
                         <span class="material-symbols-rounded">share</span>
-                        VER DISTRIBUCIÃ“N
+                        VER DISTRIBUCIÓN
                   </button>`
                 : '';
 
@@ -441,7 +443,7 @@ export function initReciboFilters() {
 
         ordenesList.innerHTML = htmlRecibos;
         
-        // Reinicializar la paginaciÃ³n despuÃ©s de cargar los recibos de Control de Calidad
+        // Reinicializar la paginación después de cargar los recibos de Control de Calidad
         window.__updateDashboardPagination?.();
     }
 
@@ -452,32 +454,32 @@ export function initReciboFilters() {
         const numeroRecibo = btn.dataset.numeroRecibo;
         const ordenCard = btn.closest('.orden-card-simple');
 
-        console.log('[DISTRIBUCION_CC] Abriendo distribucion CC:', { reciboId, tipoRecibo });
+        if (DASHBOARD_DEBUG) console.log('[DISTRIBUCION_CC] Abriendo distribucion CC:', { reciboId, tipoRecibo });
 
         if (!reciboId) {
             console.error('[DISTRIBUCION_CC] No se pudo determinar el ID del recibo');
             return;
         }
 
-        // Buscar si ya existe la secciÃ³n de distribuciÃ³n (como hermano de la orden-card)
+        // Buscar si ya existe la sección de distribución (como hermano de la orden-card)
         let distribucionSection = ordenCard?.nextElementSibling;
         
-        // Validar que sea la secciÃ³n de distribuciÃ³n correcta
+        // Validar que sea la sección de distribución correcta
         if (distribucionSection && !distribucionSection.classList.contains('distribucion-parciales-cc-section')) {
             distribucionSection = null;
         }
         
         if (distribucionSection) {
-            console.log('[DISTRIBUCION_CC] SecciÃ³n encontrada, iniciando toggle');
+            if (DASHBOARD_DEBUG) console.log('[DISTRIBUCION_CC] Sección encontrada, iniciando toggle');
             
             // Si ya existe, toggle (mostrar/ocultar)
             const isHidden = distribucionSection.style.display === 'none';
             distribucionSection.style.display = isHidden ? 'block' : 'none';
             
-            // Cambiar el texto del botÃ³n
-            btn.innerHTML = isHidden ? '<span class="material-symbols-rounded">visibility_off</span> OCULTAR' : '<span class="material-symbols-rounded">share</span> VER DISTRIBUCIÃ“N';
+            // Cambiar el texto del botón
+            btn.innerHTML = isHidden ? '<span class="material-symbols-rounded">visibility_off</span> OCULTAR' : '<span class="material-symbols-rounded">share</span> VER DISTRIBUCIÓN';
             
-            console.log('[DISTRIBUCION_CC] Toggle completado');
+            if (DASHBOARD_DEBUG) console.log('[DISTRIBUCION_CC] Toggle completado');
             return;
         }
 
@@ -486,7 +488,7 @@ export function initReciboFilters() {
     };
 
     function obtennerDistribucionParciales_CC(reciboId, numeroRecibo, ordenCard, btn) {
-        console.log('[DISTRIBUCION_CC] Obteniendo parciales del recibo:', reciboId);
+        if (DASHBOARD_DEBUG) console.log('[DISTRIBUCION_CC] Obteniendo parciales del recibo:', reciboId);
 
         const urlApi = `/operario/api/recibos/${reciboId}/distribucion-control-calidad`;
         
@@ -500,10 +502,10 @@ export function initReciboFilters() {
         })
         .then(response => response.json())
         .then(data => {
-            console.log('[DISTRIBUCION_CC] Datos parseados:', data);
+            if (DASHBOARD_DEBUG) console.log('[DISTRIBUCION_CC] Datos parseados:', data);
             
             if (data.success) {
-                console.log('[DISTRIBUCION_CC] Parciales obtenidos exitosamente:', data);
+                if (DASHBOARD_DEBUG) console.log('[DISTRIBUCION_CC] Parciales obtenidos exitosamente:', data);
                 mostrarDistribucionCards_CC(data, numeroRecibo, ordenCard, btn);
             } else {
                 console.error('[DISTRIBUCION_CC] Error en respuesta:', data.message);
@@ -512,7 +514,7 @@ export function initReciboFilters() {
         })
         .catch(error => {
             console.error('[DISTRIBUCION_CC] Error en fetch:', error);
-            alert('Error al cargar distribuciÃ³n');
+            alert('Error al cargar distribución');
         });
     }
 
@@ -520,17 +522,17 @@ export function initReciboFilters() {
         const parciales = datos.parciales || [];
         const totalParciales = datos.total_parciales || 0;
 
-        console.log('[DISTRIBUCION_CC CARDS] Preparando cards con', totalParciales, 'parciales');
+        if (DASHBOARD_DEBUG) console.log('[DISTRIBUCION_CC CARDS] Preparando cards con', totalParciales, 'parciales');
 
         if (!ordenCard) {
-            console.error('[DISTRIBUCION_CC CARDS] No se encontrÃ³ orden card');
+            console.error('[DISTRIBUCION_CC CARDS] No se encontró orden card');
             return;
         }
 
         // Crear el HTML de las tarjetas
         const cardsHTML = crearHTMLDistribucionCards_CC(parciales, numeroRecibo, totalParciales);
 
-        // Crear contenedor de distribuciÃ³n
+        // Crear contenedor de distribución
         const distribucionSection = document.createElement('div');
         distribucionSection.className = 'distribucion-parciales-cc-section';
         distribucionSection.innerHTML = cardsHTML;
@@ -538,12 +540,12 @@ export function initReciboFilters() {
         // Insertar despues de la orden-card
         ordenCard.insertAdjacentElement('afterend', distribucionSection);
 
-        // Cambiar el texto del botÃ³n a "OCULTAR"
+        // Cambiar el texto del botón a "OCULTAR"
         if (btn) {
             btn.innerHTML = '<span class="material-symbols-rounded">visibility_off</span> OCULTAR';
         }
 
-        console.log('[DISTRIBUCION_CC CARDS] Cards insertadas en el DOM');
+        if (DASHBOARD_DEBUG) console.log('[DISTRIBUCION_CC CARDS] Cards insertadas en el DOM');
     }
 
     function crearHTMLDistribucionCards_CC(parciales, numeroRecibo, totalParciales) {
@@ -633,3 +635,4 @@ export function initReciboFilters() {
         return parcialCards;
     }
 }
+

@@ -224,6 +224,29 @@ class GetOperarioDashboardUseCase
             }
 
             if ($usuario->hasRole('vista-costura')) {
+                $yaTieneCompletadosVista = $prendasConRecibos->contains(function ($prenda) {
+                    $recibo = collect($prenda['recibos'] ?? [])->first();
+                    return is_array($recibo)
+                        && array_key_exists('completado_corte', $recibo)
+                        && array_key_exists('completado_costura', $recibo)
+                        && array_key_exists('completado_control_calidad', $recibo);
+                });
+
+                if ($yaTieneCompletadosVista) {
+                    return new OperarioDashboardDTO(
+                        operario: null,
+                        prendasConRecibos: $prendasConRecibos,
+                        usuario: $usuario,
+                        tab: $tab,
+                        pendientesPedidosCount: $pendientesPedidosCount ?? 0,
+                        recibosCompletados: $recibosCompletados,
+                        recibosCompletadosCount: $recibosCompletadosCount ?? $recibosCompletados->count(),
+                        recibosBodegaCompletados: $recibosBodegaCompletados ?? collect(),
+                        recibosBodegaCompletadosCount: $recibosBodegaCompletadosCount ?? ($recibosBodegaCompletados ?? collect())->count(),
+                        recibosBodegaPendientesCount: $recibosBodegaPendientesCount ?? 0,
+                    );
+                }
+
                 $idsRecibos = $prendasConRecibos
                     ->flatMap(fn($p) => collect($p['recibos'] ?? [])->pluck('id'))
                     ->filter()
@@ -292,4 +315,3 @@ class GetOperarioDashboardUseCase
         );
     }
 }
-

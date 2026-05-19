@@ -1,4 +1,5 @@
 export function initDashboardSearch() {
+    const DASHBOARD_DEBUG = false;
     window.__initDashboardSearch = function () {
         const searchInput = document.getElementById('searchInput');
         const clearBtn = document.getElementById('clearFilterBtn');
@@ -6,17 +7,19 @@ export function initDashboardSearch() {
         const ordenesList = document.getElementById('ordenesList');
         const ordenCards = ordenesList ? ordenesList.querySelectorAll('.orden-card-simple') : [];
 
-        console.log('=== TARJETAS CARGADAS EN DASHBOARD ===');
-        console.log('Total de tarjetas:', ordenCards.length);
-        ordenCards.forEach((card, index) => {
-            console.log(`Tarjeta ${index + 1}:`, {
-                numero: card.dataset.numero,
-                prenda: card.dataset.prenda,
-                cliente: card.dataset.cliente,
-                'data-tipo-recibo': card.dataset.tipoRecibo,
+        if (DASHBOARD_DEBUG) {
+            console.log('=== TARJETAS CARGADAS EN DASHBOARD ===');
+            console.log('Total de tarjetas:', ordenCards.length);
+            ordenCards.forEach((card, index) => {
+                console.log(`Tarjeta ${index + 1}:`, {
+                    numero: card.dataset.numero,
+                    prenda: card.dataset.prenda,
+                    cliente: card.dataset.cliente,
+                    'data-tipo-recibo': card.dataset.tipoRecibo,
+                });
             });
-        });
-        console.log('=====================================\n');
+            console.log('=====================================\n');
+        }
 
         if (!searchInput) {
             return;
