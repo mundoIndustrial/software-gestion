@@ -27,18 +27,24 @@ export function initReciboFilters() {
         const body = document.body;
         const titleText = document.getElementById('dashboardPageTitleText');
         const titleIcon = document.getElementById('dashboardPageTitleIcon');
-        const theme = filtroPrincipal === 'reflectivo' ? 'reflectivo' : 'costura';
+        const theme = filtroPrincipal === 'reflectivo'
+            ? 'reflectivo'
+            : (filtroPrincipal === 'bodega' ? 'bodega' : 'costura');
 
         if (body) {
             body.setAttribute('data-dashboard-theme', theme);
         }
 
         if (titleText) {
-            titleText.textContent = theme === 'reflectivo' ? 'RECIBOS DE REFLECTIVO' : 'RECIBOS DE COSTURA';
+            titleText.textContent = theme === 'reflectivo'
+                ? 'RECIBOS DE REFLECTIVO'
+                : (theme === 'bodega' ? 'RECIBOS DE BODEGA' : 'RECIBOS DE COSTURA');
         }
 
         if (titleIcon) {
-            titleIcon.textContent = theme === 'reflectivo' ? 'auto_awesome' : 'checkroom';
+            titleIcon.textContent = theme === 'reflectivo'
+                ? 'auto_awesome'
+                : (theme === 'bodega' ? 'inventory_2' : 'checkroom');
         }
     }
 
@@ -247,6 +253,9 @@ export function initReciboFilters() {
         if (userRole === 'vista-costura') {
             const url = new URL(window.location.href);
             url.searchParams.set('filtro', filtro);
+            if (filtro === 'bodega') {
+                url.searchParams.delete('encargado');
+            }
             url.searchParams.delete('page');
             window.location.href = url.toString();
             return;
@@ -331,6 +340,7 @@ export function initReciboFilters() {
             url.searchParams.delete('page');
             if (current === modo) {
                 actualizarBadgeSinEncargado(obtenerFiltroPrincipalActivo());
+                actualizarBadgeControlCalidad(obtenerFiltroPrincipalActivo());
                 return;
             }
             window.location.href = url.toString();
@@ -357,45 +367,36 @@ export function initReciboFilters() {
     window.filtrarControlCalidad = function() {
         const filtroPrincipal = obtenerFiltroPrincipalActivo();
         const tipoRecibo = filtroPrincipal === 'reflectivo' ? 'REFLECTIVO' : 'COSTURA';
-        if (DASHBOARD_DEBUG) console.log('[FILTRO_CC] Cargando recibos en Control de Calidad:', tipoRecibo);
-        cargarRecibosControlCalidad(tipoRecibo);
+        const url = new URL(window.location.href);
+
+        url.searchParams.set('filtro', filtroPrincipal);
+        url.searchParams.set('encargado', 'control-calidad');
+        url.searchParams.delete('page');
+
+        Array.from(url.searchParams.keys()).forEach((key) => {
+            if (key.startsWith('page_vc_')) {
+                url.searchParams.delete(key);
+            }
+        });
+
+        if (DASHBOARD_DEBUG) console.log('[FILTRO_CC] Redirigiendo a Control de Calidad:', tipoRecibo, url.toString());
+        window.location.href = url.toString();
     };
 
     // Manejar click en boton "Control de calidad"
     window.cargarRecibosControlCalidad = function(tipoRecibo) {
-        if (DASHBOARD_DEBUG) console.log('[CONTROL_CALIDAD_FILTRO] Cargando recibos en CC para tipo:', tipoRecibo);
-        window.__enModoControlCalidad = true;
-        
-        const urlApi = `/operario/api/recibos/control-calidad/${encodeURIComponent(tipoRecibo)}`;
-        
-        fetch(urlApi, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (DASHBOARD_DEBUG) console.log('[CONTROL_CALIDAD_FILTRO] Respuesta:', data);
-            
-            if (data.success && data.data) {
-                mostrarRecibosControlCalidad(data.data, tipoRecibo);
-            } else {
-                const ordenesList = document.getElementById('ordenesList');
-                if (ordenesList) {
-                    ordenesList.innerHTML = '<div style="padding: 2rem; text-align: center; color: #999;">No hay recibos en Control de Calidad para este tipo</div>';
-                }
-            }
-        })
-        .catch(error => {
-            console.error('[CONTROL_CALIDAD_FILTRO] Error:', error);
-            const ordenesList = document.getElementById('ordenesList');
-            if (ordenesList) {
-                ordenesList.innerHTML = '<div style="padding: 2rem; text-align: center; color: #f00;">Error al cargar recibos en Control de Calidad</div>';
+        const url = new URL(window.location.href);
+        url.searchParams.set('filtro', tipoRecibo === 'REFLECTIVO' ? 'reflectivo' : 'costura');
+        url.searchParams.set('encargado', 'control-calidad');
+        url.searchParams.delete('page');
+
+        Array.from(url.searchParams.keys()).forEach((key) => {
+            if (key.startsWith('page_vc_')) {
+                url.searchParams.delete(key);
             }
         });
+
+        window.location.href = url.toString();
     };
 
     // Funcion para mostrar recibos en Control de Calidad
@@ -418,7 +419,7 @@ export function initReciboFilters() {
             const esParcial = Boolean(recibo.es_parcial || recibo.parcial_id || recibo.pedido_parcial_id || recibo.id_parcial);
             const parcialId = recibo.parcial_id || recibo.pedido_parcial_id || recibo.id_parcial || null;
             const consecutivoParcial = recibo.consecutivo_parcial || recibo.consecutivo_actual || '';
-            const tipoReciboNav = esParcial ? 'PARCIAL' : tipoRecibo;
+            const tipoReciboNav = tipoRecibo;
             const distribucionBtn = recibo.tiene_parciales 
                 ? `<button class="btn-ver-distribucion" 
                         onclick="abrirDistribucionReciboCC(this, '${tipoRecibo}');"

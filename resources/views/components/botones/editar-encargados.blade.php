@@ -5,7 +5,7 @@
 @endphp
 
 @if(!$ocultarParaVistaCostura)
-    {{-- Componente reutilizable para botÃ³n "Editar Encargados" --}}
+    {{-- Componente reutilizable para boton "Editar Encargados" --}}
     <button class="btn-ver-distribucion {{ $clase ?? '' }}"
             data-visible-filtro="{{ $filtro ?? '' }}"
             id="btn-editar-encargados-{{ $tipoRecibo }}-{{ $prendaId }}"

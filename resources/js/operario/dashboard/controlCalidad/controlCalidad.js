@@ -27,6 +27,7 @@ export function pasarAControlCalidad(btn) {
     const tipoRecibo = btn.dataset.tipoRecibo;
     const recibo = btn.dataset.recibo;
     const parcialId = btn.dataset.parcialId;
+    const prendaBodegaId = btn.dataset.prendaBodegaId;
     const esParcial = btn.dataset.esParcial === '1';
     const rolActual = (document.querySelector('.operario-dashboard')?.dataset?.userRole || '').toString().trim().toLowerCase();
     const esVistaCosturaReflectivo = rolActual === 'vista-costura' && String(tipoRecibo || '').toUpperCase() === 'REFLECTIVO';
@@ -45,6 +46,7 @@ export function pasarAControlCalidad(btn) {
             tipo_recibo: tipoRecibo,
             es_parcial: esParcial,
             parcial_id: parcialId || null,
+            ...(prendaBodegaId ? { prenda_bodega_id: prendaBodegaId } : {}),
         })
             .then((response) => response.json())
             .then((data) => {
@@ -88,6 +90,9 @@ export function pasarAControlCalidad(btn) {
     formData.append('prenda_id', prendaId);
     formData.append('tipo_recibo', tipoRecibo);
     formData.append('es_parcial', esParcial ? '1' : '0');
+    if (prendaBodegaId) {
+        formData.append('prenda_bodega_id', prendaBodegaId);
+    }
     if (parcialId) {
         formData.append('parcial_id', parcialId);
     }

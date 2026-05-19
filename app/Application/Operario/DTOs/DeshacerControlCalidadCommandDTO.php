@@ -8,5 +8,6 @@ readonly class DeshacerControlCalidadCommandDTO
         public int $pedidoId,
         public int $prendaId,
         public string $tipoRecibo,
+        public ?int $prendaBodegaId = null,
     ) {}
 }

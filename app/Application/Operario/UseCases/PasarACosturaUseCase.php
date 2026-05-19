@@ -10,6 +10,7 @@ use App\Domain\Operario\Services\ControlCalidadWorkflow;
 use App\Events\EncargadoCosturaAsignado;
 use App\Events\OperarioRecibosActualizados;
 use App\Events\ReciboAsignadoCosturero;
+use App\Models\PrendaBodega;
 use Illuminate\Support\Facades\Log;
 
 class PasarACosturaUseCase
@@ -25,6 +26,10 @@ class PasarACosturaUseCase
         try {
             if (!auth()->user()->hasRole('vista-costura')) {
                 return new ReciboCommandResultDTO(false, 'No tienes permisos para realizar esta accion', 403);
+            }
+
+            if ($cmd->prendaBodegaId !== null) {
+                return $this->executeBodega($cmd);
             }
 
             $pedido = $this->workflowService->findPedidoOrFail($cmd->pedidoId);
@@ -289,5 +294,119 @@ class PasarACosturaUseCase
 
             return new ReciboCommandResultDTO(false, 'Error al pasar a Costura: ' . $e->getMessage(), 500);
         }
+    }
+
+    private function executeBodega(PasarACosturaCommandDTO $cmd): ReciboCommandResultDTO
+    {
+        $prendaBodega = PrendaBodega::find($cmd->prendaBodegaId);
+
+        Log::info('[COSTURA][BODEGA] Buscando recibo para pasar a Costura', [
+            'prenda_bodega_id' => $cmd->prendaBodegaId,
+            'tipo_recibo' => $cmd->tipoRecibo,
+            'numero_recibo' => $cmd->numeroRecibo,
+            'encargado' => $cmd->encargado,
+        ]);
+
+        $recibo = $this->recibos->findActiveByPedidoPrendaTipo(
+            pedidoProduccionId: 0,
+            prendaId: 0,
+            tipoRecibo: (string) $cmd->tipoRecibo,
+            prendaBodegaId: (int) $cmd->prendaBodegaId,
+        );
+
+        if (!$recibo) {
+            $recibo = $this->recibos->findActiveByPedidoConsecutivoTipo(
+                pedidoProduccionId: 0,
+                consecutivoActual: (int) $cmd->numeroRecibo,
+                tipoRecibo: (string) $cmd->tipoRecibo,
+            );
+        }
+
+        if (!$recibo) {
+            return new ReciboCommandResultDTO(false, 'Recibo no encontrado', 404);
+        }
+
+        [$nuevoProceso, $areaAnterior] = $this->workflowService->runInTransaction(function () use ($cmd, $recibo) {
+            $areaAnterior = $recibo->area;
+
+            $procesoExistente = $this->procesos->findLatestByProcesoAndNumeroRecibo(
+                numeroPedido: 0,
+                prendaId: 0,
+                proceso: 'Costura',
+                numeroRecibo: (int) $recibo->consecutivo_actual,
+                prendaBodegaId: (int) $cmd->prendaBodegaId,
+            );
+
+            if ($procesoExistente) {
+                $datosActualizacion = [
+                    'encargado' => $cmd->encargado,
+                    'estado_proceso' => $procesoExistente->estado_proceso === 'Pendiente' ? 'En Progreso' : $procesoExistente->estado_proceso,
+                ];
+
+                if (trim($procesoExistente->encargado ?? '') !== trim($cmd->encargado) || !$procesoExistente->fecha_de_asignacion_encargado) {
+                    $datosActualizacion['fecha_de_asignacion_encargado'] = now();
+                }
+
+                $this->procesos->update($procesoExistente, $datosActualizacion);
+                $procesoExistente->refresh();
+                $nuevoProceso = $procesoExistente;
+            } else {
+                $nuevoProceso = $this->procesos->create([
+                    'numero_pedido' => null,
+                    'prenda_pedido_id' => null,
+                    'prenda_bodega_id' => (int) $cmd->prendaBodegaId,
+                    'numero_recibo' => $recibo->consecutivo_actual,
+                    'proceso' => 'Costura',
+                    'fecha_inicio' => now(),
+                    'encargado' => $cmd->encargado,
+                    'fecha_de_asignacion_encargado' => now(),
+                    'estado_proceso' => 'En Progreso',
+                    'codigo_referencia' => 'COS-BOD-' . $recibo->consecutivo_actual . '-' . date('YmdHis'),
+                ]);
+
+                $recibo->area = 'Costura';
+                $this->recibos->save($recibo);
+            }
+
+            return [$nuevoProceso, $areaAnterior];
+        });
+
+        $nombrePrenda = $prendaBodega?->nombre ?? 'Prenda de bodega';
+
+        try {
+            broadcast(new EncargadoCosturaAsignado(
+                0,
+                (int) $cmd->prendaBodegaId,
+                $recibo->consecutivo_actual,
+                $cmd->encargado,
+                $nuevoProceso->id,
+                $nombrePrenda,
+                optional($nuevoProceso->updated_at)->toIso8601String(),
+                (int) $recibo->id,
+                'BODEGA',
+                null
+            ));
+
+            broadcast(new ReciboAsignadoCosturero(
+                0,
+                (int) $cmd->prendaBodegaId,
+                $recibo->consecutivo_actual,
+                $nombrePrenda,
+                $cmd->encargado,
+                $nuevoProceso->id,
+                $cmd->encargado
+            ));
+        } catch (\Throwable $e) {
+            Log::warning('[COSTURA][BODEGA] Error al emitir broadcasts', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return new ReciboCommandResultDTO(true, 'Recibo enviado a Costura correctamente', 200, [
+            'proceso_id' => $nuevoProceso->id,
+            'proceso_nombre' => 'Costura',
+            'area_anterior' => $areaAnterior,
+            'prenda_bodega_id' => (int) $cmd->prendaBodegaId,
+        ]);
     }
 }

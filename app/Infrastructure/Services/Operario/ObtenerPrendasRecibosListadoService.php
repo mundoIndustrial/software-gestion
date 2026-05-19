@@ -4,6 +4,7 @@ namespace App\Infrastructure\Services\Operario;
 
 use App\Infrastructure\Repositories\Operario\OperarioRecibosRepository;
 use App\Models\ConsecutivoReciboPedido;
+use App\Models\ProcesoPrenda;
 use App\Models\PedidosProcesosPrendaDetalle;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -21,6 +22,11 @@ class ObtenerPrendasRecibosListadoService
         $tipoOperario = $this->supportService->obtenerTipoOperario($usuario);
         $this->supportService->logTipoOperario($usuario, $tipoOperario);
         $tiposRecibo = $this->supportService->resolverTiposRecibo($tipoOperario, $filtroRecibo);
+
+        if ($tipoOperario === 'vista-costura' && $filtroRecibo === 'bodega') {
+            return $this->obtenerPrendasConRecibosBodegaVistaCostura();
+        }
+
         if (empty($tiposRecibo)) {
             return collect();
         }
@@ -72,6 +78,97 @@ class ObtenerPrendasRecibosListadoService
         });
 
         return $this->supportService->ordenarResultadoFinalPorTipoOperario($resultadoFinal, $tipoOperario);
+    }
+
+    public function obtenerPrendasConRecibosBodegaVistaCostura(): Collection
+    {
+        $recibos = ConsecutivoReciboPedido::query()
+            ->where('activo', 1)
+            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
+            ->where(function ($query) {
+                $query->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['costura', 'control calidad'])
+                    ->orWhereRaw('LOWER(TRIM(area)) = ?', ['control de calidad']);
+            })
+            ->whereNotNull('prenda_bodega_id')
+            ->with([
+                'prendaBodega:id,nombre,descripcion,created_at',
+            ])
+            ->select([
+                'id',
+                'prenda_bodega_id',
+                'pedido_produccion_id',
+                'tipo_recibo',
+                'consecutivo_actual',
+                'consecutivo_inicial',
+                'notas',
+                'area',
+                'estado',
+                'created_at',
+                'activo',
+            ])
+            ->orderByDesc('created_at')
+            ->get();
+
+        if ($recibos->isEmpty()) {
+            return collect();
+        }
+
+        $procesos = ProcesoPrenda::query()
+            ->whereIn('prenda_bodega_id', $recibos->pluck('prenda_bodega_id')->filter()->unique()->values())
+            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get()
+            ->groupBy('prenda_bodega_id');
+
+        return $recibos
+            ->groupBy('prenda_bodega_id')
+            ->map(function (Collection $recibosDePrenda) use ($procesos) {
+                $reciboPrincipal = $recibosDePrenda->first();
+                $prendaBodega = $reciboPrincipal->prendaBodega;
+                $procesoCostura = $procesos->get($reciboPrincipal->prenda_bodega_id)?->first();
+
+                $consecutivoActual = (string) ($reciboPrincipal->consecutivo_actual ?? '');
+                $nombrePrenda = (string) ($prendaBodega->nombre ?? 'N/A');
+                $descripcion = (string) ($prendaBodega->descripcion ?? '');
+
+                return [
+                    'prenda_id' => (int) ($reciboPrincipal->prenda_bodega_id ?? 0),
+                    'pedido_id' => 0,
+                    'numero_pedido' => $consecutivoActual,
+                    'cliente' => 'BODEGA',
+                    'nombre_prenda' => $nombrePrenda,
+                    'descripcion' => $descripcion,
+                    'de_bodega' => true,
+                    'tiene_parciales' => false,
+                    'es_parcial' => false,
+                    'parcial_id' => null,
+                    'estado_pedido' => (string) ($reciboPrincipal->estado ?? 'PENDIENTE'),
+                    'fecha_creacion' => $reciboPrincipal->created_at,
+                    'tipo_recibo' => 'CORTE-PARA-BODEGA',
+                    'proceso_actual' => 'Bodega',
+                    'encargado_costura' => $procesoCostura?->encargado,
+                    'proceso_id_costura' => $procesoCostura?->id,
+                    'recibos' => [[
+                        'id' => $reciboPrincipal->id,
+                        'tipo_recibo' => 'CORTE-PARA-BODEGA',
+                        'consecutivo_actual' => $consecutivoActual,
+                        'consecutivo_inicial' => (string) ($reciboPrincipal->consecutivo_inicial ?? $consecutivoActual),
+                        'area' => $reciboPrincipal->area,
+                        'estado' => $reciboPrincipal->estado,
+                        'prenda_bodega_id' => $reciboPrincipal->prenda_bodega_id,
+                        'encargado_costura' => $procesoCostura?->encargado,
+                        'proceso_id_costura' => $procesoCostura?->id,
+                        'created_at' => $reciboPrincipal->created_at,
+                        'creado_en' => $reciboPrincipal->created_at,
+                        'pedido_parcial_id' => null,
+                        'completado_corte' => false,
+                        'completado_costura' => false,
+                        'completado_control_calidad' => false,
+                    ]],
+                ];
+            })
+            ->values();
     }
 
     private function mapearGrupoRecibosOperario(

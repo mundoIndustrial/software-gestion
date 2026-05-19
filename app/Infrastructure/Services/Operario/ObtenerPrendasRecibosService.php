@@ -33,4 +33,9 @@ class ObtenerPrendasRecibosService implements OperarioPrendasRecibosReadService
     {
         return $this->bodegaService->obtenerConteoPrendasConRecibosBodegaCortador($usuario);
     }
+
+    public function obtenerPrendasConRecibosBodegaVistaCostura(): \Illuminate\Support\Collection
+    {
+        return $this->listadoService->obtenerPrendasConRecibosBodegaVistaCostura();
+    }
 }

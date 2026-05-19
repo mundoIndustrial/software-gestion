@@ -8,6 +8,7 @@ use App\Domain\Operario\Services\ControlCalidadWorkflow;
 use App\Domain\Operario\Repositories\ConsecutivoReciboPedidoRepository;
 use App\Domain\Operario\Repositories\ProcesoPrendaRepository;
 use App\Models\PedidoProduccion;
+use App\Models\PrendaBodega;
 use App\Models\PrendaPedido;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -25,6 +26,10 @@ class CambiarAreaControlCalidadUseCase
         try {
             if (!auth()->user()->hasRole('vista-costura')) {
                 throw new \InvalidArgumentException('No tienes permisos para realizar esta accion');
+            }
+
+            if ($cmd->prendaBodegaId !== null) {
+                return $this->executeBodega($cmd);
             }
 
             $pedido = $this->workflowService->findPedidoOrFail($cmd->pedidoId);
@@ -173,5 +178,92 @@ class CambiarAreaControlCalidadUseCase
 
             return new ReciboCommandResultDTO(false, 'Error al cambiar el area: ' . $e->getMessage(), 500);
         }
+    }
+
+    private function executeBodega(CambiarAreaControlCalidadCommandDTO $cmd): ReciboCommandResultDTO
+    {
+        $prendaBodega = PrendaBodega::find($cmd->prendaBodegaId);
+
+        Log::info('[CC][BODEGA] Buscando recibo para cambiar area', [
+            'prenda_bodega_id' => $cmd->prendaBodegaId,
+            'tipo_recibo' => $cmd->tipoRecibo,
+            'numero_recibo' => $cmd->numeroRecibo,
+        ]);
+
+        $recibo = $this->recibos->findActiveByPedidoPrendaTipo(
+            pedidoProduccionId: 0,
+            prendaId: 0,
+            tipoRecibo: (string) $cmd->tipoRecibo,
+            prendaBodegaId: (int) $cmd->prendaBodegaId,
+        );
+
+        if (!$recibo) {
+            $recibo = $this->recibos->findActiveByPedidoConsecutivoTipo(
+                pedidoProduccionId: 0,
+                consecutivoActual: (int) $cmd->numeroRecibo,
+                tipoRecibo: (string) $cmd->tipoRecibo,
+            );
+        }
+
+        if (!$recibo) {
+            return new ReciboCommandResultDTO(false, 'Recibo no encontrado', 404);
+        }
+
+        [$nuevoProceso, $areaPosterior] = $this->workflowService->runInTransaction(function () use ($cmd, $recibo) {
+            $areaPosterior = $recibo->area;
+
+            $nuevoProceso = $this->procesos->create([
+                'numero_pedido' => null,
+                'prenda_pedido_id' => null,
+                'prenda_bodega_id' => (int) $cmd->prendaBodegaId,
+                'numero_recibo' => $recibo->consecutivo_actual,
+                'proceso' => 'Control de Calidad',
+                'fecha_inicio' => now(),
+                'encargado' => 'control',
+                'estado_proceso' => 'En Progreso',
+                'codigo_referencia' => 'CC-BOD-' . $recibo->consecutivo_actual . '-' . date('YmdHis'),
+            ]);
+
+            $recibo->area = 'Control Calidad';
+            $this->recibos->save($recibo);
+
+            DB::table('prenda_recibo_completado')->updateOrInsert(
+                [
+                    'id_recibo' => (int) $recibo->id,
+                    'area' => 'Control Calidad',
+                ],
+                [
+                    'numero_recibo' => (int) ($recibo->consecutivo_actual ?? $cmd->numeroRecibo),
+                    'nombre_operario' => (string) (auth()->user()->name ?? 'control'),
+                    'fecha_completado' => now(),
+                    'id_parcial' => null,
+                ]
+            );
+
+            return [$nuevoProceso, $areaPosterior];
+        });
+
+        $nombrePrenda = $prendaBodega?->nombre ?? 'Prenda de bodega';
+
+        try {
+            broadcast(new \App\Events\ReciboPasadoControlCalidad(
+                0,
+                (int) $cmd->prendaBodegaId,
+                $recibo->consecutivo_actual,
+                $nombrePrenda,
+                $cmd->tipoRecibo
+            ));
+        } catch (\Throwable $e) {
+            Log::warning('[CC][BODEGA] Error al emitir ReciboPasadoControlCalidad', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return new ReciboCommandResultDTO(true, 'Recibo enviado a Control Calidad correctamente', 200, [
+            'proceso_id' => $nuevoProceso->id,
+            'proceso_nombre' => 'Control de Calidad',
+            'area_anterior' => $areaPosterior,
+            'prenda_bodega_id' => (int) $cmd->prendaBodegaId,
+        ]);
     }
 }

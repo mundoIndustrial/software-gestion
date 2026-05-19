@@ -521,15 +521,29 @@ class ReciboCosturaController extends Controller
                 return $this->cambiarAreaControlCalidadParcial($request, (int) $pedidoId);
             }
 
-            $request->validate([
-                'prenda_id' => 'required|integer|exists:prendas_pedido,id',
+            $tipoRecibo = strtoupper(trim((string) $request->input('tipo_recibo')));
+            $esBodega = $tipoRecibo === 'CORTE-PARA-BODEGA';
+
+            $rules = [
                 'tipo_recibo' => 'required|string'
-            ]);
+            ];
+
+            if ($esBodega) {
+                $rules['prenda_bodega_id'] = 'required|integer|exists:prenda_bodega,id';
+            } else {
+                $rules['prenda_id'] = 'required|integer|exists:prendas_pedido,id';
+            }
+
+            $request->validate($rules);
+
+            $prendaId = (int) $request->input('prenda_id', 0);
+            $prendaBodegaId = $esBodega ? (int) $request->input('prenda_bodega_id') : null;
 
             $resultado = $this->cambiarAreaControlCalidadUseCase->execute(new CambiarAreaControlCalidadCommandDTO(
                 pedidoId: (int) $pedidoId,
                 numeroRecibo: (int) $numeroRecibo,
-                prendaId: (int) $request->prenda_id,
+                prendaId: $prendaId,
+                prendaBodegaId: $prendaBodegaId,
                 tipoRecibo: (string) $request->tipo_recibo,
             ));
 
@@ -575,13 +589,26 @@ class ReciboCosturaController extends Controller
                 return $this->deshacerControlCalidadParcial($request, (int) $pedidoId, (int) $prendaId);
             }
 
-            $request->validate([
+            $tipoRecibo = strtoupper(trim((string) $request->input('tipo_recibo')));
+            $esBodega = $tipoRecibo === 'CORTE-PARA-BODEGA';
+
+            $rules = [
                 'tipo_recibo' => 'required|string'
-            ]);
+            ];
+
+            if ($esBodega) {
+                $rules['prenda_bodega_id'] = 'required|integer|exists:prenda_bodega,id';
+            }
+
+            $request->validate($rules);
+
+            $prendaBodegaId = $esBodega ? (int) $request->input('prenda_bodega_id', $prendaId) : null;
+            $prendaIdReal = $esBodega ? 0 : (int) $prendaId;
 
             $resultado = $this->deshacerControlCalidadUseCase->execute(new DeshacerControlCalidadCommandDTO(
                 pedidoId: (int) $pedidoId,
-                prendaId: (int) $prendaId,
+                prendaId: $prendaIdReal,
+                prendaBodegaId: $prendaBodegaId,
                 tipoRecibo: (string) $request->tipo_recibo,
             ));
 
@@ -1083,16 +1110,30 @@ class ReciboCosturaController extends Controller
                 ], 403);
             }
 
-            $request->validate([
-                'prenda_id' => 'required|integer|exists:prendas_pedido,id',
+            $tipoRecibo = strtoupper(trim((string) $request->input('tipo_recibo')));
+            $esBodega = $tipoRecibo === 'CORTE-PARA-BODEGA';
+
+            $rules = [
                 'tipo_recibo' => 'required|string',
-                'encargado' => 'required|string|max:100'
-            ]);
+                'encargado' => 'required|string|max:100',
+            ];
+
+            if ($esBodega) {
+                $rules['prenda_bodega_id'] = 'required|integer|exists:prenda_bodega,id';
+            } else {
+                $rules['prenda_id'] = 'required|integer|exists:prendas_pedido,id';
+            }
+
+            $request->validate($rules);
+
+            $prendaId = (int) $request->input('prenda_id', 0);
+            $prendaBodegaId = $esBodega ? (int) $request->input('prenda_bodega_id') : null;
 
             $resultado = $this->pasarACosturaUseCase->execute(new PasarACosturaCommandDTO(
                 pedidoId: (int) $pedidoId,
                 numeroRecibo: (int) $numeroRecibo,
-                prendaId: (int) $request->prenda_id,
+                prendaId: $prendaId,
+                prendaBodegaId: $prendaBodegaId,
                 tipoRecibo: (string) $request->tipo_recibo,
                 encargado: (string) $request->encargado,
             ));
@@ -1156,13 +1197,26 @@ class ReciboCosturaController extends Controller
                 ], 403);
             }
 
-            $request->validate([
+            $tipoRecibo = strtoupper(trim((string) $request->input('tipo_recibo')));
+            $esBodega = $tipoRecibo === 'CORTE-PARA-BODEGA';
+
+            $rules = [
                 'tipo_recibo' => 'required|string'
-            ]);
+            ];
+
+            if ($esBodega) {
+                $rules['prenda_bodega_id'] = 'required|integer|exists:prenda_bodega,id';
+            }
+
+            $request->validate($rules);
+
+            $prendaBodegaId = $esBodega ? (int) $request->input('prenda_bodega_id', $prendaId) : null;
+            $prendaIdReal = $esBodega ? 0 : (int) $prendaId;
 
             $resultado = $this->deshacerCosturaUseCase->execute(new DeshacerCosturaCommandDTO(
                 pedidoId: (int) $pedidoId,
-                prendaId: (int) $prendaId,
+                prendaId: $prendaIdReal,
+                prendaBodegaId: $prendaBodegaId,
                 tipoRecibo: (string) $request->tipo_recibo,
             ));
 

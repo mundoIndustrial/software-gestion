@@ -1,22 +1,32 @@
-@extends('operario.layout')
+﻿@extends('operario.layout')
 
 @section('title', 'Mis Órdenes')
 @section('page-title')
+    @php
+        $filtroReciboTitle = strtolower((string) request()->query('filtro', 'costura'));
+        $filtroReciboTitle = in_array($filtroReciboTitle, ['costura', 'reflectivo', 'bodega'], true) ? $filtroReciboTitle : 'costura';
+    @endphp
     <span id="dashboardPageTitle" style="display: inline-flex; align-items: center; gap: 0.6rem;">
         <span class="material-symbols-rounded" id="dashboardPageTitleIcon">checkroom</span>
-        <span id="dashboardPageTitleText">RECIBOS DE COSTURA</span>
+        <span id="dashboardPageTitleText">
+            {{ $filtroReciboTitle === 'reflectivo' ? 'RECIBOS DE REFLECTIVO' : ($filtroReciboTitle === 'bodega' ? 'RECIBOS DE BODEGA' : 'RECIBOS DE COSTURA') }}
+        </span>
     </span>
 @endsection
 
 @php
     $esVistaCostura = auth()->user()->hasRole('vista-costura');
     $filtroReciboActual = strtolower((string) request()->query('filtro', 'costura'));
-    $filtroReciboActual = in_array($filtroReciboActual, ['costura', 'reflectivo'], true) ? $filtroReciboActual : 'costura';
+    $filtroReciboActual = in_array($filtroReciboActual, ['costura', 'reflectivo', 'bodega'], true) ? $filtroReciboActual : 'costura';
     $filtroEncargadoActual = strtolower((string) request()->query('encargado', 'todos'));
-    $filtroEncargadoActual = in_array($filtroEncargadoActual, ['todos', 'sin-encargado'], true) ? $filtroEncargadoActual : 'todos';
+    $filtroEncargadoActual = in_array($filtroEncargadoActual, ['todos', 'sin-encargado', 'control-calidad'], true)
+        ? $filtroEncargadoActual
+        : 'todos';
+    $busquedaActual = trim((string) request()->query('q', ''));
     $perPageVistaCostura = 12;
     $pageNameVistaCostura = 'page_vc_' . str_replace('-', '_', $filtroReciboActual . '_' . $filtroEncargadoActual);
     $paginaActualVistaCostura = max(1, (int) request()->query($pageNameVistaCostura, 1));
+    $modoControlCalidadVistaCostura = $esVistaCostura && $filtroEncargadoActual === 'control-calidad';
 
     $ordenarPorFechaAsignacionProceso = auth()->user()->hasAnyRole([
         'costurero',
@@ -64,14 +74,18 @@
         return 0;
     };
 
+    $coleccionBaseDashboard = $modoControlCalidadVistaCostura
+        ? collect($prendasConRecibosControlCalidad ?? [])
+        : collect($prendasConRecibos ?? []);
+
     if (auth()->user()->hasRole('vista-costura')) {
-        $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortBy($callbackOrdenamiento)->values();
+        $prendasOrdenadas = $coleccionBaseDashboard->sortBy($callbackOrdenamiento)->values();
     } elseif (auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('administrador-costura')) {
-        $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortByDesc($callbackOrdenamiento)->values();
+        $prendasOrdenadas = $coleccionBaseDashboard->sortByDesc($callbackOrdenamiento)->values();
     } elseif (auth()->user()->hasRole('cortador')) {
-        $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortBy($callbackOrdenamiento)->values();
+        $prendasOrdenadas = $coleccionBaseDashboard->sortBy($callbackOrdenamiento)->values();
     } else {
-        $prendasOrdenadas = collect($prendasConRecibos ?? [])->sortBy($callbackOrdenamiento)->values();
+        $prendasOrdenadas = $coleccionBaseDashboard->sortBy($callbackOrdenamiento)->values();
     }
 
     $prendasPaginadasVistaCostura = null;
@@ -148,13 +162,22 @@
          data-user-id="{{ Auth::id() }}"
          data-user-role="{{ $rolDashboardActual }}"
          data-user-name="{{ Auth::user()->name ?? '' }}">
-        <!-- Búsqueda -->
+        <!-- Busqueda -->
         <div class="search-section">
-            <span class="material-symbols-rounded">search</span>
-            <input type="text" id="searchInput" class="search-box" placeholder="Buscar por Consecutivo, Prenda o Cliente...">
-            <button id="clearFilterBtn" class="clear-filter-btn" title="Limpiar filtro" style="display: none;">
-                <span class="material-symbols-rounded">close</span>
-            </button>
+            <div class="search-controls">
+                <div class="search-field">
+                    <input type="text" id="searchInput" class="search-box" placeholder="Buscar por Consecutivo, Prenda o Cliente..." value="{{ $busquedaActual }}">
+                </div>
+                <div class="search-actions">
+                    <button type="button" id="clearFilterBtn" class="clear-search-text-btn" style="display: none;" onclick="window.__dashboardClearHandler?.(); return false;">
+                        Limpiar
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="searchLoadingState" class="search-loading-state" style="display: none;">
+            <span class="material-symbols-rounded">progress_activity</span>
+            <span>Cargando resultados...</span>
         </div>
 
         <!-- Mis Prendas Section -->
@@ -171,6 +194,10 @@
                         <button class="badge-filtro {{ $filtroReciboActual === 'reflectivo' ? 'badge-filtro-active' : '' }}" data-filtro="reflectivo" onclick="filtrarPrendasPorRecibo('reflectivo')">
                             <span class="material-symbols-rounded">auto_awesome</span>
                             Reflectivo
+                        </button>
+                        <button class="badge-filtro {{ $filtroReciboActual === 'bodega' ? 'badge-filtro-active' : '' }}" data-filtro="bodega" onclick="filtrarPrendasPorRecibo('bodega')">
+                            <span class="material-symbols-rounded">inventory_2</span>
+                            Bodega
                         </button>
                     @else
                         <!-- Para costura-reflectivo y lider-reflectivo: mostrar ambos tags -->
@@ -195,7 +222,7 @@
                             Sin encargado
                             <span class="badge-filtro-contador" id="badgeSinEncargadoCount" data-total-global="{{ $vistaCosturaSinEncargadoCount ?? 0 }}">{{ $vistaCosturaSinEncargadoCount ?? 0 }}</span>
                         </button>
-                        <button class="badge-filtro" data-encargado-filtro="control-calidad" onclick="document.querySelectorAll('#vistaCosturaEncargadoFilters .badge-filtro').forEach(btn => btn.classList.remove('badge-filtro-active')); this.classList.add('badge-filtro-active'); filtrarControlCalidad();">
+                        <button class="badge-filtro {{ $filtroEncargadoActual === 'control-calidad' ? 'badge-filtro-active' : '' }}" data-encargado-filtro="control-calidad" onclick="filtrarControlCalidad()">
                             <span class="material-symbols-rounded">check_circle</span>
                             Control de calidad
                             <span class="badge-filtro-contador" id="badgeControlCalidadCount" data-contador-costura="{{ $conteoControlCalidadCostura ?? 0 }}" data-contador-reflectivo="{{ $conteoControlCalidadReflectivo ?? 0 }}" style="display: none;">{{ $conteoControlCalidadCostura ?? 0 }}</span>
@@ -293,7 +320,7 @@
                                             Completado el {{ $fechaCompletado }}
                                         </div>
 
-                                        <!-- Botón Ver Recibo (debajo del estado para mobile) -->
+                                        <!-- Boton Ver Recibo (debajo del estado para mobile) -->
                                         <div class="mobile-ver-recibo-section">
                                             @component('components.botones.ver-recibo', [
                                                 'numeroPedido' => $recibo['numero_pedido'],
@@ -336,9 +363,317 @@
                             <p>No tienes recibos completados aún.</p>
                         </div>
                     @endif
+                @elseif($modoControlCalidadVistaCostura)
+                    @if($prendasRenderizadas->count() > 0)
+                        @foreach($prendasRenderizadas as $prenda)
+                            @php
+                                $reciboPrincipal = $prenda['recibos'][0] ?? [];
+                                $fechaCreacion = $prenda['fecha_creacion'] ?? ($reciboPrincipal['created_at'] ?? $reciboPrincipal['creado_en'] ?? null);
+                                $fechaCreacionTimestamp = $fechaCreacion instanceof \DateTimeInterface
+                                    ? $fechaCreacion->getTimestamp()
+                                    : (is_numeric($fechaCreacion)
+                                        ? (int) $fechaCreacion
+                                        : (is_string($fechaCreacion) && trim($fechaCreacion) !== '' ? strtotime($fechaCreacion) ?: 0 : 0));
+                                $reciboCompletadoArea = (bool) ($reciboPrincipal['completado_area'] ?? false);
+                                $esParcial = (bool) ($prenda['es_parcial'] ?? false);
+                                $parcialId = $prenda['parcial_id'] ?? null;
+                                $tipoReciboControl = strtoupper((string) ($reciboPrincipal['tipo_recibo'] ?? 'COSTURA'));
+                                $consecutivoActual = (string) ($reciboPrincipal['consecutivo_actual'] ?? ($prenda['numero_pedido'] ?? ''));
+                                $numeroReciboBusqueda = $reciboPrincipal['consecutivo_parcial'] ?? $consecutivoActual;
+                            @endphp
+
+                            <div class="orden-card-simple card-control-calidad"
+                                 data-numero="{{ $prenda['numero_pedido'] }}"
+                                 data-numero-recibo="{{ $consecutivoActual }}"
+                                 data-prenda="{{ strtolower((string) $prenda['nombre_prenda']) }}"
+                                 data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                 data-cliente="{{ strtolower((string) $prenda['cliente']) }}"
+                                 data-search-text="{{ strtolower(trim(($prenda['numero_pedido'] ?? '') . ' ' . ($prenda['nombre_prenda'] ?? '') . ' ' . ($prenda['cliente'] ?? '') . ' ' . ($consecutivoActual ?? ''))) }}"
+                                 data-tipo-recibo="{{ strtolower($tipoReciboControl) }}"
+                                 data-fecha-creacion-costura="{{ $fechaCreacionTimestamp }}"
+                                 data-fecha-creacion-reflectivo="{{ $fechaCreacionTimestamp }}"
+                                 data-sin-encargado-costura="0"
+                                 data-sin-encargado-reflectivo="0"
+                                 data-completado-costura="{{ $reciboCompletadoArea ? '1' : '0' }}"
+                                 data-completado-reflectivo="{{ $reciboCompletadoArea ? '1' : '0' }}">
+                                <div class="orden-body">
+                                    <div class="orden-left">
+                                        <div class="orden-top">
+                                            <div class="orden-numero-section">
+                                                <h4 class="orden-numero">#{{ $consecutivoActual }}</h4>
+                                                <span class="estado-badge pendiente" data-estado="recibo-control-calidad">EN CC</span>
+                                                @if($reciboCompletadoArea)
+                                                    <span class="badge-completado-costura is-on">COMPLETADO</span>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        <div class="orden-cliente">
+                                            <p class="cliente-label">CLIENTE</p>
+                                            <p class="cliente-name">{{ $prenda['cliente'] }}</p>
+                                        </div>
+
+                                        <div class="orden-prendas">
+                                            <p class="prendas-label">
+                                                <strong>{{ $prenda['nombre_prenda'] }}</strong>
+                                                @if(!empty($prenda['descripcion']))
+                                                    <br>{!! nl2br(e($prenda['descripcion'])) !!}
+                                                @endif
+                                            </p>
+                                        </div>
+
+                                        <div class="mobile-ver-recibo-section">
+                                            <button class="btn-ver-recibos mobile-under-state"
+                                                    onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', '{{ $tipoReciboControl }}', {{ $parcialId ? (int) $parcialId : 'null' }}, '{{ addslashes((string) $numeroReciboBusqueda) }}', {{ $reciboPrincipal['id'] ?? 'null' }}); return false;">
+                                                <span class="material-symbols-rounded">visibility</span>
+                                                VER RECIBO
+                                            </button>
+                                        </div>
+
+                                        <div class="orden-buttons">
+                                            <button class="btn-ver-recibos"
+                                                    onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', '{{ $tipoReciboControl }}', {{ $parcialId ? (int) $parcialId : 'null' }}, '{{ addslashes((string) $numeroReciboBusqueda) }}', {{ $reciboPrincipal['id'] ?? 'null' }}); return false;">
+                                                <span class="material-symbols-rounded">visibility</span>
+                                                VER RECIBO
+                                            </button>
+
+                                            <button class="btn-agregar-novedad"
+                                                    onclick="abrirModalNovedad('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', {{ $consecutivoActual }});">
+                                                <span class="material-symbols-rounded">comment</span>
+                                                AGREGAR NOVEDAD
+                                            </button>
+
+                                            @if((bool) ($prenda['tiene_parciales'] ?? false))
+                                                    <button class="btn-ver-distribucion"
+                                                        onclick="abrirDistribucionReciboCC(this, '{{ $tipoReciboControl }}');"
+                                                        data-recibo-id="{{ $reciboPrincipal['id'] ?? '' }}"
+                                                        data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                        data-numero-recibo="{{ $consecutivoActual }}"
+                                                        data-tipo-recibo="{{ $tipoReciboControl }}">
+                                                    <span class="material-symbols-rounded">share</span>
+                                                    VER DISTRIBUCION
+                                                </button>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    <div class="orden-right">
+                                        <div class="orden-right-center">
+                                            <a href="#"
+                                               class="action-arrow"
+                                               onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', '{{ $tipoReciboControl }}', {{ $parcialId ? (int) $parcialId : 'null' }}, '{{ addslashes((string) $numeroReciboBusqueda) }}', {{ $reciboPrincipal['id'] ?? 'null' }}); return false;">
+                                                <span class="material-symbols-rounded">arrow_forward</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="empty-state">
+                            <span class="material-symbols-rounded">inbox</span>
+                            @if(!empty($busquedaActual) && $resultadosBusquedaFueraDeArea->count() > 0)
+                                <p>Encontró coincidencias en otras Areas y te las muestro arriba.</p>
+                            @elseif(!empty($busquedaActual) && !empty($mensajeBusquedaDashboard))
+                                <p>{{ $mensajeBusquedaDashboard }}</p>
+                            @elseif(!empty($busquedaActual))
+                                <p>No encontró coincidencias para "{{ $busquedaActual }}" en este tap.</p>
+                            @elseif($filtroReciboActual === 'bodega')
+                                <p>No hay recibos de bodega para mostrar.</p>
+                            @else
+                                <p>No hay recibos en Control de Calidad para este tipo</p>
+                            @endif
+                        </div>
+                    @endif
                 @else
                     @if($prendasRenderizadas->count() > 0)
                     @foreach($prendasRenderizadas as $prenda)
+                        @if(auth()->user()->hasRole('vista-costura') && $filtroReciboActual === 'bodega')
+                            @php
+                                $reciboPrincipalBodega = $prenda['recibos'][0] ?? [];
+                                $consecutivoBodega = (string) ($reciboPrincipalBodega['consecutivo_actual'] ?? $prenda['numero_pedido'] ?? '');
+                                $reciboIdBodega = $reciboPrincipalBodega['id'] ?? null;
+                                $areaBodega = strtoupper((string) ($reciboPrincipalBodega['area'] ?? 'INSUMOS'));
+                                $encargadoCosturaBodega = trim((string) ($prenda['encargado_costura'] ?? ($reciboPrincipalBodega['encargado_costura'] ?? '')));
+                                $procesoIdCosturaBodega = $prenda['proceso_id_costura'] ?? ($reciboPrincipalBodega['proceso_id_costura'] ?? null);
+                                $mostrarComoDeshacerBodega = $encargadoCosturaBodega !== '' && !empty($procesoIdCosturaBodega);
+                                $textoEncargadoCosturaBodega = $encargadoCosturaBodega !== '' ? strtoupper($encargadoCosturaBodega) : 'SIN ASIGNAR';
+                            @endphp
+
+                            <div class="orden-card-simple card-bodega"
+                                 data-numero="{{ $consecutivoBodega }}"
+                                 data-prenda="{{ strtolower((string) $prenda['nombre_prenda']) }}"
+                                 data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                 data-cliente="{{ strtolower((string) $prenda['cliente']) }}"
+                                 data-tipo-recibo="corte-para-bodega"
+                                 data-numero-recibo="{{ $consecutivoBodega }}"
+                                 data-search-text="{{ strtolower(trim(($consecutivoBodega ?? '') . ' ' . ($prenda['nombre_prenda'] ?? '') . ' ' . ($prenda['descripcion'] ?? '') . ' ' . ($prenda['cliente'] ?? ''))) }}">
+                                <div class="orden-body">
+                                    <div class="vista-resumen-card" onclick="event.stopPropagation();">
+                                        <div class="vista-encargados-row">
+                                            <div class="vista-encargado-pill vista-encargado-pill-corte">
+                                                <span class="vista-encargado-pill-label">Corte</span>
+                                                <span class="vista-encargado-pill-name">CORTADORES</span>
+                                            </div>
+
+                                            <div class="vista-encargado-pill vista-encargado-pill-costura">
+                                                <span class="vista-encargado-pill-label">Costura</span>
+                                                <span class="vista-encargado-pill-name">{{ $textoEncargadoCosturaBodega }}</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="vista-estado-linea">
+                                            <span class="vista-estado-etiqueta">Estado:</span>
+                                            <span class="badge-completado-corte {{ $mostrarComoDeshacerBodega ? 'is-on' : '' }}">
+                                                {{ $mostrarComoDeshacerBodega ? 'PENDIENTE COSTURA' : 'PENDIENTE COSTURA' }}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="orden-left">
+                                        <div class="orden-top">
+                                            <div class="orden-numero-section">
+                                                <h4 class="orden-numero">#{{ $consecutivoBodega }}</h4>
+                                                <span class="estado-badge pendiente" data-estado="recibo-bodega">BODEGA</span>
+                                            </div>
+                                            <span class="badge-completado-corte is-on">CORTE-PARA-BODEGA</span>
+                                        </div>
+
+                                        <div class="orden-cliente">
+                                            <p class="cliente-label">CLIENTE</p>
+                                            <p class="cliente-name">BODEGA</p>
+                                        </div>
+
+                                        <div class="orden-prendas">
+                                            <p class="prendas-label">
+                                                <strong>{{ $prenda['nombre_prenda'] }}</strong>
+                                                @if(!empty($prenda['descripcion']))
+                                                    <br>{!! nl2br(e($prenda['descripcion'])) !!}
+                                                @endif
+                                            </p>
+                                        </div>
+
+                                        <div class="search-outside-results-meta">
+                                            <span class="search-outside-chip">Area: {{ $areaBodega }}</span>
+                                            <span class="search-outside-chip search-outside-chip-muted">CORTE-PARA-BODEGA</span>
+                                        </div>
+
+                                        <div class="mobile-ver-recibo-section">
+                                            <button class="btn-ver-recibos mobile-under-state"
+                                                    onclick="abrirDetallesRecibos('{{ $consecutivoBodega }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', 'CORTE-PARA-BODEGA', null, '{{ $consecutivoBodega }}', {{ $reciboIdBodega ?? 'null' }}); return false;">
+                                                <span class="material-symbols-rounded">visibility</span>
+                                                VER RECIBO
+                                            </button>
+                                        </div>
+
+                                        <div class="orden-buttons">
+                                            <button class="btn-pasar-costura {{ $mostrarComoDeshacerBodega ? 'btn-deshacer-costura' : '' }}"
+                                                    data-visible-filtro="bodega"
+                                                    id="btn-costura-bodega-{{ $prenda['prenda_id'] }}-{{ $consecutivoBodega }}"
+                                                    data-pedido-id="{{ $prenda['pedido_id'] ?: $prenda['prenda_id'] }}"
+                                                    data-numero-pedido="{{ $consecutivoBodega }}"
+                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                    data-prenda-bodega-id="{{ $prenda['prenda_id'] }}"
+                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                    data-tipo-recibo="CORTE-PARA-BODEGA"
+                                                    data-recibo="{{ $consecutivoBodega }}"
+                                                    data-area="Costura"
+                                                    data-proceso-id="{{ $procesoIdCosturaBodega ?? '' }}"
+                                                    data-encargado-costura="{{ $encargadoCosturaBodega }}"
+                                                    data-parcial-id=""
+                                                    onclick="manejarPasarACostura(this)">
+                                                <span class="material-symbols-rounded">{{ $mostrarComoDeshacerBodega ? 'undo' : 'checkroom' }}</span>
+                                                {{ $mostrarComoDeshacerBodega ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
+                                            </button>
+
+                                            <button class="btn-pasar-cc"
+                                                    data-visible-filtro="bodega"
+                                                    id="btn-cc-bodega-{{ $prenda['prenda_id'] }}-{{ $consecutivoBodega }}"
+                                                    data-pedido-id="{{ $prenda['pedido_id'] ?: $prenda['prenda_id'] }}"
+                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                    data-prenda-bodega-id="{{ $prenda['prenda_id'] }}"
+                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                    data-tipo-recibo="CORTE-PARA-BODEGA"
+                                                    data-recibo="{{ $consecutivoBodega }}"
+                                                    data-area="Costura"
+                                                    data-proceso-id="{{ $procesoIdCosturaBodega ?? '' }}"
+                                                    onclick="pasarAControlCalidad(this)">
+                                                <span class="material-symbols-rounded">check_circle</span>
+                                                PASAR A C.C
+                                            </button>
+
+                                            <button class="btn-agregar-novedad"
+                                                    onclick="abrirModalNovedad('{{ $consecutivoBodega }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', {{ $consecutivoBodega }});">
+                                                <span class="material-symbols-rounded">comment</span>
+                                                AGREGAR NOVEDAD
+                                            </button>
+
+                                            <button class="btn-ver-recibos"
+                                                    onclick="abrirDetallesRecibos('{{ $consecutivoBodega }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', 'CORTE-PARA-BODEGA', null, '{{ $consecutivoBodega }}', {{ $reciboIdBodega ?? 'null' }}); return false;">
+                                                <span class="material-symbols-rounded">visibility</span>
+                                                VER RECIBO
+                                            </button>
+                                        </div>
+
+                                        <button class="mobile-actions-toggle" onclick="toggleMobileActions({{ $prenda['prenda_id'] }})">
+                                            <span class="material-symbols-rounded">more_horiz</span>
+                                        </button>
+                                    </div>
+
+                                    <div class="mobile-actions-drawer" id="mobile-drawer-{{ $prenda['prenda_id'] }}">
+                                        <button class="btn-pasar-costura {{ $mostrarComoDeshacerBodega ? 'btn-deshacer-costura' : '' }}"
+                                                id="btn-costura-bodega-mobile-{{ $prenda['prenda_id'] }}-{{ $consecutivoBodega }}"
+                                                data-pedido-id="{{ $prenda['pedido_id'] ?: $prenda['prenda_id'] }}"
+                                                data-numero-pedido="{{ $consecutivoBodega }}"
+                                                data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                data-prenda-bodega-id="{{ $prenda['prenda_id'] }}"
+                                                data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                data-tipo-recibo="CORTE-PARA-BODEGA"
+                                                data-recibo="{{ $consecutivoBodega }}"
+                                                data-area="Costura"
+                                                data-proceso-id="{{ $procesoIdCosturaBodega ?? '' }}"
+                                                data-encargado-costura="{{ $encargadoCosturaBodega }}"
+                                                data-parcial-id=""
+                                                onclick="manejarPasarACostura(this)">
+                                            <span class="material-symbols-rounded">{{ $mostrarComoDeshacerBodega ? 'undo' : 'checkroom' }}</span>
+                                            {{ $mostrarComoDeshacerBodega ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
+                                        </button>
+
+                                        <button class="btn-pasar-cc"
+                                                id="btn-cc-bodega-mobile-{{ $prenda['prenda_id'] }}-{{ $consecutivoBodega }}"
+                                                data-pedido-id="{{ $prenda['pedido_id'] ?: $prenda['prenda_id'] }}"
+                                                data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                data-prenda-bodega-id="{{ $prenda['prenda_id'] }}"
+                                                data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                data-tipo-recibo="CORTE-PARA-BODEGA"
+                                                data-recibo="{{ $consecutivoBodega }}"
+                                                data-area="Costura"
+                                                data-proceso-id="{{ $procesoIdCosturaBodega ?? '' }}"
+                                                onclick="pasarAControlCalidad(this)">
+                                            <span class="material-symbols-rounded">check_circle</span>
+                                            PASAR A C.C
+                                        </button>
+
+                                        <button class="btn-ver-recibos"
+                                                onclick="abrirDetallesRecibos('{{ $consecutivoBodega }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', 'CORTE-PARA-BODEGA', null, '{{ $consecutivoBodega }}', {{ $reciboIdBodega ?? 'null' }}); return false;">
+                                            <span class="material-symbols-rounded">visibility</span>
+                                            VER RECIBO
+                                        </button>
+
+                                        <button class="btn-agregar-novedad"
+                                                onclick="abrirModalNovedad('{{ $consecutivoBodega }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', {{ $consecutivoBodega }});">
+                                            <span class="material-symbols-rounded">comment</span>
+                                            AGREGAR NOVEDAD
+                                        </button>
+
+                                        <button class="mobile-actions-toggle" onclick="toggleMobileActions({{ $prenda['prenda_id'] }})">
+                                            <span class="material-symbols-rounded">more_horiz</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            @continue
+                        @endif
                         @php
                             $estadoClass = 'pendiente'; // Siempre pendiente, eliminar en-proceso
                             // Determinar tipo de recibo para filtro
@@ -347,7 +682,7 @@
                             $tiposRecibos = array_map(function ($r) {
                                 return strtoupper($r['tipo_recibo']); }, $prenda['recibos']);
                             $tieneReflectivo = in_array('REFLECTIVO', $tiposRecibos);
-                            $tieneCostura = in_array('COSTURA', $tiposRecibos) || in_array('COSTURA-BODEGA', $tiposRecibos) || in_array('PARCIAL', $tiposRecibos);
+                            $tieneCostura = in_array('COSTURA', $tiposRecibos);
                             $reciboReflectivoParaFiltro = collect($prenda['recibos'] ?? [])->first(function ($recibo) {
                                 return strtoupper((string) ($recibo['tipo_recibo'] ?? '')) === 'REFLECTIVO';
                             });
@@ -361,13 +696,13 @@
                             }
 
 
-                            // Obtener el área del recibo principal para filtros
+                            // Obtener el Area del recibo principal para filtros
                             $reciboPrincipalFiltro = $prenda['recibos'][0] ?? null;
                             $areaReciboFiltro = strtolower(trim((string) ($reciboPrincipalFiltro['area'] ?? '')));
 
                             // Para vista-costura en modo filtro server-side, fijar tipo explícito para evitar cards "vacías" en cliente
                             if (auth()->user()->hasRole('vista-costura')) {
-                                $esReflectivo = $filtroReciboActual === 'reflectivo' ? 'reflectivo' : 'costura';
+                                $esReflectivo = $filtroReciboActual === 'reflectivo' ? 'reflectivo' : ($filtroReciboActual === 'bodega' ? 'bodega' : 'costura');
                             } elseif (auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo')) {
                                 // Guardar tipos separados por comas para poder filtrar correctamente
                                 $tiposParaFiltro = [];
@@ -385,7 +720,7 @@
                             // - costura-reflectivo: mostrar COSTURA por defecto (pero incluir las que tienen ambos)
                             // - vista-costura: mostrar COSTURA por defecto (pero incluir las que tienen ambos)
                             // - costurero: mostrar COSTURA por defecto
-                            // - cortador: mostrar prendas con área "Corte" (independientemente del tipo de recibo)
+                            // - cortador: mostrar prendas con Area "Corte" (independientemente del tipo de recibo)
                             $displayInicial = '';
                             if (auth()->user()->hasRole('vista-costura')) {
                                 // En vista-costura con filtro server-side, mostrar siempre lo consultado por backend
@@ -394,7 +729,7 @@
                                 // Mostrar por defecto las que tienen costura (incluyendo las que tienen ambos)
                                 $displayInicial = $tieneCostura ? '' : 'none';
                             } elseif (auth()->user()->hasRole('cortador')) {
-                                // Para cortadores: mostrar las que tienen área "Corte"
+                                // Para cortadores: mostrar las que tienen Area "Corte"
                                 $displayInicial = $areaReciboFiltro === 'corte' ? '' : 'none';
                             } else {
                                 $displayInicial = $tieneReflectivo ? '' : 'none';
@@ -406,7 +741,7 @@
                             $reciboPrincipalCard = $prenda['recibos'][0] ?? null;
                             $reciboCompletadoCostura = (bool) ($reciboPrincipalCard['completado_costura'] ?? false);
                             $reciboCosturaFiltroCard = collect($prenda['recibos'] ?? [])->first(function ($recibo) {
-                                return in_array(strtoupper((string) ($recibo['tipo_recibo'] ?? '')), ['COSTURA', 'COSTURA-BODEGA'], true);
+                                return strtoupper((string) ($recibo['tipo_recibo'] ?? '')) === 'COSTURA';
                             });
                             $reciboReflectivoFiltroCard = collect($prenda['recibos'] ?? [])->first(function ($recibo) {
                                 return strtoupper((string) ($recibo['tipo_recibo'] ?? '')) === 'REFLECTIVO';
@@ -437,7 +772,7 @@
                                 ->implode(' ');
                             $sinEncargadoCosturaCard = collect($prenda['recibos'] ?? [])->contains(function ($recibo) {
                                 $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
-                                if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA', 'PARCIAL'], true)) {
+                                if ($tipo !== 'COSTURA') {
                                     return false;
                                 }
 
@@ -447,8 +782,7 @@
                                 return $sinEncargado && $completadoCorte;
                             });
                             $sinEncargadoReflectivoCard = $reciboReflectivoFiltroCard
-                                && empty(trim((string) ($reciboReflectivoFiltroCard['encargado_costura'] ?? '')))
-                                && !((bool) ($reciboReflectivoFiltroCard['tiene_parciales'] ?? false));
+                                && empty(trim((string) ($reciboReflectivoFiltroCard['encargado_costura'] ?? '')));
 
                             $recibosCorteAsignadosCortador = collect($prenda['recibos'] ?? [])->filter(function ($recibo) {
                                 $area = strtolower(trim((string) ($recibo['area'] ?? '')));
@@ -513,12 +847,7 @@
                                         $encargadoVista = $reciboPrincipal['encargado_control_calidad'] ?? null;
                                     }
                                     $encargadoVista = is_string($encargadoVista) ? trim($encargadoVista) : $encargadoVista;
-                                    $tieneParcialesEnRecibos = collect($prenda['recibos'] ?? [])->contains(function ($recibo) {
-                                        return (bool) ($recibo['tiene_parciales'] ?? false);
-                                    });
-                                    $textoEncargadoVista = $tieneParcialesEnRecibos
-                                        ? 'DISTRIBUIDO EN MODULOS'
-                                        : ($encargadoVista ? strtoupper($encargadoVista) : 'SIN ENCARGADO');
+                                    $textoEncargadoVista = $encargadoVista ? strtoupper($encargadoVista) : 'SIN ENCARGADO';
 
                                     // Obtener encargado de corte para mostrar en el card (excepto cortadores)
                                     $encargadoCorte = $reciboPrincipal['encargado_corte'] ?? null;
@@ -526,14 +855,10 @@
                                     $encargadoCosturaCard = is_string($reciboCosturaFiltroCard['encargado_costura'] ?? null) ? trim((string) $reciboCosturaFiltroCard['encargado_costura']) : ($reciboCosturaFiltroCard['encargado_costura'] ?? null);
                                     $encargadoReflectivoCard = is_string($reciboReflectivoFiltroCard['encargado_costura'] ?? null) ? trim((string) $reciboReflectivoFiltroCard['encargado_costura']) : ($reciboReflectivoFiltroCard['encargado_costura'] ?? null);
                                     $textoEncargadoCosturaCard = $reciboCosturaFiltroCard
-                                        ? (($reciboCosturaFiltroCard['tiene_parciales'] ?? false)
-                                            ? 'DISTRIBUIDO EN MODULOS'
-                                            : ($encargadoCosturaCard ? strtoupper($encargadoCosturaCard) : 'SIN ENCARGADO'))
+                                        ? ($encargadoCosturaCard ? strtoupper($encargadoCosturaCard) : 'SIN ENCARGADO')
                                         : 'SIN ENCARGADO';
                                     $textoEncargadoReflectivoCard = $reciboReflectivoFiltroCard
-                                        ? (($reciboReflectivoFiltroCard['tiene_parciales'] ?? false)
-                                            ? 'DISTRIBUIDO EN MODULOS'
-                                            : ($encargadoReflectivoCard ? strtoupper($encargadoReflectivoCard) : 'SIN ENCARGADO'))
+                                        ? ($encargadoReflectivoCard ? strtoupper($encargadoReflectivoCard) : 'SIN ENCARGADO')
                                         : 'SIN ENCARGADO';
                                 @endphp
                                 @if(!auth()->user()->hasRole('vista-costura') && !auth()->user()->hasRole('cortador') && !auth()->user()->hasRole('visualizador_plooter') && !auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']))
@@ -621,7 +946,7 @@
                                         @if(auth()->user()->hasRole('administrador-costura') && $reciboCompletadoCostura)
                                             <span class="badge-completado-costura is-on mobile-top-right">COMPLETADO</span>
                                         @endif
-                                        <!-- Botón de más opciones para mobile -->
+                                        <!-- Boton de mas opciones para mobile -->
                                         <button class="mobile-actions-toggle" onclick="toggleMobileActions({{ $prenda['prenda_id'] }})">
                                             <span class="material-symbols-rounded">more_horiz</span>
                                         </button>
@@ -640,7 +965,7 @@
                                         </div>
                                     @endif
 
-                                    <!-- Botón Ver Recibo (debajo del estado para mobile) -->
+                                    <!-- Boton Ver Recibo (debajo del estado para mobile) -->
                                     <div class="mobile-ver-recibo-section">
                                         @component('components.botones.ver-recibo', [
                                             'numeroPedido' => $prenda['numero_pedido'],
@@ -684,7 +1009,7 @@
                                                     ?? null;
                                             @endphp
 
-                                            {{-- Botón para cortadores: Marcar como completado (pasa a Costura) --}}
+                                            {{-- Boton para cortadores: Marcar como completado (pasa a Costura) --}}
                                             @if($esCorteRecibo && $reciboId)
                                                 <button class="btn-completar-corte" 
                                                         id="btn-completar-{{ $prenda['prenda_id'] }}"
@@ -698,7 +1023,7 @@
                                                 </button>
                                             @endif
 
-                                            {{-- Botón para cortadores: Deshacer (regresa a Corte) --}}
+                                            {{-- Boton para cortadores: Deshacer (regresa a Corte) --}}
                                             @if($esCosturaRecibo && $reciboId)
                                                 <button class="btn-deshacer-corte" 
                                                         id="btn-deshacer-{{ $prenda['prenda_id'] }}"
@@ -723,7 +1048,7 @@
                                                 $reciboCompletadoCostura = (bool) ($reciboPrincipal['completado_costura'] ?? false);
                                             @endphp
 
-                                            {{-- Botón para costureros: Marcar como completado (sin cambiar de área) --}}
+                                            {{-- Boton para costureros: Marcar como completado (sin cambiar de Area) --}}
                                             @if($esCosturaRecibo && $reciboAccionId && !$reciboCompletadoCostura)
                                                 <button class="btn-completar-costura" 
                                                         type="button"
@@ -739,7 +1064,7 @@
                                                 </button>
                                             @endif
 
-                                            {{-- Botón para costureros: Deshacer (regresa a pendiente) --}}
+                                            {{-- Boton para costureros: Deshacer (regresa a pendiente) --}}
                                             @if($esCosturaRecibo && $reciboAccionId && $reciboCompletadoCostura)
                                                 <button class="btn-deshacer-costura" 
                                                         type="button"
@@ -769,7 +1094,7 @@
                                                 $reciboCompletadoCorte = (bool) ($reciboPrincipal['completado_corte'] ?? false);
                                             @endphp
 
-                                            {{-- Botón para administrador-costura: Completar recibo en Corte (pasa a Costura) --}}
+                                            {{-- Boton para administrador-costura: Completar recibo en Corte (pasa a Costura) --}}
                                             @if($esCorteRecibo && $reciboId && !$reciboCompletadoCorte)
                                                 <button class="btn-completar-corte" 
                                                         id="btn-completar-corte-sobremedida-{{ $prenda['prenda_id'] }}"
@@ -783,7 +1108,7 @@
                                                 </button>
                                             @endif
 
-                                            {{-- Botón para administrador-costura: Deshacer (regresa a Corte) --}}
+                                            {{-- Boton para administrador-costura: Deshacer (regresa a Corte) --}}
                                             @if($esCorteRecibo && $reciboId && $reciboCompletadoCorte)
                                                 <button class="btn-deshacer-corte" 
                                                         id="btn-deshacer-corte-sobremedida-{{ $prenda['prenda_id'] }}"
@@ -819,7 +1144,7 @@
                                                     $mostrarComoDeshacerCostura = ($esCosturaProceso && $tieneEncargadoCostura && !$tieneParciales);
                                                 @endphp
 
-                                                {{-- Botón "Pasar a Costura" o "DESHACER COSTURA" (NO si hay parciales) --}}
+                                                {{-- Boton "Pasar a Costura" o "DESHACER COSTURA" (NO si hay parciales) --}}
                                                 @if(!$tieneParciales)
                                                     <button class="btn-pasar-costura {{ $mostrarComoDeshacerCostura ? 'btn-deshacer-costura' : '' }}"
                                                             data-visible-filtro="costura"
@@ -839,7 +1164,7 @@
                                                         {{ $mostrarComoDeshacerCostura ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
                                                     </button>
 
-                                                    {{-- Botón "Pasar a C.C" o "DESHACER" (NO si hay parciales) --}}
+                                                    {{-- Boton "Pasar a C.C" o "DESHACER" (NO si hay parciales) --}}
                                                     <button class="btn-pasar-cc"
                                                             data-visible-filtro="costura"
                                                             id="btn-cc-{{ $prenda['prenda_id'] }}-{{ $consecutivoActual }}"
@@ -856,7 +1181,7 @@
                                                     </button>
                                                 @endif
 
-                                                {{-- Botón "Ver Distribución" para vista-costura (solo si hay parciales) --}}
+                                                {{-- Boton "Ver Distribución" para vista-costura (solo si hay parciales) --}}
                                                 @if($reciboId && $tieneParciales)
                                                     @component('components.botones.ver-distribucion', [
                                                         'filtro' => 'costura',
@@ -902,7 +1227,7 @@
                                                 $esControlCalidadRef = in_array(strtolower(trim((string) $areaReciboRef)), ['control calidad', 'control de calidad'], true);
                                             @endphp
 
-                                            {{-- Botón PASAR A COSTURA/DESHACER COSTURA para vista-costura --}}
+                                            {{-- Boton PASAR A COSTURA/DESHACER COSTURA para vista-costura --}}
                                                 @if($tieneReciboReflectivo && auth()->user()->hasRole('vista-costura'))
                                                     @php
                                                         $pedidoParcialId = isset($reciboReflectivo['pedido_parcial_id']) ? (int) $reciboReflectivo['pedido_parcial_id'] : 0;
@@ -911,7 +1236,7 @@
                                                         $reciboReflectivoAccionId = $reciboReflectivoId;
                                                     @endphp
 
-                                                    {{-- Botón VER RECIBO para vista-costura --}}
+                                                    {{-- Boton VER RECIBO para vista-costura --}}
                                                     @component('components.botones.ver-recibo', [
                                                         'numeroPedido' => $prenda['numero_pedido'],
                                                         'prendaId' => $prenda['prenda_id'],
@@ -987,7 +1312,7 @@
                                                     $consecutivoParcial = $reciboReflectivo['consecutivo_parcial'] ?? ($reciboReflectivo['consecutivo_actual'] ?? null);
                                                     $reciboCompletadoArea = false;
 
-                                                    // Verificar si está completado según el área
+                                                    // Verificar si esta completado segun el Area
                                                     if ($esCosturaAreaRef) {
                                                         $reciboCompletadoArea = (bool) ($reciboReflectivo['completado_costura'] ?? false);
                                                     } else {
@@ -1011,7 +1336,7 @@
                                                     $esReciboReflectivoParcial = !empty($reciboReflectivo['es_parcial']);
                                                 @endphp
 
-                                                {{-- Botón VER RECIBO para REFLECTIVO --}}
+                                                {{-- Boton VER RECIBO para REFLECTIVO --}}
                                                 @component('components.botones.ver-recibo', [
                                                     'numeroPedido' => $prenda['numero_pedido'],
                                                     'prendaId' => $prenda['prenda_id'],
@@ -1056,7 +1381,7 @@
                                             @endif
                                         @endif
                                         @if(auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('vista-costura') || auth()->user()->hasRole('administrador-costura'))
-                                            {{-- Para costura-reflectivo/lider-reflectivo/vista-costura/administrador-costura, crear un botón por cada TIPO de recibo (sin duplicados) --}}
+                                            {{-- Para costura-reflectivo/lider-reflectivo/vista-costura/administrador-costura, crear un Boton por cada TIPO de recibo (sin duplicados) --}}
                                             @php
                                                 $tiposUnicos = collect($prenda['recibos'])->pluck('tipo_recibo')->map(fn($t) => strtoupper($t))->unique()->values();
                                             @endphp
@@ -1112,7 +1437,7 @@
                                                         $esCosturaArea = $areaRecibo === 'costura';
                                                         $reciboCompletadoArea = false;
 
-                                                        // Verificar si está completado según el área
+                                                        // Verificar si esta completado segun el Area
                                                         if ($esCosturaArea) {
                                                             $reciboCompletadoArea = (bool) ($reciboTipo['completado_costura'] ?? false);
                                                         } else {
@@ -1173,7 +1498,7 @@
                                                 @endforeach
                                             @endif
                                         @else
-                                            {{-- Para otros operarios, un solo botón con tipo de recibo --}}
+                                            {{-- Para otros operarios, un solo Boton con tipo de recibo --}}
                                             @component('components.botones.ver-recibo', [
                                                 'numeroPedido' => $prenda['numero_pedido'],
                                                 'prendaId' => $prenda['prenda_id'],
@@ -1201,7 +1526,7 @@
                                                     ?? null;
                                             @endphp
 
-                                            {{-- Botón para cortadores: Marcar como completado (pasa a Costura) --}}
+                                            {{-- Boton para cortadores: Marcar como completado (pasa a Costura) --}}
                                             @if($esCorteRecibo && $reciboId)
                                                 <button class="btn-completar-corte" 
                                                         data-pedido-id="{{ $prenda['pedido_id'] }}"
@@ -1214,7 +1539,7 @@
                                                 </button>
                                             @endif
 
-                                            {{-- Botón para cortadores: Deshacer (regresa a Corte) --}}
+                                            {{-- Boton para cortadores: Deshacer (regresa a Corte) --}}
                                             @if($esCosturaRecibo && $reciboId)
                                                 <button class="btn-deshacer-corte" 
                                                         data-pedido-id="{{ $prenda['pedido_id'] }}"
@@ -1238,7 +1563,7 @@
                                                 $reciboCompletadoCostura = (bool) ($reciboPrincipal['completado_costura'] ?? false);
                                             @endphp
 
-                                            {{-- Botón para costureros: Marcar como completado (sin cambiar de área) --}}
+                                            {{-- Boton para costureros: Marcar como completado (sin cambiar de Area) --}}
                                             @if($esCosturaRecibo && $reciboAccionId && !$reciboCompletadoCostura)
                                                 <button class="btn-completar-costura" 
                                                         type="button"
@@ -1253,7 +1578,7 @@
                                                 </button>
                                             @endif
 
-                                            {{-- Botón para costureros: Deshacer (regresa a pendiente) --}}
+                                            {{-- Boton para costureros: Deshacer (regresa a pendiente) --}}
                                             @if($esCosturaRecibo && $reciboAccionId && $reciboCompletadoCostura)
                                                 <button class="btn-deshacer-costura" 
                                                         type="button"
@@ -1287,7 +1612,7 @@
                                                     $esCosturaArea = $areaRecibo === 'costura';
                                                     $reciboCompletadoArea = false;
 
-                                                    // Verificar si está completado según el área
+                                                    // Verificar si esta completado segun el Area
                                                     if ($esCosturaArea) {
                                                         $reciboCompletadoArea = (bool) ($reciboTipo['completado_costura'] ?? false);
                                                     } else {
@@ -1348,7 +1673,7 @@
                                                     $mostrarComoDeshacerCostura = $esCosturaProceso && $tieneEncargadoCostura;
                                                 @endphp
 
-                                                {{-- Botón "Pasar a Costura" o "DESHACER COSTURA" solo para recibos tipo COSTURA --}}
+                                                {{-- Boton "Pasar a Costura" o "DESHACER COSTURA" solo para recibos tipo COSTURA --}}
                                                 <button class="btn-pasar-costura {{ $mostrarComoDeshacerCostura ? 'btn-deshacer-costura' : '' }}"
                                                         id="btn-costura-{{ $prenda['prenda_id'] }}-{{ $consecutivoActual }}"
                                                         data-pedido-id="{{ $prenda['pedido_id'] }}"
@@ -1365,7 +1690,7 @@
                                                     {{ $mostrarComoDeshacerCostura ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
                                                 </button>
 
-                                                {{-- Botón "Pasar a C.C" o "DESHACER" --}}
+                                                {{-- Boton "Pasar a C.C" o "DESHACER" --}}
                                                 <button class="btn-pasar-cc"
                                                         id="btn-cc-{{ $prenda['prenda_id'] }}-{{ $consecutivoActual }}"
                                                         data-pedido-id="{{ $prenda['pedido_id'] }}"
@@ -1488,10 +1813,87 @@
                         </div>
                     @endforeach
                     @else
-                        <div class="empty-state">
-                            <span class="material-symbols-rounded">inbox</span>
-                            <p>No hay prendas con recibos de costura asignadas</p>
-                        </div>
+                        @if(!empty($busquedaActual) && $resultadosBusquedaFueraDeArea->count() > 0)
+                            <div class="search-outside-results">
+                                <div class="search-outside-results-header">
+                                    <span class="material-symbols-rounded">travel_explore</span>
+                                    <span>Coincidencias en otras areas</span>
+                                </div>
+                                <div class="search-outside-results-grid">
+                                    @foreach($resultadosBusquedaFueraDeArea as $resultado)
+                                        @php
+                                            $numeroReciboExterno = $resultado['consecutivo_actual'] ?? $resultado['consecutivo_inicial'] ?? '';
+                                            $areaExterna = $resultado['area_label'] ?? strtoupper((string) ($resultado['area'] ?? 'OTRA AREA'));
+                                            $estadoExterno = $resultado['estado_label'] ?? strtoupper((string) ($resultado['estado'] ?? 'SIN ESTADO'));
+                                        @endphp
+                                        <div class="orden-card-simple card-busqueda-fuera-area"
+                                             data-numero="{{ $resultado['numero_pedido'] }}"
+                                             data-prenda="{{ strtolower((string) $resultado['nombre_prenda']) }}"
+                                             data-prenda-id="{{ $resultado['prenda_id'] }}"
+                                             data-cliente="{{ strtolower((string) $resultado['cliente']) }}"
+                                             data-tipo-recibo="{{ strtolower((string) $resultado['tipo_recibo']) }}"
+                                             data-numero-recibo="{{ strtolower(trim((string) $numeroReciboExterno)) }}"
+                                             data-search-text="{{ strtolower(trim(($resultado['numero_pedido'] ?? '') . ' ' . ($resultado['nombre_prenda'] ?? '') . ' ' . ($resultado['cliente'] ?? '') . ' ' . ($resultado['area'] ?? '') . ' ' . ($resultado['estado'] ?? '') . ' ' . ($resultado['consecutivo_actual'] ?? '') . ' ' . ($resultado['consecutivo_inicial'] ?? ''))) }}">
+                                            <div class="orden-body">
+                                                <div class="orden-left">
+                                                    <div class="orden-top">
+                                                        <div class="orden-numero-section">
+                                                            <h4 class="orden-numero">#{{ $numeroReciboExterno }}</h4>
+                                                            <span class="estado-badge pendiente" data-estado="recibo-fuera-area">
+                                                                {{ $areaExterna }}
+                                                            </span>
+                                                        </div>
+                                                        <span class="badge-completado-corte is-on">{{ $estadoExterno }}</span>
+                                                    </div>
+
+                                                    <div class="orden-cliente">
+                                                        <p class="cliente-label">CLIENTE</p>
+                                                        <p class="cliente-name">{{ $resultado['cliente'] }}</p>
+                                                    </div>
+
+                                                    <div class="orden-prendas">
+                                                        <p class="prendas-label">
+                                                            <strong>{{ $resultado['nombre_prenda'] }}</strong>
+                                                            @if(!empty($resultado['descripcion']))
+                                                                <br>{!! nl2br(e($resultado['descripcion'])) !!}
+                                                            @endif
+                                                        </p>
+                                                    </div>
+
+                                                    <div class="search-outside-results-meta">
+                                                        <span class="search-outside-chip">Area: {{ $areaExterna }}</span>
+                                                        @if(!empty($resultado['tipo_recibo']))
+                                                            <span class="search-outside-chip search-outside-chip-muted">{{ strtoupper((string) $resultado['tipo_recibo']) }}</span>
+                                                        @endif
+                                                    </div>
+
+                                                    <div class="orden-buttons">
+                                                        <button class="btn-ver-recibos"
+                                                                onclick="abrirDetallesRecibos('{{ $resultado['numero_pedido'] }}', {{ $resultado['prenda_id'] }}, '{{ addslashes((string) $resultado['nombre_prenda']) }}', '{{ $resultado['tipo_recibo'] }}', null, '{{ $numeroReciboExterno }}', {{ $resultado['recibo_id'] }}); return false;">
+                                                            <span class="material-symbols-rounded">visibility</span>
+                                                            VER RECIBO
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($resultadosBusquedaFueraDeArea->count() === 0)
+                            <div class="empty-state">
+                                <span class="material-symbols-rounded">inbox</span>
+                                @if(!empty($busquedaActual) && !empty($mensajeBusquedaDashboard))
+                                    <p>{{ $mensajeBusquedaDashboard }}</p>
+                                @elseif(!empty($busquedaActual))
+                                    <p>No encontré coincidencias para "{{ $busquedaActual }}" en este tap.</p>
+                                @else
+                                    <p>No hay prendas con recibos de costura asignadas</p>
+                                @endif
+                            </div>
+                        @endif
                     @endif
                 @endif
             </div>
@@ -1533,7 +1935,7 @@
      </div>
 
     <!-- Modales -->
-    <!-- Modal de Mensaje Genérico -->
+    <!-- Modal de Mensaje Generico -->
     <div id="modalMensaje" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
         <div id="modalMensajeContenido" style="background: white; padding: 2rem; border-radius: 12px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
             <div id="modalMensajeIcono" style="font-size: 3rem; margin-bottom: 1rem;"></div>
@@ -1542,10 +1944,10 @@
         </div>
     </div>
 
-    <!-- Modal de Confirmación -->
+    <!-- Modal de Confirmacion -->
     <div id="modalConfirmacion" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
         <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 420px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); animation: slideIn 0.3s ease;">
-            <div style="display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; border-radius: 50%; background: #fef3c7; margin: 0 auto 1rem; font-size: 2rem;">⚠️</div>
+            <div style="display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; border-radius: 50%; background: #fef3c7; margin: 0 auto 1rem; font-size: 2rem;">âš ï¸</div>
             <h3 id="modalConfirmacionTitulo" style="margin: 0 0 0.75rem 0; font-size: 1.25rem; font-weight: 700; color: #111827; text-align: center;">¿Eliminar novedad?</h3>
             <p id="modalConfirmacionTexto" style="margin: 0 0 1.5rem 0; color: #6b7280; text-align: center; line-height: 1.5; font-size: 0.95rem;">Esta acción no se puede deshacer.</p>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
@@ -1604,7 +2006,7 @@
                 <div style="color: #111827; font-weight: 800; font-size: 1rem; margin-bottom: 0.75rem;">Agregar Nueva Novedad:</div>
 
                 <div style="margin-bottom: 1rem;">
-                    <textarea id="novedadDescripcionText" rows="5" style="width: 100%; padding: 0.9rem; border: 1px solid #d1d5db; border-radius: 10px; resize: vertical; font-size: 0.95rem;" placeholder="Escribe tu novedad aquí..."></textarea>
+                    <textarea id="novedadDescripcionText" rows="5" style="width: 100%; padding: 0.9rem; border: 1px solid #d1d5db; border-radius: 10px; resize: vertical; font-size: 0.95rem;" placeholder="Escribe tu novedad aquí­..."></textarea>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
@@ -1678,9 +2080,9 @@
                     </div>
                 </div>
 
-                <!-- Contenido dinámico según opción -->
+                <!-- Contenido dinamico segun opcion -->
                 <div id="contenidoAsignacion">
-                    <!-- Se cargará dinámicamente -->
+                    <!-- Se cargara dinamicamente -->
                 </div>
             </div>
 
@@ -1723,6 +2125,184 @@
     .badge-filtro-active .badge-filtro-contador {
         background: rgba(255, 255, 255, 0.22);
         color: #fff;
+    }
+
+    .search-loading-state {
+        display: none;
+        align-items: center;
+        gap: 0.45rem;
+        margin: -0.1rem 0 0.8rem;
+        padding-left: 2.2rem;
+        color: #64748b;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .search-loading-state .material-symbols-rounded {
+        font-size: 1rem;
+        animation: searchSpin 1s linear infinite;
+    }
+
+    .search-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+
+    .search-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .search-field {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1 1 280px;
+        min-width: 0;
+        padding: 0.6rem 0.85rem;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        border-radius: 14px;
+        background: #fff;
+    }
+
+    .search-field:focus-within {
+        border-color: rgba(59, 130, 246, 0.55);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+    }
+
+    .search-field-icon {
+        flex-shrink: 0;
+        color: #64748b;
+        font-size: 1.15rem;
+    }
+
+    .search-box {
+        flex: 1 1 auto;
+        min-width: 0;
+        border: none;
+        background: transparent;
+        padding: 0;
+        outline: none;
+        box-shadow: none;
+        width: 100%;
+    }
+
+    .search-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-shrink: 0;
+    }
+
+    .clear-search-text-btn {
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: #ffffff;
+        color: #334155;
+        border-radius: 999px;
+        padding: 0.45rem 0.8rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+    }
+
+    .operario-dashboard.is-searching .clear-search-text-btn {
+        background: #ef4444;
+        border-color: #dc2626;
+        color: #ffffff;
+    }
+
+    .clear-search-text-btn:hover {
+        background: #f8fafc;
+        border-color: rgba(100, 116, 139, 0.55);
+        color: #0f172a;
+    }
+
+    .operario-dashboard.is-searching .clear-search-text-btn:hover {
+        background: #dc2626;
+        border-color: #b91c1c;
+        color: #ffffff;
+    }
+
+    .operario-dashboard.is-searching .ordenes-section {
+        display: none;
+    }
+
+    .search-outside-results {
+        margin-bottom: 1rem;
+        padding: 0.85rem;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        border-radius: 16px;
+        background: rgba(248, 250, 252, 0.9);
+    }
+
+    .search-outside-results-header {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin-bottom: 0.75rem;
+        color: #334155;
+        font-size: 0.92rem;
+        font-weight: 700;
+    }
+
+    .search-outside-results-header .material-symbols-rounded {
+        font-size: 1.05rem;
+    }
+
+    .search-outside-results-grid {
+        display: grid;
+        gap: 0.85rem;
+    }
+
+    .card-busqueda-fuera-area {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .card-busqueda-fuera-area .orden-body {
+        padding-bottom: 0.75rem;
+    }
+
+    .search-outside-results-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.65rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .search-outside-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.3rem 0.65rem;
+        border-radius: 999px;
+        background: rgba(245, 158, 11, 0.14);
+        color: #92400e;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .search-outside-chip-muted {
+        background: rgba(148, 163, 184, 0.16);
+        color: #475569;
+    }
+
+    @keyframes searchSpin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     @media (max-width: 768px) {

@@ -10,9 +10,9 @@ interface ConsecutivoReciboPedidoRepository
 
     public function findFirstActiveByPedidoTipo(int $pedidoProduccionId, string $tipoRecibo): ?ConsecutivoReciboPedido;
 
-    public function findActiveByPedidoPrendaTipo(int $pedidoProduccionId, int $prendaId, string $tipoRecibo): ?ConsecutivoReciboPedido;
+    public function findActiveByPedidoPrendaTipo(int $pedidoProduccionId, int $prendaId, string $tipoRecibo, ?int $prendaBodegaId = null): ?ConsecutivoReciboPedido;
 
-    public function findActiveByPedidoPrendaTipoAndArea(int $pedidoProduccionId, int $prendaId, string $tipoRecibo, string $area): ?ConsecutivoReciboPedido;
+    public function findActiveByPedidoPrendaTipoAndArea(int $pedidoProduccionId, int $prendaId, string $tipoRecibo, string $area, ?int $prendaBodegaId = null): ?ConsecutivoReciboPedido;
 
     public function findActiveByPedidoConsecutivoTipo(int $pedidoProduccionId, int $consecutivoActual, string $tipoRecibo): ?ConsecutivoReciboPedido;
 
