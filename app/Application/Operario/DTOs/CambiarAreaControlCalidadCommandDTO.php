@@ -9,5 +9,6 @@ readonly class CambiarAreaControlCalidadCommandDTO
         public int $numeroRecibo,
         public int $prendaId,
         public string $tipoRecibo,
+        public ?int $prendaBodegaId = null,
     ) {}
 }

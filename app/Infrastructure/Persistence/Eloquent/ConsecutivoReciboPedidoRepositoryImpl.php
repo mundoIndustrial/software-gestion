@@ -22,23 +22,39 @@ class ConsecutivoReciboPedidoRepositoryImpl implements ConsecutivoReciboPedidoRe
             ->first();
     }
 
-    public function findActiveByPedidoPrendaTipo(int $pedidoProduccionId, int $prendaId, string $tipoRecibo): ?ConsecutivoReciboPedido
+    public function findActiveByPedidoPrendaTipo(int $pedidoProduccionId, int $prendaId, string $tipoRecibo, ?int $prendaBodegaId = null): ?ConsecutivoReciboPedido
     {
-        return ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoProduccionId)
-            ->where('prenda_id', $prendaId)
+        $query = ConsecutivoReciboPedido::query()
             ->whereRaw('UPPER(tipo_recibo) = ?', [strtoupper($tipoRecibo)])
-            ->where('activo', 1)
-            ->first();
+            ->where('activo', 1);
+
+        if ($prendaBodegaId !== null) {
+            $query->whereNull('pedido_produccion_id')
+                ->where('prenda_bodega_id', $prendaBodegaId);
+        } else {
+            $query->where('pedido_produccion_id', $pedidoProduccionId)
+                ->where('prenda_id', $prendaId);
+        }
+
+        return $query->first();
     }
 
-    public function findActiveByPedidoPrendaTipoAndArea(int $pedidoProduccionId, int $prendaId, string $tipoRecibo, string $area): ?ConsecutivoReciboPedido
+    public function findActiveByPedidoPrendaTipoAndArea(int $pedidoProduccionId, int $prendaId, string $tipoRecibo, string $area, ?int $prendaBodegaId = null): ?ConsecutivoReciboPedido
     {
-        return ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoProduccionId)
-            ->where('prenda_id', $prendaId)
+        $query = ConsecutivoReciboPedido::query()
             ->whereRaw('UPPER(tipo_recibo) = ?', [strtoupper($tipoRecibo)])
             ->whereRaw('LOWER(TRIM(area)) = ?', [strtolower(trim($area))])
-            ->where('activo', 1)
-            ->first();
+            ->where('activo', 1);
+
+        if ($prendaBodegaId !== null) {
+            $query->whereNull('pedido_produccion_id')
+                ->where('prenda_bodega_id', $prendaBodegaId);
+        } else {
+            $query->where('pedido_produccion_id', $pedidoProduccionId)
+                ->where('prenda_id', $prendaId);
+        }
+
+        return $query->first();
     }
 
     public function findActiveByPedidoConsecutivoTipo(int $pedidoProduccionId, int $consecutivoActual, string $tipoRecibo): ?ConsecutivoReciboPedido

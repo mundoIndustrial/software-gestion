@@ -35,6 +35,10 @@ class ObtenerPrendasRecibosSupportService
             $tiposRecibo = ['COSTURA', 'REFLECTIVO'];
         }
 
+        if ($filtroRecibo === 'bodega') {
+            return ['CORTE-PARA-BODEGA'];
+        }
+
         if ($filtroRecibo === 'reflectivo') {
             return array_values(array_intersect($tiposRecibo, ['REFLECTIVO']));
         }
@@ -48,9 +52,14 @@ class ObtenerPrendasRecibosSupportService
 
     public function cargarRecibosBaseParaOperario(User $usuario, string $tipoOperario, array $tiposRecibo): Collection
     {
+        $esBodegaVistaCostura = in_array('CORTE-PARA-BODEGA', $tiposRecibo, true);
+        $areasPermitidas = $esBodegaVistaCostura
+            ? ['Costura', 'Control de Calidad', 'Control Calidad']
+            : ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad'];
+
         $query = ConsecutivoReciboPedido::where('activo', 1)
             ->whereIn('tipo_recibo', $tiposRecibo)
-            ->whereIn('area', ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad'])
+            ->whereIn('area', $areasPermitidas)
             ->select([
                 'id',
                 'prenda_id',

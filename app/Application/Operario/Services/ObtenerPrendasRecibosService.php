@@ -31,4 +31,9 @@ class ObtenerPrendasRecibosService
     {
         return $this->service->obtenerConteoPrendasConRecibosBodegaCortador($usuario);
     }
+
+    public function obtenerPrendasConRecibosBodegaVistaCostura(): \Illuminate\Support\Collection
+    {
+        return $this->service->obtenerPrendasConRecibosBodegaVistaCostura();
+    }
 }

@@ -18,45 +18,69 @@ class ProcesoPrendaRepositoryImpl implements ProcesoPrendaRepository
             ->first();
     }
 
-    public function findLatestByPrendaAndProceso(int $prendaId, string $proceso): ?ProcesoPrenda
+    public function findLatestByPrendaAndProceso(int $prendaId, string $proceso, ?int $prendaBodegaId = null): ?ProcesoPrenda
     {
-        return ProcesoPrenda::where('prenda_pedido_id', $prendaId)
+        $query = ProcesoPrenda::query()
             ->whereRaw('LOWER(TRIM(proceso)) = ?', [strtolower(trim($proceso))])
-            ->whereNull('deleted_at')
-            ->latest('created_at')
-            ->first();
+            ->whereNull('deleted_at');
+
+        if ($prendaBodegaId !== null) {
+            $query->where('prenda_bodega_id', $prendaBodegaId);
+        } else {
+            $query->where('prenda_pedido_id', $prendaId);
+        }
+
+        return $query->latest('created_at')->first();
     }
 
-    public function findLatestByProceso(int $numeroPedido, int $prendaId, string $proceso): ?ProcesoPrenda
+    public function findLatestByProceso(int $numeroPedido, int $prendaId, string $proceso, ?int $prendaBodegaId = null): ?ProcesoPrenda
     {
-        return ProcesoPrenda::where('prenda_pedido_id', $prendaId)
-            ->where('numero_pedido', $numeroPedido)
+        $query = ProcesoPrenda::query()
             ->whereRaw('LOWER(TRIM(proceso)) = ?', [strtolower(trim($proceso))])
-            ->whereNull('deleted_at')
-            ->latest('fecha_inicio')
-            ->first();
+            ->whereNull('deleted_at');
+
+        if ($prendaBodegaId !== null) {
+            $query->where('prenda_bodega_id', $prendaBodegaId);
+        } else {
+            $query->where('prenda_pedido_id', $prendaId)
+                ->where('numero_pedido', $numeroPedido);
+        }
+
+        return $query->latest('fecha_inicio')->first();
     }
 
-    public function findLatestByProcesoAndNumeroRecibo(int $numeroPedido, int $prendaId, string $proceso, int $numeroRecibo): ?ProcesoPrenda
+    public function findLatestByProcesoAndNumeroRecibo(int $numeroPedido, int $prendaId, string $proceso, int $numeroRecibo, ?int $prendaBodegaId = null): ?ProcesoPrenda
     {
-        return ProcesoPrenda::where('prenda_pedido_id', $prendaId)
-            ->where('numero_pedido', $numeroPedido)
+        $query = ProcesoPrenda::query()
             ->whereRaw('LOWER(TRIM(proceso)) = ?', [strtolower(trim($proceso))])
             ->where('numero_recibo', $numeroRecibo)
-            ->whereNull('deleted_at')
-            ->latest('fecha_inicio')
-            ->first();
+            ->whereNull('deleted_at');
+
+        if ($prendaBodegaId !== null) {
+            $query->where('prenda_bodega_id', $prendaBodegaId);
+        } else {
+            $query->where('prenda_pedido_id', $prendaId)
+                ->where('numero_pedido', $numeroPedido);
+        }
+
+        return $query->latest('fecha_inicio')->first();
     }
 
-    public function findLatestNotProcesoByNumeroRecibo(int $numeroPedido, int $prendaId, string $procesoExcluido, int $numeroRecibo): ?ProcesoPrenda
+    public function findLatestNotProcesoByNumeroRecibo(int $numeroPedido, int $prendaId, string $procesoExcluido, int $numeroRecibo, ?int $prendaBodegaId = null): ?ProcesoPrenda
     {
-        return ProcesoPrenda::where('prenda_pedido_id', $prendaId)
-            ->where('numero_pedido', $numeroPedido)
+        $query = ProcesoPrenda::query()
             ->where('numero_recibo', $numeroRecibo)
             ->whereRaw('LOWER(TRIM(proceso)) != ?', [strtolower(trim($procesoExcluido))])
-            ->whereNull('deleted_at')
-            ->latest('fecha_inicio')
-            ->first();
+            ->whereNull('deleted_at');
+
+        if ($prendaBodegaId !== null) {
+            $query->where('prenda_bodega_id', $prendaBodegaId);
+        } else {
+            $query->where('prenda_pedido_id', $prendaId)
+                ->where('numero_pedido', $numeroPedido);
+        }
+
+        return $query->latest('fecha_inicio')->first();
     }
 
     public function create(array $attributes): ProcesoPrenda

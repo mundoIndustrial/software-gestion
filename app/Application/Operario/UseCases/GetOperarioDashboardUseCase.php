@@ -26,11 +26,12 @@ class GetOperarioDashboardUseCase
         $defaultTab = $usuario->hasRole('cortador') ? 'pendientes' : 'costura';
         $tab = (string) $request->query('tab', $defaultTab);
         $filtroRecibo = strtolower(trim((string) $request->query('filtro', '')));
-        $filtroRecibo = in_array($filtroRecibo, ['costura', 'reflectivo'], true) ? $filtroRecibo : null;
+        $filtroRecibo = in_array($filtroRecibo, ['costura', 'reflectivo', 'bodega'], true) ? $filtroRecibo : null;
         $filtroEncargadoVistaCostura = strtolower(trim((string) $request->query('encargado', '')));
         $filtroEncargadoVistaCostura = in_array($filtroEncargadoVistaCostura, ['todos', 'sin-encargado'], true)
             ? $filtroEncargadoVistaCostura
             : 'todos';
+        $busquedaVistaCostura = strtolower(trim((string) $request->query('q', '')));
 
         $prendasConRecibos = collect();
         $recibosCompletados = collect();
@@ -125,7 +126,7 @@ class GetOperarioDashboardUseCase
                                 $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
                                 $area = strtolower(trim((string) ($recibo['area'] ?? '')));
                                 
-                                if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA', 'PARCIAL'], true)) {
+                                if ($tipo !== 'COSTURA') {
                                     return false;
                                 }
 
@@ -161,7 +162,7 @@ class GetOperarioDashboardUseCase
                                     return false;
                                 }
                                 
-                                if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA', 'PARCIAL'], true)) {
+                                if ($tipo !== 'COSTURA') {
                                     return false;
                                 }
 
@@ -231,11 +232,19 @@ class GetOperarioDashboardUseCase
             }
 
             if ($usuario->hasRole('vista-costura')) {
-                $prendasConRecibos = $this->filtrarPrendasVistaCosturaVisible($prendasConRecibos, $filtroRecibo);
+                if ($filtroRecibo === 'bodega') {
+                    $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibosBodegaVistaCostura();
+                } else {
+                    $prendasConRecibos = $this->filtrarPrendasVistaCosturaVisible($prendasConRecibos, $filtroRecibo);
+                }
                 $vistaCosturaSinEncargadoCount = $this->contarPrendasVistaCosturaSinEncargado($prendasConRecibos, $filtroRecibo);
 
-                if ($filtroEncargadoVistaCostura === 'sin-encargado') {
+                if ($filtroRecibo !== 'bodega' && $filtroEncargadoVistaCostura === 'sin-encargado') {
                     $prendasConRecibos = $this->filtrarPrendasVistaCosturaSinEncargado($prendasConRecibos, $filtroRecibo);
+                }
+
+                if ($busquedaVistaCostura !== '') {
+                    $prendasConRecibos = $this->filtrarPrendasPorBusquedaVistaCostura($prendasConRecibos, $busquedaVistaCostura);
                 }
 
                 $yaTieneCompletadosVista = $prendasConRecibos->contains(function ($prenda) {
@@ -333,6 +342,10 @@ class GetOperarioDashboardUseCase
 
     private function filtrarPrendasVistaCosturaSinEncargado(Collection $prendas, ?string $filtroRecibo): Collection
     {
+        if ($filtroRecibo === 'bodega') {
+            return $prendas->values();
+        }
+
         $esReflectivo = $filtroRecibo === 'reflectivo';
 
         return $prendas->filter(function (array $prenda) use ($esReflectivo) {
@@ -345,16 +358,15 @@ class GetOperarioDashboardUseCase
                     }
 
                     $sinEncargadoReflectivo = empty(trim((string) ($recibo['encargado_costura'] ?? '')));
-                    $sinParciales = !((bool) ($recibo['tiene_parciales'] ?? false));
 
-                    if ($sinEncargadoReflectivo && $sinParciales) {
+                    if ($sinEncargadoReflectivo) {
                         return true;
                     }
 
                     continue;
                 }
 
-                if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA', 'PARCIAL'], true)) {
+                if ($tipo !== 'COSTURA') {
                     continue;
                 }
 
@@ -373,11 +385,12 @@ class GetOperarioDashboardUseCase
     private function filtrarPrendasVistaCosturaVisible(Collection $prendas, ?string $filtroRecibo): Collection
     {
         $esReflectivo = $filtroRecibo === 'reflectivo';
-        $areasPermitidas = $esReflectivo
+        $esBodega = $filtroRecibo === 'bodega';
+        $areasPermitidas = $esReflectivo || $esBodega
             ? ['costura', 'control calidad', 'control de calidad']
             : ['corte', 'costura', 'control calidad', 'control de calidad'];
 
-        return $prendas->filter(function (array $prenda) use ($esReflectivo, $areasPermitidas) {
+        return $prendas->filter(function (array $prenda) use ($esReflectivo, $esBodega, $areasPermitidas) {
             $recibos = collect($prenda['recibos'] ?? []);
             if ($recibos->isEmpty()) {
                 return false;
@@ -399,7 +412,14 @@ class GetOperarioDashboardUseCase
                     continue;
                 }
 
-                if ($completadoCorte && in_array($tipo, ['COSTURA', 'COSTURA-BODEGA', 'PARCIAL'], true)) {
+                if ($esBodega) {
+                    if ($tipo === 'CORTE-PARA-BODEGA') {
+                        return true;
+                    }
+                    continue;
+                }
+
+                if ($completadoCorte && $tipo === 'COSTURA') {
                     return true;
                 }
             }
@@ -411,5 +431,74 @@ class GetOperarioDashboardUseCase
     private function contarPrendasVistaCosturaSinEncargado(Collection $prendas, ?string $filtroRecibo): int
     {
         return $this->filtrarPrendasVistaCosturaSinEncargado($prendas, $filtroRecibo)->count();
+    }
+
+    private function filtrarPrendasPorBusquedaVistaCostura(Collection $prendas, string $busqueda): Collection
+    {
+        $busqueda = strtolower(trim($busqueda));
+
+        if ($busqueda === '') {
+            return $prendas->values();
+        }
+
+        $esNumerica = ctype_digit($busqueda);
+
+        return $prendas->filter(function (array $prenda) use ($busqueda, $esNumerica) {
+            $camposPrenda = [
+                strtolower(trim((string) ($prenda['numero_pedido'] ?? ''))),
+                strtolower(trim((string) ($prenda['cliente'] ?? ''))),
+                strtolower(trim((string) ($prenda['nombre_prenda'] ?? ''))),
+                strtolower(trim((string) ($prenda['descripcion'] ?? ''))),
+            ];
+
+            foreach ($camposPrenda as $campo) {
+                if ($campo === '') {
+                    continue;
+                }
+
+                if ($esNumerica) {
+                    if ($campo === $busqueda) {
+                        return true;
+                    }
+                    continue;
+                }
+
+                if (str_contains($campo, $busqueda)) {
+                    return true;
+                }
+            }
+
+            foreach (($prenda['recibos'] ?? []) as $recibo) {
+                $camposRecibo = [
+                    strtolower(trim((string) ($recibo['consecutivo_actual'] ?? ''))),
+                    strtolower(trim((string) ($recibo['consecutivo_parcial'] ?? ''))),
+                    strtolower(trim((string) ($recibo['tipo_recibo'] ?? ''))),
+                    strtolower(trim((string) ($recibo['area'] ?? ''))),
+                    strtolower(trim((string) ($recibo['encargado_costura'] ?? ''))),
+                    strtolower(trim((string) ($recibo['encargado_corte'] ?? ''))),
+                    strtolower(trim((string) ($recibo['encargado_control_calidad'] ?? ''))),
+                    strtolower(trim((string) ($recibo['notas'] ?? ''))),
+                ];
+
+                foreach ($camposRecibo as $campo) {
+                    if ($campo === '') {
+                        continue;
+                    }
+
+                    if ($esNumerica) {
+                        if ($campo === $busqueda) {
+                            return true;
+                        }
+                        continue;
+                    }
+
+                    if (str_contains($campo, $busqueda)) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        })->values();
     }
 }

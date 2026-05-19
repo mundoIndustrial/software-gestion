@@ -31,7 +31,7 @@ if (!in_array($filtroRecibo, ['costura', 'reflectivo'], true)) {
 
 $usuario = User::query()->find($userId);
 if (!$usuario) {
-    fwrite(STDERR, "No se encontrÃ³ el usuario con ID {$userId}\n");
+    fwrite(STDERR, "No se encontro el usuario con ID {$userId}\n");
     exit(1);
 }
 

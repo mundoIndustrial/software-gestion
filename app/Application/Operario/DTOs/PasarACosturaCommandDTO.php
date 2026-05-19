@@ -10,5 +10,6 @@ readonly class PasarACosturaCommandDTO
         public int $prendaId,
         public string $tipoRecibo,
         public string $encargado,
+        public ?int $prendaBodegaId = null,
     ) {}
 }

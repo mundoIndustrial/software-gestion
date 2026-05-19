@@ -130,6 +130,41 @@ class OperarioController extends Controller
     public function dashboard(Request $request)
     {
         $dashboardData = $this->getOperarioDashboardUseCase->execute($request);
+        $prendasConRecibosControlCalidad = collect();
+        $resultadosBusquedaFueraDeArea = collect();
+
+        $esVistaCostura = $request->user()?->hasRole('vista-costura') ?? false;
+        $filtroEncargado = strtolower(trim((string) $request->query('encargado', '')));
+        $filtroRecibo = strtolower(trim((string) $request->query('filtro', 'costura')));
+        $busquedaDashboard = strtolower(trim((string) $request->query('q', '')));
+        $mensajeBusquedaDashboard = null;
+
+        if ($esVistaCostura && $filtroEncargado === 'control-calidad') {
+            $tipoReciboControlCalidad = $filtroRecibo === 'reflectivo' ? 'REFLECTIVO' : 'COSTURA';
+            $resultadoCC = $this->obtenerRecibosControlCalidadUseCase->execute($tipoReciboControlCalidad);
+            $prendasConRecibosControlCalidad = $this->formatearRecibosControlCalidadParaDashboard(
+                (array) ($resultadoCC['payload']['data'] ?? []),
+                $tipoReciboControlCalidad
+            );
+
+            if ($busquedaDashboard !== '') {
+                $prendasConRecibosControlCalidad = $this->filtrarPrendasControlCalidadPorBusqueda(
+                    $prendasConRecibosControlCalidad,
+                    $busquedaDashboard
+                );
+            }
+        }
+
+        if ($busquedaDashboard !== '' && $dashboardData->prendasConRecibos->isEmpty()) {
+            $resultadosBusquedaFueraDeArea = $this->buscarResultadosBusquedaVistaCosturaFueraDeArea(
+                $busquedaDashboard,
+                $filtroRecibo
+            );
+
+            if ($resultadosBusquedaFueraDeArea->isEmpty()) {
+                $mensajeBusquedaDashboard = $this->resolverMensajeBusquedaVistaCostura($busquedaDashboard, $filtroRecibo);
+            }
+        }
 
         $conteoControlCalidadCostura = 0;
         $conteoControlCalidadReflectivo = 0;
@@ -184,9 +219,314 @@ class OperarioController extends Controller
             'pendientesPedidosCount' => $dashboardData->pendientesPedidosCount,
             'recibosBodegaPendientesCount' => $dashboardData->recibosBodegaPendientesCount,
             'vistaCosturaSinEncargadoCount' => $dashboardData->vistaCosturaSinEncargadoCount,
+            'prendasConRecibosControlCalidad' => $prendasConRecibosControlCalidad,
+            'resultadosBusquedaFueraDeArea' => $resultadosBusquedaFueraDeArea,
+            'mensajeBusquedaDashboard' => $mensajeBusquedaDashboard,
             'conteoControlCalidadCostura' => $conteoControlCalidadCostura,
             'conteoControlCalidadReflectivo' => $conteoControlCalidadReflectivo,
         ]);
+    }
+
+    private function formatearRecibosControlCalidadParaDashboard(array $recibos, string $tipoRecibo): \Illuminate\Support\Collection
+    {
+        return collect($recibos)
+            ->map(function (array $item) use ($tipoRecibo) {
+                $reciboPrincipal = collect($item['recibos'] ?? [])->first() ?? [];
+                $fechaCreacion = $item['fecha_creacion'] ?? ($reciboPrincipal['creado_en'] ?? null);
+                $consecutivoActual = $reciboPrincipal['consecutivo_actual']
+                    ?? $item['consecutivo_actual']
+                    ?? '';
+                $consecutivoInicial = $reciboPrincipal['consecutivo_inicial']
+                    ?? $item['consecutivo_inicial']
+                    ?? $consecutivoActual;
+                $esParcial = (bool) ($item['es_parcial'] ?? ($reciboPrincipal['es_parcial'] ?? false));
+                $parcialId = $item['parcial_id'] ?? ($reciboPrincipal['parcial_id'] ?? null);
+
+                return [
+                    'prenda_id' => (int) ($item['prenda_id'] ?? 0),
+                    'pedido_id' => (int) ($item['pedido_id'] ?? 0),
+                    'numero_pedido' => (string) ($item['numero_pedido'] ?? ''),
+                    'cliente' => (string) ($item['cliente'] ?? ''),
+                    'nombre_prenda' => (string) ($item['nombre_prenda'] ?? ''),
+                    'descripcion' => (string) ($item['descripcion'] ?? ''),
+                    'proceso_actual' => (string) ($item['proceso_actual'] ?? 'Control Calidad'),
+                    'de_bodega' => $item['de_bodega'] ?? null,
+                    'tiene_parciales' => (bool) ($item['tiene_parciales'] ?? false),
+                    'es_parcial' => $esParcial,
+                    'parcial_id' => $parcialId,
+                    'estado_pedido' => (string) ($item['estado_pedido'] ?? 'Pendiente'),
+                    'fecha_creacion' => $fechaCreacion,
+                    'tipo_recibo' => $tipoRecibo,
+                    'recibos' => [[
+                        'id' => (int) ($reciboPrincipal['id'] ?? ($item['id'] ?? 0)),
+                        'tipo_recibo' => $tipoRecibo,
+                        'consecutivo_actual' => $consecutivoActual,
+                        'consecutivo_inicial' => $consecutivoInicial,
+                        'notas' => (string) ($reciboPrincipal['notas'] ?? ''),
+                        'creado_en' => $fechaCreacion,
+                        'created_at' => $fechaCreacion,
+                        'area' => (string) ($reciboPrincipal['area'] ?? 'Control Calidad'),
+                        'es_parcial' => $esParcial,
+                        'parcial_id' => $parcialId,
+                        'pedido_parcial_id' => $parcialId,
+                        'tiene_parciales' => (bool) ($item['tiene_parciales'] ?? false),
+                        'encargado_costura' => $reciboPrincipal['encargado_costura'] ?? null,
+                        'encargado_corte' => $reciboPrincipal['encargado_corte'] ?? null,
+                        'encargado_control_calidad' => $reciboPrincipal['encargado_control_calidad'] ?? null,
+                        'completado_area' => (bool) ($reciboPrincipal['completado_area'] ?? false),
+                        'completado_corte' => (bool) ($reciboPrincipal['completado_corte'] ?? false),
+                        'completado_costura' => (bool) ($reciboPrincipal['completado_costura'] ?? false),
+                        'completado_control_calidad' => (bool) ($reciboPrincipal['completado_area'] ?? false),
+                    ]],
+                    'total_recibos' => 1,
+                ];
+            })
+            ->sortBy(fn (array $item) => $item['fecha_creacion'] instanceof \DateTimeInterface
+                ? $item['fecha_creacion']->getTimestamp()
+                : ((is_numeric($item['fecha_creacion'])
+                    ? (int) $item['fecha_creacion']
+                    : (strtotime((string) $item['fecha_creacion']) ?: 0))))
+            ->values();
+    }
+
+    private function filtrarPrendasControlCalidadPorBusqueda(\Illuminate\Support\Collection $prendas, string $busqueda): \Illuminate\Support\Collection
+    {
+        $busqueda = strtolower(trim($busqueda));
+
+        if ($busqueda === '') {
+            return $prendas->values();
+        }
+
+        return $prendas->filter(function (array $prenda) use ($busqueda) {
+            $camposPrenda = [
+                strtolower(trim((string) ($prenda['numero_pedido'] ?? ''))),
+                strtolower(trim((string) ($prenda['cliente'] ?? ''))),
+                strtolower(trim((string) ($prenda['nombre_prenda'] ?? ''))),
+                strtolower(trim((string) ($prenda['descripcion'] ?? ''))),
+            ];
+
+            foreach ($camposPrenda as $campo) {
+                if ($campo !== '' && str_contains($campo, $busqueda)) {
+                    return true;
+                }
+            }
+
+            foreach (($prenda['recibos'] ?? []) as $recibo) {
+                $camposRecibo = [
+                    strtolower(trim((string) ($recibo['consecutivo_actual'] ?? ''))),
+                    strtolower(trim((string) ($recibo['consecutivo_inicial'] ?? ''))),
+                    strtolower(trim((string) ($recibo['tipo_recibo'] ?? ''))),
+                    strtolower(trim((string) ($recibo['area'] ?? ''))),
+                    strtolower(trim((string) ($recibo['notas'] ?? ''))),
+                ];
+
+                foreach ($camposRecibo as $campo) {
+                    if ($campo !== '' && str_contains($campo, $busqueda)) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        })->values();
+    }
+
+    private function buscarResultadosBusquedaVistaCosturaFueraDeArea(string $busqueda, ?string $filtroRecibo): \Illuminate\Support\Collection
+    {
+        $busqueda = strtolower(trim($busqueda));
+
+        if ($busqueda === '') {
+            return collect();
+        }
+
+        $esNumerica = ctype_digit($busqueda);
+        $comodin = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $busqueda) . '%';
+        $areasVisibles = in_array($filtroRecibo, ['reflectivo', 'bodega'], true)
+            ? ['costura', 'control calidad', 'control de calidad']
+            : ['corte', 'costura', 'control calidad', 'control de calidad'];
+        $tiposPermitidos = $this->tiposReciboBusquedaVistaCostura($filtroRecibo);
+
+        return DB::table('consecutivos_recibos_pedidos as crp')
+            ->leftJoin('pedidos_produccion as pp', 'pp.id', '=', 'crp.pedido_produccion_id')
+            ->leftJoin('prendas_pedido as pr', 'pr.id', '=', 'crp.prenda_id')
+            ->select([
+                'crp.id',
+                'crp.pedido_produccion_id',
+                'crp.prenda_id',
+                'crp.consecutivo_actual',
+                'crp.consecutivo_inicial',
+                'crp.tipo_recibo',
+                'crp.area',
+                'crp.estado',
+                'crp.created_at',
+                'crp.notas',
+                'pp.numero_pedido',
+                'pp.cliente',
+                'pr.nombre_prenda',
+                'pr.descripcion',
+            ])
+            ->where(function ($query) use ($comodin, $busqueda, $esNumerica) {
+                if ($esNumerica) {
+                    $query
+                        ->orWhereRaw('CAST(crp.consecutivo_actual AS CHAR) = ?', [$busqueda])
+                        ->orWhereRaw('CAST(crp.consecutivo_inicial AS CHAR) = ?', [$busqueda])
+                        ->orWhereRaw('CAST(pp.numero_pedido AS CHAR) = ?', [$busqueda]);
+                    return;
+                }
+
+                $query
+                    ->orWhereRaw('LOWER(CAST(crp.consecutivo_actual AS CHAR)) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(CAST(crp.consecutivo_inicial AS CHAR)) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(COALESCE(crp.tipo_recibo, "")) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(COALESCE(crp.area, "")) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(COALESCE(crp.estado, "")) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(COALESCE(crp.notas, "")) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(COALESCE(pp.numero_pedido, "")) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(COALESCE(pp.cliente, "")) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(COALESCE(pr.nombre_prenda, "")) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(COALESCE(pr.descripcion, "")) LIKE ?', [$comodin]);
+            })
+            ->where(function ($query) use ($tiposPermitidos) {
+                foreach ($tiposPermitidos as $tipoPermitido) {
+                    $query->orWhereRaw('UPPER(COALESCE(crp.tipo_recibo, "")) = ?', [$tipoPermitido]);
+                }
+            })
+            ->orderBy('crp.created_at')
+            ->get()
+            ->filter(function ($row) use ($areasVisibles) {
+                $area = strtolower(trim((string) ($row->area ?? '')));
+                return !in_array($area, $areasVisibles, true);
+            })
+            ->map(function ($row) {
+                $area = trim((string) ($row->area ?? ''));
+                $estado = trim((string) ($row->estado ?? ''));
+                $tipoRecibo = strtoupper(trim((string) ($row->tipo_recibo ?? '')));
+                $consecutivoActual = (string) ($row->consecutivo_actual ?? '');
+                $consecutivoInicial = (string) ($row->consecutivo_inicial ?? $consecutivoActual);
+                $fechaCreacion = $row->created_at ?? null;
+
+                return [
+                    'recibo_id' => (int) ($row->id ?? 0),
+                    'pedido_id' => (int) ($row->pedido_produccion_id ?? 0),
+                    'prenda_id' => (int) ($row->prenda_id ?? 0),
+                    'numero_pedido' => (string) ($row->numero_pedido ?? ''),
+                    'cliente' => (string) ($row->cliente ?? ''),
+                    'nombre_prenda' => (string) ($row->nombre_prenda ?? ''),
+                    'descripcion' => (string) ($row->descripcion ?? ''),
+                    'tipo_recibo' => $tipoRecibo,
+                    'area' => $area,
+                    'estado' => $estado,
+                    'consecutivo_actual' => $consecutivoActual,
+                    'consecutivo_inicial' => $consecutivoInicial,
+                    'notas' => (string) ($row->notas ?? ''),
+                    'fecha_creacion' => $fechaCreacion,
+                    'area_label' => strtoupper($area !== '' ? $area : 'OTRA ÁREA'),
+                    'estado_label' => strtoupper($estado !== '' ? $estado : 'SIN ESTADO'),
+                ];
+            })
+            ->values();
+    }
+
+    private function resolverMensajeBusquedaVistaCostura(string $busqueda, ?string $filtroRecibo = null): ?string
+    {
+        $busqueda = strtolower(trim($busqueda));
+
+        if ($busqueda === '') {
+            return null;
+        }
+
+        $esNumerica = ctype_digit($busqueda);
+        $comodin = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $busqueda) . '%';
+        $tiposPermitidos = $this->tiposReciboBusquedaVistaCostura($filtroRecibo);
+
+        $coincidencias = DB::table('consecutivos_recibos_pedidos as crp')
+            ->leftJoin('pedidos_produccion as pp', 'pp.id', '=', 'crp.pedido_produccion_id')
+            ->leftJoin('prendas_pedido as pr', 'pr.id', '=', 'crp.prenda_id')
+            ->select([
+                'crp.id',
+                'crp.consecutivo_actual',
+                'crp.consecutivo_inicial',
+                'crp.tipo_recibo',
+                'crp.area',
+                'crp.estado',
+                'pp.numero_pedido',
+                'pp.cliente',
+                'pr.nombre_prenda',
+                'pr.descripcion',
+            ])
+            ->where(function ($query) use ($comodin, $busqueda, $esNumerica) {
+                if ($esNumerica) {
+                    $query
+                        ->orWhereRaw('CAST(crp.consecutivo_actual AS CHAR) = ?', [$busqueda])
+                        ->orWhereRaw('CAST(crp.consecutivo_inicial AS CHAR) = ?', [$busqueda])
+                        ->orWhereRaw('CAST(pp.numero_pedido AS CHAR) = ?', [$busqueda]);
+                    return;
+                }
+
+                $query
+                    ->orWhereRaw('LOWER(CAST(crp.consecutivo_actual AS CHAR)) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(CAST(crp.consecutivo_inicial AS CHAR)) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(COALESCE(crp.tipo_recibo, "")) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(COALESCE(crp.area, "")) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(COALESCE(crp.estado, "")) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(COALESCE(crp.notas, "")) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(COALESCE(pp.numero_pedido, "")) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(COALESCE(pp.cliente, "")) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(COALESCE(pr.nombre_prenda, "")) LIKE ?', [$comodin])
+                    ->orWhereRaw('LOWER(COALESCE(pr.descripcion, "")) LIKE ?', [$comodin]);
+            })
+            ->where(function ($query) use ($tiposPermitidos) {
+                foreach ($tiposPermitidos as $tipoPermitido) {
+                    $query->orWhereRaw('UPPER(COALESCE(crp.tipo_recibo, "")) = ?', [$tipoPermitido]);
+                }
+            })
+            ->limit(20)
+            ->get();
+
+        if ($coincidencias->isEmpty()) {
+            return null;
+        }
+
+        $anuladas = $coincidencias->filter(function ($row) {
+            $estado = strtolower(trim((string) ($row->estado ?? '')));
+            $area = strtolower(trim((string) ($row->area ?? '')));
+
+            return in_array($estado, ['anulada', 'anulado'], true)
+                || in_array($area, ['anulada', 'anulado'], true);
+        });
+
+        if ($anuladas->isNotEmpty()) {
+            $numero = $anuladas->first()?->consecutivo_actual ?? $anuladas->first()?->numero_pedido ?? $busqueda;
+            return "Encontré coincidencias, pero el recibo #{$numero} está en área Anulado con estado Anulado.";
+        }
+
+        $entregaDespacho = $coincidencias->filter(function ($row) {
+            $area = strtolower(trim((string) ($row->area ?? '')));
+            return in_array($area, ['entrega', 'despacho'], true);
+        });
+
+        if ($entregaDespacho->isNotEmpty()) {
+            $numero = $entregaDespacho->first()?->consecutivo_actual ?? $entregaDespacho->first()?->numero_pedido ?? $busqueda;
+            $area = strtoupper(trim((string) ($entregaDespacho->first()?->area ?? '')));
+            return "Encontré coincidencias, pero el recibo #{$numero} ya está en {$area}.";
+        }
+
+        if ($filtroRecibo === 'bodega') {
+            return 'Encontré coincidencias, pero no están en Bodega.';
+        }
+
+        return 'Encontré coincidencias, pero no están en Costura.';
+    }
+
+    private function tiposReciboBusquedaVistaCostura(?string $filtroRecibo): array
+    {
+        if ($filtroRecibo === 'bodega') {
+            return ['CORTE-PARA-BODEGA'];
+        }
+
+        return $filtroRecibo === 'reflectivo'
+            ? ['REFLECTIVO']
+            : ['COSTURA'];
     }
 
     /**
@@ -437,7 +777,7 @@ class OperarioController extends Controller
                 ->get();
 
             $receptivos = \App\Models\ConsecutivoReciboPedido::where('activo', 1)
-                ->whereIn('tipo_recibo', ['REFLECTIVO', 'COSTURA', 'COSTURA-BODEGA'])
+                ->whereIn('tipo_recibo', ['REFLECTIVO', 'COSTURA'])
                 ->with(['pedido:id,numero_pedido,estado', 'prenda:id,nombre_prenda'])
                 ->get();
 
@@ -722,8 +1062,7 @@ class OperarioController extends Controller
     {
         try {
             $esParcial = (bool) ($request->boolean('es_parcial')
-                || $request->boolean('esParcial')
-                || strtoupper((string) $request->input('tipo_recibo', '')) === 'PARCIAL');
+                || $request->boolean('esParcial'));
 
             $result = $this->completarReciboOperarioUseCase->execute((int) $idRecibo, $esParcial);
 
@@ -755,8 +1094,7 @@ class OperarioController extends Controller
     {
         try {
             $esParcial = (bool) ($request->boolean('es_parcial')
-                || $request->boolean('esParcial')
-                || strtoupper((string) $request->input('tipo_recibo', '')) === 'PARCIAL');
+                || $request->boolean('esParcial'));
 
             $result = $this->deshacerReciboOperarioUseCase->execute((int) $idRecibo, $esParcial);
 
@@ -874,8 +1212,7 @@ class OperarioController extends Controller
     }
 
     /**
-     * En parciales se ha guardado observación a veces como PARCIAL y a veces como COSTURA.
-     * Esta lista evita perder observaciones por diferencia de etiqueta.
+     * Los parciales se tratan como COSTURA dentro de operario.
      *
      * @return string[]
      */
@@ -883,12 +1220,8 @@ class OperarioController extends Controller
     {
         $tipo = $this->normalizarTipoProceso($tipoProceso);
 
-        if ($tipo === 'PARCIAL') {
-            return ['PARCIAL', 'COSTURA', 'COSTURA-BODEGA'];
-        }
-
-        if ($tipo === 'COSTURA' || $tipo === 'COSTURA-BODEGA') {
-            return [$tipo, 'COSTURA', 'COSTURA-BODEGA', 'PARCIAL'];
+        if ($tipo === 'PARCIAL' || $tipo === 'COSTURA' || $tipo === 'COSTURA-BODEGA') {
+            return ['COSTURA'];
         }
 
         return [$tipo];

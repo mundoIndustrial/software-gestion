@@ -7,6 +7,7 @@ use App\Application\Operario\DTOs\ReciboCommandResultDTO;
 use App\Domain\Operario\Repositories\ConsecutivoReciboPedidoRepository;
 use App\Domain\Operario\Repositories\ProcesoPrendaRepository;
 use App\Domain\Operario\Services\ControlCalidadWorkflow;
+use App\Models\PrendaBodega;
 use Illuminate\Support\Facades\Log;
 
 class DeshacerCosturaUseCase
@@ -22,6 +23,10 @@ class DeshacerCosturaUseCase
         try {
             if (!auth()->user()->hasRole('vista-costura')) {
                 return new ReciboCommandResultDTO(false, 'No tienes permisos para realizar esta accion', 403);
+            }
+
+            if ($cmd->prendaBodegaId !== null) {
+                return $this->executeBodega($cmd);
             }
 
             $pedido = $this->workflowService->findPedidoOrFail($cmd->pedidoId);
@@ -100,5 +105,54 @@ class DeshacerCosturaUseCase
 
             return new ReciboCommandResultDTO(false, 'Error al deshacer: ' . $e->getMessage(), 500);
         }
+    }
+
+    private function executeBodega(DeshacerCosturaCommandDTO $cmd): ReciboCommandResultDTO
+    {
+        $prendaBodega = PrendaBodega::find($cmd->prendaBodegaId);
+
+        $recibo = $this->recibos->findActiveByPedidoPrendaTipo(
+            pedidoProduccionId: 0,
+            prendaId: 0,
+            tipoRecibo: (string) $cmd->tipoRecibo,
+            prendaBodegaId: (int) $cmd->prendaBodegaId,
+        );
+
+        if (!$recibo) {
+            return new ReciboCommandResultDTO(false, 'Recibo no encontrado o no esta en Costura', 404);
+        }
+
+        $procesoCostura = $this->workflowService->runInTransaction(function () use ($cmd, $recibo) {
+            $procesoCostura = $this->procesos->findLatestByProcesoAndNumeroRecibo(
+                numeroPedido: 0,
+                prendaId: 0,
+                proceso: 'Costura',
+                numeroRecibo: (int) $recibo->consecutivo_actual,
+                prendaBodegaId: (int) $cmd->prendaBodegaId,
+            );
+
+            if (!$procesoCostura) {
+                return null;
+            }
+
+            $this->procesos->update($procesoCostura, [
+                'encargado' => null,
+                'fecha_de_asignacion_encargado' => null,
+                'estado_proceso' => 'Pendiente',
+            ]);
+
+            return $procesoCostura;
+        });
+
+        if (!$procesoCostura) {
+            return new ReciboCommandResultDTO(false, 'No se encontro proceso de Costura para limpiar encargado', 404);
+        }
+
+        return new ReciboCommandResultDTO(true, 'Encargado de Costura eliminado correctamente', 200, [
+            'area_nueva' => 'Costura',
+            'proceso_anterior' => 'Costura',
+            'prenda_bodega_id' => (int) $cmd->prendaBodegaId,
+            'nombre_prenda' => $prendaBodega?->nombre ?? null,
+        ]);
     }
 }

@@ -10,6 +10,7 @@ export function manejarPasarACostura(btn) {
     const tipoRecibo = btn.dataset.tipoRecibo;
     const recibo = btn.dataset.recibo;
     const parcialId = btn.dataset.parcialId;
+    const prendaBodegaId = btn.dataset.prendaBodegaId;
     const btnId = btn.id;
 
     console.log(' Manejar pasar a costura:', {
@@ -22,22 +23,23 @@ export function manejarPasarACostura(btn) {
         area: btn.dataset.area,
         procesoId: btn.dataset.procesoId,
         encargadoCostura: btn.dataset.encargadoCostura,
+        prendaBodegaId,
         btnId,
     });
 
     const esDeshacer = btn.classList.contains('btn-deshacer-costura');
 
     if (esDeshacer) {
-        deshacerCosturaVista(pedidoId, prendaId, tipoRecibo, btnId);
+        deshacerCosturaVista(pedidoId, prendaId, tipoRecibo, btnId, prendaBodegaId);
     } else {
-        abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, btnId, numeroPedido, parcialId);
+        abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, btnId, numeroPedido, parcialId, prendaBodegaId);
     }
 }
 
 // Las funciones antiguas se mantienen por compatibilidad pero ya no se usan directamente
 
-export function deshacerCosturaVista(pedidoId, prendaId, tipoRecibo, btnId) {
-    console.log('[DESHACER-COSTURA] Iniciando función:', { pedidoId, prendaId, tipoRecibo, btnId });
+export function deshacerCosturaVista(pedidoId, prendaId, tipoRecibo, btnId, prendaBodegaId = null) {
+    console.log('[DESHACER-COSTURA] Iniciando función:', { pedidoId, prendaId, tipoRecibo, btnId, prendaBodegaId });
 
     const btn = document.getElementById(btnId);
     if (!btn || btn.disabled) return;
@@ -50,6 +52,7 @@ export function deshacerCosturaVista(pedidoId, prendaId, tipoRecibo, btnId) {
 
     httpJsonBody(`/recibos-novedades/${pedidoId}/${prendaId}/deshacer-costura`, 'DELETE', {
         tipo_recibo: tipoRecibo,
+        ...(prendaBodegaId ? { prenda_bodega_id: prendaBodegaId } : {}),
     }, {
         headers: {
             Accept: 'application/json',
@@ -89,4 +92,3 @@ export function deshacerCosturaVista(pedidoId, prendaId, tipoRecibo, btnId) {
             btn.disabled = false;
         });
 }
-

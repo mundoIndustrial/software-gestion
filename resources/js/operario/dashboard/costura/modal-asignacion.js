@@ -2,12 +2,12 @@ import { httpJson } from '../api/http';
 import { mostrarError, mostrarExito } from '../ui/messages';
 
 // Función para abrir el modal (exportada para ser usada en costura.js)
-export function abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, btnId, numeroPedido = null, parcialId = null) {
+export function abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, btnId, numeroPedido = null, parcialId = null, prendaBodegaId = null) {
     const modal = document.getElementById('modalCostura');
     if (!modal) return;
 
     // Guardar datos globales
-    window.datosModalCostura = { pedidoId, prendaId, tipoRecibo, btnId, recibo, nombre, numeroPedido, parcialId };
+    window.datosModalCostura = { pedidoId, prendaId, prendaBodegaId, tipoRecibo, btnId, recibo, nombre, numeroPedido, parcialId };
     
     // Resetear selección
     window.opcionAsignacionSeleccionada = null;
@@ -2450,7 +2450,7 @@ function confirmarPasarACostura() {
         return;
     }
 
-    const { pedidoId, prendaId, tipoRecibo, btnId, recibo } = window.datosModalCostura;
+    const { pedidoId, prendaId, prendaBodegaId, tipoRecibo, btnId, recibo } = window.datosModalCostura;
 
     if (!pedidoId || !prendaId || !tipoRecibo || !recibo) {
         mostrarError('Error', 'Faltan datos necesarios para procesar la solicitud');
@@ -2476,6 +2476,9 @@ function confirmarPasarACostura() {
     formData.append('prenda_id', prendaId);
     formData.append('encargado', encargado);
     formData.append('tipo_recibo', tipoRecibo);
+    if (prendaBodegaId) {
+        formData.append('prenda_bodega_id', prendaBodegaId);
+    }
     formData.append('_method', 'POST');
 
     fetch(action, {
