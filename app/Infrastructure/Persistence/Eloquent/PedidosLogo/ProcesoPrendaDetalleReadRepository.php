@@ -78,7 +78,11 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
             ->groupBy('pedidos_procesos_prenda_detalles.id', 'crp.id', 'crp.consecutivo_actual', 'crp.created_at', 'pp.pedido_produccion_id');
 
         $this->aplicarBusqueda($queryProcesos, $searchTerm, ['ped.cliente', 'cli.nombre', 'crp.consecutivo_actual', 'pedidos_procesos_prenda_detalles.numero_recibo']);
-        $this->aplicarFiltrosColumnas($queryProcesos, $columnFilters);
+        $this->aplicarFiltrosColumnas($queryProcesos, $columnFilters, [
+            'area' => 'palp.area',
+            'novedades' => 'palp.novedades',
+            'numero_recibo' => 'crp.consecutivo_actual',
+        ]);
 
         if ($areaFija) $queryProcesos->having('area', '=', $areaFija);
         if (!$incluirEntregados) $queryProcesos->havingRaw("(MAX(palp.area) IS NULL OR MAX(palp.area) <> 'ENTREGADO')");
@@ -136,7 +140,11 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
             ->groupBy('ppar.id', 'pedidos_procesos_prenda_detalles.id', 'crp.id');
 
         $this->aplicarBusqueda($queryParciales, $searchTerm, ['ped.cliente', 'cli.nombre', 'crp.consecutivo_actual', 'ppar.consecutivo_actual', 'pedidos_procesos_prenda_detalles.numero_recibo']);
-        $this->aplicarFiltrosColumnas($queryParciales, $columnFilters);
+        $this->aplicarFiltrosColumnas($queryParciales, $columnFilters, [
+            'area' => 'palp.area',
+            'novedades' => 'palp.novedades',
+            'numero_recibo' => 'crp.consecutivo_actual',
+        ]);
 
         if ($areaFija) $queryParciales->having('area', '=', $areaFija);
         if (!$incluirEntregados) $queryParciales->havingRaw("(MAX(palp.area) IS NULL OR MAX(palp.area) <> 'ENTREGADO')");
@@ -197,7 +205,11 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
             ->groupBy('ppar.id', 'ppar.prenda_pedido_id', 'pp.pedido_produccion_id', 'ppar.consecutivo_actual', 'ppar.tipo_recibo', 'ppar.estado', 'ppar.created_at', 'ppar.updated_at', 'ppar.fecha_activacion', 'crp.id');
 
         $this->aplicarBusqueda($queryParcialesSinProceso, $searchTerm, ['ped.cliente', 'cli.nombre', 'ppar.consecutivo_actual']);
-        $this->aplicarFiltrosColumnas($queryParcialesSinProceso, $columnFilters);
+        $this->aplicarFiltrosColumnas($queryParcialesSinProceso, $columnFilters, [
+            'area' => 'palp_any.area',
+            'novedades' => 'palp_any.novedades',
+            'numero_recibo' => 'ppar.consecutivo_actual',
+        ]);
 
         if ($areaFija) $queryParcialesSinProceso->having('area', '=', $areaFija);
         if (!$incluirEntregados) $queryParcialesSinProceso->havingRaw("(COALESCE(MAX(palp_any.area), 'PENDIENTE') <> 'ENTREGADO')");
@@ -254,7 +266,11 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
             ->groupBy('crp.id', 'pp.id', 'pp.pedido_produccion_id', 'crp.consecutivo_actual', 'crp.created_at', 'crp.updated_at', 'crp.tipo_recibo');
 
         $this->aplicarBusqueda($queryCrpSinProceso, $searchTerm, ['ped.cliente', 'cli.nombre', 'crp.consecutivo_actual']);
-        $this->aplicarFiltrosColumnas($queryCrpSinProceso, $columnFilters);
+        $this->aplicarFiltrosColumnas($queryCrpSinProceso, $columnFilters, [
+            'area' => 'palp_any.area',
+            'novedades' => 'palp_any.novedades',
+            'numero_recibo' => 'crp.consecutivo_actual',
+        ]);
 
         if ($areaFija) $queryCrpSinProceso->having('area', '=', $areaFija);
         if (!$incluirEntregados) $queryCrpSinProceso->havingRaw("(COALESCE(MAX(palp_any.area), 'PENDIENTE') <> 'ENTREGADO')");
@@ -486,19 +502,23 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
         }
     }
 
-    private function aplicarFiltrosColumnas($query, ?array $columnFilters): void
+    private function aplicarFiltrosColumnas($query, ?array $columnFilters, array $columnMap = []): void
     {
         if (empty($columnFilters)) return;
+
+        $areaColumn = $columnMap['area'] ?? 'palp.area';
+        $novedadesColumn = $columnMap['novedades'] ?? 'palp.novedades';
+        $numeroReciboColumn = $columnMap['numero_recibo'] ?? 'crp.consecutivo_actual';
 
         foreach ($columnFilters as $column => $values) {
             if (empty($values) || !is_array($values)) continue;
 
-            $query->where(function ($q) use ($column, $values) {
+            $query->where(function ($q) use ($column, $values, $areaColumn, $novedadesColumn, $numeroReciboColumn) {
                 foreach ($values as $value) {
                     switch ($column) {
-                        case 'area': $q->orWhere('palp.area', $value); break;
+                        case 'area': $q->orWhere($areaColumn, $value); break;
                         case 'cliente': $q->orWhere('ped.cliente', 'like', '%' . $value . '%')->orWhere('cli.nombre', 'like', '%' . $value . '%'); break;
-                        case 'numero_recibo': $q->orWhere('crp.consecutivo_actual', 'like', '%' . $value . '%'); break;
+                        case 'numero_recibo': $q->orWhere($numeroReciboColumn, 'like', '%' . $value . '%'); break;
                         case 'asesora':
                             $q->orWhereExists(function ($subQ) use ($value) {
                                 $subQ->select(DB::raw(1))->from('users as u')->whereColumn('u.id', 'ped.asesor_id')->where('u.name', 'like', '%' . $value . '%');
@@ -506,7 +526,7 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
                                 $subQ->select(DB::raw(1))->from('users as u')->whereColumn('u.id', 'ped.anulado_por_asesora_id')->where('u.name', 'like', '%' . $value . '%');
                             });
                             break;
-                        case 'novedades': $q->orWhere('palp.novedades', 'like', '%' . $value . '%'); break;
+                        case 'novedades': $q->orWhere($novedadesColumn, 'like', '%' . $value . '%'); break;
                     }
                 }
             });
