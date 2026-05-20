@@ -1405,41 +1405,41 @@
                                                     @endif
 
                                                     @if(!$tieneParcialesReflectivo)
-                                                        <button class="btn-pasar-costura {{ $tieneEncargadoCosturaRef ? 'btn-deshacer-costura' : '' }}" 
-                                                                data-visible-filtro="reflectivo"
-                                                                id="btn-costura-reflectivo-{{ $prenda['prenda_id'] }}"
-                                                                data-pedido-id="{{ $prenda['pedido_id'] }}"
-                                                                data-numero-pedido="{{ $prenda['numero_pedido'] }}"
-                                                                data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                                data-nombre="{{ $prenda['nombre_prenda'] }}"
-                                                                data-tipo-recibo="REFLECTIVO"
-                                                                data-recibo="{{ $reciboReflectivo['consecutivo_actual'] ?? $prenda['numero_pedido'] }}"
-                                                                data-area="{{ $areaReciboRef }}"
-                                                                data-proceso-id="{{ $reciboReflectivo['proceso_id_costura'] ?? '' }}"
-                                                                data-encargado-costura="{{ $encargadoCosturaRef ?? '' }}"
-                                                                type="button"
-                                                                onclick="manejarPasarACostura(this); return false;">
-                                                            <span class="material-symbols-rounded">{{ $tieneEncargadoCosturaRef ? 'undo' : 'checkroom' }}</span>
-                                                            {{ $tieneEncargadoCosturaRef ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
-                                                        </button>
+                                                        @if(!auth()->user()->hasRole('vista-costura'))
+                                                            <button class="btn-pasar-costura {{ $tieneEncargadoCosturaRef ? 'btn-deshacer-costura' : '' }}" 
+                                                                    data-visible-filtro="reflectivo"
+                                                                    id="btn-costura-reflectivo-{{ $prenda['prenda_id'] }}"
+                                                                    data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                                    data-numero-pedido="{{ $prenda['numero_pedido'] }}"
+                                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                                    data-tipo-recibo="REFLECTIVO"
+                                                                    data-recibo="{{ $reciboReflectivo['consecutivo_actual'] ?? $prenda['numero_pedido'] }}"
+                                                                    data-area="{{ $areaReciboRef }}"
+                                                                    data-proceso-id="{{ $reciboReflectivo['proceso_id_costura'] ?? '' }}"
+                                                                    data-encargado-costura="{{ $encargadoCosturaRef ?? '' }}"
+                                                                    type="button"
+                                                                    onclick="manejarPasarACostura(this); return false;">
+                                                                <span class="material-symbols-rounded">{{ $tieneEncargadoCosturaRef ? 'undo' : 'checkroom' }}</span>
+                                                                {{ $tieneEncargadoCosturaRef ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
+                                                            </button>
+                                                        @endif
 
-                                                            @if(!$esControlCalidadRef)
-                                                                <button class="btn-pasar-cc" 
-                                                                        data-visible-filtro="reflectivo"
-                                                                        id="btn-cc-reflectivo-{{ $prenda['prenda_id'] }}"
-                                                                        data-pedido-id="{{ $prenda['pedido_id'] }}"
-                                                                        data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                                        data-nombre="{{ $prenda['nombre_prenda'] }}"
-                                                                        data-tipo-recibo="REFLECTIVO"
-                                                                        data-recibo="{{ $reciboReflectivo['consecutivo_actual'] ?? $prenda['numero_pedido'] }}"
-                                                                        data-area="{{ $areaReciboRef ?? 'REFLECTIVO' }}"
-                                                                        data-proceso-id="{{ $reciboReflectivo['proceso_id'] ?? '' }}"
-                                                                        type="button"
-                                                                        onclick="pasarAControlCalidad(this); return false;">
-                                                                    <span class="material-symbols-rounded">check_circle</span>
-                                                                    PASAR A C.C
-                                                                </button>
-                                                            @endif
+                                                            <button class="btn-pasar-cc" 
+                                                                    data-visible-filtro="reflectivo"
+                                                                    id="btn-cc-reflectivo-{{ $prenda['prenda_id'] }}"
+                                                                    data-pedido-id="{{ $prenda['pedido_id'] }}"
+                                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                                    data-tipo-recibo="REFLECTIVO"
+                                                                    data-recibo="{{ $reciboReflectivo['consecutivo_actual'] ?? $prenda['numero_pedido'] }}"
+                                                                    data-area="{{ $areaReciboRef ?? 'REFLECTIVO' }}"
+                                                                    data-proceso-id="{{ $reciboReflectivo['proceso_id'] ?? '' }}"
+                                                                    type="button"
+                                                                    onclick="pasarAControlCalidad(this); return false;">
+                                                                <span class="material-symbols-rounded">{{ $esControlCalidadRef ? 'undo' : 'check_circle' }}</span>
+                                                                {{ $esControlCalidadRef ? 'DESHACER' : 'PASAR A C.C' }}
+                                                            </button>
                                                     @endif
                                                 @endif
 

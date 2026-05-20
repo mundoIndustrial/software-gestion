@@ -270,7 +270,15 @@ export function initReciboFilters() {
         if (usaFiltroServidor) {
             const url = new URL(window.location.href);
             url.searchParams.set('filtro', filtro);
-            if (filtro === 'bodega') {
+            if (userRole === 'vista-costura') {
+                // Evita mezclar estado entre tabs (costura/reflectivo/bodega).
+                url.searchParams.delete('encargado');
+                Array.from(url.searchParams.keys()).forEach((key) => {
+                    if (key.startsWith('page_vc_')) {
+                        url.searchParams.delete(key);
+                    }
+                });
+            } else if (filtro === 'bodega') {
                 url.searchParams.delete('encargado');
             }
             url.searchParams.delete('page');
