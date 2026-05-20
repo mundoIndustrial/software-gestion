@@ -48,6 +48,30 @@ class ObtenerDatosRecibosOperarioUseCase
             $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega'])->find($reciboId);
         }
 
+        // Fallback bodega: si llega parcial_id sin recibo_id, resolver recibo base.
+        if (!$reciboBodega && $reciboId <= 0 && $parcialId && in_array($tipoReciboUpper, ['CORTE-PARA-BODEGA', 'BODEGA'], true)) {
+            $parcialBodega = DB::table('recibo_por_partes')
+                ->where('id', (int) $parcialId)
+                ->first(['pedido_produccion_id', 'prenda_pedido_id', 'consecutivo_original', 'tipo_recibo']);
+
+            if ($parcialBodega) {
+                $tipoParcialUpper = strtoupper(trim((string) ($parcialBodega->tipo_recibo ?? '')));
+                if (in_array($tipoParcialUpper, ['CORTE-PARA-BODEGA', 'BODEGA'], true)) {
+                    $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega'])
+                        ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
+                        ->where('consecutivo_actual', (int) ($parcialBodega->consecutivo_original ?? 0))
+                        ->where('prenda_bodega_id', (int) ($parcialBodega->prenda_pedido_id ?? 0))
+                        ->where('activo', 1)
+                        ->orderByDesc('id')
+                        ->first();
+
+                    if ($reciboBodega) {
+                        $reciboId = (int) $reciboBodega->id;
+                    }
+                }
+            }
+        }
+
         $isBodegaByTipo = in_array($tipoReciboUpper, ['CORTE-PARA-BODEGA', 'BODEGA'], true);
         $isBodegaOnly = (bool) (
             ($reciboBodega && strtoupper(trim((string) $reciboBodega->tipo_recibo)) === 'CORTE-PARA-BODEGA')

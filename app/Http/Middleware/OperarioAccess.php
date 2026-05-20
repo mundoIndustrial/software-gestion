@@ -28,11 +28,11 @@ class OperarioAccess
             'user_id' => $usuario->id,
             'user_name' => $usuario->name,
             'user_roles' => $userRoles,
-            'permitedRoles' => ['cortador', 'costurero', 'bodeguero', 'costura-reflectivo', 'lider-reflectivo', 'vista-costura', 'administrador-costura', 'confeccion-sobremedida', 'visualizador_plooter']
+            'permitedRoles' => ['cortador', 'costurero', 'bodeguero', 'costura-reflectivo', 'lider-reflectivo', 'lider-costura', 'vista-costura', 'administrador-costura', 'confeccion-sobremedida', 'visualizador_plooter']
         ]);
 
-        // Verificar si tiene rol de cortador, costurero, bodeguero, costura-reflectivo, lider-reflectivo, vista-costura, administrador-costura, confeccion-sobremedida o visualizador_plooter
-        if (!$usuario->hasAnyRole(['cortador', 'costurero', 'bodeguero', 'costura-reflectivo', 'lider-reflectivo', 'vista-costura', 'administrador-costura', 'confeccion-sobremedida', 'visualizador_plooter'])) {
+        // Verificar si tiene rol permitido para modulo operario
+        if (!$usuario->hasAnyRole(['cortador', 'costurero', 'bodeguero', 'costura-reflectivo', 'lider-reflectivo', 'lider-costura', 'vista-costura', 'administrador-costura', 'confeccion-sobremedida', 'visualizador_plooter'])) {
             \Log::error('[OperarioAccess] Acceso denegado - rol no autorizado', [
                 'user_id' => $usuario->id,
                 'user_roles' => $userRoles

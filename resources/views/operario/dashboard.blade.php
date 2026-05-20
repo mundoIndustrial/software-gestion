@@ -1489,7 +1489,7 @@
                                                     'tipoRecibo' => strtoupper((string) $tipoReciboUnico),
                                                     'idParcial' => $pedidoParcialId ? (int) $pedidoParcialId : null,
                                                     'consecutivo' => $consecutivoParcial ?? '',
-                                                    'reciboId' => $reciboTipo['id'] ?? null,
+                                                    'reciboId' => $reciboTipo['recibo_id'] ?? ($reciboTipo['id'] ?? null),
                                                 ])@endcomponent
                                             @endforeach
 
@@ -1585,7 +1585,7 @@
                                                 'tipoRecibo' => $tipoReciboPreferido,
                                                 'idParcial' => $parcialIdPreferido,
                                                 'consecutivo' => $consecutivoPreferido,
-                                                'reciboId' => $reciboParaBusqueda['id'] ?? null,
+                                                'reciboId' => $reciboParaBusqueda['recibo_id'] ?? ($reciboParaBusqueda['id'] ?? null),
                                                 'texto' => 'VER RECIBOS',
                                             ])@endcomponent
                                         @endif
@@ -1810,7 +1810,7 @@
                                                     'tipoRecibo' => strtoupper((string) $tipoReciboUnico),
                                                     'idParcial' => $pedidoParcialId ? (int) $pedidoParcialId : null,
                                                     'consecutivo' => $consecutivoParcial ?? '',
-                                                    'reciboId' => $reciboTipo['id'] ?? null,
+                                                    'reciboId' => $reciboTipo['recibo_id'] ?? ($reciboTipo['id'] ?? null),
                                                 ])@endcomponent
                                             @endforeach
                                         @else
@@ -1821,7 +1821,7 @@
                                                 'tipoRecibo' => $tipoReciboPreferido,
                                                 'idParcial' => $parcialIdPreferido,
                                                 'consecutivo' => $consecutivoPreferido,
-                                                'reciboId' => $reciboParaBusqueda['id'] ?? null,
+                                                'reciboId' => $reciboParaBusqueda['recibo_id'] ?? ($reciboParaBusqueda['id'] ?? null),
                                                 'texto' => 'VER RECIBOS',
                                             ])@endcomponent
                                         @endif
@@ -1883,7 +1883,7 @@
                                 <!-- Contenido Derecho -->
                                 <div class="orden-right">
                                     <div class="orden-right-center">
-                                        <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] ?? 'null' }}, '{{ $prenda['nombre_prenda'] }}', '{{ $tipoReciboPreferido }}', {{ $parcialIdPreferido ?? 'null' }}, '{{ $consecutivoPreferido }}', {{ $reciboParaBusqueda['id'] ?? 'null' }}); return false;">
+                                        <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] ?? 'null' }}, '{{ $prenda['nombre_prenda'] }}', '{{ $tipoReciboPreferido }}', {{ $parcialIdPreferido ?? 'null' }}, '{{ $consecutivoPreferido }}', {{ $reciboParaBusqueda['recibo_id'] ?? ($reciboParaBusqueda['id'] ?? 'null') }}); return false;">
                                             <span class="material-symbols-rounded">arrow_forward</span>
                                         </a>
                                     </div>

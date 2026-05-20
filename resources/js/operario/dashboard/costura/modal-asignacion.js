@@ -11,6 +11,9 @@ export function abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo
     
     // Resetear selección
     window.opcionAsignacionSeleccionada = null;
+    window.asignacionesPorModulo = {};
+    window.modulosSeleccionadosDistribucion = [];
+    window.datosDistribucion = null;
     window.talleresSeleccionadosDistribucion = []; // Inicializar talleres seleccionados
     window.asignacionesPorTaller = {}; // Inicializar asignaciones por taller
     document.getElementById('contenidoAsignacion').innerHTML = '<div style="text-align: center; padding: 2rem; color: #6b7280;"><p>Seleccione un tipo de asignación para continuar</p></div>';
@@ -1371,7 +1374,7 @@ export function confirmarAsignacion() {
         const btnConfirmar = document.getElementById('btnConfirmarAsignacion');
         const originalText = btnConfirmar ? btnConfirmar.innerHTML : null;
 
-        const { pedidoId, prendaId, prendaBodegaId, tipoRecibo, recibo } = window.datosModalCostura;
+        const { pedidoId, prendaId, prendaBodegaId, tipoRecibo, recibo, esEdicion } = window.datosModalCostura;
         if (!pedidoId || !prendaId || !tipoRecibo || !recibo) {
             mostrarError('Error', 'Faltan datos necesarios para procesar la solicitud');
             return;
@@ -1457,6 +1460,7 @@ export function confirmarAsignacion() {
                 ...(prendaBodegaId ? { prenda_bodega_id: prendaBodegaId } : {}),
                 tipo_recibo: tipoRecibo,
                 asignaciones,
+                es_edicion: esEdicion || false,
             }),
         })
             .then((r) => r.json())
@@ -2544,6 +2548,7 @@ export function cerrarModalCostura() {
     window.asignacionesPorModulo = null;
     window.datosDistribucion = null;
     window.modulosSeleccionadosDistribucion = null;
+    window.__edicionDistribucionActiva = null;
     
     // Resetear UI al estado inicial
     const modalContent = document.getElementById('modalCosturaContent');
