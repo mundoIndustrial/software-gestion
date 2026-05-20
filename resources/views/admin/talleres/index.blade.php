@@ -49,19 +49,34 @@
         <div id="viewTalleres" class="view-container">
             <div class="page-header">
                 <div class="page-title-group">
-                    <div class="subtitle">TALLERES ACTIVOS</div>
+                    <div class="subtitle" id="talleresSubtitle">{{ $status === 'inactivos' ? 'TALLERES ANULADOS' : 'TALLERES ACTIVOS' }}</div>
                 </div>
                 <div class="page-actions">
                     <form action="{{ route('talleres.index') }}" method="GET" class="gooey-search-wrapper">
+                        <input type="hidden" name="status" value="{{ $status }}">
                         <span class="material-symbols-rounded gooey-search-icon">search</span>
                         <input type="text" name="search" class="gooey-search-input" placeholder="Buscar taller..." id="searchInput" value="{{ $search ?? '' }}">
-                        <button class="gooey-search-clear" id="clearSearch" type="button" onclick="window.location.href='{{ route('talleres.index') }}'">
+                        <button class="gooey-search-clear" id="clearSearch" type="button" onclick="window.location.href='{{ route('talleres.index', ['status' => $status]) }}'">
                             <span class="material-symbols-rounded">close</span>
                         </button>
                     </form>
                     <button class="btn-primary-gradient btn-new-taller" id="btnNewTaller">
                         <span class="material-symbols-rounded">add</span>
                         NUEVO TALLER
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs de Talleres -->
+            <div class="talleres-tabs-container">
+                <div class="talleres-tabs">
+                    <button class="taller-tab-btn {{ $status === 'activos' ? 'active' : '' }}" data-status="activos">
+                        <span class="material-symbols-rounded">check_circle</span>
+                        TALLERES ACTIVOS
+                    </button>
+                    <button class="taller-tab-btn {{ $status === 'inactivos' ? 'active' : '' }}" data-status="inactivos">
+                        <span class="material-symbols-rounded">cancel</span>
+                        TALLERES ANULADOS
                     </button>
                 </div>
             </div>
@@ -116,7 +131,7 @@
             <!-- Paginación -->
             <div class="pagination-container">
                 @if($talleres instanceof \Illuminate\Pagination\LengthAwarePaginator)
-                    {{ $talleres->appends(['search' => $search])->links('vendor.pagination.simple-clean') }}
+                    {{ $talleres->appends(['search' => $search, 'status' => $status])->links('vendor.pagination.simple-clean') }}
                 @endif
             </div>
         </div>

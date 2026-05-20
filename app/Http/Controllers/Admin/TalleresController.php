@@ -12,15 +12,17 @@ class TalleresController extends Controller
     {
         $search = $request->input('search');
         $view = $request->input('view', 'talleres');
+        $status = $request->input('status', 'activos');
         
         // Solo cargar talleres si estamos en la vista de talleres
         if ($view === 'talleres') {
-            $talleres = $useCase->execute($search);
+            $activoVal = ($status === 'inactivos') ? 0 : 1;
+            $talleres = $useCase->execute($search, 9, $activoVal);
         } else {
             $talleres = collect(); // Colección vacía
         }
         
-        return view('admin.talleres.index', compact('talleres', 'search', 'view'));
+        return view('admin.talleres.index', compact('talleres', 'search', 'view', 'status'));
     }
 
     public function showRecibos($id, \App\Application\Talleres\UseCases\ObtenerDashboardTallerUseCase $useCase)
@@ -58,8 +60,10 @@ class TalleresController extends Controller
         try {
             $search = $request->input('search', '');
             $perPage = $request->input('per_page', 15);
+            $status = $request->input('status', 'activos');
+            $activoVal = ($status === 'inactivos') ? 0 : 1;
 
-            $talleres = $useCase->execute($search, $perPage);
+            $talleres = $useCase->execute($search, $perPage, $activoVal);
 
             return response()->json([
                 'success' => true,

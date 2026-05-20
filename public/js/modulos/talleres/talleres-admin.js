@@ -5,17 +5,20 @@
 let currentState = {
     view: 'talleres', // talleres, recibos, entregas
     selectedTaller: null,
-    selectedRecibo: null
+    selectedRecibo: null,
+    activeTab: 'activos'
 };
 
 document.addEventListener('DOMContentLoaded', function() {
     initTalleresSearch();
+    initOrdenesSearch();
     initViewHandlers();
     loadTalleresStats();
     initStatusToggles();
     initNewTallerModal();
     initEditTaller();
     initSidebarNavigation();
+    initTabs();
 });
 
 function initEditTaller() {
@@ -205,6 +208,28 @@ function initStatusToggles() {
                     } else {
                         card.classList.add('inactive');
                     }
+
+                    // Animación de salida al cambiar de estado y desaparecer del tab actual
+                    if ((currentState.activeTab === 'activos' && !data.activo) || 
+                        (currentState.activeTab === 'inactivos' && data.activo)) {
+                        card.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+                        card.style.opacity = '0';
+                        card.style.transform = 'scale(0.9)';
+                        setTimeout(() => {
+                            card.remove();
+                            
+                            // Mostrar mensaje de vacío si no quedan talleres en el listado
+                            const grid = document.getElementById('talleresGrid');
+                            if (grid && grid.querySelectorAll('.taller-card').length === 0) {
+                                grid.innerHTML = `<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #64748b; background: white; border-radius: 12px; border: 1px dashed #cbd5e1; width: 100%;">
+                                    <span class="material-symbols-rounded" style="font-size: 40px; color: #cbd5e1; margin-bottom: 10px; display: block;">inbox</span>
+                                    <p>No hay talleres disponibles en este momento.</p>
+                                </div>`;
+                                const paginationContainer = document.querySelector('.pagination-container');
+                                if (paginationContainer) paginationContainer.innerHTML = '';
+                            }
+                        }, 500);
+                    }
                 } else {
                     this.checked = !this.checked;
                     Swal.fire('Error', data.message || 'Error al cambiar el estado', 'error');
@@ -249,20 +274,36 @@ function initTalleresSearch() {
     const searchInput = document.getElementById('searchInput');
     const clearButton = document.getElementById('clearSearch');
     const mainContainer = document.querySelector('.main-container');
-    const apiRoute = mainContainer.dataset.routeApiSearch;
+    const apiRoute = mainContainer ? mainContainer.dataset.routeApiSearch : null;
+    const talleresForm = document.querySelector('#viewTalleres form');
+
+    if (talleresForm) {
+        talleresForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const searchTerm = searchInput ? searchInput.value.trim() : '';
+            
+            const url = new URL(window.location.href);
+            if (searchTerm) url.searchParams.set('search', searchTerm);
+            else url.searchParams.delete('search');
+            url.searchParams.delete('page');
+            window.history.pushState({ view: 'talleres', status: currentState.activeTab }, '', url.toString());
+
+            performRealtimeSearch(searchTerm, apiRoute);
+        });
+    }
     
     if (searchInput) {
         const toggleClear = () => {
             if (searchInput.value.length > 0) {
-                clearButton.style.display = 'flex';
+                if (clearButton) clearButton.style.display = 'flex';
             } else {
-                clearButton.style.display = 'none';
+                if (clearButton) clearButton.style.display = 'none';
             }
         };
 
         toggleClear();
         
-        // Búsqueda en tiempo real con debounce
+        // Búsqueda en tiempo real con de-bounce
         let searchTimeout;
         searchInput.addEventListener('input', function() {
             toggleClear();
@@ -270,24 +311,31 @@ function initTalleresSearch() {
             
             const searchTerm = this.value.trim();
             
-            // Si está vacío, recargar la página
-            if (searchTerm === '') {
-                window.location.href = window.location.pathname;
-                return;
-            }
-            
-            // Debounce de 300ms
             searchTimeout = setTimeout(() => {
+                const url = new URL(window.location.href);
+                if (searchTerm) url.searchParams.set('search', searchTerm);
+                else url.searchParams.delete('search');
+                url.searchParams.delete('page');
+                window.history.pushState({ view: 'talleres', status: currentState.activeTab }, '', url.toString());
+
                 performRealtimeSearch(searchTerm, apiRoute);
             }, 300);
         });
         
-        // Limpiar búsqueda
-        clearButton.addEventListener('click', () => {
-            searchInput.value = '';
-            toggleClear();
-            window.location.href = window.location.pathname;
-        });
+        // Limpiar búsqueda preservando el tab activo
+        if (clearButton) {
+            clearButton.addEventListener('click', () => {
+                searchInput.value = '';
+                toggleClear();
+                
+                const url = new URL(window.location.href);
+                url.searchParams.delete('search');
+                url.searchParams.delete('page');
+                window.history.pushState({ view: 'talleres', status: currentState.activeTab }, '', url.toString());
+
+                performRealtimeSearch('', apiRoute);
+            });
+        }
     }
 }
 
@@ -305,6 +353,7 @@ function performRealtimeSearch(searchTerm, apiRoute) {
     const url = new URL(apiRoute, window.location.origin);
     url.searchParams.append('search', searchTerm);
     url.searchParams.append('per_page', 15);
+    url.searchParams.append('status', currentState.activeTab || 'activos');
     
     fetch(url.toString())
         .then(response => response.json())
@@ -439,9 +488,9 @@ function renderTalleresPagination(pagination, search) {
  * Inicializar eventos de paginación para búsqueda de talleres
  */
 function initTalleresPaginationEvents(search) {
-    const paginationButtons = document.querySelectorAll('.pagination-container .btn-pagination, .pagination-container .page-number:not(.active)');
+    const paginationButtons = document.querySelectorAll('#viewTalleres .pagination-container .btn-pagination, #viewTalleres .pagination-container .page-number:not(.active)');
     const mainContainer = document.querySelector('.main-container');
-    const apiRoute = mainContainer.dataset.routeApiSearch;
+    const apiRoute = mainContainer ? mainContainer.dataset.routeApiSearch : null;
     
     paginationButtons.forEach(btn => {
         btn.addEventListener('click', function() {
@@ -468,6 +517,7 @@ function performTalleresPaginationSearch(searchTerm, page, apiRoute) {
     url.searchParams.append('search', searchTerm);
     url.searchParams.append('per_page', 15);
     url.searchParams.append('page', page);
+    url.searchParams.append('status', currentState.activeTab || 'activos');
     
     fetch(url.toString())
         .then(response => response.json())
@@ -867,10 +917,32 @@ function initSidebarNavigation() {
             
             // Cambiar URL según la vista
             if (viewName === 'viewTalleres') {
-                window.history.pushState({ view: 'talleres' }, 'Gestión Talleres', window.location.pathname);
+                // Reset search inputs when switching views
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                    searchInput.value = '';
+                    const clearBtn = document.getElementById('clearSearch');
+                    if (clearBtn) clearBtn.style.display = 'none';
+                }
+                const url = new URL(window.location.href);
+                url.searchParams.delete('search');
+                url.searchParams.set('status', currentState.activeTab || 'activos');
+                url.searchParams.delete('view');
+                window.history.pushState({ view: 'talleres' }, 'Gestión Talleres', url.toString());
                 showTalleres();
             } else if (viewName === 'viewOrdenes') {
-                window.history.pushState({ view: 'ordenes' }, 'Órdenes', window.location.pathname + '?view=ordenes');
+                // Reset search inputs when switching views
+                const searchInput = document.getElementById('searchOrdenesInput');
+                if (searchInput) {
+                    searchInput.value = '';
+                    const clearBtn = document.getElementById('clearSearchOrdenes');
+                    if (clearBtn) clearBtn.style.display = 'none';
+                }
+                const url = new URL(window.location.href);
+                url.searchParams.delete('search');
+                url.searchParams.set('view', 'ordenes');
+                url.searchParams.delete('status');
+                window.history.pushState({ view: 'ordenes' }, 'Órdenes', url.toString());
                 showOrdenes();
             }
         });
@@ -894,8 +966,63 @@ function initSidebarNavigation() {
     if (urlParams.get('view') === 'ordenes') {
         document.querySelector('[data-view="viewOrdenes"]').classList.add('active');
         document.querySelector('[data-view="viewTalleres"]').classList.remove('active');
-        showOrdenes();
+        
+        const searchVal = urlParams.get('search') || '';
+        const searchInput = document.getElementById('searchOrdenesInput');
+        if (searchInput) {
+            searchInput.value = searchVal;
+            const clearButton = document.getElementById('clearSearchOrdenes');
+            if (clearButton) {
+                clearButton.style.display = searchVal.length > 0 ? 'flex' : 'none';
+            }
+        }
+        showOrdenes(searchVal);
     }
+}
+
+/**
+ * Inicializar comportamiento de los tabs de talleres
+ */
+function initTabs() {
+    const tabButtons = document.querySelectorAll('.taller-tab-btn');
+    const subtitle = document.getElementById('talleresSubtitle');
+    const mainContainer = document.querySelector('.main-container');
+    const apiRoute = mainContainer ? mainContainer.dataset.routeApiSearch : null;
+
+    // Obtener tab inicial
+    const initialActive = document.querySelector('.taller-tab-btn.active');
+    if (initialActive) {
+        currentState.activeTab = initialActive.dataset.status;
+    } else {
+        currentState.activeTab = 'activos';
+    }
+
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (this.classList.contains('active')) return;
+
+            tabButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            currentState.activeTab = this.dataset.status;
+
+            // Actualizar subtítulo
+            if (subtitle) {
+                subtitle.textContent = currentState.activeTab === 'inactivos' ? 'TALLERES ANULADOS' : 'TALLERES ACTIVOS';
+            }
+
+            // Actualizar URL sin recargar
+            const url = new URL(window.location.href);
+            url.searchParams.set('status', currentState.activeTab);
+            url.searchParams.delete('page');
+            window.history.pushState({ view: 'talleres', status: currentState.activeTab }, '', url.toString());
+
+            // Recargar talleres vía AJAX
+            const searchInput = document.getElementById('searchInput');
+            const searchTerm = searchInput ? searchInput.value.trim() : '';
+            performRealtimeSearch(searchTerm, apiRoute);
+        });
+    });
 }
 
 /**
@@ -917,13 +1044,29 @@ function getProgressColor(percentage) {
 function initOrdenesSearch() {
     const searchInput = document.getElementById('searchOrdenesInput');
     const clearButton = document.getElementById('clearSearchOrdenes');
+    const ordenesForm = document.querySelector('#viewOrdenes form');
+
+    if (ordenesForm) {
+        ordenesForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const searchTerm = searchInput ? searchInput.value.trim() : '';
+            
+            const url = new URL(window.location.href);
+            if (searchTerm) url.searchParams.set('search', searchTerm);
+            else url.searchParams.delete('search');
+            url.searchParams.delete('page');
+            window.history.pushState({ view: 'ordenes' }, '', url.toString());
+
+            showOrdenes(searchTerm, 1);
+        });
+    }
     
     if (searchInput) {
         const toggleClear = () => {
             if (searchInput.value.length > 0) {
-                clearButton.style.display = 'flex';
+                if (clearButton) clearButton.style.display = 'flex';
             } else {
-                clearButton.style.display = 'none';
+                if (clearButton) clearButton.style.display = 'none';
             }
         };
 
@@ -934,17 +1077,34 @@ function initOrdenesSearch() {
         searchInput.addEventListener('input', function() {
             toggleClear();
             clearTimeout(searchTimeout);
+            
+            const searchTerm = this.value.trim();
+
             searchTimeout = setTimeout(() => {
-                showOrdenes(this.value, 1);
+                const url = new URL(window.location.href);
+                if (searchTerm) url.searchParams.set('search', searchTerm);
+                else url.searchParams.delete('search');
+                url.searchParams.delete('page');
+                window.history.pushState({ view: 'ordenes' }, '', url.toString());
+
+                showOrdenes(searchTerm, 1);
             }, 300);
         });
         
         // Limpiar búsqueda
-        clearButton.addEventListener('click', () => {
-            searchInput.value = '';
-            toggleClear();
-            showOrdenes('', 1);
-        });
+        if (clearButton) {
+            clearButton.addEventListener('click', () => {
+                searchInput.value = '';
+                toggleClear();
+                
+                const url = new URL(window.location.href);
+                url.searchParams.delete('search');
+                url.searchParams.delete('page');
+                window.history.pushState({ view: 'ordenes' }, '', url.toString());
+
+                showOrdenes('', 1);
+            });
+        }
     }
 }
 
@@ -1097,9 +1257,6 @@ function showOrdenes(search = '', page = 1) {
             
             // Inicializar eventos de paginación
             initPaginationEvents(search);
-            
-            // Inicializar búsqueda
-            initOrdenesSearch();
         })
         .catch(error => {
             console.error('Error:', error);
@@ -1184,7 +1341,7 @@ function renderPaginationControls(pagination, search) {
  * Inicializar eventos de paginación
  */
 function initPaginationEvents(search) {
-    const paginationButtons = document.querySelectorAll('.btn-pagination, .page-number:not(.active)');
+    const paginationButtons = document.querySelectorAll('#viewOrdenes .btn-pagination, #viewOrdenes .page-number:not(.active)');
     
     paginationButtons.forEach(btn => {
         btn.addEventListener('click', function() {
