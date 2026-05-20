@@ -166,7 +166,13 @@ export function initDashboardSearch() {
             }
 
             if (esNumerica) {
-                return texto === busqueda;
+                const tokensNumericos = texto
+                    .replace(/[^\d]+/g, ' ')
+                    .trim()
+                    .split(/\s+/)
+                    .filter(Boolean);
+
+                return tokensNumericos.includes(busqueda);
             }
 
             return texto.includes(busqueda);
