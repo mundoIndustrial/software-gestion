@@ -491,14 +491,9 @@ class ObtenerPrendasRecibosListadoService
 
     private function ordenarRecibosDelGrupo(Collection $recibosDelTipo, string $tipoOperario): Collection
     {
-        return $recibosDelTipo->sortBy(function ($recibo) use ($tipoOperario) {
-            if ($tipoOperario === 'vista-costura') {
-                return $recibo->created_at;
-            }
-
-            $fechaCorte = $this->supportService->obtenerFechaLlegadaACorte($recibo);
-            return $this->supportService->normalizarFechaAOrdenable($fechaCorte ?? $recibo->created_at);
-        })->values();
+        return $recibosDelTipo
+            ->sortBy(fn ($recibo) => $recibo->created_at)
+            ->values();
     }
 
     private function obtenerFechaOrdenPrincipalDelGrupo(Collection $recibosDelTipo, string $tipoOperario): mixed
@@ -508,12 +503,7 @@ class ObtenerPrendasRecibosListadoService
             return null;
         }
 
-        if ($tipoOperario === 'vista-costura') {
-            return $primer->created_at;
-        }
-
-        $fechaCortePrincipal = $this->supportService->obtenerFechaLlegadaACorte($primer);
-        return !empty($fechaCortePrincipal) ? $fechaCortePrincipal : $primer->created_at;
+        return $primer->created_at;
     }
 
     private function construirTarjetaGrupoRecibosOperario(

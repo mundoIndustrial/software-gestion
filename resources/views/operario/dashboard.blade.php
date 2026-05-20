@@ -27,6 +27,7 @@
     $pageNameVistaCostura = 'page_vc_' . str_replace('-', '_', $filtroReciboActual . '_' . $filtroEncargadoActual);
     $paginaActualVistaCostura = max(1, (int) request()->query($pageNameVistaCostura, 1));
     $modoControlCalidadVistaCostura = $esVistaCostura && $filtroEncargadoActual === 'control-calidad';
+    $tabActualDashboard = (string) ($tab ?? request()->query('tab', 'pendientes'));
 
     $ordenarPorFechaAsignacionProceso = auth()->user()->hasAnyRole([
         'costurero',
@@ -36,9 +37,13 @@
     $ordenarPorFechaCreacion = auth()->user()->hasRole('vista-costura');
     $ordenarPorFechaAsignacionCorte = auth()->user()->hasRole('cortador');
 
-    $callbackOrdenamiento = function ($prenda) use ($ordenarPorFechaAsignacionProceso, $ordenarPorFechaCreacion, $ordenarPorFechaAsignacionCorte) {
+    $callbackOrdenamiento = function ($prenda) use ($ordenarPorFechaAsignacionProceso, $ordenarPorFechaCreacion, $ordenarPorFechaAsignacionCorte, $tabActualDashboard) {
         $reciboPrincipal = collect($prenda['recibos'] ?? [])->first();
-        if ($ordenarPorFechaCreacion) {
+        if (in_array($tabActualDashboard, ['pendientes', 'completados', 'completado-bodega'], true)) {
+            $fechaOrden = $reciboPrincipal['created_at']
+                ?? $reciboPrincipal['creado_en']
+                ?? ($prenda['fecha_creacion'] ?? null);
+        } elseif ($ordenarPorFechaCreacion) {
             $fechaOrden = $reciboPrincipal['created_at']
                 ?? $reciboPrincipal['creado_en']
                 ?? ($prenda['fecha_creacion'] ?? null);
@@ -78,7 +83,9 @@
         ? collect($prendasConRecibosControlCalidad ?? [])
         : collect($prendasConRecibos ?? []);
 
-    if (auth()->user()->hasRole('vista-costura')) {
+    if (in_array($tabActualDashboard, ['pendientes', 'completados', 'completado-bodega'], true)) {
+        $prendasOrdenadas = $coleccionBaseDashboard->sortBy($callbackOrdenamiento)->values();
+    } elseif (auth()->user()->hasRole('vista-costura')) {
         $prendasOrdenadas = $coleccionBaseDashboard->sortBy($callbackOrdenamiento)->values();
     } elseif (auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('administrador-costura')) {
         $prendasOrdenadas = $coleccionBaseDashboard->sortByDesc($callbackOrdenamiento)->values();

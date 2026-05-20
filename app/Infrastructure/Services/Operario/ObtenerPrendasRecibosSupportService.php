@@ -143,7 +143,7 @@ class ObtenerPrendasRecibosSupportService
     public function ordenarResultadoFinalPorTipoOperario(Collection $resultadoFinal, string $tipoOperario): Collection
     {
         if ($tipoOperario === 'vista-costura') {
-            return $resultadoFinal->sortByDesc(fn ($item) => $item['fecha_creacion'] ?? null)->values();
+            return $resultadoFinal->sortBy(fn ($item) => $item['fecha_creacion'] ?? null)->values();
         }
 
         if ($tipoOperario === 'cortador') {
@@ -157,8 +157,7 @@ class ObtenerPrendasRecibosSupportService
                     $item['recibos'] = $recibosCorte;
                     $item['total_recibos'] = count($recibosCorte);
                     if (!empty($recibosCorte)) {
-                        $item['fecha_creacion'] = $recibosCorte[0]['fecha_asignacion_corte']
-                            ?? $recibosCorte[0]['fecha_proceso_corte_created_at']
+                        $item['fecha_creacion'] = $recibosCorte[0]['created_at']
                             ?? ($item['fecha_creacion'] ?? null);
                     }
 
