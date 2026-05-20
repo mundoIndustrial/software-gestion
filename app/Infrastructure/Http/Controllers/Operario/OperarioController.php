@@ -1195,6 +1195,7 @@ class OperarioController extends Controller
                 $numeroPedido = $parcial->pedido?->numero_pedido;
                 $prendaPedidoId = $parcial->prenda_pedido_id;
                 $numeroReciboParcial = $parcial->consecutivo_parcial;
+                $esBodega = strtoupper(trim((string) ($parcial->tipo_recibo ?? ''))) === 'CORTE-PARA-BODEGA';
 
                 \Log::info('[DeshacerParcial] Iniciando eliminación', [
                     'parcial_id' => $id,
@@ -1208,11 +1209,17 @@ class OperarioController extends Controller
                 \Log::info('[DeshacerParcial] Tallas eliminadas', ['count' => $tallasEliminadas]);
 
                 // 2. Eliminar COMPLETAMENTE procesos_prenda asociados al parcial
-                $procesosParcial = \App\Models\ProcesoPrenda::withTrashed()
+                $procesosParcialQuery = \App\Models\ProcesoPrenda::withTrashed()
                     ->where('numero_pedido', $numeroPedido)
-                    ->where('prenda_pedido_id', $prendaPedidoId)
-                    ->where('numero_recibo_parcial', $numeroReciboParcial)
-                    ->get();
+                    ->where('numero_recibo_parcial', $numeroReciboParcial);
+
+                if ($esBodega) {
+                    $procesosParcialQuery->where('prenda_bodega_id', $prendaPedidoId);
+                } else {
+                    $procesosParcialQuery->where('prenda_pedido_id', $prendaPedidoId);
+                }
+
+                $procesosParcial = $procesosParcialQuery->get();
 
                 $procesosEliminados = 0;
                 foreach ($procesosParcial as $procesoParcial) {

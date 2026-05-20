@@ -45,6 +45,7 @@ class ReciboCosturaController extends Controller
         $payload = [
             'recibo_por_partes_id' => $reciboParteId,
             'talla' => (string) ($tallaData['talla'] ?? ''),
+            'genero' => isset($tallaData['genero']) ? strtoupper(trim((string) $tallaData['genero'])) : null,
             'cantidad' => (int) ($tallaData['cantidad'] ?? 0),
             'color_nombre' => isset($tallaData['color_nombre']) ? (string) $tallaData['color_nombre'] : null,
             'created_at' => now(),
@@ -185,15 +186,12 @@ class ReciboCosturaController extends Controller
                     ]);
                 }
 
-                $maxParcialExistente = ProcesoPrenda::query()
-                    ->where('numero_pedido', $pedido->numero_pedido)
-                    ->where($prendaColumn, $prendaId)
-                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                    ->whereNotNull('numero_recibo_parcial')
-                    ->where('numero_recibo_parcial', '>=', $consecutivoOriginal)
-                    ->where('numero_recibo_parcial', '<', $consecutivoOriginal + 1)
-                    ->whereNull('deleted_at')
-                    ->max('numero_recibo_parcial');
+                $maxParcialExistente = DB::table('recibo_por_partes')
+                    ->where('pedido_produccion_id', (int) $pedidoId)
+                    ->where('prenda_pedido_id', $prendaId)
+                    ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim($tipoReciboReal))])
+                    ->where('consecutivo_original', $consecutivoOriginal)
+                    ->max('consecutivo_parcial');
 
                 $nextIndex = 1;
                 if ($maxParcialExistente !== null) {
@@ -250,6 +248,7 @@ class ReciboCosturaController extends Controller
                         $this->insertReciboParteTalla($reciboParteId, [
                             'talla' => $talla,
                             'cantidad' => $cantidad,
+                            'genero' => isset($t['genero']) ? (string) $t['genero'] : null,
                             'color_nombre' => $colorNombre,
                         ]);
                     }
@@ -270,12 +269,20 @@ class ReciboCosturaController extends Controller
                 ];
             });
 
-            $this->notificarParcialesDistribuidos(
-                pedido: $pedido,
-                prendaId: $prendaId,
-                tipoRecibo: $tipoReciboReal,
-                parcialesCreados: (array) ($resultado['hijos'] ?? [])
-            );
+            try {
+                $this->notificarParcialesDistribuidos(
+                    pedido: $pedido,
+                    prendaId: $prendaId,
+                    tipoRecibo: $tipoReciboReal,
+                    parcialesCreados: (array) ($resultado['hijos'] ?? [])
+                );
+            } catch (\Throwable $broadcastError) {
+                Log::warning('[COSTURA][DISTRIBUIR] Distribución guardada sin notificación en tiempo real', [
+                    'pedido_id' => (int) $pedidoId,
+                    'numero_recibo' => $numeroRecibo,
+                    'error' => $broadcastError->getMessage(),
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
@@ -1646,6 +1653,7 @@ class ReciboCosturaController extends Controller
                     $this->insertReciboParteTalla($reciboParteId, [
                         'talla' => $talla,
                         'cantidad' => $cantidad,
+                        'genero' => $genero,
                         'color_nombre' => $colorNombre,
                     ]);
                 }
@@ -1709,15 +1717,12 @@ class ReciboCosturaController extends Controller
             }
 
             // Calcular el siguiente i­ndice de parcial
-            $maxParcialExistente = ProcesoPrenda::query()
-                ->where('numero_pedido', $pedido->numero_pedido)
-                ->where($prendaColumn, $prendaId)
-                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                ->whereNotNull('numero_recibo_parcial')
-                ->where('numero_recibo_parcial', '>=', $consecutivoOriginal)
-                ->where('numero_recibo_parcial', '<', $consecutivoOriginal + 1)
-                ->whereNull('deleted_at')
-                ->max('numero_recibo_parcial');
+            $maxParcialExistente = DB::table('recibo_por_partes')
+                ->where('pedido_produccion_id', (int) $pedidoId)
+                ->where('prenda_pedido_id', $prendaId)
+                ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim($tipoReciboReal))])
+                ->where('consecutivo_original', $consecutivoOriginal)
+                ->max('consecutivo_parcial');
 
             $nextIndex = 1;
             if ($maxParcialExistente !== null) {

@@ -4,47 +4,16 @@
     });
 }
 
-async function cargarAdminTab(tab) {
-    try {
-        const url = new URL(window.location.href);
-        url.searchParams.set('tab', tab);
-
-        const resp = await fetch(url.toString(), {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            credentials: 'same-origin',
-        });
-
-        if (!resp.ok) {
-            throw new Error('HTTP ' + resp.status);
+function cargarAdminTab(tab) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    url.searchParams.delete('page');
+    Array.from(url.searchParams.keys()).forEach((key) => {
+        if (key.startsWith('page_vc_')) {
+            url.searchParams.delete(key);
         }
-
-        const html = await resp.text();
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        const nuevoOrdenesList = doc.getElementById('ordenesList');
-        const actualOrdenesList = document.getElementById('ordenesList');
-
-        if (!nuevoOrdenesList || !actualOrdenesList) {
-            throw new Error('No se encontró #ordenesList');
-        }
-
-        actualOrdenesList.innerHTML = nuevoOrdenesList.innerHTML;
-
-        if (typeof window.__initDashboardSearch === 'function') {
-            window.__initDashboardSearch();
-        }
-
-        // Actualizar URL sin recargar
-        window.history.pushState({ tab }, '', url.toString());
-
-        setActiveAdminTab(tab);
-    } catch (e) {
-        console.warn('[Operario Dashboard] Falló cargar tab admin, recargando página', e);
-        const url = new URL(window.location.href);
-        url.searchParams.set('tab', tab);
-        window.location.href = url.toString();
-    }
+    });
+    window.location.href = url.toString();
 }
 
 export function initAdminTabs() {
@@ -66,4 +35,3 @@ export function initAdminTabs() {
         setActiveAdminTab(tab);
     });
 }
-

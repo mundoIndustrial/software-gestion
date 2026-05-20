@@ -25,9 +25,10 @@ class ObtenerDatosRecibosOperarioUseCase
     public function execute(int $numeroPedido, Request $request): array
     {
         $tipoRecibo = (string) $request->query('tipo_recibo', 'COSTURA');
+        $tipoReciboUpper = strtoupper(trim($tipoRecibo));
         $parcialId = $request->query('parcial_id');
         $consecutivoParcial = $request->query('consecutivo_parcial');
-        $reciboId = $request->query('recibo_id');
+        $reciboId = (int) $request->query('recibo_id', 0);
 
         \Log::info('[ObtenerDatosRecibosOperarioUseCase] INICIO', [
             'numero_pedido' => $numeroPedido,
@@ -39,18 +40,37 @@ class ObtenerDatosRecibosOperarioUseCase
             'url_actual' => $request->fullUrl(),
         ]);
 
-        // OJO: este endpoint recibe un NÚMERO de pedido, no un ID. Evitar ambigüedad con findByIdOrNumero.
+        // OJO: este endpoint recibe un NUMERO de pedido, no un ID. Evitar ambiguedad con findByIdOrNumero.
         $pedido = null;
         $reciboBodega = null;
 
-        if ($reciboId) {
-            $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega'])->find((int) $reciboId);
+        if ($reciboId > 0) {
+            $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega'])->find($reciboId);
         }
 
+        $isBodegaByTipo = in_array($tipoReciboUpper, ['CORTE-PARA-BODEGA', 'BODEGA'], true);
         $isBodegaOnly = (bool) (
             ($reciboBodega && strtoupper(trim((string) $reciboBodega->tipo_recibo)) === 'CORTE-PARA-BODEGA')
-            || ($numeroPedido === 0 && $reciboId)
+            || ($numeroPedido === 0 && $reciboId > 0)
+            || ($isBodegaByTipo && $reciboId > 0)
         );
+
+        if ($isBodegaByTipo && $reciboId > 0 && !$reciboBodega) {
+            \Log::warning('[ObtenerDatosRecibosOperarioUseCase] Recibo bodega no encontrado', [
+                'recibo_id' => $reciboId,
+                'numero_pedido_url' => $numeroPedido,
+                'tipo_recibo' => $tipoRecibo,
+            ]);
+
+            return [
+                'status' => 404,
+                'payload' => [
+                    'success' => false,
+                    'error' => 'not found',
+                    'message' => 'Recibo de bodega no encontrado',
+                ],
+            ];
+        }
 
         if ($isBodegaOnly && $reciboBodega && strtoupper(trim((string) $reciboBodega->tipo_recibo)) === 'CORTE-PARA-BODEGA') {
             $pedido = (object) [
@@ -100,10 +120,10 @@ class ObtenerDatosRecibosOperarioUseCase
 
 
 
-        // Si se proporciona recibo_id, filtrar por ese recibo específico
-        if ($reciboId) {
+        // Si se proporciona recibo_id, filtrar por ese recibo especi­fico
+        if ($reciboId > 0) {
             $reciboEspecifico = DB::table('consecutivos_recibos_pedidos')
-                ->where('id', (int) $reciboId)
+                ->where('id', $reciboId)
                 ->where('pedido_produccion_id', $pedidoIdParaQuery)
                 ->first(['prenda_id', 'tipo_recibo']);
 
@@ -159,7 +179,7 @@ class ObtenerDatosRecibosOperarioUseCase
             }
 
             if (!$parcial) {
-                // Compatibilidad legacy: algunos parciales todavía viven en pedidos_parciales.
+                // Compatibilidad legacy: algunos parciales todaví­a viven en pedidos_parciales.
                 $parcialLegacy = DB::table('pedidos_parciales')
                     ->where('id', (int) $parcialId)
                     ->where('pedido_produccion_id', $pedidoIdParaQuery)
@@ -239,6 +259,10 @@ class ObtenerDatosRecibosOperarioUseCase
                 'prenda_id' => $parcial->prenda_pedido_id,
                 'tallas_count' => $parcial->tallas?->count() ?? 0,
             ]);
+            $pedidoIdParcial = (int) ($parcial->pedido_produccion_id ?? 0);
+            if ($pedidoIdParcial <= 0) {
+                $pedidoIdParcial = (int) $pedidoIdParaQuery;
+            }
 
             // Fecha real de activación del recibo (tabla consecutivos_recibos_pedidos.created_at)
             // para mostrarla en la vista de detalle del parcial.
@@ -248,7 +272,7 @@ class ObtenerDatosRecibosOperarioUseCase
 
             // Prioridad 1: recibo del anexo identificado por parcial_id en notas.
             $baseReciboActivacionQuery = DB::table('consecutivos_recibos_pedidos')
-                ->where('pedido_produccion_id', $pedidoIdParaQuery)
+                ->where('pedido_produccion_id', $pedidoIdParcial)
                 ->where('prenda_id', (int) $parcial->prenda_pedido_id)
                 ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [$tipoReciboParcial]);
 
@@ -277,7 +301,154 @@ class ObtenerDatosRecibosOperarioUseCase
                 ? (string) $reciboActivacion->created_at
                 : null;
 
-            $datosPedido = $this->obtenerPedidoUseCase->ejecutar($pedidoIdParaQuery, false);
+            $esParcialBodega = $isBodegaOnly
+                && $reciboBodega
+                && strtoupper(trim((string) ($reciboBodega->tipo_recibo ?? ''))) === 'CORTE-PARA-BODEGA';
+
+            if ($esParcialBodega) {
+                $prendaBodegaId = (int) ($reciboBodega->prenda_bodega_id ?? 0);
+
+                $tallasParcialRows = DB::table('recibos_por_partes_tallas')
+                    ->where('recibo_por_partes_id', (int) $parcial->id)
+                    ->get(['talla', 'genero', 'color_nombre', 'cantidad']);
+
+                $generoPorTalla = [];
+                if ($prendaBodegaId > 0) {
+                    $generoPorTalla = DB::table('prenda_tallas_bodega')
+                        ->where('prenda_bodega_id', $prendaBodegaId)
+                        ->get(['talla', 'genero'])
+                        ->mapWithKeys(function ($row) {
+                            $talla = strtoupper(trim((string) ($row->talla ?? '')));
+                            $genero = strtoupper(trim((string) ($row->genero ?? 'UNISEX')));
+                            return $talla !== '' ? [$talla => $genero] : [];
+                        })
+                        ->all();
+                }
+
+                $tallasParcial = collect($tallasParcialRows)->map(function ($row) use ($generoPorTalla) {
+                    $talla = strtoupper(trim((string) ($row->talla ?? '')));
+                    $generoFila = strtoupper(trim((string) ($row->genero ?? '')));
+                    $genero = $generoFila !== '' ? $generoFila : strtoupper(trim((string) ($generoPorTalla[$talla] ?? 'UNISEX')));
+                    if (!in_array($genero, ['DAMA', 'CABALLERO', 'UNISEX'], true)) {
+                        $genero = 'UNISEX';
+                    }
+
+                    return [
+                        'talla' => $talla,
+                        'genero' => $genero,
+                        'color_nombre' => trim((string) ($row->color_nombre ?? '')),
+                        'cantidad' => (int) ($row->cantidad ?? 0),
+                    ];
+                })
+                ->filter(fn($t) => $t['talla'] !== '' && $t['cantidad'] > 0)
+                ->values()
+                ->all();
+
+                $dama = [];
+                $caballero = [];
+                $unisex = [];
+                foreach ($tallasParcial as $talla) {
+                    if ($talla['genero'] === 'DAMA') {
+                        $dama[$talla['talla']] = ($dama[$talla['talla']] ?? 0) + (int) $talla['cantidad'];
+                    } elseif ($talla['genero'] === 'CABALLERO') {
+                        $caballero[$talla['talla']] = ($caballero[$talla['talla']] ?? 0) + (int) $talla['cantidad'];
+                    } else {
+                        $unisex[$talla['talla']] = ($unisex[$talla['talla']] ?? 0) + (int) $talla['cantidad'];
+                    }
+                }
+
+                $tallaColoresParcial = collect($tallasParcial)->map(function (array $t) {
+                    return [
+                        'genero' => $t['genero'],
+                        'talla' => $t['talla'],
+                        'color_nombre' => $t['color_nombre'],
+                        'cantidad' => $t['cantidad'],
+                    ];
+                })->values()->all();
+
+                $descripcionBodega = trim((string) ($reciboBodega->prendaBodega?->descripcion ?? ''));
+                if ($descripcionBodega === '') {
+                    $descripcionBodega = 'Recibo de Bodega';
+                }
+
+                $consecutivoParcialValor = (float) ($parcial->consecutivo_parcial ?? 0);
+                $consecutivoOriginalValor = (float) ($parcial->consecutivo_original ?? 0);
+                $reciboParcialData = [
+                    'id' => (int) $parcial->id,
+                    'consecutivo_actual' => $consecutivoParcialValor,
+                    'consecutivo_parcial' => $consecutivoParcialValor,
+                    'consecutivo_original' => $consecutivoOriginalValor,
+                    'tipo_recibo' => 'PARCIAL',
+                    'area' => (string) ($reciboBodega->area ?? 'Costura'),
+                    'encargado' => null,
+                    'tallas' => $tallasParcial,
+                    'tallas_estructura' => [
+                        'DAMA' => $dama,
+                        'CABALLERO' => $caballero,
+                        'UNISEX' => $unisex,
+                    ],
+                    'talla_colores' => $tallaColoresParcial,
+                    'observaciones' => '',
+                    'es_parcial' => true,
+                    'pedido_parcial_id' => (int) $parcial->id,
+                    'fecha_activacion_recibo' => $fechaActivacionRecibo,
+                    'created_at' => $fechaActivacionRecibo,
+                ];
+
+                $responseData = [
+                    'id' => null,
+                    'numero_pedido' => $reciboBodega->consecutivo_actual,
+                    'cliente' => 'SERVICIO',
+                    'asesor' => 'SISTEMA',
+                    'forma_pago' => 'N/A',
+                    'estado' => $reciboBodega->estado ?? 'En Ejecución',
+                    'fecha_creacion' => $reciboBodega->created_at?->format('Y-m-d') ?? now()->format('Y-m-d'),
+                    'descripcion_prendas' => $descripcionBodega,
+                    'prendas' => [
+                        [
+                            'id' => $prendaBodegaId,
+                            'prenda_id' => $prendaBodegaId,
+                            'prenda_bodega_id' => $prendaBodegaId,
+                            'nombre' => $reciboBodega->prendaBodega?->nombre ?? 'N/A',
+                            'descripcion' => $descripcionBodega,
+                            'cantidad' => (int) ($reciboBodega->cantidad ?? 0),
+                            'tallas' => $tallasParcial,
+                            'talla_colores' => $tallaColoresParcial,
+                            'procesos' => [
+                                [
+                                    'proceso' => 'CORTE-PARA-BODEGA',
+                                    'tipo_proceso' => 'CORTE-PARA-BODEGA',
+                                    'nombre_proceso' => 'CORTE-PARA-BODEGA',
+                                    'es_parcial' => true,
+                                    'pedido_parcial_id' => (int) $parcial->id,
+                                    'created_at' => $fechaActivacionRecibo,
+                                    'tallas' => [
+                                        'DAMA' => $dama,
+                                        'CABALLERO' => $caballero,
+                                        'UNISEX' => $unisex,
+                                    ],
+                                    'talla_colores' => $tallaColoresParcial,
+                                ]
+                            ],
+                            'recibos' => [
+                                'CORTE-PARA-BODEGA' => array_merge($reciboParcialData, ['tipo_recibo' => 'CORTE-PARA-BODEGA']),
+                                'PARCIAL' => $reciboParcialData,
+                            ],
+                        ]
+                    ],
+                ];
+                $responseData['fecha_activacion_recibo'] = $fechaActivacionRecibo;
+
+                return [
+                    'status' => 200,
+                    'payload' => [
+                        'success' => true,
+                        'data' => $responseData,
+                    ],
+                ];
+            }
+
+            $datosPedido = $this->obtenerPedidoUseCase->ejecutar($pedidoIdParcial, false);
             $responseData = $datosPedido->toArray();
 
             if (isset($responseData['prendas']) && $parcial->prenda_pedido_id) {
@@ -301,7 +472,7 @@ class ObtenerDatosRecibosOperarioUseCase
                         $isReciboPorPartes = ($parcial instanceof \App\Models\ReciboPorPartes);
                         $tallasTable = $isReciboPorPartes ? 'recibos_por_partes_tallas' : 'pedidos_parciales_tallas';
                         $foreignKey = $isReciboPorPartes ? 'recibo_por_partes_id' : 'pedido_parcial_id';
-                        $columns = $isReciboPorPartes ? ['talla', 'cantidad', 'color_nombre', 'genero'] : ['genero', 'talla', 'cantidad', 'color_nombre'];
+                        $columns = ['genero', 'talla', 'cantidad', 'color_nombre'];
 
                         $tallasRaw = DB::table($tallasTable)
                             ->where($foreignKey, (int) $parcial->id)
@@ -335,7 +506,7 @@ class ObtenerDatosRecibosOperarioUseCase
                         \Log::info('[NORMAL DEBUG 2] Es Collection: ' . ($tallasRaw instanceof \Illuminate\Support\Collection ? 'si' : 'no'));
                         \Log::info('[NORMAL DEBUG 3] Contenido raw original: ' . json_encode($tallasRaw));
 
-                        // Convertir a array de forma segura (ya es Collection, así que solo normalizamos)
+                        // Convertir a array de forma segura (ya es Collection, así­ que solo normalizamos)
                         if ($tallasRaw instanceof \Illuminate\Support\Collection) {
                             \Log::info('[NORMAL DEBUG 4] Entrando rama Collection');
                             $tallasRaw = $tallasRaw->toArray();
@@ -347,7 +518,7 @@ class ObtenerDatosRecibosOperarioUseCase
                             $tallasRaw = [];
                         }
 
-                        \Log::info('[NORMAL DEBUG 5] Contenido después conversión: ' . json_encode($tallasRaw));
+                        \Log::info('[NORMAL DEBUG 5] Contenido despues conversion: ' . json_encode($tallasRaw));
 
                         $tallasParcial = collect($tallasRaw)->map(function ($talla) use ($generoPrenda) {
                             \Log::info('[NORMAL DEBUG 6] Procesando talla: ' . json_encode($talla));
@@ -362,7 +533,7 @@ class ObtenerDatosRecibosOperarioUseCase
                             $cantidad = is_array($talla) ? ($talla['cantidad'] ?? 0) : ($talla->cantidad ?? 0);
                             $colorNombre = is_array($talla) ? ($talla['color_nombre'] ?? null) : ($talla->color_nombre ?? null);
 
-                            \Log::info('[NORMAL DEBUG 7] Genero extraído: ' . $genero);
+                            \Log::info('[NORMAL DEBUG 7] Genero extrai­do: ' . $genero);
 
                             return [
                                 'genero' => $genero,
@@ -376,11 +547,11 @@ class ObtenerDatosRecibosOperarioUseCase
                         // (para no mostrar tallas del recibo original).
                         $prenda['tallas'] = $tallasParcial;
 
-                        // IMPORTANTE: algunas vistas/tarjetas usan `variantes` para renderizar la sección de tallas.
+                        // IMPORTANTE: algunas vistas/tarjetas usan `variantes` para renderizar la seccion de tallas.
                         // En parciales se debe filtrar para NO devolver las tallas del recibo original.
                         $cantidadesPorTalla = [];
                         $cantidadesPorTallaYColor = [];
-                        $generosPorTalla = []; // Mapear talla -> género para preservar info
+                        $generosPorTalla = []; // Mapear talla -> genero para preservar info
                         foreach ($tallasParcial as $registro) {
                             $t = strtoupper(trim((string) ($registro['talla'] ?? '')));
                             $c = (int) ($registro['cantidad'] ?? 0);
@@ -390,7 +561,7 @@ class ObtenerDatosRecibosOperarioUseCase
                                 continue;
                             }
                             $cantidadesPorTalla[$t] = ($cantidadesPorTalla[$t] ?? 0) + $c;
-                            $generosPorTalla[$t] = $g; // Guardar género (último valor, normalmente es consistente)
+                            $generosPorTalla[$t] = $g; // Guardar genero (ultimo valor, normalmente es consistente)
     
                             if ($color !== '') {
                                 if (!isset($cantidadesPorTallaYColor[$t])) {
@@ -400,7 +571,7 @@ class ObtenerDatosRecibosOperarioUseCase
                             }
                         }
 
-                        // IMPORTANTÍSIMO: el front prioriza `prenda.talla_colores` en parciales.
+                        // IMPORTANTISIMO: el front prioriza `prenda.talla_colores` en parciales.
                         // Si dejamos la talla_colores original, se muestran tallas del recibo original.
                         // Por eso, en parciales se sobreescribe con SOLO las tallas del parcial (con color si aplica).
                         if (!empty($cantidadesPorTallaYColor)) {
@@ -464,7 +635,7 @@ class ObtenerDatosRecibosOperarioUseCase
                                 $tallasUsadas[$tallaVariante] = true;
                             }
 
-                            // Si por algún motivo no venía la variante original para una talla del parcial, crear una mínima.
+                            // Si por algun motivo no venia la variante original para una talla del parcial, crear una mi­nima.
                             foreach ($cantidadesPorTalla as $talla => $cantidad) {
                                 if (isset($tallasUsadas[$talla])) {
                                     continue;
@@ -495,9 +666,9 @@ class ObtenerDatosRecibosOperarioUseCase
                             $prenda['variantes'] = array_values($variantesFiltradas);
                         }
 
-                        // Además, muchos renderizadores usan `proceso.tallas` (estructura).
+                        // Ademas, muchos renderizadores usan `proceso.tallas` (estructura).
                         // Para parciales, sobreescribir `proceso.tallas` para que NO muestre las tallas del recibo original.
-                        // Distribuir correctamente por género (DAMA, CABALLERO, UNISEX)
+                        // Distribuir correctamente por genero (DAMA, CABALLERO, UNISEX)
                         $dama = [];
                         $caballero = [];
                         $unisex = [];
@@ -552,7 +723,7 @@ class ObtenerDatosRecibosOperarioUseCase
                             }
                         }
 
-                        // IMPORTANTE: Si no hay colores pero SÍ hay tallas en el parcial,
+                        // IMPORTANTE: Si no hay colores pero Si hay tallas en el parcial,
                         // construir talla_colores desde las tallas del parcial, NO desde el recibo original.
                         if (empty($tallaColoresParcial) && !empty($tallasParcial)) {
                             $telaNombre = $prenda['tela_nombre'] ?? $prenda['tela'] ?? null;
@@ -630,8 +801,8 @@ class ObtenerDatosRecibosOperarioUseCase
 
             $responseData['fecha_activacion_recibo'] = $fechaActivacionRecibo;
 
-            // Fallback defensivo: si por alguna incompatibilidad del transformador la prenda queda vacía,
-            // construir una prenda mínima para que el recibo parcial siempre renderice descripción/tallas.
+            // Fallback defensivo: si por alguna incompatibilidad del transformador la prenda queda vaci­a,
+            // construir una prenda mi­nima para que el recibo parcial siempre renderice descripcion/tallas.
             if (empty($responseData['prendas']) && $parcial->prenda_pedido_id) {
                 $prendaEloquent = PrendaPedido::with(['coloresTelas.color', 'coloresTelas.tela', 'variantes.tipoManga', 'variantes.tipoBroche'])
                     ->find((int) $parcial->prenda_pedido_id);
@@ -663,7 +834,7 @@ class ObtenerDatosRecibosOperarioUseCase
                 $isReciboPorPartes = ($parcial instanceof \App\Models\ReciboPorPartes);
                 $tallasTable = $isReciboPorPartes ? 'recibos_por_partes_tallas' : 'pedidos_parciales_tallas';
                 $foreignKey = $isReciboPorPartes ? 'recibo_por_partes_id' : 'pedido_parcial_id';
-                $columns = $isReciboPorPartes ? ['talla', 'cantidad', 'color_nombre', 'genero'] : ['genero', 'talla', 'cantidad', 'color_nombre'];
+                $columns = $isReciboPorPartes ? ['talla', 'cantidad', 'color_nombre'] : ['genero', 'talla', 'cantidad', 'color_nombre'];
 
                 $tallasRaw = DB::table($tallasTable)
                     ->where($foreignKey, (int) $parcial->id)
@@ -697,7 +868,7 @@ class ObtenerDatosRecibosOperarioUseCase
                 \Log::info('[FALLBACK DEBUG 2] Es Collection: ' . ($tallasRaw instanceof \Illuminate\Support\Collection ? 'si' : 'no'));
                 \Log::info('[FALLBACK DEBUG 3] Contenido raw original: ' . json_encode($tallasRaw));
 
-                // Convertir a array de forma segura (ya es Collection, así que solo normalizamos)
+                // Convertir a array de forma segura (ya es Collection, asi­ que solo normalizamos)
                 if ($tallasRaw instanceof \Illuminate\Support\Collection) {
                     \Log::info('[FALLBACK DEBUG 4] Entrando rama Collection');
                     $tallasRaw = $tallasRaw->toArray();
@@ -709,7 +880,7 @@ class ObtenerDatosRecibosOperarioUseCase
                     $tallasRaw = [];
                 }
 
-                \Log::info('[FALLBACK DEBUG 5] Contenido después conversión: ' . json_encode($tallasRaw));
+                \Log::info('[FALLBACK DEBUG 5] Contenido despues conversion: ' . json_encode($tallasRaw));
 
                 $tallasParcial = collect($tallasRaw)->map(function ($talla) use ($generoPrenda) {
                     \Log::info('[FALLBACK DEBUG 6] Procesando talla: ' . json_encode($talla));
@@ -724,7 +895,7 @@ class ObtenerDatosRecibosOperarioUseCase
                     $cantidad = is_array($talla) ? ($talla['cantidad'] ?? 0) : ($talla->cantidad ?? 0);
                     $colorNombre = is_array($talla) ? ($talla['color_nombre'] ?? null) : ($talla->color_nombre ?? null);
 
-                    \Log::info('[FALLBACK DEBUG 7] Genero extraído: ' . $genero);
+                    \Log::info('[FALLBACK DEBUG 7] Genero extrai­do: ' . $genero);
 
                     return [
                         'genero' => $genero,
@@ -734,7 +905,7 @@ class ObtenerDatosRecibosOperarioUseCase
                     ];
                 })->filter(fn($r) => !empty($r['talla']) && (int) $r['cantidad'] > 0)->values()->toArray();
 
-                // Distribuir tallas por género (DAMA, CABALLERO, UNISEX)
+                // Distribuir tallas por genero (DAMA, CABALLERO, UNISEX)
                 $dama = [];
                 $caballero = [];
                 $unisex = [];
@@ -869,7 +1040,7 @@ class ObtenerDatosRecibosOperarioUseCase
 
                 $responseData['fecha_activacion_recibo'] = $fechaActivacionRecibo;
 
-                \Log::warning('[ObtenerDatosRecibosOperarioUseCase] Prendas vacías en parcial, usando fallback mínimo', [
+                \Log::warning('[ObtenerDatosRecibosOperarioUseCase] Prendas vacias en parcial, usando fallback mi­nimo', [
                     'parcial_id' => (int) $parcial->id,
                     'prenda_id' => (int) $parcial->prenda_pedido_id,
                     'total_tallas' => count($tallasParcial),
@@ -894,6 +1065,58 @@ class ObtenerDatosRecibosOperarioUseCase
         if ($isBodegaOnly) {
             $reciboId = (int) $request->query('recibo_id');
             $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega'])->find($reciboId);
+            $prendaBodegaId = (int) ($reciboBodega->prenda_bodega_id ?? 0);
+
+            $tallasBodegaRows = collect();
+            if ($prendaBodegaId > 0) {
+                $tallasBodegaRows = DB::table('prenda_tallas_bodega')
+                    ->where('prenda_bodega_id', $prendaBodegaId)
+                    ->select(['talla', 'genero', 'color', 'cantidad'])
+                    ->get();
+            }
+
+            $tallasBodega = $tallasBodegaRows
+                ->map(function ($row) {
+                    return [
+                        'talla' => strtoupper(trim((string) ($row->talla ?? ''))),
+                        'genero' => strtoupper(trim((string) ($row->genero ?? 'UNISEX'))),
+                        'color_nombre' => trim((string) ($row->color ?? '')),
+                        'cantidad' => (int) ($row->cantidad ?? 0),
+                    ];
+                })
+                ->filter(fn($t) => $t['talla'] !== '' && $t['cantidad'] > 0)
+                ->values()
+                ->all();
+
+            $tallaColoresBodega = collect($tallasBodega)
+                ->map(function (array $t) {
+                    return [
+                        'genero' => $t['genero'],
+                        'talla' => $t['talla'],
+                        'color_nombre' => $t['color_nombre'],
+                        'cantidad' => $t['cantidad'],
+                    ];
+                })
+                ->values()
+                ->all();
+
+            $dama = [];
+            $caballero = [];
+            $unisex = [];
+            foreach ($tallasBodega as $talla) {
+                if ($talla['genero'] === 'DAMA') {
+                    $dama[$talla['talla']] = ($dama[$talla['talla']] ?? 0) + (int) $talla['cantidad'];
+                } elseif ($talla['genero'] === 'CABALLERO') {
+                    $caballero[$talla['talla']] = ($caballero[$talla['talla']] ?? 0) + (int) $talla['cantidad'];
+                } else {
+                    $unisex[$talla['talla']] = ($unisex[$talla['talla']] ?? 0) + (int) $talla['cantidad'];
+                }
+            }
+
+            $descripcionBodega = trim((string) ($reciboBodega->prendaBodega?->descripcion ?? ''));
+            if ($descripcionBodega === '') {
+                $descripcionBodega = 'Recibo de Bodega';
+            }
 
             $responseData = [
                 'id' => null,
@@ -903,14 +1126,17 @@ class ObtenerDatosRecibosOperarioUseCase
                 'forma_pago' => 'N/A',
                 'estado' => $reciboBodega->estado ?? 'En Ejecución',
                 'fecha_creacion' => $reciboBodega->created_at?->format('Y-m-d') ?? now()->format('Y-m-d'),
-                'descripcion_prendas' => $reciboBodega->prendaBodega?->descripcion ?? 'Recibo de Bodega',
+                'descripcion_prendas' => $descripcionBodega,
                 'prendas' => [
                     [
-                        'id' => null,
+                        'id' => $prendaBodegaId,
+                        'prenda_id' => $prendaBodegaId,
+                        'prenda_bodega_id' => $prendaBodegaId,
                         'nombre' => $reciboBodega->prendaBodega?->nombre ?? 'N/A',
-                        'descripcion' => $reciboBodega->prendaBodega?->descripcion ?? '',
+                        'descripcion' => $descripcionBodega,
                         'cantidad' => $reciboBodega->cantidad ?? 0,
-                        'tallas' => [],
+                        'tallas' => $tallasBodega,
+                        'talla_colores' => $tallaColoresBodega,
                         'procesos' => [
                             [
                                 'proceso' => $reciboBodega->tipo_recibo,
@@ -918,7 +1144,12 @@ class ObtenerDatosRecibosOperarioUseCase
                                 'nombre_proceso' => $reciboBodega->tipo_recibo,
                                 'estado' => $reciboBodega->estado ?? 'PENDIENTE',
                                 'cantidad' => $reciboBodega->cantidad ?? 0,
-                                'talla_colores' => [],
+                                'tallas' => [
+                                    'dama' => $dama,
+                                    'caballero' => $caballero,
+                                    'unisex' => $unisex,
+                                ],
+                                'talla_colores' => $tallaColoresBodega,
                                 'recibos' => [
                                     $reciboBodega->tipo_recibo => [
                                         'id' => $reciboBodega->id,
@@ -941,7 +1172,7 @@ class ObtenerDatosRecibosOperarioUseCase
             $responseData = $datosPedido->toArray();
         }
 
-        // Si se proporcionó recibo_id, filtrar las prendas para mostrar solo la del recibo específico
+        // Si se proporcion recibo_id, filtrar las prendas para mostrar solo la del recibo especi­fico
         $prendaIdParam = $request->query('prenda_id');
         if ($reciboId && $prendaIdParam) {
             $prendaIdParam = (int) $prendaIdParam;
@@ -952,7 +1183,7 @@ class ObtenerDatosRecibosOperarioUseCase
                 'prendas_antes' => count($responseData['prendas'] ?? []),
             ]);
 
-            // Filtrar prendas para mostrar solo la del recibo específico
+            // Filtrar prendas para mostrar solo la del recibo especi­fico
             if (isset($responseData['prendas']) && is_array($responseData['prendas'])) {
                 $responseData['prendas'] = array_values(array_filter(
                     $responseData['prendas'],
@@ -960,7 +1191,7 @@ class ObtenerDatosRecibosOperarioUseCase
                 ));
             }
 
-            \Log::info('[ObtenerDatosRecibosOperarioUseCase] Prendas después del filtro', [
+            \Log::info('[ObtenerDatosRecibosOperarioUseCase] Prendas despues del filtro', [
                 'prendas_despues' => count($responseData['prendas'] ?? []),
             ]);
         }
@@ -981,7 +1212,7 @@ class ObtenerDatosRecibosOperarioUseCase
     }
 
     /**
-     * Reconstruye talla_colores del parcial usando la distribución de colores de la prenda base.
+     * Reconstruye talla_colores del parcial usando la distribucion de colores de la prenda base.
      *
      * @param int $prendaPedidoId
      * @param array<int,array{genero:string,talla:string,cantidad:int,color_nombre:mixed}> $tallasParcial
@@ -1092,7 +1323,7 @@ class ObtenerDatosRecibosOperarioUseCase
     private function obtenerEncargadoDelParcial($parcial, $pedido): ?string
     {
         try {
-            // Obtener el número de recibo del parcial
+            // Obtener el numero de recibo del parcial
             $numeroRecibo = $parcial->consecutivo_actual ?? $parcial->consecutivo_parcial;
 
             if (!$numeroRecibo || !$pedido) {
@@ -1111,7 +1342,7 @@ class ObtenerDatosRecibosOperarioUseCase
                 ->orderByDesc('created_at')
                 ->value('encargado');
 
-            // Si encontró encargado en procesos_prenda, devolverlo
+            // Si encontro encargado en procesos_prenda, devolverlo
             if ($proceso) {
                 return $proceso;
             }

@@ -80,7 +80,7 @@ class ObtenerPrendasRecibosListadoService
         return $this->supportService->ordenarResultadoFinalPorTipoOperario($resultadoFinal, $tipoOperario);
     }
 
-    public function obtenerPrendasConRecibosBodegaVistaCostura(): Collection
+    public function obtenerPrendasConRecibosBodegaVistaCostura(bool $desglosarParciales = false): Collection
     {
         $recibos = ConsecutivoReciboPedido::query()
             ->where('activo', 1)
@@ -123,27 +123,126 @@ class ObtenerPrendasRecibosListadoService
 
         return $recibos
             ->groupBy('prenda_bodega_id')
-            ->map(function (Collection $recibosDePrenda) use ($procesos) {
+            ->flatMap(function (Collection $recibosDePrenda) use ($procesos, $desglosarParciales) {
                 $reciboPrincipal = $recibosDePrenda->first();
                 $prendaBodega = $reciboPrincipal->prendaBodega;
                 $procesoCostura = $procesos->get($reciboPrincipal->prenda_bodega_id)?->first();
-                $pedidoIdBodega = (int) ($procesoCostura?->numero_pedido ?? 0);
-                $tieneParcialesBodega = $pedidoIdBodega > 0
-                    ? $this->operarioRecibosRepository->existeReciboPorPartes(
+                $pedidoIdBodega = (int) ($reciboPrincipal->pedido_produccion_id ?? 0);
+                $consecutivoOriginalBodega = (string) ($reciboPrincipal->consecutivo_actual ?? '');
+                $prendaBodegaId = (int) ($reciboPrincipal->prenda_bodega_id ?? 0);
+
+                $tieneParcialesBodega = false;
+                if ($pedidoIdBodega > 0) {
+                    $tieneParcialesBodega = $this->operarioRecibosRepository->existeReciboPorPartes(
                         $pedidoIdBodega,
                         'CORTE-PARA-BODEGA',
-                        (string) ($reciboPrincipal->consecutivo_actual ?? ''),
-                        (int) ($reciboPrincipal->prenda_bodega_id ?? 0)
-                    )
-                    : false;
+                        $consecutivoOriginalBodega,
+                        $prendaBodegaId
+                    );
+                } elseif ($prendaBodegaId > 0 && $consecutivoOriginalBodega !== '') {
+                    // Recibos internos: fallback sin pedido_produccion_id.
+                    $tieneParcialesBodega = \Illuminate\Support\Facades\DB::table('recibo_por_partes')
+                        ->where('prenda_pedido_id', $prendaBodegaId)
+                        ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
+                        ->where('consecutivo_original', $consecutivoOriginalBodega)
+                        ->exists();
+                }
 
                 $consecutivoActual = (string) ($reciboPrincipal->consecutivo_actual ?? '');
                 $nombrePrenda = (string) ($prendaBodega->nombre ?? 'N/A');
                 $descripcion = (string) ($prendaBodega->descripcion ?? '');
 
+                if ($desglosarParciales && $tieneParcialesBodega) {
+                    $parcialesQuery = \Illuminate\Support\Facades\DB::table('recibo_por_partes')
+                        ->where('prenda_pedido_id', $prendaBodegaId)
+                        ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
+                        ->where('consecutivo_original', $consecutivoOriginalBodega)
+                        ->orderBy('consecutivo_parcial');
+
+                    if ($pedidoIdBodega > 0) {
+                        $parcialesQuery->where('pedido_produccion_id', $pedidoIdBodega);
+                    }
+
+                    $parciales = $parcialesQuery->get();
+
+                    return $parciales->map(function ($parcial) use ($prendaBodegaId, $pedidoIdBodega, $nombrePrenda, $descripcion) {
+                        $consecutivoParcialRaw = (string) ($parcial->consecutivo_parcial ?? '');
+                        $consecutivoParcial = str_contains($consecutivoParcialRaw, '.')
+                            ? rtrim(rtrim($consecutivoParcialRaw, '0'), '.')
+                            : $consecutivoParcialRaw;
+
+                        $procesoParcial = \App\Models\ProcesoPrenda::query()
+                            ->where('prenda_bodega_id', $prendaBodegaId)
+                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                            ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                            ->orderByDesc('created_at')
+                            ->first();
+
+                        $tallas = \Illuminate\Support\Facades\DB::table('recibos_por_partes_tallas')
+                            ->where('recibo_por_partes_id', (int) $parcial->id)
+                            ->get(['id', 'genero', 'talla', 'cantidad', 'color_nombre'])
+                            ->map(function ($t) {
+                                return [
+                                    'id' => (int) ($t->id ?? 0),
+                                    'genero' => $t->genero ?? null,
+                                    'talla' => $t->talla ?? null,
+                                    'cantidad' => (int) ($t->cantidad ?? 0),
+                                    'tipo_talla' => null,
+                                    'es_sobremedida' => false,
+                                    'tela' => null,
+                                    'colores' => !empty($t->color_nombre) ? [(string) $t->color_nombre] : [],
+                                ];
+                            })
+                            ->values()
+                            ->all();
+
+                        return [
+                            'prenda_id' => $prendaBodegaId,
+                            'pedido_id' => $pedidoIdBodega > 0 ? $pedidoIdBodega : null,
+                            'pedido_parcial_id' => (int) $parcial->id,
+                            'es_recibo_por_partes' => true,
+                            'es_parcial' => true,
+                            'numero_pedido' => $consecutivoParcial,
+                            'cliente' => 'BODEGA',
+                            'nombre_prenda' => $nombrePrenda,
+                            'descripcion' => $descripcion,
+                            'de_bodega' => true,
+                            'tallas' => $tallas,
+                            'tiene_parciales' => true,
+                            'estado_pedido' => 'PENDIENTE',
+                            'fecha_creacion' => $parcial->created_at ?? now(),
+                            'tipo_recibo' => 'CORTE-PARA-BODEGA',
+                            'proceso_actual' => 'Costura',
+                            'encargado_costura' => $procesoParcial?->encargado,
+                            'proceso_id_costura' => $procesoParcial?->id,
+                            'recibos' => [[
+                                'id' => null,
+                                'tipo_recibo' => 'CORTE-PARA-BODEGA',
+                                'consecutivo_actual' => $consecutivoParcial,
+                                'consecutivo_inicial' => (string) ($parcial->consecutivo_original ?? ''),
+                                'consecutivo_parcial' => $consecutivoParcial,
+                                'area' => 'Costura',
+                                'estado' => 'En Ejecución',
+                                'prenda_bodega_id' => $prendaBodegaId,
+                                'pedido_produccion_id' => $pedidoIdBodega > 0 ? $pedidoIdBodega : null,
+                                'encargado_costura' => $procesoParcial?->encargado,
+                                'proceso_id_costura' => $procesoParcial?->id,
+                                'tiene_parciales' => true,
+                                'created_at' => $parcial->created_at ?? now(),
+                                'creado_en' => $parcial->created_at ?? now(),
+                                'pedido_parcial_id' => (int) $parcial->id,
+                                'completado_corte' => false,
+                                'completado_costura' => false,
+                                'completado_control_calidad' => false,
+                            ]],
+                            'total_recibos' => 1,
+                        ];
+                    })->values();
+                }
+
                 return [
                     'prenda_id' => (int) ($reciboPrincipal->prenda_bodega_id ?? 0),
-                    'pedido_id' => null,
+                    'pedido_id' => $pedidoIdBodega > 0 ? $pedidoIdBodega : null,
                     'numero_pedido' => $consecutivoActual,
                     'cliente' => 'BODEGA',
                     'nombre_prenda' => $nombrePrenda,
@@ -166,6 +265,7 @@ class ObtenerPrendasRecibosListadoService
                         'area' => $reciboPrincipal->area,
                         'estado' => $reciboPrincipal->estado,
                         'prenda_bodega_id' => $reciboPrincipal->prenda_bodega_id,
+                        'pedido_produccion_id' => $pedidoIdBodega > 0 ? $pedidoIdBodega : null,
                         'encargado_costura' => $procesoCostura?->encargado,
                         'proceso_id_costura' => $procesoCostura?->id,
                         'tiene_parciales' => $tieneParcialesBodega,

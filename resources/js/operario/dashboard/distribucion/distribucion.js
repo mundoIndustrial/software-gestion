@@ -46,15 +46,19 @@ function esperarDatosDistribucion(timeoutMs = 10000) {
 export function abrirEditarEncargados(btn) {
     const reciboId = btn.dataset.reciboId;
     const prendaId = btn.dataset.prendaId;
+    const prendaBodegaId = btn.dataset.prendaBodegaId;
     const numeroRecibo = btn.dataset.numeroRecibo;
     const numeroPedido = btn.dataset.numeroPedido;
     const pedidoId = btn.dataset.pedidoId;
     const nombre = btn.dataset.nombre;
     const tipoRecibo = btn.dataset.tipoRecibo;
+    const esReciboBodega = String(tipoRecibo || '').toUpperCase().includes('BODEGA');
+    const prendaBodegaIdFinal = prendaBodegaId || (esReciboBodega ? prendaId : null);
 
     console.log('[EDITAR ENCARGADOS] Abriendo modal para editar:', {
         reciboId,
         prendaId,
+        prendaBodegaId: prendaBodegaIdFinal,
         numeroRecibo,
         numeroPedido,
         pedidoId,
@@ -80,7 +84,16 @@ export function abrirEditarEncargados(btn) {
         .then(data => {
             if (data.success) {
                 // Abrir el modal de asignación con los datos cargados
-                abrirModalCosturaConDatos(pedidoId, prendaId, nombre, tipoRecibo, numeroRecibo, data, numeroPedido);
+                abrirModalCosturaConDatos(
+                    pedidoId,
+                    prendaId,
+                    nombre,
+                    tipoRecibo,
+                    numeroRecibo,
+                    data,
+                    numeroPedido,
+                    prendaBodegaIdFinal
+                );
             } else {
                 mostrarError(data.message || 'Error obteniendo la distribución actual');
             }
@@ -91,9 +104,18 @@ export function abrirEditarEncargados(btn) {
         });
 }
 
-function abrirModalCosturaConDatos(pedidoId, prendaId, nombre, tipoRecibo, recibo, datosDistribucion, numeroPedido) {
+function abrirModalCosturaConDatos(
+    pedidoId,
+    prendaId,
+    nombre,
+    tipoRecibo,
+    recibo,
+    datosDistribucion,
+    numeroPedido,
+    prendaBodegaId = null
+) {
     // Abrir el modal normalmente
-    abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, null, numeroPedido);
+    abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, null, numeroPedido, null, prendaBodegaId);
     
     // Marcar que estamos en modo edición
     if (window.datosModalCostura) {
@@ -123,14 +145,14 @@ function abrirModalCosturaConDatos(pedidoId, prendaId, nombre, tipoRecibo, recib
         // Esperar a que se cargue el contenido
         setTimeout(() => {
             console.log('[EDITAR ENCARGADOS] Verificando si estamos en modo edición...');
-            
+
             // Si es tipo taller, ir directamente a múltiples talleres
             if (tipoAsignacionOriginal === 'taller') {
                 console.log('[EDITAR ENCARGADOS] Saltando selección de tipo taller, yendo a múltiples talleres...');
                 if (typeof window.seleccionarTipoTaller === 'function') {
                     window.seleccionarTipoTaller('multiple');
                 }
-                
+
                 // Esperar a que se cargue la interfaz de múltiples talleres
                 setTimeout(() => {
                     console.log('[EDITAR ENCARGADOS] Cargando datos existentes de talleres...');
@@ -138,23 +160,20 @@ function abrirModalCosturaConDatos(pedidoId, prendaId, nombre, tipoRecibo, recib
                         cargarDatosDistribucionExistenteTaller(datosDistribucion.parciales);
                     }
                 }, 500);
-            } else {
-                // Para módulos, usar la lógica existente
-                if (window.datosDistribucion) {
+                return;
+            }
+
+            // Para módulos, esperar explícitamente datos de distribución del modal
+            esperarDatosDistribucion(12000)
+                .then(() => {
                     if (datosDistribucion && datosDistribucion.parciales) {
                         console.log('[EDITAR ENCARGADOS] Cargando datos existentes de módulos...');
                         cargarDatosDistribucionExistente(datosDistribucion.parciales);
                     }
-                } else {
+                })
+                .catch(() => {
                     console.warn('[EDITAR ENCARGADOS] window.datosDistribucion no está disponible');
-                    setTimeout(() => {
-                        if (window.datosDistribucion && datosDistribucion && datosDistribucion.parciales) {
-                            console.log('[EDITAR ENCARGADOS] Reintentando cargar datos existentes...');
-                            cargarDatosDistribucionExistente(datosDistribucion.parciales);
-                        }
-                    }, 500);
-                }
-            }
+                });
         }, 500);
     }, 100);
 }
@@ -398,6 +417,7 @@ function procesarCargarDatosExistente(parciales) {
             const nombreTalla = talla.talla;
             const cantidad = parseInt(talla.cantidad) || 0;
             let color = talla.color_nombre || null;
+            const genero = talla.genero || talla.sexo || 'Sin género';
             
             // Si el color es null, intentar obtenerlo del mapa de tallas
             if (!color) {
@@ -414,9 +434,10 @@ function procesarCargarDatosExistente(parciales) {
             
             // Crear ID único que incluya el color (manejar minúsculas y espacios)
             const colorNormalizado = normalizarColorDistribucion(color);
-            const tallaIdUnico = `${nombreTalla}_${colorNormalizado}`;
+            const generoNormalizado = normalizarGeneroDistribucion(genero);
+            const tallaIdUnico = `${nombreTalla}_${colorNormalizado}_${generoNormalizado}`;
             
-            console.log(`[PROCESAR DATOS] Procesando talla: ${nombreTalla}, cantidad: ${cantidad}, color: ${color}, ID único: ${tallaIdUnico}`);
+            console.log(`[PROCESAR DATOS] Procesando talla: ${nombreTalla}, cantidad: ${cantidad}, color: ${color}, género: ${genero}, ID único: ${tallaIdUnico}`);
             
             if (nombreTalla && cantidad > 0) {
                 if (!window.asignacionesPorModulo[modulo.id]) {
@@ -427,6 +448,7 @@ function procesarCargarDatosExistente(parciales) {
                 window.asignacionesPorModulo[modulo.id][tallaIdUnico] = {
                     cantidad: cantidad,
                     color: color,
+                    genero: genero,
                     tallaOriginal: nombreTalla // Guardar el nombre original para referencia
                 };
                 
@@ -691,8 +713,8 @@ function crearHTMLDistribucionCards(parciales, numeroRecibo, totalParciales, rec
                         <button class="btn-deshacer-parcial" 
                                 onclick="deshacerParcial(${parcial.id}, this)"
                                 data-parcial-id="${parcial.id}">
-                            <span class="material-symbols-rounded">undo</span>
-                            DESHACER PARTE
+                            <span class="material-symbols-rounded">delete</span>
+                            ELIMINAR PARTE
                         </button>
                     </div>
                 </div>
@@ -779,7 +801,8 @@ function generarTallasHTML(tallas) {
  * Deshacer un parcial específico
  */
 async function deshacerParcial(parcialId, btn) {
-    if (!confirm('¿Estás seguro de que deseas deshacer esta parte? Se eliminará de procesos_prenda y recibo_por_partes.')) {
+    const confirmado = await mostrarModalConfirmacionEliminarParcial();
+    if (!confirmado) {
         return;
     }
 
@@ -818,7 +841,7 @@ async function deshacerParcial(parcialId, btn) {
                     console.log('[DESHACER PARCIAL] Tarjeta removida del DOM');
                     
                     // Mostrar mensaje de éxito
-                    showSuccessMessage('Parte deshacha correctamente');
+                    showSuccessMessage('Parte eliminada correctamente');
                 }, 300);
             }
         } else {
@@ -829,6 +852,60 @@ async function deshacerParcial(parcialId, btn) {
         console.error('[DESHACER PARCIAL] Error:', error);
         alert('Error al deshacer la parte: ' + error.message);
     }
+}
+
+function mostrarModalConfirmacionEliminarParcial() {
+    return new Promise((resolve) => {
+        const existente = document.getElementById('modal-confirmar-eliminar-parcial');
+        if (existente) {
+            existente.remove();
+        }
+
+        const overlay = document.createElement('div');
+        overlay.id = 'modal-confirmar-eliminar-parcial';
+        overlay.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 1rem;
+        `;
+
+        overlay.innerHTML = `
+            <div style="width: 100%; max-width: 460px; background: #fff; border-radius: 14px; box-shadow: 0 18px 40px rgba(0,0,0,.25); overflow: hidden;">
+                <div style="padding: 1rem 1.25rem; background: #ef4444; color: #fff; display: flex; align-items: center; gap: .6rem;">
+                    <span class="material-symbols-rounded">warning</span>
+                    <strong>Confirmar eliminación</strong>
+                </div>
+                <div style="padding: 1.1rem 1.25rem; color: #334155; font-size: .95rem; line-height: 1.45;">
+                    ¿Estás seguro de que deseas eliminar esta parte? Esta acción eliminará el parcial de forma permanente.
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: .6rem; padding: 0 1.25rem 1rem;">
+                    <button type="button" id="btn-cancelar-eliminar-parcial" style="border: 1px solid #cbd5e1; background: #fff; color: #334155; border-radius: 8px; padding: .5rem .9rem; cursor: pointer;">Cancelar</button>
+                    <button type="button" id="btn-confirmar-eliminar-parcial" style="border: none; background: #dc2626; color: #fff; border-radius: 8px; padding: .5rem .9rem; cursor: pointer;">Eliminar</button>
+                </div>
+            </div>
+        `;
+
+        const cerrar = (valor) => {
+            overlay.remove();
+            resolve(valor);
+        };
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                cerrar(false);
+            }
+        });
+
+        overlay.querySelector('#btn-cancelar-eliminar-parcial')?.addEventListener('click', () => cerrar(false));
+        overlay.querySelector('#btn-confirmar-eliminar-parcial')?.addEventListener('click', () => cerrar(true));
+
+        document.body.appendChild(overlay);
+    });
 }
 
 function showSuccessMessage(message) {

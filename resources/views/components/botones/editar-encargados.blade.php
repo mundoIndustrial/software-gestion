@@ -12,6 +12,7 @@
             data-recibo-id="{{ $reciboId }}"
             data-pedido-id="{{ $pedidoId }}"
             data-prenda-id="{{ $prendaId }}"
+            data-prenda-bodega-id="{{ $prendaBodegaId ?? '' }}"
             data-numero-recibo="{{ $numeroRecibo }}"
             data-numero-pedido="{{ $numeroPedido }}"
             data-nombre="{{ $nombrePrenda }}"

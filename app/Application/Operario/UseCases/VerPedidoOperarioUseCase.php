@@ -28,16 +28,20 @@ class VerPedidoOperarioUseCase
         $usuario = Auth::user();
 
         $pedidoDB = null;
-        $isBodegaOnly = ($numeroPedido === 0 && $request->has('recibo_id'));
+        $reciboId = (int) $request->query('recibo_id', 0);
+        $tipoReciboRequest = (string) $request->query('tipo_recibo', 'COSTURA');
+        $tipoReciboUpper = strtoupper(trim($tipoReciboRequest));
+        $isBodegaByTipo = in_array($tipoReciboUpper, ['CORTE-PARA-BODEGA', 'BODEGA'], true);
+        $isBodegaOnly = ($reciboId > 0) && (($numeroPedido === 0) || $isBodegaByTipo);
 
         \Log::info('[VerPedidoOperarioUseCase] Verificando tipo de pedido', [
             'numero_pedido' => $numeroPedido,
-            'recibo_id' => $request->query('recibo_id'),
+            'recibo_id' => $reciboId,
+            'tipo_recibo' => $tipoReciboRequest,
             'is_bodega_only' => $isBodegaOnly,
         ]);
 
         if ($isBodegaOnly) {
-            $reciboId = (int) $request->query('recibo_id');
             $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega'])->find($reciboId);
             
             \Log::info('[VerPedidoOperarioUseCase] Recibo de bodega encontrado?', [
@@ -84,8 +88,6 @@ class VerPedidoOperarioUseCase
         $fotos = $this->fotos->obtenerFotosPedido((int) $numeroPedido);
 
         $prendaIdRequest = $request->query('prenda_id');
-        $tipoReciboRequest = (string) $request->query('tipo_recibo', 'COSTURA');
-        $tipoReciboUpper = strtoupper(trim($tipoReciboRequest));
         $consecutivoParcialParam = $request->query('consecutivo_parcial');
 
         $numeroReciboCostura = null;

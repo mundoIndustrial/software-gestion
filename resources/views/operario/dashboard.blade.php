@@ -241,6 +241,10 @@
                         <span class="material-symbols-rounded">straighten</span>
                         Sobremedida
                     </button>
+                    <button type="button" class="badge-filtro {{ ($tab ?? 'costura') === 'bodega' ? 'badge-filtro-active' : '' }}" data-admin-tab="bodega">
+                        <span class="material-symbols-rounded">inventory_2</span>
+                        Bodega
+                    </button>
                 </div>
             @endif
 
@@ -385,7 +389,7 @@
                             <div class="orden-card-simple card-control-calidad"
                                  data-numero="{{ $prenda['numero_pedido'] }}"
                                  data-numero-recibo="{{ $consecutivoActual }}"
-                                 data-prenda="{{ strtolower((string) $prenda['nombre_prenda']) }}"
+                                 data-prenda="{{ strtolower((string) $textoPrendaBodega) }}"
                                  data-prenda-id="{{ $prenda['prenda_id'] }}"
                                  data-cliente="{{ strtolower((string) $prenda['cliente']) }}"
                                  data-search-text="{{ strtolower(trim(($prenda['numero_pedido'] ?? '') . ' ' . ($prenda['nombre_prenda'] ?? '') . ' ' . ($prenda['cliente'] ?? '') . ' ' . ($consecutivoActual ?? ''))) }}"
@@ -494,11 +498,33 @@
                                 $consecutivoBodega = (string) ($reciboPrincipalBodega['consecutivo_actual'] ?? $prenda['numero_pedido'] ?? '');
                                 $reciboIdBodega = $reciboPrincipalBodega['id'] ?? null;
                                 $areaBodega = strtoupper((string) ($reciboPrincipalBodega['area'] ?? 'INSUMOS'));
-                                $tieneParcialesBodega = (bool) ($reciboPrincipalBodega['tiene_parciales'] ?? $prenda['tiene_parciales'] ?? false);
+                                $tieneParcialesBodegaFlag = (bool) ($reciboPrincipalBodega['tiene_parciales'] ?? $prenda['tiene_parciales'] ?? false);
+                                $pedidoIdBodega = (int) ($prenda['pedido_id'] ?? 0);
+                                $prendaIdBodega = (int) ($prenda['prenda_id'] ?? 0);
+                                $consecutivoOriginalBodega = is_numeric($consecutivoBodega) ? (int) $consecutivoBodega : 0;
+
+                                $tieneParcialesBodegaDb = false;
+                                if ($prendaIdBodega > 0 && $consecutivoOriginalBodega > 0) {
+                                    $queryParcialesBodega = \Illuminate\Support\Facades\DB::table('recibo_por_partes')
+                                        ->where('prenda_pedido_id', $prendaIdBodega)
+                                        ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
+                                        ->where('consecutivo_original', $consecutivoOriginalBodega);
+
+                                    // Si existe pedido_produccion_id úsalo; si no, modo recibo interno sin pedido.
+                                    if ($pedidoIdBodega > 0) {
+                                        $queryParcialesBodega->where('pedido_produccion_id', $pedidoIdBodega);
+                                    }
+
+                                    $tieneParcialesBodegaDb = $queryParcialesBodega->exists();
+                                }
+
+                                $tieneParcialesBodega = $tieneParcialesBodegaFlag || $tieneParcialesBodegaDb;
                                 $encargadoCosturaBodega = trim((string) ($prenda['encargado_costura'] ?? ($reciboPrincipalBodega['encargado_costura'] ?? '')));
                                 $procesoIdCosturaBodega = $prenda['proceso_id_costura'] ?? ($reciboPrincipalBodega['proceso_id_costura'] ?? null);
                                 $mostrarComoDeshacerBodega = $encargadoCosturaBodega !== '' && !empty($procesoIdCosturaBodega);
                                 $textoEncargadoCosturaBodega = $encargadoCosturaBodega !== '' ? strtoupper($encargadoCosturaBodega) : 'SIN ASIGNAR';
+                                $descripcionPrendaBodega = trim((string) ($prenda['descripcion'] ?? ''));
+                                $textoPrendaBodega = $descripcionPrendaBodega !== '' ? $descripcionPrendaBodega : 'SIN DESCRIPCION';
                             @endphp
 
                             <div class="orden-card-simple card-bodega"
@@ -510,7 +536,7 @@
                                  data-numero-recibo="{{ $consecutivoBodega }}"
                                  data-sin-encargado-costura="{{ $encargadoCosturaBodega === '' ? '1' : '0' }}"
                                  data-sin-encargado-reflectivo="0"
-                                 data-search-text="{{ strtolower(trim(($consecutivoBodega ?? '') . ' ' . ($prenda['nombre_prenda'] ?? '') . ' ' . ($prenda['descripcion'] ?? '') . ' ' . ($prenda['cliente'] ?? ''))) }}">
+                                 data-search-text="{{ strtolower(trim(($consecutivoBodega ?? '') . ' ' . $textoPrendaBodega . ' ' . ($prenda['cliente'] ?? ''))) }}">
                                 <div class="orden-body">
                                     <div class="vista-resumen-card" onclick="event.stopPropagation();">
                                         <div class="vista-encargados-row">
@@ -549,62 +575,56 @@
 
                                         <div class="orden-prendas">
                                             <p class="prendas-label">
-                                                <strong>{{ $prenda['nombre_prenda'] }}</strong>
-                                                @if(!empty($prenda['descripcion']))
-                                                    <br>{!! nl2br(e($prenda['descripcion'])) !!}
-                                                @endif
+                                                {!! nl2br(e($textoPrendaBodega)) !!}
                                             </p>
-                                        </div>
-
-                                        <div class="search-outside-results-meta">
-                                            <span class="search-outside-chip">Area: {{ $areaBodega }}</span>
-                                            <span class="search-outside-chip search-outside-chip-muted">CORTE-PARA-BODEGA</span>
                                         </div>
 
                                         <div class="mobile-ver-recibo-section">
                                             <button type="button" class="btn-ver-recibos mobile-under-state"
-                                                    onclick="abrirDetallesRecibos('{{ $consecutivoBodega }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', 'CORTE-PARA-BODEGA', null, '{{ $consecutivoBodega }}', {{ $reciboIdBodega ?? 'null' }}); return false;">
+                                                    onclick="abrirDetallesRecibos('{{ $consecutivoBodega }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $textoPrendaBodega) }}', 'CORTE-PARA-BODEGA', null, '{{ $consecutivoBodega }}', {{ $reciboIdBodega ?? 'null' }}); return false;">
                                                 <span class="material-symbols-rounded">visibility</span>
                                                 VER RECIBO
                                             </button>
                                         </div>
 
                                         <div class="orden-buttons">
-                                            <button type="button" class="btn-pasar-costura {{ $mostrarComoDeshacerBodega ? 'btn-deshacer-costura' : '' }}"
-                                                    data-visible-filtro="bodega"
-                                                    id="btn-costura-bodega-{{ $prenda['prenda_id'] }}-{{ $consecutivoBodega }}"
-                                                    data-pedido-id="{{ $prenda['pedido_id'] ?: $prenda['prenda_id'] }}"
-                                                    data-numero-pedido="{{ $consecutivoBodega }}"
-                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                    data-prenda-bodega-id="{{ $prenda['prenda_id'] }}"
-                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
-                                                    data-tipo-recibo="CORTE-PARA-BODEGA"
-                                                    data-recibo="{{ $consecutivoBodega }}"
-                                                    data-area="Costura"
-                                                    data-proceso-id="{{ $procesoIdCosturaBodega ?? '' }}"
-                                                    data-encargado-costura="{{ $encargadoCosturaBodega }}"
-                                                    data-parcial-id=""
-                                                    onclick="manejarPasarACostura(this); return false;">
-                                                <span class="material-symbols-rounded">{{ $mostrarComoDeshacerBodega ? 'undo' : 'checkroom' }}</span>
-                                                {{ $mostrarComoDeshacerBodega ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
-                                            </button>
+                                            @if(!$tieneParcialesBodega)
+                                                <button type="button" class="btn-pasar-costura {{ $mostrarComoDeshacerBodega ? 'btn-deshacer-costura' : '' }}"
+                                                        data-visible-filtro="bodega"
+                                                        id="btn-costura-bodega-{{ $prenda['prenda_id'] }}-{{ $consecutivoBodega }}"
+                                                        data-pedido-id="{{ $prenda['pedido_id'] ?: $prenda['prenda_id'] }}"
+                                                        data-numero-pedido="{{ $consecutivoBodega }}"
+                                                        data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                        data-prenda-bodega-id="{{ $prenda['prenda_id'] }}"
+                                                        data-nombre="{{ $textoPrendaBodega }}"
+                                                        data-tipo-recibo="CORTE-PARA-BODEGA"
+                                                        data-recibo="{{ $consecutivoBodega }}"
+                                                        data-area="Costura"
+                                                        data-proceso-id="{{ $procesoIdCosturaBodega ?? '' }}"
+                                                        data-encargado-costura="{{ $encargadoCosturaBodega }}"
+                                                        data-parcial-id=""
+                                                        onclick="manejarPasarACostura(this); return false;">
+                                                    <span class="material-symbols-rounded">{{ $mostrarComoDeshacerBodega ? 'undo' : 'checkroom' }}</span>
+                                                    {{ $mostrarComoDeshacerBodega ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
+                                                </button>
 
-                                            <button class="btn-pasar-cc"
-                                                    data-visible-filtro="bodega"
-                                                    id="btn-cc-bodega-{{ $prenda['prenda_id'] }}-{{ $consecutivoBodega }}"
-                                                    data-pedido-id="{{ $prenda['pedido_id'] ?: $prenda['prenda_id'] }}"
-                                                    data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                    data-prenda-bodega-id="{{ $prenda['prenda_id'] }}"
-                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
-                                                    data-tipo-recibo="CORTE-PARA-BODEGA"
-                                                    data-recibo="{{ $consecutivoBodega }}"
-                                                    data-area="Costura"
-                                                    data-proceso-id="{{ $procesoIdCosturaBodega ?? '' }}"
-                                                    type="button"
-                                                    onclick="pasarAControlCalidad(this); return false;">
-                                                <span class="material-symbols-rounded">check_circle</span>
-                                                PASAR A C.C
-                                            </button>
+                                                <button class="btn-pasar-cc"
+                                                        data-visible-filtro="bodega"
+                                                        id="btn-cc-bodega-{{ $prenda['prenda_id'] }}-{{ $consecutivoBodega }}"
+                                                        data-pedido-id="{{ $prenda['pedido_id'] ?: $prenda['prenda_id'] }}"
+                                                        data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                        data-prenda-bodega-id="{{ $prenda['prenda_id'] }}"
+                                                        data-nombre="{{ $textoPrendaBodega }}"
+                                                        data-tipo-recibo="CORTE-PARA-BODEGA"
+                                                        data-recibo="{{ $consecutivoBodega }}"
+                                                        data-area="Costura"
+                                                        data-proceso-id="{{ $procesoIdCosturaBodega ?? '' }}"
+                                                        type="button"
+                                                        onclick="pasarAControlCalidad(this); return false;">
+                                                    <span class="material-symbols-rounded">check_circle</span>
+                                                    PASAR A C.C
+                                                </button>
+                                            @endif
 
                                             @if($tieneParcialesBodega && $reciboIdBodega)
                                                 @component('components.botones.ver-distribucion', [
@@ -621,19 +641,19 @@
                                                     'pedidoId' => $prenda['pedido_id'] ?: $prenda['prenda_id'],
                                                     'numeroPedido' => $prenda['numero_pedido'] ?? $consecutivoBodega,
                                                     'numeroRecibo' => $consecutivoBodega,
-                                                    'nombrePrenda' => $prenda['nombre_prenda'],
+                                                    'nombrePrenda' => $textoPrendaBodega,
                                                     'tipoRecibo' => 'CORTE-PARA-BODEGA',
                                                 ])@endcomponent
                                             @endif
 
                                             <button type="button" class="btn-agregar-novedad"
-                                                    onclick="abrirModalNovedad('{{ $consecutivoBodega }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', {{ $consecutivoBodega }}); return false;">
+                                                    onclick="abrirModalNovedad('{{ $consecutivoBodega }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $textoPrendaBodega) }}', {{ $consecutivoBodega }}); return false;">
                                                 <span class="material-symbols-rounded">comment</span>
                                                 AGREGAR NOVEDAD
                                             </button>
 
                                             <button type="button" class="btn-ver-recibos"
-                                                    onclick="abrirDetallesRecibos('{{ $consecutivoBodega }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', 'CORTE-PARA-BODEGA', null, '{{ $consecutivoBodega }}', {{ $reciboIdBodega ?? 'null' }}); return false;">
+                                                    onclick="abrirDetallesRecibos('{{ $consecutivoBodega }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $textoPrendaBodega) }}', 'CORTE-PARA-BODEGA', null, '{{ $consecutivoBodega }}', {{ $reciboIdBodega ?? 'null' }}); return false;">
                                                 <span class="material-symbols-rounded">visibility</span>
                                                 VER RECIBO
                                             </button>
@@ -648,45 +668,47 @@
                                         <div class="orden-right-center">
                                             <a href="#"
                                                class="action-arrow"
-                                               onclick="abrirDetallesRecibos('{{ $consecutivoBodega }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', 'CORTE-PARA-BODEGA', null, '{{ $consecutivoBodega }}', {{ $reciboIdBodega ?? 'null' }}); return false;">
+                                               onclick="abrirDetallesRecibos('{{ $consecutivoBodega }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $textoPrendaBodega) }}', 'CORTE-PARA-BODEGA', null, '{{ $consecutivoBodega }}', {{ $reciboIdBodega ?? 'null' }}); return false;">
                                                 <span class="material-symbols-rounded">arrow_forward</span>
                                             </a>
                                         </div>
                                     </div>
 
                                     <div class="mobile-actions-drawer" id="mobile-drawer-{{ $prenda['prenda_id'] }}">
-                                        <button type="button" class="btn-pasar-costura {{ $mostrarComoDeshacerBodega ? 'btn-deshacer-costura' : '' }}"
-                                                id="btn-costura-bodega-mobile-{{ $prenda['prenda_id'] }}-{{ $consecutivoBodega }}"
-                                                data-pedido-id="{{ $prenda['pedido_id'] ?: $prenda['prenda_id'] }}"
-                                                data-numero-pedido="{{ $consecutivoBodega }}"
-                                                data-prenda-id="{{ $prenda['prenda_id'] }}"
-                                                data-prenda-bodega-id="{{ $prenda['prenda_id'] }}"
-                                                data-nombre="{{ $prenda['nombre_prenda'] }}"
-                                                data-tipo-recibo="CORTE-PARA-BODEGA"
-                                                data-recibo="{{ $consecutivoBodega }}"
-                                                data-area="Costura"
-                                                data-proceso-id="{{ $procesoIdCosturaBodega ?? '' }}"
-                                                data-encargado-costura="{{ $encargadoCosturaBodega }}"
-                                                data-parcial-id=""
-                                                onclick="manejarPasarACostura(this); return false;">
-                                            <span class="material-symbols-rounded">{{ $mostrarComoDeshacerBodega ? 'undo' : 'checkroom' }}</span>
-                                            {{ $mostrarComoDeshacerBodega ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
-                                        </button>
-
-<button type="button" class="btn-pasar-cc"
-                                                    id="btn-cc-bodega-mobile-{{ $prenda['prenda_id'] }}-{{ $consecutivoBodega }}"
+                                        @if(!$tieneParcialesBodega)
+                                            <button type="button" class="btn-pasar-costura {{ $mostrarComoDeshacerBodega ? 'btn-deshacer-costura' : '' }}"
+                                                    id="btn-costura-bodega-mobile-{{ $prenda['prenda_id'] }}-{{ $consecutivoBodega }}"
                                                     data-pedido-id="{{ $prenda['pedido_id'] ?: $prenda['prenda_id'] }}"
+                                                    data-numero-pedido="{{ $consecutivoBodega }}"
                                                     data-prenda-id="{{ $prenda['prenda_id'] }}"
                                                     data-prenda-bodega-id="{{ $prenda['prenda_id'] }}"
-                                                    data-nombre="{{ $prenda['nombre_prenda'] }}"
+                                                    data-nombre="{{ $textoPrendaBodega }}"
                                                     data-tipo-recibo="CORTE-PARA-BODEGA"
                                                     data-recibo="{{ $consecutivoBodega }}"
                                                     data-area="Costura"
                                                     data-proceso-id="{{ $procesoIdCosturaBodega ?? '' }}"
-                                                    onclick="pasarAControlCalidad(this); return false;">
-                                            <span class="material-symbols-rounded">check_circle</span>
-                                            PASAR A C.C
-                                        </button>
+                                                    data-encargado-costura="{{ $encargadoCosturaBodega }}"
+                                                    data-parcial-id=""
+                                                    onclick="manejarPasarACostura(this); return false;">
+                                                <span class="material-symbols-rounded">{{ $mostrarComoDeshacerBodega ? 'undo' : 'checkroom' }}</span>
+                                                {{ $mostrarComoDeshacerBodega ? 'DESHACER COSTURA' : 'PASAR A COSTURA' }}
+                                            </button>
+
+                                            <button type="button" class="btn-pasar-cc"
+                                                        id="btn-cc-bodega-mobile-{{ $prenda['prenda_id'] }}-{{ $consecutivoBodega }}"
+                                                        data-pedido-id="{{ $prenda['pedido_id'] ?: $prenda['prenda_id'] }}"
+                                                        data-prenda-id="{{ $prenda['prenda_id'] }}"
+                                                        data-prenda-bodega-id="{{ $prenda['prenda_id'] }}"
+                                                        data-nombre="{{ $textoPrendaBodega }}"
+                                                        data-tipo-recibo="CORTE-PARA-BODEGA"
+                                                        data-recibo="{{ $consecutivoBodega }}"
+                                                        data-area="Costura"
+                                                        data-proceso-id="{{ $procesoIdCosturaBodega ?? '' }}"
+                                                        onclick="pasarAControlCalidad(this); return false;">
+                                                <span class="material-symbols-rounded">check_circle</span>
+                                                PASAR A C.C
+                                            </button>
+                                        @endif
 
                                         @if($tieneParcialesBodega && $reciboIdBodega)
                                             @component('components.botones.ver-distribucion', [
@@ -703,19 +725,19 @@
                                                 'pedidoId' => $prenda['pedido_id'] ?: $prenda['prenda_id'],
                                                 'numeroPedido' => $prenda['numero_pedido'] ?? $consecutivoBodega,
                                                 'numeroRecibo' => $consecutivoBodega,
-                                                'nombrePrenda' => $prenda['nombre_prenda'],
+                                                'nombrePrenda' => $textoPrendaBodega,
                                                 'tipoRecibo' => 'CORTE-PARA-BODEGA',
                                             ])@endcomponent
                                         @endif
 
                                         <button type="button" class="btn-ver-recibos"
-                                                onclick="abrirDetallesRecibos('{{ $consecutivoBodega }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', 'CORTE-PARA-BODEGA', null, '{{ $consecutivoBodega }}', {{ $reciboIdBodega ?? 'null' }}); return false;">
+                                                onclick="abrirDetallesRecibos('{{ $consecutivoBodega }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $textoPrendaBodega) }}', 'CORTE-PARA-BODEGA', null, '{{ $consecutivoBodega }}', {{ $reciboIdBodega ?? 'null' }}); return false;">
                                             <span class="material-symbols-rounded">visibility</span>
                                             VER RECIBO
                                         </button>
 
                                         <button type="button" class="btn-agregar-novedad"
-                                                onclick="abrirModalNovedad('{{ $consecutivoBodega }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', {{ $consecutivoBodega }}); return false;">
+                                                onclick="abrirModalNovedad('{{ $consecutivoBodega }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $textoPrendaBodega) }}', {{ $consecutivoBodega }}); return false;">
                                             <span class="material-symbols-rounded">comment</span>
                                             AGREGAR NOVEDAD
                                         </button>
