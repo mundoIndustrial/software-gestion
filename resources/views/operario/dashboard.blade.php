@@ -421,7 +421,7 @@
                             <div class="orden-card-simple card-control-calidad"
                                  data-numero="{{ $prenda['numero_pedido'] }}"
                                  data-numero-recibo="{{ $consecutivoActual }}"
-                                 data-prenda="{{ strtolower((string) $textoPrendaBodega) }}"
+                                 data-prenda="{{ strtolower((string) ($prenda['nombre_prenda'] ?? '')) }}"
                                  data-prenda-id="{{ $prenda['prenda_id'] }}"
                                  data-cliente="{{ strtolower((string) $prenda['cliente']) }}"
                                  data-search-text="{{ strtolower(trim(($prenda['numero_pedido'] ?? '') . ' ' . ($prenda['nombre_prenda'] ?? '') . ' ' . ($prenda['cliente'] ?? '') . ' ' . ($consecutivoActual ?? ''))) }}"

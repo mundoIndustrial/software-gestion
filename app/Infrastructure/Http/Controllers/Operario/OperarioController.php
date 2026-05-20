@@ -352,9 +352,11 @@ class OperarioController extends Controller
 
         $esNumerica = ctype_digit($busqueda);
         $comodin = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $busqueda) . '%';
-        $areasVisibles = in_array($filtroRecibo, ['reflectivo', 'bodega'], true)
-            ? ['costura', 'control calidad', 'control de calidad']
-            : ['corte', 'costura', 'control calidad', 'control de calidad'];
+        $areasVisibles = $filtroRecibo === 'reflectivo'
+            ? ['costura']
+            : (in_array($filtroRecibo, ['bodega'], true)
+                ? ['costura', 'control calidad', 'control de calidad']
+                : ['corte', 'costura', 'control calidad', 'control de calidad']);
         $tiposPermitidos = $this->tiposReciboBusquedaVistaCostura($filtroRecibo);
 
         return DB::table('consecutivos_recibos_pedidos as crp')
@@ -379,9 +381,9 @@ class OperarioController extends Controller
             ->where(function ($query) use ($comodin, $busqueda, $esNumerica) {
                 if ($esNumerica) {
                     $query
-                        ->orWhereRaw('CAST(crp.consecutivo_actual AS CHAR) = ?', [$busqueda])
-                        ->orWhereRaw('CAST(crp.consecutivo_inicial AS CHAR) = ?', [$busqueda])
-                        ->orWhereRaw('CAST(pp.numero_pedido AS CHAR) = ?', [$busqueda]);
+                        ->orWhereRaw('CAST(crp.consecutivo_actual AS CHAR) LIKE ?', [$comodin])
+                        ->orWhereRaw('CAST(crp.consecutivo_inicial AS CHAR) LIKE ?', [$comodin])
+                        ->orWhereRaw('CAST(pp.numero_pedido AS CHAR) LIKE ?', [$comodin]);
                     return;
                 }
 
@@ -468,9 +470,9 @@ class OperarioController extends Controller
             ->where(function ($query) use ($comodin, $busqueda, $esNumerica) {
                 if ($esNumerica) {
                     $query
-                        ->orWhereRaw('CAST(crp.consecutivo_actual AS CHAR) = ?', [$busqueda])
-                        ->orWhereRaw('CAST(crp.consecutivo_inicial AS CHAR) = ?', [$busqueda])
-                        ->orWhereRaw('CAST(pp.numero_pedido AS CHAR) = ?', [$busqueda]);
+                        ->orWhereRaw('CAST(crp.consecutivo_actual AS CHAR) LIKE ?', [$comodin])
+                        ->orWhereRaw('CAST(crp.consecutivo_inicial AS CHAR) LIKE ?', [$comodin])
+                        ->orWhereRaw('CAST(pp.numero_pedido AS CHAR) LIKE ?', [$comodin]);
                     return;
                 }
 

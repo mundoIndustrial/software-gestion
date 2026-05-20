@@ -540,7 +540,7 @@ class GetOperarioDashboardUseCase
                 }
 
                 if ($esNumerica) {
-                    if ($campo === $busqueda) {
+                    if (str_contains($campo, $busqueda)) {
                         return true;
                     }
                     continue;
@@ -569,7 +569,7 @@ class GetOperarioDashboardUseCase
                     }
 
                     if ($esNumerica) {
-                        if ($campo === $busqueda) {
+                        if (str_contains($campo, $busqueda)) {
                             return true;
                         }
                         continue;
