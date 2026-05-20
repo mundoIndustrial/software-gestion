@@ -2372,7 +2372,9 @@
     }
 
     .operario-dashboard.is-searching .ordenes-section {
-        display: none;
+        opacity: 0.6;
+        pointer-events: none;
+        transition: opacity 0.15s ease;
     }
 
     .search-outside-results {

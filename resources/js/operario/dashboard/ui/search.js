@@ -10,6 +10,8 @@ export function initDashboardSearch() {
         const usaBusquedaServidor = esVistaCostura || userRole === 'lider-reflectivo';
         const debounceMs = 350;
         let searchTimer = null;
+        let searchAbortController = null;
+        let searchRequestSeq = 0;
 
         const ordenesList = document.getElementById('ordenesList');
         const ordenCards = ordenesList ? ordenesList.querySelectorAll('.orden-card-simple') : [];
@@ -87,6 +89,14 @@ export function initDashboardSearch() {
         };
 
         const aplicarRespuestaBusquedaVistaCostura = async (url) => {
+            searchRequestSeq += 1;
+            const currentRequestSeq = searchRequestSeq;
+
+            if (searchAbortController) {
+                searchAbortController.abort();
+            }
+            searchAbortController = new AbortController();
+
             mostrarCargandoBusqueda(true);
 
             try {
@@ -95,6 +105,7 @@ export function initDashboardSearch() {
                         'X-Requested-With': 'XMLHttpRequest',
                     },
                     credentials: 'same-origin',
+                    signal: searchAbortController.signal,
                 });
 
                 if (!response.ok) {
@@ -108,6 +119,9 @@ export function initDashboardSearch() {
                 const ordenesSectionActual = document.querySelector('.operario-dashboard .ordenes-section');
 
                 if (nuevaOrdenesSection && ordenesSectionActual) {
+                    if (currentRequestSeq !== searchRequestSeq) {
+                        return;
+                    }
                     ordenesSectionActual.replaceWith(nuevaOrdenesSection);
                 } else {
                     throw new Error('No se pudo actualizar el listado');
@@ -116,11 +130,16 @@ export function initDashboardSearch() {
                 window.history.replaceState({}, '', url.toString());
                 window.__initDashboardSearch?.();
             } catch (error) {
+                if (error?.name === 'AbortError') {
+                    return;
+                }
                 console.error('[Dashboard Search] Error actualizando resultados', error);
                 window.location.href = url.toString();
                 return;
             } finally {
-                mostrarCargandoBusqueda(false);
+                if (currentRequestSeq === searchRequestSeq) {
+                    mostrarCargandoBusqueda(false);
+                }
             }
         };
 

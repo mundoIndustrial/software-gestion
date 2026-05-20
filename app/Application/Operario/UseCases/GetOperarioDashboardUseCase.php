@@ -443,7 +443,6 @@ class GetOperarioDashboardUseCase
             foreach ($recibos as $recibo) {
                 $tipo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
                 $area = strtolower(trim((string) ($recibo['area'] ?? '')));
-                $completadoCorte = (bool) ($recibo['completado_corte'] ?? false);
 
                 if (!in_array($area, $areasPermitidas, true)) {
                     continue;
@@ -463,7 +462,7 @@ class GetOperarioDashboardUseCase
                     continue;
                 }
 
-                if ($completadoCorte && $tipo === 'COSTURA') {
+                if ($tipo === 'COSTURA') {
                     return true;
                 }
             }
@@ -579,6 +578,31 @@ class GetOperarioDashboardUseCase
                         return true;
                     }
                 }
+            }
+
+            // Fallback: buscar tambien en un texto consolidado de la prenda + recibos.
+            // Evita falsos negativos cuando algun campo viene con formato inesperado.
+            $textoConsolidado = strtolower(trim(
+                (string) ($prenda['numero_pedido'] ?? '') . ' '
+                . (string) ($prenda['cliente'] ?? '') . ' '
+                . (string) ($prenda['nombre_prenda'] ?? '') . ' '
+                . (string) ($prenda['descripcion'] ?? '') . ' '
+                . collect($prenda['recibos'] ?? [])->flatMap(function ($recibo) {
+                    return [
+                        (string) ($recibo['consecutivo_actual'] ?? ''),
+                        (string) ($recibo['consecutivo_parcial'] ?? ''),
+                        (string) ($recibo['tipo_recibo'] ?? ''),
+                        (string) ($recibo['area'] ?? ''),
+                        (string) ($recibo['encargado_costura'] ?? ''),
+                        (string) ($recibo['encargado_corte'] ?? ''),
+                        (string) ($recibo['encargado_control_calidad'] ?? ''),
+                        (string) ($recibo['notas'] ?? ''),
+                    ];
+                })->implode(' ')
+            ));
+
+            if ($textoConsolidado !== '' && str_contains($textoConsolidado, $busqueda)) {
+                return true;
             }
 
             return false;
