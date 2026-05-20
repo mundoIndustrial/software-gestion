@@ -159,13 +159,18 @@ class PedidoProcesoTallaBuilder
                             'talla' => strtoupper($tallaParaSobremedida),
                             'es_sobremedida' => $esSobremedida,
                         ]);
-                        PedidosProcesosPrendaTalla::create([
-                            'proceso_prenda_detalle_id' => $proceso->id,
-                            'genero' => 'UNISEX',
-                            'talla' => strtoupper($tallaParaSobremedida),
-                            'cantidad' => $cantidad,
-                            'es_sobremedida' => $esSobremedida,
-                        ]);
+                        DB::table('pedidos_procesos_prenda_tallas')->updateOrInsert(
+                            [
+                                'proceso_prenda_detalle_id' => $proceso->id,
+                                'genero' => 'UNISEX',
+                                'talla' => strtoupper($tallaParaSobremedida),
+                            ],
+                            [
+                                'cantidad' => $cantidad,
+                                'es_sobremedida' => $esSobremedida,
+                                'updated_at' => now(),
+                            ]
+                        );
                     }
                 }
 
@@ -173,6 +178,8 @@ class PedidoProcesoTallaBuilder
             }
 
             $generoEnum = $generoMap[strtolower($generoBD)] ?? strtoupper($generoBD);
+            $tallasAgrupadas = [];
+            $coloresPorTalla = [];
 
             foreach ($tallasCant as $tallaKey => $cantidad) {
                 $cantidad = (int) $cantidad;
@@ -181,8 +188,11 @@ class PedidoProcesoTallaBuilder
                 }
 
                 $partes = explode('__', (string) $tallaKey);
-                $tallaReal = $partes[0];
-                $colorNombre = $partes[1] ?? null;
+                $tallaReal = trim((string) ($partes[0] ?? ''));
+                if ($tallaReal === '') {
+                    continue;
+                }
+                $colorNombre = isset($partes[1]) ? trim((string) $partes[1]) : null;
 
                 $ubicacionesTalla = null;
                 $observacionesTalla = null;
@@ -201,27 +211,70 @@ class PedidoProcesoTallaBuilder
                     }
                 }
 
-                $tallaCreada = PedidosProcesosPrendaTalla::create([
-                    'proceso_prenda_detalle_id' => $proceso->id,
-                    'genero' => $generoEnum,
-                    'talla' => (string) $tallaReal,
-                    'cantidad' => $cantidad,
-                    'es_sobremedida' => 0,
-                    'ubicaciones' => $ubicacionesTalla,
-                    'observaciones' => $observacionesTalla,
-                ]);
+                $clave = strtoupper($tallaReal);
+                if (!isset($tallasAgrupadas[$clave])) {
+                    $tallasAgrupadas[$clave] = [
+                        'talla' => $tallaReal,
+                        'cantidad' => 0,
+                        'ubicaciones' => $ubicacionesTalla,
+                        'observaciones' => $observacionesTalla,
+                    ];
+                    $coloresPorTalla[$clave] = [];
+                }
+                $tallasAgrupadas[$clave]['cantidad'] += $cantidad;
+                if ($tallasAgrupadas[$clave]['ubicaciones'] === null && $ubicacionesTalla !== null) {
+                    $tallasAgrupadas[$clave]['ubicaciones'] = $ubicacionesTalla;
+                }
+                if ($tallasAgrupadas[$clave]['observaciones'] === null && $observacionesTalla !== null) {
+                    $tallasAgrupadas[$clave]['observaciones'] = $observacionesTalla;
+                }
 
                 if (!empty($colorNombre)) {
-                    DB::table('pedidos_procesos_prenda_talla_colores')->insert([
-                        'pedidos_procesos_prenda_talla_id' => $tallaCreada->id,
+                    $coloresPorTalla[$clave][] = [
                         'color_nombre' => $colorNombre,
-                        'tela_nombre' => null,
                         'cantidad' => $cantidad,
                         'ubicaciones' => $ubicacionesTalla,
                         'observaciones' => $observacionesTalla,
-                        'created_at' => now(),
+                    ];
+                }
+            }
+
+            foreach ($tallasAgrupadas as $clave => $dataTalla) {
+                DB::table('pedidos_procesos_prenda_tallas')->updateOrInsert(
+                    [
+                        'proceso_prenda_detalle_id' => $proceso->id,
+                        'genero' => $generoEnum,
+                        'talla' => (string) $dataTalla['talla'],
+                    ],
+                    [
+                        'cantidad' => (int) $dataTalla['cantidad'],
+                        'es_sobremedida' => 0,
+                        'ubicaciones' => $dataTalla['ubicaciones'],
+                        'observaciones' => $dataTalla['observaciones'],
                         'updated_at' => now(),
-                    ]);
+                    ]
+                );
+
+                $tallaProcesoId = DB::table('pedidos_procesos_prenda_tallas')
+                    ->where('proceso_prenda_detalle_id', $proceso->id)
+                    ->where('genero', $generoEnum)
+                    ->where('talla', (string) $dataTalla['talla'])
+                    ->value('id');
+
+                foreach ($coloresPorTalla[$clave] as $colorData) {
+                    DB::table('pedidos_procesos_prenda_talla_colores')->updateOrInsert(
+                        [
+                            'pedidos_procesos_prenda_talla_id' => $tallaProcesoId,
+                            'color_nombre' => $colorData['color_nombre'],
+                        ],
+                        [
+                            'tela_nombre' => null,
+                            'cantidad' => (int) $colorData['cantidad'],
+                            'ubicaciones' => $colorData['ubicaciones'],
+                            'observaciones' => $colorData['observaciones'],
+                            'updated_at' => now(),
+                        ]
+                    );
                 }
             }
         }

@@ -11,6 +11,7 @@ use App\Infrastructure\Services\Pedidos\PedidoTallaBuilder;
 use App\Infrastructure\Services\Pedidos\PedidoTelaBuilder;
 use App\Infrastructure\Services\Pedidos\PedidoTipoPrendaService;
 use App\Infrastructure\Services\Pedidos\PedidoVarianteBuilder;
+use App\Infrastructure\Services\Pedidos\PrendaAsignacionesColoresUpdaterService;
 use App\Infrastructure\Services\Pedidos\PrendaImageService;
 use App\Infrastructure\Services\Pedidos\PrendaNovedadService;
 use App\Infrastructure\Services\Pedidos\PrendaProcesoService;
@@ -29,7 +30,8 @@ final class AgregarPrendaCompletaUseCase implements AgregarPrendaCompletaUseCase
         private PedidoTipoPrendaService $pedidoTipoPrendaService,
         private PedidoVarianteBuilder $pedidoVarianteBuilder,
         private PrendaProcesoService $prendaProcesoService,
-        private PrendaNovedadService $prendaNovedadService
+        private PrendaNovedadService $prendaNovedadService,
+        private PrendaAsignacionesColoresUpdaterService $prendaAsignacionesColoresUpdaterService
     ) {}
 
     public function execute(AgregarPrendaCompletaDTO $dto): PrendaPedido
@@ -54,6 +56,13 @@ final class AgregarPrendaCompletaUseCase implements AgregarPrendaCompletaUseCase
 
             if (!empty($dto->cantidad_talla)) {
                 $this->pedidoTallaBuilder->crear($prenda, $dto->cantidad_talla);
+            }
+
+            if (!empty($dto->asignaciones_colores) && is_array($dto->asignaciones_colores)) {
+                $this->prendaAsignacionesColoresUpdaterService->actualizarAsignacionesColores(
+                    $prenda,
+                    $dto->asignaciones_colores
+                );
             }
 
             if (!empty($dto->variantes) && is_array($dto->variantes)) {
@@ -84,7 +93,6 @@ final class AgregarPrendaCompletaUseCase implements AgregarPrendaCompletaUseCase
         });
     }
 }
-
 
 
 
