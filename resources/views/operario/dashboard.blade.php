@@ -46,6 +46,8 @@
             ->values();
     }
 
+    $ordenarLiderReflectivoPorCreacion = auth()->user()->hasRole('lider-reflectivo')
+        && in_array($filtroReciboActual, ['costura', 'reflectivo'], true);
     $ordenarPorFechaAsignacionProceso = auth()->user()->hasAnyRole([
         'costurero',
         'lider-reflectivo',
@@ -54,9 +56,13 @@
     $ordenarPorFechaCreacion = auth()->user()->hasRole('vista-costura');
     $ordenarPorFechaAsignacionCorte = auth()->user()->hasRole('cortador');
 
-    $callbackOrdenamiento = function ($prenda) use ($ordenarPorFechaAsignacionProceso, $ordenarPorFechaCreacion, $ordenarPorFechaAsignacionCorte, $tabActualDashboard) {
+    $callbackOrdenamiento = function ($prenda) use ($ordenarLiderReflectivoPorCreacion, $ordenarPorFechaAsignacionProceso, $ordenarPorFechaCreacion, $ordenarPorFechaAsignacionCorte, $tabActualDashboard) {
         $reciboPrincipal = collect($prenda['recibos'] ?? [])->first();
         if (in_array($tabActualDashboard, ['pendientes', 'completados', 'completado-bodega'], true)) {
+            $fechaOrden = $reciboPrincipal['created_at']
+                ?? $reciboPrincipal['creado_en']
+                ?? ($prenda['fecha_creacion'] ?? null);
+        } elseif ($ordenarLiderReflectivoPorCreacion) {
             $fechaOrden = $reciboPrincipal['created_at']
                 ?? $reciboPrincipal['creado_en']
                 ?? ($prenda['fecha_creacion'] ?? null);
@@ -103,6 +109,8 @@
     if (in_array($tabActualDashboard, ['pendientes', 'completados', 'completado-bodega'], true)) {
         $prendasOrdenadas = $coleccionBaseDashboard->sortBy($callbackOrdenamiento)->values();
     } elseif (auth()->user()->hasRole('vista-costura')) {
+        $prendasOrdenadas = $coleccionBaseDashboard->sortBy($callbackOrdenamiento)->values();
+    } elseif (auth()->user()->hasRole('lider-reflectivo') && in_array($filtroReciboActual, ['costura', 'reflectivo'], true)) {
         $prendasOrdenadas = $coleccionBaseDashboard->sortBy($callbackOrdenamiento)->values();
     } elseif (auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('administrador-costura')) {
         $prendasOrdenadas = $coleccionBaseDashboard->sortByDesc($callbackOrdenamiento)->values();

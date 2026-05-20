@@ -338,6 +338,13 @@ class GetOperarioDashboardUseCase
             } elseif ($busquedaVistaCostura !== '' && ($usuario->hasRole('lider-reflectivo') || $usuario->hasRole('costura-reflectivo'))) {
                 $prendasConRecibos = $this->filtrarPrendasPorBusquedaVistaCostura($prendasConRecibos, $busquedaVistaCostura);
             }
+
+            if (
+                $filtroRecibo === 'costura'
+                && ($usuario->hasRole('lider-reflectivo') || $usuario->hasRole('costura-reflectivo'))
+            ) {
+                $prendasConRecibos = $this->ordenarPrendasPorCreatedAtCostura($prendasConRecibos);
+            }
         }
 
         // Se eliminó la llamada a obtenerPedidosDelOperario por redundancia y alto costo de rendimiento
@@ -359,6 +366,22 @@ class GetOperarioDashboardUseCase
             vistaCosturaBodegaSinEncargadoCount: $vistaCosturaBodegaSinEncargadoCount ?? 0,
             vistaCosturaBodegaControlCalidadCount: $vistaCosturaBodegaControlCalidadCount ?? 0,
         );
+    }
+
+    private function ordenarPrendasPorCreatedAtCostura(Collection $prendas): Collection
+    {
+        return $prendas
+            ->sortBy(function (array $prenda) {
+                $reciboCostura = collect($prenda['recibos'] ?? [])->first(function (array $recibo) {
+                    return strtoupper(trim((string) ($recibo['tipo_recibo'] ?? ''))) === 'COSTURA';
+                });
+
+                $createdAt = (string) ($reciboCostura['created_at'] ?? '');
+                $timestamp = strtotime($createdAt);
+
+                return $timestamp === false ? PHP_INT_MAX : $timestamp;
+            })
+            ->values();
     }
 
     private function filtrarPrendasVistaCosturaSinEncargado(Collection $prendas, ?string $filtroRecibo): Collection
