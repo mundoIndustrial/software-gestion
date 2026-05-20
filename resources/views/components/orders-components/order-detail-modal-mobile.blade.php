@@ -1,6 +1,11 @@
 <link rel="stylesheet" href="{{ asset('css/order-detail-modal-mobile.css') }}">
 
 <style>
+    #mobile-numero-pedido {
+        top: 120px !important;
+        right: 12px !important;
+    }
+
     @media (max-width: 768px) {
         .order-detail-modal-container--mobile-full {
             padding: 2px !important;
@@ -983,6 +988,50 @@ window.llenarReciboCosturaMobile = function(data) {
     // Filtrar procesos según el rol del usuario y la vista actual
     let procesosFiltrados = todosProcesos;
     const esVistaOperario = (window.location?.pathname || '').toString().includes('/operario/');
+    const resolverProcesoRealParcial = () => {
+        let procesoParcialReal = null;
+        const parcialIdParam = String(new URLSearchParams(window.location.search).get('parcial_id') || '').trim();
+
+        if (Array.isArray(data?.prendas)) {
+            for (const prenda of data.prendas) {
+                if (prenda?.recibos && typeof prenda.recibos === 'object' && !Array.isArray(prenda.recibos)) {
+                    for (const [key, reciboVal] of Object.entries(prenda.recibos)) {
+                        if (!reciboVal || typeof reciboVal !== 'object') continue;
+                        const keyUpper = String(key || '').trim().toUpperCase();
+                        if (keyUpper === 'PARCIAL') continue;
+
+                        const parcialInterno = String(reciboVal.pedido_parcial_id || reciboVal.parcial_id || reciboVal.id || '').trim();
+                        const coincideParcial = parcialIdParam !== '' && parcialInterno === parcialIdParam;
+                        const tipoInterno = String(reciboVal.tipo_recibo || keyUpper || '').trim().toUpperCase();
+
+                        if (coincideParcial && tipoInterno) {
+                            procesoParcialReal = tipoInterno;
+                            break;
+                        }
+                    }
+                }
+
+                if (procesoParcialReal) break;
+
+                if (Array.isArray(prenda?.procesos)) {
+                    for (const proc of prenda.procesos) {
+                        const procTipo = String(proc?.proceso || proc?.tipo_proceso || proc?.nombre_proceso || '').trim().toUpperCase();
+                        const parcialProceso = String(proc?.pedido_parcial_id || proc?.parcial_id || '').trim();
+                        const coincideParcial = parcialIdParam !== '' && parcialProceso === parcialIdParam;
+                        if (procTipo && procTipo !== 'PARCIAL' && (coincideParcial || !!proc?.es_parcial)) {
+                            procesoParcialReal = procTipo;
+                            break;
+                        }
+                    }
+                }
+
+                if (procesoParcialReal) break;
+            }
+        }
+
+        return procesoParcialReal;
+    };
+
     console.log(' [FILTRO PROCESOS] Rol del usuario:', userRole);
     console.log(' [FILTRO PROCESOS] Es vista operario:', esVistaOperario);
     console.log(' [FILTRO PROCESOS] Todos los procesos encontrados:', todosProcesos);
@@ -992,8 +1041,21 @@ window.llenarReciboCosturaMobile = function(data) {
         const tieneCostu = todosProcesos.includes('COSTURA');
         const tieneReflectivo = todosProcesos.includes('REFLECTIVO');
         procesosFiltrados = [];
-        if (tieneCostu) procesosFiltrados.push('COSTURA');
-        if (tieneReflectivo) procesosFiltrados.push('REFLECTIVO');
+
+        if (tipoReciboUpper === 'PARCIAL') {
+            const procesoParcialReal = resolverProcesoRealParcial();
+            if (procesoParcialReal && todosProcesos.includes(procesoParcialReal)) {
+                procesosFiltrados = [procesoParcialReal];
+                window.procesoCarouselIndex = 0;
+                window.procesoActualSeleccionado = procesoParcialReal;
+                console.log(' [FILTRO PROCESOS] Vista costura/reflectivo - tipo_recibo=PARCIAL mapeado a proceso:', procesoParcialReal);
+            }
+        }
+
+        if (procesosFiltrados.length === 0) {
+            if (tieneCostu) procesosFiltrados.push('COSTURA');
+            if (tieneReflectivo) procesosFiltrados.push('REFLECTIVO');
+        }
         
         console.log(' [FILTRO PROCESOS] tieneCostu:', tieneCostu);
         console.log(' [FILTRO PROCESOS] tieneReflectivo:', tieneReflectivo);
@@ -1242,7 +1304,15 @@ window.llenarReciboCosturaMobile = function(data) {
     if (numeroPedido) numeroPedido.textContent = '#' + (data.numeroPedido || '');
     
     // Ocultar campos innecesarios para recibos de bodega
-    const isBodega = data.cliente === 'SERVICIO' && data.asesor === 'SISTEMA' || data.asesora === 'SISTEMA';
+    const tipoReciboEsBodega = tipoReciboUpper === 'CORTE-PARA-BODEGA';
+    const tipoParcialReal = tipoReciboUpper === 'PARCIAL' ? resolverProcesoRealParcial() : '';
+    const parcialEsBodega = String(tipoParcialReal || '').toUpperCase() === 'CORTE-PARA-BODEGA';
+    const isBodega = (
+        (data.cliente === 'SERVICIO' && data.asesor === 'SISTEMA') ||
+        data.asesora === 'SISTEMA' ||
+        tipoReciboEsBodega ||
+        parcialEsBodega
+    );
     if (document.getElementById('order-asesora')) document.getElementById('order-asesora').style.display = isBodega ? 'none' : 'block';
     if (document.getElementById('order-forma-pago')) document.getElementById('order-forma-pago').style.display = isBodega ? 'none' : 'block';
     if (document.getElementById('order-cliente')) document.getElementById('order-cliente').style.display = isBodega ? 'none' : 'block';
