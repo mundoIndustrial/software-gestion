@@ -829,7 +829,7 @@ class ReciboCosturaController extends Controller
                         'area' => 'Control Calidad',
                     ],
                     [
-                        'id_recibo' => null,
+                        'id_recibo' => (int) $parcial->id,
                         'numero_recibo' => (int) ($parcial->consecutivo_parcial ?? 0),
                         'nombre_operario' => (string) (auth()->user()->name ?? 'control'),
                         'fecha_completado' => now(),
@@ -876,7 +876,7 @@ class ReciboCosturaController extends Controller
                     'area' => 'Control Calidad',
                 ],
                 [
-                    'id_recibo' => null,
+                    'id_recibo' => (int) $parcial->id,
                     'numero_recibo' => (int) ($parcial->consecutivo_parcial ?? 0),
                     'nombre_operario' => (string) (auth()->user()->name ?? 'control'),
                     'fecha_completado' => now(),

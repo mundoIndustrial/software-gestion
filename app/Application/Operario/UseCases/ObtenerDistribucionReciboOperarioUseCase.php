@@ -4,6 +4,7 @@ namespace App\Application\Operario\UseCases;
 
 use App\Domain\Operario\Repositories\ReciboDistribucionReadRepository;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Models\ReciboPorPartes;
 
 class ObtenerDistribucionReciboOperarioUseCase
@@ -125,7 +126,18 @@ class ObtenerDistribucionReciboOperarioUseCase
             }
 
             $encargado = ($proceso ? $proceso->encargado : null) ?? $parcial->encargado ?? 'SIN ASIGNAR';
-            $area = ($proceso ? $proceso->proceso : null) ?? $parcial->area ?? 'SIN ASIGNAR';
+
+            $estaEnControlCalidad = DB::table('prenda_recibo_completado')
+                ->where('id_parcial', (int) $parcial->id)
+                ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
+                ->exists();
+
+            $procesoNombre = strtolower(trim((string) ($proceso->proceso ?? '')));
+            $procesoEsControlCalidad = in_array($procesoNombre, ['control calidad', 'control de calidad'], true);
+
+            $area = $estaEnControlCalidad || $procesoEsControlCalidad
+                ? 'Control Calidad'
+                : (($proceso ? $proceso->proceso : null) ?? $parcial->area ?? 'SIN ASIGNAR');
 
             $estaCompletado = $this->readRepository->estaCompletadoParcialEnCostura((int) $parcial->id);
 
