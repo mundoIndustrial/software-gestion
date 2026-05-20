@@ -240,7 +240,7 @@ class ObtenerPrendasRecibosListadoService
                     })->values();
                 }
 
-                return [
+                return collect([[
                     'prenda_id' => (int) ($reciboPrincipal->prenda_bodega_id ?? 0),
                     'pedido_id' => $pedidoIdBodega > 0 ? $pedidoIdBodega : null,
                     'numero_pedido' => $consecutivoActual,
@@ -276,7 +276,7 @@ class ObtenerPrendasRecibosListadoService
                         'completado_costura' => false,
                         'completado_control_calidad' => false,
                     ]],
-                ];
+                ]]);
             })
             ->values();
     }

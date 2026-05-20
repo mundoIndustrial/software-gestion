@@ -114,6 +114,12 @@ function abrirModalCosturaConDatos(
     numeroPedido,
     prendaBodegaId = null
 ) {
+    const claveEdicion = `${recibo || ''}|${prendaId || ''}|${tipoRecibo || ''}`;
+    window.__edicionDistribucionActiva = {
+        clave: claveEdicion,
+        precargaAplicada: false,
+    };
+
     // Abrir el modal normalmente
     abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, null, numeroPedido, null, prendaBodegaId);
     
@@ -346,6 +352,11 @@ function cargarTallasPreSeleccionadas(parciales) {
 }
 
 function cargarDatosDistribucionExistente(parciales) {
+    if (window.__edicionDistribucionActiva?.precargaAplicada) {
+        console.log('[EDITAR ENCARGADOS] Precarga de edición ya aplicada, se omite reprocesar');
+        return;
+    }
+
     if (!window.datosDistribucion) {
         // Si no hay datos de distribución, esperar un poco y reintentar
         setTimeout(() => {
@@ -373,6 +384,7 @@ function procesarCargarDatosExistente(parciales) {
     
     // Limpiar asignaciones anteriores
     window.asignacionesPorModulo = {};
+    window.modulosSeleccionadosDistribucion = [];
     
     const modulos = window.datosDistribucion.modulos;
     const tallas = window.datosDistribucion.tallas;
@@ -458,6 +470,9 @@ function procesarCargarDatosExistente(parciales) {
     });
     
     console.log('[PROCESAR DATOS] Asignaciones finales:', window.asignacionesPorModulo);
+    if (window.__edicionDistribucionActiva) {
+        window.__edicionDistribucionActiva.precargaAplicada = true;
+    }
     
     // Actualizar la interfaz para mostrar los datos cargados
     setTimeout(() => {

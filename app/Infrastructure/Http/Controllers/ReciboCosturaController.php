@@ -70,6 +70,7 @@ class ReciboCosturaController extends Controller
 
             $rules = [
                 'tipo_recibo' => 'required|string',
+                'es_edicion' => 'nullable|boolean',
                 'asignaciones' => 'required|array|min:1',
                 'asignaciones.*.encargado' => 'required|string|max:100',
                 'asignaciones.*.tallas' => 'required|array|min:1',
@@ -91,6 +92,7 @@ class ReciboCosturaController extends Controller
             $prendaId = (int) $request->input('prenda_id', $request->input('prenda_bodega_id', 0));
             $prendaBodegaId = $esBodega ? (int) $request->input('prenda_bodega_id', $prendaId) : null;
             $consecutivoOriginal = (int) $numeroRecibo;
+            $esEdicion = (bool) $request->boolean('es_edicion');
 
             Log::info('[COSTURA][DISTRIBUIR] Solicitud recibida', [
                 'pedido_id' => (int) $pedidoId,
@@ -98,6 +100,7 @@ class ReciboCosturaController extends Controller
                 'prenda_id' => $prendaId,
                 'tipo_recibo' => $tipoRecibo,
                 'consecutivo_original' => $consecutivoOriginal,
+                'es_edicion' => $esEdicion,
                 'asignaciones_count' => count((array) $request->asignaciones),
             ]);
 
@@ -126,7 +129,7 @@ class ReciboCosturaController extends Controller
 
             $tipoReciboReal = $esBodega ? $tipoRecibo : (string) $recibo->tipo_recibo;
 
-            $resultado = DB::transaction(function () use ($pedido, $recibo, $pedidoId, $prendaId, $prendaBodegaId, $esBodega, $tipoReciboReal, $consecutivoOriginal, $request) {
+            $resultado = DB::transaction(function () use ($pedido, $recibo, $pedidoId, $prendaId, $prendaBodegaId, $esBodega, $tipoReciboReal, $consecutivoOriginal, $request, $esEdicion) {
                 $prendaColumn = $esBodega ? 'prenda_bodega_id' : 'prenda_pedido_id';
                 // Buscar el proceso padre de Costura de forma mas flexible
                 // El proceso padre ya debe existir, solo necesitamos localizarlo
@@ -186,6 +189,34 @@ class ReciboCosturaController extends Controller
                     ]);
                 }
 
+                $parcialesExistentes = DB::table('recibo_por_partes')
+                    ->where('pedido_produccion_id', (int) $pedidoId)
+                    ->where('prenda_pedido_id', $prendaId)
+                    ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim($tipoReciboReal))])
+                    ->where('consecutivo_original', $consecutivoOriginal)
+                    ->get(['id', 'consecutivo_parcial']);
+
+                // Mapear parcial existente -> encargado (desde proceso hijo)
+                $parcialesConEncargado = [];
+                foreach ($parcialesExistentes as $parcialExistente) {
+                    $procesoHijoExistente = ProcesoPrenda::query()
+                        ->where('numero_pedido', $pedido->numero_pedido)
+                        ->where($prendaColumn, $prendaId)
+                        ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                        ->where('numero_recibo_parcial', $parcialExistente->consecutivo_parcial)
+                        ->whereNull('deleted_at')
+                        ->orderByDesc('created_at')
+                        ->first();
+
+                    $encargadoNorm = strtolower(trim((string) ($procesoHijoExistente->encargado ?? '')));
+                    if ($encargadoNorm !== '') {
+                        $parcialesConEncargado[$encargadoNorm] = [
+                            'id' => (int) $parcialExistente->id,
+                            'consecutivo_parcial' => (string) $parcialExistente->consecutivo_parcial,
+                        ];
+                    }
+                }
+
                 $maxParcialExistente = DB::table('recibo_por_partes')
                     ->where('pedido_produccion_id', (int) $pedidoId)
                     ->where('prenda_pedido_id', $prendaId)
@@ -201,41 +232,87 @@ class ReciboCosturaController extends Controller
                 }
 
                 $creados = [];
+                $encargadosProcesados = [];
 
                 foreach ((array) $request->asignaciones as $asig) {
                     $encargado = trim((string) ($asig['encargado'] ?? ''));
+                    $encargadoNorm = strtolower($encargado);
                     $tallas = (array) ($asig['tallas'] ?? []);
                     if ($encargado === '' || empty($tallas)) {
                         continue;
                     }
 
-                    $consecutivoParcial = (float) ($consecutivoOriginal + ($nextIndex / 10));
-                    $consecutivoParcialDb = number_format($consecutivoParcial, 2, '.', '');
-                    $nextIndex++;
+                    $encargadosProcesados[] = $encargadoNorm;
 
-                    $procesoHijo = ProcesoPrenda::create([
-                        'numero_pedido' => $pedido->numero_pedido,
-                        'prenda_pedido_id' => $esBodega ? null : $prendaId,
-                        'prenda_bodega_id' => $esBodega ? $prendaBodegaId : null,
-                        'numero_recibo' => null,
-                        'numero_recibo_parcial' => $consecutivoParcialDb,
-                        'proceso' => 'Costura',
-                        'fecha_inicio' => now(),
-                        'encargado' => $encargado,
-                        'fecha_de_asignacion_encargado' => now(),
-                        'estado_proceso' => 'En Progreso',
-                        'codigo_referencia' => 'COS-' . $consecutivoParcialDb . '-' . date('YmdHis'),
-                    ]);
+                    $esParcialExistente = $esEdicion && isset($parcialesConEncargado[$encargadoNorm]);
 
-                    $reciboParteId = DB::table('recibo_por_partes')->insertGetId([
-                        'pedido_produccion_id' => (int) $pedidoId,
-                        'prenda_pedido_id' => $prendaId,
-                        'tipo_recibo' => $tipoReciboReal,
-                        'consecutivo_original' => $consecutivoOriginal,
-                        'consecutivo_parcial' => $consecutivoParcialDb,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                    if ($esParcialExistente) {
+                        $reciboParteId = (int) $parcialesConEncargado[$encargadoNorm]['id'];
+                        $consecutivoParcialDb = (string) $parcialesConEncargado[$encargadoNorm]['consecutivo_parcial'];
+
+                        DB::table('recibos_por_partes_tallas')
+                            ->where('recibo_por_partes_id', $reciboParteId)
+                            ->delete();
+
+                        $procesoHijo = ProcesoPrenda::query()
+                            ->where('numero_pedido', $pedido->numero_pedido)
+                            ->where($prendaColumn, $prendaId)
+                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                            ->where('numero_recibo_parcial', $consecutivoParcialDb)
+                            ->whereNull('deleted_at')
+                            ->orderByDesc('created_at')
+                            ->first();
+
+                        if ($procesoHijo) {
+                            $procesoHijo->update([
+                                'encargado' => $encargado,
+                                'fecha_de_asignacion_encargado' => now(),
+                                'estado_proceso' => 'En Progreso',
+                            ]);
+                        } else {
+                            $procesoHijo = ProcesoPrenda::create([
+                                'numero_pedido' => $pedido->numero_pedido,
+                                'prenda_pedido_id' => $esBodega ? null : $prendaId,
+                                'prenda_bodega_id' => $esBodega ? $prendaBodegaId : null,
+                                'numero_recibo' => null,
+                                'numero_recibo_parcial' => $consecutivoParcialDb,
+                                'proceso' => 'Costura',
+                                'fecha_inicio' => now(),
+                                'encargado' => $encargado,
+                                'fecha_de_asignacion_encargado' => now(),
+                                'estado_proceso' => 'En Progreso',
+                                'codigo_referencia' => 'COS-' . $consecutivoParcialDb . '-' . date('YmdHis'),
+                            ]);
+                        }
+                    } else {
+                        $consecutivoParcial = (float) ($consecutivoOriginal + ($nextIndex / 10));
+                        $consecutivoParcialDb = number_format($consecutivoParcial, 2, '.', '');
+                        $nextIndex++;
+
+                        $procesoHijo = ProcesoPrenda::create([
+                            'numero_pedido' => $pedido->numero_pedido,
+                            'prenda_pedido_id' => $esBodega ? null : $prendaId,
+                            'prenda_bodega_id' => $esBodega ? $prendaBodegaId : null,
+                            'numero_recibo' => null,
+                            'numero_recibo_parcial' => $consecutivoParcialDb,
+                            'proceso' => 'Costura',
+                            'fecha_inicio' => now(),
+                            'encargado' => $encargado,
+                            'fecha_de_asignacion_encargado' => now(),
+                            'estado_proceso' => 'En Progreso',
+                            'codigo_referencia' => 'COS-' . $consecutivoParcialDb . '-' . date('YmdHis'),
+                        ]);
+
+                        $reciboParteId = DB::table('recibo_por_partes')->insertGetId([
+                            'pedido_produccion_id' => (int) $pedidoId,
+                            'prenda_pedido_id' => $prendaId,
+                            'tipo_recibo' => $tipoReciboReal,
+                            'consecutivo_original' => $consecutivoOriginal,
+                            'consecutivo_parcial' => $consecutivoParcialDb,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
 
                     foreach ($tallas as $t) {
                         $talla = trim((string) ($t['talla'] ?? ''));
@@ -260,6 +337,33 @@ class ReciboCosturaController extends Controller
                         'parcial_id' => (int) $reciboParteId,
                         'encargado' => $encargado,
                     ];
+                }
+
+                // En edición, eliminar parciales que quedaron fuera (encargados removidos)
+                if ($esEdicion) {
+                    foreach ($parcialesConEncargado as $encargadoExistenteNorm => $parcialExistente) {
+                        if (in_array($encargadoExistenteNorm, $encargadosProcesados, true)) {
+                            continue;
+                        }
+
+                        $parcialIdEliminar = (int) $parcialExistente['id'];
+                        $consecutivoParcialEliminar = (string) $parcialExistente['consecutivo_parcial'];
+
+                        DB::table('recibos_por_partes_tallas')
+                            ->where('recibo_por_partes_id', $parcialIdEliminar)
+                            ->delete();
+
+                        ProcesoPrenda::query()
+                            ->where('numero_pedido', $pedido->numero_pedido)
+                            ->where($prendaColumn, $prendaId)
+                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                            ->where('numero_recibo_parcial', $consecutivoParcialEliminar)
+                            ->delete();
+
+                        DB::table('recibo_por_partes')
+                            ->where('id', $parcialIdEliminar)
+                            ->delete();
+                    }
                 }
 
                 return [

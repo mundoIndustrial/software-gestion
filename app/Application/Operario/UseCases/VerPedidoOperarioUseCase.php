@@ -7,6 +7,7 @@ use App\Domain\Operario\Repositories\PedidoProduccionOperarioReadRepository;
 use App\Domain\Operario\Services\PedidoFotosReadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class VerPedidoOperarioUseCase
 {
@@ -29,9 +30,35 @@ class VerPedidoOperarioUseCase
 
         $pedidoDB = null;
         $reciboId = (int) $request->query('recibo_id', 0);
+        $parcialId = (int) $request->query('parcial_id', 0);
         $tipoReciboRequest = (string) $request->query('tipo_recibo', 'COSTURA');
         $tipoReciboUpper = strtoupper(trim($tipoReciboRequest));
         $isBodegaByTipo = in_array($tipoReciboUpper, ['CORTE-PARA-BODEGA', 'BODEGA'], true);
+
+        // Fallback para bodega parcial: si no llega recibo_id pero sí parcial_id, resolver recibo base.
+        if ($reciboId <= 0 && $parcialId > 0 && (($numeroPedido === 0) || $isBodegaByTipo)) {
+            $parcial = DB::table('recibo_por_partes')
+                ->where('id', $parcialId)
+                ->first(['consecutivo_original', 'prenda_pedido_id', 'tipo_recibo']);
+
+            if ($parcial) {
+                $tipoParcial = strtoupper(trim((string) ($parcial->tipo_recibo ?? $tipoReciboUpper)));
+                if (in_array($tipoParcial, ['CORTE-PARA-BODEGA', 'BODEGA'], true)) {
+                    $reciboBase = \App\Models\ConsecutivoReciboPedido::query()
+                        ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
+                        ->where('consecutivo_actual', (int) ($parcial->consecutivo_original ?? 0))
+                        ->where('prenda_bodega_id', (int) ($parcial->prenda_pedido_id ?? 0))
+                        ->where('activo', 1)
+                        ->orderByDesc('id')
+                        ->first(['id']);
+
+                    if ($reciboBase) {
+                        $reciboId = (int) $reciboBase->id;
+                    }
+                }
+            }
+        }
+
         $isBodegaOnly = ($reciboId > 0) && (($numeroPedido === 0) || $isBodegaByTipo);
 
         \Log::info('[VerPedidoOperarioUseCase] Verificando tipo de pedido', [
