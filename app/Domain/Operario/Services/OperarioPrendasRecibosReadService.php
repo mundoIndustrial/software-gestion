@@ -12,5 +12,5 @@ interface OperarioPrendasRecibosReadService
     
     public function obtenerConteoPrendasConRecibosBodegaCortador(\App\Models\User $usuario): int;
 
-    public function obtenerPrendasConRecibosBodegaVistaCostura(): \Illuminate\Support\Collection;
+    public function obtenerPrendasConRecibosBodegaVistaCostura(bool $desglosarParciales = false): \Illuminate\Support\Collection;
 }

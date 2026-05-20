@@ -1,6 +1,6 @@
-export function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda, tipoRecibo, pedidoParcialId = null, consecutivoParcial = null, reciboId = null) {
+﻿export function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda, tipoRecibo, pedidoParcialId = null, consecutivoParcial = null, reciboId = null) {
     console.log(' [ABRIR DETALLES RECIBOS] ===== INICIANDO =====');
-    console.log(' Parámetros recibidos:', {
+    console.log(' Parametros recibidos:', {
         numeroPedido: numeroPedido,
         prendaId: prendaId,
         nombrePrenda: nombrePrenda,
@@ -11,16 +11,17 @@ export function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda, tipoR
     });
 
     let finalNumeroPedido = numeroPedido;
-    
-    // Si es bodega y no hay número de pedido, usamos '0' como placeholder
-    if (!finalNumeroPedido || finalNumeroPedido === '' || finalNumeroPedido === null || finalNumeroPedido === undefined) {
-        if (tipoRecibo === 'CORTE-PARA-BODEGA' || tipoRecibo === 'BODEGA') {
-            finalNumeroPedido = '0';
-        } else {
-            console.error(' ERROR: numeroPedido está vacío o undefined', finalNumeroPedido);
-            alert('Error: No se pudo determinar el número de pedido');
-            return false;
-        }
+    const tipoReciboUpper = String(tipoRecibo || '').trim().toUpperCase();
+    const esReciboBodega = tipoReciboUpper === 'CORTE-PARA-BODEGA' || tipoReciboUpper === 'BODEGA';
+
+    // Para recibos de bodega, el endpoint espera /operario/pedido/0 + recibo_id.
+    // El valor mostrado en la card suele ser consecutivo del recibo, no número real de pedido.
+    if (esReciboBodega) {
+        finalNumeroPedido = '0';
+    } else if (!finalNumeroPedido || finalNumeroPedido === '' || finalNumeroPedido === null || finalNumeroPedido === undefined) {
+        console.error(' ERROR: numeroPedido está vacío o undefined', finalNumeroPedido);
+        alert('Error: No se pudo determinar el número de pedido');
+        return false;
     }
 
     const numeroPedidoStr = String(finalNumeroPedido).trim();
@@ -60,12 +61,13 @@ export function abrirDetallesRecibos(numeroPedido, prendaId, nombrePrenda, tipoR
     console.log(' URL a navegar:', url);
 
     try {
-        console.log(' Iniciando navegación...');
+        console.log(' Iniciando navegacion...');
         window.location.href = url;
-        console.log(' Navegación iniciada exitosamente');
+        console.log(' Navegacion iniciada exitosamente');
         return false;
     } catch (error) {
         console.error(' Error al navegar:', error);
         return false;
     }
 }
+

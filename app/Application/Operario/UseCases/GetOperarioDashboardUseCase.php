@@ -195,6 +195,10 @@ class GetOperarioDashboardUseCase
                 }
             }
 
+            if ($usuario->hasRole('administrador-costura') && $tab === 'bodega') {
+                $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibosBodegaVistaCostura(true);
+            }
+
             $areaOperario = $usuario->hasRole('cortador')
                 ? 'Corte'
                 : ($usuario->hasAnyRole(['costurero', 'confeccion-sobremedida']) ? 'Costura' : null);
