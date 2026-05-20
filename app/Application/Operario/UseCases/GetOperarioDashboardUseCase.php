@@ -335,6 +335,8 @@ class GetOperarioDashboardUseCase
 
                     return $prenda;
                 });
+            } elseif ($busquedaVistaCostura !== '' && ($usuario->hasRole('lider-reflectivo') || $usuario->hasRole('costura-reflectivo'))) {
+                $prendasConRecibos = $this->filtrarPrendasPorBusquedaVistaCostura($prendasConRecibos, $busquedaVistaCostura);
             }
         }
 

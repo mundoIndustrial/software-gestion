@@ -31,7 +31,7 @@ class ObtenerPrendasRecibosSupportService
     {
         $tiposRecibo = ['COSTURA', 'COSTURA-BODEGA'];
 
-        if (in_array($tipoOperario, ['vista-costura', 'costura-reflectivo'], true)) {
+        if (in_array($tipoOperario, ['vista-costura', 'costura-reflectivo', 'lider-reflectivo'], true)) {
             $tiposRecibo = ['COSTURA', 'REFLECTIVO'];
         }
 
@@ -56,6 +56,12 @@ class ObtenerPrendasRecibosSupportService
         $areasPermitidas = $esBodegaVistaCostura
             ? ['Costura', 'Control de Calidad', 'Control Calidad']
             : ['Corte', 'Costura', 'Control de Calidad', 'Control Calidad'];
+        $esLiderReflectivoConVistaReflectivo = $tipoOperario === 'lider-reflectivo'
+            && in_array('REFLECTIVO', $tiposRecibo, true);
+
+        if ($esLiderReflectivoConVistaReflectivo) {
+            $areasPermitidas[] = 'Despacho';
+        }
 
         $query = ConsecutivoReciboPedido::where('activo', 1)
             ->whereIn('tipo_recibo', $tiposRecibo)
@@ -318,6 +324,14 @@ class ObtenerPrendasRecibosSupportService
 
     public function obtenerTipoOperario(User $usuario): string
     {
+        if ($usuario->hasRole('lider-reflectivo')) {
+            return 'costura-reflectivo';
+        }
+
+        if ($usuario->hasRole('costura-reflectivo')) {
+            return 'costura-reflectivo';
+        }
+
         if ($usuario->hasRole('cortador')) {
             return 'cortador';
         }
@@ -336,14 +350,6 @@ class ObtenerPrendasRecibosSupportService
 
         if ($usuario->hasRole('bodeguero')) {
             return 'bodeguero';
-        }
-
-        if ($usuario->hasRole('costura-reflectivo')) {
-            return 'costura-reflectivo';
-        }
-
-        if ($usuario->hasRole('lider-reflectivo')) {
-            return 'costura-reflectivo';
         }
 
         if ($usuario->hasRole('visualizador_plooter')) {

@@ -7,6 +7,7 @@ export function initDashboardSearch() {
         const searchLoadingState = document.getElementById('searchLoadingState');
         const userRole = document.querySelector('.operario-dashboard')?.dataset?.userRole || '';
         const esVistaCostura = userRole === 'vista-costura';
+        const usaBusquedaServidor = esVistaCostura || userRole === 'lider-reflectivo';
         const debounceMs = 350;
         let searchTimer = null;
 
@@ -41,8 +42,20 @@ export function initDashboardSearch() {
             searchInput.removeEventListener('input', window.__dashboardSearchHandler);
         }
 
+        const obtenerFiltroActivoParaBusqueda = () => {
+            return window.__dashboardFiltroPrincipalActivo
+                || document.querySelector('.badge-filtro[data-filtro].badge-filtro-active')?.dataset?.filtro
+                || 'costura';
+        };
+
         const getBaseUrlWithQuery = (value) => {
             const url = new URL(window.location.href);
+            const filtroActivo = obtenerFiltroActivoParaBusqueda();
+
+            if (filtroActivo) {
+                url.searchParams.set('filtro', filtroActivo);
+            }
+
             if (value && value.trim() !== '') {
                 url.searchParams.set('q', value.trim());
             } else {
@@ -172,14 +185,14 @@ export function initDashboardSearch() {
                     .split(/\s+/)
                     .filter(Boolean);
 
-                return tokensNumericos.includes(busqueda);
+                return tokensNumericos.some((token) => token.includes(busqueda));
             }
 
             return texto.includes(busqueda);
         };
 
         window.__applyDashboardSearchFilter = function () {
-            if (esVistaCostura) {
+            if (usaBusquedaServidor) {
                 return;
             }
 
@@ -193,6 +206,11 @@ export function initDashboardSearch() {
             cardsActuales.forEach((card) => {
                 const coincideTipo = enModoControlCalidad ? true : coincideConFiltroPrincipal(card, filtroPrincipal);
                 const coincideEncargado = enModoControlCalidad ? true : coincideConFiltroEncargado(card, filtroPrincipal);
+                const tiposCard = String(card.dataset.tipoRecibo || '')
+                    .split(',')
+                    .map((valor) => valor.trim().toLowerCase())
+                    .filter(Boolean);
+                const tieneReflectivo = tiposCard.includes('reflectivo');
                 const numeroRecibo = String(card.dataset.numeroRecibo || '').toLowerCase();
                 const cliente = String(card.dataset.cliente || '').toLowerCase();
                 const nombrePrenda = String(card.dataset.prenda || '').toLowerCase();
@@ -209,9 +227,17 @@ export function initDashboardSearch() {
                     coincideBusquedaTexto(cliente, busqueda, esNumerica) ||
                     coincideBusquedaTexto(nombrePrenda, busqueda, esNumerica) ||
                     coincideBusquedaTexto(textoVisible, busqueda, esNumerica);
-
-                const mostrar = coincideTipo && coincideEncargado && coincideTexto;
+                const coincideFiltrosNormales = coincideTipo && coincideEncargado;
+                const buscarEnReflectivo = filtroPrincipal === 'reflectivo' && busqueda !== '';
+                const mostrarPorBusquedaReflectivo = buscarEnReflectivo && tieneReflectivo && coincideTexto;
+                const forzarPorBusqueda = mostrarPorBusquedaReflectivo && !coincideFiltrosNormales;
+                const mostrar = mostrarPorBusquedaReflectivo || (coincideTexto && coincideFiltrosNormales);
                 card.style.display = mostrar ? '' : 'none';
+
+                const areaHint = card.querySelector('.dashboard-search-area-hint');
+                if (areaHint) {
+                    areaHint.style.display = forzarPorBusqueda ? 'inline-flex' : 'none';
+                }
             });
 
             // Actualizar paginación después de filtrar por búsqueda
@@ -220,6 +246,7 @@ export function initDashboardSearch() {
 
         window.__dashboardClearHandler = function () {
             searchInput.value = '';
+            window.__dashboardSearchQuery = '';
             if (clearBtn) {
                 clearBtn.style.display = 'none';
             }
@@ -227,7 +254,7 @@ export function initDashboardSearch() {
                 clearTextBtn.style.display = 'none';
             }
             mostrarCargandoBusqueda(false);
-            if (esVistaCostura) {
+            if (usaBusquedaServidor) {
                 const url = obtenerUrlBusquedaVistaCostura('');
                 aplicarRespuestaBusquedaVistaCostura(url);
                 return;
@@ -253,7 +280,7 @@ export function initDashboardSearch() {
                 clearTextBtn.style.display = busqueda ? 'inline-flex' : 'none';
             }
 
-            if (esVistaCostura) {
+            if (usaBusquedaServidor) {
                 mostrarCargandoBusqueda(true);
                 window.clearTimeout(searchTimer);
                 searchTimer = window.setTimeout(() => {
@@ -268,9 +295,10 @@ export function initDashboardSearch() {
 
         searchInput.addEventListener('input', window.__dashboardSearchHandler);
 
-        if (esVistaCostura) {
+        if (usaBusquedaServidor) {
             const busquedaQuery = new URL(window.location.href).searchParams.get('q') || '';
             searchInput.value = busquedaQuery;
+            window.__dashboardSearchQuery = busquedaQuery.toLowerCase().trim();
             if (clearBtn) {
                 clearBtn.style.display = busquedaQuery ? 'flex' : 'none';
             }
@@ -282,6 +310,8 @@ export function initDashboardSearch() {
                 dashboard.classList.remove('is-searching');
             }
             mostrarCargandoBusqueda(false);
+        } else {
+            window.__dashboardSearchQuery = String(searchInput.value || '').toLowerCase().trim();
         }
 
         window.__applyDashboardSearchFilter?.();

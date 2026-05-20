@@ -436,6 +436,21 @@ class ObtenerPrendasRecibosListadoService
         mixed $pedido
     ): Collection {
         return $recibosDelTipo->filter(function ($recibo) use ($tipoOperario, $usuario, $prenda, $pedido, $recibosDelTipo) {
+            if ($usuario->hasRole('lider-reflectivo') && strtoupper(trim((string) ($recibo->tipo_recibo ?? ''))) === 'COSTURA') {
+                $contexto = $this->supportService->resolverContextoProcesosRecibo($recibo);
+                $encargadoCostura = trim((string) ($contexto['proceso_costura']?->encargado ?? ''));
+
+                if ($encargadoCostura === '') {
+                    return false;
+                }
+
+                $encargadoUsuario = User::query()
+                    ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($encargadoCostura)])
+                    ->first();
+
+                return $encargadoUsuario?->hasRole('costura-reflectivo') ?? false;
+            }
+
             if ($tipoOperario !== 'vista-costura') {
                 return true;
             }

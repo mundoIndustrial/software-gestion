@@ -28,6 +28,23 @@
     $paginaActualVistaCostura = max(1, (int) request()->query($pageNameVistaCostura, 1));
     $modoControlCalidadVistaCostura = $esVistaCostura && $filtroEncargadoActual === 'control-calidad';
     $tabActualDashboard = (string) ($tab ?? request()->query('tab', 'pendientes'));
+    $rolCosturaReflectivoId = \Illuminate\Support\Facades\DB::table('roles')
+        ->where('name', 'costura-reflectivo')
+        ->value('id');
+
+    $nombresCosturaReflectivo = collect();
+    if ($rolCosturaReflectivoId) {
+        $nombresCosturaReflectivo = \App\Models\User::query()
+            ->where(function ($query) use ($rolCosturaReflectivoId) {
+                $query->whereJsonContains('roles_ids', (int) $rolCosturaReflectivoId)
+                    ->orWhere('role_id', (int) $rolCosturaReflectivoId);
+            })
+            ->pluck('name')
+            ->map(fn ($name) => strtolower(trim((string) $name)))
+            ->filter(fn ($name) => $name !== '')
+            ->unique()
+            ->values();
+    }
 
     $ordenarPorFechaAsignacionProceso = auth()->user()->hasAnyRole([
         'costurero',
@@ -208,11 +225,11 @@
                         </button>
                     @else
                         <!-- Para costura-reflectivo y lider-reflectivo: mostrar ambos tags -->
-                        <button class="badge-filtro badge-filtro-active" data-filtro="costura" onclick="filtrarPrendasPorRecibo('costura')">
+                        <button class="badge-filtro {{ $filtroReciboActual === 'costura' ? 'badge-filtro-active' : '' }}" data-filtro="costura" onclick="filtrarPrendasPorRecibo('costura')">
                             <span class="material-symbols-rounded">checkroom</span>
                             Costura
                         </button>
-                        <button class="badge-filtro" data-filtro="reflectivo" onclick="filtrarPrendasPorRecibo('reflectivo')">
+                        <button class="badge-filtro {{ $filtroReciboActual === 'reflectivo' ? 'badge-filtro-active' : '' }}" data-filtro="reflectivo" onclick="filtrarPrendasPorRecibo('reflectivo')">
                             <span class="material-symbols-rounded">auto_awesome</span>
                             Reflectivo
                         </button>
@@ -778,6 +795,9 @@
                                 }
                             }
 
+                            $busquedaActiva = $busquedaActual !== '';
+                            $reflectivoCompletadoEnCard = (bool) (($reciboReflectivoParaFiltro['completado_reflectivo'] ?? false) || ($reciboReflectivoParaFiltro['completado_costura'] ?? false));
+
 
                             // Obtener el Area del recibo principal para filtros
                             $reciboPrincipalFiltro = $prenda['recibos'][0] ?? null;
@@ -808,8 +828,14 @@
                             if (auth()->user()->hasRole('vista-costura')) {
                                 // En vista-costura con filtro server-side, mostrar siempre lo consultado por backend
                                 $displayInicial = '';
-                            } elseif (auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']) || auth()->user()->hasRole('administrador-costura')) {
-                                // Mostrar por defecto las que tienen costura (incluyendo las que tienen ambos)
+                            } elseif (auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo')) {
+                                // Para roles mixtos, respetar el tab activo en server-side
+                                if ($filtroReciboActual === 'reflectivo') {
+                                    $displayInicial = ($mostrarReflectivoEnFiltro && ($busquedaActiva || !$reflectivoCompletadoEnCard)) ? '' : 'none';
+                                } else {
+                                    $displayInicial = $tieneCostura ? '' : 'none';
+                                }
+                            } elseif (auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']) || auth()->user()->hasRole('administrador-costura')) {
                                 $displayInicial = $tieneCostura ? '' : 'none';
                             } elseif (auth()->user()->hasRole('cortador')) {
                                 // Para cortadores: mostrar las que tienen Area "Corte"
@@ -866,6 +892,8 @@
                             });
                             $sinEncargadoReflectivoCard = $reciboReflectivoFiltroCard
                                 && empty(trim((string) ($reciboReflectivoFiltroCard['encargado_costura'] ?? '')));
+                            $sinEncargadoCosturaLider = $reciboCosturaFiltroCard
+                                && empty(trim((string) ($reciboCosturaFiltroCard['encargado_costura'] ?? '')));
 
                             $recibosCorteAsignadosCortador = collect($prenda['recibos'] ?? [])->filter(function ($recibo) {
                                 $area = strtolower(trim((string) ($recibo['area'] ?? '')));
@@ -873,6 +901,18 @@
                             })->count();
                         @endphp
 
+                        @if(auth()->user()->hasRole('lider-reflectivo') && $filtroReciboActual === 'costura' && !$mostrarReflectivoEnFiltro && $sinEncargadoCosturaLider)
+                            @continue
+                        @endif
+                        @if(auth()->user()->hasRole('lider-reflectivo') && $filtroReciboActual === 'costura' && !$mostrarReflectivoEnFiltro && $tieneCostura)
+                            @php
+                                $encargadoCosturaLider = strtolower(trim((string) ($reciboCosturaFiltroCard['encargado_costura'] ?? '')));
+                                $encargadoCosturaEsReflectivo = $encargadoCosturaLider !== '' && $nombresCosturaReflectivo->contains($encargadoCosturaLider);
+                            @endphp
+                            @if(!$encargadoCosturaEsReflectivo)
+                                @continue
+                            @endif
+                        @endif
                         <div class="orden-card-simple {{ ((auth()->user()->hasAnyRole(['costurero', 'confeccion-sobremedida']) || auth()->user()->hasRole('costura-reflectivo') || auth()->user()->hasRole('lider-reflectivo') || auth()->user()->hasRole('administrador-costura')) && $reciboCompletadoCostura) ? 'card-completado-costura' : '' }} {{ $tieneReflectivo ? 'borde-reflectivo' : '' }}" 
                              data-numero="{{ $prenda['numero_pedido'] }}" 
                              data-prenda="{{ strtolower($prenda['nombre_prenda']) }}"
@@ -890,6 +930,7 @@
                              data-fecha-creacion-costura="{{ ($reciboCosturaFiltroCard['created_at'] ?? ($prenda['fecha_creacion'] ?? '')) ? strtotime($reciboCosturaFiltroCard['created_at'] ?? ($prenda['fecha_creacion'] ?? '')) : 0 }}"
                              data-fecha-asignacion-costura="{{ ($reciboCosturaFiltroCard['fecha_asignacion_costura'] ?? ($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? ''))) ? strtotime($reciboCosturaFiltroCard['fecha_asignacion_costura'] ?? ($reciboCosturaFiltroCard['fecha_proceso_costura_created_at'] ?? ($prenda['fecha_creacion'] ?? ''))) : 0 }}"
                              data-recibos-corte-asignados="{{ $recibosCorteAsignadosCortador }}"
+                             data-area-actual="{{ strtoupper(trim((string) ($reciboPrincipalCard['area'] ?? 'SIN AREA'))) }}"
                              style="display: {{ $displayInicial }}">
 
                             <!-- Borde izquierdo eliminado -->
@@ -1038,6 +1079,10 @@
                                     <div class="orden-cliente">
                                         <p class="cliente-label">{{ (isset($prenda['recibos'][0]) && strtoupper((string)($prenda['recibos'][0]['tipo_recibo'] ?? '')) === 'CORTE-PARA-BODEGA') ? 'SERVICIO' : 'CLIENTE' }}</p>
                                         <p class="cliente-name">{{ $prenda['cliente'] }}</p>
+                                    </div>
+                                    <div class="dashboard-search-area-hint" style="display: none;">
+                                        <span class="material-symbols-rounded">location_on</span>
+                                        <span>EN AREA: {{ strtoupper(trim((string) ($reciboPrincipalCard['area'] ?? 'SIN AREA'))) }}</span>
                                     </div>
 
                                     @if(auth()->user()->hasRole('lider-reflectivo'))

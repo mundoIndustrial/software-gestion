@@ -141,6 +141,8 @@ export function initReciboFilters() {
         }
 
         const filtroEncargado = obtenerFiltroEncargadoActivo();
+        const userRole = document.querySelector('.operario-dashboard')?.dataset?.userRole || '';
+        const esLiderReflectivo = userRole === 'lider-reflectivo';
         const ordenCards = ordenesList.querySelectorAll('.orden-card-simple');
         let mostradas = 0;
         let ocultadas = 0;
@@ -169,12 +171,23 @@ export function initReciboFilters() {
 
             const tipos = tipoRecibo ? tipoRecibo.split(',').map((t) => t.trim()) : [];
             const coincideFiltroPrincipal = tipos.includes(filtroPrincipal);
+            const areaActualCard = String(card.dataset.areaActual || '').toLowerCase().trim();
+            const enBusqueda = String(window.__dashboardSearchQuery || '').trim() !== '';
+            const reflectivoCompletadoRaw = String(card.dataset.completadoReflectivo || '0').toLowerCase();
+            const reflectivoCompletado = reflectivoCompletadoRaw === '1' || reflectivoCompletadoRaw === 'true';
             const atributoSinEncargado =
                 filtroPrincipal === 'reflectivo' ? 'sinEncargadoReflectivo' : 'sinEncargadoCostura';
             const coincideFiltroEncargado =
                 filtroEncargado !== 'sin-encargado' || String(card.dataset[atributoSinEncargado] || '0') === '1';
+            const excluirPorReflectivoCompletado =
+                esLiderReflectivo && filtroPrincipal === 'reflectivo' && !enBusqueda && reflectivoCompletado;
+            const excluirPorAreaFueraReflectivo =
+                esLiderReflectivo
+                && filtroPrincipal === 'reflectivo'
+                && !enBusqueda
+                && areaActualCard !== 'costura';
 
-            if (coincideFiltroPrincipal && coincideFiltroEncargado) {
+            if (coincideFiltroPrincipal && coincideFiltroEncargado && !excluirPorReflectivoCompletado && !excluirPorAreaFueraReflectivo) {
                 if (DASHBOARD_DEBUG) console.log(`  Mostrando (contiene "${filtroPrincipal}" en [${tipos.join(', ')}])`);
                 card.style.display = '';
                 const elementosFiltrables = card.querySelectorAll('[data-visible-filtro]');
@@ -232,10 +245,10 @@ export function initReciboFilters() {
             }
 
             if (esLiderReflectivo) {
-                // lider-reflectivo (costura): ordenar por fecha_de_asignacion_encargado
-                valA = parseInt(a.dataset.fechaAsignacionCostura || a.dataset.fechaCreacionCostura || '0');
-                valB = parseInt(b.dataset.fechaAsignacionCostura || b.dataset.fechaCreacionCostura || '0');
-                return valB - valA;
+                // lider-reflectivo (costura): ordenar por created_at (mas viejo a mas nuevo)
+                valA = parseInt(a.dataset.fechaCreacionCostura || '0');
+                valB = parseInt(b.dataset.fechaCreacionCostura || '0');
+                return valA - valB;
             }
 
             // Costura (otros roles): mantener mas reciente primero
@@ -253,7 +266,8 @@ export function initReciboFilters() {
 
     window.filtrarPrendasPorRecibo = function (filtro) {
         const userRole = document.querySelector('.operario-dashboard')?.dataset?.userRole || '';
-        if (userRole === 'vista-costura') {
+        const usaFiltroServidor = userRole === 'vista-costura' || userRole === 'lider-reflectivo' || userRole === 'costura-reflectivo';
+        if (usaFiltroServidor) {
             const url = new URL(window.location.href);
             url.searchParams.set('filtro', filtro);
             if (filtro === 'bodega') {
