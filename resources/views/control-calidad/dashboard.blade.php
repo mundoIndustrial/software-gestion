@@ -45,8 +45,9 @@
 
     <div class="ordenes-section">
         <div class="filtros-badges filtros-badges-principales recibo-tags" id="reciboTags">
-            <button type="button" class="badge-filtro recibo-tag badge-filtro-active active" data-filter="COSTURA">Costura</button>
-            <button type="button" class="badge-filtro recibo-tag" data-filter="REFLECTIVO">Reflectivo</button>
+            <a href="{{ route('control-calidad.dashboard', ['tab' => 'COSTURA']) }}" class="badge-filtro recibo-tag {{ $activeTab === 'COSTURA' ? 'active badge-filtro-active' : '' }}" data-filter="COSTURA">Costura</a>
+            <a href="{{ route('control-calidad.dashboard', ['tab' => 'REFLECTIVO']) }}" class="badge-filtro recibo-tag {{ $activeTab === 'REFLECTIVO' ? 'active badge-filtro-active' : '' }}" data-filter="REFLECTIVO">Reflectivo</a>
+            <a href="{{ route('control-calidad.dashboard', ['tab' => 'BODEGA']) }}" class="badge-filtro recibo-tag {{ $activeTab === 'BODEGA' ? 'active badge-filtro-active' : '' }}" data-filter="BODEGA">Bodega</a>
         </div>
 
         <div class="ordenes-list" id="ordenesList">
@@ -65,8 +66,21 @@
                             . '&prenda_id=' . $prenda['prenda_id'];
 
                         if ($esParcial) {
-                            $urlVerRecibo .= '&parcial_id=' . urlencode((string) ($recibo['parcial_id'] ?? ''))
-                                . '&consecutivo_parcial=' . urlencode((string) ($recibo['consecutivo_parcial'] ?? $recibo['consecutivo_actual'] ?? ''));
+                            $parcialId = (string) ($recibo['parcial_id'] ?? '');
+                            $consecutivoParcial = (string) ($recibo['consecutivo_parcial'] ?? $recibo['consecutivo_actual'] ?? '');
+                            $esBodegaParcial = str_contains(strtoupper((string) $tipoRecibo), 'BODEGA');
+                            $reciboIdOrigen = (string) ($recibo['recibo_id_origen'] ?? '');
+
+                            if ($esBodegaParcial && $reciboIdOrigen !== '') {
+                                $urlVerRecibo = '/operario/pedido/0?prenda_id=' . urlencode((string) $prenda['prenda_id'])
+                                    . '&recibo_id=' . urlencode($reciboIdOrigen)
+                                    . '&tipo_recibo=PARCIAL'
+                                    . '&parcial_id=' . urlencode($parcialId)
+                                    . '&consecutivo_parcial=' . urlencode($consecutivoParcial);
+                            } else {
+                                $urlVerRecibo .= '&parcial_id=' . urlencode($parcialId)
+                                    . '&consecutivo_parcial=' . urlencode($consecutivoParcial);
+                            }
                         }
                     @endphp
                     <div @class([
@@ -81,6 +95,7 @@
                          data-tipo-recibo="{{ strtoupper($tipoRecibo) }}"
                          data-es-parcial="{{ $esParcial ? '1' : '0' }}"
                          data-parcial-id="{{ $recibo['parcial_id'] ?? '' }}"
+                         data-recibo-id-origen="{{ $recibo['recibo_id_origen'] ?? '' }}"
                          data-numero-recibo="{{ $recibo['id'] ?? '' }}">
 
                         <div class="orden-border {{ $estadoClass }}"></div>
@@ -273,6 +288,9 @@
     }
 
     .recibo-tag {
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
         border: 1px solid #e0e0e0;
         background: #f9f9f9;
         color: #555;
@@ -724,6 +742,9 @@
 
     .control-calidad-dashboard .recibo-tag {
         min-width: 0;
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
         justify-content: center;
         border: none;
         border-radius: 999px;
@@ -1496,7 +1517,7 @@
         const tagsContainer = document.getElementById('reciboTags');
         const getOrdenCards = () => ordenesList ? ordenesList.querySelectorAll('.orden-card-simple') : [];
 
-        let activeFilter = 'COSTURA';
+        let activeFilter = @js($activeTab);
 
         function aplicarTemaDashboard(filter) {
             const body = document.body;
@@ -1509,12 +1530,39 @@
             }
 
             if (titleText) {
-                titleText.textContent = filter === 'REFLECTIVO' ? 'CONTROL DE CALIDAD REFLECTIVO' : 'CONTROL DE CALIDAD';
+                if (filter === 'REFLECTIVO') {
+                    titleText.textContent = 'CONTROL DE CALIDAD REFLECTIVO';
+                } else if (filter === 'BODEGA') {
+                    titleText.textContent = 'CONTROL DE CALIDAD BODEGA';
+                } else {
+                    titleText.textContent = 'CONTROL DE CALIDAD';
+                }
             }
 
             if (titleIcon) {
-                titleIcon.textContent = filter === 'REFLECTIVO' ? 'auto_awesome' : 'fact_check';
+                if (filter === 'REFLECTIVO') {
+                    titleIcon.textContent = 'auto_awesome';
+                } else if (filter === 'BODEGA') {
+                    titleIcon.textContent = 'inventory_2';
+                } else {
+                    titleIcon.textContent = 'fact_check';
+                }
             }
+        }
+
+        function coincideConFiltro(tipoRecibo, filtroActivo) {
+            const tipo = String(tipoRecibo || '').toUpperCase().trim();
+            const filtro = String(filtroActivo || '').toUpperCase().trim();
+
+            if (filtro === 'REFLECTIVO') {
+                return tipo === 'REFLECTIVO';
+            }
+
+            if (filtro === 'BODEGA') {
+                return tipo.includes('BODEGA');
+            }
+
+            return tipo === 'COSTURA';
         }
 
         function formatearConsecutivoVisibleJS(valor) {
@@ -1536,15 +1584,29 @@
         function construirUrlVerRecibo(orden, recibo, tipoRecibo, numeroPedido, prendaId) {
             const esParcial = String(recibo?.es_parcial || orden?.es_parcial || '0') === '1' || Boolean(recibo?.es_parcial || orden?.es_parcial);
             const params = new URLSearchParams();
+            // IMPORTANTE: Mantener el tipo de recibo ORIGINAL, no cambiarlo a 'PARCIAL'
             params.set('tipo_recibo', tipoRecibo);
             params.set('prenda_id', prendaId);
 
             if (esParcial) {
                 const parcialId = orden?.parcial_id || recibo?.parcial_id || '';
                 const consecutivoParcial = recibo?.consecutivo_parcial || recibo?.consecutivo_actual || orden?.consecutivo_actual || '';
-                params.set('tipo_recibo', 'PARCIAL');
+                const tipo = String(tipoRecibo || '').toUpperCase().trim();
+                const reciboIdOrigen = orden?.recibo_id_origen || recibo?.recibo_id_origen || '';
+                // NO cambiar tipo_recibo a 'PARCIAL' - mantener el tipo original
+                // params.set('tipo_recibo', 'PARCIAL'); // <- ELIMINADO
                 if (parcialId) params.set('parcial_id', parcialId);
                 if (consecutivoParcial) params.set('consecutivo_parcial', consecutivoParcial);
+
+                if (tipo.includes('BODEGA') && reciboIdOrigen) {
+                    const operarioParams = new URLSearchParams();
+                    operarioParams.set('prenda_id', prendaId);
+                    operarioParams.set('recibo_id', reciboIdOrigen);
+                    operarioParams.set('tipo_recibo', tipoRecibo); // Usar tipo original
+                    if (parcialId) operarioParams.set('parcial_id', parcialId);
+                    if (consecutivoParcial) operarioParams.set('consecutivo_parcial', consecutivoParcial);
+                    return `/operario/pedido/0?${operarioParams.toString()}`;
+                }
             }
 
             return `/control-calidad/pedido/${numeroPedido}?${params.toString()}`;
@@ -1593,7 +1655,7 @@
                 const tipoRecibo = (card.dataset.tipoRecibo || '').toUpperCase();
 
                 const matchBusqueda = (numero.includes(busqueda) || prenda.includes(busqueda) || cliente.includes(busqueda) || busqueda === '');
-                const matchTipo = tipoRecibo === activeFilter;
+                const matchTipo = coincideConFiltro(tipoRecibo, activeFilter);
 
                 if (matchBusqueda && matchTipo) {
                     card.style.display = '';
@@ -1622,26 +1684,8 @@
             });
         }
 
-        if (tagsContainer) {
-            tagsContainer.addEventListener('click', function(e) {
-                const btn = e.target.closest('.recibo-tag');
-                if (!btn) {
-                    return;
-                }
-
-                const filter = (btn.dataset.filter || 'COSTURA').toUpperCase();
-                activeFilter = filter;
-
-                tagsContainer.querySelectorAll('.recibo-tag').forEach(b => {
-                    b.classList.remove('active', 'badge-filtro-active');
-                });
-                btn.classList.add('active');
-                btn.classList.add('badge-filtro-active');
-
-                aplicarTemaDashboard(filter);
-                aplicarFiltros();
-            });
-        }
+        // Pestañas ahora son enlaces <a> que recargan la página desde el servidor.
+        // No es necesario interceptar el clic para filtrar en el cliente.
 
         aplicarTemaDashboard(activeFilter);
         aplicarFiltros();
@@ -1661,6 +1705,7 @@
                     area: orden.area || orden.proceso_actual || 'Control Calidad',
                     es_parcial: orden.es_parcial || false,
                     parcial_id: orden.parcial_id || null,
+                    recibo_id_origen: orden.recibo_id_origen || null,
                     completado_area: orden.completado_area || false,
                     prenda_id: orden.prenda_id || null,
                 });
@@ -1692,6 +1737,7 @@
             card.dataset.tipoRecibo = tipoRecibo;
             card.dataset.esParcial = esParcial ? '1' : '0';
             card.dataset.parcialId = String(parcialId || '');
+            card.dataset.reciboIdOrigen = String(orden.recibo_id_origen || recibo.recibo_id_origen || '');
             card.dataset.numeroRecibo = String(consecutivoActual || recibo.id || orden.id || '');
 
             card.innerHTML = `
@@ -2032,7 +2078,7 @@
 
                             <div class="parcial-row parcial-acciones">
                                 <button class="btn-ver-recibo-parcial" 
-                                        onclick="verReciboParcialCC(${parcial.id}, '${String(parcial.consecutivo_parcial).replace(/'/g, "\\'")}'  , '${numeroRecibo}')">
+                                        onclick="verReciboParcialCC(${parcial.id}, '${String(parcial.consecutivo_parcial).replace(/'/g, "\\'")}'  , '${numeroRecibo}', '${String(tipoRecibo || '').replace(/'/g, "\\'")}', ${reciboId}, ${prendaId || 'null'})">
                                     <span class="material-symbols-rounded">visibility</span>
                                     VER RECIBO
                                 </button>
@@ -2073,7 +2119,23 @@
     };
 
     // Función para ver recibo de un parcial
-    window.verReciboParcialCC = function(parcialId, consecutivoParcial, numeroRecibo) {
+    window.verReciboParcialCC = function(parcialId, consecutivoParcial, numeroRecibo, tipoRecibo, reciboIdOrigen, prendaId) {
+        const tipoReciboUpper = String(tipoRecibo || '').trim().toUpperCase();
+        const esBodega = tipoReciboUpper.includes('BODEGA');
+
+        if (esBodega && reciboIdOrigen) {
+            const params = new URLSearchParams();
+            if (prendaId) {
+                params.set('prenda_id', String(prendaId).trim());
+            }
+            params.set('recibo_id', String(reciboIdOrigen));
+            params.set('tipo_recibo', 'PARCIAL');
+            params.set('parcial_id', String(parcialId));
+            params.set('consecutivo_parcial', String(consecutivoParcial).trim());
+            window.location.href = `/operario/pedido/0?${params.toString()}`;
+            return;
+        }
+
         const urlRecibo = `/control-calidad/pedido/${numeroRecibo}?parcial_id=${parcialId}&consecutivo_parcial=${consecutivoParcial}&tipo_recibo=PARCIAL`;
         window.location.href = urlRecibo;
     };

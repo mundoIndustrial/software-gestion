@@ -38,15 +38,27 @@ class ControlCalidadController extends Controller
         $usuario = auth()->user();
         $esLiderControlCalidad = $usuario && $usuario->hasRole('lider-control-calidad');
 
+        $activeTab = strtoupper($request->query('tab', 'COSTURA'));
+        if (!in_array($activeTab, ['COSTURA', 'REFLECTIVO', 'BODEGA'])) {
+            $activeTab = 'COSTURA';
+        }
+
         // Filtrar recibos que estén en el área de Control de Calidad
-        $recibosQuery = ConsecutivoReciboPedido::where('activo', 1)
-            ->whereIn('tipo_recibo', ['COSTURA', 'REFLECTIVO']);
+        $recibosQuery = ConsecutivoReciboPedido::where('activo', 1);
+
+        if ($activeTab === 'REFLECTIVO') {
+            $recibosQuery->where('tipo_recibo', 'REFLECTIVO');
+        } elseif ($activeTab === 'BODEGA') {
+            $recibosQuery->whereIn('tipo_recibo', ['BODEGA', 'CORTE-PARA-BODEGA']);
+        } else {
+            $recibosQuery->where('tipo_recibo', 'COSTURA');
+        }
 
         // Siempre listar únicamente recibos cuyo área actual sea Control de Calidad
         $recibosQuery->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad']);
 
         $recibos = $recibosQuery
-            ->with(['pedido', 'prenda', 'pedido.prendas'])
+            ->with(['pedido', 'prenda', 'prendaBodega', 'pedido.prendas'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -77,7 +89,25 @@ class ControlCalidadController extends Controller
         // Formatear para reutilizar el mismo layout de tarjetas
         $prendasConRecibos = $recibos->map(function ($recibo) use ($ultimoProcesoPorPedido) {
             $pedido = $recibo->pedido;
-            $prenda = $recibo->prenda ?: $pedido?->prendas?->first();
+            
+            $tipoReciboLower = strtolower((string)$recibo->tipo_recibo);
+            $esBodega = str_contains($tipoReciboLower, 'bodega');
+            
+            if ($esBodega && $recibo->prendaBodega) {
+                $prendaBodega = $recibo->prendaBodega;
+                $prenda = (object) [
+                    'id' => $prendaBodega->id,
+                    'nombre_prenda' => $prendaBodega->nombre,
+                    'descripcion' => $prendaBodega->descripcion,
+                    'de_bodega' => true,
+                ];
+            } else {
+                $prenda = $recibo->prenda;
+            }
+
+            if (!$prenda) {
+                $prenda = $pedido?->prendas?->first();
+            }
             $numeroPedido = $pedido?->numero_pedido;
             $procesoActual = $numeroPedido ? ($ultimoProcesoPorPedido[$numeroPedido] ?? null) : null;
             $procesoControlCalidad = null;
@@ -141,8 +171,18 @@ class ControlCalidadController extends Controller
             ->values()
             ->all();
 
-        $parcialesEnControlCalidad = ReciboPorPartes::query()
-            ->with(['pedido', 'prenda', 'tallas'])
+        $parcialesQuery = ReciboPorPartes::query()
+            ->with(['pedido', 'prenda', 'tallas']);
+
+        if ($activeTab === 'REFLECTIVO') {
+            $parcialesQuery->where('tipo_recibo', 'REFLECTIVO');
+        } elseif ($activeTab === 'BODEGA') {
+            $parcialesQuery->whereIn('tipo_recibo', ['BODEGA', 'CORTE-PARA-BODEGA']);
+        } else {
+            $parcialesQuery->where('tipo_recibo', 'COSTURA');
+        }
+
+        $parcialesEnControlCalidad = $parcialesQuery
             ->orderByDesc('created_at')
             ->get()
             ->filter(function (ReciboPorPartes $parcial) {
@@ -196,10 +236,57 @@ class ControlCalidadController extends Controller
 
         $parcialesConRecibos = $parcialesEnControlCalidad->map(function (ReciboPorPartes $parcial) use ($completadosPorParcialId) {
             $pedido = $parcial->pedido;
-            $prenda = $parcial->prenda;
             $numeroPedido = $pedido?->numero_pedido;
+            
+            $tipoReciboLower = strtolower((string)$parcial->tipo_recibo);
+            $esBodega = str_contains($tipoReciboLower, 'bodega');
+
+            if ($esBodega) {
+                // Si es bodega, prenda_pedido_id apunta a PrendaBodega
+                $prendaBodega = \App\Models\PrendaBodega::find((int)$parcial->prenda_pedido_id);
+                $prenda = null;
+                if ($prendaBodega) {
+                    $prenda = (object) [
+                        'id' => $prendaBodega->id,
+                        'nombre_prenda' => $prendaBodega->nombre,
+                        'descripcion' => $prendaBodega->descripcion,
+                        'de_bodega' => true,
+                    ];
+                }
+            } else {
+                $prenda = $parcial->prenda;
+            }
+
+            if (!$prenda) {
+                $prenda = $pedido?->prendas?->first();
+            }
+
             $consecutivoOriginal = (string) ($parcial->getRawOriginal('consecutivo_original') ?? $parcial->consecutivo_original ?? '');
             $consecutivoParcial = (string) ($parcial->getRawOriginal('consecutivo_parcial') ?? $parcial->consecutivo_parcial ?? '');
+            $reciboOriginal = null;
+            if ($consecutivoOriginal !== '') {
+                $consecutivoOriginalTrim = trim($consecutivoOriginal);
+                $consecutivoOriginalNum = is_numeric($consecutivoOriginalTrim) ? (float) $consecutivoOriginalTrim : null;
+                $consecutivoOriginalInt = $consecutivoOriginalNum !== null ? (string) ((int) $consecutivoOriginalNum) : null;
+
+                $queryOriginal = ConsecutivoReciboPedido::query()
+                    ->where('pedido_produccion_id', (int) ($pedido->id ?? 0))
+                    ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim((string) $parcial->tipo_recibo))])
+                    ->where(function ($q) use ($consecutivoOriginalTrim, $consecutivoOriginalInt) {
+                        $q->where('consecutivo_actual', $consecutivoOriginalTrim);
+                        if ($consecutivoOriginalInt !== null) {
+                            $q->orWhere('consecutivo_actual', $consecutivoOriginalInt);
+                        }
+                    });
+
+                if ($esBodega) {
+                    $queryOriginal->where('prenda_bodega_id', (int) ($prenda->id ?? 0));
+                } else {
+                    $queryOriginal->where('prenda_id', (int) ($prenda->id ?? 0));
+                }
+
+                $reciboOriginal = $queryOriginal->latest('id')->first();
+            }
 
             $proceso = null;
             if ($numeroPedido) {
@@ -233,6 +320,7 @@ class ControlCalidadController extends Controller
                     'parcial_id' => $parcial->id,
                     'consecutivo_parcial' => $consecutivoParcial,
                     'completado_area' => $completadosPorParcialId->has($parcial->id),
+                    'recibo_id_origen' => $reciboOriginal?->id,
                 ]],
                 'total_recibos' => 1,
                 'fecha_creacion' => $proceso?->created_at ?? $parcial->created_at,
@@ -266,6 +354,7 @@ class ControlCalidadController extends Controller
         return view('control-calidad.dashboard', [
             'usuario' => $usuario,
             'prendasConRecibos' => $prendasConRecibos,
+            'activeTab' => $activeTab,
         ]);
     }
 
@@ -549,8 +638,11 @@ class ControlCalidadController extends Controller
         $parcialIdParam = (int) $request->query('parcial_id', 0);
         $consecutivoParcialParam = trim((string) $request->query('consecutivo_parcial', ''));
 
+        // Detectar si es un parcial por la presencia de parcial_id y consecutivo_parcial
+        $esParcial = $parcialIdParam > 0 || $consecutivoParcialParam !== '';
+
         $parcialSeleccionado = null;
-        if ($tipoRecibo === 'PARCIAL') {
+        if ($esParcial) {
             $parcialSeleccionado = ReciboPorPartes::query()
                 ->with(['pedido', 'prenda'])
                 ->where('pedido_produccion_id', $pedidoDB->id)
@@ -564,13 +656,13 @@ class ControlCalidadController extends Controller
         // EXCEPCIÓN: el rol lider-control-calidad puede ver cualquier recibo COSTURA/REFLECTIVO
         if (!$esLiderControlCalidad) {
             $tieneReciboEnControlCalidad = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoDB->id)
-                ->whereIn('tipo_recibo', ['COSTURA', 'REFLECTIVO'])
+                ->whereIn('tipo_recibo', ['COSTURA', 'REFLECTIVO', 'CORTE-PARA-BODEGA', 'BODEGA'])
                 ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
                 ->where('activo', 1)
                 ->exists();
 
             $tieneParcialEnControlCalidad = false;
-            if ($tipoRecibo === 'PARCIAL' && $parcialSeleccionado) {
+            if ($esParcial && $parcialSeleccionado) {
                 $tieneParcialEnControlCalidad = ProcesoPrenda::query()
                     ->where('numero_pedido', (int) ($parcialSeleccionado->pedido?->numero_pedido ?? 0))
                     ->where('prenda_pedido_id', (int) $parcialSeleccionado->prenda_pedido_id)
@@ -591,7 +683,7 @@ class ControlCalidadController extends Controller
         // Para reutilizar operario.ver-pedido sin cambios, inyectamos el consecutivo
         // del recibo seleccionado en el mismo campo que el blade espera.
         $numeroReciboSeleccionado = null;
-        if ($tipoRecibo === 'PARCIAL' && $parcialSeleccionado) {
+        if ($esParcial && $parcialSeleccionado) {
             $numeroReciboSeleccionado = $parcialSeleccionado->getRawOriginal('consecutivo_parcial')
                 ?? $parcialSeleccionado->consecutivo_parcial;
         } elseif ($tipoRecibo) {
@@ -671,6 +763,8 @@ class ControlCalidadController extends Controller
         
         // FILTRAR POR PRENDA_ID si se proporciona
         $prendaIdParam = $request->query('prenda_id');
+        $tipoReciboParam = strtoupper(trim((string) $request->query('tipo_recibo', '')));
+        
         if ($prendaIdParam !== null && isset($result['payload']['data']['prendas'])) {
             $prendaIdParam = (int) $prendaIdParam;
             
@@ -682,6 +776,33 @@ class ControlCalidadController extends Controller
             
             // Si encontramos la prenda, dejarla como única
             if (!empty($prendasFiltradas)) {
+                $prendasFiltradas = array_map(function($prenda) use ($tipoReciboParam) {
+                    // Si se especifica un tipo_recibo, filtrar también los procesos y recibos
+                    if ($tipoReciboParam && isset($prenda['procesos'])) {
+                        $prenda['procesos'] = array_filter(
+                            $prenda['procesos'],
+                            fn($proceso) => strtoupper(trim((string) ($proceso['tipo_proceso'] ?? $proceso['proceso'] ?? ''))) === $tipoReciboParam
+                        );
+                        $prenda['procesos'] = array_values($prenda['procesos']);
+                    }
+                    
+                    // También filtrar los recibos por tipo
+                    if ($tipoReciboParam && isset($prenda['recibos']) && is_array($prenda['recibos'])) {
+                        $prendaRecibosOriginal = $prenda['recibos'];
+                        $prenda['recibos'] = [];
+                        
+                        foreach ($prendaRecibosOriginal as $tipoRecibo => $reciboData) {
+                            $tipoRecibonormalizado = strtoupper(trim((string) $tipoRecibo));
+                            // Mantener el recibo si coincide con el filtro o si es PARCIAL (que puede ser de cualquier tipo)
+                            if ($tipoRecibonormalizado === $tipoReciboParam || $tipoRecibonormalizado === 'PARCIAL') {
+                                $prenda['recibos'][$tipoRecibo] = $reciboData;
+                            }
+                        }
+                    }
+                    
+                    return $prenda;
+                }, $prendasFiltradas);
+                
                 $result['payload']['data']['prendas'] = array_values($prendasFiltradas);
             }
         }

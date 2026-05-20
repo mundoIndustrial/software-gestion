@@ -1,7 +1,7 @@
 /**
  * Control de Calidad - Search and Filter Script
  * Búsqueda dinámica sin recarga de página
- * Respeta el filtro de tags activos (COSTURA/REFLECTIVO)
+ * Respeta el filtro de tags activos (COSTURA/REFLECTIVO/BODEGA)
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -32,7 +32,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Primero verificar que el tipo de recibo coincida con el filtro activo
             const tipoRecibo = (card.dataset.tipoRecibo || 'COSTURA').toUpperCase();
-            const matchTipo = tipoRecibo === activeFilter;
+            const matchTipo = activeFilter === 'BODEGA'
+                ? tipoRecibo.includes('BODEGA')
+                : tipoRecibo === activeFilter;
             
             if (!matchTipo) {
                 // Si no coincide el tipo de recibo, no mostrar
@@ -118,4 +120,3 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
