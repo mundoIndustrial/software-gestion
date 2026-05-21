@@ -35,6 +35,7 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
     Route::post('/api/recibos/{idRecibo}/completar-corte-sobremedida', [OperarioRecibosController::class, 'completarReciboCorteSobremedida'])->name('api.recibos.completar-corte-sobremedida');
     Route::delete('/api/recibos/{idRecibo}/deshacer', [OperarioRecibosController::class, 'deshacerRecibo'])->name('api.recibos.deshacer');
     Route::delete('/api/parciales/{id}/deshacer', [OperarioRecibosController::class, 'deshacerParcial'])->name('api.parciales.deshacer');
+    Route::patch('/api/parciales/{id}/anular', [OperarioRecibosController::class, 'anularParcial'])->name('api.parciales.anular');
     Route::get('/api/recibos/{idRecibo}/distribucion', [OperarioRecibosController::class, 'obtenerDistribucionRecibo'])->name('api.recibos.distribucion');
     Route::get('/api/recibos-procesos/observacion', [OperarioRecibosController::class, 'obtenerObservacionReciboProceso'])->name('api.recibos-procesos.observacion.obtener');
     Route::get('/api/recibos/control-calidad/{tipoRecibo}', [OperarioDashboardController::class, 'obtenerRecibosControlCalidad'])->name('api.recibos.control-calidad');

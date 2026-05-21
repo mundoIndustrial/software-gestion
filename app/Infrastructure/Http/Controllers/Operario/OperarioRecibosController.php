@@ -286,6 +286,71 @@ class OperarioRecibosController extends Controller
         }
     }
 
+    /**
+     * PATCH /operario/api/parciales/{id}/anular
+     * Anula un parcial (cambia su estado a Anulado)
+     */
+    public function anularParcial(Request $request, $id): JsonResponse
+    {
+        try {
+            $usuario = Auth::user();
+            if (!$usuario) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario no autenticado'
+                ], 401);
+            }
+
+            $parcial = \App\Models\ReciboPorPartes::findOrFail($id);
+
+            DB::beginTransaction();
+
+            try {
+                \Log::info('[AnularParcial] Iniciando anulación', [
+                    'parcial_id' => $id,
+                    'estado_actual' => $parcial->estado,
+                ]);
+
+                // Cambiar el estado a 'Anulado'
+                $parcial->update([
+                    'estado' => 'Anulado',
+                    'updated_at' => now(),
+                ]);
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Parcial anulado correctamente',
+                    'data' => [
+                        'id' => $parcial->id,
+                        'estado' => $parcial->estado,
+                    ]
+                ], 200);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                \Log::error('[AnularParcial] Error durante anulación', [
+                    'parcial_id' => $id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                throw $e;
+            }
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Parcial no encontrado'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al anular parcial: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     private function normalizarTipoProceso(string $tipoProceso): string
     {
         return mb_strtoupper(trim($tipoProceso), 'UTF-8');
