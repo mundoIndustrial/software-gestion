@@ -1,12 +1,12 @@
-﻿// FunciÃ³n para cargar recibos dinÃ¡micamente cuando se navega entre procesos
+﻿// Funcion para cargar recibos dinamicamente cuando se navega entre procesos
 window.cargarReciboDinamico = async function(pedidoId, tipoProceso) {
     try {
         console.log(' [CARGAR DINAMICO] ========== INICIANDO ==========');
         console.log(' [CARGAR DINAMICO] Datos:', { pedidoId, tipoProceso });
-        console.log(' [CARGAR DINAMICO] Ãndice actual:', window.procesoCarouselIndex);
+        console.log(' [CARGAR DINAMICO] indice actual:', window.procesoCarouselIndex);
         console.log(' [CARGAR DINAMICO] Procesos disponibles:', window.todosProcesosDisponibles);
         
-        // Determinar la ruta correcta segÃºn la vista actual
+        // Determinar la ruta correcta segun la vista actual
         const pathActual = (window.location?.pathname || '').toString();
         const esControlCalidad = pathActual.includes('/control-calidad/');
         const baseApi = esControlCalidad ? '/control-calidad/api/pedido' : '/operario/api/pedido';
@@ -37,7 +37,7 @@ window.cargarReciboDinamico = async function(pedidoId, tipoProceso) {
         });
         
         if (result.success && result.data) {
-            console.log(' [CARGAR DINAMICO] Datos vÃ¡lidos obtenidos');
+            console.log(' [CARGAR DINAMICO] Datos validos obtenidos');
             console.log(' [CARGAR DINAMICO] Data.prendas:', result.data.prendas?.length);
             
             // Resetear prendaCarouselIndex para que muestre desde el principio
@@ -53,14 +53,14 @@ window.cargarReciboDinamico = async function(pedidoId, tipoProceso) {
                 window.actualizarFotosPrenda();
             }
             
-            // Actualizar nÃºmero de recibo en el header
+            // Actualizar numero de recibo en el header
             if (window.actualizarNumeroPrendaHeader) {
                 window.actualizarNumeroPrendaHeader();
             }
             
             console.log(' [CARGAR DINAMICO] llenarReciboCosturaMobile completado');
         } else {
-            throw new Error('Respuesta invÃ¡lida de la API: ' + JSON.stringify(result));
+            throw new Error('Respuesta invalida de la API: ' + JSON.stringify(result));
         }
     } catch (error) {
         console.error(' [CARGAR DINAMICO] Error:', error);

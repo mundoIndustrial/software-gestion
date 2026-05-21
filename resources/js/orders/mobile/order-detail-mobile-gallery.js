@@ -2,9 +2,9 @@
 let currentImageIndexMobile = 0;
 let currentPedidoNumeroMobile = null;
 
-// Esta funciÃ³n serÃ¡ llamada desde ver-pedido.blade.php cuando se carguen las fotos
+// Esta funcion sera llamada desde ver-pedido.blade.php cuando se carguen las fotos
 function loadGaleriaMobile(container) {
-    // Obtener nÃºmero de pedido
+    // Obtener numero de pedido
     const pedidoElement = document.getElementById('factura-container-mobile');
     if (!pedidoElement) {
         return;
@@ -21,19 +21,19 @@ function loadGaleriaMobile(container) {
     window.OrderDetailMobileService.getGaleria(pedido)
         .then(data => {
 
-            // Construir array de todas las imÃ¡genes para el visor
+            // Construir array de todas las imagenes para el visor
             allImagesMobile = [];
             let html = '<div style="background: linear-gradient(135deg, #1e40af, #0ea5e9); padding: 12px; margin: 0; border-radius: 0; width: 100%; box-sizing: border-box; position: sticky; top: 0; z-index: 100;">';
             html += '<h2 style="text-align: center; margin: 0; font-size: 1.6rem; font-weight: 700; color: white; letter-spacing: 1px;">GALERIA</h2>';
             html += '</div>';
             html += '<div style="padding: 20px; flex: 1; overflow-y: auto;">';
-            // Mostrar prendas con sus imÃ¡genes (separando fotos de prenda/tela de fotos de logo)
+            // Mostrar prendas con sus imagenes (separando fotos de prenda/tela de fotos de logo)
             let fotosLogo = [];
             
             if (data.prendas && data.prendas.length > 0) {
                 data.prendas.forEach((prenda, idx) => {
                     if (prenda.imagenes && prenda.imagenes.length > 0) {
-                        // Separar fotos de logo de las demÃ¡s
+                        // Separar fotos de logo de las demas
                         const fotosPrendaTela = prenda.imagenes.filter(img => img.type !== 'logo');
                         const fotosLogoPrend = prenda.imagenes.filter(img => img.type === 'logo');
                         // Guardar fotos de logo para mostrar al final
@@ -132,14 +132,14 @@ function loadGaleriaMobile(container) {
                     });
                 }
             } else {
-                html += '<p style="text-align: center; color: #999; padding: 2rem;">No hay imÃ¡genes para este pedido</p>';
+                html += '<p style="text-align: center; color: #999; padding: 2rem;">No hay imágenes para este pedido</p>';
             }
             
             html += '</div>';
             container.innerHTML = html;
         })
         .catch(error => {
-            container.innerHTML = '<p style="text-align: center; color: #999;">Error al cargar imÃ¡genes</p>';
+            container.innerHTML = '<p style="text-align: center; color: #999;">Error al cargar imágenes</p>';
         });
 }
 
@@ -214,7 +214,7 @@ function openImageViewerMobile(index) {
         
         <div class="image-viewer-container-mobile">
             <button onclick="closeImageViewerMobile()" style="position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; background: rgba(255, 255, 255, 0.2); border: 2px solid white; color: white; cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s ease;">
-                Ã—
+                X
             </button>
             
             <div class="image-viewer-content-mobile">

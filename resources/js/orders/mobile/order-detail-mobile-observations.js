@@ -66,7 +66,7 @@ window.anexarObservacionReciboProcesoMobile = async function({ pedidoId, tipoPro
         const bloque = document.createElement('div');
         bloque.className = 'observacion-recibo-proceso-extra-mobile';
         bloque.style.color = '#dc2626';
-        bloque.innerHTML = `<br><br><strong>OBSERVACIÃ“N PROCESO:</strong><br>${escapeHtmlMobile(observacion).replace(/\n/g, '<br>')}`;
+        bloque.innerHTML = `<br><br><strong>OBSERVACIÓN PROCESO:</strong><br>${escapeHtmlMobile(observacion).replace(/\n/g, '<br>')}`;
         itemPrenda.appendChild(bloque);
     }));
 };

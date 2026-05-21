@@ -19,7 +19,7 @@ try {
     console.log('  No se pudo leer .env.development, usando localhost');
 }
 
-// Fallback a variable de entorno si estÃ¡ disponible
+
 hmrHost = process.env.VITE_HMR_HOST || hmrHost;
 
 const isProduction = process.env.VITE_ENV === 'production' || process.env.NODE_ENV === 'production';
@@ -48,7 +48,7 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/js/operario/entry.js',
                 'resources/js/insumos/materiales.entry.js',
-                'resources/js/supervisor-pedidos/index.js',  // CambiÃ© entry.js â†’ index.js (mÃ¡s estÃ¡ndar)
+                'resources/js/supervisor-pedidos/index.js',  
                 'resources/js/recepcion-despacho/entry.js',
                 'resources/js/orders/mobile/order-detail-mobile-modal.js',
             ],
