@@ -2,37 +2,42 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Infrastructure\Http\Controllers\Operario\OperarioController;
+use App\Infrastructure\Http\Controllers\Operario\OperarioDashboardController;
+use App\Infrastructure\Http\Controllers\Operario\OperarioNovedadesController;
+use App\Infrastructure\Http\Controllers\Operario\OperarioNotificacionesController;
+use App\Infrastructure\Http\Controllers\Operario\OperarioPedidosController;
+use App\Infrastructure\Http\Controllers\Operario\OperarioRecibosController;
 use App\Infrastructure\Http\Controllers\ControlCalidad\ControlCalidadController;
 
 // ========================================
 // RUTAS PARA OPERARIOS (CORTADOR Y COSTURERO)
 // ========================================
 Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operario.')->group(function () {
-    Route::get('/dashboard', [OperarioController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', [OperarioDashboardController::class, 'dashboard'])->name('dashboard');
     Route::get('/mis-pedidos', [OperarioController::class, 'misPedidos'])->name('mis-pedidos');
     Route::get('/pedido/{numeroPedido}', [OperarioController::class, 'verPedido'])->name('ver-pedido');
     Route::get('/api/pedidos', [OperarioController::class, 'obtenerPedidosJson'])->name('api.pedidos');
-    Route::get('/api/notificaciones/recibos', [OperarioController::class, 'listarNotificacionesRecibos'])->name('api.notificaciones.recibos');
-    Route::post('/api/notificaciones/recibos/{id}/leer', [OperarioController::class, 'marcarNotificacionReciboLeida'])->name('api.notificaciones.recibos.leer');
-    Route::post('/api/notificaciones/recibos/leer-todas', [OperarioController::class, 'marcarTodasNotificacionesRecibosLeidas'])->name('api.notificaciones.recibos.leer-todas');
+    Route::get('/api/notificaciones/recibos', [OperarioNotificacionesController::class, 'listarNotificacionesRecibos'])->name('api.notificaciones.recibos');
+    Route::post('/api/notificaciones/recibos/{id}/leer', [OperarioNotificacionesController::class, 'marcarNotificacionReciboLeida'])->name('api.notificaciones.recibos.leer');
+    Route::post('/api/notificaciones/recibos/leer-todas', [OperarioNotificacionesController::class, 'marcarTodasNotificacionesRecibosLeidas'])->name('api.notificaciones.recibos.leer-todas');
     Route::get('/api/pedido/{numeroPedido}', [OperarioController::class, 'obtenerDatosRecibosOperario'])->name('api.pedido');
     Route::get('/api/prenda-bodega/{prendaBodegaId}', [OperarioController::class, 'obtenerDatosPrendaBodega'])->name('api.prenda-bodega');
-    Route::post('/api/novedades/crear', [OperarioController::class, 'crearNovedad'])->name('api.novedades.crear');
-    Route::delete('/api/novedades/{id}', [OperarioController::class, 'eliminarNovedad'])->name('api.novedades.eliminar');
-    Route::put('/api/novedades/{id}', [OperarioController::class, 'actualizarNovedad'])->name('api.novedades.actualizar');
-    Route::get('/api/novedades/{numeroPedido}/{prendaId}', [OperarioController::class, 'obtenerNovedadesPrenda'])->name('api.novedades.prenda');
-    Route::get('/api/novedades/{numeroPedido}', [OperarioController::class, 'obtenerNovedades'])->name('api.novedades');
-    Route::post('/buscar', [OperarioController::class, 'buscarPedido'])->name('buscar');
-    Route::post('/reportar-pendiente', [OperarioController::class, 'reportarPendiente'])->name('reportar-pendiente');
+    Route::post('/api/novedades/crear', [OperarioNovedadesController::class, 'crearNovedad'])->name('api.novedades.crear');
+    Route::delete('/api/novedades/{id}', [OperarioNovedadesController::class, 'eliminarNovedad'])->name('api.novedades.eliminar');
+    Route::put('/api/novedades/{id}', [OperarioNovedadesController::class, 'actualizarNovedad'])->name('api.novedades.actualizar');
+    Route::get('/api/novedades/{numeroPedido}/{prendaId}', [OperarioNovedadesController::class, 'obtenerNovedadesPrenda'])->name('api.novedades.prenda');
+    Route::get('/api/novedades/{numeroPedido}', [OperarioNovedadesController::class, 'obtenerNovedades'])->name('api.novedades');
+    Route::post('/buscar', [OperarioPedidosController::class, 'buscarPedido'])->name('buscar');
+    Route::post('/reportar-pendiente', [OperarioPedidosController::class, 'reportarPendiente'])->name('reportar-pendiente');
     Route::post('/api/completar-proceso/{numeroPedido}', [OperarioController::class, 'completarProceso'])->name('api.completar-proceso');
-    Route::post('/api/recibos/{idRecibo}/completar', [OperarioController::class, 'completarRecibo'])->name('api.recibos.completar');
-    Route::post('/api/recibos/{idRecibo}/completar-corte-sobremedida', [OperarioController::class, 'completarReciboCorteSobremedida'])->name('api.recibos.completar-corte-sobremedida');
-    Route::delete('/api/recibos/{idRecibo}/deshacer', [OperarioController::class, 'deshacerRecibo'])->name('api.recibos.deshacer');
-    Route::delete('/api/parciales/{id}/deshacer', [OperarioController::class, 'deshacerParcial'])->name('api.parciales.deshacer');
-    Route::get('/api/recibos/{idRecibo}/distribucion', [OperarioController::class, 'obtenerDistribucionRecibo'])->name('api.recibos.distribucion');
-    Route::get('/api/recibos-procesos/observacion', [OperarioController::class, 'obtenerObservacionReciboProceso'])->name('api.recibos-procesos.observacion.obtener');
-    Route::get('/api/recibos/control-calidad/{tipoRecibo}', [OperarioController::class, 'obtenerRecibosControlCalidad'])->name('api.recibos.control-calidad');
-    Route::get('/api/recibos/{idRecibo}/distribucion-control-calidad', [OperarioController::class, 'obtenerDistribucionControlCalidad'])->name('api.recibos.distribucion-cc');
+    Route::post('/api/recibos/{idRecibo}/completar', [OperarioRecibosController::class, 'completarRecibo'])->name('api.recibos.completar');
+    Route::post('/api/recibos/{idRecibo}/completar-corte-sobremedida', [OperarioRecibosController::class, 'completarReciboCorteSobremedida'])->name('api.recibos.completar-corte-sobremedida');
+    Route::delete('/api/recibos/{idRecibo}/deshacer', [OperarioRecibosController::class, 'deshacerRecibo'])->name('api.recibos.deshacer');
+    Route::delete('/api/parciales/{id}/deshacer', [OperarioRecibosController::class, 'deshacerParcial'])->name('api.parciales.deshacer');
+    Route::get('/api/recibos/{idRecibo}/distribucion', [OperarioRecibosController::class, 'obtenerDistribucionRecibo'])->name('api.recibos.distribucion');
+    Route::get('/api/recibos-procesos/observacion', [OperarioRecibosController::class, 'obtenerObservacionReciboProceso'])->name('api.recibos-procesos.observacion.obtener');
+    Route::get('/api/recibos/control-calidad/{tipoRecibo}', [OperarioDashboardController::class, 'obtenerRecibosControlCalidad'])->name('api.recibos.control-calidad');
+    Route::get('/api/recibos/{idRecibo}/distribucion-control-calidad', [OperarioDashboardController::class, 'obtenerDistribucionControlCalidad'])->name('api.recibos.distribucion-cc');
     Route::get('/debug', [OperarioController::class, 'debug'])->name('debug');
     Route::get('/debug/prendas-recibos', [OperarioController::class, 'debugPrendasRecibos'])->name('debug.prendas-recibos');
 });
