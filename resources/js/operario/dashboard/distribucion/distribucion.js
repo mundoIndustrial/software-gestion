@@ -120,6 +120,10 @@ function abrirModalCosturaConDatos(
         precargaAplicada: false,
     };
 
+    // Guardar los datos de parciales para usarlos en modo edición
+    // Hacer una copia para poder modificarla sin afectar los datos originales
+    window.__datosParcialesEdicion = JSON.parse(JSON.stringify(datosDistribucion?.parciales || []));
+
     // Abrir el modal normalmente
     abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, null, numeroPedido, null, prendaBodegaId);
     
@@ -725,11 +729,11 @@ function crearHTMLDistribucionCards(parciales, numeroRecibo, totalParciales, rec
                             <span class="material-symbols-rounded">visibility</span>
                             VER RECIBO
                         </button>
-                        <button class="btn-deshacer-parcial" 
-                                onclick="deshacerParcial(${parcial.id}, this)"
+                        <button class="btn-anular-parcial" 
+                                onclick="anularParcial(${parcial.id}, this)"
                                 data-parcial-id="${parcial.id}">
-                            <span class="material-symbols-rounded">delete</span>
-                            ELIMINAR PARTE
+                            <span class="material-symbols-rounded">block</span>
+                            ANULAR
                         </button>
                     </div>
                 </div>
@@ -815,25 +819,31 @@ function generarTallasHTML(tallas) {
 /**
  * Deshacer un parcial específico
  */
-async function deshacerParcial(parcialId, btn) {
-    const confirmado = await mostrarModalConfirmacionEliminarParcial();
+/**
+ * Anular un parcial específico (cambiar estado a Anulado)
+ */
+async function anularParcial(parcialId, btn) {
+    const confirmado = await mostrarModalConfirmacionAnularParcial();
     if (!confirmado) {
         return;
     }
 
     try {
-        console.log('[DESHACER PARCIAL] Eliminando parcial:', parcialId);
+        console.log('[ANULAR PARCIAL] Anulando parcial:', parcialId);
 
-        const response = await fetch(`/operario/api/parciales/${parcialId}/deshacer`, {
-            method: 'DELETE',
+        const response = await fetch(`/operario/api/parciales/${parcialId}/anular`, {
+            method: 'PATCH',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify({
+                estado: 'Anulado'
+            })
         });
 
-        console.log('[DESHACER PARCIAL] Response status:', response.status);
+        console.log('[ANULAR PARCIAL] Response status:', response.status);
 
         if (!response.ok) {
             throw new Error(`HTTP Error: ${response.status}`);
@@ -842,42 +852,42 @@ async function deshacerParcial(parcialId, btn) {
         const data = await response.json();
 
         if (data.success) {
-            console.log('[DESHACER PARCIAL] Parcial eliminado exitosamente');
+            console.log('[ANULAR PARCIAL] Parcial anulado exitosamente');
             
-            // Animar y eliminar la tarjeta
+            // Cambiar el estilo del botón y deshabilitarlo
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+            btn.innerHTML = '<span class="material-symbols-rounded">check_circle</span> PARTE ANULADA';
+            
+            // Cambiar el color de la tarjeta a gris
             const parcialCard = btn.closest('.parcial-card');
             if (parcialCard) {
-                parcialCard.style.opacity = '0';
-                parcialCard.style.transform = 'scale(0.9)';
-                parcialCard.style.transition = 'all 0.3s ease';
-                
-                setTimeout(() => {
-                    parcialCard.remove();
-                    console.log('[DESHACER PARCIAL] Tarjeta removida del DOM');
-                    
-                    // Mostrar mensaje de éxito
-                    showSuccessMessage('Parte eliminada correctamente');
-                }, 300);
+                parcialCard.style.opacity = '0.6';
+                parcialCard.style.backgroundColor = '#f3f4f6';
             }
+            
+            // Mostrar mensaje de éxito
+            showSuccessMessage('Parte anulada correctamente');
         } else {
-            console.error('[DESHACER PARCIAL] Error en respuesta:', data);
-            alert('Error: ' + (data.message || 'No se pudo deshacer el parcial'));
+            console.error('[ANULAR PARCIAL] Error en respuesta:', data);
+            alert('Error: ' + (data.message || 'No se pudo anular el parcial'));
         }
     } catch (error) {
-        console.error('[DESHACER PARCIAL] Error:', error);
-        alert('Error al deshacer la parte: ' + error.message);
+        console.error('[ANULAR PARCIAL] Error:', error);
+        alert('Error al anular la parte: ' + error.message);
     }
 }
 
-function mostrarModalConfirmacionEliminarParcial() {
+function mostrarModalConfirmacionAnularParcial() {
     return new Promise((resolve) => {
-        const existente = document.getElementById('modal-confirmar-eliminar-parcial');
+        const existente = document.getElementById('modal-confirmar-anular-parcial');
         if (existente) {
             existente.remove();
         }
 
         const overlay = document.createElement('div');
-        overlay.id = 'modal-confirmar-eliminar-parcial';
+        overlay.id = 'modal-confirmar-anular-parcial';
         overlay.style.cssText = `
             position: fixed;
             inset: 0;
@@ -891,35 +901,45 @@ function mostrarModalConfirmacionEliminarParcial() {
 
         overlay.innerHTML = `
             <div style="width: 100%; max-width: 460px; background: #fff; border-radius: 14px; box-shadow: 0 18px 40px rgba(0,0,0,.25); overflow: hidden;">
-                <div style="padding: 1rem 1.25rem; background: #ef4444; color: #fff; display: flex; align-items: center; gap: .6rem;">
+                <div style="padding: 1rem 1.25rem; background: #f59e0b; color: #fff; display: flex; align-items: center; gap: .6rem;">
                     <span class="material-symbols-rounded">warning</span>
-                    <strong>Confirmar eliminación</strong>
+                    <span style="font-weight: 600;">Anular Parte</span>
                 </div>
                 <div style="padding: 1.1rem 1.25rem; color: #334155; font-size: .95rem; line-height: 1.45;">
-                    ¿Estás seguro de que deseas eliminar esta parte? Esta acción eliminará el parcial de forma permanente.
+                    ¿Estás seguro de que deseas anular esta parte? El estado cambiará a "Anulado" y no se podrá editar.
                 </div>
                 <div style="display: flex; justify-content: flex-end; gap: .6rem; padding: 0 1.25rem 1rem;">
-                    <button type="button" id="btn-cancelar-eliminar-parcial" style="border: 1px solid #cbd5e1; background: #fff; color: #334155; border-radius: 8px; padding: .5rem .9rem; cursor: pointer;">Cancelar</button>
-                    <button type="button" id="btn-confirmar-eliminar-parcial" style="border: none; background: #dc2626; color: #fff; border-radius: 8px; padding: .5rem .9rem; cursor: pointer;">Eliminar</button>
+                    <button onclick="document.getElementById('modal-confirmar-anular-parcial').remove(); arguments[0].detail = false;" style="padding: .5rem 1rem; background: #e2e8f0; color: #334155; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                        Cancelar
+                    </button>
+                    <button onclick="document.getElementById('modal-confirmar-anular-parcial').remove();" style="padding: .5rem 1rem; background: #f59e0b; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                        Anular
+                    </button>
                 </div>
             </div>
         `;
 
-        const cerrar = (valor) => {
+        document.body.appendChild(overlay);
+
+        const btnCancelar = overlay.querySelector('button:nth-of-type(1)');
+        const btnConfirmar = overlay.querySelector('button:nth-of-type(2)');
+
+        btnCancelar.onclick = () => {
             overlay.remove();
-            resolve(valor);
+            resolve(false);
         };
 
-        overlay.addEventListener('click', (e) => {
+        btnConfirmar.onclick = () => {
+            overlay.remove();
+            resolve(true);
+        };
+
+        overlay.onclick = (e) => {
             if (e.target === overlay) {
-                cerrar(false);
+                overlay.remove();
+                resolve(false);
             }
-        });
-
-        overlay.querySelector('#btn-cancelar-eliminar-parcial')?.addEventListener('click', () => cerrar(false));
-        overlay.querySelector('#btn-confirmar-eliminar-parcial')?.addEventListener('click', () => cerrar(true));
-
-        document.body.appendChild(overlay);
+        };
     });
 }
 
@@ -1019,5 +1039,5 @@ async function verReciboParcial(parcialId, consecutivoParcial, numeroPedido, pre
         // Limpiar después de la animación
 // Registrar función global
 window.abrirDistribucionRecibo = abrirDistribucionRecibo;
-window.deshacerParcial = deshacerParcial;
+window.anularParcial = anularParcial;
 window.verReciboParcial = verReciboParcial;

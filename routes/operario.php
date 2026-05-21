@@ -30,6 +30,7 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
     Route::post('/buscar', [OperarioPedidosController::class, 'buscarPedido'])->name('buscar');
     Route::post('/reportar-pendiente', [OperarioPedidosController::class, 'reportarPendiente'])->name('reportar-pendiente');
     Route::post('/api/completar-proceso/{numeroPedido}', [OperarioController::class, 'completarProceso'])->name('api.completar-proceso');
+<<<<<<< HEAD
     Route::post('/api/recibos/{idRecibo}/completar', [OperarioRecibosController::class, 'completarRecibo'])->name('api.recibos.completar');
     Route::post('/api/recibos/{idRecibo}/completar-corte-sobremedida', [OperarioRecibosController::class, 'completarReciboCorteSobremedida'])->name('api.recibos.completar-corte-sobremedida');
     Route::delete('/api/recibos/{idRecibo}/deshacer', [OperarioRecibosController::class, 'deshacerRecibo'])->name('api.recibos.deshacer');
@@ -38,6 +39,17 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
     Route::get('/api/recibos-procesos/observacion', [OperarioRecibosController::class, 'obtenerObservacionReciboProceso'])->name('api.recibos-procesos.observacion.obtener');
     Route::get('/api/recibos/control-calidad/{tipoRecibo}', [OperarioDashboardController::class, 'obtenerRecibosControlCalidad'])->name('api.recibos.control-calidad');
     Route::get('/api/recibos/{idRecibo}/distribucion-control-calidad', [OperarioDashboardController::class, 'obtenerDistribucionControlCalidad'])->name('api.recibos.distribucion-cc');
+=======
+    Route::post('/api/recibos/{idRecibo}/completar', [OperarioController::class, 'completarRecibo'])->name('api.recibos.completar');
+    Route::post('/api/recibos/{idRecibo}/completar-corte-sobremedida', [OperarioController::class, 'completarReciboCorteSobremedida'])->name('api.recibos.completar-corte-sobremedida');
+    Route::delete('/api/recibos/{idRecibo}/deshacer', [OperarioController::class, 'deshacerRecibo'])->name('api.recibos.deshacer');
+    Route::delete('/api/parciales/{id}/deshacer', [OperarioController::class, 'deshacerParcial'])->name('api.parciales.deshacer');
+    Route::patch('/api/parciales/{id}/anular', [OperarioController::class, 'anularParcial'])->name('api.parciales.anular');
+    Route::get('/api/recibos/{idRecibo}/distribucion', [OperarioController::class, 'obtenerDistribucionRecibo'])->name('api.recibos.distribucion');
+    Route::get('/api/recibos-procesos/observacion', [OperarioController::class, 'obtenerObservacionReciboProceso'])->name('api.recibos-procesos.observacion.obtener');
+    Route::get('/api/recibos/control-calidad/{tipoRecibo}', [OperarioController::class, 'obtenerRecibosControlCalidad'])->name('api.recibos.control-calidad');
+    Route::get('/api/recibos/{idRecibo}/distribucion-control-calidad', [OperarioController::class, 'obtenerDistribucionControlCalidad'])->name('api.recibos.distribucion-cc');
+>>>>>>> b0eb8bec (ajustes, distribucion recibo parte 1)
     Route::get('/debug', [OperarioController::class, 'debug'])->name('debug');
     Route::get('/debug/prendas-recibos', [OperarioController::class, 'debugPrendasRecibos'])->name('debug.prendas-recibos');
 });

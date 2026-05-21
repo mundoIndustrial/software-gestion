@@ -226,9 +226,11 @@ class ReciboCosturaController extends Controller
 
                 $nextIndex = 1;
                 if ($maxParcialExistente !== null) {
-                    $maxFloat = (float) $maxParcialExistente;
-                    $parteDecimal = $maxFloat - floor($maxFloat);
-                    $nextIndex = (int) round($parteDecimal * 10) + 1;
+                    $maxStr = (string) $maxParcialExistente;
+                    $partes = explode('.', $maxStr);
+                    if (count($partes) === 2) {
+                        $nextIndex = (int) $partes[1] + 1;
+                    }
                 }
 
                 $creados = [];
@@ -238,13 +240,16 @@ class ReciboCosturaController extends Controller
                     $encargado = trim((string) ($asig['encargado'] ?? ''));
                     $encargadoNorm = strtolower($encargado);
                     $tallas = (array) ($asig['tallas'] ?? []);
+                    $esNuevaParte = (bool) ($asig['is_nueva_parte'] ?? false);
+                    
                     if ($encargado === '' || empty($tallas)) {
                         continue;
                     }
 
                     $encargadosProcesados[] = $encargadoNorm;
 
-                    $esParcialExistente = $esEdicion && isset($parcialesConEncargado[$encargadoNorm]);
+                    // Si es una nueva parte, siempre crear una nueva (no reutilizar existente)
+                    $esParcialExistente = $esEdicion && !$esNuevaParte && isset($parcialesConEncargado[$encargadoNorm]);
 
                     if ($esParcialExistente) {
                         $reciboParteId = (int) $parcialesConEncargado[$encargadoNorm]['id'];
@@ -285,8 +290,8 @@ class ReciboCosturaController extends Controller
                             ]);
                         }
                     } else {
-                        $consecutivoParcial = (float) ($consecutivoOriginal + ($nextIndex / 10));
-                        $consecutivoParcialDb = number_format($consecutivoParcial, 2, '.', '');
+                        // Generar número de parte como string para evitar problemas de punto flotante
+                        $consecutivoParcialDb = (string) $consecutivoOriginal . '.' . $nextIndex;
                         $nextIndex++;
 
                         $procesoHijo = ProcesoPrenda::create([
@@ -309,6 +314,7 @@ class ReciboCosturaController extends Controller
                             'tipo_recibo' => $tipoReciboReal,
                             'consecutivo_original' => $consecutivoOriginal,
                             'consecutivo_parcial' => $consecutivoParcialDb,
+                            'estado' => 'En ejecución',
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);
@@ -1739,6 +1745,7 @@ class ReciboCosturaController extends Controller
                     'tipo_recibo' => $tipoReciboReal,
                     'consecutivo_original' => $consecutivoOriginal,
                     'consecutivo_parcial' => $consecutivoParcialDb,
+                    'estado' => 'En ejecución',
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -1899,6 +1906,7 @@ class ReciboCosturaController extends Controller
                     'tipo_recibo' => $tipoReciboReal,
                     'consecutivo_original' => $consecutivoOriginal,
                     'consecutivo_parcial' => $consecutivoParcialDb,
+                    'estado' => 'En ejecución',
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
