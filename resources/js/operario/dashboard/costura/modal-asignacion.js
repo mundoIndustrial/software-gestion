@@ -3103,9 +3103,33 @@ function confirmarPasarACostura() {
         return;
     }
 
-    const btn = document.getElementById(btnId);
+    let btn = btnId ? document.getElementById(btnId) : null;
     if (!btn) {
-        mostrarError('Error', 'No se encontrÃ³ el botÃ³n de acciÃ³n');
+        const tipoNormalizado = String(tipoRecibo || '').toUpperCase();
+        const reciboNormalizado = String(recibo || '').trim();
+        const prendaNormalizada = String(prendaId || '').trim();
+        const pedidoNormalizado = String(pedidoId || '').trim();
+
+        btn = Array.from(document.querySelectorAll('.btn-pasar-costura')).find((el) => {
+            const elTipo = String(el.dataset.tipoRecibo || '').toUpperCase();
+            const elRecibo = String(el.dataset.recibo || '').trim();
+            const elPrenda = String(el.dataset.prendaId || '').trim();
+            const elPedido = String(el.dataset.pedidoId || '').trim();
+            return elTipo === tipoNormalizado
+                && elRecibo === reciboNormalizado
+                && elPrenda === prendaNormalizada
+                && elPedido === pedidoNormalizado;
+        }) || null;
+    }
+    if (!btn) {
+        mostrarError('Error', 'No se encontró el botón de acción');
+        console.error('[COSTURA] Botón de acción no encontrado', {
+            btnId,
+            pedidoId,
+            prendaId,
+            tipoRecibo,
+            recibo,
+        });
         return;
     }
 
@@ -3216,3 +3240,4 @@ export function cerrarModalCostura() {
 window.seleccionarOpcionAsignacion = seleccionarOpcionAsignacion;
 window.confirmarAsignacion = confirmarAsignacion;
 window.cerrarModalCostura = cerrarModalCostura;
+
