@@ -12,6 +12,7 @@ class ReciboPorPartesTalla extends Model
     protected $fillable = [
         'recibo_por_partes_id',
         'talla',
+        'genero',
         'cantidad',
         'color_nombre',
     ];

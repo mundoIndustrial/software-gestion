@@ -858,7 +858,7 @@ class ObtenerDatosRecibosOperarioUseCase
                 $isReciboPorPartes = ($parcial instanceof \App\Models\ReciboPorPartes);
                 $tallasTable = $isReciboPorPartes ? 'recibos_por_partes_tallas' : 'pedidos_parciales_tallas';
                 $foreignKey = $isReciboPorPartes ? 'recibo_por_partes_id' : 'pedido_parcial_id';
-                $columns = $isReciboPorPartes ? ['talla', 'cantidad', 'color_nombre'] : ['genero', 'talla', 'cantidad', 'color_nombre'];
+                $columns = $isReciboPorPartes ? ['talla', 'genero', 'cantidad', 'color_nombre'] : ['genero', 'talla', 'cantidad', 'color_nombre'];
 
                 $tallasRaw = DB::table($tallasTable)
                     ->where($foreignKey, (int) $parcial->id)

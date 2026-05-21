@@ -1925,6 +1925,7 @@ class ReciboCosturaController extends Controller
                     $this->insertReciboParteTalla($reciboParteId, [
                         'talla' => $talla,
                         'cantidad' => $cantidad,
+                        'genero' => $genero,
                         'color_nombre' => $colorNombre,
                     ]);
                 }
