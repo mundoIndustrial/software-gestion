@@ -35,7 +35,11 @@ class OperarioDashboardController extends Controller
         $mensajeBusquedaDashboard = null;
 
         if ($esVistaCostura && $filtroEncargado === 'control-calidad') {
-            $tipoReciboControlCalidad = $filtroRecibo === 'reflectivo' ? 'REFLECTIVO' : 'COSTURA';
+            $tipoReciboControlCalidad = match ($filtroRecibo) {
+                'reflectivo' => 'REFLECTIVO',
+                'bodega' => 'CORTE-PARA-BODEGA',
+                default => 'COSTURA',
+            };
             $resultadoCC = $this->obtenerRecibosControlCalidadUseCase->execute($tipoReciboControlCalidad);
             $prendasConRecibosControlCalidad = $this->operarioDashboardVistaCosturaService->formatearRecibosControlCalidadParaDashboard(
                 (array) ($resultadoCC['payload']['data'] ?? []),

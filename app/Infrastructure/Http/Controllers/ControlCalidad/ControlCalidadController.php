@@ -622,6 +622,50 @@ class ControlCalidadController extends Controller
     {
         $usuario = Auth::user();
         $esLiderControlCalidad = $usuario && $usuario->hasRole('lider-control-calidad');
+        $tipoRecibo = strtoupper(trim((string) $request->query('tipo_recibo', '')));
+        $tipoRecibo = $tipoRecibo === '' ? null : $tipoRecibo;
+        $prendaIdParam = $request->query('prenda_id', null);
+        $parcialIdParam = (int) $request->query('parcial_id', 0);
+        $consecutivoParcialParam = trim((string) $request->query('consecutivo_parcial', ''));
+        $reciboIdParam = (int) $request->query('recibo_id', 0);
+
+        // Caso especial: recibos de bodega que no tienen numero_pedido asociado.
+        if ((int) $numeroPedido === 0 && in_array($tipoRecibo, ['BODEGA', 'CORTE-PARA-BODEGA'], true)) {
+            $reciboBodega = ConsecutivoReciboPedido::query()
+                ->where('id', $reciboIdParam)
+                ->whereIn('tipo_recibo', ['BODEGA', 'CORTE-PARA-BODEGA'])
+                ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
+                ->where('activo', 1)
+                ->first();
+
+            if (!$reciboBodega) {
+                return redirect()->route('control-calidad.dashboard', ['tab' => 'BODEGA'])
+                    ->with('error', 'Recibo de bodega no encontrado');
+            }
+
+            return view('operario.ver-pedido', [
+                'operario' => null,
+                'pedido' => [
+                    'numero_pedido' => 0,
+                    'numero_recibo_costura' => $reciboBodega->consecutivo_actual,
+                    'cliente' => 'BODEGA',
+                    'asesor' => 'N/A',
+                    'asesora' => 'N/A',
+                    'forma_de_pago' => 'N/A',
+                    'forma_pago' => 'N/A',
+                    'estado' => 'En Ejecución',
+                    'area' => 'Control de Calidad',
+                    'fecha_creacion' => now()->format('d/m/Y'),
+                    'fecha_estimada' => null,
+                    'descripcion' => 'Recibo de bodega',
+                    'descripcion_prendas' => 'Recibo de bodega',
+                    'cantidad' => 0,
+                    'novedades' => 'Sin novedades',
+                ],
+                'usuario' => $usuario,
+                'fotos' => [],
+            ]);
+        }
 
         $pedidoDB = PedidoProduccion::where('numero_pedido', $numeroPedido)
             ->with('prendas')
@@ -631,12 +675,6 @@ class ControlCalidadController extends Controller
             return redirect()->route('control-calidad.dashboard')
                 ->with('error', 'Pedido no encontrado');
         }
-
-        $tipoRecibo = strtoupper(trim((string) $request->query('tipo_recibo', '')));
-        $tipoRecibo = $tipoRecibo === '' ? null : $tipoRecibo;
-        $prendaIdParam = $request->query('prenda_id', null);
-        $parcialIdParam = (int) $request->query('parcial_id', 0);
-        $consecutivoParcialParam = trim((string) $request->query('consecutivo_parcial', ''));
 
         // Detectar si es un parcial por la presencia de parcial_id y consecutivo_parcial
         $esParcial = $parcialIdParam > 0 || $consecutivoParcialParam !== '';

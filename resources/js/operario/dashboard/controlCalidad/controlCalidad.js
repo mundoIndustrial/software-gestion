@@ -99,6 +99,15 @@ export function pasarAControlCalidad(btn) {
 
     const originalHTML = btn.innerHTML;
     const card = btn.closest('.orden-card-simple');
+    const sincronizarBotonesControlCalidad = (procesoId = '') => {
+        if (!card) return;
+        const botones = card.querySelectorAll('.btn-pasar-cc');
+        botones.forEach((boton) => {
+            boton.dataset.area = 'Control Calidad';
+            boton.dataset.procesoId = procesoId || '';
+            boton.innerHTML = '<span class="material-symbols-rounded">undo</span> DESHACER';
+        });
+    };
     btn.disabled = true;
     btn.style.opacity = '0.6';
     btn.style.pointerEvents = 'none';
@@ -139,7 +148,7 @@ export function pasarAControlCalidad(btn) {
                         // Regla de UI: en vista-costura/reflectivo, al quedar en CC ya no debe mostrarse el botón.
                         btn.style.display = 'none';
                     } else {
-                        btn.innerHTML = '<span class="material-symbols-rounded">undo</span> DESHACER';
+                        sincronizarBotonesControlCalidad(data.data?.proceso_id || '');
                     }
                 }
 

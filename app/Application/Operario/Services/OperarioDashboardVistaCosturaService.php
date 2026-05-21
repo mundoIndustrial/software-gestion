@@ -341,6 +341,27 @@ class OperarioDashboardVistaCosturaService
             ? $prendasConRecibosControlCalidad
             : $prendasConRecibos;
 
+        // En modo control-calidad, respetar estrictamente el filtro de tipo de recibo
+        // para evitar mezclar tarjetas de costura/reflectivo en la pestaña de bodega.
+        if ($modoControlCalidadVistaCostura) {
+            $tiposPermitidos = $this->tiposReciboBusquedaVistaCostura($filtroReciboActual);
+            $coleccionBase = $coleccionBase->filter(function ($prenda) use ($tiposPermitidos) {
+                $recibos = (array) ($prenda['recibos'] ?? []);
+                if (empty($recibos)) {
+                    return false;
+                }
+
+                foreach ($recibos as $recibo) {
+                    $tipoRecibo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
+                    if (in_array($tipoRecibo, $tiposPermitidos, true)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            })->values();
+        }
+
         $callbackOrdenamiento = function ($prenda) use ($usuario, $filtroReciboActual, $tabActualDashboard) {
             $reciboPrincipal = collect($prenda['recibos'] ?? [])->first();
 

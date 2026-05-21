@@ -57,13 +57,24 @@
                         $estadoClass = getEstadoClass($prenda['estado_pedido'] ?? 'pendiente');
                         $recibo = $prenda['recibos'][0] ?? null;
                         $tipoRecibo = $recibo['tipo_recibo'] ?? '';
+                        $tipoReciboUpper = strtoupper(trim((string) $tipoRecibo));
                         $consecutivoActual = formatearConsecutivoVisible($recibo['consecutivo_actual'] ?? null);
                         $reciboCompletadoArea = (bool) ($recibo['completado_area'] ?? false);
-                        $esReflectivo = strtoupper(trim((string) $tipoRecibo)) === 'REFLECTIVO';
+                        $esReflectivo = $tipoReciboUpper === 'REFLECTIVO';
                         $esParcial = (bool) ($recibo['es_parcial'] ?? false);
-                        $urlVerRecibo = route('control-calidad.ver-pedido', $prenda['numero_pedido'])
-                            . '?tipo_recibo=' . urlencode($esParcial ? 'PARCIAL' : $tipoRecibo)
-                            . '&prenda_id=' . $prenda['prenda_id'];
+                        $numeroPedido = trim((string) ($prenda['numero_pedido'] ?? ''));
+                        $urlVerRecibo = 'javascript:void(0);';
+
+                        if ($numeroPedido !== '') {
+                            $urlVerRecibo = route('control-calidad.ver-pedido', $numeroPedido)
+                                . '?tipo_recibo=' . urlencode($esParcial ? 'PARCIAL' : $tipoRecibo)
+                                . '&prenda_id=' . $prenda['prenda_id'];
+                        } elseif ($tipoReciboUpper === 'CORTE-PARA-BODEGA') {
+                            $urlVerRecibo = route('control-calidad.ver-pedido', 0)
+                                . '?prenda_id=' . urlencode((string) ($prenda['prenda_id'] ?? ''))
+                                . '&recibo_id=' . urlencode((string) ($recibo['id'] ?? ''))
+                                . '&tipo_recibo=' . urlencode($esParcial ? 'PARCIAL' : $tipoRecibo);
+                        }
 
                         if ($esParcial) {
                             $parcialId = (string) ($recibo['parcial_id'] ?? '');

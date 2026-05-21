@@ -82,36 +82,50 @@ class CambiarAreaControlCalidadUseCase
             [$nuevoProceso, $areaPosterior] = $this->workflowService->runInTransaction(function () use ($pedido, $cmd, $recibo) {
                 $areaPosterior = $recibo->area;
 
-            $nuevoProceso = $this->procesos->create([
-                'numero_pedido' => $pedido->numero_pedido,
-                'prenda_pedido_id' => $cmd->prendaId,
-                'numero_recibo' => $recibo->consecutivo_actual,
-                'proceso' => 'Control de Calidad',
-                'fecha_inicio' => now(),
-                'encargado' => 'control',
-                'estado_proceso' => 'En Progreso',
-                'codigo_referencia' => 'CC-' . $recibo->consecutivo_actual . '-' . date('YmdHis'),
-            ]);
+                $nuevoProceso = $this->procesos->findLatestByProcesoAndNumeroRecibo(
+                    numeroPedido: (int) $pedido->numero_pedido,
+                    prendaId: (int) $cmd->prendaId,
+                    proceso: 'Control de Calidad',
+                    numeroRecibo: (int) $recibo->consecutivo_actual,
+                );
 
-            $prenda = PrendaPedido::find($cmd->prendaId);
+                if (!$nuevoProceso) {
+                    $nuevoProceso = $this->procesos->create([
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'prenda_pedido_id' => $cmd->prendaId,
+                        'numero_recibo' => $recibo->consecutivo_actual,
+                        'proceso' => 'Control de Calidad',
+                        'fecha_inicio' => now(),
+                        'encargado' => 'control',
+                        'estado_proceso' => 'En Progreso',
+                        'codigo_referencia' => 'CC-' . $recibo->consecutivo_actual . '-' . date('YmdHis'),
+                    ]);
+                } else {
+                    $this->procesos->update($nuevoProceso, [
+                        'encargado' => $nuevoProceso->encargado ?: 'control',
+                        'estado_proceso' => $nuevoProceso->estado_proceso ?: 'En Progreso',
+                    ]);
+                }
+
+                $prenda = PrendaPedido::find($cmd->prendaId);
 
                 $recibo->area = 'Control Calidad';
                 $this->recibos->save($recibo);
 
             // Fuente de verdad de completado por área:
             // registrar explícitamente el paso a Control Calidad.
-            DB::table('prenda_recibo_completado')->updateOrInsert(
-                [
-                    'id_recibo' => (int) $recibo->id,
-                    'area' => 'Control Calidad',
-                ],
-                [
-                    'numero_recibo' => (int) ($recibo->consecutivo_actual ?? $cmd->numeroRecibo),
-                    'nombre_operario' => (string) (auth()->user()->name ?? 'control'),
-                    'fecha_completado' => now(),
-                    'id_parcial' => null,
-                ]
-            );
+                DB::table('prenda_recibo_completado')->updateOrInsert(
+                    [
+                        'id_recibo' => (int) $recibo->id,
+                        'area' => 'Control Calidad',
+                    ],
+                    [
+                        'numero_recibo' => (int) ($recibo->consecutivo_actual ?? $cmd->numeroRecibo),
+                        'nombre_operario' => (string) (auth()->user()->name ?? 'control'),
+                        'fecha_completado' => now(),
+                        'id_parcial' => null,
+                    ]
+                );
 
             try {
                 broadcast(new \App\Events\ReciboPasadoControlCalidad(
@@ -225,17 +239,32 @@ class CambiarAreaControlCalidadUseCase
         [$nuevoProceso, $areaPosterior] = $this->workflowService->runInTransaction(function () use ($cmd, $recibo) {
             $areaPosterior = $recibo->area;
 
-            $nuevoProceso = $this->procesos->create([
-                'numero_pedido' => null,
-                'prenda_pedido_id' => null,
-                'prenda_bodega_id' => (int) $cmd->prendaBodegaId,
-                'numero_recibo' => $recibo->consecutivo_actual,
-                'proceso' => 'Control de Calidad',
-                'fecha_inicio' => now(),
-                'encargado' => 'control',
-                'estado_proceso' => 'En Progreso',
-                'codigo_referencia' => 'CC-BOD-' . $recibo->consecutivo_actual . '-' . date('YmdHis'),
-            ]);
+            $nuevoProceso = $this->procesos->findLatestByProcesoAndNumeroRecibo(
+                numeroPedido: 0,
+                prendaId: 0,
+                proceso: 'Control de Calidad',
+                numeroRecibo: (int) $recibo->consecutivo_actual,
+                prendaBodegaId: (int) $cmd->prendaBodegaId,
+            );
+
+            if (!$nuevoProceso) {
+                $nuevoProceso = $this->procesos->create([
+                    'numero_pedido' => null,
+                    'prenda_pedido_id' => null,
+                    'prenda_bodega_id' => (int) $cmd->prendaBodegaId,
+                    'numero_recibo' => $recibo->consecutivo_actual,
+                    'proceso' => 'Control de Calidad',
+                    'fecha_inicio' => now(),
+                    'encargado' => 'control',
+                    'estado_proceso' => 'En Progreso',
+                    'codigo_referencia' => 'CC-BOD-' . $recibo->consecutivo_actual . '-' . date('YmdHis'),
+                ]);
+            } else {
+                $this->procesos->update($nuevoProceso, [
+                    'encargado' => $nuevoProceso->encargado ?: 'control',
+                    'estado_proceso' => $nuevoProceso->estado_proceso ?: 'En Progreso',
+                ]);
+            }
 
             $recibo->area = 'Control Calidad';
             $this->recibos->save($recibo);
