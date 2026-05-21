@@ -630,6 +630,10 @@ function mostrarErrorDistribucion() {
 // Función para cargar la interfaz de distribución con datos reales
 function cargarInterfazDistribucionConDatos(tallas, modulos) {
     const interfazDiv = document.getElementById('interfazDistribucion');
+    if (!interfazDiv) {
+        console.warn('[DISTRIBUCION] No existe #interfazDistribucion al cargar datos');
+        return;
+    }
     
     if (!tallas || tallas.length === 0) {
         interfazDiv.innerHTML = `
@@ -669,6 +673,10 @@ function cargarInterfazDistribucionConDatos(tallas, modulos) {
 // Función para mostrar cards de encargados (modo edición)
 window.mostrarCardsEncargados = function(tallas, modulos) {
     const interfazDiv = document.getElementById('interfazDistribucion');
+    if (!interfazDiv) {
+        console.warn('[DISTRIBUCION] No existe #interfazDistribucion en modo edicion');
+        return;
+    }
     
     // Guardar datos globales PRIMERO para que estén disponibles en renderCardsEncargadosSeleccionados
     window.datosDistribucion = { tallas, modulos };
@@ -1404,6 +1412,10 @@ window.cerrarModalAsignacion = function() {
 }
 function mostrarInterfazDistribucionNormal(tallas, modulos) {
     const interfazDiv = document.getElementById('interfazDistribucion');
+    if (!interfazDiv) {
+        console.warn('[DISTRIBUCION] No existe #interfazDistribucion en modo normal');
+        return;
+    }
 
     window.modulosSeleccionadosDistribucion = [];
     
