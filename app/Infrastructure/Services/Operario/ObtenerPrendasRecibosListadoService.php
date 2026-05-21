@@ -310,8 +310,35 @@ class ObtenerPrendasRecibosListadoService
                 continue;
             }
 
-            $parcialIdPadre = $this->obtenerParcialIdPadreDelGrupo($recibosDelTipo);
             $recibosDelTipo = $this->ordenarRecibosDelGrupo($recibosDelTipo, $tipoOperario);
+
+            // Para vista-costura no se deben agrupar recibos: 1 tarjeta por recibo.
+            if ($tipoOperario === 'vista-costura') {
+                foreach ($recibosDelTipo as $reciboIndividual) {
+                    $grupoIndividual = collect([$reciboIndividual]);
+                    $parcialIdPadre = $this->obtenerParcialIdPadreDelGrupo($grupoIndividual);
+                    $fechaOrdenPrincipal = $this->obtenerFechaOrdenPrincipalDelGrupo($grupoIndividual, $tipoOperario);
+
+                    $resultados[] = $this->construirTarjetaGrupoRecibosOperario(
+                        $prenda,
+                        $pedido,
+                        $parcialIdPadre,
+                        $grupoIndividual,
+                        $fechaOrdenPrincipal,
+                        $tipoOperario,
+                        $completadosCorteMap,
+                        $completadosCosturaMap,
+                        $fechaCompletadoCosturaMap,
+                        $completadosControlCalidadMap,
+                        $parcialIdByReciboId,
+                        $parcialCreatedAtMap,
+                        $reciboPorPartesKeyMap
+                    );
+                }
+                continue;
+            }
+
+            $parcialIdPadre = $this->obtenerParcialIdPadreDelGrupo($recibosDelTipo);
             $fechaOrdenPrincipal = $this->obtenerFechaOrdenPrincipalDelGrupo($recibosDelTipo, $tipoOperario);
 
             $resultados[] = $this->construirTarjetaGrupoRecibosOperario(
