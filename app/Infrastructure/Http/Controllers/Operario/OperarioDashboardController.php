@@ -65,8 +65,30 @@ class OperarioDashboardController extends Controller
         $conteoControlCalidadCostura = (int) ($conteosControlCalidad['costura'] ?? 0);
         $conteoControlCalidadReflectivo = (int) ($conteosControlCalidad['reflectivo'] ?? 0);
         $conteoControlCalidadBodega = (int) ($conteosControlCalidad['bodega'] ?? 0);
+        $nombresCosturaReflectivo = $this->operarioDashboardVistaCosturaService->obtenerNombresCosturaReflectivoNormalizados();
+        $mapaParcialesBodega = $this->operarioDashboardVistaCosturaService
+            ->construirMapaParcialesBodegaDesdePrendas(collect($dashboardData->prendasConRecibos ?? []));
+        $contextoVistaDashboard = $this->operarioDashboardVistaCosturaService->prepararContextoVistaDashboard(
+            $request,
+            collect($dashboardData->prendasConRecibos ?? []),
+            $prendasConRecibosControlCalidad,
+            $dashboardData->tab ?? null
+        );
+        $contextoVistaDashboard['prendasRenderizadas'] = $this->operarioDashboardVistaCosturaService
+            ->enriquecerPrendasBodegaParaVista(
+                collect($contextoVistaDashboard['prendasRenderizadas'] ?? []),
+                $mapaParcialesBodega
+            );
+        $contextoVistaDashboard['prendasRenderizadas'] = $this->operarioDashboardVistaCosturaService
+            ->enriquecerPrendasNormalesParaVista(
+                collect($contextoVistaDashboard['prendasRenderizadas'] ?? []),
+                $request->user(),
+                (string) ($contextoVistaDashboard['filtroReciboActual'] ?? 'costura'),
+                (string) ($contextoVistaDashboard['busquedaActual'] ?? ''),
+                $nombresCosturaReflectivo
+            );
 
-        return view('operario.dashboard', [
+        return view('operario.dashboard', array_merge([
             'operario' => $dashboardData->operario,
             'prendasConRecibos' => $dashboardData->prendasConRecibos,
             'usuario' => $dashboardData->usuario,
@@ -86,7 +108,9 @@ class OperarioDashboardController extends Controller
             'conteoControlCalidadCostura' => $conteoControlCalidadCostura,
             'conteoControlCalidadReflectivo' => $conteoControlCalidadReflectivo,
             'conteoControlCalidadBodega' => $conteoControlCalidadBodega,
-        ]);
+            'nombresCosturaReflectivo' => $nombresCosturaReflectivo,
+            'mapaParcialesBodega' => $mapaParcialesBodega,
+        ], $contextoVistaDashboard));
     }
 
     /**
@@ -107,4 +131,3 @@ class OperarioDashboardController extends Controller
         return response()->json($resultado['payload'], $resultado['status']);
     }
 }
-

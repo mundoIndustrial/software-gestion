@@ -7,6 +7,39 @@ use Illuminate\Support\Facades\DB;
 
 class OperarioDashboardRepository
 {
+    public function obtenerRolIdPorNombre(string $nombreRol): ?int
+    {
+        $id = DB::table('roles')
+            ->where('name', $nombreRol)
+            ->value('id');
+
+        return $id ? (int) $id : null;
+    }
+
+    public function obtenerNombresUsuariosPorRolId(int $rolId): Collection
+    {
+        return DB::table('users')
+            ->where(function ($query) use ($rolId) {
+                $query->whereJsonContains('roles_ids', $rolId)
+                    ->orWhere('role_id', $rolId);
+            })
+            ->pluck('name');
+    }
+
+    public function obtenerParcialesBodegaPorPrendaYConsecutivo(array $prendaIds, array $consecutivos): Collection
+    {
+        if (empty($prendaIds) || empty($consecutivos)) {
+            return collect();
+        }
+
+        return DB::table('recibo_por_partes')
+            ->select('pedido_produccion_id', 'prenda_pedido_id', 'consecutivo_original')
+            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
+            ->whereIn('prenda_pedido_id', $prendaIds)
+            ->whereIn('consecutivo_original', $consecutivos)
+            ->get();
+    }
+
     public function obtenerConteosParcialesControlCalidadPorTipoRecibo(): Collection
     {
         return DB::table('procesos_prenda')
@@ -128,4 +161,3 @@ class OperarioDashboardRepository
             ->get();
     }
 }
-

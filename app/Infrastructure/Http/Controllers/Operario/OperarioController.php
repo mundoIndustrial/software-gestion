@@ -47,7 +47,7 @@ class OperarioController extends Controller
         // Obtener TODOS los procesos sin filtros
         $todosProcesos = \App\Models\ProcesoPrenda::all();
 
-        // Procesos filtrados por Ã¡rea (sin filtrar por estado)
+        // Procesos filtrados por Area (sin filtrar por estado)
         $procesesPorArea = \App\Models\ProcesoPrenda::where('proceso', $area)
             ->get();
 
@@ -132,7 +132,7 @@ class OperarioController extends Controller
         return response()->json($datosOperario->toArray());
     }
     /**
-     * API: Obtener datos del pedido para el modal mÃ³vil de operarios
+     * API: Obtener datos del pedido para el modal movil de operarios
      * Endpoint: /api/operario/pedido/{numeroPedido}
      */
     public function obtenerDatosRecibosOperario($numeroPedido)
@@ -157,7 +157,7 @@ class OperarioController extends Controller
 
     /**
      * API: Obtener datos completos del pedido (igual que /pedidos-public/{id}/recibos-datos)
-     * Usa el mismo endpoint y lÃ³gica que el mÃ³dulo de recibos pÃºblicos
+     * Usa el mismo endpoint y logica que el modulo de recibos publicos
      */
     public function getPedidoData($numeroPedido)
     {
@@ -174,7 +174,7 @@ class OperarioController extends Controller
                 fn($prenda) => (int) ($prenda['id'] ?? 0) === $prendaIdParam
             );
 
-            // Si encontramos la prenda, dejarla como Ãºnica
+            // Si encontramos la prenda, dejarla como unica
             if (!empty($prendasFiltradas)) {
                 $result['payload']['data']['prendas'] = array_values($prendasFiltradas);
             }
@@ -184,7 +184,7 @@ class OperarioController extends Controller
     }
 
     /**
-     * API: Obtener datos de una prenda de bodega para el modal de asignaciÃ³n.
+     * API: Obtener datos de una prenda de bodega para el modal de asignacion.
      * Endpoint: /operario/api/prenda-bodega/{prendaBodegaId}
      */
     public function obtenerDatosPrendaBodega($prendaBodegaId): JsonResponse
@@ -234,7 +234,7 @@ class OperarioController extends Controller
             // Obtener prendas con recibos usando el servicio
             $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibos($usuario);
 
-            // Obtener informaciÃ³n de la BD sin filtros
+            // Obtener informacion de la BD sin filtros
             $todosPedidos = \App\Models\PedidoProduccion::where('area', 'costura')
                 ->select('id', 'numero_pedido', 'estado', 'area')
                 ->get();
