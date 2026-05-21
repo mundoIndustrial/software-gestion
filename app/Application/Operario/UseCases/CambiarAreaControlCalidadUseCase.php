@@ -42,16 +42,29 @@ class CambiarAreaControlCalidadUseCase
                 'numero_recibo' => $cmd->numeroRecibo,
             ]);
 
-            $recibo = $this->recibos->findActiveByPedidoPrendaTipo(
+            // IMPORTANTE: priorizar el consecutivo exacto recibido desde UI para evitar
+            // tomar otro recibo activo de la misma prenda/tipo (ej: 87 vs 106).
+            $recibo = $this->recibos->findActiveByPedidoConsecutivoTipo(
                 pedidoProduccionId: (int) $pedido->id,
-                prendaId: (int) $cmd->prendaId,
+                consecutivoActual: (int) $cmd->numeroRecibo,
                 tipoRecibo: (string) $cmd->tipoRecibo,
             );
 
+            if ($recibo && (int) $recibo->prenda_id !== (int) $cmd->prendaId) {
+                Log::warning('[CC] Recibo por consecutivo no coincide con prenda solicitada', [
+                    'pedido_id' => $pedido->id,
+                    'consecutivo' => (int) $cmd->numeroRecibo,
+                    'prenda_id_solicitada' => (int) $cmd->prendaId,
+                    'prenda_id_recibo' => (int) $recibo->prenda_id,
+                    'recibo_id' => (int) $recibo->id,
+                ]);
+                $recibo = null;
+            }
+
             if (!$recibo) {
-                $recibo = $this->recibos->findActiveByPedidoConsecutivoTipo(
+                $recibo = $this->recibos->findActiveByPedidoPrendaTipo(
                     pedidoProduccionId: (int) $pedido->id,
-                    consecutivoActual: (int) $cmd->numeroRecibo,
+                    prendaId: (int) $cmd->prendaId,
                     tipoRecibo: (string) $cmd->tipoRecibo,
                 );
             }
