@@ -1325,70 +1325,44 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (confirmAddProcesoBtn) confirmAddProcesoBtn.disabled = true;
         try {
-            const hasProduccionIds = Boolean(adminBadgeContext.pedido_produccion_id && adminBadgeContext.prenda_id);
+            const numeroRecibo = Number(adminBadgeContext.numero_recibo || 0);
+            const prendaBodegaId = Number(adminBadgeContext.prenda_bodega_id || 0);
+            if (!numeroRecibo) {
+                throw new Error('No se encontró número de recibo para actualizar el proceso.');
+            }
 
-            if (hasProduccionIds) {
-                const response = await fetch('/seguimiento-proceso/guardar', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    body: JSON.stringify({
-                        pedido_produccion_id: adminBadgeContext.pedido_produccion_id,
-                        prenda_id: adminBadgeContext.prenda_id,
-                        numero_recibo: adminBadgeContext.numero_recibo,
-                        area,
-                        encargado,
-                        estado: 'Pendiente',
-                    }),
-                });
+            const qs = prendaBodegaId > 0 ? `?prenda_bodega_id=${encodeURIComponent(String(prendaBodegaId))}` : '';
+            const procesosResp = await fetch(`/api/recibos-bodega/${numeroRecibo}/procesos${qs}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+            const procesos = await procesosResp.json().catch(() => []);
+            if (!procesosResp.ok || !Array.isArray(procesos)) {
+                throw new Error('No se pudieron consultar procesos del recibo en bodega.');
+            }
 
-                const json = await response.json().catch(() => ({}));
-                if (!response.ok || !json?.success) {
-                    throw new Error(json?.message || 'No se pudo guardar el proceso');
-                }
-            } else {
-                const numeroRecibo = Number(adminBadgeContext.numero_recibo || 0);
-                const prendaBodegaId = Number(adminBadgeContext.prenda_bodega_id || 0);
-                if (!numeroRecibo) {
-                    throw new Error('No se encontró número de recibo para actualizar el proceso.');
-                }
+            const procesoCorte = procesos.find((p) => String(p?.proceso || '').toLowerCase().includes('corte'))
+                || procesos[0];
+            if (!procesoCorte?.id) {
+                throw new Error('No existe un proceso para este recibo en bodega.');
+            }
 
-                const qs = prendaBodegaId > 0 ? `?prenda_bodega_id=${encodeURIComponent(String(prendaBodegaId))}` : '';
-                const procesosResp = await fetch(`/api/recibos-bodega/${numeroRecibo}/procesos${qs}`, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                });
-                const procesos = await procesosResp.json().catch(() => []);
-                if (!procesosResp.ok || !Array.isArray(procesos)) {
-                    throw new Error('No se pudieron consultar procesos del recibo en bodega.');
-                }
+            const editarResp = await fetch(`/api/recibos-bodega/procesos/${procesoCorte.id}/encargado`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    encargado,
+                }),
+            });
 
-                const procesoCorte = procesos.find((p) => String(p?.proceso || '').toLowerCase().includes('corte'))
-                    || procesos[0];
-                if (!procesoCorte?.id) {
-                    throw new Error('No existe un proceso para este recibo en bodega.');
-                }
-
-                const editarResp = await fetch(`/api/recibos-bodega/procesos/${procesoCorte.id}/encargado`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    body: JSON.stringify({
-                        encargado,
-                    }),
-                });
-
-                const editarJson = await editarResp.json().catch(() => ({}));
-                if (!editarResp.ok || editarJson?.success === false) {
-                    throw new Error(editarJson?.message || 'No se pudo actualizar el proceso de bodega.');
-                }
+            const editarJson = await editarResp.json().catch(() => ({}));
+            if (!editarResp.ok || editarJson?.success === false) {
+                throw new Error(editarJson?.message || 'No se pudo actualizar el proceso de bodega.');
             }
 
             closeAdminAddProcesoModal();

@@ -702,6 +702,10 @@ class OperarioDashboardVistaCosturaService
 
         $recibos = (array) ($prenda['recibos'] ?? []);
         $reciboPrincipal = $recibos[0] ?? null;
+        $pedidoId = $prenda['pedido_id'] ?? $prenda['pedido_id_accion'] ?? null;
+        $prendaId = $prenda['prenda_id'] ?? null;
+        $nombrePrenda = $prenda['nombre_prenda'] ?? '';
+        $numeroPedido = $prenda['numero_pedido'] ?? '';
         $normalView = $prenda['normal_view'] ?? [];
         $recibosPreferidosPorTipo = $normalView['recibos_preferidos_por_tipo'] ?? [];
         $tiposUnicos = $normalView['tipos_unicos'] ?? [];
@@ -728,10 +732,10 @@ class OperarioDashboardVistaCosturaService
                     'icono' => 'check_circle',
                     'texto' => 'MARCAR COMPLETADO',
                     'datos' => [
-                        'pedido_id' => $prenda['pedido_id'],
-                        'prenda_id' => $prenda['prenda_id'],
+                        'pedido_id' => $pedidoId,
+                        'prenda_id' => $prendaId,
                         'recibo_id' => $reciboId,
-                        'nombre' => $prenda['nombre_prenda'],
+                        'nombre' => $nombrePrenda,
                     ],
                 ];
             }
@@ -743,10 +747,10 @@ class OperarioDashboardVistaCosturaService
                     'icono' => 'undo',
                     'texto' => 'DESHACER',
                     'datos' => [
-                        'pedido_id' => $prenda['pedido_id'],
-                        'prenda_id' => $prenda['prenda_id'],
+                        'pedido_id' => $pedidoId,
+                        'prenda_id' => $prendaId,
                         'recibo_id' => $reciboId,
-                        'nombre' => $prenda['nombre_prenda'],
+                        'nombre' => $nombrePrenda,
                     ],
                 ];
             }
@@ -766,11 +770,11 @@ class OperarioDashboardVistaCosturaService
                     'icono' => 'check_circle',
                     'texto' => 'COMPLETAR',
                     'datos' => [
-                        'pedido_id' => $prenda['pedido_id'],
-                        'prenda_id' => $prenda['prenda_id'],
+                        'pedido_id' => $pedidoId,
+                        'prenda_id' => $prendaId,
                         'recibo_id' => $reciboAccionId,
                         'es_parcial' => '0',
-                        'nombre' => $prenda['nombre_prenda'],
+                        'nombre' => $nombrePrenda,
                     ],
                 ];
             }
@@ -782,11 +786,11 @@ class OperarioDashboardVistaCosturaService
                     'icono' => 'undo',
                     'texto' => 'DESHACER',
                     'datos' => [
-                        'pedido_id' => $prenda['pedido_id'],
-                        'prenda_id' => $prenda['prenda_id'],
+                        'pedido_id' => $pedidoId,
+                        'prenda_id' => $prendaId,
                         'recibo_id' => $reciboAccionId,
                         'es_parcial' => '0',
-                        'nombre' => $prenda['nombre_prenda'],
+                        'nombre' => $nombrePrenda,
                     ],
                 ];
             }
@@ -806,10 +810,10 @@ class OperarioDashboardVistaCosturaService
                     'icono' => 'check_circle',
                     'texto' => 'COMPLETAR CORTE',
                     'datos' => [
-                        'pedido_id' => $prenda['pedido_id'],
-                        'prenda_id' => $prenda['prenda_id'],
+                        'pedido_id' => $pedidoId,
+                        'prenda_id' => $prendaId,
                         'recibo_id' => $reciboId,
-                        'nombre' => $prenda['nombre_prenda'],
+                        'nombre' => $nombrePrenda,
                     ],
                 ];
             }
@@ -821,10 +825,10 @@ class OperarioDashboardVistaCosturaService
                     'icono' => 'undo',
                     'texto' => 'DESHACER',
                     'datos' => [
-                        'pedido_id' => $prenda['pedido_id'],
-                        'prenda_id' => $prenda['prenda_id'],
+                        'pedido_id' => $pedidoId,
+                        'prenda_id' => $prendaId,
                         'recibo_id' => $reciboId,
-                        'nombre' => $prenda['nombre_prenda'],
+                        'nombre' => $nombrePrenda,
                     ],
                 ];
             }
@@ -842,7 +846,7 @@ class OperarioDashboardVistaCosturaService
                 $areaActual = $reciboItem['area'] ?? null;
                 $procesoId = $reciboItem['proceso_id_costura'] ?? null;
                 $encargadoCostura = $reciboItem['encargado_costura'] ?? null;
-                $consecutivoActual = $reciboItem['consecutivo_actual'] ?? $prenda['numero_pedido'];
+                $consecutivoActual = $reciboItem['consecutivo_actual'] ?? $numeroPedido;
 
                 $esCC = in_array(strtolower(trim($areaActual ?? '')), ['control calidad', 'control de calidad']);
                 $esCosturaProceso = strtolower(trim($areaActual ?? '')) === 'costura';
@@ -857,10 +861,10 @@ class OperarioDashboardVistaCosturaService
                         'icono' => $mostrarComoDeshacerCostura ? 'undo' : 'checkroom',
                         'texto' => $mostrarComoDeshacerCostura ? 'DESHACER COSTURA' : 'PASAR A COSTURA',
                         'datos' => [
-                            'pedido_id' => $prenda['pedido_id'],
-                            'numero_pedido' => $prenda['numero_pedido'],
-                            'prenda_id' => $prenda['prenda_id'],
-                            'nombre' => $prenda['nombre_prenda'],
+                            'pedido_id' => $pedidoId,
+                            'numero_pedido' => $numeroPedido,
+                            'prenda_id' => $prendaId,
+                            'nombre' => $nombrePrenda,
                             'tipo_recibo' => 'COSTURA',
                             'recibo' => $consecutivoActual,
                             'area' => $areaActual ?? '',
@@ -877,9 +881,9 @@ class OperarioDashboardVistaCosturaService
                         'icono' => $esCC ? 'undo' : 'check_circle',
                         'texto' => $esCC ? 'DESHACER' : 'PASAR A C.C',
                         'datos' => [
-                            'pedido_id' => $prenda['pedido_id'],
-                            'prenda_id' => $prenda['prenda_id'],
-                            'nombre' => $prenda['nombre_prenda'],
+                            'pedido_id' => $pedidoId,
+                            'prenda_id' => $prendaId,
+                            'nombre' => $nombrePrenda,
                             'tipo_recibo' => 'COSTURA',
                             'recibo' => $consecutivoActual,
                             'area' => $areaActual ?? 'COSTURA',

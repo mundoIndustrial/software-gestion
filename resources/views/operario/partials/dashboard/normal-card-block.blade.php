@@ -1,4 +1,14 @@
 ﻿                        @php
+                            $prendaOriginal = $prenda ?? [];
+                            $prenda = array_merge([
+                                'numero_pedido' => '',
+                                'nombre_prenda' => '',
+                                'descripcion' => '',
+                                'prenda_id' => 0,
+                                'pedido_id' => ($prendaOriginal['pedido_id_accion'] ?? 0),
+                                'cliente' => '',
+                                'recibos' => [],
+                            ], $prendaOriginal);
                             $normal = $prenda['normal_view'] ?? [];
                             $estadoClass = (string) ($normal['estado_class'] ?? 'pendiente');
                             $tieneReflectivo = (bool) ($normal['tiene_reflectivo'] ?? false);
@@ -21,6 +31,14 @@
                             $recibosCorteAsignadosCortador = (int) ($normal['recibos_corte_asignados'] ?? 0);
                             $tiposUnicos = collect($normal['tipos_unicos'] ?? []);
                             $recibosPreferidosPorTipo = is_array($normal['recibos_preferidos_por_tipo'] ?? null) ? $normal['recibos_preferidos_por_tipo'] : [];
+                            $tipoReciboPrincipal = strtoupper((string) ($prenda['recibos'][0]['tipo_recibo'] ?? ''));
+                            $esReciboBodega = $tipoReciboPrincipal === 'CORTE-PARA-BODEGA';
+                            $clienteCard = trim((string) ($prenda['cliente'] ?? ''));
+                            if ($esReciboBodega && ($clienteCard === '' || strtoupper($clienteCard) === 'SIN CLIENTE')) {
+                                $clienteCard = 'BODEGA';
+                            } elseif ($clienteCard === '') {
+                                $clienteCard = 'SIN CLIENTE';
+                            }
                         @endphp
 
                         @if(!(bool) ($normal['debe_omitirse_lider_reflectivo'] ?? false))
@@ -29,7 +47,7 @@
                              data-prenda="{{ strtolower($prenda['nombre_prenda']) }}"
                              data-prenda-id="{{ $prenda['prenda_id'] }}"
                              data-pedido-parcial-id="{{ $prenda['recibos'][0]['pedido_parcial_id'] ?? '' }}"
-                             data-cliente="{{ strtolower($prenda['cliente']) }}"
+                             data-cliente="{{ strtolower($clienteCard) }}"
                              data-tipo-recibo="{{ $esReflectivo }}"
                              data-sin-encargado-costura="{{ $sinEncargadoCosturaCard ? '1' : '0' }}"
                              data-sin-encargado-reflectivo="{{ $sinEncargadoReflectivoCard ? '1' : '0' }}"
@@ -188,8 +206,8 @@
                                     </div>
 
                                     <div class="orden-cliente">
-                                        <p class="cliente-label">{{ (isset($prenda['recibos'][0]) && strtoupper((string)($prenda['recibos'][0]['tipo_recibo'] ?? '')) === 'CORTE-PARA-BODEGA') ? 'SERVICIO' : 'CLIENTE' }}</p>
-                                        <p class="cliente-name">{{ $prenda['cliente'] }}</p>
+                                        <p class="cliente-label">{{ $esReciboBodega ? 'SERVICIO' : 'CLIENTE' }}</p>
+                                        <p class="cliente-name">{{ $clienteCard }}</p>
                                     </div>
                                     <div class="dashboard-search-area-hint" style="display: none;">
                                         <span class="material-symbols-rounded">location_on</span>
@@ -969,7 +987,3 @@
                             </div>
                         </div>
                         @endif
-
-
-
-
