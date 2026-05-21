@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+﻿import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import fs from 'fs';
 
@@ -19,7 +19,7 @@ try {
     console.log('  No se pudo leer .env.development, usando localhost');
 }
 
-// Fallback a variable de entorno si está disponible
+// Fallback a variable de entorno si estÃ¡ disponible
 hmrHost = process.env.VITE_HMR_HOST || hmrHost;
 
 const isProduction = process.env.VITE_ENV === 'production' || process.env.NODE_ENV === 'production';
@@ -48,8 +48,9 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/js/operario/entry.js',
                 'resources/js/insumos/materiales.entry.js',
-                'resources/js/supervisor-pedidos/index.js',  // Cambié entry.js → index.js (más estándar)
+                'resources/js/supervisor-pedidos/index.js',  // CambiÃ© entry.js â†’ index.js (mÃ¡s estÃ¡ndar)
                 'resources/js/recepcion-despacho/entry.js',
+                'resources/js/orders/mobile/order-detail-mobile-modal.js',
             ],
             refresh: true,
         }),
