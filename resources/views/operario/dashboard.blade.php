@@ -62,6 +62,10 @@
                             <span class="material-symbols-rounded">auto_awesome</span>
                             Reflectivo
                         </button>
+                        <button class="badge-filtro {{ $filtroReciboActual === 'bodega' ? 'badge-filtro-active' : '' }}" data-filtro="bodega" onclick="filtrarPrendasPorRecibo('bodega')">
+                            <span class="material-symbols-rounded">inventory_2</span>
+                            Bodega
+                        </button>
                     @endif
                 </div>
                 @if(auth()->user()->hasRole('vista-costura') && in_array($filtroReciboActual, ['costura', 'bodega'], true))
@@ -925,7 +929,6 @@
     </style>
 
 @endsection
-
 
 
 

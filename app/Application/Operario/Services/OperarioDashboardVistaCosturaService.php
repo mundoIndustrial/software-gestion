@@ -547,6 +547,7 @@ class OperarioDashboardVistaCosturaService
             $tiposRecibos = array_map(fn ($r) => strtoupper((string) ($r['tipo_recibo'] ?? '')), $recibos);
             $tieneReflectivo = in_array('REFLECTIVO', $tiposRecibos, true);
             $tieneCostura = in_array('COSTURA', $tiposRecibos, true);
+            $tieneBodega = in_array('CORTE-PARA-BODEGA', $tiposRecibos, true) || in_array('BODEGA', $tiposRecibos, true);
             $reciboReflectivoParaFiltro = collect($recibos)->first(fn ($recibo) => strtoupper((string) ($recibo['tipo_recibo'] ?? '')) === 'REFLECTIVO');
             $reciboCosturaFiltroCard = collect($recibos)->first(fn ($recibo) => strtoupper((string) ($recibo['tipo_recibo'] ?? '')) === 'COSTURA');
             $reciboReflectivoFiltroCard = $reciboReflectivoParaFiltro;
@@ -573,6 +574,9 @@ class OperarioDashboardVistaCosturaService
                 if ($mostrarReflectivoEnFiltro) {
                     $tiposParaFiltro[] = 'reflectivo';
                 }
+                if ($tieneBodega) {
+                    $tiposParaFiltro[] = 'bodega';
+                }
                 $esReflectivo = implode(',', $tiposParaFiltro);
             } else {
                 $esReflectivo = $mostrarReflectivoEnFiltro ? 'reflectivo' : 'costura';
@@ -584,6 +588,8 @@ class OperarioDashboardVistaCosturaService
             } elseif (($usuario?->hasRole('costura-reflectivo')) || ($usuario?->hasRole('lider-reflectivo'))) {
                 if ($filtroReciboActual === 'reflectivo') {
                     $displayInicial = ($mostrarReflectivoEnFiltro && ($busquedaActiva || !$reflectivoCompletadoEnCard)) ? '' : 'none';
+                } elseif ($filtroReciboActual === 'bodega') {
+                    $displayInicial = $tieneBodega ? '' : 'none';
                 } else {
                     $displayInicial = $tieneCostura ? '' : 'none';
                 }
