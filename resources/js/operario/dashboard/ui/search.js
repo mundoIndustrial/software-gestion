@@ -134,7 +134,9 @@ export function initDashboardSearch() {
                     return;
                 }
                 console.error('[Dashboard Search] Error actualizando resultados', error);
-                window.location.href = url.toString();
+                // No recargar la página, solo mostrar que no hay resultados
+                // Preservar el valor del input de búsqueda
+                mostrarCargandoBusqueda(false);
                 return;
             } finally {
                 if (currentRequestSeq === searchRequestSeq) {

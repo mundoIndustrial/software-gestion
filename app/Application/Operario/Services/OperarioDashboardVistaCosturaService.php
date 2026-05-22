@@ -85,32 +85,23 @@ class OperarioDashboardVistaCosturaService
         }
 
         return $prendas->filter(function (array $prenda) use ($busqueda) {
-            $camposPrenda = [
-                strtolower(trim((string) ($prenda['numero_pedido'] ?? ''))),
-                strtolower(trim((string) ($prenda['cliente'] ?? ''))),
-                strtolower(trim((string) ($prenda['nombre_prenda'] ?? ''))),
-                strtolower(trim((string) ($prenda['descripcion'] ?? ''))),
-            ];
-
-            foreach ($camposPrenda as $campo) {
-                if ($campo !== '' && str_contains($campo, $busqueda)) {
-                    return true;
-                }
+            // Buscar por nombre del cliente
+            $cliente = strtolower(trim((string) ($prenda['cliente'] ?? '')));
+            if ($cliente !== '' && str_contains($cliente, $busqueda)) {
+                return true;
             }
 
+            // Buscar por número de recibo (consecutivo_actual o consecutivo_inicial)
             foreach (($prenda['recibos'] ?? []) as $recibo) {
-                $camposRecibo = [
-                    strtolower(trim((string) ($recibo['consecutivo_actual'] ?? ''))),
-                    strtolower(trim((string) ($recibo['consecutivo_inicial'] ?? ''))),
-                    strtolower(trim((string) ($recibo['tipo_recibo'] ?? ''))),
-                    strtolower(trim((string) ($recibo['area'] ?? ''))),
-                    strtolower(trim((string) ($recibo['notas'] ?? ''))),
-                ];
+                $consecutivoActual = strtolower(trim((string) ($recibo['consecutivo_actual'] ?? '')));
+                $consecutivoInicial = strtolower(trim((string) ($recibo['consecutivo_inicial'] ?? '')));
 
-                foreach ($camposRecibo as $campo) {
-                    if ($campo !== '' && str_contains($campo, $busqueda)) {
-                        return true;
-                    }
+                if ($consecutivoActual !== '' && str_contains($consecutivoActual, $busqueda)) {
+                    return true;
+                }
+
+                if ($consecutivoInicial !== '' && str_contains($consecutivoInicial, $busqueda)) {
+                    return true;
                 }
             }
 

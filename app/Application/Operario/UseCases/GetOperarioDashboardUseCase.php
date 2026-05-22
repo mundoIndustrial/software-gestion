@@ -579,89 +579,30 @@ class GetOperarioDashboardUseCase
             return $prendas->values();
         }
 
-        $esNumerica = ctype_digit($busqueda);
+        return $prendas->filter(function (array $prenda) use ($busqueda) {
+            // Buscar por nombre del cliente
+            $cliente = strtolower(trim((string) ($prenda['cliente'] ?? '')));
+            if ($cliente !== '' && str_contains($cliente, $busqueda)) {
+                return true;
+            }
 
-        return $prendas->filter(function (array $prenda) use ($busqueda, $esNumerica) {
-            $camposPrenda = [
-                strtolower(trim((string) ($prenda['numero_pedido'] ?? ''))),
-                strtolower(trim((string) ($prenda['cliente'] ?? ''))),
-                strtolower(trim((string) ($prenda['nombre_prenda'] ?? ''))),
-                strtolower(trim((string) ($prenda['descripcion'] ?? ''))),
-            ];
+            // Buscar por número de recibo (consecutivo_actual o consecutivo_parcial)
+            foreach (($prenda['recibos'] ?? []) as $recibo) {
+                $consecutivoActual = strtolower(trim((string) ($recibo['consecutivo_actual'] ?? '')));
+                $consecutivoParcial = strtolower(trim((string) ($recibo['consecutivo_parcial'] ?? '')));
 
-            foreach ($camposPrenda as $campo) {
-                if ($campo === '') {
-                    continue;
-                }
-
-                if ($esNumerica) {
-                    if (str_contains($campo, $busqueda)) {
-                        return true;
-                    }
-                    continue;
-                }
-
-                if (str_contains($campo, $busqueda)) {
+                if ($consecutivoActual !== '' && str_contains($consecutivoActual, $busqueda)) {
                     return true;
                 }
-            }
 
-            foreach (($prenda['recibos'] ?? []) as $recibo) {
-                $camposRecibo = [
-                    strtolower(trim((string) ($recibo['consecutivo_actual'] ?? ''))),
-                    strtolower(trim((string) ($recibo['consecutivo_parcial'] ?? ''))),
-                    strtolower(trim((string) ($recibo['tipo_recibo'] ?? ''))),
-                    strtolower(trim((string) ($recibo['area'] ?? ''))),
-                    strtolower(trim((string) ($recibo['encargado_costura'] ?? ''))),
-                    strtolower(trim((string) ($recibo['encargado_corte'] ?? ''))),
-                    strtolower(trim((string) ($recibo['encargado_control_calidad'] ?? ''))),
-                    strtolower(trim((string) ($recibo['notas'] ?? ''))),
-                ];
-
-                foreach ($camposRecibo as $campo) {
-                    if ($campo === '') {
-                        continue;
-                    }
-
-                    if ($esNumerica) {
-                        if (str_contains($campo, $busqueda)) {
-                            return true;
-                        }
-                        continue;
-                    }
-
-                    if (str_contains($campo, $busqueda)) {
-                        return true;
-                    }
+                if ($consecutivoParcial !== '' && str_contains($consecutivoParcial, $busqueda)) {
+                    return true;
                 }
-            }
-
-            // Fallback: buscar tambien en un texto consolidado de la prenda + recibos.
-            // Evita falsos negativos cuando algun campo viene con formato inesperado.
-            $textoConsolidado = strtolower(trim(
-                (string) ($prenda['numero_pedido'] ?? '') . ' '
-                . (string) ($prenda['cliente'] ?? '') . ' '
-                . (string) ($prenda['nombre_prenda'] ?? '') . ' '
-                . (string) ($prenda['descripcion'] ?? '') . ' '
-                . collect($prenda['recibos'] ?? [])->flatMap(function ($recibo) {
-                    return [
-                        (string) ($recibo['consecutivo_actual'] ?? ''),
-                        (string) ($recibo['consecutivo_parcial'] ?? ''),
-                        (string) ($recibo['tipo_recibo'] ?? ''),
-                        (string) ($recibo['area'] ?? ''),
-                        (string) ($recibo['encargado_costura'] ?? ''),
-                        (string) ($recibo['encargado_corte'] ?? ''),
-                        (string) ($recibo['encargado_control_calidad'] ?? ''),
-                        (string) ($recibo['notas'] ?? ''),
-                    ];
-                })->implode(' ')
-            ));
-
-            if ($textoConsolidado !== '' && str_contains($textoConsolidado, $busqueda)) {
-                return true;
             }
 
             return false;
         })->values();
     }
+
+
 }

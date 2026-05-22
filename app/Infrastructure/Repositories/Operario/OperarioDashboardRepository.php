@@ -81,25 +81,19 @@ class OperarioDashboardRepository
                 'pr.descripcion',
             ])
             ->where(function ($query) use ($comodin, $esNumerica) {
+                // Solo buscar por número de recibo y cliente
                 if ($esNumerica) {
                     $query
                         ->orWhereRaw('CAST(crp.consecutivo_actual AS CHAR) LIKE ?', [$comodin])
                         ->orWhereRaw('CAST(crp.consecutivo_inicial AS CHAR) LIKE ?', [$comodin])
-                        ->orWhereRaw('CAST(pp.numero_pedido AS CHAR) LIKE ?', [$comodin]);
+                        ->orWhereRaw('LOWER(COALESCE(pp.cliente, "")) LIKE ?', [$comodin]);
                     return;
                 }
 
                 $query
                     ->orWhereRaw('LOWER(CAST(crp.consecutivo_actual AS CHAR)) LIKE ?', [$comodin])
                     ->orWhereRaw('LOWER(CAST(crp.consecutivo_inicial AS CHAR)) LIKE ?', [$comodin])
-                    ->orWhereRaw('LOWER(COALESCE(crp.tipo_recibo, "")) LIKE ?', [$comodin])
-                    ->orWhereRaw('LOWER(COALESCE(crp.area, "")) LIKE ?', [$comodin])
-                    ->orWhereRaw('LOWER(COALESCE(crp.estado, "")) LIKE ?', [$comodin])
-                    ->orWhereRaw('LOWER(COALESCE(crp.notas, "")) LIKE ?', [$comodin])
-                    ->orWhereRaw('LOWER(COALESCE(pp.numero_pedido, "")) LIKE ?', [$comodin])
-                    ->orWhereRaw('LOWER(COALESCE(pp.cliente, "")) LIKE ?', [$comodin])
-                    ->orWhereRaw('LOWER(COALESCE(pr.nombre_prenda, "")) LIKE ?', [$comodin])
-                    ->orWhereRaw('LOWER(COALESCE(pr.descripcion, "")) LIKE ?', [$comodin]);
+                    ->orWhereRaw('LOWER(COALESCE(pp.cliente, "")) LIKE ?', [$comodin]);
             })
             ->where(function ($query) use ($tiposPermitidos) {
                 foreach ($tiposPermitidos as $tipoPermitido) {
@@ -132,25 +126,19 @@ class OperarioDashboardRepository
                 'pr.descripcion',
             ])
             ->where(function ($query) use ($comodin, $esNumerica) {
+                // Solo buscar por número de recibo y cliente
                 if ($esNumerica) {
                     $query
                         ->orWhereRaw('CAST(crp.consecutivo_actual AS CHAR) LIKE ?', [$comodin])
                         ->orWhereRaw('CAST(crp.consecutivo_inicial AS CHAR) LIKE ?', [$comodin])
-                        ->orWhereRaw('CAST(pp.numero_pedido AS CHAR) LIKE ?', [$comodin]);
+                        ->orWhereRaw('LOWER(COALESCE(pp.cliente, "")) LIKE ?', [$comodin]);
                     return;
                 }
 
                 $query
                     ->orWhereRaw('LOWER(CAST(crp.consecutivo_actual AS CHAR)) LIKE ?', [$comodin])
                     ->orWhereRaw('LOWER(CAST(crp.consecutivo_inicial AS CHAR)) LIKE ?', [$comodin])
-                    ->orWhereRaw('LOWER(COALESCE(crp.tipo_recibo, "")) LIKE ?', [$comodin])
-                    ->orWhereRaw('LOWER(COALESCE(crp.area, "")) LIKE ?', [$comodin])
-                    ->orWhereRaw('LOWER(COALESCE(crp.estado, "")) LIKE ?', [$comodin])
-                    ->orWhereRaw('LOWER(COALESCE(crp.notas, "")) LIKE ?', [$comodin])
-                    ->orWhereRaw('LOWER(COALESCE(pp.numero_pedido, "")) LIKE ?', [$comodin])
-                    ->orWhereRaw('LOWER(COALESCE(pp.cliente, "")) LIKE ?', [$comodin])
-                    ->orWhereRaw('LOWER(COALESCE(pr.nombre_prenda, "")) LIKE ?', [$comodin])
-                    ->orWhereRaw('LOWER(COALESCE(pr.descripcion, "")) LIKE ?', [$comodin]);
+                    ->orWhereRaw('LOWER(COALESCE(pp.cliente, "")) LIKE ?', [$comodin]);
             })
             ->where(function ($query) use ($tiposPermitidos) {
                 foreach ($tiposPermitidos as $tipoPermitido) {
