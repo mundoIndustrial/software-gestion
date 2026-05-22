@@ -318,12 +318,13 @@ class OperarioRecibosController extends Controller
 
                 // Mantener sincronizado el estado del proceso asociado al parcial
                 // para que no continúe visible como "En Progreso" en vistas derivadas.
+                // "Pausado" es el estado compatible con la tabla procesos_prenda.
                 $procesosActualizados = \App\Models\ProcesoPrenda::query()
                     ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
                     ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
                     ->whereNull('deleted_at')
                     ->update([
-                        'estado_proceso' => 'Anulado',
+                        'estado_proceso' => 'Pausado',
                         'observaciones' => DB::raw("CONCAT(COALESCE(observaciones,''), '\n[ANULADO] Parcial anulado desde Operario')"),
                         'updated_at' => now(),
                     ]);

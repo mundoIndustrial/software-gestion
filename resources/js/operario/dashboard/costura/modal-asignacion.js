@@ -1531,22 +1531,66 @@ window.actualizarAsignacion = function(talla, moduloId, cantidad, esNueva = fals
 
 // Funcion para obtener el total asignado de una talla (excepto el Modulo actual)
 function getTotalAsignadoTalla(talla, moduloIdExcluir = null) {
-    if (!window.asignacionesPorModulo) return 0;
-    
     let total = 0;
-    for (const [moduloId, asignaciones] of Object.entries(window.asignacionesPorModulo)) {
-        if (parseInt(moduloId) !== moduloIdExcluir && asignaciones[talla]) {
-            // Manejar tanto el formato antiguo (numero) como el nuevo (objeto)
-            let cantidad = 0;
-            if (typeof asignaciones[talla] === 'object' && asignaciones[talla] !== null) {
-                cantidad = asignaciones[talla].cantidad || 0;
-            } else if (typeof asignaciones[talla] === 'number') {
-                cantidad = asignaciones[talla];
+    let hayAsignacionesEnMemoria = false;
+    
+    if (window.asignacionesPorModulo) {
+        for (const [moduloId, asignaciones] of Object.entries(window.asignacionesPorModulo)) {
+            if (parseInt(moduloId) !== moduloIdExcluir && asignaciones[talla]) {
+                let cantidad = 0;
+                if (typeof asignaciones[talla] === 'object' && asignaciones[talla] !== null) {
+                    cantidad = asignaciones[talla].cantidad || 0;
+                } else if (typeof asignaciones[talla] === 'number') {
+                    cantidad = asignaciones[talla];
+                }
+                total += cantidad;
+                hayAsignacionesEnMemoria = true;
             }
-            total += cantidad;
         }
     }
+
+    if (hayAsignacionesEnMemoria) {
+        return total;
+    }
+
+    if (window.datosModalCostura?.esEdicion) {
+        return getTotalAsignadoTallaDesdeParcialesEdicion(talla);
+    }
+
     return total;
+}
+
+function getTotalAsignadoTallaDesdeParcialesEdicion(tallaId) {
+    const parciales = Array.isArray(window.__datosParcialesEdicion) ? window.__datosParcialesEdicion : [];
+    if (parciales.length === 0) return 0;
+
+    return parciales.reduce((total, parcial) => {
+        const estadoParcial = String(
+            parcial?.proceso_estado
+                ?? parcial?.estado_proceso
+                ?? parcial?.estado
+                ?? ''
+        ).toUpperCase().trim();
+
+        if (estadoParcial === 'ANULADO') return total;
+
+        (parcial.tallas || []).forEach((tallaParcial) => {
+            const cantidad = parseInt(tallaParcial?.cantidad) || 0;
+            if (cantidad <= 0) return;
+
+            const idParcial = construirTallaIdUnico(
+                String(tallaParcial?.talla || '').trim(),
+                tallaParcial?.color_nombre || getColorParaTallaId(tallaId) || null,
+                tallaParcial?.genero || tallaParcial?.sexo || 'Sin género'
+            );
+
+            if (idParcial === tallaId) {
+                total += cantidad;
+            }
+        });
+
+        return total;
+    }, 0);
 }
 
 function normalizarColor(color) {

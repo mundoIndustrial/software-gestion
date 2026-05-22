@@ -30,7 +30,7 @@ export function manejarPasarACostura(btn) {
     const esDeshacer = btn.classList.contains('btn-deshacer-costura');
 
     if (esDeshacer) {
-        deshacerCosturaVista(pedidoId, prendaId, tipoRecibo, btnId, prendaBodegaId);
+        deshacerCosturaVista(pedidoId, prendaId, tipoRecibo, btn, prendaBodegaId);
     } else {
         abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, btnId, numeroPedido, parcialId, prendaBodegaId);
     }
@@ -38,11 +38,20 @@ export function manejarPasarACostura(btn) {
 
 // Las funciones antiguas se mantienen por compatibilidad pero ya no se usan directamente
 
-export function deshacerCosturaVista(pedidoId, prendaId, tipoRecibo, btnId, prendaBodegaId = null) {
-    console.log('[DESHACER-COSTURA] Iniciando funciÃ³n:', { pedidoId, prendaId, tipoRecibo, btnId, prendaBodegaId });
+export function deshacerCosturaVista(pedidoId, prendaId, tipoRecibo, btnOrId, prendaBodegaId = null) {
+    const btn = resolverBotonCostura(btnOrId, pedidoId, prendaId, tipoRecibo);
+    console.log('[DESHACER-COSTURA] Iniciando función:', {
+        pedidoId,
+        prendaId,
+        tipoRecibo,
+        btnId: typeof btnOrId === 'string' ? btnOrId : (btn?.id || ''),
+        prendaBodegaId,
+    });
 
-    const btn = document.getElementById(btnId);
-    if (!btn || btn.disabled) return;
+    if (!btn || btn.disabled) {
+        console.warn('[DESHACER-COSTURA] No se pudo resolver el botón o ya estaba deshabilitado');
+        return;
+    }
 
     const originalHTML = btn.innerHTML;
     btn.disabled = true;
@@ -98,4 +107,28 @@ export function deshacerCosturaVista(pedidoId, prendaId, tipoRecibo, btnId, pren
         .finally(() => {
             btn.disabled = false;
         });
+}
+function resolverBotonCostura(btnOrId, pedidoId, prendaId, tipoRecibo) {
+    if (typeof HTMLElement !== 'undefined' && btnOrId instanceof HTMLElement) {
+        return btnOrId;
+    }
+
+    if (typeof btnOrId === 'string' && btnOrId.trim()) {
+        const byId = document.getElementById(btnOrId);
+        if (byId) return byId;
+    }
+
+    const pedidoNormalizado = String(pedidoId || '').trim();
+    const prendaNormalizada = String(prendaId || '').trim();
+    const tipoNormalizado = String(tipoRecibo || '').toUpperCase().trim();
+
+    return Array.from(document.querySelectorAll('.btn-deshacer-costura, .btn-completar-costura'))
+        .find((el) => {
+            const elPedido = String(el.dataset.pedidoId || '').trim();
+            const elPrenda = String(el.dataset.prendaId || '').trim();
+            const elTipo = String(el.dataset.tipoRecibo || '').toUpperCase().trim();
+            return elPedido === pedidoNormalizado
+                && elPrenda === prendaNormalizada
+                && (!tipoNormalizado || elTipo === tipoNormalizado);
+        }) || null;
 }
