@@ -194,11 +194,16 @@ class ReciboCosturaController extends Controller
                     ->where('prenda_pedido_id', $prendaId)
                     ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim($tipoReciboReal))])
                     ->where('consecutivo_original', $consecutivoOriginal)
-                    ->get(['id', 'consecutivo_parcial']);
+                    ->get(['id', 'consecutivo_parcial', 'estado']);
 
                 // Mapear parcial existente -> encargado (desde proceso hijo)
                 $parcialesConEncargado = [];
                 foreach ($parcialesExistentes as $parcialExistente) {
+                    $estadoParcial = strtoupper(trim((string) ($parcialExistente->estado ?? '')));
+                    if ($estadoParcial === 'ANULADO') {
+                        continue;
+                    }
+
                     $procesoHijoExistente = ProcesoPrenda::query()
                         ->where('numero_pedido', $pedido->numero_pedido)
                         ->where($prendaColumn, $prendaId)
@@ -213,6 +218,7 @@ class ReciboCosturaController extends Controller
                         $parcialesConEncargado[$encargadoNorm] = [
                             'id' => (int) $parcialExistente->id,
                             'consecutivo_parcial' => (string) $parcialExistente->consecutivo_parcial,
+                            'estado' => (string) ($parcialExistente->estado ?? ''),
                         ];
                     }
                 }
@@ -354,6 +360,11 @@ class ReciboCosturaController extends Controller
 
                         $parcialIdEliminar = (int) $parcialExistente['id'];
                         $consecutivoParcialEliminar = (string) $parcialExistente['consecutivo_parcial'];
+                        $estadoParcialExistente = strtoupper(trim((string) ($parcialExistente['estado'] ?? '')));
+
+                        if ($estadoParcialExistente === 'ANULADO') {
+                            continue;
+                        }
 
                         DB::table('recibos_por_partes_tallas')
                             ->where('recibo_por_partes_id', $parcialIdEliminar)
@@ -1631,6 +1642,11 @@ class ReciboCosturaController extends Controller
                 ->get();
 
             foreach ($parcialesExistentes as $parcial) {
+                $estadoParcial = strtoupper(trim((string) ($parcial->estado ?? '')));
+                if ($estadoParcial === 'ANULADO') {
+                    continue;
+                }
+
                 // Eliminar tallas del parcial
                 DB::table('recibos_por_partes_tallas')
                     ->where('recibo_por_partes_id', $parcial->id)

@@ -16,6 +16,7 @@ class ReciboPorPartes extends Model
         'tipo_recibo',
         'consecutivo_original',
         'consecutivo_parcial',
+        'estado',
     ];
 
     protected $casts = [

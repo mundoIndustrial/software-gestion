@@ -653,6 +653,7 @@ function crearHTMLDistribucionCards(parciales, numeroRecibo, totalParciales, rec
     const parcialCards = parciales.map((parcial, index) => {
         const estadoParcial = String(parcial.proceso_estado || 'En Progreso');
         const badgeClass = `badge-estado-${estadoParcial.toLowerCase().replace(/\s+/g, '-')}`;
+        const estaAnulado = String(estadoParcial).trim().toLowerCase() === 'anulado';
         const areaParcial = String(parcial.area || 'SIN ASIGNAR');
         const estaEnControlCalidad = ['control calidad', 'control de calidad'].includes(areaParcial.trim().toLowerCase());
         const esBodega = String(parcial.tipo_recibo || '').toUpperCase() === 'CORTE-PARA-BODEGA';
@@ -710,7 +711,7 @@ function crearHTMLDistribucionCards(parciales, numeroRecibo, totalParciales, rec
                     ` : ''}
 
                     <div class="parcial-row parcial-acciones">
-                        ${esVistaCostura ? `
+                        ${esVistaCostura && !estaAnulado ? `
                         <button class="btn-pasar-cc"
                                 onclick="pasarAControlCalidad(this)"
                                 data-pedido-id="${parcial.pedido_produccion_id}"
@@ -729,12 +730,14 @@ function crearHTMLDistribucionCards(parciales, numeroRecibo, totalParciales, rec
                             <span class="material-symbols-rounded">visibility</span>
                             VER RECIBO
                         </button>
+                        ${!estaAnulado ? `
                         <button class="btn-anular-parcial" 
                                 onclick="anularParcial(${parcial.id}, this)"
                                 data-parcial-id="${parcial.id}">
                             <span class="material-symbols-rounded">block</span>
                             ANULAR
                         </button>
+                        ` : ''}
                     </div>
                 </div>
             </div>

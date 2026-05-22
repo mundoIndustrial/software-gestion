@@ -311,10 +311,28 @@ class OperarioRecibosController extends Controller
                     'estado_actual' => $parcial->estado,
                 ]);
 
-                // Cambiar el estado a 'Anulado'
-                $parcial->update([
-                    'estado' => 'Anulado',
-                    'updated_at' => now(),
+                // Cambiar el estado a 'Anulado' y persistir explícitamente.
+                $parcial->estado = 'Anulado';
+                $parcial->save();
+                $parcial->refresh();
+
+                // Mantener sincronizado el estado del proceso asociado al parcial
+                // para que no continúe visible como "En Progreso" en vistas derivadas.
+                $procesosActualizados = \App\Models\ProcesoPrenda::query()
+                    ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                    ->whereNull('deleted_at')
+                    ->update([
+                        'estado_proceso' => 'Pausado',
+                        'observaciones' => DB::raw("CONCAT(COALESCE(observaciones,''), '\n[ANULADO] Parcial anulado desde Operario')"),
+                        'updated_at' => now(),
+                    ]);
+
+                \Log::info('[AnularParcial] Parcial anulado correctamente', [
+                    'parcial_id' => $id,
+                    'consecutivo_parcial' => $parcial->consecutivo_parcial,
+                    'estado_guardado' => $parcial->estado,
+                    'procesos_actualizados' => $procesosActualizados,
                 ]);
 
                 DB::commit();

@@ -140,6 +140,8 @@ class ObtenerDistribucionReciboOperarioUseCase
                 : (($proceso ? $proceso->proceso : null) ?? $parcial->area ?? 'SIN ASIGNAR');
 
             $estaCompletado = $this->readRepository->estaCompletadoParcialEnCostura((int) $parcial->id);
+            $estadoParcial = strtoupper(trim((string) ($parcial->estado ?? '')));
+            $estaAnulado = $estadoParcial === 'ANULADO';
 
             return [
                 'id' => $parcial->id,
@@ -149,9 +151,12 @@ class ObtenerDistribucionReciboOperarioUseCase
                 'tipo_recibo' => $parcial->tipo_recibo,
                 'consecutivo_parcial' => (float) $parcial->consecutivo_parcial,
                 'consecutivo_original' => (float) $parcial->consecutivo_original,
-                'proceso_estado' => $estaCompletado
+                'proceso_estado' => $estaAnulado
+                    ? 'Anulado'
+                    : ($estaCompletado
                     ? 'COMPLETADO'
-                    : (($proceso && $proceso->estado_proceso ? $proceso->estado_proceso : 'En Progreso') ?: 'En Progreso'),
+                    : (($proceso && $proceso->estado_proceso ? $proceso->estado_proceso : 'En Progreso') ?: 'En Progreso')),
+                'estado_parcial' => $parcial->estado,
                 'fecha_asignacion' => ($proceso ? $proceso->fecha_de_asignacion_encargado : null) ?? null,
                 'observaciones' => ($proceso ? $proceso->observaciones : null) ?? '',
                 'pedido_produccion_id' => $parcial->pedido_produccion_id,
