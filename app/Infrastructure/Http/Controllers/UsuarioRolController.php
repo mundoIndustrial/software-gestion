@@ -216,28 +216,30 @@ class UsuarioRolController extends Controller
     public function getUsuariosTaller(Request $request)
     {
         try {
-            // Buscar el rol 'taller'
             $rolTaller = Role::where('name', 'taller')->first();
-            
+
             if (!$rolTaller) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No se encontró el rol "taller" en el sistema'
+                    'message' => 'No se encontro el rol "taller" en el sistema'
                 ], 404);
             }
-            
-            // Obtener usuarios con rol taller que estén activos
-            $usuarios = User::select('users.id', 'users.name', 'users.email')
-                ->leftJoin('taller_config', 'users.id', '=', 'taller_config.user_id')
+
+            $query = User::select('users.id', 'users.name', 'users.email')
                 ->where(function($query) use ($rolTaller) {
                     $query->whereJsonContains('roles_ids', $rolTaller->id)
                           ->orWhere('role_id', $rolTaller->id);
-                })
-                ->where(function($query) {
-                    $query->whereNull('taller_config.activo')
-                          ->orWhere('taller_config.activo', '!=', 0);
-                })
-                ->orderBy('users.name')
+                });
+
+            if (\Illuminate\Support\Facades\Schema::hasTable('taller_config')) {
+                $query->leftJoin('taller_config', 'users.id', '=', 'taller_config.user_id')
+                    ->where(function($query) {
+                        $query->whereNull('taller_config.activo')
+                              ->orWhere('taller_config.activo', '!=', 0);
+                    });
+            }
+
+            $usuarios = $query->orderBy('users.name')
                 ->distinct()
                 ->get();
 
@@ -245,7 +247,7 @@ class UsuarioRolController extends Controller
                 'success' => true,
                 'usuarios' => $usuarios
             ], 200);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -254,3 +256,4 @@ class UsuarioRolController extends Controller
         }
     }
 }
+
