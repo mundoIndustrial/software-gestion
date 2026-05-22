@@ -503,110 +503,6 @@ function construirTallaIdUnico(nombreTalla, color, genero = '') {
     return `${tallaBase}_${colorNormalizado}_${generoNormalizado}`;
 }
 
-// Funcion para generar HTML de tallas agrupadas
-function generarHtmlTallasAgrupadas(tallas, moduloId) {
-    const grupos = agruparTallasPorGeneroYColor(tallas);
-    let html = '';
-    
-    Object.entries(grupos).forEach(([genero, colores]) => {
-        html += `
-            <div style="margin-bottom: 1.5rem;">
-                <h6 style="margin: 0 0 0.75rem 0; font-size: 0.875rem; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.05em;">
-                    ${genero}
-                </h6>
-                <div style="display: grid; gap: 0.75rem;">
-        `;
-        
-        Object.entries(colores).forEach(([color, tallasColor]) => {
-            const colorDisplay = color === 'Sin color' ? null : color;
-            const colorStyle = colorDisplay ? `background: ${colorDisplay}; border: 1px solid #d1d5db;` : 'background: #f3f4f6; border: 1px solid #d1d5db;';
-            
-            html += `
-                <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem;">
-                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-                        ${colorDisplay ? `
-                            <span style="display: inline-block; width: 16px; height: 16px; ${colorStyle} border-radius: 4px; margin-right: 0.5rem;"></span>
-                            <span style="font-size: 0.875rem; font-weight: 500; color: #374151;">${color}</span>
-                        ` : `
-                            <span style="font-size: 0.875rem; font-weight: 500; color: #6b7280;">Sin color</span>
-                        `}
-                    </div>
-                    <div style="display: grid; gap: 0.5rem;">
-            `;
-            
-            tallasColor.forEach(talla => {
-                // Crear un ID unico que incluya el color y genero para evitar colisiones
-                const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, color, talla.genero);
-                
-                // Verificar si esta talla especifico (con color) esta asignada a este Modulo
-                let asignado = 0;
-                if (window.asignacionesPorModulo && window.asignacionesPorModulo[moduloId]) {
-                    if (typeof window.asignacionesPorModulo[moduloId][tallaIdUnico] === 'object' && window.asignacionesPorModulo[moduloId][tallaIdUnico] !== null) {
-                        asignado = window.asignacionesPorModulo[moduloId][tallaIdUnico].cantidad || 0;
-                    } else if (typeof window.asignacionesPorModulo[moduloId][tallaIdUnico] === 'number') {
-                        asignado = window.asignacionesPorModulo[moduloId][tallaIdUnico];
-                    }
-                }
-                
-                const maxDisponible = getMaxDisponibleParaModulo(tallaIdUnico, moduloId);
-                const disponible = getDisponibleRestanteGlobal(tallaIdUnico);
-                const asignadoMostrar = Math.min(asignado, maxDisponible);
-                const isSelected = asignadoMostrar > 0;
-                
-                // SI NO HAY DISPONIBILIDAD Y NO ESTA SELECCIONADA, NO MOSTRARLA
-                if (disponible <= 0 && !isSelected) return;
-                
-                html += `
-                    <div class="dist-talla-row ${isSelected ? 'is-selected' : ''}" style="padding: 0.5rem; border: 1px solid #f3f4f6; border-radius: 6px;">
-                        <div style="display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 0.75rem;">
-                            <input
-                                type="checkbox"
-                                class="dist-talla-check"
-                                ${isSelected ? 'checked' : ''}
-                                onchange="toggleTallaSeleccion('${tallaIdUnico}', ${moduloId}, this.checked)"
-                                data-tallaid="${tallaIdUnico}"
-                                data-moduloid="${moduloId}"
-                            />
-                            <div style="font-size: 0.875rem; font-weight: 500; color: #374151;">
-                                ${talla.tallaOriginal}
-                            </div>
-                            <input
-                                type="number"
-                                class="dist-talla-input"
-                                id="talla_${tallaIdUnico}_modulo_${moduloId}"
-                                data-tallaid="${tallaIdUnico}"
-                                data-moduloid="${moduloId}"
-                                min="0"
-                                max="${maxDisponible}"
-                                value="${asignadoMostrar}"
-                                ${isSelected ? '' : 'disabled'}
-                                 oninput="if(this.value==='')return; const v=parseInt(this.value)||0; const mx=parseInt(this.max)||0; if(v>mx)this.value=mx; if(v<0)this.value=0;"
-                                onchange="actualizarAsignacion('${tallaIdUnico}', ${moduloId}, this.value)"
-                                style="width: 70px; text-align: center; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem; font-weight: 500;"
-                            />
-                            <div class="dist-disp" data-tallaid="${tallaIdUnico}" data-moduloid="${moduloId}" style="font-size: 0.75rem; color: #dc2626; font-weight: 500;">
-                                Disp: ${disponible}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            html += `
-                    </div>
-                </div>
-            `;
-        });
-        
-        html += `
-                </div>
-            </div>
-        `;
-    });
-    
-    return html;
-}
-
 // Funcion para procesar usuarios al formato esperado
 function procesarUsuariosParaDistribucion(usuarios) {
     return usuarios.map((usuario, index) => ({
@@ -700,34 +596,6 @@ window.mostrarCardsEncargados = function(tallas, modulos) {
     if (typeof window.renderTallasDisponibles === 'function') {
         window.renderTallasDisponibles();
     }
-}
-
-// Funcion para generar HTML de una card de encargado
-function generarCardEncargado(modulo, tallas, asignaciones) {
-    const htmlTallas = generarHtmlTallasParaEncargado(tallas, modulo.id, asignaciones);
-    
-    return `
-        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
-            <!-- Header del encargado -->
-            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #f3f4f6; flex-wrap: wrap;">
-                <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <span class="material-symbols-rounded" style="color: white; font-size: 1.5rem;">person</span>
-                </div>
-                <div style="flex: 1; min-width: 0;">
-                    <h5 style="margin: 0; font-size: 1.125rem; font-weight: 600; color: #1f2937; line-height: 1.3; word-break: break-word;">${modulo.encargado}</h5>
-                    <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #6b7280;">Encargado de produccion</p>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
-                    <span style="padding: 0.25rem 0.75rem; background: #ecfdf5; color: #059669; font-size: 0.75rem; font-weight: 500; border-radius: 9999px; white-space: nowrap;">
-                        ${Object.keys(asignaciones).length} tallas asignadas
-                    </span>
-                </div>
-            </div>
-            
-            <!-- Tallas agrupadas por parte, genero y color -->
-            ${htmlTallas}
-        </div>
-    `;
 }
 
 // Funcion para generar HTML de tallas para un encargado especifico
@@ -1052,7 +920,6 @@ window.renderTallasDisponibles = function() {
     if (!container || !window.datosDistribucion) return;
 
     const tallas = window.datosDistribucion.tallas || [];
-    const asignacionesGlobales = window.asignacionesPorModulo || {};
     
     // Calcular tallas disponibles (no asignadas o parcialmente asignadas)
     const tallasDisponibles = tallas.filter(talla => {
@@ -1207,8 +1074,6 @@ window.asignarTallaDisponible = function(tallaIdUnico, disponible) {
     
     modalContainer.innerHTML = modalHTML;
     
-    // Guardar datos para confirmar despues
-    window.__datosAsignacionTalla = { tallaIdUnico, disponible };
 }
 
 // Funcion para confirmar la asignacion
@@ -2102,44 +1967,76 @@ function confirmarDistribucionTaller() {
         };
     } else {
         // Multiples talleres
-        if (!window.asignacionesPorTaller || Object.keys(window.asignacionesPorTaller).length === 0) {
-            mostrarError('Error', 'No hay asignaciones realizadas');
-            return;
-        }
-        
-        const asignaciones = Object.entries(window.asignacionesPorTaller)
+        const esEdicionTaller = !!window.datosModalCostura?.esEdicion;
+        const talleresDisponibles = window.talleresDisponiblesAsignacion || window.talleresDisponibles || [];
+        const tallas = window.datosDistribucion?.tallas || [];
+
+        const obtenerDatosAsignacion = (valor) => {
+            if (typeof valor === 'object' && valor !== null) {
+                return {
+                    cantidad: parseInt(valor.cantidad) || 0,
+                    esNueva: valor.es_nueva_parte === true,
+                };
+            }
+
+            return {
+                cantidad: parseInt(valor) || 0,
+                esNueva: false,
+            };
+        };
+
+        const asignaciones = Object.entries(window.asignacionesPorTaller || {})
             .map(([tallerIdStr, asignacionesTallas]) => {
-                const tallerId = parseInt(tallerIdStr);
-                const taller = window.talleresSeleccionadosDistribucion?.find(t => {
-                    // Comparar por ID (puede ser negativo si es nuevo)
-                    return parseInt(t.id) === tallerId;
+                const taller = talleresDisponibles.find((t) => String(t.id) === String(tallerIdStr));
+                const encargado = (taller?.name || taller?.nombre || '').trim();
+
+                if (!encargado) return null;
+
+                const tallasNuevas = [];
+                const tallasExistentes = [];
+
+                Object.entries(asignacionesTallas || {}).forEach(([tallaRaw, datosAsignacion]) => {
+                    const { cantidad, esNueva } = obtenerDatosAsignacion(datosAsignacion);
+                    if (cantidad <= 0) return;
+
+                    const { base, colorNorm, generoNorm } = parseTallaIdUnico(tallaRaw);
+                    const itemTalla = tallas.find(t => {
+                        const baseT = (t.tallaOriginal || (String(t.talla || '').split(' ')[0])) || '';
+                        return baseT === base && normalizarColor(t.color) === colorNorm && normalizarGenero(t.genero) === generoNorm;
+                    });
+                    
+                    const tallaObj = {
+                        talla: base,
+                        cantidad,
+                        color_nombre: itemTalla ? itemTalla.color : null,
+                        genero: itemTalla ? itemTalla.genero : null,
+                    };
+
+                    if (esNueva) {
+                        tallasNuevas.push(tallaObj);
+                    } else {
+                        tallasExistentes.push(tallaObj);
+                    }
                 });
-                const encargado = taller?.nombre || '';
-                
-                const tallas = Object.entries(asignacionesTallas || {})
-                    .map(([tallaRaw, cantidad]) => {
-                        const cantidadNum = parseInt(cantidad) || 0;
-                        const { base, colorNorm, generoNorm } = parseTallaIdUnico(tallaRaw);
-                        const itemTalla = window.datosDistribucion.tallas.find(t => {
-                            const baseT = (t.tallaOriginal || (String(t.talla || '').split(' ')[0])) || '';
-                            return baseT === base && normalizarColor(t.color) === colorNorm && normalizarGenero(t.genero) === generoNorm;
-                        });
-                        
-                        return {
-                            talla: base,
-                            cantidad: cantidadNum,
-                            color_nombre: itemTalla ? itemTalla.color : null,
-                            genero: itemTalla ? itemTalla.genero : null,
-                        };
-                    })
-                    .filter((t) => t.talla && t.cantidad > 0);
-                
+
+                if (esEdicionTaller) {
+                    if (tallasNuevas.length === 0) return null;
+                    return {
+                        encargado,
+                        tallas: tallasNuevas,
+                        is_nueva_parte: true,
+                    };
+                }
+
+                const tallasParaGuardar = [...tallasNuevas, ...tallasExistentes];
+                if (tallasParaGuardar.length === 0) return null;
+
                 return {
                     encargado,
-                    tallas,
+                    tallas: tallasParaGuardar,
                 };
             })
-            .filter((a) => a.encargado && Array.isArray(a.tallas) && a.tallas.length > 0);
+            .filter((a) => a && a.encargado && Array.isArray(a.tallas) && a.tallas.length > 0);
         
         if (asignaciones.length === 0) {
             mostrarError('Error', 'No hay asignaciones validas para guardar');
@@ -2354,6 +2251,38 @@ function mostrarContenidoTallerUnico() {
 // Funcion para mostrar contenido de multiples talleres
 function mostrarContenidoTallerMultiple() {
     const contenidoDiv = document.getElementById('contenidoAsignacion');
+    const esEdicion = Boolean(window.datosModalCostura?.esEdicion);
+    const parcialesEdicion = window.__datosParcialesEdicion || [];
+
+    if (esEdicion) {
+        contenidoDiv.innerHTML = `
+            <div>
+                <div style="margin-bottom: 1rem;">
+                    <h4 style="margin: 0; font-size: 1rem; font-weight: 600; color: #1e293b;">Tallas Disponibles para Asignar</h4>
+                    <p style="margin: 0.35rem 0 0; font-size: 0.85rem; color: #64748b;">Selecciona una talla y luego el taller con rol taller.</p>
+                </div>
+                <div id="interfazDistribucionTaller" style="margin-top: 1rem;">
+                    <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                        <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.75rem;">hourglass_empty</span>
+                        <p style="font-size: 0.875rem; margin: 0;">Cargando tallas disponibles...</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        cargarTalleresParaDistribucion().then(() => {
+            window.asignacionesPorTaller = construirMapaAsignacionesTallerDesdeParciales(
+                parcialesEdicion,
+                window.talleresDisponibles || []
+            );
+
+            if (typeof window.cargarInterfazDistribucionTallerMultiple === 'function') {
+                window.cargarInterfazDistribucionTallerMultiple([]);
+            }
+        });
+
+        return;
+    }
     
     contenidoDiv.innerHTML = `
         <div>
@@ -2389,9 +2318,49 @@ function mostrarContenidoTallerMultiple() {
             </div>
         </div>
     `;
-    
-    // Cargar talleres disponibles
+
+    // Cargar la lista de talleres apenas se pinta la interfaz para que el buscador funcione de inmediato.
     cargarTalleresParaDistribucion();
+    
+}
+
+function construirMapaAsignacionesTallerDesdeParciales(parciales, talleres) {
+    const mapa = {};
+
+    (parciales || []).forEach((parcial) => {
+        const estadoParcial = String(parcial?.estado || parcial?.estado_proceso || parcial?.proceso_estado || '').toUpperCase().trim();
+        if (estadoParcial === 'ANULADO') return;
+
+        const encargado = String(parcial?.encargado_costura || parcial?.encargado || '').trim();
+        if (!encargado) return;
+
+        const taller = (talleres || []).find((t) => String(t.name || t.nombre || '').trim().toLowerCase() === encargado.toLowerCase());
+        const tallerId = taller ? taller.id : encargado;
+
+        if (!mapa[tallerId]) {
+            mapa[tallerId] = {};
+        }
+
+        (parcial.tallas || []).forEach((tallaParcial) => {
+            const nombreTalla = String(tallaParcial?.talla || '').trim();
+            const cantidad = parseInt(tallaParcial?.cantidad) || 0;
+            const color = tallaParcial?.color_nombre || null;
+            const genero = tallaParcial?.genero || tallaParcial?.sexo || 'Sin género';
+
+            if (!nombreTalla || cantidad <= 0) return;
+
+            const tallaIdUnico = `${nombreTalla}_${normalizarColor(color)}_${normalizarGenero(genero)}`;
+            mapa[tallerId][tallaIdUnico] = {
+                cantidad,
+                color,
+                genero,
+                tallaOriginal: nombreTalla,
+                es_nueva_parte: false,
+            };
+        });
+    });
+
+    return mapa;
 }
 
 // Funcion para cargar talleres disponibles
@@ -2420,16 +2389,23 @@ function cargarTalleresDisponibles() {
 // Funcion para cargar talleres para Distribucion multiple
 function cargarTalleresParaDistribucion() {
     const datalist = document.getElementById('listaTalleresMultiplesDatalist');
-    if (!datalist) return;
+    if (!datalist) return Promise.resolve([]);
     
     datalist.innerHTML = '';
     
-    httpJson('/api/usuarios/taller')
-        .then(response => response.json())
-        .then(data => {
+    return httpJson('/api/usuarios/taller')
+        .then((response) => {
+            if (response?.ok === false) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            return response.json();
+        })
+        .then((data) => {
             if (data.success && data.usuarios) {
                 // Guardar datos de talleres
                 window.talleresDisponibles = data.usuarios;
+                window.talleresDisponiblesAsignacion = data.usuarios;
                 
                 // Obtener IDs de talleres ya seleccionados
                 const talleresSeleccionadosIds = (window.talleresSeleccionadosDistribucion || []).map(t => t.id);
@@ -2444,9 +2420,12 @@ function cargarTalleresParaDistribucion() {
                     }
                 });
             }
+
+            return data?.usuarios || [];
         })
         .catch((error) => {
             console.error('Error cargando talleres para Distribucion:', error);
+            return [];
         });
 }
 
@@ -2461,7 +2440,8 @@ window.agregarTallerSeleccionado = function() {
     }
     
     // Verificar que el taller existe
-    let taller = window.talleresDisponibles?.find(t => t.name === tallerNombre);
+    const nombreBuscado = tallerNombre.toLowerCase();
+    let taller = window.talleresDisponibles?.find(t => String(t?.name || t?.nombre || '').trim().toLowerCase() === nombreBuscado);
     
     // Si no existe, crear un objeto temporal para el nuevo taller
     if (!taller) {
@@ -2585,7 +2565,20 @@ window.cargarInterfazDistribucionTallerMultiple = function(talleresSeleccionados
             
             // Procesar tallas al formato esperado
             const tallasProcesadas = procesarTallasParaDistribucion(tallas);
-            
+
+            if (window.datosModalCostura?.esEdicion) {
+                window.datosDistribucion = {
+                    tallas: tallasProcesadas,
+                    talleres: Array.isArray(window.talleresDisponibles) ? window.talleresDisponibles : [],
+                };
+
+                if (typeof window.renderTallasDisponiblesTallerEdicion === 'function') {
+                    window.renderTallasDisponiblesTallerEdicion();
+                }
+
+                return tallasProcesadas;
+            }
+
             // Cargar interfaz con datos reales
             cargarInterfazDistribucionTallerConDatos(tallasProcesadas, talleresSeleccionados);
             
@@ -2605,6 +2598,322 @@ window.cargarInterfazDistribucionTallerMultiple = function(talleresSeleccionados
             throw error;
         });
 }
+
+window.renderTallasDisponiblesTallerEdicion = function() {
+    const container = document.getElementById('interfazDistribucionTaller');
+    if (!container || !window.datosDistribucion) return;
+
+    const tallas = window.datosDistribucion.tallas || [];
+
+    const tallasDisponibles = tallas.filter((talla) => {
+        const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, talla.color, talla.genero);
+        return getDisponibleRestanteGlobalTaller(tallaIdUnico) > 0;
+    });
+
+    if (tallasDisponibles.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #6b7280; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+                <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.75rem;">check_circle</span>
+                <p style="font-size: 0.875rem; margin: 0;">Todas las tallas han sido asignadas</p>
+            </div>
+        `;
+        return;
+    }
+
+    const grupos = agruparTallasPorGeneroYColor(tallasDisponibles);
+    let html = '';
+
+    Object.entries(grupos).forEach(([genero, colores]) => {
+        html += `
+            <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 1rem; overflow: hidden;">
+                <h6 style="margin: 0 0 0.75rem 0; font-size: 0.875rem; font-weight: 600; color: #92400e; text-transform: uppercase; letter-spacing: 0.05em;">
+                    ${genero}
+                </h6>
+                <div style="display: grid; gap: 0.75rem;">
+        `;
+
+        Object.entries(colores).forEach(([color, tallasColor]) => {
+            const colorDisplay = color === 'Sin color' ? null : color;
+            const colorStyle = colorDisplay ? `background: ${colorDisplay}; border: 1px solid #d1d5db;` : 'background: #f3f4f6; border: 1px solid #d1d5db;';
+
+            html += `
+                <div style="background: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.75rem;">
+                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                        ${colorDisplay ? `
+                            <span style="display: inline-block; width: 16px; height: 16px; ${colorStyle} border-radius: 4px; margin-right: 0.5rem;"></span>
+                            <span style="font-size: 0.875rem; font-weight: 500; color: #374151;">${color}</span>
+                        ` : `
+                            <span style="font-size: 0.875rem; font-weight: 500; color: #6b7280;">Sin color</span>
+                        `}
+                    </div>
+                    <div style="display: grid; gap: 0.5rem;">
+            `;
+
+            tallasColor.forEach((talla) => {
+                const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, color, talla.genero);
+                const totalOriginal = getTotalOriginalTallaIdTaller(tallaIdUnico);
+                const totalAsignado = getTotalAsignadoTallaTaller(tallaIdUnico);
+                const disponible = Math.max(0, totalOriginal - totalAsignado);
+
+                if (disponible <= 0) return;
+
+                html += `
+                    <div style="padding: 0.5rem; border: 1px solid #f3f4f6; border-radius: 6px; display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 0.75rem; background: #fafafa;">
+                        <div style="font-size: 0.875rem; font-weight: 500; color: #374151;">
+                            ${talla.tallaOriginal}
+                        </div>
+                        <div style="font-size: 0.75rem; color: #6b7280; font-weight: 500;">
+                            Disponible: <span style="color: #059669; font-weight: 600;">${disponible}</span>
+                        </div>
+                        <button onclick="asignarTallaDisponibleTaller('${tallaIdUnico}', ${disponible})"
+                            style="padding: 0.4rem 0.75rem; background: #f59e0b; color: white; border: none; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; transition: background 0.2s; white-space: nowrap;"
+                            onmouseover="this.style.background='#d97706'"
+                            onmouseout="this.style.background='#f59e0b'"
+                        >
+                            <span class="material-symbols-rounded" style="font-size: 0.9rem;">add</span>
+                            Asignar
+                        </button>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+};
+
+function getTotalOriginalTallaIdTaller(tallaId) {
+    const { base, colorNorm, generoNorm } = parseTallaIdUnico(tallaId);
+    const tallas = window?.datosDistribucion?.tallas || [];
+    const colorObjetivo = colorNorm || 'sin_color';
+
+    const item = tallas.find((t) => {
+        const baseT = (t.tallaOriginal || (String(t.talla || '').split(' ')[0])) || '';
+        if (String(baseT) !== String(base)) return false;
+        if (normalizarColor(t.color) !== colorObjetivo) return false;
+        return normalizarGenero(t.genero) === generoNorm;
+    });
+
+    return parseInt(item?.cantidad) || 0;
+}
+
+function getTotalAsignadoTallaTaller(tallaId) {
+    let total = 0;
+    Object.values(window.asignacionesPorTaller || {}).forEach((asignaciones) => {
+        const valor = asignaciones?.[tallaId];
+        if (typeof valor === 'object' && valor !== null) {
+            total += parseInt(valor.cantidad) || 0;
+        } else {
+            total += parseInt(valor) || 0;
+        }
+    });
+    return total;
+}
+
+function getDisponibleRestanteGlobalTaller(tallaId) {
+    return Math.max(0, getTotalOriginalTallaIdTaller(tallaId) - getTotalAsignadoTallaTaller(tallaId));
+}
+
+async function obtenerTalleresDisponiblesParaAsignarTaller() {
+    const cache = Array.isArray(window.talleresDisponiblesAsignacion) ? window.talleresDisponiblesAsignacion : [];
+    if (cache.length > 0) {
+        return cache;
+    }
+
+    const response = await httpJson('/api/usuarios/taller');
+    if (response?.ok === false) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const talleres = Array.isArray(data?.usuarios) ? data.usuarios : [];
+    window.talleresDisponiblesAsignacion = talleres;
+    window.talleresDisponibles = talleres;
+    return talleres;
+}
+
+function resolverOCrearTallerAsignacionPorNombre(tallerNombre) {
+    const nombreBuscado = String(tallerNombre || '').trim();
+    if (!nombreBuscado) return null;
+
+    if (!Array.isArray(window.talleresDisponiblesAsignacion)) {
+        window.talleresDisponiblesAsignacion = [];
+    }
+
+    let taller = window.talleresDisponiblesAsignacion.find((item) => {
+        const nombreItem = String(item?.name || item?.nombre || '').trim().toLowerCase();
+        return nombreItem === nombreBuscado.toLowerCase();
+    });
+
+    if (taller) {
+        return taller;
+    }
+
+    const nuevoId = -(Date.now() + Math.floor(Math.random() * 1000));
+    taller = {
+        id: nuevoId,
+        name: nombreBuscado,
+        nombre: nombreBuscado,
+        esNuevo: true,
+    };
+
+    window.talleresDisponiblesAsignacion.push(taller);
+    window.talleresDisponibles = window.talleresDisponiblesAsignacion;
+
+    return taller;
+}
+
+window.asignarTallaDisponibleTaller = async function(tallaIdUnico, disponible) {
+    let talleres = Array.isArray(window.talleresDisponiblesAsignacion) ? window.talleresDisponiblesAsignacion : [];
+
+    if (talleres.length === 0) {
+        try {
+            talleres = await obtenerTalleresDisponiblesParaAsignarTaller();
+        } catch (error) {
+            console.error('Error cargando talleres para asignar:', error);
+            alert('No se pudieron cargar los talleres disponibles');
+            return;
+        }
+    }
+
+    if (talleres.length === 0) {
+        alert('No hay talleres disponibles para asignar');
+        return;
+    }
+
+    const talleresHTML = talleres
+        .map((taller) => `<option value="${taller?.name || taller?.nombre || 'Taller'}"></option>`)
+        .join('');
+
+    const modalHTML = `
+        <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;">
+            <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 400px; width: 90%; box-shadow: 0 20px 25px rgba(0,0,0,0.15);">
+                <h5 style="margin: 0 0 1rem 0; font-size: 1.125rem; font-weight: 600; color: #1f2937;">Asignar Talla</h5>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #374151;">Taller:</label>
+                    <input
+                        type="text"
+                        id="inputTallerAsignar"
+                        list="listaTalleresAsignar"
+                        placeholder="Escribe para buscar un taller..."
+                        autocomplete="off"
+                        style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem;"
+                    >
+                    <datalist id="listaTalleresAsignar">
+                        ${talleresHTML}
+                    </datalist>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #374151;">Cantidad (max: ${disponible}):</label>
+                    <input type="number" id="inputCantidadAsignarTaller" min="1" max="${disponible}" value="${disponible}" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem;">
+                </div>
+                
+                <div style="display: flex; gap: 0.75rem;">
+                    <button onclick="confirmarAsignacionTallaTaller('${tallaIdUnico}')"
+                        style="flex: 1; padding: 0.75rem; background: #10b981; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;"
+                        onmouseover="this.style.background='#059669'"
+                        onmouseout="this.style.background='#10b981'"
+                    >
+                        Asignar
+                    </button>
+                    <button onclick="cerrarModalAsignacionTaller()"
+                        style="flex: 1; padding: 0.75rem; background: #e5e7eb; color: #374151; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;"
+                        onmouseover="this.style.background='#d1d5db'"
+                        onmouseout="this.style.background='#e5e7eb'"
+                    >
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    let modalContainer = document.getElementById('modalAsignacionTallaTaller');
+    if (!modalContainer) {
+        modalContainer = document.createElement('div');
+        modalContainer.id = 'modalAsignacionTallaTaller';
+        document.body.appendChild(modalContainer);
+    }
+
+    modalContainer.innerHTML = modalHTML;
+};
+
+window.confirmarAsignacionTallaTaller = function(tallaIdUnico) {
+    const inputTaller = document.getElementById('inputTallerAsignar');
+    const inputCantidad = document.getElementById('inputCantidadAsignarTaller');
+
+    if (!inputTaller || !inputCantidad) return;
+
+    const tallerNombre = String(inputTaller.value || '').trim();
+    const cantidad = parseInt(inputCantidad.value) || 0;
+
+    if (!tallerNombre) {
+        alert('Por favor, selecciona un taller');
+        return;
+    }
+
+    if (cantidad <= 0) {
+        alert('Por favor, ingresa una cantidad valida');
+        return;
+    }
+
+    const tallas = window.datosDistribucion?.tallas || [];
+    const tallaInfo = tallas.find((t) => construirTallaIdUnico(t.tallaOriginal, t.color, t.genero) === tallaIdUnico);
+
+    if (!tallaInfo) {
+        alert('No se encontro la informacion de la talla');
+        return;
+    }
+
+    const taller = resolverOCrearTallerAsignacionPorNombre(tallerNombre);
+
+    if (!taller) {
+        alert('Por favor, selecciona un taller de la lista o escribe uno valido');
+        return;
+    }
+
+    const tallerId = parseInt(taller.id);
+    const tallerKey = Number.isFinite(tallerId) ? tallerId : taller.name;
+    if (!window.asignacionesPorTaller) {
+        window.asignacionesPorTaller = {};
+    }
+    if (!window.asignacionesPorTaller[tallerKey]) {
+        window.asignacionesPorTaller[tallerKey] = {};
+    }
+
+    window.asignacionesPorTaller[tallerKey][tallaIdUnico] = {
+        cantidad,
+        color: tallaInfo.color,
+        genero: tallaInfo.genero,
+        tallaOriginal: tallaInfo.tallaOriginal,
+        es_nueva_parte: true,
+    };
+
+    window.cerrarModalAsignacionTaller();
+
+    if (typeof window.renderTallasDisponiblesTallerEdicion === 'function') {
+        window.renderTallasDisponiblesTallerEdicion();
+    }
+};
+
+window.cerrarModalAsignacionTaller = function() {
+    const modalContainer = document.getElementById('modalAsignacionTallaTaller');
+    if (modalContainer) {
+        modalContainer.innerHTML = '';
+    }
+};
 
 // Funcion para cargar la interfaz de Distribucion de tallas para multiples talleres
 function cargarInterfazDistribucionTallerConDatos(tallas, talleres) {

@@ -1614,7 +1614,7 @@ class ReciboCosturaController extends Controller
 
                     $tallerRole = \App\Models\Role::where('name', 'taller')->first();
                     if ($tallerRole) {
-                        $taller->roles()->attach($tallerRole->id);
+                        $taller->addRole((int) $tallerRole->id);
                     }
 
                     \Log::info('[TALLER] Nuevo taller creado en edicion', [
@@ -1769,7 +1769,7 @@ class ReciboCosturaController extends Controller
 
                     $tallerRole = \App\Models\Role::where('name', 'taller')->first();
                     if ($tallerRole) {
-                        $taller->roles()->attach($tallerRole->id);
+                        $taller->addRole((int) $tallerRole->id);
                     }
 
                     \Log::info('[TALLER] Nuevo taller creado en multiples talleres', [
