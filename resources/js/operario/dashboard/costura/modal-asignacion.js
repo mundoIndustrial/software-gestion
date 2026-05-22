@@ -684,53 +684,8 @@ window.mostrarCardsEncargados = function(tallas, modulos) {
     // Guardar datos globales PRIMERO para que este disponibles en renderCardsEncargadosSeleccionados
     window.datosDistribucion = { tallas, modulos };
     
-    // Obtener solo los Modulos que tienen asignaciones
-    const modulosConAsignaciones = Object.keys(window.asignacionesPorModulo || {}).map(id => 
-        modulos.find(m => m.id === parseInt(id))
-    ).filter(m => m);
-    
-    window.modulosSeleccionadosDistribucion = modulosConAsignaciones.map((modulo) => modulo.id);
-
     let html = `
-        <div style="margin-bottom: 1.5rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Seleccionar Modulo:</label>
-            <div style="display: flex; gap: 0.5rem;">
-                <div style="position: relative; flex: 1;">
-                    <input type="text" id="moduloSelector" list="listaModulosDisponibles" 
-                        placeholder="Seleccione o escriba un Modulo para asignar tallas..." 
-                        style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; background: white; font-size: 0.875rem; outline: none; transition: all 0.2s;"
-                        onfocus="this.style.borderColor='#10b981'; this.style.boxShadow='0 0 0 3px rgba(16, 185, 129, 0.1)';"
-                        onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none';"
-                        onkeypress="if(event.key === 'Enter') agregarEncargadoSeleccionado()"
-                    >
-                    <datalist id="listaModulosDisponibles">
-                        ${modulos
-                            .filter((modulo) => !window.modulosSeleccionadosDistribucion.includes(modulo.id))
-                            .map(modulo => `<option value="${modulo.encargado}"></option>`).join('')}
-                    </datalist>
-                </div>
-                <button onclick="agregarEncargadoSeleccionado()" 
-                    style="padding: 0.75rem 1.25rem; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;"
-                    onmouseover="this.style.background='#059669'"
-                    onmouseout="this.style.background='#10b981'"
-                >
-                    <span class="material-symbols-rounded" style="font-size: 1.25rem;">add</span>
-                    Agregar
-                </button>
-            </div>
-        </div>
-        
-        <!-- Encargados con tallas asignadas -->
-        <div id="cardsEncargadosPlaceholder" style="display: ${modulosConAsignaciones.length === 0 ? 'block' : 'none'}; min-height: 120px;">
-            <div style="text-align: center; padding: 2rem; color: #6b7280;">
-                <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.75rem;">person_off</span>
-                <p style="font-size: 0.875rem; margin: 0;">No hay encargados asignados</p>
-            </div>
-        </div>
-        <div id="cardsEncargadosSeleccionados" style="display: grid; gap: 1rem;"></div>
-        
-        <!-- Tallas disponibles para asignar -->
-        <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e5e7eb;">
+        <div style="margin-top: 0.5rem;">
             <h5 style="margin: 0 0 1rem 0; font-size: 1rem; font-weight: 600; color: #1f2937; display: flex; align-items: center; gap: 0.5rem;">
                 <span class="material-symbols-rounded" style="color: #f59e0b;">inventory_2</span>
                 Tallas Disponibles para Asignar
@@ -740,10 +695,6 @@ window.mostrarCardsEncargados = function(tallas, modulos) {
     `;
 
     interfazDiv.innerHTML = html;
-
-    if (typeof window.renderCardsEncargadosSeleccionados === 'function') {
-        window.renderCardsEncargadosSeleccionados();
-    }
     
     // Renderizar tallas disponibles
     if (typeof window.renderTallasDisponibles === 'function') {
@@ -1196,20 +1147,16 @@ window.renderTallasDisponibles = function() {
 // Funcion para asignar una talla disponible a un encargado
 window.asignarTallaDisponible = function(tallaIdUnico, disponible) {
     // Mostrar modal para seleccionar encargado y cantidad
-    const modulosSeleccionados = window.modulosSeleccionadosDistribucion || [];
     const modulos = window.datosDistribucion?.modulos || [];
     
-    if (modulosSeleccionados.length === 0) {
-        alert('Por favor, selecciona un encargado primero');
+    if (modulos.length === 0) {
+        alert('No hay encargados disponibles para asignar');
         return;
     }
     
-    // Crear modal simple para seleccionar encargado y cantidad
-    const modulosHTML = modulosSeleccionados
-        .map(id => {
-            const modulo = modulos.find(m => m.id === id);
-            return `<option value="${id}">${modulo?.encargado || 'Encargado'}</option>`;
-        })
+    // Cargar todos los encargados disponibles
+    const modulosHTML = modulos
+        .map((modulo) => `<option value="${modulo.id}">${modulo?.encargado || 'Encargado'}</option>`)
         .join('');
     
     const modalHTML = `
@@ -1220,13 +1167,14 @@ window.asignarTallaDisponible = function(tallaIdUnico, disponible) {
                 <div style="margin-bottom: 1rem;">
                     <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #374151;">Encargado:</label>
                     <select id="selectEncargadoAsignar" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem;">
+                        <option value="" selected>Selecciona un encargado</option>
                         ${modulosHTML}
                     </select>
                 </div>
                 
                 <div style="margin-bottom: 1.5rem;">
                     <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #374151;">Cantidad (max: ${disponible}):</label>
-                    <input type="number" id="inputCantidadAsignar" min="1" max="${disponible}" value="1" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem;">
+                    <input type="number" id="inputCantidadAsignar" min="1" max="${disponible}" value="${disponible}" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem;">
                 </div>
                 
                 <div style="display: flex; gap: 0.75rem;">
@@ -1272,6 +1220,11 @@ window.confirmarAsignacionTalla = function(tallaIdUnico) {
     
     const moduloId = parseInt(selectEncargado.value);
     const cantidad = parseInt(inputCantidad.value) || 0;
+    
+    if (!Number.isFinite(moduloId)) {
+        alert('Por favor, selecciona un encargado');
+        return;
+    }
     
     if (cantidad <= 0) {
         alert('Por favor, ingresa una cantidad valida');
@@ -2025,29 +1978,24 @@ export function confirmarAsignacion() {
 
                 const asignacionesResult = [];
                 
-                // Si hay tallas existentes, crear asignacion para ellas (sin flag de nueva parte)
-                if (tallasExistentes.length > 0) {
-                    asignacionesResult.push({
-                        encargado,
-                        tallas: tallasExistentes,
-                    });
-                }
-                
-                // Si hay tallas nuevas, crear asignacion separada para ellas (con flag de nueva parte)
-                if (tallasNuevas.length > 0) {
-                    asignacionesResult.push({
-                        encargado,
-                        tallas: tallasNuevas,
-                        is_nueva_parte: true,
-                    });
-                }
-                
-                // Si no hay ni nuevas ni existentes, enviar como esta (caso normal)
-                if (asignacionesResult.length === 0 && (tallasNuevas.length > 0 || tallasExistentes.length > 0)) {
-                    asignacionesResult.push({
-                        encargado,
-                        tallas: [...tallasNuevas, ...tallasExistentes],
-                    });
+                if (esEdicion) {
+                    // En edición solo enviamos las tallas nuevas; las existentes ya están guardadas.
+                    if (tallasNuevas.length > 0) {
+                        asignacionesResult.push({
+                            encargado,
+                            tallas: tallasNuevas,
+                            is_nueva_parte: true,
+                        });
+                    }
+                } else {
+                    // Flujo normal: enviar todas las tallas del módulo en un solo bloque.
+                    const tallasParaGuardar = [...tallasNuevas, ...tallasExistentes];
+                    if (tallasParaGuardar.length > 0) {
+                        asignacionesResult.push({
+                            encargado,
+                            tallas: tallasParaGuardar,
+                        });
+                    }
                 }
                 
                 return asignacionesResult;
@@ -3243,4 +3191,3 @@ export function cerrarModalCostura() {
 window.seleccionarOpcionAsignacion = seleccionarOpcionAsignacion;
 window.confirmarAsignacion = confirmarAsignacion;
 window.cerrarModalCostura = cerrarModalCostura;
-
