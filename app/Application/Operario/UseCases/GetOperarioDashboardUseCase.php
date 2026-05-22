@@ -6,6 +6,7 @@ use App\Application\Operario\DTOs\OperarioDashboardDTO;
 use App\Application\Operario\Services\ObtenerPedidosOperarioService;
 use App\Application\Operario\Services\ObtenerPrendasRecibosService;
 use App\Domain\Operario\Services\OperarioDashboardReadService;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Collection;
@@ -28,7 +29,7 @@ class GetOperarioDashboardUseCase
         $filtroRecibo = strtolower(trim((string) $request->query('filtro', '')));
         $filtroRecibo = in_array($filtroRecibo, ['costura', 'reflectivo', 'bodega'], true) ? $filtroRecibo : null;
         $filtroEncargadoVistaCostura = strtolower(trim((string) $request->query('encargado', '')));
-        $filtroEncargadoVistaCostura = in_array($filtroEncargadoVistaCostura, ['todos', 'sin-encargado'], true)
+        $filtroEncargadoVistaCostura = in_array($filtroEncargadoVistaCostura, ['todos', 'sin-encargado', 'control-calidad'], true)
             ? $filtroEncargadoVistaCostura
             : 'todos';
         $busquedaVistaCostura = strtolower(trim((string) $request->query('q', '')));
@@ -197,6 +198,49 @@ class GetOperarioDashboardUseCase
 
             if ($usuario->hasRole('administrador-costura') && $tab === 'bodega') {
                 $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibosBodegaVistaCostura(true);
+                $cacheEsRolCostura = [];
+
+                $prendasConRecibos = $prendasConRecibos->filter(function ($prenda) use (&$cacheEsRolCostura) {
+                    $reciboPrincipal = collect($prenda['recibos'] ?? [])->first();
+                    $areaRecibo = is_array($reciboPrincipal)
+                        ? strtolower(trim((string) ($reciboPrincipal['area'] ?? '')))
+                        : '';
+
+                    // En tab bodega de administrador/lider costura solo deben verse
+                    // los recibos que siguen en Costura (no los que ya pasaron a C.C).
+                    if ($areaRecibo !== 'costura') {
+                        return false;
+                    }
+
+                    $encargadoPrenda = strtolower(trim((string) ($prenda['encargado_costura'] ?? '')));
+                    $encargadoRecibo = is_array($reciboPrincipal)
+                        ? strtolower(trim((string) ($reciboPrincipal['encargado_costura'] ?? '')))
+                        : '';
+                    $encargado = $encargadoPrenda !== '' ? $encargadoPrenda : $encargadoRecibo;
+
+                    if ($encargado === '' || $encargado === 'sin encargado') {
+                        return false;
+                    }
+
+                    if (!array_key_exists($encargado, $cacheEsRolCostura)) {
+                        $encargadoUsuario = User::query()
+                            ->whereRaw('LOWER(TRIM(name)) = ?', [$encargado])
+                            ->first();
+
+                        if (!$encargadoUsuario) {
+                            $cacheEsRolCostura[$encargado] = false;
+                        } else {
+                            $esRolCosturaPermitido = $encargadoUsuario->hasAnyRole(['costurero', 'confeccion-sobremedida']);
+                            $esRolReflectivo = $encargadoUsuario->hasRole('costura-reflectivo');
+
+                            // En tab bodega de administrador-costura:
+                            // mostrar solo encargados de costura, excluyendo reflectivo.
+                            $cacheEsRolCostura[$encargado] = $esRolCosturaPermitido && !$esRolReflectivo;
+                        }
+                    }
+
+                    return (bool) $cacheEsRolCostura[$encargado];
+                })->values();
             }
 
             $areaOperario = $usuario->hasRole('cortador')
@@ -253,6 +297,18 @@ class GetOperarioDashboardUseCase
                     $prendasConRecibos = $this->filtrarPrendasVistaCosturaSinEncargadoBodega($prendasConRecibos);
                 } elseif ($filtroRecibo !== 'bodega' && $filtroEncargadoVistaCostura === 'sin-encargado') {
                     $prendasConRecibos = $this->filtrarPrendasVistaCosturaSinEncargado($prendasConRecibos, $filtroRecibo);
+                }
+                if ($filtroRecibo === 'bodega' && $filtroEncargadoVistaCostura !== 'control-calidad') {
+                    // En bodega/todos (y bodega/sin-encargado) no mezclar recibos que ya están en C.C.
+                    $prendasConRecibos = $prendasConRecibos->filter(function (array $prenda) {
+                        $reciboPrincipal = collect($prenda['recibos'] ?? [])->first();
+                        if (!is_array($reciboPrincipal)) {
+                            return false;
+                        }
+
+                        $area = strtolower(trim((string) ($reciboPrincipal['area'] ?? '')));
+                        return !in_array($area, ['control calidad', 'control de calidad'], true);
+                    })->values();
                 }
                 if ($filtroRecibo === 'bodega' && $filtroEncargadoVistaCostura === 'control-calidad') {
                     $prendasConRecibos = $this->filtrarPrendasVistaCosturaControlCalidadBodega($prendasConRecibos);

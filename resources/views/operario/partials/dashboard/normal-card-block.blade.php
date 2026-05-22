@@ -72,6 +72,9 @@
                                 $reciboCompletadoCorte = (bool) ($reciboPrincipal['completado_corte'] ?? false);
                                 $areaReciboActual = (string) ($reciboPrincipal['area'] ?? '');
                                 $reciboCompletadoCostura = (bool) ($reciboPrincipal['completado_costura'] ?? false);
+                                if (($filtroReciboActual ?? '') === 'bodega' && is_array($reciboCosturaFiltroCard ?? null)) {
+                                    $reciboCompletadoCostura = (bool) ($reciboCosturaFiltroCard['completado_costura'] ?? $reciboCompletadoCostura);
+                                }
                                 $reciboCompletadoControlCalidad = (bool) ($reciboPrincipal['completado_control_calidad'] ?? false);
                                 $areaReciboNormalizada = strtolower(trim($areaReciboActual));
                                 $completadoVistaSegunArea = $areaReciboNormalizada === 'costura'
@@ -92,7 +95,11 @@
                             <div class="orden-body {{ ($reciboCompletadoArea || (auth()->user()->hasRole('vista-costura') && $completadoVistaSegunArea)) ? 'recibo-completado-area' : '' }}">
                                 @php
                                     $encargadoVista = null;
-                                    if ($areaReciboNormalizada === 'corte') {
+                                    if (($filtroReciboActual ?? '') === 'bodega') {
+                                        $encargadoVista = $reciboCosturaFiltroCard['encargado_costura']
+                                            ?? ($prenda['encargado_costura'] ?? null)
+                                            ?? ($reciboPrincipal['encargado_costura'] ?? null);
+                                    } elseif ($areaReciboNormalizada === 'corte') {
                                         $encargadoVista = $reciboPrincipal['encargado_corte'] ?? null;
                                     } elseif ($areaReciboNormalizada === 'costura') {
                                         $encargadoVista = $reciboPrincipal['encargado_costura'] ?? null;

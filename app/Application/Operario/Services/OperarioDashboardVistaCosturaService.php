@@ -341,6 +341,43 @@ class OperarioDashboardVistaCosturaService
             ? $prendasConRecibosControlCalidad
             : $prendasConRecibos;
 
+        if ($modoControlCalidadVistaCostura && $filtroReciboActual === 'bodega') {
+            // En bodega/control-calidad necesitamos:
+            // 1) Parciales en C.C. (fuente dedicada de control-calidad)
+            // 2) Recibos bodega normales en C.C. (fuente general de bodega, ej. #17)
+            $bodegaNormalesEnControlCalidad = $prendasConRecibos->filter(function (array $prenda) {
+                $reciboPrincipal = collect($prenda['recibos'] ?? [])->first();
+                if (!is_array($reciboPrincipal)) {
+                    return false;
+                }
+
+                $tipo = strtoupper(trim((string) ($reciboPrincipal['tipo_recibo'] ?? '')));
+                $area = strtolower(trim((string) ($reciboPrincipal['area'] ?? '')));
+
+                return $tipo === 'CORTE-PARA-BODEGA'
+                    && in_array($area, ['control calidad', 'control de calidad'], true);
+            });
+
+            $coleccionBase = $prendasConRecibosControlCalidad
+                ->concat($bodegaNormalesEnControlCalidad)
+                ->unique(function (array $prenda) {
+                    $reciboPrincipal = collect($prenda['recibos'] ?? [])->first();
+                    $reciboId = is_array($reciboPrincipal) ? ($reciboPrincipal['id'] ?? null) : null;
+                    $parcialId = is_array($reciboPrincipal) ? ($reciboPrincipal['pedido_parcial_id'] ?? null) : null;
+                    $consecutivo = is_array($reciboPrincipal) ? ($reciboPrincipal['consecutivo_actual'] ?? null) : null;
+
+                    if ($parcialId) {
+                        return 'parcial:' . (string) $parcialId;
+                    }
+                    if ($reciboId) {
+                        return 'recibo:' . (string) $reciboId;
+                    }
+
+                    return 'consecutivo:' . (string) ($consecutivo ?? ($prenda['numero_pedido'] ?? ''));
+                })
+                ->values();
+        }
+
         // En modo control-calidad, respetar estrictamente el filtro de tipo de recibo
         // para evitar mezclar tarjetas de costura/reflectivo en la pestaña de bodega.
         if ($modoControlCalidadVistaCostura) {
@@ -550,7 +587,26 @@ class OperarioDashboardVistaCosturaService
             $tieneBodega = in_array('CORTE-PARA-BODEGA', $tiposRecibos, true) || in_array('BODEGA', $tiposRecibos, true);
             $reciboReflectivoParaFiltro = collect($recibos)->first(fn ($recibo) => strtoupper((string) ($recibo['tipo_recibo'] ?? '')) === 'REFLECTIVO');
             $reciboCosturaFiltroCard = collect($recibos)->first(fn ($recibo) => strtoupper((string) ($recibo['tipo_recibo'] ?? '')) === 'COSTURA');
+            $reciboBodegaFiltroCard = collect($recibos)->first(function ($recibo) {
+                $tipo = strtoupper((string) ($recibo['tipo_recibo'] ?? ''));
+                return $tipo === 'CORTE-PARA-BODEGA' || $tipo === 'BODEGA';
+            });
             $reciboReflectivoFiltroCard = $reciboReflectivoParaFiltro;
+
+            if ($filtroReciboActual === 'bodega' && $reciboBodegaFiltroCard) {
+                // Reusar el slot de "costura" del card normal para mostrar encargado/fechas de bodega
+                // cuando lider-reflectivo o costura-reflectivo ven el tab bodega.
+                $reciboCosturaFiltroCard = $reciboBodegaFiltroCard;
+            }
+
+            if ($filtroReciboActual === 'bodega' && is_array($reciboCosturaFiltroCard)) {
+                $encargadoRecibo = trim((string) ($reciboCosturaFiltroCard['encargado_costura'] ?? ''));
+                $encargadoPrenda = trim((string) ($prenda['encargado_costura'] ?? ''));
+
+                if ($encargadoRecibo === '' && $encargadoPrenda !== '') {
+                    $reciboCosturaFiltroCard['encargado_costura'] = $encargadoPrenda;
+                }
+            }
 
             $mostrarReflectivoEnFiltro = $tieneReflectivo;
             if ($usuario?->hasRole('vista-costura')) {

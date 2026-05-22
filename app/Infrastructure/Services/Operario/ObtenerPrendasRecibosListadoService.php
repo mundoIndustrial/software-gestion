@@ -24,7 +24,21 @@ class ObtenerPrendasRecibosListadoService
         $tiposRecibo = $this->supportService->resolverTiposRecibo($tipoOperario, $filtroRecibo);
 
         if (in_array($tipoOperario, ['vista-costura', 'costura-reflectivo'], true) && $filtroRecibo === 'bodega') {
-            return $this->obtenerPrendasConRecibosBodegaVistaCostura();
+            $prendasBodega = $this->obtenerPrendasConRecibosBodegaVistaCostura();
+
+            if ($usuario->hasRole('lider-reflectivo')) {
+                return $prendasBodega->filter(function (array $prenda) {
+                    $encargado = strtolower(trim((string) ($prenda['encargado_costura'] ?? '')));
+                    if ($encargado === '') {
+                        return false;
+                    }
+
+                    $encargadoUsuario = $this->operarioRecibosRepository->buscarUsuarioPorNombreNormalizado($encargado);
+                    return $encargadoUsuario?->hasRole('costura-reflectivo') ?? false;
+                })->values();
+            }
+
+            return $prendasBodega;
         }
 
         if (empty($tiposRecibo)) {
@@ -113,6 +127,26 @@ class ObtenerPrendasRecibosListadoService
             return collect();
         }
 
+        $reciboIdsBodega = $recibos->pluck('id')->filter()->map(fn ($id) => (int) $id)->unique()->values();
+        $numerosReciboBodega = $recibos->pluck('consecutivo_actual')->filter()->map(fn ($n) => (int) $n)->unique()->values();
+        $completadosCosturaRows = \Illuminate\Support\Facades\DB::table('prenda_recibo_completado')
+            ->whereRaw("LOWER(TRIM(COALESCE(area, ''))) = 'costura'")
+            ->where(function ($query) use ($reciboIdsBodega, $numerosReciboBodega) {
+                $query->whereIn('id_recibo', $reciboIdsBodega)
+                    ->orWhereIn('numero_recibo', $numerosReciboBodega);
+            })
+            ->get(['id_recibo', 'numero_recibo']);
+        $completadosCosturaPorReciboId = $completadosCosturaRows
+            ->pluck('id_recibo')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->flip();
+        $completadosCosturaPorNumeroRecibo = $completadosCosturaRows
+            ->pluck('numero_recibo')
+            ->filter()
+            ->map(fn ($n) => (int) $n)
+            ->flip();
+
         $procesos = ProcesoPrenda::query()
             ->whereIn('prenda_bodega_id', $recibos->pluck('prenda_bodega_id')->filter()->unique()->values())
             ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
@@ -123,10 +157,28 @@ class ObtenerPrendasRecibosListadoService
 
         return $recibos
             ->groupBy('prenda_bodega_id')
-            ->flatMap(function (Collection $recibosDePrenda) use ($procesos, $desglosarParciales) {
+            ->flatMap(function (Collection $recibosDePrenda) use ($procesos, $desglosarParciales, $completadosCosturaPorReciboId, $completadosCosturaPorNumeroRecibo) {
                 $reciboPrincipal = $recibosDePrenda->first();
                 $prendaBodega = $reciboPrincipal->prendaBodega;
-                $procesoCostura = $procesos->get($reciboPrincipal->prenda_bodega_id)?->first();
+                $procesosPrendaBodega = $procesos->get($reciboPrincipal->prenda_bodega_id, collect());
+                $numeroReciboBodega = (int) ($reciboPrincipal->consecutivo_actual ?? 0);
+                $procesoCostura = $procesosPrendaBodega->first(function ($proceso) use ($numeroReciboBodega) {
+                    $numeroReciboProceso = (int) ($proceso->numero_recibo ?? 0);
+                    $numeroReciboParcial = $proceso->numero_recibo_parcial ?? null;
+                    $esBase = $numeroReciboParcial === null
+                        || trim((string) $numeroReciboParcial) === ''
+                        || (float) $numeroReciboParcial === 0.0;
+
+                    return $numeroReciboProceso === $numeroReciboBodega && $esBase;
+                });
+                if (!$procesoCostura) {
+                    $procesoCostura = $procesosPrendaBodega->first(function ($proceso) {
+                        return trim((string) ($proceso->encargado ?? '')) !== '';
+                    });
+                }
+                if (!$procesoCostura) {
+                    $procesoCostura = $procesosPrendaBodega->first();
+                }
                 $pedidoIdBodega = (int) ($reciboPrincipal->pedido_produccion_id ?? 0);
                 $consecutivoOriginalBodega = (string) ($reciboPrincipal->consecutivo_actual ?? '');
                 $prendaBodegaId = (int) ($reciboPrincipal->prenda_bodega_id ?? 0);
@@ -151,6 +203,9 @@ class ObtenerPrendasRecibosListadoService
                 $consecutivoActual = (string) ($reciboPrincipal->consecutivo_actual ?? '');
                 $nombrePrenda = (string) ($prendaBodega->nombre ?? 'N/A');
                 $descripcion = (string) ($prendaBodega->descripcion ?? '');
+                $reciboPrincipalId = (int) ($reciboPrincipal->id ?? 0);
+                $completadoCosturaRecibo = ($reciboPrincipalId > 0 && $completadosCosturaPorReciboId->has($reciboPrincipalId))
+                    || ($numeroReciboBodega > 0 && $completadosCosturaPorNumeroRecibo->has($numeroReciboBodega));
 
                 if ($desglosarParciales && $tieneParcialesBodega) {
                     $parcialesQuery = \Illuminate\Support\Facades\DB::table('recibo_por_partes')
@@ -165,7 +220,7 @@ class ObtenerPrendasRecibosListadoService
 
                     $parciales = $parcialesQuery->get();
 
-                    return $parciales->map(function ($parcial) use ($prendaBodegaId, $pedidoIdBodega, $nombrePrenda, $descripcion) {
+                    return $parciales->map(function ($parcial) use ($prendaBodegaId, $pedidoIdBodega, $nombrePrenda, $descripcion, $completadoCosturaRecibo) {
                         $consecutivoParcialRaw = (string) ($parcial->consecutivo_parcial ?? '');
                         $consecutivoParcial = str_contains($consecutivoParcialRaw, '.')
                             ? rtrim(rtrim($consecutivoParcialRaw, '0'), '.')
@@ -232,7 +287,7 @@ class ObtenerPrendasRecibosListadoService
                                 'creado_en' => $parcial->created_at ?? now(),
                                 'pedido_parcial_id' => (int) $parcial->id,
                                 'completado_corte' => false,
-                                'completado_costura' => false,
+                                'completado_costura' => $completadoCosturaRecibo,
                                 'completado_control_calidad' => false,
                             ]],
                             'total_recibos' => 1,
@@ -273,7 +328,7 @@ class ObtenerPrendasRecibosListadoService
                         'creado_en' => $reciboPrincipal->created_at,
                         'pedido_parcial_id' => null,
                         'completado_corte' => false,
-                        'completado_costura' => false,
+                        'completado_costura' => $completadoCosturaRecibo,
                         'completado_control_calidad' => false,
                     ]],
                 ]]);

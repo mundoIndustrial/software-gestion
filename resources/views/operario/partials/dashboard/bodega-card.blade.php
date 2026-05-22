@@ -23,7 +23,7 @@
             <div class="vista-estado-linea">
                 <span class="vista-estado-etiqueta">Estado:</span>
                 <span class="badge-completado-corte {{ $bodega['mostrar_como_deshacer'] ? 'is-on' : '' }}">
-                    PENDIENTE COSTURA
+                    {{ $bodega['mostrar_como_deshacer'] ? 'COMPLETADO COSTURA' : 'PENDIENTE COSTURA' }}
                 </span>
             </div>
         </div>

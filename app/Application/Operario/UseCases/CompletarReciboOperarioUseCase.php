@@ -9,6 +9,7 @@ use App\Domain\Operario\Repositories\ProcesoPrendaRepository;
 use App\Domain\Operario\Services\ReciboOperarioWorkflow;
 use App\Events\OperarioRecibosActualizados;
 use App\Events\ReciboCompletado;
+use App\Models\ProcesoPrenda;
 use App\Models\ReciboPorPartes;
 use Illuminate\Support\Facades\Auth;
 
@@ -114,6 +115,33 @@ class CompletarReciboOperarioUseCase
                 if (!empty($recibo->prenda_id)) {
                     $procesoCostura = $this->procesos->findLatestByPrendaAndProceso((int) $recibo->prenda_id, 'Costura');
                     $encargadoActual = $procesoCostura?->encargado;
+                } elseif (
+                    strtoupper(trim((string) ($recibo->tipo_recibo ?? ''))) === 'CORTE-PARA-BODEGA'
+                    && !empty($recibo->prenda_bodega_id)
+                ) {
+                    $procesoCosturaBodega = ProcesoPrenda::query()
+                        ->where('prenda_bodega_id', (int) $recibo->prenda_bodega_id)
+                        ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                        ->where('numero_recibo', (int) ($recibo->consecutivo_actual ?? 0))
+                        ->where(function ($query) {
+                            $query->whereNull('numero_recibo_parcial')
+                                ->orWhere('numero_recibo_parcial', '')
+                                ->orWhere('numero_recibo_parcial', 0);
+                        })
+                        ->orderByDesc('created_at')
+                        ->orderByDesc('id')
+                        ->first();
+
+                    if (!$procesoCosturaBodega) {
+                        $procesoCosturaBodega = ProcesoPrenda::query()
+                            ->where('prenda_bodega_id', (int) $recibo->prenda_bodega_id)
+                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                            ->orderByDesc('created_at')
+                            ->orderByDesc('id')
+                            ->first();
+                    }
+
+                    $encargadoActual = $procesoCosturaBodega?->encargado;
                 }
 
                 $encargadoActual = is_string($encargadoActual) ? trim($encargadoActual) : $encargadoActual;
