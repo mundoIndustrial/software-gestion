@@ -107,7 +107,18 @@
                                         $encargadoVista = $reciboPrincipal['encargado_control_calidad'] ?? null;
                                     }
                                     $encargadoVista = is_string($encargadoVista) ? trim($encargadoVista) : $encargadoVista;
-                                    $textoEncargadoVista = $encargadoVista ? strtoupper($encargadoVista) : 'SIN ENCARGADO';
+                                    
+                                    // Obtener tipo de distribución
+                                    $tipoDistribucion = $normal['tipo_distribucion'] ?? null;
+                                    
+                                    // Determinar el texto a mostrar
+                                    if ($tipoDistribucion === 'modulos') {
+                                        $textoEncargadoVista = 'DISTRIBUIDO EN MÓDULOS';
+                                    } elseif ($tipoDistribucion === 'talleres') {
+                                        $textoEncargadoVista = 'DISTRIBUIDO EN TALLERES';
+                                    } else {
+                                        $textoEncargadoVista = $encargadoVista ? strtoupper($encargadoVista) : 'SIN ENCARGADO';
+                                    }
 
                                     // Obtener encargado de corte para mostrar en el card (excepto cortadores)
                                     $encargadoCorte = $reciboPrincipal['encargado_corte'] ?? null;

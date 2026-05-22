@@ -572,6 +572,37 @@ class OperarioDashboardVistaCosturaService
         })->values();
     }
 
+    /**
+     * Obtener información de distribución de un recibo
+     * Retorna: null (sin distribuir), 'modulos' (distribuido en módulos), 'talleres' (distribuido en talleres)
+     */
+    private function obtenerTipoDistribucion(int $pedidoId, int $prendaId, int $numeroRecibo, string $tipoRecibo): ?string
+    {
+        // Buscar en recibo_por_partes (distribución en módulos)
+        $tieneModulos = \Illuminate\Support\Facades\DB::table('recibo_por_partes')
+            ->where('pedido_produccion_id', $pedidoId)
+            ->where('prenda_pedido_id', $prendaId)
+            ->where('consecutivo_original', $numeroRecibo)
+            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim($tipoRecibo))])
+            ->exists();
+
+        if ($tieneModulos) {
+            return 'modulos';
+        }
+
+        // Buscar en pedidos_parciales (distribución en talleres)
+        $tieneTalleres = \Illuminate\Support\Facades\DB::table('pedidos_parciales')
+            ->where('pedido_produccion_id', $pedidoId)
+            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim($tipoRecibo))])
+            ->exists();
+
+        if ($tieneTalleres) {
+            return 'talleres';
+        }
+
+        return null;
+    }
+
     public function enriquecerPrendasNormalesParaVista(
         Collection $prendas,
         $usuario,
@@ -726,6 +757,17 @@ class OperarioDashboardVistaCosturaService
             $debeOmitirseEnLiderReflectivo = ($usuario?->hasRole('lider-reflectivo') && $filtroReciboActual === 'costura' && !$mostrarReflectivoEnFiltro && $sinEncargadoCosturaLider)
                 || (($usuario?->hasRole('lider-reflectivo') && $filtroReciboActual === 'costura' && !$mostrarReflectivoEnFiltro && $tieneCostura) && !$encargadoCosturaEsReflectivo);
 
+            // Obtener información de distribución del recibo original
+            $pedidoId = (int) ($prenda['pedido_id'] ?? $prenda['pedido_id_accion'] ?? 0);
+            $prendaId = (int) ($prenda['prenda_id'] ?? 0);
+            $numeroReciboCostura = (int) ($reciboPrincipalCard['consecutivo_actual'] ?? 0);
+            $tipoReciboCostura = strtoupper(trim((string) ($reciboPrincipalCard['tipo_recibo'] ?? 'COSTURA')));
+            $tipoDistribucion = null;
+            
+            if ($pedidoId > 0 && $prendaId > 0 && $numeroReciboCostura > 0) {
+                $tipoDistribucion = $this->obtenerTipoDistribucion($pedidoId, $prendaId, $numeroReciboCostura, $tipoReciboCostura);
+            }
+
             $acciones = $this->construirAccionesParaCard(
                 $prenda,
                 $usuario,
@@ -759,6 +801,7 @@ class OperarioDashboardVistaCosturaService
                 'sin_encargado_costura_lider' => $sinEncargadoCosturaLider,
                 'recibos_corte_asignados' => $recibosCorteAsignadosCortador,
                 'debe_omitirse_lider_reflectivo' => $debeOmitirseEnLiderReflectivo,
+                'tipo_distribucion' => $tipoDistribucion,
                 'acciones' => $acciones,
             ];
 
