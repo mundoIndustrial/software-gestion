@@ -575,6 +575,8 @@ class OperarioDashboardVistaCosturaService
     /**
      * Obtener información de distribución de un recibo
      * Retorna: null (sin distribuir), 'modulos' (distribuido en módulos), 'talleres' (distribuido en talleres)
+     * 
+     * IMPORTANTE: Solo retorna 'talleres' si existen encargados asignados en procesos_prenda
      */
     private function obtenerTipoDistribucion(int $pedidoId, int $prendaId, int $numeroRecibo, string $tipoRecibo): ?string
     {
@@ -597,7 +599,24 @@ class OperarioDashboardVistaCosturaService
             ->exists();
 
         if ($tieneTalleres) {
-            return 'talleres';
+            // Validar que exista al menos un encargado asignado en procesos_prenda
+            // Si no hay encargado, no mostrar "DISTRIBUIDO EN TALLERES"
+            $tieneEncargadoAsignado = \Illuminate\Support\Facades\DB::table('procesos_prenda')
+                ->where('numero_pedido', function ($query) use ($pedidoId) {
+                    $query->select('numero_pedido')
+                        ->from('pedidos_produccion')
+                        ->where('id', $pedidoId);
+                })
+                ->where('prenda_pedido_id', $prendaId)
+                ->where('numero_recibo', $numeroRecibo)
+                ->where('proceso', 'Costura')
+                ->whereNotNull('encargado')
+                ->whereRaw('TRIM(encargado) != ?', [''])
+                ->exists();
+
+            if ($tieneEncargadoAsignado) {
+                return 'talleres';
+            }
         }
 
         return null;
