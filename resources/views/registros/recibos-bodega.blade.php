@@ -22,15 +22,16 @@
                                 <th style="width: 60px; text-align: center;">Acciones</th>
                                 <th style="width: 140px; text-align: center;">Área</th>
                                 <th style="width: 120px; text-align: center;">N&deg; Recibo</th>
-                                <th>Descripción</th>
-                                <th style="width: 120px;">Tallas</th>
-                                <th style="width: 120px;">Cantidad Total</th>
-                                <th style="width: 150px;">Fecha de creación</th>
+                                <th style="width: 300px;">Descripción</th>
+                                <th style="width: 120px; text-align: center;">Tallas</th>
+                                <th style="width: 120px; text-align: center;">Cantidad Total</th>
+                                <th style="width: 150px; text-align: center;">Fecha de creación</th>
+                                <th style="width: 180px; text-align: center;">Encargado</th>
                             </tr>
                         </thead>
                         <tbody id="recibo-corte-bodega-tbody">
                             <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">Cargando recibos...</td>
+                                <td colspan="8" class="text-center py-4 text-muted">Cargando recibos...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -2125,14 +2126,15 @@ function loadRecibosCorteForBodega() {
                         <td>${prenda.descripcion || '-'}</td>
                         <td style="text-align: center;">${prenda.cantidad_tallas}</td>
                         <td style="text-align: center;"><span class="badge bg-success">${prenda.total_cantidad}</span></td>
-                        <td>${prenda.fecha_corta}</td>
+                        <td style="text-align: center;">${prenda.fecha_corta}</td>
+                        <td style="text-align: center;">${prenda.encargado || '-'}</td>
                     `;
                     tbody.appendChild(row);
                 });
             } else {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="text-center py-4">
+                        <td colspan="8" class="text-center py-4">
                             <div class="alert alert-info mb-0">
                                 <i class="fas fa-info-circle"></i> No hay recibos de corte para bodega registrados aún.
                             </div>
@@ -2146,7 +2148,7 @@ function loadRecibosCorteForBodega() {
             const tbody = document.getElementById('recibo-corte-bodega-tbody');
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center py-4">
+                    <td colspan="8" class="text-center py-4">
                         <div class="alert alert-danger mb-0">
                             Error al cargar los recibos de corte para bodega.
                         </div>

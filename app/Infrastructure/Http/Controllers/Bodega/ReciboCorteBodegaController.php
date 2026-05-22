@@ -134,9 +134,28 @@ class ReciboCorteBodegaController extends Controller
             }
         }
 
+        // Obtener encargados más recientes por número de recibo
+        $encargadosMap = [];
+        if (!empty($numerosRecibo)) {
+            $encargados = DB::table('procesos_prenda')
+                ->whereIn('numero_recibo', $numerosRecibo)
+                ->whereNotNull('encargado')
+                ->orderByDesc('fecha_de_asignacion_encargado')
+                ->orderByDesc('id')
+                ->select('numero_recibo', 'encargado')
+                ->get()
+                ->groupBy('numero_recibo')
+                ->map(function ($rows) {
+                    return $rows->first()->encargado;
+                })
+                ->toArray();
+            
+            $encargadosMap = $encargados;
+        }
+
         return response()->json([
             'success' => true,
-            'data' => $prendas->map(function ($prenda) use ($recibosMap, $fallbackProcesoMap) {
+            'data' => $prendas->map(function ($prenda) use ($recibosMap, $fallbackProcesoMap, $encargadosMap) {
                 $numeroRecibo = $recibosMap[$prenda->id]['numero_recibo'] ?? null;
                 $pedidoProduccionId = $recibosMap[$prenda->id]['pedido_produccion_id'] ?? null;
                 $prendaId = $recibosMap[$prenda->id]['prenda_id'] ?? null;
@@ -152,6 +171,8 @@ class ReciboCorteBodegaController extends Controller
                     }
                 }
 
+                $encargado = $numeroRecibo ? ($encargadosMap[$numeroRecibo] ?? null) : null;
+
                 return [
                     'id' => $prenda->id,
                     'numero_recibo' => $numeroRecibo,
@@ -164,6 +185,7 @@ class ReciboCorteBodegaController extends Controller
                     'cantidad_tallas' => $prenda->tallas->count(),
                     'fecha' => $prenda->created_at->format('Y-m-d H:i'),
                     'fecha_corta' => $prenda->created_at->format('d/m/Y'),
+                    'encargado' => $encargado,
                 ];
             })->toArray(),
             'pagination' => [

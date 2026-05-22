@@ -12,10 +12,16 @@ class PrendaBodega extends Model
         'numero_recibo',
         'nombre',
         'descripcion',
+        'user_id',
     ];
 
     public function tallas()
     {
         return $this->hasMany(PrendaTallasBodega::class, 'prenda_bodega_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }
