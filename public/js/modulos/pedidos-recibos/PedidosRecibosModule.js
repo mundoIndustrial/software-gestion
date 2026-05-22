@@ -1180,7 +1180,8 @@ if (typeof window.printReceiptModal !== 'function') {
                                 items.push(`<span style="color: #d32f2f;">${tallaKey}-${n}${refText}</span>`);
                             }
                             if (items.length > 0) {
-                                lineasColor.push(`<span style="color: #d32f2f; font-weight: bold;"><strong>${color}:</strong> ${items.join(', ')}</span>`);
+                                const colorLabel = color !== 'SIN COLOR' ? `<strong>${color}:</strong> ` : '';
+                                lineasColor.push(`<span style="color: #d32f2f; font-weight: bold;">${colorLabel}${items.join(', ')}</span>`);
                             }
                         }
 
@@ -1188,7 +1189,7 @@ if (typeof window.printReceiptModal !== 'function') {
                             partesGenero.push(`<strong>${gen}:</strong><br>${lineasColor.join('<br>')}`);
                         }
                     });
-                    return partesGenero.join(' | ');
+                    return partesGenero.join('<br>');
                 }
 
                 // === 2) Array simple: [{genero,talla,cantidad}] (agrupar por genero sin repetir) ===
@@ -1353,7 +1354,16 @@ if (typeof window.printReceiptModal !== 'function') {
             const formaPago = String(datosPedido.forma_de_pago || getDomText('#forma-pago-value') || '').trim();
             const cliente = String(datosPedido.cliente || getDomText('#cliente-value') || '').trim();
 
-            const descripcionDOM = getDomHtmlText('#descripcion-text');
+            const descripcionDOM = (() => {
+                try {
+                    const el = wrapper.querySelector('#descripcion-text');
+                    if (!el) return '';
+                    const html = String(el.innerHTML || '').trim();
+                    return stripHtml(html);
+                } catch (_) {
+                    return '';
+                }
+            })();
             const anchoMetrajeDOM = (() => {
                 try {
                     const el = wrapper.querySelector('#order-ancho-metraje');
@@ -1437,7 +1447,7 @@ if (typeof window.printReceiptModal !== 'function') {
             const ubicaciones = (() => {
                 if (tipoProceso && tipoProceso.toUpperCase() === 'COSTURA') {
                     // Para COSTURA: solo la descripcion principal de la prenda
-                    const desc = prendaData?.descripcion || '';
+                    const desc = stripHtml(prendaData?.descripcion || '');
                     return desc ? [desc] : [];
                 }
 
@@ -1582,11 +1592,12 @@ if (typeof window.printReceiptModal !== 'function') {
                             const partes = [];
                             generosMap.forEach((tallasGen, genero) => {
                                 const tallasStr = Array.from(tallasGen.entries())
-                                    .map(([t, c]) => `${t}-${c}`)
-                                    .join(' ');
-                                partes.push(genero ? `${genero}: ${tallasStr}` : tallasStr);
+                                    .map(([t, c]) => `<span style="color: #d32f2f;">${t}:${c}</span>`)
+                                    .join(', ');
+                                const generoLabel = genero ? `<strong>${genero}:</strong><br>` : '';
+                                partes.push(`${generoLabel}<span style="color: #d32f2f; font-weight: bold;">${tallasStr}</span>`);
                             });
-                            return partes.join(' | ');
+                            return partes.join('<br>');
                         }
                     }
                 }

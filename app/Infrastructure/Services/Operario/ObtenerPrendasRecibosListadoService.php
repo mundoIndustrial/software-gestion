@@ -23,7 +23,7 @@ class ObtenerPrendasRecibosListadoService
         $this->supportService->logTipoOperario($usuario, $tipoOperario);
         $tiposRecibo = $this->supportService->resolverTiposRecibo($tipoOperario, $filtroRecibo);
 
-        if ($tipoOperario === 'vista-costura' && $filtroRecibo === 'bodega') {
+        if (in_array($tipoOperario, ['vista-costura', 'costura-reflectivo'], true) && $filtroRecibo === 'bodega') {
             return $this->obtenerPrendasConRecibosBodegaVistaCostura();
         }
 
@@ -35,7 +35,7 @@ class ObtenerPrendasRecibosListadoService
         $recibos = $this->supportService->filtrarRecibosVisualizadorPlooter($recibos, $usuario, $tipoOperario);
         $recibos = $this->agregarReflectivosAprobadosSiAplica($recibos, $usuario, $tipoOperario);
         $recibos = $this->deduplicarRecibos($recibos);
-        $recibos = $this->aplicarFiltroAreaFinalPorTipoOperario($recibos, $tipoOperario);
+        $recibos = $this->aplicarFiltroAreaFinalPorTipoOperario($recibos, $tipoOperario, $filtroRecibo);
 
         if (config('app.debug') && request()->boolean('debug_operario_dashboard')) {
             \Log::info(' [ObtenerPrendasRecibosService] Recibos encontrados', [
@@ -66,7 +66,7 @@ class ObtenerPrendasRecibosListadoService
             ->values();
 
         $resultadoFinal = $prendasAgrupadas;
-        if ($tipoOperario !== 'vista-costura') {
+        if ($tipoOperario !== 'vista-costura' && $filtroRecibo !== 'bodega') {
             $resultadoFinal = $resultadoFinal->concat($this->parcialesService->obtenerPrendasParcialesCostura($usuario, false));
         }
 
@@ -755,7 +755,7 @@ class ObtenerPrendasRecibosListadoService
             ->values();
     }
 
-    private function aplicarFiltroAreaFinalPorTipoOperario(Collection $recibos, string $tipoOperario): Collection
+    private function aplicarFiltroAreaFinalPorTipoOperario(Collection $recibos, string $tipoOperario, ?string $filtroRecibo = null): Collection
     {
         if ($tipoOperario === 'vista-costura') {
             return $recibos->filter(function ($recibo) {
@@ -769,6 +769,18 @@ class ObtenerPrendasRecibosListadoService
         }
 
         if ($tipoOperario === 'costura-reflectivo') {
+            if ($filtroRecibo === 'bodega') {
+                return $recibos->filter(function ($recibo) {
+                    $tipoRecibo = strtoupper(trim((string) ($recibo->tipo_recibo ?? '')));
+                    $area = strtolower(trim((string) ($recibo->area ?? '')));
+                    if ($tipoRecibo !== 'CORTE-PARA-BODEGA') {
+                        return false;
+                    }
+
+                    return in_array($area, ['costura', 'control calidad', 'control de calidad'], true);
+                })->values();
+            }
+
             return $recibos->filter(function ($recibo) {
                 $tipoRecibo = strtoupper(trim((string) ($recibo->tipo_recibo ?? '')));
                 $area = strtolower(trim((string) ($recibo->area ?? '')));
