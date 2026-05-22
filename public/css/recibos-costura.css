@@ -1267,6 +1267,12 @@ input[type="range"]::-moz-range-thumb {
     color: #334155;
 }
 
+.distribution-pill--red {
+    background: rgba(220, 38, 38, 0.14);
+    color: #991b1b;
+    border: 1px solid rgba(220, 38, 38, 0.28);
+}
+
 .distribution-sizes {
     display: flex;
     flex-wrap: wrap;

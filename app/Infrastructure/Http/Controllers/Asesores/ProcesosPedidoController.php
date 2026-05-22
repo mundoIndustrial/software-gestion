@@ -344,4 +344,162 @@ class ProcesosPedidoController
         }
     }
 
+    /**
+     * GET /api/recibos-bodega/{numeroRecibo}/distribucion
+     * Obtiene la distribución de parciales de un recibo de bodega
+     */
+    public function obtenerDistribucionReciboBodega(\Illuminate\Http\Request $request, int|string $numeroRecibo): JsonResponse
+    {
+        try {
+            $numeroReciboInt = (int) $numeroRecibo;
+            if ($numeroReciboInt <= 0) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Número de recibo inválido',
+                    'parciales' => [],
+                    'total_parciales' => 0,
+                ], 400);
+            }
+
+            $prendaBodegaId = (int) $request->query('prenda_bodega_id', 0);
+
+            // Obtener información del recibo
+            $reciboQuery = DB::table('consecutivos_recibos_pedidos')
+                ->where('consecutivo_actual', $numeroReciboInt)
+                ->where('tipo_recibo', 'CORTE-PARA-BODEGA');
+
+            if ($prendaBodegaId > 0 && DB::getSchemaBuilder()->hasColumn('consecutivos_recibos_pedidos', 'prenda_bodega_id')) {
+                $reciboQuery->where('prenda_bodega_id', $prendaBodegaId);
+            }
+
+            $recibo = $reciboQuery->first();
+
+            if (!$recibo) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado',
+                    'parciales' => [],
+                    'total_parciales' => 0,
+                ], 404);
+            }
+
+            // Fuente canónica: recibo_por_partes.
+            // Evita mostrar parciales "fantasma" que existan solo en procesos_prenda.
+            $parciales = DB::table('recibo_por_partes')
+                ->where('consecutivo_original', $numeroReciboInt)
+                ->where('tipo_recibo', 'CORTE-PARA-BODEGA')
+                ->when(($recibo->pedido_produccion_id ?? null), function ($query) use ($recibo) {
+                    $query->where('pedido_produccion_id', (int) $recibo->pedido_produccion_id);
+                })
+                ->when(($recibo->prenda_id ?? null), function ($query) use ($recibo) {
+                    $query->where('prenda_pedido_id', (int) $recibo->prenda_id);
+                })
+                ->orderBy('consecutivo_parcial')
+                ->get(['id', 'consecutivo_original', 'consecutivo_parcial', 'estado']);
+
+            $hasPrendaBodegaColumn = DB::getSchemaBuilder()->hasColumn('procesos_prenda', 'prenda_bodega_id');
+
+            $procesos = DB::table('procesos_prenda')
+                ->where('numero_recibo', $numeroReciboInt)
+                ->when($prendaBodegaId > 0 && $hasPrendaBodegaColumn, function ($query) use ($prendaBodegaId) {
+                    $query->where('prenda_bodega_id', $prendaBodegaId);
+                })
+                ->orderByDesc('created_at')
+                ->get([
+                    'numero_recibo_parcial',
+                    'proceso',
+                    'encargado',
+                    'fecha_inicio',
+                    'fecha_fin',
+                    'estado_proceso',
+                ]);
+
+            $procesoPorParcialMap = $procesos
+                ->keyBy(function ($row) {
+                    return (string) ((float) ($row->numero_recibo_parcial ?? 0));
+                });
+
+            $parcialIds = $parciales->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+            $tallasPorParcialMap = collect();
+            if (!empty($parcialIds)) {
+                $tallasPorParcialMap = DB::table('recibos_por_partes_tallas')
+                    ->whereIn('recibo_por_partes_id', $parcialIds)
+                    ->orderBy('id')
+                    ->get([
+                        'recibo_por_partes_id',
+                        'talla',
+                        'genero',
+                        'cantidad',
+                        'color_nombre',
+                    ])
+                    ->groupBy('recibo_por_partes_id');
+            }
+
+            $areas = $procesos
+                ->pluck('proceso')
+                ->filter(fn ($a) => trim((string) $a) !== '')
+                ->map(fn ($a) => trim((string) $a))
+                ->unique()
+                ->values();
+
+            $areaActual = $areas->count() === 1
+                ? (string) $areas->first()
+                : ($areas->count() > 1 ? 'Distribuido' : 'Sin asignar');
+
+            $totalUnidades = $tallasPorParcialMap
+                ->flatten(1)
+                ->sum(fn ($t) => (int) ($t->cantidad ?? 0));
+
+            return $this->json([
+                'success' => true,
+                'recibo' => [
+                    'id' => $recibo->id ?? null,
+                    'numero_recibo' => $numeroReciboInt,
+                    'numero_pedido' => $recibo->pedido_produccion_id ?? null,
+                    'prenda_id' => $recibo->prenda_id ?? null,
+                    'area_actual' => $areaActual,
+                    'total_unidades' => (int) $totalUnidades,
+                ],
+                'parciales' => $parciales->map(function ($p) use ($procesoPorParcialMap, $tallasPorParcialMap, $numeroReciboInt) {
+                    $parcialKey = (string) ((float) ($p->consecutivo_parcial ?? 0));
+                    $proceso = $procesoPorParcialMap->get($parcialKey);
+                    $estadoParcial = $p->estado ?? null;
+                    $estaAnulado = strtoupper(trim((string) $estadoParcial)) === 'ANULADO';
+
+                    return [
+                        'id' => $p->id, // id de recibo_por_partes
+                        'numero_recibo' => $numeroReciboInt,
+                        'numero_recibo_parcial' => $p->consecutivo_parcial,
+                        'proceso' => $proceso->proceso ?? null,
+                        'encargado' => $proceso->encargado ?? null,
+                        'fecha_inicio' => $proceso->fecha_inicio ?? null,
+                        'fecha_fin' => $proceso->fecha_fin ?? null,
+                        'estado_parcial' => $estadoParcial,
+                        'estado_proceso' => $estaAnulado ? 'Anulado' : ($proceso->estado_proceso ?? 'Pendiente'),
+                        'tallas' => ($tallasPorParcialMap->get((int) $p->id, collect()))
+                            ->map(function ($t) {
+                                return [
+                                    'talla' => $t->talla,
+                                    'genero' => $t->genero,
+                                    'cantidad' => (int) ($t->cantidad ?? 0),
+                                    'color_nombre' => $t->color_nombre,
+                                ];
+                            })
+                            ->values()
+                            ->toArray(),
+                    ];
+                })->toArray(),
+                'total_parciales' => $parciales->count(),
+            ], 200);
+        } catch (\Throwable $e) {
+            Log::error('[ProcesosPedidoController] Error en obtenerDistribucionReciboBodega', [
+                'numero_recibo' => $numeroRecibo,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->failure('Error al obtener distribución: ' . $e->getMessage(), 500);
+        }
+    }
+
 }

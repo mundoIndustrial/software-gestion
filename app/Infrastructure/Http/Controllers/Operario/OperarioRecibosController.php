@@ -323,7 +323,7 @@ class OperarioRecibosController extends Controller
                     ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
                     ->whereNull('deleted_at')
                     ->update([
-                        'estado_proceso' => 'Pausado',
+                        'estado_proceso' => 'Anulado',
                         'observaciones' => DB::raw("CONCAT(COALESCE(observaciones,''), '\n[ANULADO] Parcial anulado desde Operario')"),
                         'updated_at' => now(),
                     ]);

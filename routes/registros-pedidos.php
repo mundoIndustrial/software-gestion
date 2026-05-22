@@ -72,6 +72,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/api/registros-por-orden-bodega/{pedido}', [RegistroBodegaController::class, 'getRegistrosPorOrden'])->name('api.registros-por-orden-bodega');
     Route::get('/api/ordenes/{id}/procesos', [ProcesosPedidoController::class, 'getProcesos'])->name('api.ordenes.procesos');
     Route::get('/api/recibos-bodega/{numeroRecibo}/procesos', [ProcesosPedidoController::class, 'getProcesosPorNumeroReciboBodega'])->name('api.recibos-bodega.procesos');
+    Route::get('/api/recibos-bodega/{numeroRecibo}/distribucion', [ProcesosPedidoController::class, 'obtenerDistribucionReciboBodega'])->name('api.recibos-bodega.distribucion');
     Route::post('/api/ordenes/{numero_pedido}/novedades', [RegistroOrdenController::class, 'updateNovedades'])->name('api.ordenes.novedades');
     Route::post('/api/ordenes/{numero_pedido}/novedades/add', [RegistroOrdenController::class, 'addNovedad'])->name('api.ordenes.novedades.add');
     Route::post('/api/bodega/{pedido}/novedades', [RegistroBodegaController::class, 'updateNovedadesBodega'])->name('api.bodega.novedades');

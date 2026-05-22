@@ -2191,6 +2191,10 @@ function openReciboBodegaDropdown(button) {
             <i class="fas fa-eye"></i> Ver Detalles
         </button>
         <div class="dropdown-divider"></div>
+        <button class="dropdown-item-btn" type="button" data-action="ver-distribucion">
+            <i class="fas fa-share"></i> Ver Distribución
+        </button>
+        <div class="dropdown-divider"></div>
         <button class="dropdown-item-btn" type="button" data-action="seguimiento">
             <i class="fas fa-tasks"></i> Seguimiento
         </button>
@@ -2204,6 +2208,14 @@ function openReciboBodegaDropdown(button) {
         if (action === 'ver-detalles') {
             if (reciboId > 0) {
                 openReciboCorteBodegaModal(reciboId);
+            }
+            closeReciboBodegaDropdowns();
+            return;
+        }
+
+        if (action === 'ver-distribucion') {
+            if (numeroRecibo > 0) {
+                await openReciboBodegaDistribucion(numeroRecibo, prendaBodegaId);
             }
             closeReciboBodegaDropdowns();
             return;
@@ -2334,6 +2346,314 @@ async function openReciboBodegaSeguimientoInterno(numeroRecibo, prendaBodegaId) 
         alert(error.message || 'Error cargando seguimiento interno de bodega.');
     }
 }
+
+async function openReciboBodegaDistribucion(numeroRecibo, prendaBodegaId) {
+    const numero = Number(numeroRecibo || 0);
+    const prendaBodega = Number(prendaBodegaId || 0);
+
+    if (numero <= 0) {
+        alert('Este recibo no tiene número de recibo válido.');
+        return;
+    }
+
+    try {
+        const qs = prendaBodega > 0 ? `?prenda_bodega_id=${encodeURIComponent(String(prendaBodega))}` : '';
+        const resp = await fetch(`/api/recibos-bodega/${numero}/distribucion${qs}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        const data = await resp.json().catch(() => ({}));
+
+        if (!resp.ok) {
+            throw new Error(data.message || 'No se pudieron cargar los datos de distribución.');
+        }
+
+        const parciales = data.parciales || [];
+        const totalParciales = data.total_parciales || 0;
+        const areaActual = String(data?.recibo?.area_actual || 'Sin asignar');
+        const totalUnidades = Number(data?.recibo?.total_unidades || 0);
+
+        if (totalParciales === 0) {
+            alert('No hay parciales creados para este recibo #' + numero);
+            return;
+        }
+
+        // Usar el modal específico de distribución
+        const modal = document.getElementById('recibo-distribution-modal');
+        const backdrop = modal?.querySelector('.distribution-modal__backdrop');
+        const closeBtn = modal?.querySelector('.distribution-modal__close');
+        const titleEl = modal?.querySelector('#distributionModalTitle');
+        const bodyEl = modal?.querySelector('#distributionModalBody');
+
+        if (!modal || !bodyEl) {
+            throw new Error('Modal de distribución no disponible.');
+        }
+
+        // Actualizar título
+        if (titleEl) titleEl.textContent = `Distribucion del recibo #${numero}`;
+
+        // Calcular cantidad total
+        const totalCantidad = parciales.reduce((sum, p) => {
+            // Aquí podrías sumar cantidades si están disponibles en los datos
+            return sum;
+        }, 0);
+
+        // Construir HTML del modal
+        const parcialesHTML = parciales.length
+            ? parciales.map((p, idx) => {
+                const estado = String(p?.estado_proceso || 'Pendiente');
+                const estadoNormalizado = estado.trim().toLowerCase();
+                const estadoPillClass = estadoNormalizado === 'anulado'
+                    ? 'distribution-pill--red'
+                    : 'distribution-pill--slate';
+                const numeroReciboParcial = p?.numero_recibo_parcial || (idx + 1);
+                const parcialLabel = String(numeroReciboParcial).includes('.')
+                    ? String(numeroReciboParcial)
+                    : `${numero}.${numeroReciboParcial}`;
+                const tallas = Array.isArray(p?.tallas) ? p.tallas : [];
+                const tallasHTML = tallas.length
+                    ? `<div class="distribution-sizes">${tallas.map((t) => {
+                        const tallaNombre = String(t?.talla || '-').toUpperCase();
+                        const qty = Number(t?.cantidad || 0);
+                        return `<span class="distribution-size-chip">${tallaNombre} <strong>x${qty}</strong></span>`;
+                    }).join('')}</div>`
+                    : '<span class="distribution-pill">Sin tallas</span>';
+                
+                return `
+                <article class="distribution-card">
+                    <div class="distribution-card__inner">
+                        <div class="distribution-card__top">
+                            <div class="distribution-card__title">
+                                <h3>Parcial #${parcialLabel}</h3>
+                                <span class="distribution-pill ${estadoPillClass}">${estado}</span>
+                            </div>
+                            <span class="distribution-pill distribution-pill--green">${p?.proceso || 'Sin asignar'}</span>
+                        </div>
+                        <div class="distribution-card__meta">
+                            <div class="distribution-card__row">
+                                <span class="distribution-card__row-label">Encargado</span>
+                                <span class="distribution-pill distribution-pill--blue">${p?.encargado || 'SIN ASIGNAR'}</span>
+                            </div>
+                            <div class="distribution-card__row">
+                                <span class="distribution-card__row-label">Fechas</span>
+                                <span class="distribution-pill">${p?.fecha_inicio ? String(p.fecha_inicio).slice(0, 10) : '---'} a ${p?.fecha_fin ? String(p.fecha_fin).slice(0, 10) : '---'}</span>
+                            </div>
+                            <div class="distribution-card__row">
+                                <span class="distribution-card__row-label">Tallas</span>
+                                ${tallasHTML}
+                            </div>
+                        </div>
+                        <div class="distribution-card__actions">
+                            <button type="button" class="distribution-action-btn" onclick="openReciboBodegaParcialSeguimiento(${Number(p?.id || 0)}, ${numero}, ${prendaBodega})">
+                                <i class="fas fa-route"></i>
+                                Ver seguimiento
+                            </button>
+                        </div>
+                    </div>
+                </article>`;
+            }).join('')
+            : `<div style="padding: 2rem; text-align: center; color: #64748b;">Sin parciales registrados para este recibo.</div>`;
+
+        bodyEl.innerHTML = `
+            <div class="distribution-summary">
+                <div class="distribution-summary__card">
+                    <span class="distribution-summary__label">Recibo</span>
+                    <span class="distribution-summary__value">#${numero}</span>
+                </div>
+                <div class="distribution-summary__card">
+                    <span class="distribution-summary__label">Area actual</span>
+                    <span class="distribution-summary__value">${areaActual}</span>
+                </div>
+                <div class="distribution-summary__card">
+                    <span class="distribution-summary__label">Resumen</span>
+                    <span class="distribution-summary__value">${totalParciales} parciales - ${totalUnidades} und</span>
+                </div>
+            </div>
+            <div class="distribution-list">
+                ${parcialesHTML}
+            </div>
+        `;
+
+        // Configurar eventos de cierre
+        const closeModal = () => {
+            if (modal?.contains(document.activeElement)) {
+                document.activeElement.blur();
+                const table = document.getElementById('recibo-corte-bodega-table');
+                if (table) table.focus?.();
+            }
+            modal.setAttribute('aria-hidden', 'true');
+            modal.style.display = 'none';
+        };
+
+        if (backdrop) {
+            backdrop.onclick = closeModal;
+        }
+        if (closeBtn) {
+            closeBtn.onclick = closeModal;
+        }
+
+        // Mostrar modal
+        modal.setAttribute('aria-hidden', 'false');
+        modal.style.display = 'flex';
+        if (closeBtn) {
+            setTimeout(() => closeBtn.focus?.(), 0);
+        }
+    } catch (error) {
+        alert(error.message || 'Error cargando distribución de bodega.');
+    }
+}
+
+function openReciboBodegaParcialSeguimiento(parcialId, numeroRecibo, prendaBodegaId) {
+    const id = Number(parcialId || 0);
+    if (id > 0 && typeof window.openSeguimientoParcialModal === 'function') {
+        window.openSeguimientoParcialModal(id);
+        return;
+    }
+
+    alert('No está disponible el modal de seguimiento por parcial en esta vista.');
+}
+
+function escapeDistributionHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function formatParcialConsecutivo(value) {
+    if (value === null || value === undefined || value === '') return '-';
+    const raw = String(value);
+    if (raw.includes('.')) {
+        return raw.replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1');
+    }
+    return raw;
+}
+
+function buildPartialTrackingModalContent(parcial, timeline) {
+    const tallas = Array.isArray(parcial.tallas) ? parcial.tallas : [];
+    const tallasHtml = tallas.length > 0
+        ? `
+            <div class="partial-tracking-sizes" aria-label="Tallas del parcial">
+                ${tallas.map((talla) => {
+                    const tallaNombre = escapeDistributionHtml(talla.talla ?? 'N/A');
+                    const cantidad = parseInt(talla.cantidad, 10) || 0;
+                    const color = talla.color_nombre ? ` <span style="opacity:.75;">${escapeDistributionHtml(talla.color_nombre)}</span>` : '';
+                    return `<span class="partial-tracking-size-chip">${tallaNombre} <strong>x${cantidad}</strong>${color}</span>`;
+                }).join('')}
+            </div>
+        `
+        : '<span class="partial-tracking-muted">Sin tallas registradas</span>';
+
+    const steps = (Array.isArray(timeline) ? timeline : []).map((step) => {
+        const isCompleted = Boolean(step.completado);
+        const estadoLabel = isCompleted ? 'Completado' : (step.estado || 'En progreso');
+        const estadoIcon = isCompleted ? 'fa-check-circle' : 'fa-signal';
+        const fechaInicio = step.fecha_inicio ? `<span><strong>Inicio:</strong> ${escapeDistributionHtml(step.fecha_inicio)}</span>` : '';
+        const fechaFin = step.fecha_fin ? `<span><strong>Fin:</strong> ${escapeDistributionHtml(step.fecha_fin)}</span>` : '';
+
+        return `
+            <article class="partial-tracking-step">
+                <div class="partial-tracking-step__top">
+                    <div class="partial-tracking-step__title">
+                        <h3>${escapeDistributionHtml(step.area || 'Sin area')}</h3>
+                        <div class="partial-tracking-step__meta">
+                            <span class="partial-tracking-badge partial-tracking-badge--blue">
+                                <i class="fas fa-user"></i>
+                                ${escapeDistributionHtml(step.encargado || 'Sin asignar')}
+                            </span>
+                            <span class="partial-tracking-badge partial-tracking-badge--green">
+                                <i class="fas ${estadoIcon}"></i>
+                                ${escapeDistributionHtml(estadoLabel)}
+                            </span>
+                        </div>
+                    </div>
+                    <span class="partial-tracking-badge partial-tracking-badge--slate">Paso ${escapeDistributionHtml(step.orden || '-')}</span>
+                </div>
+                <div class="partial-tracking-step__dates">${fechaInicio}${fechaFin}</div>
+            </article>
+        `;
+    }).join('');
+
+    return `
+        <div class="partial-tracking-summary">
+            <div class="partial-tracking-summary__card">
+                <span class="partial-tracking-summary__label">Parcial</span>
+                <span class="partial-tracking-summary__value">#${escapeDistributionHtml(formatParcialConsecutivo(parcial.consecutivo_parcial ?? '-'))}</span>
+            </div>
+            <div class="partial-tracking-summary__card">
+                <span class="partial-tracking-summary__label">Area actual</span>
+                <span class="partial-tracking-summary__value">${escapeDistributionHtml(parcial.area_actual ?? 'Sin area')}</span>
+            </div>
+            <div class="partial-tracking-summary__card">
+                <span class="partial-tracking-summary__label">Tallas</span>
+                <div class="partial-tracking-summary__value">${tallasHtml}</div>
+            </div>
+        </div>
+        <div class="partial-tracking-timeline">
+            ${steps || '<div class="partial-tracking-empty"><p style="margin:0;">Este parcial aún no tiene recorrido registrado.</p></div>'}
+        </div>
+    `;
+}
+
+window.openSeguimientoParcialModal = async function (parcialId) {
+    const modal = document.getElementById('partial-tracking-modal');
+    const body = document.getElementById('partialTrackingModalBody');
+    const title = document.getElementById('partialTrackingModalTitle');
+    const id = Number(parcialId || 0);
+
+    if (!modal || !body || !title || id <= 0) {
+        alert('No se pudo abrir el seguimiento del parcial.');
+        return;
+    }
+
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    title.textContent = 'Recorrido del parcial';
+    body.innerHTML = `<div class="distribution-loading"><span class="distribution-spinner"></span><span>Cargando seguimiento del parcial...</span></div>`;
+
+    try {
+        const response = await fetch(`/api/recibos-costura/parciales/${encodeURIComponent(String(id))}/seguimiento`, {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || 'No se pudo cargar el seguimiento del parcial');
+        }
+
+        const parcial = result.parcial || {};
+        const timeline = Array.isArray(result.timeline) ? result.timeline : [];
+        title.textContent = `Seguimiento del parcial #${escapeDistributionHtml(formatParcialConsecutivo(parcial.consecutivo_parcial ?? id))}`;
+        body.innerHTML = buildPartialTrackingModalContent(parcial, timeline);
+    } catch (error) {
+        body.innerHTML = `<div class="partial-tracking-empty"><p style="margin:0;">${escapeDistributionHtml(error.message || 'Error cargando seguimiento')}</p></div>`;
+    }
+};
+
+window.closeSeguimientoParcialModal = function () {
+    const modal = document.getElementById('partial-tracking-modal');
+    if (!modal) return;
+    if (modal.contains(document.activeElement)) {
+        document.activeElement.blur();
+        const table = document.getElementById('recibo-corte-bodega-table');
+        if (table) table.focus?.();
+    }
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+};
+
+document.addEventListener('click', function (event) {
+    const modal = document.getElementById('partial-tracking-modal');
+    if (!modal) return;
+    const shouldClose = event.target.closest('[data-partial-tracking-close="true"]');
+    if (shouldClose || event.target === modal) {
+        window.closeSeguimientoParcialModal();
+    }
+});
 
 
 document.addEventListener('click', function (event) {
