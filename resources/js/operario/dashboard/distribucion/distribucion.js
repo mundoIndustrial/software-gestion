@@ -131,61 +131,40 @@ function abrirModalCosturaConDatos(
     if (window.datosModalCostura) {
         window.datosModalCostura.esEdicion = true;
     }
-    
-    // Detectar el tipo de asignación original
+    // Detectar el tipo de asignación original (solo informativo).
+    // En edición NO se selecciona automáticamente ninguna opción.
     const tipoAsignacionOriginal = datosDistribucion?.tipo_asignacion_original || 'modulos';
     console.log('[EDITAR ENCARGADOS] Tipo de asignación original detectado:', tipoAsignacionOriginal);
-    
-    // Esperar a que el modal esté listo y seleccionar automáticamente la opción correcta
-    setTimeout(() => {
-        // Seleccionar la opción correcta según el tipo de asignación original
-        let opcionASeleccionar = 'distribuir'; // Por defecto
-        
-        if (tipoAsignacionOriginal === 'taller') {
-            opcionASeleccionar = 'taller';
-            console.log('[EDITAR ENCARGADOS] Seleccionando opción: Distribuir a Taller');
-        } else {
-            console.log('[EDITAR ENCARGADOS] Seleccionando opción: Distribuir por Módulos');
-        }
-        
-        if (typeof window.seleccionarOpcionAsignacion === 'function') {
-            window.seleccionarOpcionAsignacion(opcionASeleccionar);
-        }
-        
-        // Esperar a que se cargue el contenido
-        setTimeout(() => {
-            console.log('[EDITAR ENCARGADOS] Verificando si estamos en modo edición...');
 
-            // Si es tipo taller, ir directamente a múltiples talleres
-            if (tipoAsignacionOriginal === 'taller') {
-                console.log('[EDITAR ENCARGADOS] Saltando selección de tipo taller, yendo a múltiples talleres...');
-                if (typeof window.seleccionarTipoTaller === 'function') {
-                    window.seleccionarTipoTaller('multiple');
-                }
+    const onSeleccionOpcion = (event) => {
+        const opcion = String(event?.detail?.opcion || '').toLowerCase().trim();
 
-                // Esperar a que se cargue la interfaz de múltiples talleres
-                setTimeout(() => {
-                    console.log('[EDITAR ENCARGADOS] Cargando datos existentes de talleres...');
-                    if (datosDistribucion && datosDistribucion.parciales) {
-                        cargarDatosDistribucionExistenteTaller(datosDistribucion.parciales);
-                    }
-                }, 500);
-                return;
+        if (opcion === 'taller') {
+            console.log('[EDITAR ENCARGADOS] Opción elegida por usuario: Taller. Cargando datos existentes...');
+            if (datosDistribucion && datosDistribucion.parciales) {
+                cargarDatosDistribucionExistenteTaller(datosDistribucion.parciales);
             }
+            window.removeEventListener('costura:opcion-asignacion-seleccionada', onSeleccionOpcion);
+            return;
+        }
 
-            // Para módulos, esperar explícitamente datos de distribución del modal
+        if (opcion === 'distribuir') {
+            console.log('[EDITAR ENCARGADOS] Opción elegida por usuario: Distribuir por Módulos. Cargando datos existentes...');
             esperarDatosDistribucion(12000)
                 .then(() => {
                     if (datosDistribucion && datosDistribucion.parciales) {
-                        console.log('[EDITAR ENCARGADOS] Cargando datos existentes de módulos...');
                         cargarDatosDistribucionExistente(datosDistribucion.parciales);
                     }
                 })
                 .catch(() => {
                     console.warn('[EDITAR ENCARGADOS] window.datosDistribucion no está disponible');
                 });
-        }, 500);
-    }, 100);
+            window.removeEventListener('costura:opcion-asignacion-seleccionada', onSeleccionOpcion);
+        }
+    };
+
+    window.removeEventListener('costura:opcion-asignacion-seleccionada', onSeleccionOpcion);
+    window.addEventListener('costura:opcion-asignacion-seleccionada', onSeleccionOpcion);
 }
 
 function cargarDatosDistribucionExistenteTaller(parciales) {
@@ -411,6 +390,20 @@ function procesarCargarDatosExistente(parciales) {
     console.log('[PROCESAR DATOS] Mapa de tallas con colores:', mapaTallasConColores);
     
     parciales.forEach(parcial => {
+        const estadoParcial = String(
+            parcial?.proceso_estado
+                ?? parcial?.estado_proceso
+                ?? parcial?.estado
+                ?? ''
+        ).toUpperCase().trim();
+
+        // Los parciales anulados deben mantenerse para historial visual,
+        // pero NO deben bloquear disponibilidad ni precargarse como asignados.
+        if (estadoParcial === 'ANULADO') {
+            console.log('[PROCESAR DATOS] Parcial anulado omitido de precarga de asignaciones:', parcial);
+            return;
+        }
+
         const encargado = parcial.encargado_costura || parcial.encargado;
         console.log(`[PROCESAR DATOS] Procesando parcial con encargado: ${encargado}`);
         
@@ -1044,3 +1037,4 @@ async function verReciboParcial(parcialId, consecutivoParcial, numeroPedido, pre
 window.abrirDistribucionRecibo = abrirDistribucionRecibo;
 window.anularParcial = anularParcial;
 window.verReciboParcial = verReciboParcial;
+

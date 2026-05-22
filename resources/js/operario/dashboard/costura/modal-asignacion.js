@@ -1,7 +1,7 @@
-import { httpJson } from '../api/http';
+﻿import { httpJson } from '../api/http';
 import { mostrarError, mostrarExito } from '../ui/messages';
 
-// Función para abrir el modal (exportada para ser usada en costura.js)
+// Funcion para abrir el modal (exportada para ser usada en costura.js)
 export function abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, btnId, numeroPedido = null, parcialId = null, prendaBodegaId = null) {
     const modal = document.getElementById('modalCostura');
     if (!modal) return;
@@ -9,7 +9,7 @@ export function abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo
     // Guardar datos globales
     window.datosModalCostura = { pedidoId, prendaId, prendaBodegaId, tipoRecibo, btnId, recibo, nombre, numeroPedido, parcialId };
     
-    // Resetear selección
+    // Resetear seleccion
     window.opcionAsignacionSeleccionada = null;
     window.asignacionesPorModulo = {};
     window.modulosSeleccionadosDistribucion = [];
@@ -31,10 +31,10 @@ export function abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo
         btnDistribuir.style.background = 'white';
     }
     
-    // Resetear subtítulo
+    // Resetear subtitulo
     const modalSubtitulo = document.getElementById('modalSubtitulo');
     if (modalSubtitulo) {
-        modalSubtitulo.textContent = 'Seleccione el tipo de asignación';
+        modalSubtitulo.textContent = 'Seleccione el tipo de asignacion';
     }
     
     modal.style.display = 'flex';
@@ -44,9 +44,12 @@ export function abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo
 window.opcionAsignacionSeleccionada = null;
 window.datosModalCostura = null;
 
-// Función para seleccionar opción de asignación
+// Funcion para seleccionar opcion de asignacion
 export function seleccionarOpcionAsignacion(opcion) {
     window.opcionAsignacionSeleccionada = opcion;
+    window.dispatchEvent(new CustomEvent('costura:opcion-asignacion-seleccionada', {
+        detail: { opcion }
+    }));
     
     // Actualizar estilos de botones
     const btnCompleto = document.getElementById('btnModuloCompleto');
@@ -73,7 +76,7 @@ export function seleccionarOpcionAsignacion(opcion) {
     modalContent.style.maxWidth = '1200px';
     modalContent.style.maxHeight = '98vh';
     
-    // Ocultar opciones y mostrar botón volver
+    // Ocultar opciones y mostrar boton volver
     opcionesDiv.style.display = 'none';
     btnVolver.style.display = 'inline-flex';
     
@@ -81,13 +84,13 @@ export function seleccionarOpcionAsignacion(opcion) {
     if (opcion === 'completo') {
         btnCompleto.style.borderColor = '#3b82f6';
         btnCompleto.style.background = '#eff6ff';
-        modalSubtitulo.textContent = 'Asignar a Módulo Completo';
+        modalSubtitulo.textContent = 'Asignar a Modulo Completo';
         mostrarContenidoModuloCompleto();
         btnConfirmar.style.background = '#3b82f6';
     } else if (opcion === 'distribuir') {
         btnDistribuir.style.borderColor = '#10b981';
         btnDistribuir.style.background = '#ecfdf5';
-        modalSubtitulo.textContent = 'Distribuir por Módulos';
+        modalSubtitulo.textContent = 'Distribuir por Modulos';
         mostrarContenidoDistribuirModulos();
         btnConfirmar.style.background = '#10b981';
     } else if (opcion === 'taller') {
@@ -100,11 +103,11 @@ export function seleccionarOpcionAsignacion(opcion) {
         btnConfirmar.style.background = '#f59e0b';
     }
     
-    // Habilitar botón confirmar
+    // Habilitar boton confirmar
     btnConfirmar.disabled = false;
 }
 
-// Función para volver a las opciones de asignación
+// Funcion para volver a las opciones de asignacion
 export function volverAOpciones() {
     const opcionesDiv = document.getElementById('opcionesAsignacion');
     const contenidoDiv = document.getElementById('contenidoAsignacion');
@@ -116,20 +119,20 @@ export function volverAOpciones() {
     const btnDistribuir = document.getElementById('btnDistribuirModulos');
     const btnTaller = document.getElementById('btnTaller');
     
-    // Restaurar tamaño original
+    // Restaurar tamano original
     modalContent.style.maxWidth = '900px';
     
     // Mostrar opciones y ocultar volver
     opcionesDiv.style.display = 'block';
     btnVolver.style.display = 'none';
     
-    // Restaurar subtítulo
-    modalSubtitulo.textContent = 'Seleccione el tipo de asignación';
+    // Restaurar subti­tulo
+    modalSubtitulo.textContent = 'Seleccione el tipo de asignacion';
     
     // Limpiar contenido
     contenidoDiv.innerHTML = '';
     
-    // Resetear selección
+    // Resetear seleccion
     window.opcionAsignacionSeleccionada = null;
     btnConfirmar.disabled = true;
     btnConfirmar.style.background = '#3b82f6';
@@ -145,7 +148,7 @@ export function volverAOpciones() {
     }
 }
 
-// Función para mostrar contenido de módulo completo
+// Funcion para mostrar contenido de Modulo completo
 function mostrarContenidoModuloCompleto() {
     const contenidoDiv = document.getElementById('contenidoAsignacion');
     
@@ -156,8 +159,8 @@ function mostrarContenidoModuloCompleto() {
                     <span class="material-symbols-rounded" style="color: white; font-size: 1.25rem;">inventory_2</span>
                 </div>
                 <div style="flex: 1; min-width: 0;">
-                    <h5 style="margin: 0; font-size: 1rem; font-weight: 600; color: #1e40af; line-height: 1.3;">Asignación a Módulo Completo</h5>
-                    <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #64748b; line-height: 1.3;">Todas las prendas serán asignadas a un solo encargado</p>
+                    <h5 style="margin: 0; font-size: 1rem; font-weight: 600; color: #1e40af; line-height: 1.3;">asignacion a Modulo Completo</h5>
+                    <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #64748b; line-height: 1.3;">Todas las prendas seran asignadas a un solo encargado</p>
                 </div>
             </div>
             
@@ -187,7 +190,7 @@ function mostrarContenidoModuloCompleto() {
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
                     <span class="material-symbols-rounded" style="color: #0c4a6e; font-size: 1rem;">assignment_turned_in</span>
                     <div style="flex: 1; min-width: 0;">
-                        <p style="margin: 0; font-size: 0.75rem; font-weight: 600; color: #0c4a6e;">Estado de la asignación:</p>
+                        <p style="margin: 0; font-size: 0.75rem; font-weight: 600; color: #0c4a6e;">Estado de la asignacion:</p>
                         <p id="textoEstadoAsignacion" style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #0c4a6e;">Pendiente de seleccionar encargado</p>
                     </div>
                 </div>
@@ -222,7 +225,7 @@ function mostrarContenidoModuloCompleto() {
     }, 100);
 }
 
-// Función para mostrar contenido de distribución por módulos
+// Funcion para mostrar contenido de distribucion por Modulos
 function mostrarContenidoDistribuirModulos() {
     const contenidoDiv = document.getElementById('contenidoAsignacion');
     
@@ -233,22 +236,22 @@ function mostrarContenidoDistribuirModulos() {
                     <span class="material-symbols-rounded" style="color: white; font-size: 1.25rem;">share</span>
                 </div>
                 <div style="flex: 1; min-width: 0;">
-                    <h5 style="margin: 0; font-size: 1rem; font-weight: 600; color: #047857; line-height: 1.3;">Distribución por Módulos</h5>
-                    <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #64748b; line-height: 1.3;">Reparta las prendas entre diferentes módulos</p>
+                    <h5 style="margin: 0; font-size: 1rem; font-weight: 600; color: #047857; line-height: 1.3;">Distribucion por Modulos</h5>
+                    <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #64748b; line-height: 1.3;">Reparta las prendas entre diferentes Modulos</p>
                 </div>
             </div>
             
-            <!-- Aquí se cargará la interfaz de distribución -->
+            <!-- Aquí se cargará la interfaz de Distribucion -->
             <div id="interfazDistribucion" style="margin-top: 1rem;">
             </div>
         </div>
     `;
     
-    // Cargar datos reales de tallas y módulos
+    // Cargar datos reales de tallas y Modulos
     cargarDatosDistribucion();
 }
 
-// Función para cargar datos reales de distribución
+// Funcion para cargar datos reales de Distribucion
 function cargarDatosDistribucion() {
     if (!window.datosModalCostura) {
         console.error('No hay datos de la prenda disponibles');
@@ -274,12 +277,12 @@ function cargarDatosDistribucion() {
         cargarInterfazDistribucionConDatos(tallasProcesadas, usuariosProcesados);
     })
     .catch(error => {
-        console.error('Error cargando datos de distribución:', error);
+        console.error('Error cargando datos de Distribucion:', error);
         mostrarErrorDistribucion();
     });
 }
 
-// Función para cargar tallas de la prenda
+// Funcion para cargar tallas de la prenda
 function cargarTallasPrenda(prendaId, tipoRecibo) {
     if (!window.datosModalCostura) {
         return Promise.resolve([]);
@@ -358,7 +361,7 @@ function cargarTallasPrenda(prendaId, tipoRecibo) {
     return intentar(0);
 }
 
-// Función para cargar usuarios según tipo de recibo
+// Funcion para cargar usuarios segun tipo de recibo
 function cargarUsuariosPorTipo(tipoRecibo) {
     const qs = new URLSearchParams();
     const tr = String(tipoRecibo || '').trim().toUpperCase();
@@ -377,7 +380,7 @@ function cargarUsuariosPorTipo(tipoRecibo) {
         });
 }
 
-// Función para procesar tallas al formato esperado
+// Funcion para procesar tallas al formato esperado
 function procesarTallasParaDistribucion(tallas) {
     const tallasArray = [];
     
@@ -442,7 +445,7 @@ function procesarTallasParaDistribucion(tallas) {
             }
         });
     } else if (typeof tallas === 'object' && tallas !== null) {
-        // Si es un objeto por género
+        // Si es un objeto por genero
         Object.entries(tallas).forEach(([genero, tallasGenero]) => {
             if (typeof tallasGenero === 'object') {
                 Object.entries(tallasGenero).forEach(([nombreTalla, datos]) => {
@@ -471,12 +474,12 @@ function procesarTallasParaDistribucion(tallas) {
     return tallasArray;
 }
 
-// Función para agrupar tallas por género y color
+// Funcion para agrupar tallas por genero y color
 function agruparTallasPorGeneroYColor(tallas) {
     const grupos = {};
     
     tallas.forEach(talla => {
-        const genero = talla.genero || 'Sin género';
+        const genero = talla.genero || 'Sin genero';
         const color = talla.color || 'Sin color';
         
         if (!grupos[genero]) {
@@ -500,7 +503,7 @@ function construirTallaIdUnico(nombreTalla, color, genero = '') {
     return `${tallaBase}_${colorNormalizado}_${generoNormalizado}`;
 }
 
-// Función para generar HTML de tallas agrupadas
+// Funcion para generar HTML de tallas agrupadas
 function generarHtmlTallasAgrupadas(tallas, moduloId) {
     const grupos = agruparTallasPorGeneroYColor(tallas);
     let html = '';
@@ -532,10 +535,10 @@ function generarHtmlTallasAgrupadas(tallas, moduloId) {
             `;
             
             tallasColor.forEach(talla => {
-                // Crear un ID único que incluya el color y género para evitar colisiones
+                // Crear un ID unico que incluya el color y genero para evitar colisiones
                 const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, color, talla.genero);
                 
-                // Verificar si esta talla específica (con color) está asignada a este módulo
+                // Verificar si esta talla especifico (con color) esta asignada a este Modulo
                 let asignado = 0;
                 if (window.asignacionesPorModulo && window.asignacionesPorModulo[moduloId]) {
                     if (typeof window.asignacionesPorModulo[moduloId][tallaIdUnico] === 'object' && window.asignacionesPorModulo[moduloId][tallaIdUnico] !== null) {
@@ -550,7 +553,7 @@ function generarHtmlTallasAgrupadas(tallas, moduloId) {
                 const asignadoMostrar = Math.min(asignado, maxDisponible);
                 const isSelected = asignadoMostrar > 0;
                 
-                // SI NO HAY DISPONIBILIDAD Y NO ESTÁ SELECCIONADA, NO MOSTRARLA
+                // SI NO HAY DISPONIBILIDAD Y NO ESTA SELECCIONADA, NO MOSTRARLA
                 if (disponible <= 0 && !isSelected) return;
                 
                 html += `
@@ -604,30 +607,30 @@ function generarHtmlTallasAgrupadas(tallas, moduloId) {
     return html;
 }
 
-// Función para procesar usuarios al formato esperado
+// Funcion para procesar usuarios al formato esperado
 function procesarUsuariosParaDistribucion(usuarios) {
     return usuarios.map((usuario, index) => ({
         id: index + 1,
-        nombre: `Módulo ${index + 1}`,
+        nombre: `Modulo ${index + 1}`,
         encargado: usuario.name || usuario.nombre || 'Sin nombre',
         usuarioId: usuario.id
     }));
 }
 
-// Función para mostrar error en distribución
+// Funcion para mostrar error en Distribucion
 function mostrarErrorDistribucion() {
     const interfazDiv = document.getElementById('interfazDistribucion');
     if (interfazDiv) {
         interfazDiv.innerHTML = `
             <div style="text-align: center; padding: 2rem; color: #dc2626;">
                 <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.75rem;">error</span>
-                <p style="font-size: 0.875rem; margin: 0;">No se pudo cargar la información. Por favor, intente nuevamente.</p>
+                <p style="font-size: 0.875rem; margin: 0;">No se pudo cargar la informacion. Por favor, intente nuevamente.</p>
             </div>
         `;
     }
 }
 
-// Función para cargar la interfaz de distribución con datos reales
+// Funcion para cargar la interfaz de Distribucion con datos reales
 function cargarInterfazDistribucionConDatos(tallas, modulos) {
     const interfazDiv = document.getElementById('interfazDistribucion');
     if (!interfazDiv) {
@@ -649,7 +652,7 @@ function cargarInterfazDistribucionConDatos(tallas, modulos) {
         interfazDiv.innerHTML = `
             <div style="text-align: center; padding: 2rem; color: #6b7280;">
                 <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.75rem;">person_off</span>
-                <p style="font-size: 0.875rem; margin: 0;">No hay módulos disponibles para asignar</p>
+                <p style="font-size: 0.875rem; margin: 0;">No hay Modulos disponibles para asignar</p>
             </div>
         `;
         return;
@@ -659,7 +662,7 @@ function cargarInterfazDistribucionConDatos(tallas, modulos) {
     if (window.datosModalCostura?.esEdicion) {
         mostrarCardsEncargados(tallas, modulos);
     } else {
-        // Modo normal de distribución
+        // Modo normal de Distribucion
         mostrarInterfazDistribucionNormal(tallas, modulos);
     }
     
@@ -670,7 +673,7 @@ function cargarInterfazDistribucionConDatos(tallas, modulos) {
     }));
 }
 
-// Función para mostrar cards de encargados (modo edición)
+// Funcion para mostrar cards de encargados (modo edicion)
 window.mostrarCardsEncargados = function(tallas, modulos) {
     const interfazDiv = document.getElementById('interfazDistribucion');
     if (!interfazDiv) {
@@ -678,10 +681,10 @@ window.mostrarCardsEncargados = function(tallas, modulos) {
         return;
     }
     
-    // Guardar datos globales PRIMERO para que estén disponibles en renderCardsEncargadosSeleccionados
+    // Guardar datos globales PRIMERO para que este disponibles en renderCardsEncargadosSeleccionados
     window.datosDistribucion = { tallas, modulos };
     
-    // Obtener solo los módulos que tienen asignaciones
+    // Obtener solo los Modulos que tienen asignaciones
     const modulosConAsignaciones = Object.keys(window.asignacionesPorModulo || {}).map(id => 
         modulos.find(m => m.id === parseInt(id))
     ).filter(m => m);
@@ -690,11 +693,11 @@ window.mostrarCardsEncargados = function(tallas, modulos) {
 
     let html = `
         <div style="margin-bottom: 1.5rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Seleccionar Módulo:</label>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Seleccionar Modulo:</label>
             <div style="display: flex; gap: 0.5rem;">
                 <div style="position: relative; flex: 1;">
                     <input type="text" id="moduloSelector" list="listaModulosDisponibles" 
-                        placeholder="Seleccione o escriba un módulo para asignar tallas..." 
+                        placeholder="Seleccione o escriba un Modulo para asignar tallas..." 
                         style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; background: white; font-size: 0.875rem; outline: none; transition: all 0.2s;"
                         onfocus="this.style.borderColor='#10b981'; this.style.boxShadow='0 0 0 3px rgba(16, 185, 129, 0.1)';"
                         onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none';"
@@ -748,7 +751,7 @@ window.mostrarCardsEncargados = function(tallas, modulos) {
     }
 }
 
-// Función para generar HTML de una card de encargado
+// Funcion para generar HTML de una card de encargado
 function generarCardEncargado(modulo, tallas, asignaciones) {
     const htmlTallas = generarHtmlTallasParaEncargado(tallas, modulo.id, asignaciones);
     
@@ -761,7 +764,7 @@ function generarCardEncargado(modulo, tallas, asignaciones) {
                 </div>
                 <div style="flex: 1; min-width: 0;">
                     <h5 style="margin: 0; font-size: 1.125rem; font-weight: 600; color: #1f2937; line-height: 1.3; word-break: break-word;">${modulo.encargado}</h5>
-                    <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #6b7280;">Encargado de producción</p>
+                    <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #6b7280;">Encargado de produccion</p>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
                     <span style="padding: 0.25rem 0.75rem; background: #ecfdf5; color: #059669; font-size: 0.75rem; font-weight: 500; border-radius: 9999px; white-space: nowrap;">
@@ -770,25 +773,25 @@ function generarCardEncargado(modulo, tallas, asignaciones) {
                 </div>
             </div>
             
-            <!-- Tallas agrupadas por parte, género y color -->
+            <!-- Tallas agrupadas por parte, genero y color -->
             ${htmlTallas}
         </div>
     `;
 }
 
-// Función para generar HTML de tallas para un encargado específico
+// Funcion para generar HTML de tallas para un encargado especifico
 function generarHtmlTallasParaEncargado(tallas, moduloId, asignaciones) {
-    // Obtener datos de parciales si estamos en modo edición
+    // Obtener datos de parciales si estamos en modo edicion
     const parcialesEdicion = window.__datosParcialesEdicion || [];
     const esEdicion = window.datosModalCostura?.esEdicion || false;
     
-    // Agrupar tallas por parte (número de parcial)
-    // En modo edición, solo mostrar las partes nuevas (is_nueva_parte: true)
+    // Agrupar tallas por parte (numero de parcial)
+    // En modo edicion, solo mostrar las partes nuevas (is_nueva_parte: true)
     const tallasPorParte = agruparTallasPorParte(tallas, asignaciones, parcialesEdicion, moduloId, esEdicion);
     
     let html = '';
     
-    // Si hay agrupación por partes, mostrar así
+    // Si hay agrupacion por partes, mostrar asi­
     if (Object.keys(tallasPorParte).length > 0) {
         Object.entries(tallasPorParte).forEach(([numeroParte, datosPartes]) => {
             html += `
@@ -812,7 +815,7 @@ function generarHtmlTallasParaEncargado(tallas, moduloId, asignaciones) {
             `;
         });
     } else if (!esEdicion) {
-        // Fallback: agrupar por género y color si no hay información de partes (solo en modo normal, no en edición)
+        // Fallback: agrupar por genero y color si no hay informacion de partes (solo en modo normal, no en edicion)
         const grupos = agruparTallasPorGeneroYColor(tallas);
         Object.entries(grupos).forEach(([genero, colores]) => {
             html += `
@@ -910,30 +913,30 @@ function generarHtmlTallasParaEncargado(tallas, moduloId, asignaciones) {
     return html;
 }
 
-// Función para agrupar tallas por número de parte
+// Funcion para agrupar tallas por numero de parte
 function agruparTallasPorParte(tallas, asignaciones, parcialesEdicion, moduloId, esEdicion = false) {
     const tallasPorParte = {};
     
     if (!parcialesEdicion || parcialesEdicion.length === 0) {
-        console.log('[AGRUPAR TALLAS POR PARTE] No hay parciales de edición');
+        console.log('[AGRUPAR TALLAS POR PARTE] No hay parciales de edicion');
         return tallasPorParte;
     }
     
-    // Obtener el módulo actual
+    // Obtener el Modulo actual
     const modulos = window.datosDistribucion?.modulos || [];
     const moduloActual = modulos.find(m => m.id === moduloId);
     
     if (!moduloActual) {
-        console.log('[AGRUPAR TALLAS POR PARTE] No se encontró módulo:', moduloId);
+        console.log('[AGRUPAR TALLAS POR PARTE] No se encontro Modulo:', moduloId);
         return tallasPorParte;
     }
     
-    console.log('[AGRUPAR TALLAS POR PARTE] Módulo actual:', moduloActual);
-    console.log('[AGRUPAR TALLAS POR PARTE] Parciales de edición:', parcialesEdicion);
-    console.log('[AGRUPAR TALLAS POR PARTE] Asignaciones del módulo:', asignaciones);
-    console.log('[AGRUPAR TALLAS POR PARTE] Es edición:', esEdicion);
+    console.log('[AGRUPAR TALLAS POR PARTE] Modulo actual:', moduloActual);
+    console.log('[AGRUPAR TALLAS POR PARTE] Parciales de edicion:', parcialesEdicion);
+    console.log('[AGRUPAR TALLAS POR PARTE] Asignaciones del Modulo:', asignaciones);
+    console.log('[AGRUPAR TALLAS POR PARTE] Es edicion:', esEdicion);
     
-    // Buscar los parciales que corresponden a este módulo
+    // Buscar los parciales que corresponden a este Modulo
     let parcialesDelModulo = parcialesEdicion.filter(p => {
         const encargado = p.encargado || 'SIN ASIGNAR';
         const match = moduloActual.encargado.toLowerCase().trim() === encargado.toLowerCase().trim();
@@ -941,20 +944,20 @@ function agruparTallasPorParte(tallas, asignaciones, parcialesEdicion, moduloId,
         return match;
     });
     
-    // En modo edición, solo mostrar las partes nuevas (is_nueva_parte: true)
+    // En modo edicion, solo mostrar las partes nuevas (is_nueva_parte: true)
     if (esEdicion) {
         parcialesDelModulo = parcialesDelModulo.filter(p => p.is_nueva_parte === true);
-        console.log('[AGRUPAR TALLAS POR PARTE] Filtrando solo partes nuevas en modo edición:', parcialesDelModulo);
+        console.log('[AGRUPAR TALLAS POR PARTE] Filtrando solo partes nuevas en modo edicion:', parcialesDelModulo);
     }
     
-    console.log('[AGRUPAR TALLAS POR PARTE] Parciales del módulo:', parcialesDelModulo);
+    console.log('[AGRUPAR TALLAS POR PARTE] Parciales del Modulo:', parcialesDelModulo);
     
     if (parcialesDelModulo.length === 0) {
-        console.log('[AGRUPAR TALLAS POR PARTE] No hay parciales para este módulo');
+        console.log('[AGRUPAR TALLAS POR PARTE] No hay parciales para este Modulo');
         return tallasPorParte;
     }
     
-    // Agrupar tallas por número de parte
+    // Agrupar tallas por numero de parte
     parcialesDelModulo.forEach(parcial => {
         const numeroParte = parcial.consecutivo_parcial;
         
@@ -969,9 +972,9 @@ function agruparTallasPorParte(tallas, asignaciones, parcialesEdicion, moduloId,
         (parcial.tallas || []).forEach(tallaParcial => {
             const nombreTalla = tallaParcial.talla;
             const color = tallaParcial.color_nombre || null;
-            const genero = tallaParcial.genero || 'Sin género';
+            const genero = tallaParcial.genero || 'Sin genero';
             
-            // Buscar la talla en el array de tallas para obtener más información
+            // Buscar la talla en el array de tallas para obtener mas informacion
             const tallaInfo = tallas.find(t => {
                 const baseT = (t.tallaOriginal || (String(t.talla || '').split(' ')[0])) || '';
                 return baseT === nombreTalla;
@@ -994,7 +997,7 @@ function agruparTallasPorParte(tallas, asignaciones, parcialesEdicion, moduloId,
     return tallasPorParte;
 }
 
-// Función para generar HTML de tallas para una parte específica
+// Funcion para generar HTML de tallas para una parte especifico
 function generarHtmlTallasParaParte(tallasParte, moduloId, asignaciones) {
     const grupos = agruparTallasPorGeneroYColor(tallasParte);
     let html = '';
@@ -1055,7 +1058,7 @@ function generarHtmlTallasParaParte(tallasParte, moduloId, asignaciones) {
                         />
                         <div style="font-size: 0.8rem; font-weight: 500; color: #374151;">
                             ${talla.tallaOriginal}
-                            ${isSelected ? '<span style="color: #059669; font-size: 0.7rem; margin-left: 0.3rem;"> ✓</span>' : ''}
+                            ${isSelected ? '<span style="color: #059669; font-size: 0.7rem; margin-left: 0.3rem;"> âœ“</span>' : ''}
                         </div>
                         <input
                             type="number"
@@ -1118,7 +1121,7 @@ window.renderTallasDisponibles = function() {
         return;
     }
 
-    // Agrupar tallas disponibles por género y color
+    // Agrupar tallas disponibles por genero y color
     const grupos = agruparTallasPorGeneroYColor(tallasDisponibles);
     
     let html = '';
@@ -1190,7 +1193,7 @@ window.renderTallasDisponibles = function() {
     container.innerHTML = html;
 }
 
-// Función para asignar una talla disponible a un encargado
+// Funcion para asignar una talla disponible a un encargado
 window.asignarTallaDisponible = function(tallaIdUnico, disponible) {
     // Mostrar modal para seleccionar encargado y cantidad
     const modulosSeleccionados = window.modulosSeleccionadosDistribucion || [];
@@ -1222,7 +1225,7 @@ window.asignarTallaDisponible = function(tallaIdUnico, disponible) {
                 </div>
                 
                 <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #374151;">Cantidad (máx: ${disponible}):</label>
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #374151;">Cantidad (max: ${disponible}):</label>
                     <input type="number" id="inputCantidadAsignar" min="1" max="${disponible}" value="1" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem;">
                 </div>
                 
@@ -1256,11 +1259,11 @@ window.asignarTallaDisponible = function(tallaIdUnico, disponible) {
     
     modalContainer.innerHTML = modalHTML;
     
-    // Guardar datos para confirmar después
+    // Guardar datos para confirmar despues
     window.__datosAsignacionTalla = { tallaIdUnico, disponible };
 }
 
-// Función para confirmar la asignación
+// Funcion para confirmar la asignacion
 window.confirmarAsignacionTalla = function(tallaIdUnico) {
     const selectEncargado = document.getElementById('selectEncargadoAsignar');
     const inputCantidad = document.getElementById('inputCantidadAsignar');
@@ -1271,11 +1274,11 @@ window.confirmarAsignacionTalla = function(tallaIdUnico) {
     const cantidad = parseInt(inputCantidad.value) || 0;
     
     if (cantidad <= 0) {
-        alert('Por favor, ingresa una cantidad válida');
+        alert('Por favor, ingresa una cantidad valida');
         return;
     }
     
-    // Obtener información de la talla
+    // Obtener informacion de la talla
     const tallas = window.datosDistribucion?.tallas || [];
     const tallaInfo = tallas.find(t => {
         const id = construirTallaIdUnico(t.tallaOriginal, t.color, t.genero);
@@ -1283,14 +1286,14 @@ window.confirmarAsignacionTalla = function(tallaIdUnico) {
     });
     
     if (!tallaInfo) {
-        alert('No se encontró la información de la talla');
+        alert('No se encontro la informacion de la talla');
         return;
     }
     
     // Crear una nueva parte virtual si es necesario
     crearNuevaParteVirtual(moduloId, tallaIdUnico, tallaInfo, cantidad);
     
-    // Actualizar asignación marcando como nueva (es_nueva = true)
+    // Actualizar asignacion marcando como nueva (es_nueva = true)
     window.actualizarAsignacion(tallaIdUnico, moduloId, cantidad, true);
     
     // Cerrar modal
@@ -1305,7 +1308,7 @@ window.confirmarAsignacionTalla = function(tallaIdUnico) {
     }
 }
 
-// Función para crear una nueva parte virtual cuando se asigna una talla disponible
+// Funcion para crear una nueva parte virtual cuando se asigna una talla disponible
 function crearNuevaParteVirtual(moduloId, tallaIdUnico, tallaInfo, cantidad) {
     if (!window.__datosParcialesEdicion) {
         window.__datosParcialesEdicion = [];
@@ -1316,7 +1319,7 @@ function crearNuevaParteVirtual(moduloId, tallaIdUnico, tallaInfo, cantidad) {
     
     if (!moduloActual) return;
     
-    // Obtener el número de parte más alto para este encargado
+    // Obtener el numero de parte mas alto para este encargado
     const parcialesDelEncargado = window.__datosParcialesEdicion.filter(p => 
         p.encargado === moduloActual.encargado
     );
@@ -1342,7 +1345,7 @@ function crearNuevaParteVirtual(moduloId, tallaIdUnico, tallaInfo, cantidad) {
         }
     });
     
-    // Si no hay partes, usar el número principal del primer parcial
+    // Si no hay partes, usar el numero principal del primer parcial
     if (numeroPrincipal === null && parcialesDelEncargado.length > 0) {
         const primerParcial = parcialesDelEncargado[0];
         const numStr = String(primerParcial.consecutivo_parcial);
@@ -1350,12 +1353,12 @@ function crearNuevaParteVirtual(moduloId, tallaIdUnico, tallaInfo, cantidad) {
         numeroPrincipal = parseInt(partes[0]);
     }
     
-    // Crear nuevo número de parte (ej: 95.2, 95.3, etc.)
+    // Crear nuevo numero de parte (ej: 95.2, 95.3, etc.)
     const nuevoNumeroParte = numeroPrincipal ? `${numeroPrincipal}.${maxSubParte + 1}` : `${maxSubParte + 1}`;
     
-    console.log('[CREAR PARTE VIRTUAL] Nuevo número de parte:', nuevoNumeroParte);
+    console.log('[CREAR PARTE VIRTUAL] Nuevo numero de parte:', nuevoNumeroParte);
     
-    // Verificar si ya existe una parte con este número
+    // Verificar si ya existe una parte con este numero
     const parteExistente = window.__datosParcialesEdicion.find(p => 
         String(p.consecutivo_parcial) === nuevoNumeroParte && p.encargado === moduloActual.encargado
     );
@@ -1381,7 +1384,7 @@ function crearNuevaParteVirtual(moduloId, tallaIdUnico, tallaInfo, cantidad) {
     } else {
         // Crear una nueva parte virtual con marcador de "nueva"
         const nuevaParte = {
-            id: Date.now(), // ID temporal (número, no string)
+            id: Date.now(), // ID temporal (numero, no string)
             is_nueva_parte: true, // Marcador para indicar que es nueva
             consecutivo_parcial: nuevoNumeroParte,
             consecutivo_original: nuevoNumeroParte,
@@ -1403,7 +1406,7 @@ function crearNuevaParteVirtual(moduloId, tallaIdUnico, tallaInfo, cantidad) {
     console.log('[CREAR PARTE VIRTUAL] Nueva parte creada:', window.__datosParcialesEdicion);
 }
 
-// Función para cerrar el modal
+// Funcion para cerrar el modal
 window.cerrarModalAsignacion = function() {
     const modalContainer = document.getElementById('modalAsignacionTalla');
     if (modalContainer) {
@@ -1420,13 +1423,13 @@ function mostrarInterfazDistribucionNormal(tallas, modulos) {
     window.modulosSeleccionadosDistribucion = [];
     
     let html = `
-        <!-- Selector de módulos -->
+        <!-- Selector de Modulos -->
         <div style="margin-bottom: 1.5rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Seleccionar Módulo:</label>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Seleccionar Modulo:</label>
             <div style="display: flex; gap: 0.5rem;">
                 <div style="position: relative; flex: 1;">
                     <input type="text" id="moduloSelector" list="listaModulosDisponibles" 
-                        placeholder="Seleccione o escriba un módulo para asignar tallas..." 
+                        placeholder="Seleccione o escriba un Modulo para asignar tallas..." 
                         style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; background: white; font-size: 0.875rem; outline: none; transition: all 0.2s;"
                         onfocus="this.style.borderColor='#10b981'; this.style.boxShadow='0 0 0 3px rgba(16, 185, 129, 0.1)';"
                         onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none';"
@@ -1451,7 +1454,7 @@ function mostrarInterfazDistribucionNormal(tallas, modulos) {
         <div id="cardsEncargadosPlaceholder" style="min-height: 120px;">
             <div style="text-align: center; padding: 2rem; color: #6b7280;">
                 <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.75rem;">playlist_add_check</span>
-                <p style="font-size: 0.875rem; margin: 0;">Seleccione un módulo para ver las tallas disponibles</p>
+                <p style="font-size: 0.875rem; margin: 0;">Seleccione un Modulo para ver las tallas disponibles</p>
             </div>
         </div>
         <div id="cardsEncargadosSeleccionados" style="display: grid; gap: 1rem;"></div>
@@ -1470,14 +1473,14 @@ window.agregarEncargadoSeleccionado = function() {
     const modulos = window.datosDistribucion.modulos;
     let moduloId;
     
-    // Buscar si el valor corresponde a un módulo existente
+    // Buscar si el valor corresponde a un Modulo existente
     const moduloExistente = modulos.find(m => m.encargado === valor);
     
     if (moduloExistente) {
         moduloId = moduloExistente.id;
     } else {
-        // Es un nuevo taller/módulo, crearlo virtualmente
-        moduloId = Date.now(); // ID único temporal
+        // Es un nuevo taller/Modulo, crearlo virtualmente
+        moduloId = Date.now(); // ID unico temporal
         modulos.push({
             id: moduloId,
             nombre: valor,
@@ -1517,7 +1520,7 @@ window.renderCardsEncargadosSeleccionados = function() {
         if (placeholder) placeholder.style.display = '';
         if (selector) {
             selector.innerHTML = `
-                <option value="">Seleccione un módulo para asignar tallas...</option>
+                <option value="">Seleccione un Modulo para asignar tallas...</option>
                 ${modulos.map(modulo => `<option value="${modulo.id}">${modulo.encargado}</option>`).join('')}
             `;
         }
@@ -1552,7 +1555,7 @@ window.renderCardsEncargadosSeleccionados = function() {
                         </div>
                         <div style="flex: 1; min-width: 0;">
                             <h5 style="margin: 0; font-size: 1.125rem; font-weight: 600; color: #1f2937; line-height: 1.3; word-break: break-word;">${modulo.encargado}</h5>
-                            <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #6b7280;">Encargado de producción</p>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #6b7280;">Encargado de produccion</p>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
                             <span style="padding: 0.25rem 0.75rem; background: #ecfdf5; color: #059669; font-size: 0.75rem; font-weight: 500; border-radius: 9999px; white-space: nowrap;">
@@ -1569,7 +1572,7 @@ window.renderCardsEncargadosSeleccionados = function() {
                         </div>
                     </div>
                     
-                    <!-- Tallas agrupadas por parte, género y color -->
+                    <!-- Tallas agrupadas por parte, genero y color -->
                     ${generarHtmlTallasParaEncargado(tallas, moduloId, asignacionesModulo)}
                 </div>
             `;
@@ -1587,7 +1590,7 @@ window.eliminarModuloSeleccionado = function(moduloId) {
     
     window.modulosSeleccionadosDistribucion = window.modulosSeleccionadosDistribucion.filter(id => id !== moduloId);
     
-    // También eliminar las asignaciones de este módulo
+    // Tambien eliminar las asignaciones de este Modulo
     if (window.asignacionesPorModulo && window.asignacionesPorModulo[moduloId]) {
         delete window.asignacionesPorModulo[moduloId];
     }
@@ -1596,7 +1599,7 @@ window.eliminarModuloSeleccionado = function(moduloId) {
 };
 
 window.toggleTallaSeleccion = function(talla, moduloId, checked) {
-    console.log(`[TOGGLE TALLA] Iniciando - Talla: ${talla}, Módulo: ${moduloId}, Checked: ${checked}`);
+    console.log(`[TOGGLE TALLA] Iniciando - Talla: ${talla}, Modulo: ${moduloId}, Checked: ${checked}`);
     
     const input = document.getElementById(`talla_${talla}_modulo_${moduloId}`);
     console.log(`[TOGGLE TALLA] Input encontrado:`, input);
@@ -1624,7 +1627,7 @@ window.toggleTallaSeleccion = function(talla, moduloId, checked) {
     }
 
     input.disabled = false;
-    // Al seleccionar, poner automáticamente la cantidad disponible (máximo disponible para este módulo)
+    // Al seleccionar, poner automaticamente la cantidad disponible (maximo disponible para este Modulo)
     input.value = maxValue;
     console.log(`[TOGGLE TALLA] Asignando valor: ${maxValue}`);
     actualizarAsignacion(talla, moduloId, maxValue);
@@ -1636,10 +1639,10 @@ window.toggleTallaSeleccion = function(talla, moduloId, checked) {
     }
 
     refrescarDistribucionUI();
-    console.log(`[TOGGLE TALLA] Función completada`);
+    console.log(`[TOGGLE TALLA] Funcion completada`);
 };
 
-// Función para ajustar cantidad con botones +/-
+// Funcion para ajustar cantidad con botones +/-
 window.ajustarCantidad = function(talla, moduloId, delta) {
     const input = document.getElementById(`talla_${talla}_modulo_${moduloId}`);
     if (!input) return;
@@ -1661,7 +1664,7 @@ window.ajustarCantidad = function(talla, moduloId, delta) {
     refrescarDistribucionUI();
 };
 
-// Función para actualizar asignación
+// Funcion para actualizar asignacion
 window.actualizarAsignacion = function(talla, moduloId, cantidad, esNueva = false) {
     cantidad = parseInt(cantidad) || 0;
 
@@ -1693,7 +1696,7 @@ window.actualizarAsignacion = function(talla, moduloId, cantidad, esNueva = fals
         delete window.asignacionesPorModulo[moduloId][talla];
     }
     
-    // Si el módulo quedó vacío, eliminarlo
+    // Si el Modulo quedó vacío, eliminarlo
     if (Object.keys(window.asignacionesPorModulo[moduloId]).length === 0) {
         delete window.asignacionesPorModulo[moduloId];
     }
@@ -1702,20 +1705,20 @@ window.actualizarAsignacion = function(talla, moduloId, cantidad, esNueva = fals
         window.renderCardsEncargadosSeleccionados();
     }
     
-    // Re-renderizar tallas disponibles también
+    // Re-renderizar tallas disponibles Tambien
     if (typeof window.renderTallasDisponibles === 'function') {
         window.renderTallasDisponibles();
     }
 };
 
-// Función para obtener el total asignado de una talla (excepto el módulo actual)
+// Funcion para obtener el total asignado de una talla (excepto el Modulo actual)
 function getTotalAsignadoTalla(talla, moduloIdExcluir = null) {
     if (!window.asignacionesPorModulo) return 0;
     
     let total = 0;
     for (const [moduloId, asignaciones] of Object.entries(window.asignacionesPorModulo)) {
         if (parseInt(moduloId) !== moduloIdExcluir && asignaciones[talla]) {
-            // Manejar tanto el formato antiguo (número) como el nuevo (objeto)
+            // Manejar tanto el formato antiguo (numero) como el nuevo (objeto)
             let cantidad = 0;
             if (typeof asignaciones[talla] === 'object' && asignaciones[talla] !== null) {
                 cantidad = asignaciones[talla].cantidad || 0;
@@ -1738,7 +1741,7 @@ function normalizarColor(color) {
 
 function normalizarGenero(genero) {
     const genLimpio = String(genero || '').trim().toLowerCase();
-    if (!genLimpio || genLimpio === 'sin género' || genLimpio === 'sin genero') {
+    if (!genLimpio || genLimpio === 'sin genero' || genLimpio === 'sin genero') {
         return 'sin_genero';
     }
     return genLimpio.replace(/\s+/g, '_');
@@ -1891,7 +1894,7 @@ function refrescarDistribucionUI() {
     });
 }
 
-// Función para actualizar el resumen de asignaciones
+// Funcion para actualizar el resumen de asignaciones
 function actualizarResumenAsignaciones() {
     const resumenContenido = document.getElementById('resumenContenido');
     if (!resumenContenido) return;
@@ -1910,7 +1913,7 @@ function actualizarResumenAsignaciones() {
         
         const tallasAsignadas = Object.entries(asignaciones)
             .map(([talla, datos]) => {
-                // Manejar tanto el formato antiguo (número) como el nuevo (objeto)
+                // Manejar tanto el formato antiguo (numero) como el nuevo (objeto)
                 let cantidad = 0;
                 if (typeof datos === 'object' && datos !== null) {
                     cantidad = datos.cantidad || 0;
@@ -1921,7 +1924,7 @@ function actualizarResumenAsignaciones() {
             })
             .join(', ');
         
-        const nombreModuloResumen = modulo.encargado || modulo.nombre || `Módulo ${moduloId}`;
+        const nombreModuloResumen = modulo.encargado || modulo.nombre || `Modulo ${moduloId}`;
 
         html += `
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: white; border-radius: 4px;">
@@ -1935,10 +1938,10 @@ function actualizarResumenAsignaciones() {
     resumenContenido.innerHTML = html;
 }
 
-// Función para confirmar asignación
+// Funcion para confirmar asignacion
 export function confirmarAsignacion() {
     if (!window.opcionAsignacionSeleccionada) {
-        mostrarError('Error', 'Debe seleccionar un tipo de asignación');
+        mostrarError('Error', 'Debe seleccionar un tipo de asignacion');
         return;
     }
     
@@ -2022,7 +2025,7 @@ export function confirmarAsignacion() {
 
                 const asignacionesResult = [];
                 
-                // Si hay tallas existentes, crear asignación para ellas (sin flag de nueva parte)
+                // Si hay tallas existentes, crear asignacion para ellas (sin flag de nueva parte)
                 if (tallasExistentes.length > 0) {
                     asignacionesResult.push({
                         encargado,
@@ -2030,7 +2033,7 @@ export function confirmarAsignacion() {
                     });
                 }
                 
-                // Si hay tallas nuevas, crear asignación separada para ellas (con flag de nueva parte)
+                // Si hay tallas nuevas, crear asignacion separada para ellas (con flag de nueva parte)
                 if (tallasNuevas.length > 0) {
                     asignacionesResult.push({
                         encargado,
@@ -2039,7 +2042,7 @@ export function confirmarAsignacion() {
                     });
                 }
                 
-                // Si no hay ni nuevas ni existentes, enviar como está (caso normal)
+                // Si no hay ni nuevas ni existentes, enviar como esta (caso normal)
                 if (asignacionesResult.length === 0 && (tallasNuevas.length > 0 || tallasExistentes.length > 0)) {
                     asignacionesResult.push({
                         encargado,
@@ -2054,7 +2057,7 @@ export function confirmarAsignacion() {
         const asignaciones = asignacionesTemp.filter((a) => a.encargado && Array.isArray(a.tallas) && a.tallas.length > 0);
 
         if (asignaciones.length === 0) {
-            mostrarError('Error', 'No hay asignaciones válidas para guardar');
+            mostrarError('Error', 'No hay asignaciones validas para guardar');
             return;
         }
 
@@ -2066,7 +2069,7 @@ export function confirmarAsignacion() {
             btnConfirmar.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">refresh</span> Procesando...';
         }
 
-        // Preparar datos de nuevas partes si estamos en modo edición
+        // Preparar datos de nuevas partes si estamos en modo edicion
         const nuevasPartes = esEdicion ? (window.__datosParcialesEdicion || []).filter(p => p.id && typeof p.id === 'number') : [];
 
         fetch(action, {
@@ -2090,7 +2093,7 @@ export function confirmarAsignacion() {
             .then(async (data) => {
                 if (data?.success) {
                     cerrarModalCostura();
-                    mostrarExito('Éxito', data?.message || 'La distribución del recibo fue exitosa');
+                    mostrarExito('Éxito', data?.message || 'La Distribucion del recibo fue exitosa');
 
                     if (
                         document.getElementById('ordenesList') &&
@@ -2103,12 +2106,12 @@ export function confirmarAsignacion() {
                         }
                     }
                 } else {
-                    mostrarError('Error', data?.message || 'No se pudo guardar la distribución');
+                    mostrarError('Error', data?.message || 'No se pudo guardar la Distribucion');
                 }
             })
             .catch((err) => {
-                console.error('Error guardando distribución:', err);
-                mostrarError('Error', 'Error de conexión: ' + (err?.message || err));
+                console.error('Error guardando Distribucion:', err);
+                mostrarError('Error', 'Error de conexion: ' + (err?.message || err));
             })
             .finally(() => {
                 if (btnConfirmar) {
@@ -2121,7 +2124,7 @@ export function confirmarAsignacion() {
     }
 }
 
-// Función para confirmar distribución a taller
+// Funcion para confirmar Distribucion a taller
 function confirmarDistribucionTaller() {
     const tipoDistribucion = window.tipoDistribucionTaller || 'unico';
     const btnConfirmar = document.getElementById('btnConfirmarAsignacion');
@@ -2150,7 +2153,7 @@ function confirmarDistribucionTaller() {
             encargado: tallerNombre,
         };
     } else {
-        // Múltiples talleres
+        // Multiples talleres
         if (!window.asignacionesPorTaller || Object.keys(window.asignacionesPorTaller).length === 0) {
             mostrarError('Error', 'No hay asignaciones realizadas');
             return;
@@ -2191,7 +2194,7 @@ function confirmarDistribucionTaller() {
             .filter((a) => a.encargado && Array.isArray(a.tallas) && a.tallas.length > 0);
         
         if (asignaciones.length === 0) {
-            mostrarError('Error', 'No hay asignaciones válidas para guardar');
+            mostrarError('Error', 'No hay asignaciones validas para guardar');
             return;
         }
         
@@ -2230,7 +2233,7 @@ function confirmarDistribucionTaller() {
         .then(async (data) => {
             if (data?.success) {
                 cerrarModalCostura();
-                mostrarExito('Éxito', data?.message || 'El recibo fue asignado a taller correctamente');
+                mostrarExito('Exito', data?.message || 'El recibo fue asignado a taller correctamente');
                 
                 if (
                     document.getElementById('ordenesList') &&
@@ -2248,7 +2251,7 @@ function confirmarDistribucionTaller() {
         })
         .catch((err) => {
             console.error('Error asignando a taller:', err);
-            mostrarError('Error', 'Error de conexión: ' + (err?.message || err));
+            mostrarError('Error', 'Error de conexion: ' + (err?.message || err));
         })
         .finally(() => {
             if (btnConfirmar) {
@@ -2258,7 +2261,7 @@ function confirmarDistribucionTaller() {
         });
 }
 
-// Función para cargar usuarios de costura (copiada de costura.js)
+// Funcion para cargar usuarios de costura (copiada de costura.js)
 function cargarUsuariosCostura(tipoRecibo = '') {
     const datalist = document.getElementById('listaEncargados');
     if (!datalist) return;
@@ -2293,13 +2296,13 @@ function cargarUsuariosCostura(tipoRecibo = '') {
         });
 }
 
-// Función para mostrar contenido de distribución a taller
+// Funcion para mostrar contenido de Distribucion a taller
 function mostrarContenidoTaller() {
     const contenidoDiv = document.getElementById('contenidoAsignacion');
     
     contenidoDiv.innerHTML = `
         <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
-            <!-- Opción: Un solo taller -->
+            <!-- opcion: Un solo taller -->
             <button type="button" id="btnTallerUnico" onclick="seleccionarTipoTaller('unico')" style="padding: 1rem; border: 2px solid #e2e8f0; border-radius: 12px; background: white; cursor: pointer; transition: all 0.2s; text-align: left;">
                 <div style="display: flex; align-items: center; gap: 1rem;">
                     <div style="width: 40px; height: 40px; background: #8b5cf6; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -2307,19 +2310,19 @@ function mostrarContenidoTaller() {
                     </div>
                     <div style="flex: 1; min-width: 0;">
                         <h5 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: #1e293b; line-height: 1.3;">Un solo taller</h5>
-                        <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #64748b; line-height: 1.3;">Todas las unidades a un único taller externo</p>
+                        <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #64748b; line-height: 1.3;">Todas las unidades a un unico taller externo</p>
                     </div>
                 </div>
             </button>
 
-            <!-- Opción: Múltiples talleres -->
+            <!-- opcion: Multiples talleres -->
             <button type="button" id="btnTallerMultiple" onclick="seleccionarTipoTaller('multiple')" style="padding: 1rem; border: 2px solid #e2e8f0; border-radius: 12px; background: white; cursor: pointer; transition: all 0.2s; text-align: left;">
                 <div style="display: flex; align-items: center; gap: 1rem;">
                     <div style="width: 40px; height: 40px; background: #ec4899; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                         <span class="material-symbols-rounded" style="color: white; font-size: 1.25rem;">groups</span>
                     </div>
                     <div style="flex: 1; min-width: 0;">
-                        <h5 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: #1e293b; line-height: 1.3;">Múltiples talleres</h5>
+                        <h5 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: #1e293b; line-height: 1.3;">Multiples talleres</h5>
                         <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #64748b; line-height: 1.3;">Repartir entre diversos talleres externos</p>
                     </div>
                 </div>
@@ -2328,7 +2331,7 @@ function mostrarContenidoTaller() {
     `;
 }
 
-// Función para seleccionar tipo de taller
+// Funcion para seleccionar tipo de taller
 window.seleccionarTipoTaller = function(tipo) {
     window.tipoDistribucionTaller = tipo;
     
@@ -2338,11 +2341,11 @@ window.seleccionarTipoTaller = function(tipo) {
         mostrarContenidoTallerMultiple();
     }
     
-    // Mostrar botón volver
+    // Mostrar boton volver
     document.getElementById('btnVolver').style.display = 'inline-flex';
 };
 
-// Función para mostrar contenido de un solo taller
+// Funcion para mostrar contenido de un solo taller
 function mostrarContenidoTallerUnico() {
     const contenidoDiv = document.getElementById('contenidoAsignacion');
     
@@ -2400,13 +2403,13 @@ function mostrarContenidoTallerUnico() {
     }, 100);
 }
 
-// Función para mostrar contenido de múltiples talleres
+// Funcion para mostrar contenido de multiples talleres
 function mostrarContenidoTallerMultiple() {
     const contenidoDiv = document.getElementById('contenidoAsignacion');
     
     contenidoDiv.innerHTML = `
         <div>
-            <h4 style="margin: 0 0 1rem 0; font-size: 1rem; font-weight: 600; color: #1e293b;">Múltiples Destinos</h4>
+            <h4 style="margin: 0 0 1rem 0; font-size: 1rem; font-weight: 600; color: #1e293b;">Multiples Destinos</h4>
             
             <div style="position: relative; margin-bottom: 1rem;">
                 <div style="position: relative;">
@@ -2432,9 +2435,9 @@ function mostrarContenidoTallerMultiple() {
                 </div>
             </div>
             
-            <!-- Interfaz de distribución de tallas -->
+            <!-- Interfaz de Distribucion de tallas -->
             <div id="interfazDistribucionTaller" style="margin-top: 1rem;">
-                <!-- Se cargará dinámicamente -->
+                <!-- Se cargara dinamicamente -->
             </div>
         </div>
     `;
@@ -2443,7 +2446,7 @@ function mostrarContenidoTallerMultiple() {
     cargarTalleresParaDistribucion();
 }
 
-// Función para cargar talleres disponibles
+// Funcion para cargar talleres disponibles
 function cargarTalleresDisponibles() {
     const datalist = document.getElementById('listaTalleresUnicos');
     if (!datalist) return;
@@ -2466,7 +2469,7 @@ function cargarTalleresDisponibles() {
         });
 }
 
-// Función para cargar talleres para distribución múltiple
+// Funcion para cargar talleres para Distribucion multiple
 function cargarTalleresParaDistribucion() {
     const datalist = document.getElementById('listaTalleresMultiplesDatalist');
     if (!datalist) return;
@@ -2485,7 +2488,7 @@ function cargarTalleresParaDistribucion() {
                 
                 // Llenar datalist solo con talleres no seleccionados
                 data.usuarios.forEach((usuario) => {
-                    // No agregar si ya está seleccionado
+                    // No agregar si ya esta seleccionado
                     if (!talleresSeleccionadosIds.includes(usuario.id)) {
                         const option = document.createElement('option');
                         option.value = usuario.name;
@@ -2495,16 +2498,16 @@ function cargarTalleresParaDistribucion() {
             }
         })
         .catch((error) => {
-            console.error('Error cargando talleres para distribución:', error);
+            console.error('Error cargando talleres para Distribucion:', error);
         });
 }
 
-// Función para agregar taller seleccionado
+// Funcion para agregar taller seleccionado
 window.agregarTallerSeleccionado = function() {
     const input = document.getElementById('tallerMultipleSelector');
     const tallerNombre = input?.value.trim();
     
-    // Si el input está vacío, no hacer nada
+    // Si el input esta vaci­o, no hacer nada
     if (!tallerNombre) {
         return;
     }
@@ -2525,7 +2528,7 @@ window.agregarTallerSeleccionado = function() {
         console.log('[AGREGAR TALLER] Nuevo taller creado localmente:', taller);
     }
     
-    // Verificar que no esté duplicado - si ya está seleccionado, simplemente no hacer nada
+    // Verificar que no esta duplicado - si ya esta seleccionado, simplemente no hacer nada
     if (window.talleresSeleccionadosDistribucion?.find(t => t.id === taller.id)) {
         input.value = ''; // Limpiar input sin mostrar error
         return;
@@ -2551,13 +2554,13 @@ window.agregarTallerSeleccionado = function() {
     // Recargar la datalist para ocultar el taller que acaba de ser agregado
     cargarTalleresParaDistribucion();
     
-    // Cargar interfaz de distribución
+    // Cargar interfaz de Distribucion
     if (window.talleresSeleccionadosDistribucion.length > 0) {
         cargarInterfazDistribucionTallerMultiple(window.talleresSeleccionadosDistribucion);
     }
 };
 
-// Función para actualizar lista de talleres seleccionados
+// Funcion para actualizar lista de talleres seleccionados
 window.actualizarListaTalleresSeleccionados = function() {
     const listaTalleres = document.getElementById('listaTalleresSeleccionados');
     if (!listaTalleres) return;
@@ -2584,7 +2587,7 @@ window.actualizarListaTalleresSeleccionados = function() {
                     <span class="material-symbols-rounded" style="color: ${esNuevo ? '#f59e0b' : '#6366f1'}; font-size: 1.25rem;">apartment</span>
                     <div>
                         <div style="font-weight: 600; font-size: 0.875rem; color: #1e293b;">${taller.nombre}</div>
-                        ${esNuevo ? '<div style="font-size: 0.75rem; color: #b45309;">Nuevo taller (se creará al confirmar)</div>' : ''}
+                        ${esNuevo ? '<div style="font-size: 0.75rem; color: #b45309;">Nuevo taller (se creara al confirmar)</div>' : ''}
                     </div>
                 </div>
                 <button type="button" onclick="removerTallerSeleccionado(${index})" style="background: #fee2e2; border: none; border-radius: 6px; padding: 0.5rem; cursor: pointer; color: #dc2626; transition: all 0.2s;">
@@ -2597,7 +2600,7 @@ window.actualizarListaTalleresSeleccionados = function() {
     listaTalleres.innerHTML = html;
 };
 
-// Función para remover taller seleccionado
+// Funcion para remover taller seleccionado
 window.removerTallerSeleccionado = function(index) {
     if (window.talleresSeleccionadosDistribucion) {
         window.talleresSeleccionadosDistribucion.splice(index, 1);
@@ -2606,7 +2609,7 @@ window.removerTallerSeleccionado = function(index) {
         // Recargar la datalist para mostrar el taller removido
         cargarTalleresParaDistribucion();
         
-        // Actualizar interfaz de distribución
+        // Actualizar interfaz de Distribucion
         if (window.talleresSeleccionadosDistribucion.length > 0) {
             cargarInterfazDistribucionTallerMultiple(window.talleresSeleccionadosDistribucion);
         } else {
@@ -2618,7 +2621,7 @@ window.removerTallerSeleccionado = function(index) {
     }
 };
 
-// Función para cargar la interfaz de distribución para múltiples talleres
+// Funcion para cargar la interfaz de Distribucion para multiples talleres
 window.cargarInterfazDistribucionTallerMultiple = function(talleresSeleccionados) {
     if (!window.datosModalCostura) {
         console.error('No hay datos de la prenda disponibles');
@@ -2630,7 +2633,7 @@ window.cargarInterfazDistribucionTallerMultiple = function(talleresSeleccionados
     // Cargar tallas de la prenda
     return cargarTallasPrenda(prendaId, tipoRecibo)
         .then((tallas) => {
-            console.log('Tallas cargadas para distribución a taller:', tallas);
+            console.log('Tallas cargadas para Distribucion a taller:', tallas);
             
             // Procesar tallas al formato esperado
             const tallasProcesadas = procesarTallasParaDistribucion(tallas);
@@ -2641,13 +2644,13 @@ window.cargarInterfazDistribucionTallerMultiple = function(talleresSeleccionados
             return tallasProcesadas;
         })
         .catch(error => {
-            console.error('Error cargando datos de distribución a taller:', error);
+            console.error('Error cargando datos de Distribucion a taller:', error);
             const interfazDiv = document.getElementById('interfazDistribucionTaller');
             if (interfazDiv) {
                 interfazDiv.innerHTML = `
                     <div style="text-align: center; padding: 2rem; color: #dc2626;">
                         <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.75rem;">error</span>
-                        <p style="font-size: 0.875rem; margin: 0;">No se pudo cargar la información. Por favor, intente nuevamente.</p>
+                        <p style="font-size: 0.875rem; margin: 0;">No se pudo cargar la informacion. Por favor, intente nuevamente.</p>
                     </div>
                 `;
             }
@@ -2655,7 +2658,7 @@ window.cargarInterfazDistribucionTallerMultiple = function(talleresSeleccionados
         });
 }
 
-// Función para cargar la interfaz de distribución de tallas para múltiples talleres
+// Funcion para cargar la interfaz de Distribucion de tallas para multiples talleres
 function cargarInterfazDistribucionTallerConDatos(tallas, talleres) {
     const interfazDiv = document.getElementById('interfazDistribucionTaller');
     
@@ -2669,7 +2672,7 @@ function cargarInterfazDistribucionTallerConDatos(tallas, talleres) {
         return;
     }
     
-    // Guardar datos de distribución para usar en actualizarDisponibilidad()
+    // Guardar datos de Distribucion para usar en actualizarDisponibilidad()
     window.datosDistribucion = { tallas, talleres };
     
     // Inicializar asignaciones por taller SOLO si no existen
@@ -2705,7 +2708,7 @@ function cargarInterfazDistribucionTallerConDatos(tallas, talleres) {
     html += '</div>';
     interfazDiv.innerHTML = html;
     
-    // Recalcular disponibilidad para todas las tallas después de renderizar
+    // Recalcular disponibilidad para todas las tallas despues de renderizar
     setTimeout(() => {
         tallas.forEach(talla => {
             talleres.forEach(taller => {
@@ -2716,13 +2719,13 @@ function cargarInterfazDistribucionTallerConDatos(tallas, talleres) {
     }, 100);
 }
 
-// Función para generar HTML de tallas para un taller específico (igual a distribuir por módulos)
+// Funcion para generar HTML de tallas para un taller especifico (igual a distribuir por Modulos)
 function generarHtmlTallasParaTaller(tallas, tallerId) {
     const grupos = agruparTallasPorGeneroYColor(tallas);
     let html = '';
     
     Object.entries(grupos).forEach(([genero, colores]) => {
-        // Primero, verificar si hay al menos una talla visible en este género
+        // Primero, verificar si hay al menos una talla visible en este genero
         let tieneAlgunaTallaVisible = false;
         
         Object.entries(colores).forEach(([color, tallasColor]) => {
@@ -2735,7 +2738,7 @@ function generarHtmlTallasParaTaller(tallas, tallerId) {
                     asignado = window.asignacionesPorTaller[tallerId][tallaIdUnico] || 0;
                 }
                 
-                // Calcular cuánto se ha asignado en otros talleres
+                // Calcular cuanto se ha asignado en otros talleres
                 let asignadoEnOtrosTalleres = 0;
                 if (window.asignacionesPorTaller) {
                     Object.entries(window.asignacionesPorTaller).forEach(([otroTallerId, asignaciones]) => {
@@ -2756,12 +2759,12 @@ function generarHtmlTallasParaTaller(tallas, tallerId) {
             });
         });
         
-        // Si no hay ninguna talla visible en este género, no mostrar la sección
+        // Si no hay ninguna talla visible en este genero, no mostrar la seccion
         if (!tieneAlgunaTallaVisible) {
             return;
         }
         
-        // Si hay tallas visibles, generar la sección del género
+        // Si hay tallas visibles, generar la seccion del genero
         html += `
             <div style="margin-bottom: 1.5rem;">
                 <h6 style="margin: 0 0 0.75rem 0; font-size: 0.875rem; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.05em;">
@@ -2787,7 +2790,7 @@ function generarHtmlTallasParaTaller(tallas, tallerId) {
                     asignado = window.asignacionesPorTaller[tallerId][tallaIdUnico] || 0;
                 }
                 
-                // Calcular cuánto se ha asignado en otros talleres
+                // Calcular cuanto se ha asignado en otros talleres
                 let asignadoEnOtrosTalleres = 0;
                 if (window.asignacionesPorTaller) {
                     Object.entries(window.asignacionesPorTaller).forEach(([otroTallerId, asignaciones]) => {
@@ -2803,7 +2806,7 @@ function generarHtmlTallasParaTaller(tallas, tallerId) {
                 
                 const isSelected = asignado > 0;
                 
-                // NO MOSTRAR si no hay disponibilidad Y no está seleccionada en este taller
+                // NO MOSTRAR si no hay disponibilidad Y no esta seleccionada en este taller
                 if (disponibleInicial <= 0 && !isSelected) return;
                 
                 tieneAlgunaTallaVisibleEnColor = true;
@@ -2871,13 +2874,13 @@ function generarHtmlTallasParaTaller(tallas, tallerId) {
     return html;
 }
 
-// Función para toggle de selección de talla en taller
+// Funcion para toggle de seleccion de talla en taller
 window.toggleTallaSeleccionTaller = function(tallaId, tallerId, isChecked) {
     const input = document.getElementById(`talla_${tallaId}_taller_${tallerId}`);
     if (input) {
         input.disabled = !isChecked;
         if (isChecked) {
-            // Al hacer check, establecer valor a la cantidad máxima disponible
+            // Al hacer check, establecer valor a la cantidad maxima disponible
             const maxDisponible = parseInt(input.max) || 0;
             input.value = maxDisponible;
             actualizarAsignacionTallerConRegeneracion(tallaId, tallerId, maxDisponible, true);
@@ -2889,7 +2892,7 @@ window.toggleTallaSeleccionTaller = function(tallaId, tallerId, isChecked) {
     }
 };
 
-// Función auxiliar para actualizar asignación con regeneración de todos los talleres
+// Funcion auxiliar para actualizar asignacion con regeneracion de todos los talleres
 function actualizarAsignacionTallerConRegeneracion(tallaId, tallerId, cantidad, regenerarTodos = false) {
     if (!window.asignacionesPorTaller) {
         window.asignacionesPorTaller = {};
@@ -2911,7 +2914,7 @@ function actualizarAsignacionTallerConRegeneracion(tallaId, tallerId, cantidad, 
     
     // Siempre regenerar todos los talleres cuando se hace toggle (check/uncheck)
     if (window.datosDistribucion && window.datosDistribucion.talleres) {
-        console.log(`[TOGGLE TALLA] Regenerando todos los talleres después de toggle de ${tallaId}`);
+        console.log(`[TOGGLE TALLA] Regenerando todos los talleres despues de toggle de ${tallaId}`);
         
         // Regenerar todos los talleres
         window.datosDistribucion.talleres.forEach(taller => {
@@ -2921,7 +2924,7 @@ function actualizarAsignacionTallerConRegeneracion(tallaId, tallerId, cantidad, 
             }
         });
         
-        // Recalcular disponibilidad para todas las tallas después de regenerar
+        // Recalcular disponibilidad para todas las tallas despues de regenerar
         setTimeout(() => {
             window.datosDistribucion.tallas.forEach(talla => {
                 window.datosDistribucion.talleres.forEach(taller => {
@@ -2933,7 +2936,7 @@ function actualizarAsignacionTallerConRegeneracion(tallaId, tallerId, cantidad, 
     }
 }
 
-// Función para actualizar asignación de talla en taller
+// Funcion para actualizar asignacion de talla en taller
 window.actualizarAsignacionTaller = function(tallaId, tallerId, cantidad) {
     if (!window.asignacionesPorTaller) {
         window.asignacionesPorTaller = {};
@@ -2956,7 +2959,7 @@ window.actualizarAsignacionTaller = function(tallaId, tallerId, cantidad) {
     // Actualizar disponibilidad
     actualizarDisponibilidad(tallaId, tallerId);
     
-    // Verificar si la talla se agotó completamente o si volvió a tener disponibilidad
+    // Verificar si la talla se agota completamente o si volvio a tener disponibilidad
     const tallaOriginal = window.datosDistribucion?.tallas?.find(t => {
         const id = construirTallaIdUnico(t.tallaOriginal, t.color, t.genero);
         return id === tallaId;
@@ -2965,7 +2968,7 @@ window.actualizarAsignacionTaller = function(tallaId, tallerId, cantidad) {
     if (tallaOriginal) {
         const cantidadTotal = tallaOriginal.cantidad;
         
-        // Calcular cuánto se ha asignado en TODOS los talleres
+        // Calcular cuanto se ha asignado en TODOS los talleres
         let asignadoTotal = 0;
         if (window.asignacionesPorTaller) {
             Object.entries(window.asignacionesPorTaller).forEach(([otroTallerId, asignaciones]) => {
@@ -2981,14 +2984,14 @@ window.actualizarAsignacionTaller = function(tallaId, tallerId, cantidad) {
         const disponibilidadAnterior = cantidadTotal - asignadoTotalAnterior;
         
         // Regenerar TODOS los talleres si:
-        // 1. La talla se agotó completamente (disponibilidadActual === 0)
-        // 2. La talla volvió a tener disponibilidad (disponibilidadAnterior === 0 && disponibilidadActual > 0)
+        // 1. La talla se agoto completamente (disponibilidadActual === 0)
+        // 2. La talla volvio a tener disponibilidad (disponibilidadAnterior === 0 && disponibilidadActual > 0)
         const debeRegenerarTodos = 
-            (disponibilidadActual === 0 && disponibilidadAnterior > 0) || // Se agotó
-            (disponibilidadAnterior === 0 && disponibilidadActual > 0);   // Volvió a haber disponibilidad
+            (disponibilidadActual === 0 && disponibilidadAnterior > 0) || // Se agoto
+            (disponibilidadAnterior === 0 && disponibilidadActual > 0);   // Volvio a haber disponibilidad
         
         if (debeRegenerarTodos) {
-            console.log(`[ACTUALIZAR ASIGNACIÓN] Cambio en disponibilidad de ${tallaId}. Anterior: ${disponibilidadAnterior}, Actual: ${disponibilidadActual}. Regenerando todos los talleres...`);
+            console.log(`[ACTUALIZAR ASIGNACION] Cambio en disponibilidad de ${tallaId}. Anterior: ${disponibilidadAnterior}, Actual: ${disponibilidadActual}. Regenerando todos los talleres...`);
             
             if (window.datosDistribucion && window.datosDistribucion.talleres) {
                 // Regenerar todos los talleres
@@ -2999,7 +3002,7 @@ window.actualizarAsignacionTaller = function(tallaId, tallerId, cantidad) {
                     }
                 });
                 
-                // Recalcular disponibilidad para todas las tallas después de regenerar
+                // Recalcular disponibilidad para todas las tallas despues de regenerar
                 setTimeout(() => {
                     window.datosDistribucion.tallas.forEach(talla => {
                         window.datosDistribucion.talleres.forEach(taller => {
@@ -3010,14 +3013,14 @@ window.actualizarAsignacionTaller = function(tallaId, tallerId, cantidad) {
                 }, 50);
             }
         } else {
-            // Si no hay cambio crítico en disponibilidad, solo regenerar el taller actual
+            // Si no hay cambio critico en disponibilidad, solo regenerar el taller actual
             if (window.datosDistribucion && window.datosDistribucion.talleres) {
                 const container = document.getElementById(`tallas-taller-${tallerId}`);
                 if (container) {
                     container.innerHTML = generarHtmlTallasParaTaller(window.datosDistribucion.tallas, tallerId);
                 }
                 
-                // Recalcular disponibilidad para todas las tallas después de regenerar
+                // Recalcular disponibilidad para todas las tallas despues de regenerar
                 setTimeout(() => {
                     window.datosDistribucion.tallas.forEach(talla => {
                         window.datosDistribucion.talleres.forEach(taller => {
@@ -3033,7 +3036,7 @@ window.actualizarAsignacionTaller = function(tallaId, tallerId, cantidad) {
     console.log('Asignaciones por taller actualizadas:', window.asignacionesPorTaller);
 };
 
-// Función para actualizar disponibilidad de una talla
+// Funcion para actualizar disponibilidad de una talla
 function actualizarDisponibilidad(tallaId, tallerId) {
     // Obtener la cantidad total de la talla
     const tallaOriginal = window.datosDistribucion?.tallas?.find(t => {
@@ -3045,7 +3048,7 @@ function actualizarDisponibilidad(tallaId, tallerId) {
     
     const cantidadTotal = tallaOriginal.cantidad;
     
-    // Calcular cuánto se ha asignado en otros talleres
+    // Calcular cuanto se ha asignado en otros talleres
     let asignadoEnOtrosTalleres = 0;
     if (window.asignacionesPorTaller) {
         Object.entries(window.asignacionesPorTaller).forEach(([otroTallerId, asignaciones]) => {
@@ -3073,7 +3076,7 @@ function actualizarDisponibilidad(tallaId, tallerId) {
         const maxDisponible = Math.max(0, cantidadTotal - asignadoEnOtrosTalleres);
         input.max = maxDisponible;
         
-        // Si el valor actual excede el máximo, ajustarlo
+        // Si el valor actual excede el maximo, ajustarlo
         if (parseInt(input.value) > maxDisponible) {
             input.value = maxDisponible;
             window.asignacionesPorTaller[tallerId][tallaId] = maxDisponible;
@@ -3081,7 +3084,7 @@ function actualizarDisponibilidad(tallaId, tallerId) {
     }
 }
 
-// Función original confirmarPasarACostura (adaptada)
+// Funcion original confirmarPasarACostura (adaptada)
 function confirmarPasarACostura() {
     const encargado = document.getElementById('costuraEncargado')?.value.trim();
 
@@ -3122,8 +3125,8 @@ function confirmarPasarACostura() {
         }) || null;
     }
     if (!btn) {
-        mostrarError('Error', 'No se encontr� el bot�n de acci�n');
-        console.error('[COSTURA] Bot�n de acci�n no encontrado', {
+        mostrarError('Error', 'No se encontró el botón de acción');
+        console.error('[COSTURA] Botón de acción no encontrado', {
             btnId,
             pedidoId,
             prendaId,
@@ -3168,7 +3171,7 @@ function confirmarPasarACostura() {
                 btn.classList.add('btn-deshacer-costura');
                 btn.innerHTML = '<span class="material-symbols-rounded">undo</span> DESHACER COSTURA';
                 cerrarModalCostura();
-                mostrarExito('Éxito', data.message || 'Prenda asignada a costura correctamente');
+                mostrarExito('Exito', data.message || 'Prenda asignada a costura correctamente');
             } else {
                 btn.innerHTML = originalHTML;
                 mostrarError('Error', data.message || 'Error asignando a costura');
@@ -3177,14 +3180,14 @@ function confirmarPasarACostura() {
         .catch((error) => {
             console.error('Error:', error);
             btn.innerHTML = originalHTML;
-            mostrarError('Error', 'Error de conexión: ' + error.message);
+            mostrarError('Error', 'Error de conexion: ' + error.message);
         })
         .finally(() => {
             btn.disabled = false;
         });
 }
 
-// Función para cerrar modal (adaptada)
+// Funcion para cerrar modal (adaptada)
 export function cerrarModalCostura() {
     const modal = document.getElementById('modalCostura');
     if (modal) modal.style.display = 'none';
@@ -3217,7 +3220,7 @@ export function cerrarModalCostura() {
         contenidoDiv.innerHTML = '';
     }
     if (modalSubtitulo) {
-        modalSubtitulo.textContent = 'Seleccione el tipo de asignación';
+        modalSubtitulo.textContent = 'Seleccione el tipo de asignacion';
     }
     if (btnVolver) {
         btnVolver.style.display = 'none';
