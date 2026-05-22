@@ -201,11 +201,12 @@ class EloquentReceiptRepository implements ReceiptRepository
                 ]);
         }
 
-        // Marcar el recibo como inactivo
+        // Aprobar el recibo sin inactivarlo.
+        // Regla de negocio: la aprobación no debe apagar el consecutivo.
         DB::table('consecutivos_recibos_pedidos')
             ->where('id', $receiptId)
             ->update([
-                'activo' => 0,
+                'estado' => 'APROBADO',
                 'updated_at' => now()
             ]);
 

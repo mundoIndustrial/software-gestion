@@ -47,6 +47,9 @@
     <button id="rcb-btn-print" type="button" title="Imprimir" onclick="printReciboCorteBodegaModal()">
         <i class="fas fa-print"></i>
     </button>
+    <button id="rcb-btn-zoom" type="button" title="Zoom recibo (100%)" onclick="toggleReciboCorteBodegaZoom()">
+        <i class="fas fa-search-plus"></i>
+    </button>
 </div>
 
 <style>
@@ -183,6 +186,37 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+#rcb-btn-zoom {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#rcb-btn-zoom.is-zoomed {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+#rcb-btn-print:hover,
+#rcb-btn-zoom:hover {
+    transform: scale(1.05);
+    filter: brightness(0.95);
+}
+
+#rcb-modal-wrapper.zoomed {
+    max-width: 900px !important;
+    width: 96% !important;
+}
+
 @media (max-width: 1100px) {
     .rcb-floating-buttons-outside {
         left: auto;
@@ -214,6 +248,10 @@
         display: none !important;
     }
 
+    #rcb-btn-zoom {
+        display: none !important;
+    }
+
     .order-detail-card {
         box-shadow: none !important;
         page-break-after: always;
@@ -222,6 +260,43 @@
 </style>
 
 <script>
+const rcbReceiptZoomState = {
+    current: 1,
+    levels: [1, 1.2, 1.4, 1.6],
+};
+
+function applyReciboCorteBodegaZoom(zoomLevel = 1) {
+    const wrapper = document.getElementById('rcb-modal-wrapper');
+    const card = wrapper?.querySelector('.order-detail-card');
+    const zoomBtn = document.getElementById('rcb-btn-zoom');
+    if (!wrapper || !card) return;
+
+    card.style.transformOrigin = 'center top';
+    card.style.transition = 'transform 0.2s ease';
+
+    if (typeof card.style.zoom !== 'undefined') {
+        card.style.zoom = String(zoomLevel);
+        card.style.transform = 'none';
+    } else {
+        card.style.zoom = '';
+        card.style.transform = `scale(${zoomLevel})`;
+    }
+
+    if (zoomBtn) {
+        const percent = Math.round(zoomLevel * 100);
+        zoomBtn.title = `Zoom recibo (${percent}%)`;
+        zoomBtn.classList.toggle('is-zoomed', zoomLevel > 1);
+        zoomBtn.innerHTML = zoomLevel > 1
+            ? '<i class="fas fa-search-minus"></i>'
+            : '<i class="fas fa-search-plus"></i>';
+    }
+}
+
+function resetReciboCorteBodegaZoom() {
+    rcbReceiptZoomState.current = 1;
+    applyReciboCorteBodegaZoom(1);
+}
+
 function openReciboCorteBodegaModal(id) {
     console.log('[RCB] Abriendo modal para id:', id);
 
@@ -249,33 +324,46 @@ function openReciboCorteBodegaModal(id) {
                 const tallasList = document.getElementById('rcb-tallas-list');
                 tallasList.innerHTML = '';
 
-                const grupos = new Map();
+                const grupos = new Map(); // genero -> color -> ["M:12", "L:11"]
                 const sinGenero = [];
 
-                data.tallas.forEach(talla => {
-                    const genero = (talla.genero || '').toString().trim().toUpperCase();
-                    const tallaValor = (talla.talla || '').toString().trim().toUpperCase();
-                    const color = (talla.color || '').toString().trim().toUpperCase();
-                    const esSoloCantidad = tallaValor === '' || tallaValor === 'UNICA';
-                    const detalle = esSoloCantidad
-                        ? `${talla.cantidad}`
-                        : (color !== ''
-                            ? `COLOR ${color}: ${talla.talla}:${talla.cantidad}`
-                            : `${talla.talla}:${talla.cantidad}`);
+                data.tallas.forEach((item) => {
+                    const genero = (item.genero || '').toString().trim().toUpperCase();
+                    const tallaValor = (item.talla || '').toString().trim().toUpperCase();
+                    const color = (item.color || '').toString().trim().toUpperCase();
+                    const cantidad = parseInt(item.cantidad || '0', 10);
+                    if (cantidad <= 0) return;
 
-                    if (genero !== '') {
-                        if (!grupos.has(genero)) grupos.set(genero, []);
-                        grupos.get(genero).push(detalle);
-                    } else {
+                    const esSoloCantidad = tallaValor === '' || tallaValor === 'UNICA';
+                    if (genero === '') {
+                        const detalle = esSoloCantidad ? `${cantidad}` : `${tallaValor}:${cantidad}`;
                         sinGenero.push(detalle);
+                        return;
+                    }
+
+                    if (!grupos.has(genero)) grupos.set(genero, new Map());
+                    const porColor = grupos.get(genero);
+                    const colorKey = color !== '' ? color : 'SIN COLOR';
+                    if (!porColor.has(colorKey)) porColor.set(colorKey, []);
+
+                    if (esSoloCantidad) {
+                        porColor.get(colorKey).push(`${cantidad}`);
+                    } else {
+                        porColor.get(colorKey).push(`${tallaValor}:${cantidad}`);
                     }
                 });
 
-                grupos.forEach((detalles, genero) => {
-                    const linea = `${genero} - ${detalles.join(', ')}`;
-                    const span = document.createElement('div');
-                    span.innerHTML = `<span style="color: red;"><strong>${linea}</strong></span><br>`;
-                    tallasList.appendChild(span);
+                grupos.forEach((porColor, genero) => {
+                    const bloque = document.createElement('div');
+                    let html = `<span style="color: #1f2937;"><strong>${genero}</strong></span><br>`;
+                    porColor.forEach((detalles, color) => {
+                        const lineaColor = color === 'SIN COLOR'
+                            ? `${detalles.join(', ')}`
+                            : `${color}: ${detalles.join(', ')}`;
+                        html += `<span style="color: red;"><strong>${lineaColor}</strong></span><br>`;
+                    });
+                    bloque.innerHTML = html;
+                    tallasList.appendChild(bloque);
                 });
 
                 if (sinGenero.length > 0) {
@@ -288,6 +376,7 @@ function openReciboCorteBodegaModal(id) {
                 document.getElementById('rcb-modal-wrapper').classList.add('is-visible');
                 document.getElementById('rcb-modal-overlay').classList.add('is-visible');
                 document.getElementById('rcb-floating-buttons').classList.add('is-visible');
+                resetReciboCorteBodegaZoom();
             }
         })
         .catch(error => {
@@ -300,6 +389,16 @@ function closeReciboCorteBodegaModal() {
     document.getElementById('rcb-modal-wrapper').classList.remove('is-visible');
     document.getElementById('rcb-modal-overlay').classList.remove('is-visible');
     document.getElementById('rcb-floating-buttons').classList.remove('is-visible');
+    resetReciboCorteBodegaZoom();
+}
+
+function toggleReciboCorteBodegaZoom() {
+    const { levels, current } = rcbReceiptZoomState;
+    const currentIndex = levels.findIndex((level) => level === current);
+    const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % levels.length : 1;
+    const nextLevel = levels[nextIndex];
+    rcbReceiptZoomState.current = nextLevel;
+    applyReciboCorteBodegaZoom(nextLevel);
 }
 
 function printReciboCorteBodegaModal() {
@@ -310,6 +409,7 @@ function printReciboCorteBodegaModal() {
     const descripcion = (document.getElementById('rcb-prenda-desc')?.textContent || '').trim();
     const total = (document.getElementById('rcb-total-qty')?.textContent || '').trim();
     const tallasText = (document.getElementById('rcb-tallas-list')?.innerText || '').trim();
+    const numeroRecibo = (document.getElementById('rcb-order-pedido')?.textContent || '').trim();
 
     const esc = (value) => String(value || '')
         .replace(/&/g, '&amp;')
@@ -329,54 +429,70 @@ function printReciboCorteBodegaModal() {
   <style>
     @page { size: A4; margin: 8mm; }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: Arial, sans-serif; color: #111; background: #ffffff; }
+    body { margin: 0; font-family: Arial, sans-serif; color: #111; background: #fff; }
     body.singlepage { width: 100%; min-height: 100vh; display: flex; justify-content: center; }
-    .page { width: 210mm; min-height: 277mm; padding: 0; display: flex; }
-    .receipt-shell { width: 100%; background: #dcdcdc; border: 3px solid #111; border-radius: 20px; padding: 12px 14px 24px; }
-    .receipt-card { width: 100%; min-height: 100%; border: none; border-radius: 0; padding: 0; }
-    .logo-row { text-align: center; margin-bottom: 8px; }
-    .order-logo { width: 200px; height: 64px; object-fit: contain; }
-    .header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
-    .order-date { width: 128px; background-color: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; border-radius: 10px; padding: 6px; color: #fff; text-align: center; }
-    .fec-label { font-weight: 700; font-size: 11px; letter-spacing: .5px; margin-bottom: 4px; }
+    .page { width: 100%; max-width: 180mm; margin: 0 auto; }
+    .receipt-card { border: 3px solid #111; border-radius: 18px; padding: 14px; }
+    .order-logo { width: 150px; height: 56px; object-fit: contain; display: block; margin: 0 auto 8px; }
+    .header-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+    .order-date {
+      width: 128px;
+      background: #000 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      border-radius: 10px;
+      padding: 6px;
+      color: #fff;
+      text-align: center;
+    }
+    .fec-label { font-weight: 700; font-size: 11px; margin-bottom: 4px; }
     .date-boxes { display: flex; gap: 4px; justify-content: center; }
-    .date-box { background-color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #111; border-radius: 4px; min-width: 36px; padding: 4px 4px; font-size: 12px; font-weight: 800; }
-    .title { flex: 1; text-align: right; font-size: 24px; line-height: 1.05; font-weight: 900; letter-spacing: .2px; }
-    .content { margin-top: 20px; max-width: 68%; }
-    .prenda { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
-    .desc { font-size: 17px; color: #646464; margin-bottom: 14px; text-transform: uppercase; }
-    .section-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
-    .tallas { font-size: 19px; font-weight: 800; color: #d00; line-height: 1.35; text-transform: uppercase; }
-    .total { margin-top: 8px; padding-top: 6px; border-top: 2px solid #9ca3af; font-size: 20px; font-weight: 800; color: #1f2937; width: 180px; }
+    .date-box {
+      background: #fff !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color: #111;
+      border-radius: 4px;
+      min-width: 36px;
+      padding: 4px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .header-right { text-align: right; flex: 1; }
+    .receipt-title-print { font-weight: 900; text-transform: uppercase; font-size: 16px; line-height: 1.1; margin: 0; }
+    .recibo-number-print { font-size: 14px; font-weight: 800; margin-top: 2px; }
+    .prenda-info { margin: 8px 0 6px; font-size: 13px; font-weight: 800; text-transform: uppercase; }
+    .desc { margin: 0 0 8px; font-size: 12px; font-weight: 600; text-transform: uppercase; color: #374151; }
+    .section h4 { margin: 0 0 5px; font-size: 12px; font-weight: 900; text-transform: uppercase; }
+    .tallas-resumen { color: #d32f2f; font-weight: 900; white-space: pre-line; font-size: 11px; line-height: 1.3; text-transform: uppercase; }
+    .total-line { margin-top: 8px; padding-top: 4px; border-top: 1.5px solid #1f2937; color: #1f2937; font-weight: 800; font-size: 12px; width: 160px; }
   </style>
 </head>
 <body class="singlepage">
   <div class="page">
-    <div class="receipt-shell">
-      <div class="receipt-card">
-        <div class="logo-row">
-          <img src="/images/logo2.png" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
-        </div>
-        <div class="header-row">
-          <div class="order-date">
-            <div class="fec-label">FECHA</div>
-            <div class="date-boxes">
-              <div class="date-box">${esc(day)}</div>
-              <div class="date-box">${esc(month)}</div>
-              <div class="date-box">${esc(year)}</div>
-            </div>
+    <div class="receipt-card">
+      <img src="/images/logo2.png" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
+      <div class="header-row">
+        <div class="order-date">
+          <div class="fec-label">FECHA</div>
+          <div class="date-boxes">
+            <div class="date-box">${esc(day)}</div>
+            <div class="date-box">${esc(month)}</div>
+            <div class="date-box">${esc(year)}</div>
           </div>
-          <div class="title">RECIBO DE CORTE<br>PARA BODEGA</div>
         </div>
-
-        <div class="content">
-          <div class="prenda">${esc(prendaTitle)}</div>
-          <div class="desc">${esc(descripcion)}</div>
-          <div class="section-title">TALLAS</div>
-          <div class="tallas">${tallasHtml}</div>
-          <div class="total">TOTAL: ${esc(total)}</div>
+        <div class="header-right">
+          <div class="receipt-title-print">RECIBO DE CORTE<br>PARA BODEGA</div>
+          <div class="recibo-number-print">${esc(numeroRecibo)}</div>
         </div>
       </div>
+      <div class="prenda-info">${esc(prendaTitle)}</div>
+      <div class="desc">${esc(descripcion)}</div>
+      <div class="section">
+        <h4>TALLAS:</h4>
+        <div class="tallas-resumen">${tallasHtml}</div>
+      </div>
+      <div class="total-line">TOTAL: ${esc(total)}</div>
     </div>
   </div>
   <script>

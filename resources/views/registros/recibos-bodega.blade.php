@@ -184,20 +184,56 @@
 <div id="tipoTallaGeneroModal" class="tipo-talla-modal is-hidden" aria-hidden="true">
     <div class="tipo-talla-modal__backdrop"></div>
     <div class="tipo-talla-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="tipoTallaGeneroModalTitle">
-        <h3 id="tipoTallaGeneroModalTitle" class="mb-2">Tipo de talla</h3>
-        <p id="tipoTallaGeneroModalText" class="mb-2 text-sm text-muted">Selecciona el tipo de talla y registra talla, color y cantidad.</p>
-        <div id="tipoTallaWizardBar" class="tipo-talla-wizard-bar">
-            <button type="button" id="tipoTallaBackBtn" class="btn btn-light btn-sm" style="display:none;">Volver</button>
-            <span id="tipoTallaWizardSummary" class="text-xs text-muted"></span>
+        <div class="tipo-talla-modal__header">
+            <div>
+                <h3 id="tipoTallaGeneroModalTitle">Configurar tallas</h3>
+                <p id="tipoTallaGeneroModalText">Selecciona el tipo de talla y registra talla, color y cantidad.</p>
+            </div>
+            <div class="tipo-talla-modal__header-actions">
+                <span id="tipoTallaGeneroBadge" class="tipo-talla-genero-badge">GÉNERO</span>
+                <button type="button" id="tipoTallaCloseBtn" class="tipo-talla-close-btn" aria-label="Cerrar">×</button>
+            </div>
         </div>
+
+        <div id="tipoTallaWizardBar" class="tipo-talla-wizard-bar">
+            <div class="tipo-talla-stepper" aria-hidden="true">
+                <div id="tipoTallaStepModo" class="tipo-talla-step">
+                    <span class="tipo-talla-step__dot">1</span>
+                    <span class="tipo-talla-step__label">Modo</span>
+                </div>
+                <div id="tipoTallaStepTipo" class="tipo-talla-step">
+                    <span class="tipo-talla-step__dot">2</span>
+                    <span class="tipo-talla-step__label">Tipo</span>
+                </div>
+                <div id="tipoTallaStepCaptura" class="tipo-talla-step">
+                    <span class="tipo-talla-step__dot">3</span>
+                    <span class="tipo-talla-step__label">Tallas</span>
+                </div>
+            </div>
+            <div class="tipo-talla-wizard-bar__tools">
+                <span id="tipoTallaWizardSummary" class="tipo-talla-summary-pill"></span>
+                <button type="button" id="tipoTallaBackBtn" class="btn btn-light btn-sm" style="display:none;">Volver</button>
+            </div>
+        </div>
+
         <div id="tipoTallaModoActions" class="tipo-talla-modal__actions tipo-talla-modal__actions--wizard">
-            <button type="button" class="btn btn-primary" data-modo-carga-select="normal">Normal</button>
-            <button type="button" class="btn btn-outline-primary" data-modo-carga-select="color">Talla por color</button>
-            <button type="button" class="btn btn-outline-primary" data-modo-carga-select="cantidad">Cantidad nada más</button>
+            <button type="button" class="btn btn-primary tipo-talla-select-card" data-modo-carga-select="normal">
+                <span class="tipo-talla-select-card__title">Normal</span>
+            </button>
+            <button type="button" class="btn btn-outline-primary tipo-talla-select-card" data-modo-carga-select="color">
+                <span class="tipo-talla-select-card__title">Por color</span>
+            </button>
+            <button type="button" class="btn btn-outline-primary tipo-talla-select-card" data-modo-carga-select="cantidad">
+                <span class="tipo-talla-select-card__title">Cantidad nada más</span>
+            </button>
         </div>
         <div id="tipoTallaTipoActions" class="tipo-talla-modal__actions">
-            <button type="button" class="btn btn-primary" data-tipo-talla-select="letra">Por letra</button>
-            <button type="button" class="btn btn-outline-primary" data-tipo-talla-select="numero">Por número</button>
+            <button type="button" class="btn btn-primary tipo-talla-select-card" data-tipo-talla-select="letra">
+                <span class="tipo-talla-select-card__title">Por letra</span>
+            </button>
+            <button type="button" class="btn btn-outline-primary tipo-talla-select-card" data-tipo-talla-select="numero">
+                <span class="tipo-talla-select-card__title">Por número</span>
+            </button>
         </div>
         <div id="tipoTallaGeneroGrid" class="tipo-talla-grid"></div>
         <div class="tipo-talla-modal__footer">
@@ -891,6 +927,7 @@
     position: fixed;
     inset: 0;
     z-index: 10000200;
+    font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
 
 .tipo-talla-modal.is-hidden {
@@ -906,71 +943,293 @@
 .tipo-talla-modal__dialog {
     position: relative;
     z-index: 10000201;
-    width: min(96vw, 880px);
-    margin: 6vh auto 0;
-    max-height: 88vh;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    max-height: 100vh;
     overflow-y: auto;
     background: #fff;
-    border-radius: 14px;
-    padding: 20px;
-    box-shadow: 0 24px 44px rgba(15, 23, 42, 0.32);
+    border-radius: 0;
+    padding: 22px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 22px 60px rgba(15, 23, 42, 0.22);
+    display: grid;
+    grid-template-rows: auto auto auto auto 1fr auto;
+    gap: 14px;
+}
+
+.tipo-talla-modal__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.tipo-talla-modal__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#tipoTallaGeneroModalTitle {
+    margin: 0 0 6px 0;
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    color: #0f172a;
+}
+
+#tipoTallaGeneroModalText {
+    margin: 0;
+    color: #64748b;
+    font-size: .92rem;
+}
+
+.tipo-talla-genero-badge {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 7px 11px;
+    white-space: nowrap;
+}
+
+.tipo-talla-close-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #475569;
+    font-size: 20px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all .18s ease;
+}
+
+.tipo-talla-close-btn:hover {
+    border-color: #94a3b8;
+    color: #0f172a;
+    background: #f8fafc;
 }
 
 .tipo-talla-modal__actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
-    margin-bottom: 12px;
+    margin-bottom: 0;
 }
 
 .tipo-talla-modal__actions--wizard {
-    margin-top: -4px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .tipo-talla-wizard-bar {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    margin-bottom: 10px;
+    gap: 14px;
+}
+
+.tipo-talla-wizard-bar__tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tipo-talla-summary-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    font-size: .73rem;
+    font-weight: 700;
+    padding: 6px 10px;
+    background: #fff;
+    min-height: 30px;
+}
+
+.tipo-talla-stepper {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    flex: 1;
+}
+
+.tipo-talla-step {
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all .22s ease;
+}
+
+.tipo-talla-step__dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .72rem;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    background: #fff;
+}
+
+.tipo-talla-step__label {
+    font-size: .76rem;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: .01em;
+}
+
+.tipo-talla-step.is-active {
+    border-color: #93c5fd;
+    background: #eff6ff;
+}
+
+.tipo-talla-step.is-active .tipo-talla-step__dot {
+    border-color: #3b82f6;
+    color: #fff;
+    background: #3b82f6;
+}
+
+.tipo-talla-step.is-active .tipo-talla-step__label {
+    color: #1e3a8a;
+}
+
+.tipo-talla-step.is-completed {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+}
+
+.tipo-talla-step.is-completed .tipo-talla-step__dot {
+    border-color: #10b981;
+    color: #fff;
+    background: #10b981;
+}
+
+.tipo-talla-step.is-completed .tipo-talla-step__label {
+    color: #065f46;
 }
 
 #tipoTallaBackBtn {
-    background: #e0ecff;
-    color: #1d4ed8;
-    border: 1px solid #93c5fd;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #334155;
     font-weight: 700;
-    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.15);
+    border-radius: 10px;
+    padding: 6px 12px;
+    transition: all .2s ease;
 }
 
 #tipoTallaBackBtn:hover {
-    background: #dbeafe;
-    border-color: #60a5fa;
-    color: #1e40af;
+    border-color: #94a3b8;
+    color: #0f172a;
 }
 
 #tipoTallaBackBtn:focus {
-    outline: 2px solid #60a5fa;
-    outline-offset: 2px;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .tipo-talla-grid {
     display: grid;
+    gap: 12px;
+    margin-bottom: 0;
+    background: #fcfdff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 14px;
+    overflow: visible;
+    max-height: none;
+}
+
+.tipo-talla-color-groups {
+    display: grid;
+    gap: 12px;
+}
+
+.tipo-talla-color-block {
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    background: #f8fbff;
+    padding: 12px;
+    display: grid;
     gap: 10px;
-    margin-bottom: 12px;
+    transition: all .2s ease;
+}
+
+.tipo-talla-color-block.is-active {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .14);
+    transform: translateY(-1px);
+}
+
+.tipo-talla-color-head {
+    display: grid;
+    grid-template-columns: 1fr 34px;
+    gap: 8px;
+}
+
+.tipo-talla-color-head input {
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 10px 11px;
+    font-size: 13px;
+    text-transform: uppercase;
+    background: #fff;
+    color: #0f172a;
+    transition: all .18s ease;
+}
+
+.tipo-talla-color-head input:focus {
+    outline: none;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .18);
+}
+
+.tipo-talla-remove-color-block {
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    background: #fff5f5;
+    color: #ef4444;
+    font-weight: 700;
+    transition: all .18s ease;
+}
+
+.tipo-talla-remove-color-block:hover {
+    background: #fee2e2;
+    color: #b91c1c;
 }
 
 .tipo-talla-empty {
     border: 1px dashed #cbd5e1;
-    background: #f8fafc;
+    background: #fff;
     color: #475569;
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 10px 12px;
     font-size: 12px;
 }
 
 .tipo-talla-pills {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 8px;
 }
 
@@ -978,45 +1237,380 @@
     border: 1px solid #d1d5db;
     background: #fff;
     color: #1f2937;
-    border-radius: 8px;
-    padding: 6px 8px;
+    border-radius: 10px;
+    padding: 10px 16px;
     font-weight: 700;
+    font-size: .9rem;
+    min-height: 40px;
+    min-width: 68px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1;
     cursor: pointer;
+    transition: all .2s ease;
+}
+
+.tipo-talla-pill:hover {
+    border-color: #93c5fd;
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.tipo-talla-pill.is-picked {
+    border-color: #60a5fa;
+    background: #dbeafe;
+    color: #1e3a8a;
+}
+
+.tipo-talla-pill.is-selected {
+    border-color: #3b82f6;
+    background: #dbeafe;
+    color: #1e3a8a;
+    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, .25);
 }
 
 .tipo-talla-row {
     display: grid;
-    grid-template-columns: 1fr 1fr 110px 36px;
+    grid-template-columns: minmax(0, 1fr) 120px 34px;
     gap: 8px;
+    align-items: center;
 }
 
 .tipo-talla-row.is-normal {
-    grid-template-columns: 1fr 110px 36px;
+    grid-template-columns: minmax(0, 1fr) 120px 34px;
+}
+
+.tipo-talla-row.is-color {
+    grid-template-columns: minmax(0, 1fr) 120px 34px;
 }
 
 .tipo-talla-row input {
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    padding: 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 10px 11px;
     font-size: 13px;
+    color: #0f172a;
+    background: #fff;
+    transition: all .18s ease;
+}
+
+.tipo-talla-row input:focus {
+    outline: none;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .18);
 }
 
 .tipo-talla-remove {
-    border: none;
-    border-radius: 8px;
+    width: 34px;
+    height: 34px;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    background: #fff5f5;
+    color: #ef4444;
+    font-weight: 700;
+    line-height: 1;
+    transition: all .18s ease;
+}
+
+.tipo-talla-remove:hover {
     background: #fee2e2;
     color: #b91c1c;
-    font-weight: 700;
 }
 
 .tipo-talla-add-btn {
     width: fit-content;
+    border: 1px solid #bfdbfe;
+    color: #1d4ed8;
+    background: #eff6ff;
+    border-radius: 10px;
+    font-weight: 700;
+    padding: 9px 13px;
+    transition: all .2s ease;
+}
+
+.tipo-talla-add-btn:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
 }
 
 .tipo-talla-modal__footer {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
+    border-top: 1px solid #eef2f7;
+    padding-top: 14px;
+    flex-wrap: nowrap;
+    width: 100%;
+    max-width: 100%;
+    align-items: center;
+}
+
+.tipo-talla-modal__footer .btn {
+    width: auto !important;
+    max-width: none !important;
+    flex: 0 0 auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap;
+}
+
+#cancelarTipoTallaGeneroBtn,
+#confirmarTipoTallaGeneroBtn,
+.tipo-talla-add-talla-color-btn {
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-weight: 600;
+    font-size: .90rem;
+    line-height: 1.2;
+    transition: all .2s ease;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#cancelarTipoTallaGeneroBtn {
+    border: 1px solid #d1d5db;
+    color: #334155;
+    background: #fff;
+    width: auto !important;
+    min-width: 100px !important;
+    max-width: 140px !important;
+    flex: 0 0 auto !important;
+    padding: 8px 16px !important;
+}
+
+#confirmarTipoTallaGeneroBtn {
+    border: 1px solid #2563eb;
+    background: #2563eb;
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, .22);
+    width: auto !important;
+    min-width: 100px !important;
+    max-width: 140px !important;
+    flex: 0 0 auto !important;
+    padding: 8px 16px !important;
+}
+
+#confirmarTipoTallaGeneroBtn:disabled {
+    opacity: .55;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.tipo-talla-add-talla-color-btn {
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    background: #fff;
+    width: fit-content;
+    padding: 8px 11px;
+    font-size: .78rem;
+}
+
+.tipo-talla-select-card {
+    text-align: left;
+    border-radius: 12px;
+    border: 1px solid #dbe2ea;
+    background: #fff;
+    color: #0f172a;
+    padding: 12px;
+    transition: all .2s ease;
+    display: grid;
+    gap: 4px;
+    min-height: 74px;
+}
+
+.tipo-talla-select-card:hover {
+    border-color: #93c5fd;
+    background: #f8fbff;
+    transform: translateY(-1px);
+}
+
+.tipo-talla-select-card__title {
+    font-weight: 800;
+    font-size: .88rem;
+}
+
+.tipo-talla-select-card__desc {
+    font-size: .77rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.tipo-talla-select-card.btn-primary {
+    border-color: #60a5fa;
+    background: linear-gradient(180deg, #eff6ff 0%, #e0ecff 100%);
+    color: #1e3a8a;
+    box-shadow: 0 8px 20px rgba(59, 130, 246, .15);
+}
+
+.tipo-talla-modal .tipo-talla-select-card.btn-primary:hover,
+.tipo-talla-modal .tipo-talla-select-card.btn-primary:focus,
+.tipo-talla-modal .tipo-talla-select-card.btn-primary:active {
+    border-color: #3b82f6 !important;
+    background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%) !important;
+    color: #1e3a8a !important;
+}
+
+.tipo-talla-modal .tipo-talla-select-card.btn-outline-primary:hover,
+.tipo-talla-modal .tipo-talla-select-card.btn-outline-primary:focus {
+    border-color: #93c5fd !important;
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+}
+
+.tipo-talla-modal__dialog::-webkit-scrollbar,
+.tipo-talla-grid::-webkit-scrollbar {
+    width: 10px;
+}
+
+.tipo-talla-modal__dialog::-webkit-scrollbar-thumb,
+.tipo-talla-grid::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+}
+
+@media (max-width: 768px) {
+    .tipo-talla-modal__dialog {
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .tipo-talla-modal__header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .tipo-talla-wizard-bar {
+        flex-direction: column;
+    }
+
+    .tipo-talla-wizard-bar__tools {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .tipo-talla-modal__actions--wizard,
+    .tipo-talla-modal__actions {
+        grid-template-columns: 1fr !important;
+    }
+
+    .tipo-talla-row,
+    .tipo-talla-row.is-normal,
+    .tipo-talla-row.is-color {
+        grid-template-columns: 1fr 96px 32px;
+    }
+}
+
+/* UX simple para usuarios operativos */
+.tipo-talla-modal__dialog {
+    border-radius: 16px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+    gap: 12px;
+}
+
+.tipo-talla-stepper {
+    display: none;
+}
+
+.tipo-talla-wizard-bar {
+    justify-content: flex-end;
+}
+
+.tipo-talla-summary-pill {
+    border: 0;
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.tipo-talla-modal__actions--wizard,
+.tipo-talla-modal__actions {
+    gap: 12px;
+}
+
+.tipo-talla-select-card {
+    min-height: 58px;
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tipo-talla-select-card__title {
+    font-size: .98rem;
+}
+
+.tipo-talla-select-card__desc {
+    display: none;
+}
+
+.tipo-talla-grid {
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    padding: 12px;
+}
+
+.tipo-talla-color-block {
+    background: #fff;
+    border: 1px solid #dbe2ea;
+    border-radius: 12px;
+    box-shadow: none;
+}
+
+.tipo-talla-color-block.is-active {
+    box-shadow: none;
+    transform: none;
+    border-color: #93c5fd;
+}
+
+.tipo-talla-block-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tipo-talla-pill--in-block {
+    background: #f8fafc;
+}
+
+.tipo-talla-pill--in-block:hover {
+    background: #e2e8f0;
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+
+.tipo-talla-row {
+    grid-template-columns: minmax(0, 1fr) 120px 34px;
+}
+
+.tipo-talla-row .modal-talla-input.is-readonly {
+    background: #f1f5f9;
+    color: #334155;
+    font-weight: 700;
+    border-color: #dbe2ea;
+}
+
+.tipo-talla-row input,
+.tipo-talla-color-head input {
+    background: #f8fafc;
+    border: 1px solid #dbe2ea;
+    box-shadow: none;
+}
+
+.tipo-talla-row input:focus,
+.tipo-talla-color-head input:focus {
+    background: #fff;
+    border-color: #93c5fd;
+    box-shadow: 0 0 0 2px rgba(147, 197, 253, .35);
+}
+
+.tipo-talla-add-btn {
+    background: #fff;
+    color: #1e40af;
 }
 
 #reciboBodegaCreateModal .tallas-head {
@@ -1153,6 +1747,37 @@
         gap: 8px;
     }
 }
+
+/* Override específico para botones del modal de tallas */
+.tipo-talla-modal__footer #cancelarTipoTallaGeneroBtn,
+.tipo-talla-modal__footer #confirmarTipoTallaGeneroBtn {
+    width: auto !important;
+    min-width: 100px !important;
+    max-width: 140px !important;
+    flex: 0 0 auto !important;
+    padding: 8px 16px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.9rem !important;
+    line-height: 1.2 !important;
+}
+
+.tipo-talla-modal__footer #cancelarTipoTallaGeneroBtn {
+    background: #fff !important;
+    color: #334155 !important;
+    border: 1px solid #d1d5db !important;
+}
+
+.tipo-talla-modal__footer #confirmarTipoTallaGeneroBtn {
+    background: #2563eb !important;
+    color: #fff !important;
+    border: 1px solid #2563eb !important;
+}
+
+.tipo-talla-modal__footer #confirmarTipoTallaGeneroBtn:disabled {
+    opacity: 0.55 !important;
+}
 </style>
 @endpush
 
@@ -1167,8 +1792,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('reciboBodegaCreateForm');
     const tipoTallaModal = document.getElementById('tipoTallaGeneroModal');
     const tipoTallaModalText = document.getElementById('tipoTallaGeneroModalText');
+    const tipoTallaCloseBtn = document.getElementById('tipoTallaCloseBtn');
+    const tipoTallaGeneroBadge = document.getElementById('tipoTallaGeneroBadge');
     const tipoTallaWizardSummary = document.getElementById('tipoTallaWizardSummary');
     const tipoTallaBackBtn = document.getElementById('tipoTallaBackBtn');
+    const tipoTallaStepModo = document.getElementById('tipoTallaStepModo');
+    const tipoTallaStepTipo = document.getElementById('tipoTallaStepTipo');
+    const tipoTallaStepCaptura = document.getElementById('tipoTallaStepCaptura');
     const tipoTallaModoActions = document.getElementById('tipoTallaModoActions');
     const tipoTallaTipoActions = document.getElementById('tipoTallaTipoActions');
     const tipoTallaCancelarBtn = document.getElementById('cancelarTipoTallaGeneroBtn');
@@ -1440,9 +2070,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 <button type="button" class="tipo-talla-remove">x</button>
             `;
         } else {
+            row.classList.add('is-color');
             row.innerHTML = `
                 <input type="text" class="modal-talla-input" list="${datalistId}" placeholder="Talla" value="${detalle.talla || ''}">
-                <input type="text" class="modal-color-input" placeholder="Color" value="${detalle.color || ''}">
                 <input type="number" class="modal-cantidad-input" min="1" placeholder="Cantidad" value="${detalle.cantidad || ''}">
                 <button type="button" class="tipo-talla-remove">x</button>
             `;
@@ -1451,11 +2081,19 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function textoModoSeleccionado() {
-        return tipoTallaState.modoCarga === 'normal' ? 'Sin color' : 'Con color';
+        if (tipoTallaState.modoCarga === 'cantidad') return 'Cantidad nada más';
+        if (tipoTallaState.modoCarga === 'color') return 'Talla por color';
+        return 'Normal';
     }
 
     function textoTipoSeleccionado() {
         return tipoTallaState.tipoSeleccionado === 'numero' ? 'Por número' : 'Por letra';
+    }
+
+    function setStepVisual(stepEl, isActive, isCompleted) {
+        if (!stepEl) return;
+        stepEl.classList.toggle('is-active', !!isActive);
+        stepEl.classList.toggle('is-completed', !!isCompleted);
     }
 
     function actualizarUIWizard() {
@@ -1464,10 +2102,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (tipoTallaTipoActions) tipoTallaTipoActions.style.display = etapa === 'tipo' ? '' : 'none';
         if (tipoTallaBackBtn) tipoTallaBackBtn.style.display = etapa === 'modo' ? 'none' : '';
         if (tipoTallaGrid) tipoTallaGrid.style.display = etapa === 'captura' ? '' : 'none';
+        setStepVisual(tipoTallaStepModo, etapa === 'modo', etapa === 'tipo' || etapa === 'captura');
+        setStepVisual(tipoTallaStepTipo, etapa === 'tipo', etapa === 'captura');
+        setStepVisual(tipoTallaStepCaptura, etapa === 'captura', false);
         if (tipoTallaWizardSummary) {
             tipoTallaWizardSummary.textContent = etapa === 'captura'
-                ? 'Modo Normal'
-                : '';
+                ? `${textoModoSeleccionado()} · ${textoTipoSeleccionado()}`
+                : etapa === 'tipo'
+                    ? `${textoModoSeleccionado()}`
+                    : 'Selecciona un modo';
         }
         if (tipoTallaConfirmarBtn) {
             tipoTallaConfirmarBtn.disabled = etapa !== 'captura';
@@ -1484,25 +2127,136 @@ document.addEventListener('DOMContentLoaded', function () {
         let tieneAlMenosUnaValida = false;
         rows.forEach((row) => {
             const talla = (row.querySelector('.modal-talla-input')?.value || '').trim();
-            const color = (row.querySelector('.modal-color-input')?.value || '').trim();
             const cantidad = parseInt(row.querySelector('.modal-cantidad-input')?.value || '0', 10);
-            const esValida = tipoTallaState.modoCarga === 'normal'
+            let esValida = tipoTallaState.modoCarga === 'normal'
                 ? (talla !== '' && cantidad > 0)
                 : tipoTallaState.modoCarga === 'cantidad'
                     ? (cantidad > 0)
-                : (talla !== '' && color !== '' && cantidad > 0);
+                : false;
+            if (tipoTallaState.modoCarga === 'color') {
+                esValida = false;
+            }
             if (esValida) {
                 tieneAlMenosUnaValida = true;
             }
         });
+        if (!tieneAlMenosUnaValida && tipoTallaState.modoCarga === 'color') {
+            const blocks = tipoTallaGrid?.querySelectorAll('.tipo-talla-color-block') || [];
+            blocks.forEach((block) => {
+                const color = (block.querySelector('.modal-color-grupo-input')?.value || '').trim();
+                const colorRows = block.querySelectorAll('.tipo-talla-row');
+                colorRows.forEach((row) => {
+                    const talla = (row.querySelector('.modal-talla-input')?.value || '').trim();
+                    const cantidad = parseInt(row.querySelector('.modal-cantidad-input')?.value || '0', 10);
+                    if (color !== '' && talla !== '' && cantidad > 0) {
+                        tieneAlMenosUnaValida = true;
+                    }
+                });
+            });
+        }
         tipoTallaConfirmarBtn.disabled = !tieneAlMenosUnaValida;
+    }
+
+    function crearBloqueColorModal(tipo, color = '', detalles = []) {
+        const block = document.createElement('div');
+        block.className = 'tipo-talla-color-block';
+        const tallasPillsHtml = (TALLAS_POR_TIPO[tipo] || []).map((talla) => {
+            return `<button type="button" class="tipo-talla-pill tipo-talla-pill--in-block" data-color-block-pill="${talla}">${talla}</button>`;
+        }).join('');
+        block.innerHTML = `
+            <div class="tipo-talla-color-head">
+                <input type="text" class="modal-color-grupo-input" placeholder="Color (ej: AZUL REY)" value="${color}">
+                <button type="button" class="tipo-talla-remove-color-block">x</button>
+            </div>
+            <div class="tipo-talla-block-pills">${tallasPillsHtml}</div>
+            <div class="tipo-talla-color-rows"></div>
+        `;
+        const rowsWrap = block.querySelector('.tipo-talla-color-rows');
+        const items = Array.isArray(detalles) && detalles.length > 0 ? detalles : [{}];
+        items.forEach((detalle) => {
+            if ((detalle?.talla || '').trim() !== '') {
+                const row = crearFilaDetalleModal(tipo, 'color', detalle);
+                const tallaInput = row.querySelector('.modal-talla-input');
+                if (tallaInput) {
+                    tallaInput.readOnly = true;
+                    tallaInput.classList.add('is-readonly');
+                }
+                rowsWrap?.appendChild(row);
+            }
+        });
+        const selected = new Set(
+            Array.from(rowsWrap?.querySelectorAll('.modal-talla-input') || [])
+                .map((input) => String(input.value || '').trim().toUpperCase())
+                .filter(Boolean)
+        );
+        block.querySelectorAll('.tipo-talla-pill--in-block[data-color-block-pill]').forEach((pill) => {
+            const talla = String(pill.dataset.colorBlockPill || '').trim().toUpperCase();
+            pill.classList.toggle('is-selected', selected.has(talla));
+        });
+        return block;
+    }
+
+    function obtenerBloqueColorActivo() {
+        const active = tipoTallaGrid?.querySelector('.tipo-talla-color-block.is-active');
+        if (active) return active;
+        return tipoTallaGrid?.querySelector('.tipo-talla-color-block') || null;
+    }
+
+    function activarBloqueColor(block) {
+        tipoTallaGrid?.querySelectorAll('.tipo-talla-color-block').forEach((item) => {
+            item.classList.toggle('is-active', item === block);
+        });
+        sincronizarEstadoPills();
+    }
+
+    function sincronizarEstadoPills() {
+        const pills = tipoTallaGrid?.querySelectorAll('.tipo-talla-pill') || [];
+        pills.forEach((pill) => pill.classList.remove('is-selected'));
+        if (tipoTallaState.modoCarga === 'cantidad') return;
+
+        if (tipoTallaState.modoCarga === 'color') {
+            const activeBlock = obtenerBloqueColorActivo();
+            const selected = new Set(
+                Array.from(activeBlock?.querySelectorAll('.modal-talla-input') || [])
+                    .map((input) => String(input.value || '').trim().toUpperCase())
+                    .filter(Boolean)
+            );
+            pills.forEach((pill) => {
+                const talla = String(pill.dataset.colorBlockPill || pill.textContent || '').trim().toUpperCase();
+                if (selected.has(talla)) pill.classList.add('is-selected');
+            });
+            activeBlock?.querySelectorAll('.tipo-talla-pill--in-block[data-color-block-pill]').forEach((pill) => {
+                const talla = String(pill.dataset.colorBlockPill || '').trim().toUpperCase();
+                pill.classList.toggle('is-selected', selected.has(talla));
+            });
+            return;
+        }
+
+        const selected = new Set(
+            Array.from(tipoTallaGrid?.querySelectorAll('.tipo-talla-row .modal-talla-input') || [])
+                .map((input) => String(input.value || '').trim().toUpperCase())
+                .filter(Boolean)
+        );
+        pills.forEach((pill) => {
+            const talla = String(pill.textContent || '').trim().toUpperCase();
+            if (selected.has(talla)) pill.classList.add('is-selected');
+        });
     }
 
     function renderTallasDisponibles(tipo) {
         if (!tipoTallaGrid) return;
         tipoTallaGrid.innerHTML = '';
 
-        if (tipoTallaState.modoCarga !== 'cantidad') {
+        if (tipoTallaState.modoCarga === 'color') {
+            const groupsWrap = document.createElement('div');
+            groupsWrap.className = 'tipo-talla-color-groups';
+            const block = crearBloqueColorModal(tipo);
+            groupsWrap.appendChild(block);
+            tipoTallaGrid.appendChild(groupsWrap);
+            activarBloqueColor(block);
+        }
+
+        if (tipoTallaState.modoCarga !== 'cantidad' && tipoTallaState.modoCarga !== 'color') {
             const pillsWrap = document.createElement('div');
             pillsWrap.className = 'tipo-talla-pills';
             (TALLAS_POR_TIPO[tipo] || []).forEach((talla) => {
@@ -1511,6 +2265,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 pill.className = 'tipo-talla-pill';
                 pill.textContent = talla;
                 pill.addEventListener('click', function () {
+                    pill.classList.add('is-picked');
+                    setTimeout(() => pill.classList.remove('is-picked'), 220);
                     if (tipoTallaState.modoCarga === 'normal') {
                         const existe = Array.from(tipoTallaGrid.querySelectorAll('.tipo-talla-row .modal-talla-input'))
                             .some((input) => String(input.value || '').trim().toUpperCase() === talla.toUpperCase());
@@ -1528,6 +2284,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         tipoTallaGrid.appendChild(row);
                     }
                     actualizarConfirmarModal();
+                    sincronizarEstadoPills();
                 });
                 pillsWrap.appendChild(pill);
             });
@@ -1537,22 +2294,38 @@ document.addEventListener('DOMContentLoaded', function () {
             emptyState.textContent = 'No hay tallas agregadas. Usa el botón para crear una fila.';
             tipoTallaGrid.appendChild(emptyState);
         } else {
-            // En modo cantidad pura mostramos una fila directa sin pedir tipo de talla.
-            tipoTallaGrid.appendChild(crearFilaDetalleModal(tipo, 'cantidad'));
+            const emptyState = document.createElement('div');
+            emptyState.className = 'tipo-talla-empty';
+            emptyState.textContent = 'Agrega una cantidad para continuar.';
+            tipoTallaGrid.appendChild(emptyState);
         }
 
         const addBtn = document.createElement('button');
         addBtn.type = 'button';
         addBtn.className = 'btn btn-outline-primary tipo-talla-add-btn';
-        addBtn.textContent = tipoTallaState.modoCarga === 'cantidad' ? '+ Agregar cantidad' : '+ Agregar talla';
+        addBtn.textContent = tipoTallaState.modoCarga === 'cantidad'
+            ? '+ Agregar cantidad'
+            : tipoTallaState.modoCarga === 'color'
+                ? '+ Agregar color'
+                : '+ Agregar talla';
         addBtn.addEventListener('click', function () {
             const emptyRef = tipoTallaGrid.querySelector('.tipo-talla-empty');
             if (emptyRef) emptyRef.remove();
-            tipoTallaGrid.insertBefore(crearFilaDetalleModal(tipo, tipoTallaState.modoCarga), addBtn);
+            if (tipoTallaState.modoCarga === 'color') {
+                const groupsWrap = tipoTallaGrid.querySelector('.tipo-talla-color-groups');
+                const block = crearBloqueColorModal(tipo);
+                groupsWrap?.appendChild(block);
+                activarBloqueColor(block);
+                const colorInput = block.querySelector('.modal-color-grupo-input');
+                colorInput?.focus();
+            } else {
+                tipoTallaGrid.insertBefore(crearFilaDetalleModal(tipo, tipoTallaState.modoCarga), addBtn);
+            }
             actualizarConfirmarModal();
         });
         tipoTallaGrid.appendChild(addBtn);
         actualizarConfirmarModal();
+        sincronizarEstadoPills();
     }
 
     function abrirModalTipoTalla(genero) {
@@ -1565,6 +2338,9 @@ document.addEventListener('DOMContentLoaded', function () {
             tipoTallaState.etapa = 'modo';
             tipoTallaState.detallesSeleccionados = [];
             tipoTallaModalText.textContent = `Configura tallas para ${toGeneroLabel(genero)}.`;
+            if (tipoTallaGeneroBadge) {
+                tipoTallaGeneroBadge.textContent = toGeneroLabel(genero);
+            }
 
             tipoTallaModal.querySelectorAll('[data-modo-carga-select]').forEach((btn) => {
                 const isActive = btn.dataset.modoCargaSelect === 'normal';
@@ -2016,14 +2792,58 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     tipoTallaGrid?.addEventListener('input', function () {
+        const active = document.activeElement;
+        if (active?.classList?.contains('modal-color-grupo-input')) {
+            active.value = String(active.value || '').toUpperCase();
+        }
         actualizarConfirmarModal();
+        sincronizarEstadoPills();
     });
 
     tipoTallaGrid?.addEventListener('click', function (event) {
+        const colorBlock = event.target.closest('.tipo-talla-color-block');
+        if (colorBlock) {
+            activarBloqueColor(colorBlock);
+        }
+        const colorPill = event.target.closest('.tipo-talla-pill--in-block[data-color-block-pill]');
+        if (colorPill) {
+            const block = colorPill.closest('.tipo-talla-color-block');
+            const talla = (colorPill.dataset.colorBlockPill || '').trim().toUpperCase();
+            const rowsWrap = block?.querySelector('.tipo-talla-color-rows');
+            if (!block || !rowsWrap || !talla) return;
+            activarBloqueColor(block);
+            const existe = Array.from(rowsWrap.querySelectorAll('.modal-talla-input'))
+                .some((input) => String(input.value || '').trim().toUpperCase() === talla);
+            if (existe) return;
+            const row = crearFilaDetalleModal(tipoTallaState.tipoSeleccionado, 'color', { talla, cantidad: 1 });
+            const tallaInput = row.querySelector('.modal-talla-input');
+            const cantidadInput = row.querySelector('.modal-cantidad-input');
+            if (tallaInput) {
+                tallaInput.readOnly = true;
+                tallaInput.classList.add('is-readonly');
+            }
+            rowsWrap.appendChild(row);
+            colorPill.classList.add('is-selected');
+            if (cantidadInput) cantidadInput.focus();
+            actualizarConfirmarModal();
+            sincronizarEstadoPills();
+            return;
+        }
+        const removeColorBlockBtn = event.target.closest('.tipo-talla-remove-color-block');
+        if (removeColorBlockBtn) {
+            const block = removeColorBlockBtn.closest('.tipo-talla-color-block');
+            block?.remove();
+            const firstBlock = tipoTallaGrid.querySelector('.tipo-talla-color-block');
+            if (firstBlock) activarBloqueColor(firstBlock);
+            actualizarConfirmarModal();
+            sincronizarEstadoPills();
+            return;
+        }
         const removeBtn = event.target.closest('.tipo-talla-remove');
         if (!removeBtn) return;
         removeBtn.closest('.tipo-talla-row')?.remove();
         actualizarConfirmarModal();
+        sincronizarEstadoPills();
     });
 
     tipoTallaConfirmarBtn?.addEventListener('click', function () {
@@ -2033,7 +2853,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const rows = tipoTallaGrid?.querySelectorAll('.tipo-talla-row') || [];
         rows.forEach((row) => {
             const talla = (row.querySelector('.modal-talla-input')?.value || '').trim().toUpperCase();
-            const color = (row.querySelector('.modal-color-input')?.value || '').trim().toUpperCase();
             const cantidad = parseInt(row.querySelector('.modal-cantidad-input')?.value || '0', 10);
             if (tipoTallaState.modoCarga === 'normal') {
                 if (talla !== '' && cantidad > 0) {
@@ -2047,10 +2866,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (cantidad > 0) {
                     detalles.push({ talla: 'UNICA', color: '', cantidad });
                 }
-            } else if (talla !== '' && color !== '' && cantidad > 0) {
-                detalles.push({ talla, color, cantidad });
             }
         });
+        if (tipoTallaState.modoCarga === 'color') {
+            const blocks = tipoTallaGrid?.querySelectorAll('.tipo-talla-color-block') || [];
+            blocks.forEach((block) => {
+                const color = (block.querySelector('.modal-color-grupo-input')?.value || '').trim().toUpperCase();
+                if (!color) return;
+                const tallasColor = new Set();
+                block.querySelectorAll('.tipo-talla-row').forEach((row) => {
+                    const talla = (row.querySelector('.modal-talla-input')?.value || '').trim().toUpperCase();
+                    const cantidad = parseInt(row.querySelector('.modal-cantidad-input')?.value || '0', 10);
+                    if (talla !== '' && cantidad > 0) {
+                        const key = `${color}::${talla}`;
+                        if (tallasColor.has(key)) return;
+                        tallasColor.add(key);
+                        detalles.push({ talla, color, cantidad });
+                    }
+                });
+            });
+        }
         if (tipoTallaState.modoCarga === 'normal') {
             const tallasCapturadas = rows
                 ? Array.from(rows).map((row) => (row.querySelector('.modal-talla-input')?.value || '').trim().toUpperCase()).filter(Boolean)
@@ -2070,6 +2905,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     tipoTallaCancelarBtn?.addEventListener('click', function () {
+        cerrarModalTipoTalla(null);
+    });
+
+    tipoTallaCloseBtn?.addEventListener('click', function () {
         cerrarModalTipoTalla(null);
     });
 
