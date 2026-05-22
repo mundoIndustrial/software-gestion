@@ -304,7 +304,7 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
         $esReciboBodega = $tipoRecibo === 'CORTE-PARA-BODEGA';
 
         // Para CORTE-PARA-BODEGA no siempre existe pedido_produccion_id.
-        // Se usa numero_pedido tecnico=0 para cumplir NOT NULL en procesos_prenda.
+        // En esos casos se persiste numero_pedido = null (seguimiento interno).
         if (!$pedido && !$esReciboBodega) {
             Log::warning('[cambiarEstadoRecibo] No se crea proceso Corte: pedido_produccion_id no encontrado', [
                 'recibo_id' => $recibo->id,
@@ -374,7 +374,5 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
         return strtolower(trim(Str::ascii($estado))) === 'en ejecucion';
     }
 }
-
-
 
 
