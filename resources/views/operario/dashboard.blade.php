@@ -190,6 +190,7 @@
                                                 'tipoRecibo' => $recibo['tipo_recibo'],
                                                 'idParcial' => $recibo['id_parcial'] ?: null,
                                                 'consecutivo' => $recibo['consecutivo_actual'],
+                                                'consecutivoParcial' => $recibo['consecutivo_parcial'] ?: null,
                                                 'reciboId' => $recibo['recibo_id'] ?? null,
                                                 'clase' => 'mobile-under-state',
                                             ])@endcomponent
@@ -203,6 +204,7 @@
                                                 'tipoRecibo' => $recibo['tipo_recibo'],
                                                 'idParcial' => $recibo['id_parcial'] ?: null,
                                                 'consecutivo' => $recibo['consecutivo_actual'],
+                                                'consecutivoParcial' => $recibo['consecutivo_parcial'] ?: null,
                                                 'reciboId' => $recibo['recibo_id'] ?? null,
                                             ])@endcomponent
                                         </div>

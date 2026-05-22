@@ -81,13 +81,22 @@ class OperarioDashboardReadServiceImpl implements OperarioDashboardReadService
                 $join->on('prc.id_recibo', '=', 'crp.id')
                     ->whereNull('prc.id_parcial');
             })
-            ->leftJoin('recibo_por_partes as rpp', 'prc.id_parcial', '=', 'rpp.id')
+            ->leftJoin('pedidos_parciales as pp', function ($join) {
+                $join->on('prc.id_parcial', '=', 'pp.id')
+                    ->whereNotNull('prc.id_parcial');
+            })
+            ->leftJoin('recibo_por_partes as rpp', function ($join) {
+                $join->on('prc.id_parcial', '=', 'rpp.id')
+                    ->whereNotNull('prc.id_parcial');
+            })
             ->leftJoin('pedidos_produccion as p', function ($join) {
                 $join->on('crp.pedido_produccion_id', '=', 'p.id')
+                    ->orOn('pp.pedido_produccion_id', '=', 'p.id')
                     ->orOn('rpp.pedido_produccion_id', '=', 'p.id');
             })
             ->leftJoin('prendas_pedido as prep', function ($join) {
                 $join->on('crp.prenda_id', '=', 'prep.id')
+                    ->orOn('pp.prenda_pedido_id', '=', 'prep.id')
                     ->orOn('rpp.prenda_pedido_id', '=', 'prep.id');
             })
             ->leftJoin('prenda_bodega as pb', 'crp.prenda_bodega_id', '=', 'pb.id')
@@ -107,15 +116,17 @@ class OperarioDashboardReadServiceImpl implements OperarioDashboardReadService
                 'pb.nombre as bodega_nombre',
                 'pb.descripcion as bodega_descripcion',
                 'crp.tipo_recibo as crp_tipo',
-                'rpp.tipo_recibo as pp_tipo',
+                'pp.tipo_recibo as pp_tipo',
+                'rpp.tipo_recibo as rpp_tipo',
                 'crp.consecutivo_actual as crp_consecutivo',
-                'rpp.consecutivo_parcial as pp_consecutivo'
+                'pp.consecutivo_actual as pp_consecutivo',
+                'rpp.consecutivo_parcial as rpp_consecutivo'
             ])
             ->orderBy('prc.fecha_completado', 'desc')
             ->get();
 
         return $completados->map(function ($item) {
-            $tipoRecibo = $item->crp_tipo ?: ($item->pp_tipo ?: 'COSTURA');
+            $tipoRecibo = $item->crp_tipo ?: ($item->pp_tipo ?: ($item->rpp_tipo ?: 'COSTURA'));
             $esBodega = strtoupper((string) $tipoRecibo) === 'CORTE-PARA-BODEGA';
 
             return [
@@ -131,7 +142,8 @@ class OperarioDashboardReadServiceImpl implements OperarioDashboardReadService
                 'nombre_prenda' => $esBodega ? ($item->bodega_nombre ?? 'N/A') : ($item->nombre_prenda ?? 'N/A'),
                 'descripcion' => $esBodega ? ($item->bodega_descripcion ?? '') : ($item->descripcion ?? ''),
                 'tipo_recibo' => $tipoRecibo,
-                'consecutivo_actual' => $item->crp_consecutivo ?: ($item->pp_consecutivo ?: $item->numero_recibo),
+                'consecutivo_actual' => $item->crp_consecutivo ?: ($item->pp_consecutivo ?: ($item->rpp_consecutivo ?: $item->numero_recibo)),
+                'consecutivo_parcial' => $item->pp_consecutivo ?: ($item->rpp_consecutivo ?: null),
             ];
         });
     }
