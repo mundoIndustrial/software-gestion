@@ -1,6 +1,105 @@
 import { httpJson } from '../api/http';
 import { asegurarBadgeCompletado } from '../ui/badges';
 
+function mostrarConfirmacionCompletarCorte() {
+    return new Promise((resolve) => {
+        const existente = document.getElementById('modal-confirmar-completar-corte');
+        if (existente) {
+            existente.remove();
+        }
+
+        const overlay = document.createElement('div');
+        overlay.id = 'modal-confirmar-completar-corte';
+        overlay.style.cssText = `
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            background: rgba(0, 0, 0, 0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        `;
+
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            width: min(760px, 96vw);
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+            overflow: hidden;
+            font-family: inherit;
+        `;
+
+        modal.innerHTML = `
+            <div style="padding: 22px 24px; border-bottom: 1px solid #e5e7eb;">
+                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-rounded" style="color: #dc2626; font-size: 1.45rem;">warning</span>
+                    Advertencia
+                </h3>
+            </div>
+            <div style="padding: 24px; line-height: 1.6; color: #111827;">
+                <span style="display: inline-block; font-size: 1.6rem; font-weight: 900; margin-bottom: 12px; color: #111827;">
+                    ¿Sí está seguro de que completaste el corte?
+                </span>
+                <div style="font-size: 1.1rem; margin-bottom: 8px;">
+                    La orden pasará a Costura y saldrá de Corte.
+                </div>
+                <div style="font-size: 1.1rem; margin-bottom: 8px;">
+                    Recuerda: registrar la novedad del corte (ej.: piezas x pasadas). Sin ella no habrá trazabilidad.
+                </div>
+                <div style="font-size: 1.1rem;">
+                    Si no lo has hecho, presiona Cancelar.
+                </div>
+            </div>
+            <div style="padding: 16px 24px 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                <button type="button" data-accion="cancelar" style="border: 1px solid #d1d5db; background: #fff; color: #374151; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="button" data-accion="confirmar" style="border: none; background: #f97316; color: #fff; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor: pointer;">
+                    Sí, completar
+                </button>
+            </div>
+        `;
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+
+        const manejarEscape = (event) => {
+            if (event.key === 'Escape') {
+                cerrar(false);
+            }
+        };
+
+        const cerrar = (respuesta) => {
+            document.removeEventListener('keydown', manejarEscape);
+            document.body.style.overflow = '';
+            overlay.remove();
+            resolve(respuesta);
+        };
+
+        overlay.addEventListener('click', (event) => {
+            if (event.target === overlay) {
+                cerrar(false);
+            }
+        });
+
+        const btnCancelar = modal.querySelector('[data-accion="cancelar"]');
+        const btnConfirmar = modal.querySelector('[data-accion="confirmar"]');
+
+        if (btnCancelar) {
+            btnCancelar.addEventListener('click', () => cerrar(false));
+        }
+        if (btnConfirmar) {
+            btnConfirmar.addEventListener('click', () => cerrar(true));
+            btnConfirmar.focus();
+        }
+
+        document.addEventListener('keydown', manejarEscape);
+    });
+}
+
 function actualizarInterfazCorte(container, accion, btnActual) {
     if (!container) return;
 
@@ -115,13 +214,14 @@ function actualizarInterfazCostura(container, accion, btnActual) {
     }
 }
 
-export function completarCorte(btn) {
+export async function completarCorte(btn) {
     const reciboId = btn.dataset.reciboId;
     const prendaId = btn.dataset.prendaId;
     const card = btn.closest('.orden-card-simple');
     const esParcial = btn.dataset.esParcial === '1';
+    const confirmado = await mostrarConfirmacionCompletarCorte();
 
-    if (!reciboId) {
+    if (!confirmado || !reciboId) {
         return;
     }
 
@@ -329,4 +429,3 @@ export function deshacerCostura(btn) {
             btn.innerHTML = originalText;
         });
 }
-
