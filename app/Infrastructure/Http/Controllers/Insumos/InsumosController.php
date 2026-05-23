@@ -193,12 +193,25 @@ class InsumosController extends Controller
             }
             
             // Si no es AJAX, retornar la vista completa
+            $estadosBadgeBodega = [
+                'PENDIENTE_INSUMOS',
+                'PENDIENTE_TELA',
+                'PENDIENTE_PLOTTER',
+                'INSUMOS_PEDIDOS',
+            ];
+
+            $conteoRecibosBodegaPendientes = ConsecutivoReciboPedido::query()
+                ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
+                ->whereIn(\DB::raw('UPPER(TRIM(estado))'), $estadosBadgeBodega)
+                ->count();
+
             return view('insumos.materiales.index', [
                 'ordenes' => $ordenes,
                 'user' => $user,
                 'search' => $search,
                 'esGestionReflectivo' => false,
                 'tipoReciboActivo' => $tipoReciboActivo,
+                'conteoRecibosBodegaPendientes' => $conteoRecibosBodegaPendientes,
             ]);
         } catch (\Exception $e) {
             Log::error(' ERROR en InsumosController.materiales()', [

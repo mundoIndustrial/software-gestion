@@ -280,15 +280,15 @@ class GetOperarioDashboardUseCase
             }
 
             if ($usuario->hasRole('vista-costura')) {
+                $prendasBodegaVistaCostura = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibosBodegaVistaCostura();
+
                 if ($filtroRecibo === 'bodega') {
-                    $prendasConRecibos = $this->obtenerPrendasRecibosService->obtenerPrendasConRecibosBodegaVistaCostura();
+                    $prendasConRecibos = $prendasBodegaVistaCostura;
                 } else {
                     $prendasConRecibos = $this->filtrarPrendasVistaCosturaVisible($prendasConRecibos, $filtroRecibo);
                 }
                 $vistaCosturaSinEncargadoCount = $this->contarPrendasVistaCosturaSinEncargado($prendasConRecibos, $filtroRecibo);
-                $vistaCosturaBodegaSinEncargadoCount = $filtroRecibo === 'bodega'
-                    ? $this->contarPrendasVistaCosturaSinEncargadoBodega($prendasConRecibos)
-                    : 0;
+                $vistaCosturaBodegaSinEncargadoCount = $this->contarPrendasVistaCosturaSinEncargadoBodega($prendasBodegaVistaCostura);
                 $vistaCosturaBodegaControlCalidadCount = $filtroRecibo === 'bodega'
                     ? $this->contarPrendasVistaCosturaControlCalidadBodega($prendasConRecibos)
                     : 0;

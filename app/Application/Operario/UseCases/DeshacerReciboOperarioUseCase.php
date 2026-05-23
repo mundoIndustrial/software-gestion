@@ -97,6 +97,43 @@ class DeshacerReciboOperarioUseCase
                                     $procesoCostura = $procesoCosturaFallback;
                                 }
                             }
+                        } elseif (
+                            strtoupper(trim((string) ($recibo->tipo_recibo ?? ''))) === 'CORTE-PARA-BODEGA'
+                            && !empty($recibo->prenda_bodega_id)
+                        ) {
+                            $numeroPedido = (int) ($recibo->pedido?->numero_pedido ?? 0);
+                            if ($numeroPedido <= 0 && !empty($recibo->pedido_produccion_id)) {
+                                $numeroPedido = (int) (\App\Models\PedidoProduccion::query()
+                                    ->where('id', (int) $recibo->pedido_produccion_id)
+                                    ->value('numero_pedido') ?? 0);
+                            }
+
+                            $procesoCostura = ProcesoPrenda::query()
+                                ->where('prenda_bodega_id', (int) $recibo->prenda_bodega_id)
+                                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                                ->when($numeroPedido > 0, fn ($q) => $q->where('numero_pedido', $numeroPedido))
+                                ->where('numero_recibo', (int) ($recibo->consecutivo_actual ?? 0))
+                                ->where(function ($query) {
+                                    $query->whereNull('numero_recibo_parcial')
+                                        ->orWhere('numero_recibo_parcial', '')
+                                        ->orWhere('numero_recibo_parcial', 0);
+                                })
+                                ->orderByDesc('created_at')
+                                ->orderByDesc('id')
+                                ->first();
+
+                            if (!$procesoCostura) {
+                                $procesoCostura = ProcesoPrenda::query()
+                                    ->where('prenda_bodega_id', (int) $recibo->prenda_bodega_id)
+                                    ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                                    ->orderByDesc('created_at')
+                                    ->orderByDesc('id')
+                                    ->first();
+                            }
+
+                            if ($procesoCostura && !empty($procesoCostura->encargado)) {
+                                $sinEncargadoCostura = false;
+                            }
                         }
 
                         if ($sinEncargadoCostura) {

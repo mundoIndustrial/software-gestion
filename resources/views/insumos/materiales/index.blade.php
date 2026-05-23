@@ -8,6 +8,7 @@
     $mostrarSoloVerRecibo = (bool) ($mostrarSoloVerRecibo ?? false);
     $tipoReciboActivo = strtoupper((string) ($tipoReciboActivo ?? 'COSTURA'));
     $esTabBodega = $tipoReciboActivo === 'CORTE-PARA-BODEGA';
+    $conteoRecibosBodegaPendientes = (int) ($conteoRecibosBodegaPendientes ?? 0);
     $mostrarColumnaPedido = !$esTabBodega;
     $mostrarColumnaEstado = !$esGestionReflectivo;
     $totalColumnas = 7 + ($mostrarColumnaPedido ? 1 : 0) + ($mostrarColumnaEstado ? 1 : 0);
@@ -117,8 +118,13 @@
                         Pedidos
                     </a>
                     <a href="{{ route('insumos.materiales.index', ['tipo_recibo' => 'CORTE-PARA-BODEGA']) }}"
-                       style="padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none; {{ $esTabBodega ? 'background:#2563eb;color:#fff;' : 'color:#374151;' }}">
-                        Bodega (Recibo de corte)
+                       style="position: relative; display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none; {{ $esTabBodega ? 'background:#2563eb;color:#fff;' : 'color:#374151;' }}">
+                        Bodega
+                        @if($conteoRecibosBodegaPendientes > 0)
+                            <span style="display:inline-flex;align-items:center;justify-content:center;min-width:1.2rem;height:1.2rem;padding:0 0.35rem;border-radius:999px;background:#dc2626;color:#fff;font-size:0.7rem;font-weight:700;line-height:1;">
+                                {{ $conteoRecibosBodegaPendientes }}
+                            </span>
+                        @endif
                     </a>
                 </div>
             </div>

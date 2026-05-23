@@ -276,8 +276,8 @@
 
 <div id="rcbSuccessModal" style="display:none; position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 10000300; align-items: center; justify-content: center;">
     <div style="background:#fff; width:min(92vw,420px); border-radius:14px; padding:18px; box-shadow:0 18px 40px rgba(15,23,42,.25);">
-        <h3 style="margin:0 0 8px 0; font-size:18px; font-weight:700; color:#0f172a;">Recibo registrado</h3>
-        <p style="margin:0 0 14px 0; color:#334155; font-size:14px;">El recibo se guardó correctamente.</p>
+        <h3 id="rcbSuccessModalTitle" style="margin:0 0 8px 0; font-size:18px; font-weight:700; color:#0f172a;">Recibo registrado</h3>
+        <p id="rcbSuccessModalMessage" style="margin:0 0 14px 0; color:#334155; font-size:14px;">El recibo se guardó correctamente.</p>
         <div style="display:flex; justify-content:flex-end;">
             <button type="button" id="rcbSuccessModalOkBtn" class="btn btn-primary">Aceptar</button>
         </div>
@@ -1815,6 +1815,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const tipoTallaConfirmarBtn = document.getElementById('confirmarTipoTallaGeneroBtn');
     const tipoTallaGrid = document.getElementById('tipoTallaGeneroGrid');
     const rcbSuccessModal = document.getElementById('rcbSuccessModal');
+    const rcbSuccessModalTitle = document.getElementById('rcbSuccessModalTitle');
+    const rcbSuccessModalMessage = document.getElementById('rcbSuccessModalMessage');
     const rcbSuccessModalOkBtn = document.getElementById('rcbSuccessModalOkBtn');
     const addProcesoModal = document.getElementById('addProcesoModal');
     const addProcesoOverlay = document.getElementById('addProcesoOverlay');
@@ -1832,6 +1834,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function showReciboSuccessModal() {
         if (!rcbSuccessModal) return;
+        if (rcbSuccessModalTitle) rcbSuccessModalTitle.textContent = 'Recibo registrado';
+        if (rcbSuccessModalMessage) rcbSuccessModalMessage.textContent = 'El recibo se guardó correctamente.';
+        rcbSuccessModal.style.display = 'flex';
+    }
+
+    function showFeedbackModal(title, message) {
+        if (!rcbSuccessModal) return;
+        if (rcbSuccessModalTitle) rcbSuccessModalTitle.textContent = String(title || 'Mensaje');
+        if (rcbSuccessModalMessage) rcbSuccessModalMessage.textContent = String(message || '');
         rcbSuccessModal.style.display = 'flex';
     }
 
@@ -1955,12 +1966,12 @@ document.addEventListener('DOMContentLoaded', function () {
             : (procesoEncargadoInput?.value || '').trim().toUpperCase();
 
         if (!area) {
-            alert('Selecciona un área para continuar.');
+            showFeedbackModal('Validación', 'Selecciona un área para continuar.');
             return;
         }
 
         if (!encargado) {
-            alert('Ingresa el encargado para continuar.');
+            showFeedbackModal('Validación', 'Ingresa el encargado para continuar.');
             return;
         }
 
@@ -2008,9 +2019,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             closeAdminAddProcesoModal();
             loadRecibosCorteForBodega();
-            alert(`Encargado asignado correctamente: ${encargado}`);
+            showFeedbackModal('Proceso actualizado', `Encargado asignado correctamente: ${encargado}`);
         } catch (error) {
-            alert(error.message || 'Error guardando proceso');
+            showFeedbackModal('Error', error.message || 'Error guardando proceso');
         } finally {
             if (confirmAddProcesoBtn) confirmAddProcesoBtn.disabled = false;
         }

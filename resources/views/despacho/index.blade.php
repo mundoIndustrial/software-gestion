@@ -1,4 +1,4 @@
-@extends('layouts.despacho-standalone')
+﻿@extends('layouts.despacho-standalone')
 
 @section('title', 'Módulo de Despacho')
 @section('page-title', 'Despacho')
@@ -21,11 +21,11 @@
 
 @section('content')
 <script>
-// Definir funciones ANTES de renderizar el HTML para que estén disponibles en los onclick
+// Definir funciones ANTES de renderizar el HTML para que estan disponibles en los onclick
 window.entregarTodo = function(pedidoId, numeroPedido) {
     Swal.fire({
         title: '¿Marcar como entregado?',
-        html: `¿Estás seguro de marcar <strong>TODOS los ítems del pedido #${numeroPedido}</strong> como entregados?<br><br><span style="color: #ef4444; font-weight: bold;">Esta acción marcará el pedido como completado.</span>`,
+        html: `<span style="color: #ef4444; font-weight: bold;">Este pedido ya no lo verá producción.</span><br><br>¿Estás seguro de marcar <strong>TODOS los ítems del pedido #${numeroPedido}</strong> como entregados?<br><br><span style="color: #ef4444; font-weight: bold;">Esta acción marcará el pedido como completado.</span>`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#3b82f6',
@@ -60,10 +60,10 @@ window._procesarEntregarTodo = function(pedidoId, numeroPedido) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Mostrar notificación de éxito
+            // Mostrar notificacion de Exito
             window.mostrarNotificacionExito(numeroPedido);
             
-            // Eliminar la fila de la tabla con animación
+            // Eliminar la fila de la tabla con animacion
             const row = document.querySelector(`tr[data-pedido-id="${pedidoId}"]`);
             if (row) {
                 row.style.transition = 'all 0.3s ease';
@@ -87,7 +87,7 @@ window._procesarEntregarTodo = function(pedidoId, numeroPedido) {
                 }, { once: true });
             }
         } else {
-            // Restaurar botón y mostrar error
+            // Restaurar boton y mostrar error
             if (btn) {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
@@ -101,12 +101,12 @@ window._procesarEntregarTodo = function(pedidoId, numeroPedido) {
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
-        alert('Error de conexión. Por favor intenta nuevamente.');
+        alert('Error de conexion. Por favor intenta nuevamente.');
     });
 };
 
 window.mostrarNotificacionExito = function(numeroPedido) {
-    // Crear notificación flotante
+    // Crear notificacion flotante
     const notificacion = document.createElement('div');
     notificacion.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
     notificacion.innerHTML = ` Pedido #${numeroPedido} marcado como entregado`;
@@ -116,7 +116,7 @@ window.mostrarNotificacionExito = function(numeroPedido) {
     // Animar entrada
     setTimeout(() => notificacion.style.transform = 'translateX(0)', 10);
     
-    // Remover después de 3 segundos
+    // Remover despues de 3 segundos
     setTimeout(() => {
         notificacion.style.transform = 'translateX(full)';
         setTimeout(() => notificacion.remove(), 300);
@@ -162,7 +162,7 @@ window.mostrarNotificacionExito = function(numeroPedido) {
                         <span class="block text-2xl font-semibold text-slate-900">{{ $pedidos->total() }}</span>
                     </div>
                     <div>
-                        <span class="text-sm text-slate-500">En esta página</span>
+                        <span class="text-sm text-slate-500">En esta pagina</span>
                         <span class="block text-2xl font-semibold text-slate-900">{{ $pedidos->count() }}</span>
                     </div>
                 </div>
@@ -204,7 +204,7 @@ window.mostrarNotificacionExito = function(numeroPedido) {
                                         {{ $pedido->numero_pedido }}
                                     </td>
                                     <td class="px-6 py-4 text-slate-600">
-                                        {{ $pedido->cliente ?? '—' }}
+                                        {{ $pedido->cliente ?? '–' }}
                                     </td>
                                     <td class="px-6 py-3" style="min-width: 320px;">
                                         <div class="flex gap-2 items-center">
@@ -215,7 +215,7 @@ window.mostrarNotificacionExito = function(numeroPedido) {
                                                 readonly
                                                 title="{{ $pedido->novedades ?? '' }}"
                                                 style="height:72px"
-                                            >{{ !empty($pedido->novedades) ? $pedido->novedades : '—' }}</textarea>
+                                            >{{ !empty($pedido->novedades) ? $pedido->novedades : '–' }}</textarea>
                                             <button
                                                 type="button"
                                                 onclick="abrirModalNovedadesDespachoIndex({{ $pedido->id }}, '{{ addslashes($pedido->numero_pedido) }}')"
@@ -258,11 +258,11 @@ window.mostrarNotificacionExito = function(numeroPedido) {
                                                 bg-slate-100 text-slate-800
                                             @endif
                                         ">
-                                            {{ str_replace('_', ' ', $pedido->estado) ?? '—' }}
+                                            {{ str_replace('_', ' ', $pedido->estado) ?? '–' }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-center text-slate-600 text-xs">
-                                        {{ $pedido->created_at?->format('d/m/Y h:i A') ?? '—' }}
+                                        {{ $pedido->created_at?->format('d/m/Y h:i A') ?? '–' }}
                                     </td>
                                 </tr>
                             @endforeach
@@ -345,7 +345,7 @@ function abrirModalNovedadesDespachoIndex(pedidoId, numeroPedido) {
         warn('Solo lectura: no puedes guardar novedades desde Despacho');
     };
 
-    // Ocultar botón "Agregar Novedad" cuando el modal esté en el DOM
+    // Ocultar boton "Agregar Novedad" cuando el modal esta en el DOM
     document.addEventListener('DOMContentLoaded', function () {
         const modal = document.getElementById('novedadesAdvancedModal');
         if (!modal) return;
@@ -383,10 +383,10 @@ let reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
 
 function connectWebSocket() {
-    console.log(' ✅ Iniciando conexión WebSocket para despacho...');
+    console.log('  Iniciando conexion WebSocket para despacho...');
     
     if (!window.Echo || !window.EchoInstance) {
-        console.error('❌ Echo no está inicializado. Reintentando...');
+        console.error(' Echo no está inicializado. Reintentando...');
         if (reconnectAttempts < maxReconnectAttempts) {
             reconnectAttempts++;
             setTimeout(connectWebSocket, 2000 * reconnectAttempts);
@@ -398,7 +398,7 @@ function connectWebSocket() {
         // Usar la instancia de Echo ya inicializada en bootstrap.js
         socket = window.Echo || window.EchoInstance;
 
-        // Escuchar eventos de pedidos en el canal público de despacho
+        // Escuchar eventos de pedidos en el canal publico de despacho
         console.log(' Creando canal pedidos.general...');
         const despachoChannel = socket.channel('pedidos.general');
         
@@ -410,7 +410,7 @@ function connectWebSocket() {
         console.log(' Canal pedidos.general creado, configurando listener...');
         
         despachoChannel.listen('.pedido.actualizado', (event) => {
-            console.log(' ✅ Evento WebSocket recibido en despacho:', event);
+            console.log('  Evento WebSocket recibido en despacho:', event);
             
             // Log adicional para debugging
             console.log(' Debug evento recibido:', {
@@ -423,26 +423,26 @@ function connectWebSocket() {
                 'timestamp': event.timestamp
             });
             
-            // Mostrar notificación de que se recibió un evento
+            // Mostrar notificacion de que se recibio un evento
             console.log(' Evento recibido - Verificando si hay que actualizar la lista...');
             
-            // Si estamos en la lista principal y el pedido cambió a "Entregado", eliminarlo
+            // Si estamos en la lista principal y el pedido cambio a "Entregado", eliminarlo
             if (event.nuevo_estado === 'Entregado') {
                     console.log(' Eliminando pedido entregado de la lista:', event.numero_pedido);
                     
-                    // Buscar el pedido en la tabla y eliminarlo con animación
+                    // Buscar el pedido en la tabla y eliminarlo con animacion
                     const pedidoRow = document.querySelector(`tr[data-pedido-id="${event.pedido_id}"]`);
                     if (pedidoRow) {
-                        // Agregar animación de fade out usando CSS transitions
+                        // Agregar animacion de fade out usando CSS transitions
                         pedidoRow.style.transition = 'all 0.3s ease';
                         pedidoRow.style.opacity = '0';
                         pedidoRow.style.transform = 'translateX(-20px)';
                         
-                        // Eliminar después de que la animación complete
+                        // Eliminar despues de que la animacion complete
                         pedidoRow.addEventListener('transitionend', function() {
                             pedidoRow.remove();
                             
-                            // Mostrar notificación
+                            // Mostrar notificacion
                             mostrarNotificacionPedidoEntregado(event.numero_pedido);
                             
                             // Verificar si no quedan pedidos
@@ -459,19 +459,19 @@ function connectWebSocket() {
                         }, { once: true }); // Solo se ejecuta una vez
                     }
                 }
-                // Si el pedido cambió a "Pendiente" y no está en la lista, agregarlo o recargar
+                // Si el pedido cambio a "Pendiente" y no esta en la lista, agregarlo o recargar
                 else if (event.nuevo_estado === 'Pendiente') {
-                    console.log(' Pedido cambió a Pendiente, verificando lista:', event.numero_pedido);
+                    console.log(' Pedido cambio a Pendiente, verificando lista:', event.numero_pedido);
                     
-                    // Verificar si el pedido NO está en la lista actual
+                    // Verificar si el pedido NO esta en la lista actual
                     const pedidoRow = document.querySelector(`tr[data-pedido-id="${event.pedido_id}"]`);
                     if (!pedidoRow) {
                         console.log(' Pedido no encontrado en lista, recargando para mostrarlo...');
-                        console.log(' Recargando página por cambio en bodega...');
-                        // Recargar la página para mostrar el nuevo pedido pendiente
+                        console.log(' Recargando pagina por cambio en bodega...');
+                        // Recargar la pagina para mostrar el nuevo pedido pendiente
                         window.location.reload();
                     } else {
-                        console.log(' Pedido ya está en la lista');
+                        console.log(' Pedido ya esta en la lista');
                     }
                 }
                 // Si hay cambios en bodega (items count, etc.), recargar para estar seguros
@@ -479,25 +479,25 @@ function connectWebSocket() {
                     console.log(' Hay cambios en bodega, verificando si hay que recargar...');
                     console.log(' Info de bodega:', event.changedFields);
                     
-                    // Si hay items pendientes y el pedido no está en la lista, recargar
+                    // Si hay items pendientes y el pedido no esta en la lista, recargar
                     if (event.changedFields.bodega_pendientes_count > 0) {
                         const pedidoRow = document.querySelector(`tr[data-pedido-id="${event.pedido_id}"]`);
                         if (!pedidoRow) {
-                            console.log(' Hay items pendientes pero el pedido no está en lista, recargando...');
+                            console.log(' Hay items pendientes pero el pedido no esta en lista, recargando...');
                             window.location.reload();
                         } else {
-                            console.log(' Pedido con items pendientes ya está en lista');
+                            console.log(' Pedido con items pendientes ya esta en lista');
                         }
                     }
                 }
-                // Si el pedido volvió a "Pendiente" desde "Entregado" y no está en la lista, recargar la página
+                // Si el pedido volvio a "Pendiente" desde "Entregado" y no esta en la lista, recargar la pagina
                 else if (event.nuevo_estado === 'Pendiente' && event.anterior_estado === 'Entregado') {
-                    console.log(' Pedido volvió a Pendiente, recargando lista:', event.numero_pedido);
+                    console.log(' Pedido volvio a Pendiente, recargando lista:', event.numero_pedido);
                     
-                    // Verificar si el pedido NO está en la lista actual
+                    // Verificar si el pedido NO esta en la lista actual
                     const pedidoRow = document.querySelector(`tr[data-pedido-id="${event.pedido_id}"]`);
                     if (!pedidoRow) {
-                        // Recargar la página para mostrar el pedido que volvió
+                        // Recargar la pagina para mostrar el pedido que volvio
                         window.location.reload();
                     }
                 }
@@ -506,13 +506,13 @@ function connectWebSocket() {
                 console.error(' Error en WebSocket (despacho):', error);
             });
 
-        console.log(' ✅ WebSocket conectado para lista de despacho');
+        console.log('  WebSocket conectado para lista de despacho');
         console.log(' Verificando canal público de despacho...');
         
-        // Verificar si podemos suscribirnos al canal público
+        // Verificar si podemos suscribirnos al canal publico
         const channel = socket.channel('pedidos.general');
         if (channel) {
-            console.log(' ✅ Canal público pedidos.general creado correctamente');
+            console.log('  Canal público pedidos.general creado correctamente');
         } else {
             console.error(' Error al crear canal público pedidos.general');
         }
@@ -526,7 +526,7 @@ function connectWebSocket() {
 }
 
 function mostrarNotificacionPedidoEntregado(numeroPedido) {
-    // Crear notificación flotante
+    // Crear notificacion flotante
     const notificacion = document.createElement('div');
     notificacion.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
     notificacion.innerHTML = `
@@ -538,12 +538,12 @@ function mostrarNotificacionPedidoEntregado(numeroPedido) {
     
     document.body.appendChild(notificacion);
     
-    // Mostrar notificación
+    // Mostrar notificacion
     setTimeout(() => {
         notificacion.style.transform = 'translateX(0)';
     }, 100);
     
-    // Ocultar después de 3 segundos
+    // Ocultar despues de 3 segundos
     setTimeout(() => {
         notificacion.style.transform = 'translateX(100%)';
         setTimeout(() => {
@@ -552,25 +552,27 @@ function mostrarNotificacionPedidoEntregado(numeroPedido) {
     }, 3000);
 }
 
-// Inicializar cuando se carga la página
+// Inicializar cuando se carga la pagina
 document.addEventListener('DOMContentLoaded', function() {
     console.log(' DOM cargado - Iniciando WebSocket de despacho...');
     console.log(' URL actual:', window.location.href);
     console.log(' Pathname:', window.location.pathname);
     
-    // Verificar si estamos en la página correcta
+    // Verificar si estamos en la pagina correcta
     if (window.location.pathname.includes('/despacho/pendientes')) {
-        console.log(' Estamos en la página de despacho pendientes');
+        console.log(' Estamos en la pagina de despacho pendientes');
     } else {
         console.log(' No estamos en /despacho/pendientes, estamos en:', window.location.pathname);
     }
     
-    // Usar el sistema waitForEcho para asegurar que Echo esté disponible
+    // Usar el sistema waitForEcho para asegurar que Echo esta disponible
     window.waitForEcho(function() {
-        console.log(' Echo está listo, conectando WebSocket para lista de despacho...');
+        console.log(' Echo esta listo, conectando WebSocket para lista de despacho...');
         connectWebSocket();
     });
 });
 </script>
 <script src="{{ asset('js/despacho-index.js') }}"></script>
 @endsection
+
+

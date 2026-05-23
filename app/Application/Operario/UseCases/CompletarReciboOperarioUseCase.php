@@ -156,10 +156,19 @@ class CompletarReciboOperarioUseCase
                     $recibo->area = 'Costura';
                     $this->recibos->save($recibo);
 
-                    if (!empty($recibo->prenda_id)) {
-                        $numeroPedido = $this->workflow->findNumeroPedidoByPrendaId((int) $recibo->prenda_id);
+                    $numeroPedido = (int) ($recibo->pedido?->numero_pedido ?? 0);
+                    if ($numeroPedido <= 0 && !empty($recibo->pedido_produccion_id)) {
+                        $numeroPedido = (int) (\App\Models\PedidoProduccion::query()
+                            ->where('id', (int) $recibo->pedido_produccion_id)
+                            ->value('numero_pedido') ?? 0);
+                    }
 
-                        if (!empty($numeroPedido)) {
+                    if (!empty($recibo->prenda_id)) {
+                        if ($numeroPedido <= 0) {
+                            $numeroPedido = (int) ($this->workflow->findNumeroPedidoByPrendaId((int) $recibo->prenda_id) ?? 0);
+                        }
+
+                        if ($numeroPedido > 0) {
                             $procesoCostura = $this->procesos->findLatestByProceso(
                                 numeroPedido: (int) $numeroPedido,
                                 prendaId: (int) $recibo->prenda_id,
@@ -182,6 +191,40 @@ class CompletarReciboOperarioUseCase
                                     'encargado' => null,
                                 ]);
                             }
+                        }
+                    } elseif (
+                        strtoupper(trim((string) ($recibo->tipo_recibo ?? ''))) === 'CORTE-PARA-BODEGA'
+                        && !empty($recibo->prenda_bodega_id)
+                    ) {
+                        $procesoCosturaBodega = ProcesoPrenda::query()
+                            ->where('prenda_bodega_id', (int) $recibo->prenda_bodega_id)
+                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                            ->when($numeroPedido > 0, fn ($q) => $q->where('numero_pedido', $numeroPedido))
+                            ->where('numero_recibo', (int) ($recibo->consecutivo_actual ?? 0))
+                            ->where(function ($query) {
+                                $query->whereNull('numero_recibo_parcial')
+                                    ->orWhere('numero_recibo_parcial', '')
+                                    ->orWhere('numero_recibo_parcial', 0);
+                            })
+                            ->orderByDesc('created_at')
+                            ->orderByDesc('id')
+                            ->first();
+
+                        if (!$procesoCosturaBodega) {
+                            $this->procesos->create([
+                                'numero_pedido' => $numeroPedido > 0 ? $numeroPedido : null,
+                                'prenda_bodega_id' => (int) $recibo->prenda_bodega_id,
+                                'numero_recibo' => (int) ($recibo->consecutivo_actual ?? 0),
+                                'proceso' => 'Costura',
+                                'fecha_inicio' => now(),
+                                'encargado' => null,
+                                'estado_proceso' => 'Pendiente',
+                                'codigo_referencia' => 'COS-BOD-' . ($recibo->consecutivo_actual ?? 0) . '-' . date('YmdHis'),
+                            ]);
+                        } else {
+                            $this->procesos->update($procesoCosturaBodega, [
+                                'encargado' => null,
+                            ]);
                         }
                     }
                 });

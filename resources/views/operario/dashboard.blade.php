@@ -51,6 +51,7 @@
                         <button class="badge-filtro {{ $filtroReciboActual === 'bodega' ? 'badge-filtro-active' : '' }}" data-filtro="bodega" onclick="filtrarPrendasPorRecibo('bodega')">
                             <span class="material-symbols-rounded">inventory_2</span>
                             Bodega
+                            <span class="badge-filtro-contador badge-filtro-contador-alerta">{{ $vistaCosturaBodegaSinEncargadoCount ?? 0 }}</span>
                         </button>
                     @else
                         <!-- Para costura-reflectivo y lider-reflectivo: mostrar ambos tags -->
@@ -65,6 +66,7 @@
                         <button class="badge-filtro {{ $filtroReciboActual === 'bodega' ? 'badge-filtro-active' : '' }}" data-filtro="bodega" onclick="filtrarPrendasPorRecibo('bodega')">
                             <span class="material-symbols-rounded">inventory_2</span>
                             Bodega
+                            <span class="badge-filtro-contador badge-filtro-contador-alerta">{{ $vistaCosturaBodegaSinEncargadoCount ?? 0 }}</span>
                         </button>
                     @endif
                 </div>
@@ -570,6 +572,16 @@
         color: #fff;
     }
 
+    .badge-filtro-contador-alerta {
+        background: #dc2626;
+        color: #fff;
+    }
+
+    .badge-filtro-active .badge-filtro-contador-alerta {
+        background: #b91c1c;
+        color: #fff;
+    }
+
     .search-loading-state {
         display: none;
         align-items: center;
@@ -931,4 +943,3 @@
     </style>
 
 @endsection
-
