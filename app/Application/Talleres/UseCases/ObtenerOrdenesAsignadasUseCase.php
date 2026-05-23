@@ -151,7 +151,8 @@ class ObtenerOrdenesAsignadasUseCase
         foreach ($recibosAgrupados as $numeroBase => $grupo) {
             $primerRecibo = $grupo[0];
             $numerosUnicos = count(array_unique(array_map(fn($r) => $r->numero_recibo, $grupo)));
-            $esDividido = $numerosUnicos > 1;
+            $tieneAlMenosUnParcial = collect($grupo)->contains(fn($r) => (bool) ($r->es_parcial ?? false));
+            $esDividido = $numerosUnicos > 1 || $tieneAlMenosUnParcial;
 
             // Calcular cantidades totales - SOLO UNA VEZ por número de recibo
             $cantidadTotalOriginal = 0;

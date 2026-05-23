@@ -930,6 +930,13 @@ function initSidebarNavigation() {
                 url.searchParams.delete('view');
                 window.history.pushState({ view: 'talleres' }, 'Gestión Talleres', url.toString());
                 showTalleres();
+
+                // Recargar listado para evitar estado vacío al volver desde Órdenes
+                const mainContainer = document.querySelector('.main-container');
+                const apiRoute = mainContainer ? mainContainer.dataset.routeApiSearch : null;
+                if (apiRoute) {
+                    performRealtimeSearch('', apiRoute);
+                }
             } else if (viewName === 'viewOrdenes') {
                 // Reset search inputs when switching views
                 const searchInput = document.getElementById('searchOrdenesInput');
@@ -1008,7 +1015,7 @@ function initTabs() {
 
             // Actualizar subtítulo
             if (subtitle) {
-                subtitle.textContent = currentState.activeTab === 'inactivos' ? 'TALLERES ANULADOS' : 'TALLERES ACTIVOS';
+                subtitle.textContent = currentState.activeTab === 'inactivos' ? 'TALLERES INACTIVOS' : 'TALLERES ACTIVOS';
             }
 
             // Actualizar URL sin recargar

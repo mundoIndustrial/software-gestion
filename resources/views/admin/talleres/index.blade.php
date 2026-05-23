@@ -49,7 +49,7 @@
         <div id="viewTalleres" class="view-container">
             <div class="page-header">
                 <div class="page-title-group">
-                    <div class="subtitle" id="talleresSubtitle">{{ $status === 'inactivos' ? 'TALLERES ANULADOS' : 'TALLERES ACTIVOS' }}</div>
+                    <div class="subtitle" id="talleresSubtitle">{{ $status === 'inactivos' ? 'TALLERES INACTIVOS' : 'TALLERES ACTIVOS' }}</div>
                 </div>
                 <div class="page-actions">
                     <form action="{{ route('talleres.index') }}" method="GET" class="gooey-search-wrapper">
@@ -76,7 +76,7 @@
                     </button>
                     <button class="taller-tab-btn {{ $status === 'inactivos' ? 'active' : '' }}" data-status="inactivos">
                         <span class="material-symbols-rounded">cancel</span>
-                        TALLERES ANULADOS
+                        TALLERES INACTIVOS
                     </button>
                 </div>
             </div>
