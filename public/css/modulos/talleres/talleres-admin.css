@@ -11,46 +11,74 @@ body {
 .talleres-sidebar {
     position: fixed;
     left: 0;
-    top: 80px;
+    top: 0;
     width: 250px;
-    height: calc(100vh - 80px);
+    height: 100vh;
     background: linear-gradient(135deg, #f8fafc 0%, #f8fafc 100%);
     border-right: 1px solid #e2e8f0;
-    padding: 20px 0;
+    padding: 0 0 20px 0;
     z-index: 100;
     box-shadow: 0 3px 9px rgba(0, 0, 0, 0.08);
     display: flex;
     flex-direction: column;
+    transition: width 0.25s ease;
 }
 
 .sidebar-header {
-    padding: 0 20px 20px 20px;
-    border-bottom: 1px solid #334155;
-    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 12px;
+    min-height: 70px;
+    border-bottom: 1px solid #e2e8f0;
 }
 
-.sidebar-header h3 {
-    margin: 0;
-    color: #e2e8f0;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
+.logo-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
 }
 
-.sidebar-header {
-    padding: 0 20px 20px 20px;
-    border-bottom: 1px solid #334155;
-    margin-bottom: 20px;
+.sidebar-header .header-logo {
+    width: 140px;
+    height: auto;
+    max-height: 40px;
+    display: block;
+    object-fit: contain;
+    transition: all 0.3s ease;
 }
 
-.sidebar-header h3 {
-    margin: 0;
-    color: #e2e8f0;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
+.sidebar-toggle {
+    height: 36px;
+    width: 36px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    color: #0f172a;
+    background: #e2e8f0;
+    transition: all 0.3s ease;
+    touch-action: manipulation;
+    flex-shrink: 0;
+}
+
+.sidebar-toggle .material-symbols-rounded {
+    font-size: 1.25rem;
+    transition: transform 0.3s ease;
+}
+
+.sidebar-toggle:hover {
+    background: #2563eb;
+    color: #ffffff;
+    transform: scale(1.05);
+}
+
+.sidebar-toggle:active {
+    transform: scale(0.95);
 }
 
 .sidebar-nav {
@@ -137,9 +165,57 @@ body {
 /* Adjust main container for sidebar */
 main.main-container {
     margin-left: 250px;
-    padding: 40px;
+    padding: 32px 40px 40px 40px;
     width: calc(100% - 250px);
     max-width: none;
+    transition: margin-left 0.25s ease, width 0.25s ease;
+}
+
+body.talleres-sidebar-collapsed .talleres-sidebar {
+    width: 84px;
+}
+
+body.talleres-sidebar-collapsed .sidebar-item .nav-label,
+body.talleres-sidebar-collapsed .btn-volver .nav-label {
+    display: none;
+}
+
+body.talleres-sidebar-collapsed .sidebar-header .logo-wrapper {
+    display: none;
+}
+
+body.talleres-sidebar-collapsed .sidebar-header {
+    justify-content: center;
+}
+
+body.talleres-sidebar-collapsed .sidebar-item,
+body.talleres-sidebar-collapsed .btn-volver {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+body.talleres-sidebar-collapsed .sidebar-toggle .material-symbols-rounded {
+    transform: rotate(180deg);
+}
+
+body.talleres-sidebar-collapsed main.main-container {
+    margin-left: 84px;
+    width: calc(100% - 84px);
+}
+
+/* Header integration (Top Nav) */
+.top-nav {
+    position: sticky;
+    top: 0;
+    z-index: 220;
+    margin-left: 250px;
+    width: calc(100% - 250px);
+}
+
+body.talleres-sidebar-collapsed .top-nav {
+    margin-left: 84px;
+    width: calc(100% - 84px);
 }
 .page-header {
     display: flex;
@@ -212,18 +288,20 @@ main.main-container {
     border-color: #94a3b8;
 }
 .cards-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 25px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    align-items: stretch;
 }
 .taller-card {
     background: white;
     border-radius: 12px;
     padding: 25px;
-    width: 320px;
+    width: 100%;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     border: 1px solid #f1f5f9;
     transition: transform 0.2s, box-shadow 0.2s;
+    min-width: 0;
 }
 .taller-card:hover {
     transform: translateY(-5px);

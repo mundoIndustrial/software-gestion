@@ -125,6 +125,23 @@
     </div>
 
     <div class="nav-right">
+        @if(request()->routeIs('talleres.*'))
+        @php($statusTalleres = request('status', 'activos'))
+        <div class="page-actions">
+            <form action="{{ route('talleres.index') }}" method="GET" class="gooey-search-wrapper">
+                <input type="hidden" name="status" value="{{ $statusTalleres }}">
+                <span class="material-symbols-rounded gooey-search-icon">search</span>
+                <input type="text" name="search" class="gooey-search-input" placeholder="Buscar taller..." id="searchInput" value="{{ request('search', '') }}">
+                <button class="gooey-search-clear" id="clearSearch" type="button" onclick="window.location.href='{{ route('talleres.index', ['status' => $statusTalleres]) }}'">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </form>
+            <button class="btn-primary-gradient btn-new-taller" id="btnNewTaller" type="button">
+                <span class="material-symbols-rounded">add</span>
+                NUEVO TALLER
+            </button>
+        </div>
+        @endif
         <!-- Botón Nuevo Usuario -->
         @if(request()->is('users'))
         <button class="btn-primary" onclick="openCreateModal()" style="margin-right: 12px;">

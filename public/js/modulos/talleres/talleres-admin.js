@@ -19,7 +19,25 @@ document.addEventListener('DOMContentLoaded', function() {
     initEditTaller();
     initSidebarNavigation();
     initTabs();
+    initSidebarToggle();
+    restoreLastViewFromSession();
 });
+
+function initSidebarToggle() {
+    const toggleBtn = document.getElementById('sidebarToggle');
+    if (!toggleBtn) return;
+
+    const storageKey = 'talleres.sidebar.collapsed';
+    const isCollapsed = localStorage.getItem(storageKey) === '1';
+    if (isCollapsed) {
+        document.body.classList.add('talleres-sidebar-collapsed');
+    }
+
+    toggleBtn.addEventListener('click', function () {
+        const collapsed = document.body.classList.toggle('talleres-sidebar-collapsed');
+        localStorage.setItem(storageKey, collapsed ? '1' : '0');
+    });
+}
 
 function initEditTaller() {
     const editButtons = document.querySelectorAll('.btn-edit-taller');
@@ -275,7 +293,7 @@ function initTalleresSearch() {
     const clearButton = document.getElementById('clearSearch');
     const mainContainer = document.querySelector('.main-container');
     const apiRoute = mainContainer ? mainContainer.dataset.routeApiSearch : null;
-    const talleresForm = document.querySelector('#viewTalleres form');
+    const talleresForm = searchInput ? searchInput.closest('form') : null;
 
     if (talleresForm) {
         talleresForm.addEventListener('submit', function(e) {
@@ -659,6 +677,14 @@ function showTalleres() {
     switchView('talleres');
     currentState.selectedTaller = null;
     currentState.selectedRecibo = null;
+    sessionStorage.removeItem('talleres.lastView');
+    sessionStorage.removeItem('talleres.lastTallerId');
+    sessionStorage.removeItem('talleres.lastTallerName');
+    const url = new URL(window.location.href);
+    url.searchParams.delete('taller_id');
+    url.searchParams.delete('view');
+    url.searchParams.set('status', currentState.activeTab || 'activos');
+    window.history.replaceState({ view: 'talleres', status: currentState.activeTab || 'activos' }, '', url.toString());
 }
 
 function showRecibos(tallerId, tallerName) {
@@ -671,6 +697,17 @@ function showRecibos(tallerId, tallerName) {
     if (recibosTitle) recibosTitle.textContent = tallerName;
     if (recibosContent) recibosContent.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Cargando recibos...</p></div>';
     switchView('recibos');
+    
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', 'recibos');
+    url.searchParams.set('taller_id', String(tallerId));
+    url.searchParams.set('status', currentState.activeTab || 'activos');
+    url.searchParams.delete('search');
+    window.history.replaceState({ view: 'recibos', taller_id: String(tallerId), status: currentState.activeTab || 'activos' }, '', url.toString());
+    sessionStorage.setItem('talleres.lastView', 'recibos');
+    sessionStorage.setItem('talleres.lastTallerId', String(tallerId));
+    sessionStorage.setItem('talleres.lastTallerName', String(tallerName || 'Taller'));
+    sessionStorage.setItem('talleres.lastStatus', String(currentState.activeTab || 'activos'));
 
     fetch(apiRoute)
         .then(response => response.json())
@@ -730,6 +767,30 @@ function showRecibos(tallerId, tallerName) {
             console.error('Error:', error);
             recibosContent.innerHTML = '<div class="empty-state"><p>Error al cargar los recibos.</p></div>';
         });
+}
+
+function restoreLastViewFromSession() {
+    const url = new URL(window.location.href);
+    const viewParam = url.searchParams.get('view');
+    const tallerParam = url.searchParams.get('taller_id');
+
+    // Si la URL ya trae estado explícito, dejamos que ese flujo mande.
+    if (viewParam || tallerParam) {
+        return;
+    }
+
+    const lastView = sessionStorage.getItem('talleres.lastView');
+    const lastTallerId = sessionStorage.getItem('talleres.lastTallerId');
+    const lastTallerName = sessionStorage.getItem('talleres.lastTallerName');
+    const lastStatus = sessionStorage.getItem('talleres.lastStatus');
+
+    if (lastStatus && lastStatus !== currentState.activeTab) {
+        currentState.activeTab = lastStatus;
+    }
+
+    if (lastView === 'recibos' && lastTallerId) {
+        showRecibos(lastTallerId, lastTallerName || 'Taller');
+    }
 }
 
 function showEntregas(tallerId, reciboId, esParcial, reciboNumero, cliente, prenda) {
@@ -961,6 +1022,12 @@ function initSidebarNavigation() {
             document.querySelector('[data-view="viewOrdenes"]').classList.add('active');
             document.querySelector('[data-view="viewTalleres"]').classList.remove('active');
             showOrdenes();
+        } else if (event.state && event.state.view === 'recibos' && event.state.taller_id) {
+            document.querySelector('[data-view="viewTalleres"]').classList.add('active');
+            document.querySelector('[data-view="viewOrdenes"]').classList.remove('active');
+            const card = document.querySelector(`.taller-card[data-taller-id="${event.state.taller_id}"]`);
+            const name = card ? card.querySelector('.taller-name')?.textContent?.trim() : 'Taller';
+            showRecibos(event.state.taller_id, name || 'Taller');
         } else {
             document.querySelector('[data-view="viewTalleres"]').classList.add('active');
             document.querySelector('[data-view="viewOrdenes"]').classList.remove('active');
@@ -984,6 +1051,13 @@ function initSidebarNavigation() {
             }
         }
         showOrdenes(searchVal);
+    } else if (urlParams.get('view') === 'recibos' && urlParams.get('taller_id')) {
+        document.querySelector('[data-view="viewTalleres"]').classList.add('active');
+        document.querySelector('[data-view="viewOrdenes"]').classList.remove('active');
+        const tallerId = urlParams.get('taller_id');
+        const card = document.querySelector(`.taller-card[data-taller-id="${tallerId}"]`);
+        const tallerName = card ? card.querySelector('.taller-name')?.textContent?.trim() : 'Taller';
+        showRecibos(tallerId, tallerName || 'Taller');
     }
 }
 

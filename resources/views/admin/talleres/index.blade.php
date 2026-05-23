@@ -15,6 +15,18 @@
 
     <!-- Sidebar Navigation -->
     <aside class="talleres-sidebar">
+        <div class="sidebar-header">
+            <a href="{{ route('dashboard') }}" class="logo-wrapper" aria-label="Ir al Dashboard">
+                <img src="{{ asset('images/logo2.png') }}"
+                     alt="Logo Mundo Industrial"
+                     class="header-logo"
+                     data-logo-light="{{ asset('images/logo2.png') }}"
+                     data-logo-dark="{{ asset('logo.png') }}">
+            </a>
+            <button class="sidebar-toggle" id="sidebarToggle" aria-label="Colapsar menú">
+                <span class="material-symbols-rounded">chevron_left</span>
+            </button>
+        </div>
         <nav class="sidebar-nav">
             <button class="sidebar-item active" data-view="viewTalleres" id="navTalleres">
                 <span class="material-symbols-rounded">factory</span>
@@ -48,23 +60,6 @@
         <!-- Vista 1: Grid de Talleres -->
         <div id="viewTalleres" class="view-container">
             <div class="page-header">
-                <div class="page-title-group">
-                    <div class="subtitle" id="talleresSubtitle">{{ $status === 'inactivos' ? 'TALLERES INACTIVOS' : 'TALLERES ACTIVOS' }}</div>
-                </div>
-                <div class="page-actions">
-                    <form action="{{ route('talleres.index') }}" method="GET" class="gooey-search-wrapper">
-                        <input type="hidden" name="status" value="{{ $status }}">
-                        <span class="material-symbols-rounded gooey-search-icon">search</span>
-                        <input type="text" name="search" class="gooey-search-input" placeholder="Buscar taller..." id="searchInput" value="{{ $search ?? '' }}">
-                        <button class="gooey-search-clear" id="clearSearch" type="button" onclick="window.location.href='{{ route('talleres.index', ['status' => $status]) }}'">
-                            <span class="material-symbols-rounded">close</span>
-                        </button>
-                    </form>
-                    <button class="btn-primary-gradient btn-new-taller" id="btnNewTaller">
-                        <span class="material-symbols-rounded">add</span>
-                        NUEVO TALLER
-                    </button>
-                </div>
             </div>
 
             <!-- Tabs de Talleres -->
