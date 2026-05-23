@@ -100,6 +100,96 @@ function mostrarConfirmacionCompletarCorte() {
     });
 }
 
+function mostrarConfirmacionCompletarCostura() {
+    return new Promise((resolve) => {
+        const existente = document.getElementById('modal-confirmar-completar-costura');
+        if (existente) {
+            existente.remove();
+        }
+
+        const overlay = document.createElement('div');
+        overlay.id = 'modal-confirmar-completar-costura';
+        overlay.style.cssText = `
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            background: rgba(0, 0, 0, 0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        `;
+
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            width: min(680px, 96vw);
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+            overflow: hidden;
+            font-family: inherit;
+        `;
+
+        modal.innerHTML = `
+            <div style="padding: 22px 24px; border-bottom: 1px solid #e5e7eb;">
+                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-rounded" style="color: #dc2626; font-size: 1.45rem;">warning</span>
+                    Advertencia
+                </h3>
+            </div>
+            <div style="padding: 24px; line-height: 1.6; color: #111827;">
+                <span style="display: inline-block; font-size: 1.35rem; font-weight: 900;">
+                    ¿Estás seguro que completaste la orden?
+                </span>
+            </div>
+            <div style="padding: 16px 24px 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                <button type="button" data-accion="cancelar" style="border: 1px solid #d1d5db; background: #fff; color: #374151; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="button" data-accion="confirmar" style="border: none; background: #f97316; color: #fff; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor: pointer;">
+                    Sí, completar
+                </button>
+            </div>
+        `;
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+
+        const manejarEscape = (event) => {
+            if (event.key === 'Escape') {
+                cerrar(false);
+            }
+        };
+
+        const cerrar = (respuesta) => {
+            document.removeEventListener('keydown', manejarEscape);
+            document.body.style.overflow = '';
+            overlay.remove();
+            resolve(respuesta);
+        };
+
+        overlay.addEventListener('click', (event) => {
+            if (event.target === overlay) {
+                cerrar(false);
+            }
+        });
+
+        const btnCancelar = modal.querySelector('[data-accion="cancelar"]');
+        const btnConfirmar = modal.querySelector('[data-accion="confirmar"]');
+
+        if (btnCancelar) {
+            btnCancelar.addEventListener('click', () => cerrar(false));
+        }
+        if (btnConfirmar) {
+            btnConfirmar.addEventListener('click', () => cerrar(true));
+            btnConfirmar.focus();
+        }
+
+        document.addEventListener('keydown', manejarEscape);
+    });
+}
+
 function actualizarInterfazCorte(container, accion, btnActual) {
     if (!container) return;
 
@@ -332,13 +422,14 @@ export function deshacerCorte(btn) {
         });
 }
 
-export function completarCostura(btn) {
+export async function completarCostura(btn) {
     const reciboId = btn.dataset.reciboId;
     const prendaId = btn.dataset.prendaId;
     const card = btn.closest('.orden-card-simple');
     const esParcial = btn.dataset.esParcial === '1';
+    const confirmado = await mostrarConfirmacionCompletarCostura();
 
-    if (!reciboId) {
+    if (!confirmado || !reciboId) {
         return;
     }
 

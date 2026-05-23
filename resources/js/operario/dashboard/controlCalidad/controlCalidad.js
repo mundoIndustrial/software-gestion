@@ -2,6 +2,83 @@ import { httpJsonBody } from '../api/http';
 import { mostrarError, mostrarExito } from '../ui/messages';
 import { asegurarBotonAgregarNovedad } from '../ui/novedadButtons';
 
+function mostrarConfirmacionPasarCC() {
+    return new Promise((resolve) => {
+        const existente = document.getElementById('modal-confirmar-pasar-cc');
+        if (existente) existente.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'modal-confirmar-pasar-cc';
+        overlay.style.cssText = `
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            background: rgba(0, 0, 0, 0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        `;
+
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            width: min(680px, 96vw);
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+            overflow: hidden;
+            font-family: inherit;
+        `;
+
+        modal.innerHTML = `
+            <div style="padding: 22px 24px; border-bottom: 1px solid #e5e7eb;">
+                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-rounded" style="color: #dc2626; font-size: 1.45rem;">warning</span>
+                    Advertencia
+                </h3>
+            </div>
+            <div style="padding: 24px; line-height: 1.6; color: #111827;">
+                <span style="display: inline-block; font-size: 1.35rem; font-weight: 900;">
+                    ¿Está seguro de pasar esta orden a Control de Calidad?
+                </span>
+            </div>
+            <div style="padding: 16px 24px 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                <button type="button" data-accion="cancelar" style="border: 1px solid #d1d5db; background: #fff; color: #374151; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="button" data-accion="confirmar" style="border: none; background: #f97316; color: #fff; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor: pointer;">
+                    Sí, pasar a C.C
+                </button>
+            </div>
+        `;
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+
+        const manejarEscape = (event) => {
+            if (event.key === 'Escape') cerrar(false);
+        };
+
+        const cerrar = (respuesta) => {
+            document.removeEventListener('keydown', manejarEscape);
+            document.body.style.overflow = '';
+            overlay.remove();
+            resolve(respuesta);
+        };
+
+        overlay.addEventListener('click', (event) => {
+            if (event.target === overlay) cerrar(false);
+        });
+
+        modal.querySelector('[data-accion="cancelar"]')?.addEventListener('click', () => cerrar(false));
+        modal.querySelector('[data-accion="confirmar"]')?.addEventListener('click', () => cerrar(true));
+        modal.querySelector('[data-accion="confirmar"]')?.focus();
+
+        document.addEventListener('keydown', manejarEscape);
+    });
+}
+
 function actualizarInterfazControlCalidadParcial(btn, areaNueva, procesoId = '', esDeshacer = false) {
     const parcialCard = btn.closest('.parcial-card');
     if (!parcialCard) return;
@@ -21,7 +98,7 @@ function actualizarInterfazControlCalidadParcial(btn, areaNueva, procesoId = '',
         : '<span class="material-symbols-rounded">undo</span> DESHACER C.C';
 }
 
-export function pasarAControlCalidad(btn) {
+export async function pasarAControlCalidad(btn) {
     const pedidoId = btn.dataset.pedidoId;
     const prendaId = btn.dataset.prendaId;
     const tipoRecibo = btn.dataset.tipoRecibo;
@@ -78,6 +155,11 @@ export function pasarAControlCalidad(btn) {
                 btn.style.pointerEvents = '';
             });
 
+        return;
+    }
+
+    const confirmarPasoCC = await mostrarConfirmacionPasarCC();
+    if (!confirmarPasoCC) {
         return;
     }
 

@@ -1885,6 +1885,83 @@
         window.abrirModalRecibo(pedidoId, prendaId, 'control calidad');
     }
 
+    function mostrarConfirmacionCompletarEntrega() {
+        return new Promise((resolve) => {
+            const existente = document.getElementById('modal-confirmar-completar-entrega');
+            if (existente) existente.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'modal-confirmar-completar-entrega';
+            overlay.style.cssText = `
+                position: fixed;
+                inset: 0;
+                z-index: 999999;
+                background: rgba(0, 0, 0, 0.55);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 16px;
+            `;
+
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                width: min(680px, 96vw);
+                background: #fff;
+                border-radius: 14px;
+                box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+                overflow: hidden;
+                font-family: inherit;
+            `;
+
+            modal.innerHTML = `
+                <div style="padding: 22px 24px; border-bottom: 1px solid #e5e7eb;">
+                    <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #111827; display: flex; align-items: center; gap: 8px;">
+                        <span class="material-symbols-rounded" style="color: #dc2626; font-size: 1.45rem;">warning</span>
+                        Advertencia
+                    </h3>
+                </div>
+                <div style="padding: 24px; line-height: 1.6; color: #111827;">
+                    <span style="display: inline-block; font-size: 1.3rem; font-weight: 900;">
+                        ¿Está seguro que está completado? Pasará a entrega.
+                    </span>
+                </div>
+                <div style="padding: 16px 24px 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" data-accion="cancelar" style="border: 1px solid #d1d5db; background: #fff; color: #374151; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor: pointer;">
+                        Cancelar
+                    </button>
+                    <button type="button" data-accion="confirmar" style="border: none; background: #f97316; color: #fff; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor: pointer;">
+                        Sí, completar
+                    </button>
+                </div>
+            `;
+
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            document.body.style.overflow = 'hidden';
+
+            const onEscape = (event) => {
+                if (event.key === 'Escape') cerrar(false);
+            };
+
+            const cerrar = (respuesta) => {
+                document.removeEventListener('keydown', onEscape);
+                document.body.style.overflow = '';
+                overlay.remove();
+                resolve(respuesta);
+            };
+
+            overlay.addEventListener('click', (event) => {
+                if (event.target === overlay) cerrar(false);
+            });
+
+            modal.querySelector('[data-accion="cancelar"]')?.addEventListener('click', () => cerrar(false));
+            modal.querySelector('[data-accion="confirmar"]')?.addEventListener('click', () => cerrar(true));
+            modal.querySelector('[data-accion="confirmar"]')?.focus();
+
+            document.addEventListener('keydown', onEscape);
+        });
+    }
+
     window.toggleCompletarRecibo = async function(btn) {
         const reciboId = btn.dataset.reciboId;
         if (!reciboId) {
@@ -1895,6 +1972,10 @@
         const esParcial = btn.dataset.esParcial === '1';
         const parcialId = btn.dataset.parcialId || reciboId;
         if (yaCompletado) {
+            return;
+        }
+        const confirmarCompletar = await mostrarConfirmacionCompletarEntrega();
+        if (!confirmarCompletar) {
             return;
         }
 
