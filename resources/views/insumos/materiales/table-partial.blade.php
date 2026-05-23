@@ -115,12 +115,13 @@
                 </tr>
             </thead>
             <tbody>
+                @php
+                    $diaLaboralCalculator = app(\App\Application\Services\DiaLaboralCalculator::class);
+                @endphp
                 @forelse($ordenes ?? [] as $orden)
                     <tr class="border-b border-gray-200 hover:bg-gray-50 transition @if(isset($orden->dias_calculados) && $orden->dias_calculados > 0)
-                        @if($orden->dias_calculados >= 14) dias-mayor-15
-                        @elseif($orden->dias_calculados >= 10) dias-10-15
-                        @elseif($orden->dias_calculados >= 5) dias-5-9
-                        @else dias-0-4 @endif
+                        @if($orden->dias_calculados >= 3) dias-mas-3
+                        @else dias-0-3 @endif
                     @endif @if(isset($orden->marcar_plooter) && $orden->marcar_plooter) row-checked @endif @if(!$esGestionReflectivo && isset($orden->esta_completado) && $orden->esta_completado) row-completado @endif @if(isset($orden->estado) && in_array($orden->estado, ['ANULADO', 'Anulada'])) bg-red-100 @endif"
                     data-pedido="{{ strtoupper($orden->numero_pedido ?? '') }}"
                     data-cliente="{{ strtoupper($orden->cliente ?? '') }}"
@@ -258,21 +259,39 @@
                         <td class="py-4 px-6 text-center">
                             @php
                                 $diasRestantes = null;
+                                $diasTranscurridos = null;
+                                if (!empty($orden->created_at)) {
+                                    try {
+                                        $diasTranscurridos = $diaLaboralCalculator->calcular(\Carbon\Carbon::parse($orden->created_at));
+                                    } catch (\Throwable $e) {
+                                        $diasTranscurridos = (isset($orden->dias_calculados) && is_numeric($orden->dias_calculados))
+                                            ? max(0, (int) $orden->dias_calculados)
+                                            : null;
+                                    }
+                                } elseif (isset($orden->dias_calculados) && is_numeric($orden->dias_calculados)) {
+                                    $diasTranscurridos = max(0, (int) $orden->dias_calculados);
+                                }
                                 if (isset($orden->dia_de_entrega) && is_numeric($orden->dia_de_entrega) && isset($orden->dias_calculados) && is_numeric($orden->dias_calculados)) {
                                     $diasRestantes = max(0, ((int) $orden->dia_de_entrega) - ((int) $orden->dias_calculados));
                                 }
                                 $fechaEstimadaEntrega = $orden->fecha_estimada_de_entrega ?? null;
                             @endphp
                             @if($diasRestantes !== null)
-                                <span style="display: inline-flex; flex-direction: column; line-height: 1.1; color: #dc2626; font-weight: 700; font-size: 0.78rem;">
-                                    <span>{{ $diasRestantes }} dias</span>
-                                    <span>habiles restantes</span>
-                                    <span style="margin-top: 0.2rem; color: #6b7280; font-weight: 600; font-size: 0.72rem;">Est.: {{ $fechaEstimadaEntrega ?? '-' }}</span>
+                                <span class="days-chip">
+                                    <span class="days-chip__value">{{ $diasRestantes }} dias</span>
+                                    <span class="days-chip__label">habiles restantes</span>
+                                    <span class="days-chip__est">Est.: {{ $fechaEstimadaEntrega ?? '-' }}</span>
+                                </span>
+                            @elseif($diasTranscurridos !== null)
+                                <span class="days-chip">
+                                    <span class="days-chip__value">{{ $diasTranscurridos }} dias</span>
+                                    <span class="days-chip__label">habiles transcurridos</span>
+                                    <span class="days-chip__est">Est.: {{ $fechaEstimadaEntrega ?? '-' }}</span>
                                 </span>
                             @else
-                                <span style="display: inline-flex; flex-direction: column; line-height: 1.1; color: #6b7280; font-weight: 600; font-size: 0.78rem;">
-                                    <span>-</span>
-                                    <span style="margin-top: 0.2rem; font-size: 0.72rem;">Est.: {{ $fechaEstimadaEntrega ?? '-' }}</span>
+                                <span class="days-chip days-chip--muted">
+                                    <span class="days-chip__value">-</span>
+                                    <span class="days-chip__est">Est.: {{ $fechaEstimadaEntrega ?? '-' }}</span>
                                 </span>
                             @endif
                         </td>

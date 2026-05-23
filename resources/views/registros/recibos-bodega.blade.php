@@ -697,6 +697,16 @@
     letter-spacing: .8px;
 }
 
+tr.recibo-atrasado-row > td {
+    background-color: #fde8e8 !important;
+    color: #7f1d1d;
+    font-weight: 600;
+}
+
+tr.recibo-atrasado-row:hover > td {
+    background-color: #fecaca !important;
+}
+
 .custom-recibo-modal__subtitle {
     margin: 4px 0 0 0;
     color: #cbd5e1;
@@ -2921,6 +2931,71 @@ document.addEventListener('DOMContentLoaded', function() {
     loadRecibosCorteForBodega();
 });
 
+const festivosReciboBodega = @json(\App\Models\Festivo::pluck('fecha')->toArray());
+const festivosReciboBodegaSet = new Set(
+    (festivosReciboBodega || [])
+        .map((f) => String(f || '').slice(0, 10))
+        .filter(Boolean)
+);
+
+function formatLocalYmd(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+function parseFechaFlexible(value) {
+    if (!value) return null;
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+
+    const raw = String(value).trim();
+    if (!raw) return null;
+
+    const ddmmyyyy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (ddmmyyyy) {
+        const day = Number(ddmmyyyy[1]);
+        const month = Number(ddmmyyyy[2]);
+        const year = Number(ddmmyyyy[3]);
+        const parsed = new Date(year, month - 1, day);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    const parsed = new Date(raw);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function esDiaHabil(date) {
+    const day = date.getDay();
+    if (day === 0 || day === 6) return false;
+    return !festivosReciboBodegaSet.has(formatLocalYmd(date));
+}
+
+function calcularDiasHabilesDesdeSiguienteHabil(fechaInicio, fechaFin = new Date()) {
+    const inicio = parseFechaFlexible(fechaInicio);
+    const fin = parseFechaFlexible(fechaFin);
+    if (!inicio || !fin) return 0;
+
+    const start = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate());
+    const end = new Date(fin.getFullYear(), fin.getMonth(), fin.getDate());
+    if (start > end) return 0;
+
+    const cursor = new Date(start);
+    cursor.setDate(cursor.getDate() + 1);
+
+    while (cursor <= end && !esDiaHabil(cursor)) {
+        cursor.setDate(cursor.getDate() + 1);
+    }
+
+    let diasHabiles = 0;
+    while (cursor <= end) {
+        if (esDiaHabil(cursor)) diasHabiles++;
+        cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return diasHabiles;
+}
+
 function loadRecibosCorteForBodega() {
     fetch('/api/recibo-corte-bodega')
         .then(response => response.json())
@@ -2935,7 +3010,14 @@ function loadRecibosCorteForBodega() {
                         prenda &&
                         String(prenda.area || '').toLowerCase().includes('corte')
                     );
+                    const fechaBaseCalculo = prenda.created_at || prenda.fecha_creacion || prenda.fecha_corta;
+                    const diasHabilesTranscurridos = calcularDiasHabilesDesdeSiguienteHabil(fechaBaseCalculo, new Date());
+                    const estaAtrasado = diasHabilesTranscurridos > 3;
                     const row = document.createElement('tr');
+                    if (estaAtrasado) {
+                        row.classList.add('recibo-atrasado-row');
+                        row.title = `Atrasado: ${diasHabilesTranscurridos} dias habiles transcurridos`;
+                    }
                     row.innerHTML = `
                         <td class="acciones-column" style="text-align: center; position: relative;">
                             <button type="button"

@@ -150,6 +150,82 @@ tbody tr:hover .text-gray-600 {
     color: var(--text-secondary) !important;
 }
 
+/* Filas vencidas en insumos/materiales: mas de 3 dias habiles */
+tbody tr.dias-mas-3 td {
+    background-color: #fee2e2 !important;
+}
+
+tbody tr.dias-mas-3:hover td {
+    background-color: #fecaca !important;
+}
+
+tbody tr.dias-mas-3 td .text-gray-800,
+tbody tr.dias-mas-3 td .text-gray-700,
+tbody tr.dias-mas-3 td .text-gray-600 {
+    color: #7f1d1d !important;
+}
+
+/* Chip visual para columna de dias */
+.days-chip {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 140px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #fecaca;
+    background: #fff1f2;
+    color: #b91c1c;
+    line-height: 1.1;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.days-chip__value {
+    font-size: 0.92rem;
+    font-weight: 800;
+}
+
+.days-chip__label {
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.days-chip__est {
+    margin-top: 0.2rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.days-chip--muted {
+    border-color: #e5e7eb;
+    background: #f9fafb;
+    color: #6b7280;
+}
+
+/* Si esta marcado con chulo, el morado prevalece sobre rojo de demora */
+tbody tr.dias-mas-3.row-checked td,
+tbody tr.row-checked.dias-mas-3 td {
+    background-color: #ede9fe !important;
+}
+
+tbody tr.dias-mas-3.row-checked:hover td,
+tbody tr.row-checked.dias-mas-3:hover td {
+    background-color: #ddd6fe !important;
+}
+
+tbody tr.dias-mas-3.row-checked td .text-gray-800,
+tbody tr.dias-mas-3.row-checked td .text-gray-700,
+tbody tr.dias-mas-3.row-checked td .text-gray-600,
+tbody tr.row-checked.dias-mas-3 td .text-gray-800,
+tbody tr.row-checked.dias-mas-3 td .text-gray-700,
+tbody tr.row-checked.dias-mas-3 td .text-gray-600 {
+    color: #1f2937 !important;
+}
+
 /* Botones */
 .px-4.py-2,
 .px-6.py-2,
@@ -598,6 +674,14 @@ tr.row-checked {
 }
 
 tr.row-checked:hover {
+    background-color: #ddd6fe !important;
+}
+
+tr.row-checked td {
+    background-color: #ede9fe !important;
+}
+
+tr.row-checked:hover td {
     background-color: #ddd6fe !important;
 }
 

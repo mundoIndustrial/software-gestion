@@ -185,10 +185,7 @@ class ObtenerPrendasRecibosSupportService
 
         $numeroRecibo = $recibo->consecutivo_actual;
         $procesoCostura = $this->buscarProcesoCosturaOriginal($procesos, $numeroRecibo);
-        $procesoCorte = $procesos
-            ->filter(fn ($p) => is_string($p->proceso ?? null) && strtolower(trim((string) $p->proceso)) === 'corte')
-            ->sortByDesc(fn ($p) => $p->created_at)
-            ->first();
+        $procesoCorte = $this->buscarProcesoCorteOriginal($procesos, $numeroRecibo);
         $procesoControlCalidad = $procesos
             ->filter(function ($p) {
                 $proc = strtolower(trim((string) ($p->proceso ?? '')));
@@ -255,6 +252,20 @@ class ObtenerPrendasRecibosSupportService
                 $numeroReciboParcial = $proceso->numero_recibo_parcial ?? null;
 
                 return $numeroReciboParcial === null || trim((string) $numeroReciboParcial) === '' || (float) $numeroReciboParcial === 0.0;
+            })
+            ->sortByDesc(fn ($proceso) => $proceso->created_at)
+            ->first();
+    }
+
+    public function buscarProcesoCorteOriginal(Collection $procesos, $numeroRecibo): ?ProcesoPrenda
+    {
+        return $procesos
+            ->filter(function ($proceso) use ($numeroRecibo) {
+                if (!is_string($proceso->proceso ?? null) || strtolower(trim((string) $proceso->proceso)) !== 'corte') {
+                    return false;
+                }
+
+                return (string) ($proceso->numero_recibo ?? '') === (string) $numeroRecibo;
             })
             ->sortByDesc(fn ($proceso) => $proceso->created_at)
             ->first();
