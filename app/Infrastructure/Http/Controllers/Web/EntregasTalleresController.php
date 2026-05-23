@@ -4,6 +4,7 @@ namespace App\Infrastructure\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\User;
 use App\Models\ConsecutivoReciboPedido;
 use App\Models\EntregaReciboCostura;
 use App\Models\PrendaPedido;
@@ -14,22 +15,31 @@ use Illuminate\Support\Facades\DB;
 
 class EntregasTalleresController extends Controller
 {
-    public function index()
+    public function index(Request $request, \App\Application\Talleres\UseCases\ObtenerListadoTalleresUseCase $useCase)
     {
-        return view('entregas_talleres.index');
+        $search = $request->input('search', '');
+        $talleres = $useCase->execute($search, 9, 1);
+
+        return view('entregas_talleres.index', compact('talleres', 'search'));
     }
 
     public function buscar(Request $request, \App\Application\EntregasTalleres\UseCases\BuscarRecibosTallerUseCase $useCase)
     {
-        $busqueda = $request->input('busqueda');
+        $busqueda = trim((string) $request->input('busqueda', ''));
+        $tallerId = $request->input('taller_id');
+        $taller = null;
 
-        if (!$busqueda) {
+        if ($tallerId) {
+            $taller = User::findOrFail($tallerId);
+        }
+
+        if (!$busqueda && !$tallerId) {
             return redirect()->route('entregas-talleres.index');
         }
 
-        $recibos = $useCase->execute($busqueda);
+        $recibos = $useCase->execute($busqueda !== '' ? $busqueda : null, 0, $tallerId ? (int) $tallerId : null);
 
-        return view('entregas_talleres.resultados', compact('recibos', 'busqueda'));
+        return view('entregas_talleres.resultados', compact('recibos', 'busqueda', 'taller'));
     }
 
     public function showRecibo(Request $request, $id, \App\Application\EntregasTalleres\UseCases\ObtenerDetalleReciboTallerUseCase $useCase)
@@ -78,10 +88,34 @@ class EntregasTalleresController extends Controller
 
     public function apiSearch(Request $request, \App\Application\EntregasTalleres\UseCases\BuscarRecibosTallerUseCase $useCase)
     {
-        $term = $request->get('term');
-        $recibos = $useCase->execute($term, 10);
+        try {
+            $search = $request->input('search', '');
+            $perPage = (int) $request->input('per_page', 9);
 
-        return response()->json($recibos);
+            // En este módulo la búsqueda en tiempo real del index trabaja sobre talleres activos.
+            $talleres = app(\App\Application\Talleres\UseCases\ObtenerListadoTalleresUseCase::class)
+                ->execute($search, $perPage, 1);
+
+            return response()->json([
+                'success' => true,
+                'data' => $talleres->items(),
+                'pagination' => [
+                    'current_page' => $talleres->currentPage(),
+                    'last_page' => $talleres->lastPage(),
+                    'per_page' => $talleres->perPage(),
+                    'total' => $talleres->total(),
+                    'from' => $talleres->firstItem(),
+                    'to' => $talleres->lastItem(),
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error en entregas-talleres apiSearch: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al buscar talleres',
+            ], 500);
+        }
     }
 
     public function destroy($id, \App\Application\EntregasTalleres\UseCases\EliminarEntregaTallerUseCase $useCase)
@@ -90,4 +124,3 @@ class EntregasTalleresController extends Controller
         return response()->json($result);
     }
 }
-

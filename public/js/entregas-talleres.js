@@ -3,22 +3,330 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Logic for Search View (Index)
-    const searchInput = document.getElementById('main-search');
-    const nextBtn = document.querySelector('.btn-primary');
+    initEntregasTalleresSearch();
+});
 
-    if (searchInput && nextBtn) {
-        searchInput.addEventListener('input', function() {
-            if (this.value.trim().length > 0) {
-                nextBtn.style.background = '#2450ef';
-                nextBtn.style.opacity = '1';
-            } else {
-                nextBtn.style.background = '#94a3b8';
-                nextBtn.style.opacity = '0.7';
+function initEntregasTalleresSearch() {
+    const mainContainer = document.querySelector('.entregas-talleres-index');
+    const searchInput = document.getElementById('searchInput');
+    const clearButton = document.getElementById('clearSearch');
+    const talleresGrid = document.getElementById('talleresGrid');
+    const paginationContainer = document.querySelector('.pagination-container');
+    const apiRoute = mainContainer?.dataset?.routeApiSearch;
+
+    if (mainContainer && searchInput && talleresGrid && paginationContainer && apiRoute) {
+        const toggleClear = () => {
+            if (clearButton) {
+                clearButton.style.display = searchInput.value.trim().length > 0 ? 'flex' : 'none';
             }
+        };
+
+        const syncUrl = (searchTerm, page = 1) => {
+            const url = new URL(window.location.href);
+
+            if (searchTerm) {
+                url.searchParams.set('search', searchTerm);
+            } else {
+                url.searchParams.delete('search');
+            }
+
+            if (page > 1) {
+                url.searchParams.set('page', page);
+            } else {
+                url.searchParams.delete('page');
+            }
+
+            window.history.pushState({ view: 'entregas_talleres', search: searchTerm, page }, '', url.toString());
+        };
+
+        const renderEmptyState = (searchTerm) => {
+            const term = escapeHtml(searchTerm || '');
+            talleresGrid.innerHTML = `
+                <div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #64748b; background: white; border-radius: 12px; border: 1px dashed #cbd5e1; width: 100%;">
+                    <span class="material-symbols-rounded" style="font-size: 40px; color: #cbd5e1; margin-bottom: 10px; display: block;">search_off</span>
+                    <p>No se encontraron talleres que coincidan con "<strong>${term}</strong>"</p>
+                </div>
+            `;
+            paginationContainer.innerHTML = '';
+        };
+
+        const renderTallerCard = (taller) => {
+            const name = escapeHtml(taller.name || '');
+            return `
+                <a
+                    href="${mainContainer.dataset.routeBuscar}?taller_id=${encodeURIComponent(taller.id)}"
+                    class="taller-card taller-card-link"
+                    data-name="${escapeHtml(String(taller.name || '').toLowerCase())}"
+                    data-taller-id="${taller.id}"
+                >
+                    <div class="card-header-info">
+                        <h2 class="taller-name">${name}</h2>
+                        <div class="taller-status-badge active">ACTIVO</div>
+                    </div>
+
+                    <p class="taller-role">RESPONSABLE DE TALLER</p>
+
+                    <div class="stats-container">
+                        <div class="stat-row">
+                            <span>Recibos asignados</span>
+                            <span class="stat-value">Ver</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Estado</span>
+                            <span class="stat-value stat-active">Activo</span>
+                        </div>
+                    </div>
+
+                    <div class="card-footer-actions">
+                        <span class="btn-view btn-view-recibos">
+                            Ver Recibos <span style="font-size: 10px; margin-left: 5px;">&#10095;</span>
+                        </span>
+                    </div>
+                </a>
+            `;
+        };
+
+        const renderPagination = (pagination, searchTerm) => {
+            const { current_page, last_page } = pagination;
+            if (!last_page || last_page <= 1) {
+                return '';
+            }
+
+            let html = '<nav role="navigation" aria-label="Pagination Navigation" class="flex items-center justify-center gap-2">';
+
+            if (current_page > 1) {
+                html += `<button class="pagination-item btn-pagination" data-page="${current_page - 1}" data-search="${escapeHtml(searchTerm)}" type="button"><span class="material-symbols-rounded">chevron_left</span></button>`;
+            } else {
+                html += `<span class="pagination-item disabled"><span class="material-symbols-rounded">chevron_left</span></span>`;
+            }
+
+            for (let i = 1; i <= last_page; i++) {
+                if (i === current_page) {
+                    html += `<span class="pagination-item active" aria-current="page">${i}</span>`;
+                } else if (i === 1 || i === last_page || (i >= current_page - 1 && i <= current_page + 1)) {
+                    html += `<button class="pagination-item btn-pagination page-number" data-page="${i}" data-search="${escapeHtml(searchTerm)}" type="button">${i}</button>`;
+                } else if (i === 2 || i === last_page - 1) {
+                    html += `<span class="pagination-item disabled">...</span>`;
+                }
+            }
+
+            if (current_page < last_page) {
+                html += `<button class="pagination-item btn-pagination" data-page="${current_page + 1}" data-search="${escapeHtml(searchTerm)}" type="button"><span class="material-symbols-rounded">chevron_right</span></button>`;
+            } else {
+                html += `<span class="pagination-item disabled"><span class="material-symbols-rounded">chevron_right</span></span>`;
+            }
+
+            html += '</nav>';
+
+            return html;
+        };
+
+        const initPaginationEvents = (searchTerm) => {
+            const paginationButtons = document.querySelectorAll('.pagination-container .btn-pagination, .pagination-container .page-number');
+
+            paginationButtons.forEach((btn) => {
+                btn.addEventListener('click', function() {
+                    const page = parseInt(this.dataset.page, 10) || 1;
+                    const term = this.dataset.search || searchTerm || '';
+                    performTalleresSearch(term, page);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            });
+        };
+
+        const performTalleresSearch = (searchTerm, page = 1) => {
+            talleresGrid.innerHTML = '<div class="loading" style="grid-column: 1/-1; padding: 40px; text-align: center;"><div class="loading-spinner"></div><p>Buscando talleres...</p></div>';
+
+            const url = new URL(apiRoute, window.location.origin);
+            url.searchParams.set('search', searchTerm || '');
+            url.searchParams.set('per_page', 9);
+            url.searchParams.set('page', page);
+
+            fetch(url.toString())
+                .then((response) => response.json())
+                .then((data) => {
+                    if (!data.success || !data.data || data.data.length === 0) {
+                        renderEmptyState(searchTerm);
+                        return;
+                    }
+
+                    talleresGrid.innerHTML = data.data.map(renderTallerCard).join('');
+                    paginationContainer.innerHTML = renderPagination(data.pagination, searchTerm);
+                    initPaginationEvents(searchTerm);
+                })
+                .catch((error) => {
+                    console.error('Error en la búsqueda de talleres:', error);
+                    talleresGrid.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #ef4444;"><span class="material-symbols-rounded" style="font-size: 40px; margin-bottom: 10px; display: block;">error</span><p>Error al buscar talleres. Intenta de nuevo.</p></div>';
+                    paginationContainer.innerHTML = '';
+                });
+        };
+
+        toggleClear();
+
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            toggleClear();
+            clearTimeout(searchTimeout);
+
+            const searchTerm = this.value.trim();
+            searchTimeout = setTimeout(() => {
+                syncUrl(searchTerm);
+                performTalleresSearch(searchTerm, 1);
+            }, 300);
+        });
+
+        const searchForm = searchInput.closest('form');
+        if (searchForm) {
+            searchForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const searchTerm = searchInput.value.trim();
+                syncUrl(searchTerm);
+                performTalleresSearch(searchTerm, 1);
+            });
+        }
+
+        if (clearButton) {
+            clearButton.addEventListener('click', () => {
+                searchInput.value = '';
+                toggleClear();
+                syncUrl('');
+                performTalleresSearch('', 1);
+            });
+        }
+
+        window.addEventListener('popstate', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchTerm = urlParams.get('search') || '';
+            const page = parseInt(urlParams.get('page') || '1', 10) || 1;
+            searchInput.value = searchTerm;
+            toggleClear();
+            performTalleresSearch(searchTerm, page);
+        });
+
+        return;
+    }
+
+    initRecibosTallerSearch();
+}
+
+function initRecibosTallerSearch() {
+    const resultsForm = document.querySelector('.results-search-form');
+    const resultsContent = document.querySelector('.results-content');
+
+    if (!resultsForm || !resultsContent) {
+        return;
+    }
+
+    const searchInput = resultsForm.querySelector('input[name="busqueda"]');
+    const clearButton = resultsForm.querySelector('.gooey-search-clear');
+    const searchEndpoint = resultsForm.getAttribute('action');
+    const tallerIdInput = resultsForm.querySelector('input[name="taller_id"]');
+
+    if (!searchInput || !searchEndpoint || !tallerIdInput) {
+        return;
+    }
+
+    const toggleClear = () => {
+        if (clearButton) {
+            clearButton.style.display = searchInput.value.trim().length > 0 ? 'flex' : 'none';
+        }
+    };
+
+    const syncUrl = (searchTerm) => {
+        const url = new URL(window.location.href);
+
+        if (searchTerm) {
+            url.searchParams.set('busqueda', searchTerm);
+        } else {
+            url.searchParams.delete('busqueda');
+        }
+
+        url.searchParams.set('taller_id', tallerIdInput.value);
+        window.history.pushState({ view: 'entregas_talleres_recibos', search: searchTerm }, '', url.toString());
+    };
+
+    const updateResults = (searchTerm) => {
+        const url = new URL(searchEndpoint, window.location.origin);
+        url.searchParams.set('taller_id', tallerIdInput.value);
+
+        if (searchTerm) {
+            url.searchParams.set('busqueda', searchTerm);
+        }
+
+        resultsContent.innerHTML = '<div class="loading" style="padding: 40px; text-align: center;"><div class="loading-spinner"></div><p>Buscando recibos...</p></div>';
+
+        fetch(url.toString(), {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'text/html'
+            }
+        })
+            .then((response) => response.text())
+            .then((html) => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const content = doc.querySelector('.results-content');
+
+                if (content) {
+                    resultsContent.innerHTML = content.innerHTML;
+                } else {
+                    resultsContent.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded empty-state-icon">search_off</span><p>No se encontraron recibos para "' + escapeHtml(searchTerm) + '"</p></div>';
+                }
+            })
+            .catch((error) => {
+                console.error('Error en la búsqueda de recibos:', error);
+                resultsContent.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded empty-state-icon">error</span><p>Error al buscar recibos. Intenta de nuevo.</p></div>';
+            });
+    };
+
+    toggleClear();
+
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        toggleClear();
+        clearTimeout(searchTimeout);
+
+        const searchTerm = this.value.trim();
+        searchTimeout = setTimeout(() => {
+            syncUrl(searchTerm);
+            updateResults(searchTerm);
+        }, 300);
+    });
+
+    const form = resultsForm;
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const searchTerm = searchInput.value.trim();
+        syncUrl(searchTerm);
+        updateResults(searchTerm);
+    });
+
+    if (clearButton) {
+        clearButton.addEventListener('click', () => {
+            searchInput.value = '';
+            toggleClear();
+            syncUrl('');
+            updateResults('');
         });
     }
-});
+
+    window.addEventListener('popstate', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchTerm = urlParams.get('busqueda') || '';
+        searchInput.value = searchTerm;
+        toggleClear();
+        updateResults(searchTerm);
+    });
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
 
 function promptDelivery(talla, disponible, genero, color, safeId) {
     if (disponible <= 0) {

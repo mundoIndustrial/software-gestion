@@ -1,6 +1,6 @@
 @extends('operario.layout')
 
-@section('title', 'Resultados de Búsqueda - Talleres')
+@section('title', 'Recibos del Taller')
 
 @section('page-title')
     <span style="display: inline-flex; align-items: center; gap: 0.6rem;">
@@ -8,7 +8,6 @@
         <span>ENTREGAS TALLERES</span>
     </span>
 @endsection
-
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/entregas-talleres.css') }}?v={{ time() }}">
@@ -18,15 +17,43 @@
 
 @section('content')
 <div class="entregas-container">
-        <div class="results-header">
-            <a href="{{ route('entregas-talleres.index') }}" class="back-btn">
-                <span class="material-symbols-rounded">arrow_back</span>
-            </a>
+    <div class="results-header">
+        <a href="{{ route('entregas-talleres.index') }}" class="back-btn">
+            <span class="material-symbols-rounded">arrow_back</span>
+        </a>
+        <div class="results-header-copy">
+            <div class="section-label">Recibos asignados</div>
+            <h2>{{ $taller ? $taller->name : 'Resultados de busqueda' }}</h2>
+            <p>
+                @if($taller)
+                    Filtrados por taller activo.
+                @else
+                    Busca un recibo por numero o por nombre de prenda.
+                @endif
+            </p>
         </div>
+    </div>
+
+    @if($taller)
+        <form action="{{ route('entregas-talleres.buscar') }}" method="GET" class="results-search-form">
+            <input type="hidden" name="taller_id" value="{{ $taller->id }}">
+            <div class="gooey-search-wrapper results-search-wrapper">
+                <span class="material-symbols-rounded gooey-search-icon">search</span>
+                <input
+                    type="text"
+                    name="busqueda"
+                    class="gooey-search-input"
+                    placeholder="Buscar recibo en este taller..."
+                    value="{{ $busqueda }}"
+                >
+                <button class="gooey-search-clear" type="button" onclick="window.location.href='{{ route('entregas-talleres.buscar', ['taller_id' => $taller->id]) }}'">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+        </form>
+    @endif
 
     <div class="results-content">
-        <div class="section-label">Resultados</div>
-
         @forelse($recibos as $recibo)
             <div class="recibo-card" onclick="window.location.href='{{ route('entregas-talleres.show', $recibo->id) }}?es_parcial={{ $recibo->es_parcial }}'">
                 <div class="recibo-info">
@@ -40,11 +67,21 @@
                 <span class="material-symbols-rounded" style="color: #cbd5e1;">chevron_right</span>
             </div>
         @empty
-            <div style="text-align: center; padding: 40px 0; color: #94a3b8;">
-                <span class="material-symbols-rounded" style="font-size: 48px; margin-bottom: 16px;">search_off</span>
-                <p>No se encontraron recibos para "{{ $busqueda }}"</p>
+            <div class="empty-state">
+                <span class="material-symbols-rounded empty-state-icon">search_off</span>
+                <p>
+                    @if($taller)
+                        No hay recibos asignados a este taller.
+                    @else
+                        No se encontraron recibos para "{{ $busqueda }}"
+                    @endif
+                </p>
             </div>
         @endforelse
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/entregas-talleres.js') }}?v={{ time() }}"></script>
+@endpush

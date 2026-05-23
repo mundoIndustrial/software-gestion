@@ -2,12 +2,20 @@
 
 namespace App\Application\EntregasTalleres\UseCases;
 
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class BuscarRecibosTallerUseCase
 {
-    public function execute(string $term, int $limit = 0)
+    public function execute(?string $term = null, int $limit = 0, ?int $tallerId = null)
     {
+        $term = trim((string) $term);
+        $tallerNombre = null;
+
+        if ($tallerId) {
+            $tallerNombre = User::findOrFail($tallerId)->name;
+        }
+
         // 1. Recibos normales
         $queryNormales = DB::table('consecutivos_recibos_pedidos as crp')
             ->join('prendas_pedido as pp', 'crp.prenda_id', '=', 'pp.id')
@@ -19,10 +27,6 @@ class BuscarRecibosTallerUseCase
             })
             ->whereIn('crp.tipo_recibo', ['REFLECTIVO', 'COSTURA'])
             ->where('crp.area', '=', 'Costura')
-            ->where(function($query) use ($term) {
-                $query->where('crp.consecutivo_actual', 'LIKE', "%$term%")
-                      ->orWhere('ppren.encargado', 'LIKE', "%$term%");
-            })
             ->select(
                 'crp.id', 
                 'crp.consecutivo_actual as numero_recibo', 
@@ -30,7 +34,20 @@ class BuscarRecibosTallerUseCase
                 'ppren.encargado', 
                 'crp.tipo_recibo',
                 DB::raw('0 as es_parcial')
-            );
+            )
+            ->distinct();
+
+        if ($tallerNombre) {
+            $queryNormales->whereRaw('TRIM(ppren.encargado) = ?', [trim($tallerNombre)]);
+        }
+
+        if ($term !== '') {
+            $queryNormales->where(function($query) use ($term) {
+                $query->where('crp.consecutivo_actual', 'LIKE', "%{$term}%")
+                      ->orWhere('ppren.encargado', 'LIKE', "%{$term}%")
+                      ->orWhere('pp.nombre_prenda', 'LIKE', "%{$term}%");
+            });
+        }
 
         if ($limit > 0) {
             $queryNormales->limit($limit);
@@ -49,10 +66,6 @@ class BuscarRecibosTallerUseCase
                      ->where('ppren.proceso', '=', 'Costura');
             })
             ->whereIn('rpp.tipo_recibo', ['REFLECTIVO', 'COSTURA'])
-            ->where(function($query) use ($term) {
-                $query->where('rpp.consecutivo_parcial', 'LIKE', "%$term%")
-                      ->orWhere('ppren.encargado', 'LIKE', "%$term%");
-            })
             ->select(
                 'rpp.id', 
                 'rpp.consecutivo_parcial as numero_recibo', 
@@ -60,7 +73,20 @@ class BuscarRecibosTallerUseCase
                 'ppren.encargado', 
                 'rpp.tipo_recibo',
                 DB::raw('1 as es_parcial')
-            );
+            )
+            ->distinct();
+
+        if ($tallerNombre) {
+            $queryParciales->whereRaw('TRIM(ppren.encargado) = ?', [trim($tallerNombre)]);
+        }
+
+        if ($term !== '') {
+            $queryParciales->where(function($query) use ($term) {
+                $query->where('rpp.consecutivo_parcial', 'LIKE', "%{$term}%")
+                      ->orWhere('ppren.encargado', 'LIKE', "%{$term}%")
+                      ->orWhere('pp.nombre_prenda', 'LIKE', "%{$term}%");
+            });
+        }
 
         if ($limit > 0) {
             $queryParciales->limit($limit);
@@ -68,7 +94,13 @@ class BuscarRecibosTallerUseCase
 
         $recibosParciales = $queryParciales->get();
 
-        return $recibosNormales->concat($recibosParciales)->map(function($r) {
+        return $recibosNormales
+            ->concat($recibosParciales)
+            ->unique(function ($r) {
+                return $r->id . '|' . $r->es_parcial;
+            })
+            ->values()
+            ->map(function($r) {
             $r->numero_recibo = $r->numero_recibo + 0;
             return $r;
         });
