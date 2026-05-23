@@ -1152,11 +1152,13 @@ function showOrdenes(search = '', page = 1) {
 
             data.ordenes.forEach(orden => {
                 const rowClass = orden.es_dividido ? 'orden-dividida' : '';
+                const tipoRecibo = String(orden.tipo_recibo || '').trim().toUpperCase();
+                const etiquetaOrden = tipoRecibo === 'CORTE-PARA-BODEGA' ? 'Bodega' : 'Pedido';
                 
                 // Fila principal
                 html += `
                     <tr class="${rowClass}" data-orden-id="${orden.id}">
-                        <td class="col-numero"><strong>${orden.numero_recibo}</strong></td>
+                        <td class="col-numero"><strong>${etiquetaOrden} #${orden.numero_recibo}</strong></td>
                         <td>
                             <div class="prenda-nombre">${orden.descripcion}</div>
                             <p class="prenda-desc">${orden.cliente}</p>

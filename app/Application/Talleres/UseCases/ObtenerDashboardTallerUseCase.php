@@ -20,10 +20,10 @@ class ObtenerDashboardTallerUseCase
             ->join('procesos_prenda as ppren', function($join) {
                 $join->on('ppro.numero_pedido', '=', 'ppren.numero_pedido')
                      ->on('crp.consecutivo_actual', '=', 'ppren.numero_recibo')
-                     ->where('ppren.proceso', '=', 'Costura');
+                     ->whereRaw("LOWER(TRIM(ppren.proceso)) = 'costura'");
             })
             ->whereIn('crp.tipo_recibo', ['REFLECTIVO', 'COSTURA'])
-            ->where('crp.area', '=', 'Costura')
+            ->whereRaw("LOWER(TRIM(COALESCE(crp.area, ''))) = 'costura'")
             ->where('ppren.encargado', '=', $nombreTaller)
             ->select(
                 'crp.id', 
@@ -38,31 +38,58 @@ class ObtenerDashboardTallerUseCase
             ->groupBy('crp.id')
             ->get();
 
-        // 2. Recibos parciales asignados al taller
-        $recibosParciales = DB::table('recibo_por_partes as rpp')
-            ->join('prendas_pedido as pp', 'rpp.prenda_pedido_id', '=', 'pp.id')
-            ->join('pedidos_produccion as ppro', 'rpp.pedido_produccion_id', '=', 'ppro.id')
-            ->join('clientes', 'ppro.cliente_id', '=', 'clientes.id')
-            ->join('procesos_prenda as ppren', function($join) {
-                $join->on('ppro.numero_pedido', '=', 'ppren.numero_pedido')
-                     ->on('rpp.prenda_pedido_id', '=', 'ppren.prenda_pedido_id')
-                     ->on('rpp.consecutivo_parcial', '=', 'ppren.numero_recibo_parcial')
-                     ->where('ppren.proceso', '=', 'Costura');
+        $recibosNormalesBodega = DB::table('consecutivos_recibos_pedidos as crp')
+            ->join('prenda_bodega as pb', 'crp.prenda_bodega_id', '=', 'pb.id')
+            ->join('procesos_prenda as ppren', function ($join) {
+                $join->on('crp.consecutivo_actual', '=', 'ppren.numero_recibo')
+                    ->whereRaw("LOWER(TRIM(ppren.proceso)) = 'costura'");
             })
-            ->whereIn('rpp.tipo_recibo', ['REFLECTIVO', 'COSTURA'])
+            ->where('crp.tipo_recibo', 'CORTE-PARA-BODEGA')
+            ->whereRaw("LOWER(TRIM(COALESCE(crp.area, ''))) = 'costura'")
             ->where('ppren.encargado', '=', $nombreTaller)
             ->select(
-                'rpp.id', 
-                'rpp.consecutivo_parcial as numero_recibo', 
-                'pp.nombre_prenda',
-                'pp.descripcion as descripcion_prenda',
-                'clientes.nombre as cliente', 
-                'rpp.tipo_recibo',
+                'crp.id',
+                'crp.consecutivo_actual as numero_recibo',
+                DB::raw('NULL as prenda_id'),
+                'pb.nombre as nombre_prenda',
+                'pb.descripcion as descripcion_prenda',
+                DB::raw("'Bodega' as cliente"),
+                'crp.tipo_recibo',
+                DB::raw('0 as es_parcial')
+            )
+            ->groupBy('crp.id')
+            ->get();
+
+        // 2. Recibos parciales asignados al taller
+        $recibosParciales = DB::table('recibo_por_partes as rpp')
+            ->leftJoin('prendas_pedido as pp', 'rpp.prenda_pedido_id', '=', 'pp.id')
+            ->leftJoin('pedidos_produccion as ppro', 'rpp.pedido_produccion_id', '=', 'ppro.id')
+            ->leftJoin('clientes', 'ppro.cliente_id', '=', 'clientes.id')
+            ->leftJoin('consecutivos_recibos_pedidos as crp_base', function ($join) {
+                $join->on('rpp.pedido_produccion_id', '=', 'crp_base.pedido_produccion_id')
+                    ->on('rpp.consecutivo_original', '=', 'crp_base.consecutivo_actual')
+                    ->where('crp_base.tipo_recibo', '=', 'CORTE-PARA-BODEGA');
+            })
+            ->leftJoin('prenda_bodega as pb', 'crp_base.prenda_bodega_id', '=', 'pb.id')
+            ->join('procesos_prenda as ppren', function($join) {
+                $join->on('rpp.consecutivo_parcial', '=', 'ppren.numero_recibo_parcial')
+                    ->whereRaw("LOWER(TRIM(ppren.proceso)) = 'costura'");
+            })
+            ->whereIn('rpp.tipo_recibo', ['REFLECTIVO', 'COSTURA', 'CORTE-PARA-BODEGA'])
+            ->where('ppren.encargado', '=', $nombreTaller)
+            ->select(
+                'rpp.id',
+                DB::raw('ANY_VALUE(rpp.consecutivo_parcial) as numero_recibo'),
+                DB::raw('ANY_VALUE(COALESCE(pp.nombre_prenda, pb.nombre, "N/A")) as nombre_prenda'),
+                DB::raw('ANY_VALUE(COALESCE(pp.descripcion, pb.descripcion, "N/A")) as descripcion_prenda'),
+                DB::raw('ANY_VALUE(COALESCE(clientes.nombre, "Bodega")) as cliente'),
+                DB::raw('ANY_VALUE(rpp.tipo_recibo) as tipo_recibo'),
                 DB::raw('1 as es_parcial')
             )
             ->groupBy('rpp.id')
             ->get();
 
+        $recibosNormales = $recibosNormales->concat($recibosNormalesBodega);
         $recibos = $recibosNormales->concat($recibosParciales);
 
         // Optimización: Cargar totales y entregas en bloque
@@ -76,6 +103,23 @@ class ObtenerDashboardTallerUseCase
             ->groupBy('prenda_pedido_id')
             ->select('prenda_pedido_id', DB::raw('SUM(cantidad) as total'))
             ->pluck('total', 'prenda_pedido_id');
+
+        $idsNormalesBodega = $recibosNormales
+            ->filter(fn($r) => ($r->tipo_recibo ?? null) === 'CORTE-PARA-BODEGA')
+            ->pluck('id')
+            ->values()
+            ->all();
+
+        $totalesAsignadosNormalesBodega = [];
+        if (!empty($idsNormalesBodega)) {
+            $totalesAsignadosNormalesBodega = DB::table('consecutivos_recibos_pedidos as crp')
+                ->join('prenda_tallas_bodega as ptb', 'crp.prenda_bodega_id', '=', 'ptb.prenda_bodega_id')
+                ->whereIn('crp.id', $idsNormalesBodega)
+                ->groupBy('crp.id')
+                ->select('crp.id', DB::raw('SUM(ptb.cantidad) as total'))
+                ->pluck('total', 'crp.id')
+                ->toArray();
+        }
 
         // Totales Asignados (Parciales)
         $totalesAsignadosParciales = DB::table('recibos_por_partes_tallas')
@@ -105,7 +149,11 @@ class ObtenerDashboardTallerUseCase
                 $r->cantidad_total = $totalesAsignadosParciales[$r->id] ?? 0;
                 $r->cantidad_entregada = $entregasParciales[$r->id] ?? 0;
             } else {
-                $r->cantidad_total = $totalesAsignadosNormales[$r->prenda_id] ?? 0;
+                if (($r->tipo_recibo ?? null) === 'CORTE-PARA-BODEGA') {
+                    $r->cantidad_total = $totalesAsignadosNormalesBodega[$r->id] ?? 0;
+                } else {
+                    $r->cantidad_total = $totalesAsignadosNormales[$r->prenda_id] ?? 0;
+                }
                 $r->cantidad_entregada = $entregasNormales[$r->id] ?? 0;
             }
             

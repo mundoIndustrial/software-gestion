@@ -7,6 +7,7 @@ class OrdenDTO
     public int $id;
     public string $numeroRecibo;
     public string $cliente;
+    public string $tipoRecibo;
     public string $descripcion;
     public int $cantidadTotal;
     public int $cantidadEntregada;
@@ -21,6 +22,7 @@ class OrdenDTO
         int $id,
         string $numeroRecibo,
         string $cliente,
+        string $tipoRecibo,
         string $descripcion,
         int $cantidadTotal,
         int $cantidadEntregada,
@@ -34,6 +36,7 @@ class OrdenDTO
         $this->id = $id;
         $this->numeroRecibo = $numeroRecibo;
         $this->cliente = $cliente;
+        $this->tipoRecibo = $tipoRecibo;
         $this->descripcion = $descripcion;
         $this->cantidadTotal = $cantidadTotal;
         $this->cantidadEntregada = $cantidadEntregada;
@@ -51,6 +54,7 @@ class OrdenDTO
             'id' => $this->id,
             'numero_recibo' => $this->numeroRecibo,
             'cliente' => $this->cliente,
+            'tipo_recibo' => $this->tipoRecibo,
             'descripcion' => $this->descripcion,
             'talla' => 'N/A',
             'cantidad_total' => $this->cantidadTotal,

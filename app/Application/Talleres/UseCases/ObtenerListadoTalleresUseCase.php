@@ -17,6 +17,7 @@ class ObtenerListadoTalleresUseCase
         }
 
         $query = User::whereJsonContains('roles_ids', $roleTaller->id)
+            ->whereRaw("LOWER(TRIM(users.name)) NOT LIKE 'modulo%'")
             ->leftJoin('taller_config', 'users.id', '=', 'taller_config.user_id')
             ->select('users.*', DB::raw('IFNULL(taller_config.activo, 1) as activo'));
 

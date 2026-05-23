@@ -76,25 +76,17 @@ class ObtenerOrdenesAsignadasUseCase
     private function obtenerCantidadesTotales(Collection $recibos): array
     {
         $cantidades = [];
-        $idsNormales = [];
-        $prendaIds = [];
         $idsParciales = [];
+        $tallasNormalesProcesadas = [];
 
         foreach ($recibos as $recibo) {
             if ($recibo->es_parcial) {
                 $idsParciales[] = $recibo->id;
             } else {
-                $idsNormales[] = $recibo->id;
-                $prendaIds[] = $recibo->prenda_id;
-            }
-        }
-
-        // Obtener cantidades normales - pasar prendaIds, no idsNormales
-        if (!empty($prendaIds)) {
-            $cantidadesNormales = $this->repository->obtenerCantidadesTotales($idsNormales, $prendaIds, false);
-            foreach ($recibos as $recibo) {
-                if (!$recibo->es_parcial && isset($cantidadesNormales[$recibo->prenda_id])) {
-                    $cantidades[$recibo->numero_recibo] = $cantidadesNormales[$recibo->prenda_id];
+                $claveTalla = $recibo->numero_recibo . '|' . ($recibo->talla_nombre ?? 'N/A');
+                if (!isset($tallasNormalesProcesadas[$claveTalla])) {
+                    $cantidades[$recibo->numero_recibo] = ($cantidades[$recibo->numero_recibo] ?? 0) + (int) ($recibo->cantidad_talla ?? 0);
+                    $tallasNormalesProcesadas[$claveTalla] = true;
                 }
             }
         }
@@ -186,6 +178,7 @@ class ObtenerOrdenesAsignadasUseCase
                 id: $primerRecibo->id ?? 0,
                 numeroRecibo: $numeroBase,
                 cliente: $primerRecibo->cliente ?? 'N/A',
+                tipoRecibo: (string) ($primerRecibo->tipo_recibo ?? ''),
                 descripcion: $primerRecibo->nombre_prenda ?? 'N/A',
                 cantidadTotal: $cantidadTotalOriginal,
                 cantidadEntregada: $cantidadEntregadaTotal,
