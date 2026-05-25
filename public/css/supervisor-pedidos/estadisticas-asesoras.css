@@ -384,6 +384,97 @@
     font-size: 0.9rem;
 }
 
+.stats-chart-block {
+    margin: 0.5rem 0 1rem;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+}
+
+.stats-chart-title {
+    margin: 0 0 0.55rem;
+    color: #0f172a;
+    font-size: 0.9rem;
+}
+
+.stats-chart-wrap {
+    position: relative;
+    width: 100%;
+    min-height: 280px;
+    height: clamp(280px, 52vh, 560px);
+}
+
+.stats-chart-wrap-sm {
+    min-height: 220px;
+    height: clamp(220px, 40vh, 420px);
+}
+
+.stats-mini-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 0.55rem;
+    margin: 0.35rem 0 0.85rem;
+}
+
+.stats-mini-metric {
+    margin: 0;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.stats-mini-metric span {
+    color: #64748b;
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+.stats-mini-metric strong {
+    color: #0f172a;
+    font-size: 0.92rem;
+}
+
+.stats-pagination {
+    margin-top: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+}
+
+.stats-page-info {
+    color: #475569;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0 0.2rem;
+}
+
+.stats-page-btn {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #0f172a;
+    border-radius: 8px;
+    padding: 0.34rem 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.stats-page-btn:hover:not(:disabled) {
+    background: #f8fafc;
+}
+
+.stats-page-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
     .stats-asesoras-wrapper {
         padding: 0.25rem;
@@ -409,6 +500,20 @@
 
     .btn-aplicar {
         width: 100%;
+        justify-content: center;
+    }
+
+    .stats-chart-wrap {
+        min-height: 240px;
+        height: 52vh;
+    }
+
+    .stats-chart-wrap-sm {
+        min-height: 210px;
+        height: 40vh;
+    }
+
+    .stats-pagination {
         justify-content: center;
     }
 }

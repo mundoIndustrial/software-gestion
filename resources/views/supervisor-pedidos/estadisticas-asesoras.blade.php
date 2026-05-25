@@ -210,13 +210,32 @@
 <div id="clientesUnicosModal" class="stats-modal" aria-hidden="true">
     <div class="stats-modal-panel">
         <div class="stats-modal-header">
-            <h3>Analisis: clientes completamente nuevos del {{ $periodoNombre }}</h3>
+            <h3>Analisis: clientes nuevos del {{ $periodoNombre }}</h3>
             <button type="button" class="stats-modal-close" data-close-modal>&times;</button>
         </div>
         <div class="stats-modal-body">
+            @php
+                $nuevosPorAsesora = collect($clientesNuevos)
+                    ->groupBy('asesoras')
+                    ->map(fn ($items) => $items->count())
+                    ->sortDesc();
+                $topAsesoraNuevos = $nuevosPorAsesora->keys()->first();
+                $topAsesoraNuevosTotal = $nuevosPorAsesora->first();
+            @endphp
             <p class="modal-metric">Clientes completamente nuevos del {{ $periodoNombre }}: <strong>{{ number_format($clientesNuevosCount, 0, ',', '.') }}</strong></p>
+            <div class="stats-mini-metrics">
+                <p class="stats-mini-metric"><span>Asesoras con nuevos</span><strong>{{ number_format($nuevosPorAsesora->count(), 0, ',', '.') }}</strong></p>
+                <p class="stats-mini-metric"><span>Promedio por asesora</span><strong>{{ $nuevosPorAsesora->count() > 0 ? number_format($clientesNuevosCount / $nuevosPorAsesora->count(), 1, ',', '.') : '0,0' }}</strong></p>
+                <p class="stats-mini-metric"><span>Mayor captacion</span><strong>{{ $topAsesoraNuevos ? $topAsesoraNuevos.' ('.$topAsesoraNuevosTotal.')' : 'Sin datos' }}</strong></p>
+            </div>
+            <div class="stats-chart-block">
+                <h4 class="stats-chart-title">Distribucion de clientes nuevos por asesora</h4>
+                <div class="stats-chart-wrap stats-chart-wrap-sm">
+                    <canvas id="clientesNuevosChart" aria-label="Distribucion de clientes nuevos por asesora"></canvas>
+                </div>
+            </div>
             <div class="stats-table-wrapper">
-                <table class="stats-table">
+                <table class="stats-table" id="clientesNuevosTable">
                     <thead>
                         <tr>
                             <th>Cliente nuevo</th>
@@ -255,6 +274,11 @@
                     </tbody>
                 </table>
             </div>
+            <div class="stats-pagination" data-table-pagination="clientesNuevosTable" data-page-size="10">
+                <button type="button" class="stats-page-btn" data-page-action="prev">Anterior</button>
+                <span class="stats-page-info" data-page-info>Página 1 de 1</span>
+                <button type="button" class="stats-page-btn" data-page-action="next">Siguiente</button>
+            </div>
         </div>
     </div>
 </div>
@@ -268,7 +292,7 @@
         <div class="stats-modal-body">
             <p class="modal-metric">Clientes que repiten: <strong>{{ number_format($clientesRecurrentesCount, 0, ',', '.') }}</strong></p>
             <div class="stats-table-wrapper">
-                <table class="stats-table">
+                <table class="stats-table" id="clientesRepitenTable">
                     <thead>
                         <tr>
                             <th>Cliente</th>
@@ -307,6 +331,11 @@
                     </tbody>
                 </table>
             </div>
+            <div class="stats-pagination" data-table-pagination="clientesRepitenTable" data-page-size="10">
+                <button type="button" class="stats-page-btn" data-page-action="prev">Anterior</button>
+                <span class="stats-page-info" data-page-info>Pagina 1 de 1</span>
+                <button type="button" class="stats-page-btn" data-page-action="next">Siguiente</button>
+            </div>
         </div>
     </div>
 </div>
@@ -325,6 +354,12 @@
             </p>
             <p class="modal-metric">Periodo actual: <strong>{{ number_format($totalActual, 0, ',', '.') }}</strong></p>
             <p class="modal-metric">{{ $comparativoTitulo }}: <strong>{{ number_format($totalAnterior, 0, ',', '.') }}</strong></p>
+            <div class="stats-chart-block">
+                <h4 class="stats-chart-title">Diferencia por asesora (barras divergentes)</h4>
+                <div class="stats-chart-wrap">
+                    <canvas id="diferenciaChart" aria-label="Diferencia de pedidos por asesora frente al periodo comparativo"></canvas>
+                </div>
+            </div>
             <table class="stats-table">
                 <thead>
                     <tr>
@@ -358,7 +393,7 @@
             <button type="button" class="stats-modal-close" data-close-modal>&times;</button>
         </div>
         <div class="stats-modal-body">
-            <table class="stats-table">
+            <table class="stats-table" id="clientesPedidosTable">
                 <thead>
                     <tr>
                         <th>Cliente</th>
@@ -402,6 +437,11 @@
                     @endforelse
                 </tbody>
             </table>
+            <div class="stats-pagination" data-table-pagination="clientesPedidosTable" data-page-size="10">
+                <button type="button" class="stats-page-btn" data-page-action="prev">Anterior</button>
+                <span class="stats-page-info" data-page-info>Pagina 1 de 1</span>
+                <button type="button" class="stats-page-btn" data-page-action="next">Siguiente</button>
+            </div>
         </div>
     </div>
 </div>
@@ -574,6 +614,215 @@ document.addEventListener('DOMContentLoaded', function () {
             modal.classList.remove('is-open');
             modal.setAttribute('aria-hidden', 'true');
         });
+    });
+
+    const diferenciaChartCanvas = document.getElementById('diferenciaChart');
+    if (diferenciaChartCanvas && window.Chart) {
+        const rankingAsesoras = @json($rankingAsesoras);
+        const rows = [...rankingAsesoras]
+            .map((row) => ({
+                asesora: row.asesora_nombre,
+                diferencia: Number(row.diferencia || 0),
+            }))
+            .sort((a, b) => b.diferencia - a.diferencia);
+
+        const labels = rows.map((item) => item.asesora);
+        const data = rows.map((item) => item.diferencia);
+        const colors = rows.map((item) => item.diferencia >= 0 ? 'rgba(22, 163, 74, 0.8)' : 'rgba(220, 38, 38, 0.82)');
+        const borderColors = rows.map((item) => item.diferencia >= 0 ? '#166534' : '#991b1b');
+        const maxAbsValue = Math.max(...data.map((value) => Math.abs(value)), 1);
+
+        new Chart(diferenciaChartCanvas, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Diferencia de pedidos',
+                    data,
+                    backgroundColor: colors,
+                    borderColor: borderColors,
+                    borderWidth: 1.2,
+                    borderRadius: 7,
+                    maxBarThickness: 28,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        min: -maxAbsValue,
+                        max: maxAbsValue,
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.24)',
+                        },
+                        ticks: {
+                            callback: (value) => Number(value).toLocaleString('es-CO'),
+                            color: '#334155',
+                            font: {
+                                size: 11,
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false,
+                        },
+                        ticks: {
+                            color: '#0f172a',
+                            font: {
+                                size: 11,
+                                weight: '600',
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false,
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const value = Number(context.raw || 0);
+                                const sign = value >= 0 ? '+' : '';
+                                return `${sign}${value.toLocaleString('es-CO')} pedidos`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    const clientesNuevosCanvas = document.getElementById('clientesNuevosChart');
+    if (clientesNuevosCanvas && window.Chart) {
+        const clientesNuevos = @json($clientesNuevos);
+        const porAsesora = clientesNuevos.reduce((acc, item) => {
+            const key = item.asesoras || 'Sin asesora';
+            acc[key] = (acc[key] || 0) + 1;
+            return acc;
+        }, {});
+
+        const rows = Object.entries(porAsesora)
+            .map(([asesora, total]) => ({ asesora, total }))
+            .sort((a, b) => b.total - a.total)
+            .slice(0, 12);
+        const totalNuevos = rows.reduce((acc, item) => acc + item.total, 0) || 1;
+        const porcentajes = rows.map((item) => (item.total / totalNuevos) * 100);
+        const labels = rows.map((item, index) => `${item.asesora} (${porcentajes[index].toFixed(1)}%)`);
+
+        new Chart(clientesNuevosCanvas, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Clientes nuevos (participacion %)',
+                    data: rows.map((item) => item.total),
+                    backgroundColor: 'rgba(14, 165, 233, 0.78)',
+                    borderColor: '#0369a1',
+                    borderWidth: 1.1,
+                    borderRadius: 7,
+                    maxBarThickness: 34,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.22)',
+                        },
+                        ticks: {
+                            precision: 0,
+                            color: '#334155',
+                            font: {
+                                size: 11,
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false,
+                        },
+                        ticks: {
+                            color: '#0f172a',
+                            font: {
+                                size: 11,
+                                weight: '600',
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false,
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const clientes = Number(context.raw || 0);
+                                const pct = porcentajes[context.dataIndex] || 0;
+                                return `${clientes.toLocaleString('es-CO')} clientes (${pct.toFixed(1)}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    document.querySelectorAll('[data-table-pagination]').forEach((pager) => {
+        const tableId = pager.getAttribute('data-table-pagination');
+        const pageSize = Number(pager.getAttribute('data-page-size') || 10);
+        const table = document.getElementById(tableId);
+        if (!table) return;
+
+        const tbody = table.querySelector('tbody');
+        const info = pager.querySelector('[data-page-info]');
+        const prevBtn = pager.querySelector('[data-page-action="prev"]');
+        const nextBtn = pager.querySelector('[data-page-action="next"]');
+        if (!tbody || !info || !prevBtn || !nextBtn) return;
+
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        if (rows.length <= pageSize) {
+            pager.style.display = 'none';
+            return;
+        }
+
+        let currentPage = 1;
+        const totalPages = Math.ceil(rows.length / pageSize);
+
+        const renderPage = () => {
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+
+            rows.forEach((row, index) => {
+                row.style.display = index >= start && index < end ? '' : 'none';
+            });
+
+            info.textContent = `Página ${currentPage} de ${totalPages}`;
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = currentPage === totalPages;
+        };
+
+        prevBtn.addEventListener('click', () => {
+            if (currentPage <= 1) return;
+            currentPage -= 1;
+            renderPage();
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentPage >= totalPages) return;
+            currentPage += 1;
+            renderPage();
+        });
+
+        renderPage();
     });
 });
 </script>
