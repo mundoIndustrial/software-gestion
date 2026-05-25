@@ -59,7 +59,7 @@ class BodegaPedidoConsultaService
         $areasPermitidas = $this->roleService->obtenerAreasPermitidas($rolesDelUsuario);
 
         $numerosAnulados = PedidoProduccion::query()
-            ->where('estado', WarehouseConstants::STATE_CANCELLED)
+            ->whereIn('estado', [WarehouseConstants::STATE_CANCELLED, 'RECHAZADO_CARTERA'])
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '!=', '')
             ->pluck('numero_pedido')

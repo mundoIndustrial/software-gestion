@@ -606,8 +606,12 @@ class PedidoProduccionReadService
     {
         $filtrosCartera = array_values(array_filter(array_map('trim', explode(',', (string) ($request->getAprobacionCartera() ?? '')))));
         $incluyeNoAprobadoCartera = in_array('no_aprobado', $filtrosCartera, true);
+        $estadoSolicitado = trim((string) ($request->getEstado() ?? ''));
 
-        $estadosExcluidos = ['RECHAZADO_CARTERA', 'Entregado'];
+        $estadosExcluidos = ['Entregado'];
+        if ($estadoSolicitado !== 'Anulada') {
+            $estadosExcluidos[] = 'RECHAZADO_CARTERA';
+        }
         if (!$incluyeNoAprobadoCartera) {
             $estadosExcluidos[] = 'pendiente_cartera';
         }
@@ -817,6 +821,8 @@ class PedidoProduccionReadService
             $estado = $request->getEstado();
             if ($estado === 'En Producción') {
                 $query->whereIn('estado', ['No iniciado', 'En Ejecución']);
+            } elseif ($estado === 'Anulada') {
+                $query->whereIn('estado', ['Anulada', 'RECHAZADO_CARTERA']);
             } else {
                 $query->where('estado', $estado);
             }
@@ -999,6 +1005,8 @@ class PedidoProduccionReadService
             ->limit(200)
             ->get();
 
+        $novedades = $this->filterRecentDuplicateNews($novedades);
+
         return $novedades->map(function ($news) use ($newsVistosIds) {
             $icono = match ($news->event_type) {
                 'pedido_creado', 'order_created' => 'add_shopping_cart',
@@ -1007,6 +1015,7 @@ class PedidoProduccionReadService
                 'epp_agregado' => 'health_and_safety',
                 'epp_modificado' => 'edit',
                 'order_status_changed' => 'sync_alt',
+                'pedido_rechazado_cartera' => 'gpp_bad',
                 default => 'notifications',
             };
 
@@ -1017,6 +1026,7 @@ class PedidoProduccionReadService
                 'epp_agregado' => '#8b5cf6',
                 'epp_modificado' => '#f59e0b',
                 'order_status_changed' => '#6366f1',
+                'pedido_rechazado_cartera' => '#dc2626',
                 default => '#6b7280',
             };
 
@@ -1034,6 +1044,35 @@ class PedidoProduccionReadService
                 'source' => 'news',
             ];
         });
+    }
+
+    private function filterRecentDuplicateNews(\Illuminate\Support\Collection $novedades): \Illuminate\Support\Collection
+    {
+        $seenBySignature = [];
+        $windowSeconds = 90;
+
+        return $novedades->filter(function ($news) use (&$seenBySignature, $windowSeconds) {
+            $signature = implode('|', [
+                (string) ($news->event_type ?? ''),
+                (string) ($news->pedido ?? ''),
+                trim((string) ($news->description ?? '')),
+            ]);
+
+            $currentTs = \Carbon\Carbon::parse($news->created_at)->getTimestamp();
+
+            if (!isset($seenBySignature[$signature])) {
+                $seenBySignature[$signature] = $currentTs;
+                return true;
+            }
+
+            $previousTs = $seenBySignature[$signature];
+            if (($previousTs - $currentTs) <= $windowSeconds) {
+                return false;
+            }
+
+            $seenBySignature[$signature] = $currentTs;
+            return true;
+        })->values();
     }
 
     private function getCancelledOrders(int $userId): \Illuminate\Support\Collection
@@ -1091,6 +1130,7 @@ class PedidoProduccionReadService
             'epp_agregado',
             'epp_modificado',
             'order_status_changed',
+            'pedido_rechazado_cartera',
         ];
     }
 }

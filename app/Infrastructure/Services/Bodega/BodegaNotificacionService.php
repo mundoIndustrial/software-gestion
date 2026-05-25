@@ -57,7 +57,7 @@ class BodegaNotificacionService implements BodegaNotificacionServiceContract
             // Novedades (News)
             $newsVistosIds = NewsVisto::where('user_id', $user->id)->pluck('news_id')->toArray();
 
-            $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'epp_homologado', 'order_status_changed', 'order_updated'];
+            $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'epp_homologado', 'order_status_changed', 'order_updated', 'pedido_rechazado_cartera'];
             $novedadesQuery = News::whereIn('event_type', $novedadesTipos)
                 ->where(function ($query) {
                     $query->where('event_type', '!=', 'order_updated')
@@ -89,6 +89,7 @@ class BodegaNotificacionService implements BodegaNotificacionServiceContract
                     'epp_homologado' => 'compare_arrows',
                     'order_status_changed' => 'sync_alt',
                     'order_updated' => 'edit_note',
+                    'pedido_rechazado_cartera' => 'gpp_bad',
                     default => 'notifications',
                 };
                 $color = match($news->event_type) {
@@ -100,6 +101,7 @@ class BodegaNotificacionService implements BodegaNotificacionServiceContract
                     'epp_homologado' => '#0ea5e9',
                     'order_status_changed' => '#6366f1',
                     'order_updated' => '#0f766e',
+                    'pedido_rechazado_cartera' => '#dc2626',
                     default => '#6b7280',
                 };
                 return [
@@ -167,7 +169,7 @@ class BodegaNotificacionService implements BodegaNotificacionServiceContract
             }
 
             // Marcar news como vistas
-            $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'epp_homologado', 'order_status_changed', 'order_updated'];
+            $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'epp_homologado', 'order_status_changed', 'order_updated', 'pedido_rechazado_cartera'];
             $newsIds = News::whereIn('event_type', $novedadesTipos)
                 ->where(function ($query) {
                     $query->where('event_type', '!=', 'order_updated')
@@ -268,3 +270,4 @@ class BodegaNotificacionService implements BodegaNotificacionServiceContract
         return $this->{$method}(...$arguments);
     }
 }
+

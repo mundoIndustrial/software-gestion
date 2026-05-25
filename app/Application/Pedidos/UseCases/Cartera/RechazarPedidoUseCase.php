@@ -3,6 +3,7 @@
 namespace App\Application\Pedidos\UseCases\Cartera;
 
 use App\Infrastructure\Repositories\CarteraPedidosRepository;
+use App\Models\News;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -60,6 +61,42 @@ class RechazarPedidoUseCase
                 'motivo' => $motivo
             ]);
 
+            try {
+                $descripcionNews = "Cartera rechazo el Pedido #{$pedidoRechazado->numero_pedido}. Motivo: {$motivo}";
+                $duplicadaReciente = News::query()
+                    ->where('event_type', 'pedido_rechazado_cartera')
+                    ->where('pedido', $pedidoRechazado->numero_pedido)
+                    ->where('description', $descripcionNews)
+                    ->where('created_at', '>=', now()->subSeconds(30))
+                    ->exists();
+
+                if ($duplicadaReciente) {
+                    Log::info('[CARTERA] News duplicada evitada', [
+                        'pedido_id' => $pedidoRechazado->id,
+                        'numero_pedido' => $pedidoRechazado->numero_pedido,
+                    ]);
+                } else {
+                News::create([
+                    'event_type' => 'pedido_rechazado_cartera',
+                    'table_name' => 'pedidos_produccion',
+                    'record_id' => $pedidoRechazado->id,
+                    'description' => $descripcionNews,
+                    'user_id' => $usuarioId,
+                    'pedido' => $pedidoRechazado->numero_pedido,
+                    'metadata' => [
+                        'tipo' => 'pedido_rechazado_cartera',
+                        'pedido_id' => $pedidoRechazado->id,
+                        'motivo' => $motivo,
+                    ],
+                ]);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('[CARTERA] No se pudo crear News de rechazo', [
+                    'pedido_id' => $pedidoRechazado->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             return [
                 'success' => true,
                 'message' => 'Pedido rechazado correctamente',
@@ -74,4 +111,3 @@ class RechazarPedidoUseCase
         }
     }
 }
-

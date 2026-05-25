@@ -494,7 +494,7 @@ class DespachoPendientesApplicationService
         int $perPage = 10
     ): array {
         $query = PedidoProduccion::query()
-            ->where('estado', 'Anulada')
+            ->whereIn('estado', ['Anulada', 'RECHAZADO_CARTERA'])
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '!=', '')
             ->orderByDesc('numero_pedido');
