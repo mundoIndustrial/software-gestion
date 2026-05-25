@@ -1,4 +1,4 @@
-@extends('layouts.base')
+﻿@extends('layouts.base')
 
 @section('title', 'Gestión de Talleres')
 @section('page-title', 'Gestión de Talleres')
@@ -27,12 +27,20 @@
                 <span class="material-symbols-rounded">chevron_left</span>
             </button>
         </div>
+        @php
+            $currentView = request('view');
+            $isOrdenesView = $currentView === 'ordenes';
+        @endphp
         <nav class="sidebar-nav">
-            <button class="sidebar-item active" data-view="viewTalleres" id="navTalleres">
+            <button class="sidebar-item {{ !$isOrdenesView && $status !== 'inactivos' ? 'active' : '' }}" data-view="viewTalleres" data-status="activos" id="navTalleres">
                 <span class="material-symbols-rounded">factory</span>
-                <span class="nav-label">Gestión Talleres</span>
+                <span class="nav-label">Talleres Activos</span>
             </button>
-            <button class="sidebar-item" data-view="viewOrdenes" id="navOrdenes">
+            <button class="sidebar-item {{ !$isOrdenesView && $status === 'inactivos' ? 'active' : '' }}" data-view="viewTalleres" data-status="inactivos" id="navTalleresInactivos">
+                <span class="material-symbols-rounded">cancel</span>
+                <span class="nav-label">Talleres Inactivos</span>
+            </button>
+            <button class="sidebar-item {{ $isOrdenesView ? 'active' : '' }}" data-view="viewOrdenes" id="navOrdenes">
                 <span class="material-symbols-rounded">assignment</span>
                 <span class="nav-label">Órdenes</span>
             </button>
@@ -62,68 +70,58 @@
             <div class="page-header">
             </div>
 
-            <!-- Tabs de Talleres -->
-            <div class="talleres-tabs-container">
-                <div class="talleres-tabs">
-                    <button class="taller-tab-btn {{ $status === 'activos' ? 'active' : '' }}" data-status="activos">
-                        <span class="material-symbols-rounded">check_circle</span>
-                        TALLERES ACTIVOS
-                    </button>
-                    <button class="taller-tab-btn {{ $status === 'inactivos' ? 'active' : '' }}" data-status="inactivos">
-                        <span class="material-symbols-rounded">cancel</span>
-                        TALLERES INACTIVOS
-                    </button>
-                </div>
+
+            <div class="table-container" id="talleresGrid">
+                <table class="table-talleres">
+                    <thead>
+                        <tr>
+                            <th>Taller</th>
+                            <th>Estado</th>
+                            <th>Completados</th>
+                            <th>Pendientes</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="talleresRows">
+                        @forelse($talleres as $taller)
+                            <tr class="{{ !$taller->activo ? 'inactive' : '' }}" data-name="{{ strtolower($taller->name) }}" data-taller-id="{{ $taller->id }}">
+                                <td class="col-taller-name">{{ $taller->name }}</td>
+                                <td>
+                                    <div class="taller-status-toggle">
+                                        <label class="switch">
+                                            <input type="checkbox" class="toggle-taller-status" 
+                                                data-id="{{ $taller->id }}" 
+                                                {{ $taller->activo ? 'checked' : '' }}>
+                                            <span class="slider round"></span>
+                                        </label>
+                                        <span class="status-label {{ $taller->activo ? 'active' : 'inactive' }}">
+                                            {{ $taller->activo ? 'ACTIVO' : 'INACTIVO' }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td><span class="stat-value stat-completed" data-taller-id="{{ $taller->id }}">-</span></td>
+                                <td><span class="stat-value stat-pending" data-taller-id="{{ $taller->id }}">-</span></td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="btn-edit-icon btn-edit-taller" data-id="{{ $taller->id }}" data-name="{{ $taller->name }}" title="Editar nombre">
+                                            <span class="material-symbols-rounded">edit</span>
+                                        </button>
+                                        <button class="btn-view btn-view-recibos" data-taller-id="{{ $taller->id }}" data-taller-name="{{ $taller->name }}">
+                                            Ver Recibos <span style="font-size: 10px; margin-left: 5px;">&#10095;</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="table-empty-state">No hay talleres disponibles en este momento.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
 
-            <div class="cards-grid" id="talleresGrid">
-                @forelse($talleres as $taller)
-                    <div class="taller-card {{ !$taller->activo ? 'inactive' : '' }}" data-name="{{ strtolower($taller->name) }}" data-taller-id="{{ $taller->id }}">
-                        <div class="card-header-info">
-                            <h2 class="taller-name">{{ $taller->name }}</h2>
-                            <div class="taller-status-toggle">
-                                <label class="switch">
-                                    <input type="checkbox" class="toggle-taller-status" 
-                                           data-id="{{ $taller->id }}" 
-                                           {{ $taller->activo ? 'checked' : '' }}>
-                                    <span class="slider round"></span>
-                                </label>
-                                <span class="status-label {{ $taller->activo ? 'active' : 'inactive' }}">
-                                    {{ $taller->activo ? 'ACTIVO' : 'INACTIVO' }}
-                                </span>
-                            </div>
-                        </div>
-                        <p class="taller-role">RESPONSABLE DE TALLER</p>
-                        
-                        <div class="stats-container">
-                            <div class="stat-row">
-                                <span>Completados:</span>
-                                <span class="stat-value stat-completed" data-taller-id="{{ $taller->id }}">-</span>
-                            </div>
-                            <div class="stat-row">
-                                <span>Pendientes:</span>
-                                <span class="stat-value stat-pending" data-taller-id="{{ $taller->id }}">-</span>
-                            </div>
-                        </div>
-                        
-                        <div class="card-footer-actions">
-                            <button class="btn-edit-icon btn-edit-taller" data-id="{{ $taller->id }}" data-name="{{ $taller->name }}" title="Editar nombre">
-                                <span class="material-symbols-rounded">edit</span>
-                            </button>
-                            <button class="btn-view btn-view-recibos" data-taller-id="{{ $taller->id }}">
-                                Ver Recibos <span style="font-size: 10px; margin-left: 5px;">&#10095;</span>
-                            </button>
-                        </div>
-                    </div>
-                @empty
-                    <div style="width: 100%; padding: 40px; text-align: center; color: #64748b; background: white; border-radius: 12px; border: 1px dashed #cbd5e1;">
-                        <span class="material-symbols-rounded" style="font-size: 40px; color: #cbd5e1; margin-bottom: 10px;">inbox</span>
-                        <p>No hay talleres disponibles en este momento.</p>
-                    </div>
-                @endforelse
-            </div>
-
-            <!-- Paginación -->
+            <!-- Paginacion -->
             <div class="pagination-container">
                 @if($talleres instanceof \Illuminate\Pagination\LengthAwarePaginator)
                     {{ $talleres->appends(['search' => $search, 'status' => $status])->links('vendor.pagination.simple-clean') }}
@@ -200,23 +198,8 @@
             </div>
         </div>
 
-        <!-- Vista 4: Órdenes (Todos los Recibos) -->
+        <!-- Vista 4: ordenes (Todos los Recibos) -->
         <div id="viewOrdenes" class="view-container" style="display: none;">
-            <div class="page-header">
-                <div class="page-title-group">
-                    <div class="subtitle">TODAS LAS ÓRDENES</div>
-                </div>
-                <div class="page-actions">
-                    <form action="{{ route('talleres.index') }}" method="GET" class="gooey-search-wrapper">
-                        <span class="material-symbols-rounded gooey-search-icon">search</span>
-                        <input type="text" name="search" class="gooey-search-input" placeholder="Buscar orden..." id="searchOrdenesInput">
-                        <button class="gooey-search-clear" id="clearSearchOrdenes" type="button">
-                            <span class="material-symbols-rounded">close</span>
-                        </button>
-                    </form>
-                </div>
-            </div>
-
             <div class="recibos-card">
                 <div class="card-header">
                     <div class="icon">

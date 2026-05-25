@@ -18,10 +18,16 @@ document.addEventListener('DOMContentLoaded', function() {
     initNewTallerModal();
     initEditTaller();
     initSidebarNavigation();
-    initTabs();
+    initInitialStatus();
     initSidebarToggle();
     restoreLastViewFromSession();
 });
+
+function initInitialStatus() {
+    const url = new URL(window.location.href);
+    const statusParam = url.searchParams.get('status');
+    currentState.activeTab = statusParam === 'inactivos' ? 'inactivos' : 'activos';
+}
 
 function initSidebarToggle() {
     const toggleBtn = document.getElementById('sidebarToggle');
@@ -204,7 +210,7 @@ function initStatusToggles() {
         checkbox.addEventListener('change', function() {
             const id = this.dataset.id;
             const label = this.closest('.taller-status-toggle').querySelector('.status-label');
-            const card = this.closest('.taller-card');
+            const row = this.closest('tr');
             const routeBase = mainContainer.dataset.routeToggleStatus.replace(':id', id);
 
             fetch(routeBase, {
@@ -221,32 +227,23 @@ function initStatusToggles() {
                     label.textContent = data.activo ? 'ACTIVO' : 'INACTIVO';
                     label.className = `status-label ${data.activo ? 'active' : 'inactive'}`;
                     
-                    if (data.activo) {
-                        card.classList.remove('inactive');
-                    } else {
-                        card.classList.add('inactive');
-                    }
+                    if (row) row.classList.toggle('inactive', !data.activo);
 
                     // Animación de salida al cambiar de estado y desaparecer del tab actual
                     if ((currentState.activeTab === 'activos' && !data.activo) || 
                         (currentState.activeTab === 'inactivos' && data.activo)) {
-                        card.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
-                        card.style.opacity = '0';
-                        card.style.transform = 'scale(0.9)';
+                        if (row) row.style.opacity = '0';
                         setTimeout(() => {
-                            card.remove();
+                            if (row) row.remove();
                             
-                            // Mostrar mensaje de vacío si no quedan talleres en el listado
-                            const grid = document.getElementById('talleresGrid');
-                            if (grid && grid.querySelectorAll('.taller-card').length === 0) {
-                                grid.innerHTML = `<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #64748b; background: white; border-radius: 12px; border: 1px dashed #cbd5e1; width: 100%;">
-                                    <span class="material-symbols-rounded" style="font-size: 40px; color: #cbd5e1; margin-bottom: 10px; display: block;">inbox</span>
-                                    <p>No hay talleres disponibles en este momento.</p>
-                                </div>`;
+                            const rows = document.querySelectorAll('#talleresRows tr[data-taller-id]');
+                            if (rows.length === 0) {
+                                const body = document.getElementById('talleresRows');
+                                if (body) body.innerHTML = '<tr><td colspan="5" class="table-empty-state">No hay talleres disponibles en este momento.</td></tr>';
                                 const paginationContainer = document.querySelector('.pagination-container');
                                 if (paginationContainer) paginationContainer.innerHTML = '';
                             }
-                        }, 500);
+                        }, 300);
                     }
                 } else {
                     this.checked = !this.checked;
@@ -264,26 +261,25 @@ function initStatusToggles() {
 
 function loadTalleresStats() {
     const mainContainer = document.querySelector('.main-container');
-    const tallerCards = document.querySelectorAll('.taller-card');
+    const statNodes = document.querySelectorAll('.stat-value[data-taller-id]');
     const apiRouteBase = mainContainer.dataset.routeApiRecibos;
+    const uniqueIds = [...new Set(Array.from(statNodes).map(el => el.getAttribute('data-taller-id')).filter(Boolean))];
     
-    tallerCards.forEach(card => {
-        const tallerId = card.getAttribute('data-taller-id');
-        const completadosSpan = card.querySelector('.stat-completed');
-        const pendientesSpan = card.querySelector('.stat-pending');
-        
+    uniqueIds.forEach(tallerId => {
+        const completadosSpans = document.querySelectorAll(`.stat-completed[data-taller-id="${tallerId}"]`);
+        const pendientesSpans = document.querySelectorAll(`.stat-pending[data-taller-id="${tallerId}"]`);
         const finalRoute = apiRouteBase.replace(':id', tallerId);
 
         fetch(finalRoute)
             .then(response => response.json())
             .then(data => {
-                completadosSpan.textContent = data.completados;
-                pendientesSpan.textContent = data.pendientes;
+                completadosSpans.forEach(span => span.textContent = data.completados);
+                pendientesSpans.forEach(span => span.textContent = data.pendientes);
             })
             .catch(error => {
                 console.error('Error loading stats for taller:', tallerId, error);
-                completadosSpan.textContent = '0';
-                pendientesSpan.textContent = '0';
+                completadosSpans.forEach(span => span.textContent = '0');
+                pendientesSpans.forEach(span => span.textContent = '0');
             });
     });
 }
@@ -299,6 +295,17 @@ function initTalleresSearch() {
         talleresForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const searchTerm = searchInput ? searchInput.value.trim() : '';
+            const isOrdenesView = currentState.view === 'ordenes' || new URLSearchParams(window.location.search).get('view') === 'ordenes';
+            if (isOrdenesView) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('view', 'ordenes');
+                if (searchTerm) url.searchParams.set('search', searchTerm);
+                else url.searchParams.delete('search');
+                url.searchParams.delete('page');
+                window.history.pushState({ view: 'ordenes' }, '', url.toString());
+                showOrdenes(searchTerm, 1);
+                return;
+            }
             
             const url = new URL(window.location.href);
             if (searchTerm) url.searchParams.set('search', searchTerm);
@@ -328,8 +335,19 @@ function initTalleresSearch() {
             clearTimeout(searchTimeout);
             
             const searchTerm = this.value.trim();
+            const isOrdenesView = currentState.view === 'ordenes' || new URLSearchParams(window.location.search).get('view') === 'ordenes';
             
             searchTimeout = setTimeout(() => {
+                if (isOrdenesView) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('view', 'ordenes');
+                    if (searchTerm) url.searchParams.set('search', searchTerm);
+                    else url.searchParams.delete('search');
+                    url.searchParams.delete('page');
+                    window.history.pushState({ view: 'ordenes' }, '', url.toString());
+                    showOrdenes(searchTerm, 1);
+                    return;
+                }
                 const url = new URL(window.location.href);
                 if (searchTerm) url.searchParams.set('search', searchTerm);
                 else url.searchParams.delete('search');
@@ -345,6 +363,16 @@ function initTalleresSearch() {
             clearButton.addEventListener('click', () => {
                 searchInput.value = '';
                 toggleClear();
+                const isOrdenesView = currentState.view === 'ordenes' || new URLSearchParams(window.location.search).get('view') === 'ordenes';
+                if (isOrdenesView) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('view', 'ordenes');
+                    url.searchParams.delete('search');
+                    url.searchParams.delete('page');
+                    window.history.pushState({ view: 'ordenes' }, '', url.toString());
+                    showOrdenes('', 1);
+                    return;
+                }
                 
                 const url = new URL(window.location.href);
                 url.searchParams.delete('search');
@@ -361,11 +389,11 @@ function initTalleresSearch() {
  * Realizar búsqueda en tiempo real
  */
 function performRealtimeSearch(searchTerm, apiRoute) {
-    const talleresGrid = document.getElementById('talleresGrid');
+    const talleresRows = document.getElementById('talleresRows');
     const paginationContainer = document.querySelector('.pagination-container');
     
     // Mostrar estado de carga
-    talleresGrid.innerHTML = '<div class="loading" style="grid-column: 1/-1; padding: 40px; text-align: center;"><div class="loading-spinner"></div><p>Buscando talleres...</p></div>';
+    talleresRows.innerHTML = '<tr><td colspan="5" class="table-empty-state"><div class="loading"><div class="loading-spinner"></div><p>Buscando talleres...</p></div></td></tr>';
     
     // Construir URL con parámetros
     const url = new URL(apiRoute, window.location.origin);
@@ -377,56 +405,12 @@ function performRealtimeSearch(searchTerm, apiRoute) {
         .then(response => response.json())
         .then(data => {
             if (!data.success || !data.data || data.data.length === 0) {
-                talleresGrid.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #64748b; background: white; border-radius: 12px; border: 1px dashed #cbd5e1;"><span class="material-symbols-rounded" style="font-size: 40px; color: #cbd5e1; margin-bottom: 10px; display: block;">search_off</span><p>No se encontraron talleres que coincidan con "<strong>' + escapeHtml(searchTerm) + '</strong>"</p></div>';
+                talleresRows.innerHTML = '<tr><td colspan="5" class="table-empty-state">No se encontraron talleres que coincidan con "' + escapeHtml(searchTerm) + '"</td></tr>';
                 paginationContainer.innerHTML = '';
                 return;
             }
             
-            // Renderizar resultados
-            let html = '';
-            data.data.forEach(taller => {
-                html += `
-                    <div class="taller-card ${!taller.activo ? 'inactive' : ''}" data-name="${escapeHtml(taller.name.toLowerCase())}" data-taller-id="${taller.id}">
-                        <div class="card-header-info">
-                            <h2 class="taller-name">${escapeHtml(taller.name)}</h2>
-                            <div class="taller-status-toggle">
-                                <label class="switch">
-                                    <input type="checkbox" class="toggle-taller-status" 
-                                           data-id="${taller.id}" 
-                                           ${taller.activo ? 'checked' : ''}>
-                                    <span class="slider round"></span>
-                                </label>
-                                <span class="status-label ${taller.activo ? 'active' : 'inactive'}">
-                                    ${taller.activo ? 'ACTIVO' : 'INACTIVO'}
-                                </span>
-                            </div>
-                        </div>
-                        <p class="taller-role">RESPONSABLE DE TALLER</p>
-                        
-                        <div class="stats-container">
-                            <div class="stat-row">
-                                <span>Completados:</span>
-                                <span class="stat-value stat-completed" data-taller-id="${taller.id}">-</span>
-                            </div>
-                            <div class="stat-row">
-                                <span>Pendientes:</span>
-                                <span class="stat-value stat-pending" data-taller-id="${taller.id}">-</span>
-                            </div>
-                        </div>
-                        
-                        <div class="card-footer-actions">
-                            <button class="btn-edit-icon btn-edit-taller" data-id="${taller.id}" data-name="${escapeHtml(taller.name)}" title="Editar nombre">
-                                <span class="material-symbols-rounded">edit</span>
-                            </button>
-                            <button class="btn-view btn-view-recibos" data-taller-id="${taller.id}">
-                                Ver Recibos <span style="font-size: 10px;">&#10095;</span>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            talleresGrid.innerHTML = html;
+            talleresRows.innerHTML = renderTalleresRows(data.data);
             
             // Renderizar paginación
             let paginationHtml = '';
@@ -444,7 +428,7 @@ function performRealtimeSearch(searchTerm, apiRoute) {
         })
         .catch(error => {
             console.error('Error en búsqueda:', error);
-            talleresGrid.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #ef4444;"><span class="material-symbols-rounded" style="font-size: 40px; margin-bottom: 10px; display: block;">error</span><p>Error al buscar talleres. Intenta de nuevo.</p></div>';
+            talleresRows.innerHTML = '<tr><td colspan="5" class="table-empty-state">Error al buscar talleres. Intenta de nuevo.</td></tr>';
             paginationContainer.innerHTML = '';
         });
 }
@@ -524,11 +508,11 @@ function initTalleresPaginationEvents(search) {
  * Realizar búsqueda paginada de talleres
  */
 function performTalleresPaginationSearch(searchTerm, page, apiRoute) {
-    const talleresGrid = document.getElementById('talleresGrid');
+    const talleresRows = document.getElementById('talleresRows');
     const paginationContainer = document.querySelector('.pagination-container');
     
     // Mostrar estado de carga
-    talleresGrid.innerHTML = '<div class="loading" style="grid-column: 1/-1; padding: 40px; text-align: center;"><div class="loading-spinner"></div><p>Cargando página...</p></div>';
+    talleresRows.innerHTML = '<tr><td colspan="5" class="table-empty-state"><div class="loading"><div class="loading-spinner"></div><p>Cargando página...</p></div></td></tr>';
     
     // Construir URL con parámetros
     const url = new URL(apiRoute, window.location.origin);
@@ -541,56 +525,12 @@ function performTalleresPaginationSearch(searchTerm, page, apiRoute) {
         .then(response => response.json())
         .then(data => {
             if (!data.success || !data.data || data.data.length === 0) {
-                talleresGrid.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #64748b;"><p>No hay resultados en esta página.</p></div>';
+                talleresRows.innerHTML = '<tr><td colspan="5" class="table-empty-state">No hay resultados en esta página.</td></tr>';
                 paginationContainer.innerHTML = '';
                 return;
             }
             
-            // Renderizar resultados
-            let html = '';
-            data.data.forEach(taller => {
-                html += `
-                    <div class="taller-card ${!taller.activo ? 'inactive' : ''}" data-name="${escapeHtml(taller.name.toLowerCase())}" data-taller-id="${taller.id}">
-                        <div class="card-header-info">
-                            <h2 class="taller-name">${escapeHtml(taller.name)}</h2>
-                            <div class="taller-status-toggle">
-                                <label class="switch">
-                                    <input type="checkbox" class="toggle-taller-status" 
-                                           data-id="${taller.id}" 
-                                           ${taller.activo ? 'checked' : ''}>
-                                    <span class="slider round"></span>
-                                </label>
-                                <span class="status-label ${taller.activo ? 'active' : 'inactive'}">
-                                    ${taller.activo ? 'ACTIVO' : 'INACTIVO'}
-                                </span>
-                            </div>
-                        </div>
-                        <p class="taller-role">RESPONSABLE DE TALLER</p>
-                        
-                        <div class="stats-container">
-                            <div class="stat-row">
-                                <span>Completados:</span>
-                                <span class="stat-value stat-completed" data-taller-id="${taller.id}">-</span>
-                            </div>
-                            <div class="stat-row">
-                                <span>Pendientes:</span>
-                                <span class="stat-value stat-pending" data-taller-id="${taller.id}">-</span>
-                            </div>
-                        </div>
-                        
-                        <div class="card-footer-actions">
-                            <button class="btn-edit-icon btn-edit-taller" data-id="${taller.id}" data-name="${escapeHtml(taller.name)}" title="Editar nombre">
-                                <span class="material-symbols-rounded">edit</span>
-                            </button>
-                            <button class="btn-view btn-view-recibos" data-taller-id="${taller.id}">
-                                Ver Recibos <span style="font-size: 10px;">&#10095;</span>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            talleresGrid.innerHTML = html;
+            talleresRows.innerHTML = renderTalleresRows(data.data);
             
             // Renderizar paginación
             let paginationHtml = '';
@@ -608,9 +548,38 @@ function performTalleresPaginationSearch(searchTerm, page, apiRoute) {
         })
         .catch(error => {
             console.error('Error en búsqueda paginada:', error);
-            talleresGrid.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #ef4444;"><p>Error al cargar la página. Intenta de nuevo.</p></div>';
+            talleresRows.innerHTML = '<tr><td colspan="5" class="table-empty-state">Error al cargar la página. Intenta de nuevo.</td></tr>';
             paginationContainer.innerHTML = '';
         });
+}
+
+function renderTalleresRows(talleres) {
+    return talleres.map(taller => `
+        <tr class="${!taller.activo ? 'inactive' : ''}" data-name="${escapeHtml((taller.name || '').toLowerCase())}" data-taller-id="${taller.id}">
+            <td class="col-taller-name">${escapeHtml(taller.name || '')}</td>
+            <td>
+                <div class="taller-status-toggle">
+                    <label class="switch">
+                        <input type="checkbox" class="toggle-taller-status" data-id="${taller.id}" ${taller.activo ? 'checked' : ''}>
+                        <span class="slider round"></span>
+                    </label>
+                    <span class="status-label ${taller.activo ? 'active' : 'inactive'}">${taller.activo ? 'ACTIVO' : 'INACTIVO'}</span>
+                </div>
+            </td>
+            <td><span class="stat-value stat-completed" data-taller-id="${taller.id}">-</span></td>
+            <td><span class="stat-value stat-pending" data-taller-id="${taller.id}">-</span></td>
+            <td>
+                <div class="table-actions">
+                    <button class="btn-edit-icon btn-edit-taller" data-id="${taller.id}" data-name="${escapeHtml(taller.name || '')}" title="Editar nombre">
+                        <span class="material-symbols-rounded">edit</span>
+                    </button>
+                    <button class="btn-view btn-view-recibos" data-taller-id="${taller.id}" data-taller-name="${escapeHtml(taller.name || '')}">
+                        Ver Recibos <span style="font-size: 10px; margin-left: 5px;">&#10095;</span>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
 }
 
 /**
@@ -635,7 +604,7 @@ function initViewHandlers() {
     viewRecibosButtons.forEach(btn => {
         btn.addEventListener('click', function() {
             const tallerId = this.getAttribute('data-taller-id');
-            const tallerName = this.closest('.taller-card').querySelector('.taller-name').textContent;
+            const tallerName = this.getAttribute('data-taller-name') || this.closest('[data-taller-id]')?.querySelector('.col-taller-name')?.textContent || 'Taller';
             showRecibos(tallerId, tallerName);
         });
     });
@@ -978,10 +947,12 @@ function initSidebarNavigation() {
             
             // Cambiar URL según la vista
             if (viewName === 'viewTalleres') {
+                currentState.activeTab = this.dataset.status || 'activos';
                 // Reset search inputs when switching views
                 const searchInput = document.getElementById('searchInput');
                 if (searchInput) {
                     searchInput.value = '';
+                    searchInput.placeholder = 'Buscar taller...';
                     const clearBtn = document.getElementById('clearSearch');
                     if (clearBtn) clearBtn.style.display = 'none';
                 }
@@ -1000,10 +971,11 @@ function initSidebarNavigation() {
                 }
             } else if (viewName === 'viewOrdenes') {
                 // Reset search inputs when switching views
-                const searchInput = document.getElementById('searchOrdenesInput');
+                const searchInput = document.getElementById('searchInput');
                 if (searchInput) {
                     searchInput.value = '';
-                    const clearBtn = document.getElementById('clearSearchOrdenes');
+                    searchInput.placeholder = 'Buscar número de orden...';
+                    const clearBtn = document.getElementById('clearSearch');
                     if (clearBtn) clearBtn.style.display = 'none';
                 }
                 const url = new URL(window.location.href);
@@ -1016,20 +988,30 @@ function initSidebarNavigation() {
         });
     });
 
+    const setSidebarActiveByStatus = (status) => {
+        sidebarItems.forEach(i => i.classList.remove('active'));
+        const target = status === 'inactivos'
+            ? document.getElementById('navTalleresInactivos')
+            : document.getElementById('navTalleres');
+        if (target) target.classList.add('active');
+    };
+
     // Manejar el botón atrás del navegador
     window.addEventListener('popstate', function(event) {
         if (event.state && event.state.view === 'ordenes') {
+            sidebarItems.forEach(i => i.classList.remove('active'));
             document.querySelector('[data-view="viewOrdenes"]').classList.add('active');
-            document.querySelector('[data-view="viewTalleres"]').classList.remove('active');
             showOrdenes();
         } else if (event.state && event.state.view === 'recibos' && event.state.taller_id) {
-            document.querySelector('[data-view="viewTalleres"]').classList.add('active');
+            currentState.activeTab = event.state.status === 'inactivos' ? 'inactivos' : (currentState.activeTab || 'activos');
+            setSidebarActiveByStatus(currentState.activeTab);
             document.querySelector('[data-view="viewOrdenes"]').classList.remove('active');
-            const card = document.querySelector(`.taller-card[data-taller-id="${event.state.taller_id}"]`);
-            const name = card ? card.querySelector('.taller-name')?.textContent?.trim() : 'Taller';
+            const row = document.querySelector(`tr[data-taller-id="${event.state.taller_id}"]`);
+            const name = row ? row.querySelector('.col-taller-name')?.textContent?.trim() : 'Taller';
             showRecibos(event.state.taller_id, name || 'Taller');
         } else {
-            document.querySelector('[data-view="viewTalleres"]').classList.add('active');
+            currentState.activeTab = event.state?.status === 'inactivos' ? 'inactivos' : (currentState.activeTab || 'activos');
+            setSidebarActiveByStatus(currentState.activeTab);
             document.querySelector('[data-view="viewOrdenes"]').classList.remove('active');
             showTalleres();
         }
@@ -1038,72 +1020,32 @@ function initSidebarNavigation() {
     // Verificar si hay parámetro view en la URL al cargar
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('view') === 'ordenes') {
+        sidebarItems.forEach(i => i.classList.remove('active'));
         document.querySelector('[data-view="viewOrdenes"]').classList.add('active');
-        document.querySelector('[data-view="viewTalleres"]').classList.remove('active');
         
         const searchVal = urlParams.get('search') || '';
-        const searchInput = document.getElementById('searchOrdenesInput');
+        const searchInput = document.getElementById('searchInput');
         if (searchInput) {
             searchInput.value = searchVal;
-            const clearButton = document.getElementById('clearSearchOrdenes');
+            searchInput.placeholder = 'Buscar número de orden...';
+            const clearButton = document.getElementById('clearSearch');
             if (clearButton) {
                 clearButton.style.display = searchVal.length > 0 ? 'flex' : 'none';
             }
         }
         showOrdenes(searchVal);
     } else if (urlParams.get('view') === 'recibos' && urlParams.get('taller_id')) {
-        document.querySelector('[data-view="viewTalleres"]').classList.add('active');
+        currentState.activeTab = urlParams.get('status') === 'inactivos' ? 'inactivos' : (currentState.activeTab || 'activos');
+        setSidebarActiveByStatus(currentState.activeTab);
         document.querySelector('[data-view="viewOrdenes"]').classList.remove('active');
         const tallerId = urlParams.get('taller_id');
-        const card = document.querySelector(`.taller-card[data-taller-id="${tallerId}"]`);
-        const tallerName = card ? card.querySelector('.taller-name')?.textContent?.trim() : 'Taller';
+        const row = document.querySelector(`tr[data-taller-id="${tallerId}"]`);
+        const tallerName = row ? row.querySelector('.col-taller-name')?.textContent?.trim() : 'Taller';
         showRecibos(tallerId, tallerName || 'Taller');
-    }
-}
-
-/**
- * Inicializar comportamiento de los tabs de talleres
- */
-function initTabs() {
-    const tabButtons = document.querySelectorAll('.taller-tab-btn');
-    const subtitle = document.getElementById('talleresSubtitle');
-    const mainContainer = document.querySelector('.main-container');
-    const apiRoute = mainContainer ? mainContainer.dataset.routeApiSearch : null;
-
-    // Obtener tab inicial
-    const initialActive = document.querySelector('.taller-tab-btn.active');
-    if (initialActive) {
-        currentState.activeTab = initialActive.dataset.status;
     } else {
-        currentState.activeTab = 'activos';
+        currentState.activeTab = urlParams.get('status') === 'inactivos' ? 'inactivos' : 'activos';
+        setSidebarActiveByStatus(currentState.activeTab);
     }
-
-    tabButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            if (this.classList.contains('active')) return;
-
-            tabButtons.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-
-            currentState.activeTab = this.dataset.status;
-
-            // Actualizar subtítulo
-            if (subtitle) {
-                subtitle.textContent = currentState.activeTab === 'inactivos' ? 'TALLERES INACTIVOS' : 'TALLERES ACTIVOS';
-            }
-
-            // Actualizar URL sin recargar
-            const url = new URL(window.location.href);
-            url.searchParams.set('status', currentState.activeTab);
-            url.searchParams.delete('page');
-            window.history.pushState({ view: 'talleres', status: currentState.activeTab }, '', url.toString());
-
-            // Recargar talleres vía AJAX
-            const searchInput = document.getElementById('searchInput');
-            const searchTerm = searchInput ? searchInput.value.trim() : '';
-            performRealtimeSearch(searchTerm, apiRoute);
-        });
-    });
 }
 
 /**
@@ -1123,70 +1065,7 @@ function getProgressColor(percentage) {
  * Inicializar búsqueda en Órdenes
  */
 function initOrdenesSearch() {
-    const searchInput = document.getElementById('searchOrdenesInput');
-    const clearButton = document.getElementById('clearSearchOrdenes');
-    const ordenesForm = document.querySelector('#viewOrdenes form');
-
-    if (ordenesForm) {
-        ordenesForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const searchTerm = searchInput ? searchInput.value.trim() : '';
-            
-            const url = new URL(window.location.href);
-            if (searchTerm) url.searchParams.set('search', searchTerm);
-            else url.searchParams.delete('search');
-            url.searchParams.delete('page');
-            window.history.pushState({ view: 'ordenes' }, '', url.toString());
-
-            showOrdenes(searchTerm, 1);
-        });
-    }
-    
-    if (searchInput) {
-        const toggleClear = () => {
-            if (searchInput.value.length > 0) {
-                if (clearButton) clearButton.style.display = 'flex';
-            } else {
-                if (clearButton) clearButton.style.display = 'none';
-            }
-        };
-
-        toggleClear();
-        
-        // Buscar al escribir (con debounce)
-        let searchTimeout;
-        searchInput.addEventListener('input', function() {
-            toggleClear();
-            clearTimeout(searchTimeout);
-            
-            const searchTerm = this.value.trim();
-
-            searchTimeout = setTimeout(() => {
-                const url = new URL(window.location.href);
-                if (searchTerm) url.searchParams.set('search', searchTerm);
-                else url.searchParams.delete('search');
-                url.searchParams.delete('page');
-                window.history.pushState({ view: 'ordenes' }, '', url.toString());
-
-                showOrdenes(searchTerm, 1);
-            }, 300);
-        });
-        
-        // Limpiar búsqueda
-        if (clearButton) {
-            clearButton.addEventListener('click', () => {
-                searchInput.value = '';
-                toggleClear();
-                
-                const url = new URL(window.location.href);
-                url.searchParams.delete('search');
-                url.searchParams.delete('page');
-                window.history.pushState({ view: 'ordenes' }, '', url.toString());
-
-                showOrdenes('', 1);
-            });
-        }
-    }
+    // La búsqueda de órdenes se maneja desde initTalleresSearch usando #searchInput
 }
 
 /**

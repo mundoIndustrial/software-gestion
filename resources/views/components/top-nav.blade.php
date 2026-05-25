@@ -127,12 +127,18 @@
     <div class="nav-right">
         @if(request()->routeIs('talleres.*'))
         @php($statusTalleres = request('status', 'activos'))
+        @php($viewTalleres = request('view'))
+        @php($isViewOrdenes = $viewTalleres === 'ordenes')
         <div class="page-actions">
             <form action="{{ route('talleres.index') }}" method="GET" class="gooey-search-wrapper">
+                @if($isViewOrdenes)
+                <input type="hidden" name="view" value="ordenes">
+                @else
                 <input type="hidden" name="status" value="{{ $statusTalleres }}">
+                @endif
                 <span class="material-symbols-rounded gooey-search-icon">search</span>
-                <input type="text" name="search" class="gooey-search-input" placeholder="Buscar taller..." id="searchInput" value="{{ request('search', '') }}">
-                <button class="gooey-search-clear" id="clearSearch" type="button" onclick="window.location.href='{{ route('talleres.index', ['status' => $statusTalleres]) }}'">
+                <input type="text" name="search" class="gooey-search-input" placeholder="{{ $isViewOrdenes ? 'Buscar número de orden...' : 'Buscar taller...' }}" id="searchInput" value="{{ request('search', '') }}">
+                <button class="gooey-search-clear" id="clearSearch" type="button">
                     <span class="material-symbols-rounded">close</span>
                 </button>
             </form>
