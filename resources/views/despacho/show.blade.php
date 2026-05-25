@@ -1570,6 +1570,9 @@ async function guardarAjusteFilaDespacho(fila) {
 }
 
 async function guardarAjustesCantidadesDespacho() {
+    const btnGuardar = document.getElementById('btnGuardarAjustesDespacho');
+    const textoOriginalBtn = btnGuardar ? btnGuardar.innerHTML : '';
+
     const filas = Array.from(document.querySelectorAll('#tablaDespacho tr[data-tipo]'));
     const cambios = filas.filter((fila) => {
         const input = fila.querySelector('.cantidad-ajustada-input');
@@ -1584,35 +1587,51 @@ async function guardarAjustesCantidadesDespacho() {
         return;
     }
 
-    const csrf = document.querySelector('input[name="_token"]')?.value;
-    for (const fila of cambios) {
-        const payload = {
-            tipo_item: String(fila.dataset.tipo || '').toLowerCase(),
-            item_id: parseInt(fila.dataset.id || '0', 10) || 0,
-            talla_id: (parseInt(fila.dataset.tallaId || '0', 10) || 0) || null,
-            talla_color_id: (parseInt(fila.dataset.tallaColorId || '0', 10) || 0) || null,
-            genero: (fila.dataset.genero || '').trim() || null,
-            cantidad_original: parseInt(fila.dataset.cantidadOriginal || '0', 10) || 0,
-            cantidad_ajustada: parseInt(fila.dataset.cantidadAjustada || '0', 10) || 0,
-        };
+    try {
+        if (btnGuardar) {
+            btnGuardar.disabled = true;
+            btnGuardar.innerHTML = 'Cargando...';
+            btnGuardar.classList.add('opacity-70', 'cursor-not-allowed');
+        }
 
-        const res = await fetch(`/despacho/${window.pedidoId}/ajustes-cantidad`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrf,
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify(payload),
-        });
+        const csrf = document.querySelector('input[name="_token"]')?.value;
+        for (const fila of cambios) {
+            const payload = {
+                tipo_item: String(fila.dataset.tipo || '').toLowerCase(),
+                item_id: parseInt(fila.dataset.id || '0', 10) || 0,
+                talla_id: (parseInt(fila.dataset.tallaId || '0', 10) || 0) || null,
+                talla_color_id: (parseInt(fila.dataset.tallaColorId || '0', 10) || 0) || null,
+                genero: (fila.dataset.genero || '').trim() || null,
+                cantidad_original: parseInt(fila.dataset.cantidadOriginal || '0', 10) || 0,
+                cantidad_ajustada: parseInt(fila.dataset.cantidadAjustada || '0', 10) || 0,
+            };
 
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-            throw new Error(data.message || 'No se pudo guardar un ajuste.');
+            const res = await fetch(`/despacho/${window.pedidoId}/ajustes-cantidad`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                throw new Error(data.message || 'No se pudo guardar un ajuste.');
+            }
+        }
+
+        window.location.reload();
+    } catch (error) {
+        alert(error.message || 'Error guardando ajustes.');
+    } finally {
+        if (btnGuardar) {
+            btnGuardar.disabled = false;
+            btnGuardar.innerHTML = textoOriginalBtn;
+            btnGuardar.classList.remove('opacity-70', 'cursor-not-allowed');
         }
     }
-
-    window.location.reload();
 }
 
 // Cargar estado de entregas al cargar la pagina
@@ -2702,6 +2721,5 @@ if (filas.length === 0) {
 </script>
 
 @endsection
-
 
 
