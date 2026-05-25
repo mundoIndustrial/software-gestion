@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Gestión de Pedidos - Bodega')
 @section('page-title', Route::currentRouteName() === 'gestion-bodega.pedidos-anulados' ? 'Pedidos Anulados' : 'Gestión de Bodega')
@@ -789,6 +789,57 @@
                     }
                 };
 
+                function refrescarYSubirPedido(pedidoNumero, pedidoId = null) {
+                    if (!pedidoNumero) return false;
+
+                    const row = document.querySelector(`tr[data-numero-pedido="${pedidoNumero}"]`);
+                    if (!row) return false;
+
+                    console.log('[BODEGA-LIST] Resaltando pedido existente:', pedidoNumero);
+                    row.classList.remove('bg-white', 'bg-yellow-200', 'bg-blue-200');
+                    row.classList.add('bg-red-200');
+                    const tbody = document.getElementById('tablaOrdenesBody');
+                    if (tbody && tbody.firstChild !== row) {
+                        row.style.transition = 'all 0.5s ease-out';
+                        tbody.prepend(row);
+                        row.animate([{backgroundColor:'#fecaca'},{backgroundColor:'#fee2e2'},{backgroundColor:'#fecaca'}], {duration:2000});
+                    }
+
+                    const filaPedidoId = row.dataset.pedidoId || pedidoId;
+                    if (filaPedidoId) {
+                        fetch(`/gestion-bodega/pedidos/${filaPedidoId}/fila`, { headers: { 'Accept': 'application/json' } })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success && data.fila) {
+                                    const checkbox = row.querySelector('input[type="checkbox"]');
+                                    if (checkbox) {
+                                        const tieneChanges = data.fila.tiene_cambios_nuevos;
+                                        const estaRevisado = data.fila.pedido_revisado;
+                                        checkbox.checked = !tieneChanges && estaRevisado;
+                                    }
+
+                                    row.classList.remove('bg-white', 'bg-yellow-200', 'bg-blue-200', 'bg-red-200');
+                                    if (data.fila.tiene_cambios_nuevos) {
+                                        row.classList.add('bg-red-200');
+                                    } else if (data.fila.todos_pendientes) {
+                                        row.classList.add('bg-yellow-200');
+                                    } else if (data.fila.todos_entregados) {
+                                        row.classList.add('bg-blue-200');
+                                    } else {
+                                        row.classList.add('bg-white');
+                                    }
+
+                                    const novedades = procesarNovedades(data.fila.novedades);
+                                    actualizarBadgeNovedades(filaPedidoId, novedades);
+                                    console.log('[BODEGA-LIST] Fila actualizada para pedido:', filaPedidoId, 'Novedades:', novedades.length);
+                                }
+                            })
+                            .catch(err => console.error('[BODEGA-LIST] Error actualizando fila:', err));
+                    }
+
+                    return true;
+                }
+
                 echo.channel('notifications').listen('.new-notification', (e) => {
                     console.log('[BODEGA-LIST] Evento recibido:', e.event_type, e);
                     const num = e.pedido; if (!num) return;
@@ -798,56 +849,8 @@
                         if (!eventCache.shouldProcess(num, 'update')) return;
                     }
 
-                    const row = document.querySelector(`tr[data-numero-pedido="${num}"]`);
-                    if (row) {
-                        console.log('[BODEGA-LIST] Resaltando pedido existente:', num);
-                        row.classList.remove('bg-white', 'bg-yellow-200', 'bg-blue-200');
-                        row.classList.add('bg-red-200');
-                        const tbody = document.getElementById('tablaOrdenesBody');
-                        if (tbody && tbody.firstChild !== row) {
-                            row.style.transition = 'all 0.5s ease-out';
-                            tbody.prepend(row);
-                            row.animate([{backgroundColor:'#fecaca'},{backgroundColor:'#fee2e2'},{backgroundColor:'#fecaca'}], {duration:2000});
-                        }
-                        
-                        // 🔥 ACTUALIZAR CHECKBOX Y ESTADO DEL PEDIDO
-                        const pedidoId = row.dataset.pedidoId;
-                        if (pedidoId) {
-                            fetch(`/gestion-bodega/pedidos/${pedidoId}/fila`, { headers: { 'Accept': 'application/json' } })
-                                .then(res => res.json())
-                                .then(data => {
-                                    if (data.success && data.fila) {
-                                        // Actualizar checkbox: desmarcar si hay cambios nuevos
-                                        const checkbox = row.querySelector('input[type="checkbox"]');
-                                        if (checkbox) {
-                                            const tieneChanges = data.fila.tiene_cambios_nuevos;
-                                            const estaRevisado = data.fila.pedido_revisado;
-                                            // Solo marcar si NO tiene cambios nuevos Y está revisado
-                                            checkbox.checked = !tieneChanges && estaRevisado;
-                                            console.log('[BODEGA-LIST] Checkbox actualizado para pedido:', pedidoId, 'Checked:', checkbox.checked, 'Tiene cambios:', tieneChanges, 'Revisado:', estaRevisado);
-                                        }
-                                        
-                                        // Actualizar color de fila según estado
-                                        row.classList.remove('bg-white', 'bg-yellow-200', 'bg-blue-200', 'bg-red-200');
-                                        if (data.fila.tiene_cambios_nuevos) {
-                                            row.classList.add('bg-red-200');
-                                        } else if (data.fila.todos_pendientes) {
-                                            row.classList.add('bg-yellow-200');
-                                        } else if (data.fila.todos_entregados) {
-                                            row.classList.add('bg-blue-200');
-                                        } else {
-                                            row.classList.add('bg-white');
-                                        }
-                                        
-                                        // Actualizar badge de novedades
-                                        const novedades = procesarNovedades(data.fila.novedades);
-                                        actualizarBadgeNovedades(pedidoId, novedades);
-                                        console.log('[BODEGA-LIST] Fila actualizada para pedido:', pedidoId, 'Novedades:', novedades.length);
-                                    }
-                                })
-                                .catch(err => console.error('[BODEGA-LIST] Error actualizando fila:', err));
-                        }
-                    } else if (['pedido_creado', 'order_created', 'pedido_approved', 'pedido_aprobado', 'order_status_changed'].includes(e.event_type)) {
+                    const seRefrescoFila = refrescarYSubirPedido(num, e.record_id || e.id || null);
+                    if (!seRefrescoFila && ['pedido_creado', 'order_created', 'pedido_approved', 'pedido_aprobado', 'order_status_changed', 'epp_homologado', 'epp_agregado', 'prenda_modificada'].includes(e.event_type)) {
                         console.log('[BODEGA-LIST] Nuevo pedido detectado, insertando dinámicamente...');
                         const params = new URLSearchParams(window.location.search);
                         if ((params.get('page') || '1') === '1' && !params.has('search')) {
@@ -857,10 +860,12 @@
                 });
 
                 echo.channel('pedidos.general').listen('.pedido.actualizado', (e) => {
-                    if (e.action === 'approved') {
-                        // Usar el mismo cache para evitar duplicación con 'new-notification'
-                        const pedidoNum = e.numero_pedido || e.pedido_id;
-                        if (eventCache.shouldProcess(pedidoNum, 'update')) {
+                    const pedidoNum = e.numero_pedido || e.pedido_id;
+                    if (!pedidoNum) return;
+
+                    if (eventCache.shouldProcess(pedidoNum, 'update')) {
+                        const seRefrescoFila = refrescarYSubirPedido(pedidoNum, e.pedido_id || null);
+                        if (!seRefrescoFila) {
                             insertarPedidoDinamico(e.pedido_id);
                         }
                     }
@@ -871,7 +876,7 @@
 
     window.addEventListener('message', (e) => { if (e.data.action === 'cerrarDrawerPedido') window.cerrarDetallePedidoInline(); });
 
-    // 🔥 REFRESH ON BACK: Forzar recarga si se vuelve atrás desde el navegador
+    // REFRESH ON BACK: Forzar recarga si se vuelve atrás desde el navegador
     window.addEventListener('pageshow', (event) => {
         if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
             console.log('[BODEGA-LIST] Detectada navegación atrás, recargando para actualizar estados...');
