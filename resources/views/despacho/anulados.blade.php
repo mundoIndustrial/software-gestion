@@ -1,4 +1,4 @@
-@extends('layouts.despacho-standalone')
+﻿@extends('layouts.despacho-standalone')
 
 @section('title', 'Despacho - Anulados')
 @section('page-title', 'Pedidos Anulados')
@@ -524,12 +524,24 @@ function paginaSiguiente() {
     window.scrollTo(0, 0);
 }
 
-// Función placeholder para observaciones (si existe en el sistema)
+// Función para abrir el modal de observaciones
 function abrirModalObservacionesDespachoIndex(pedidoId, numeroPedido) {
-    console.log('Abrir observaciones para pedido:', pedidoId, numeroPedido);
-    // Aquí puedes implementar la lógica para abrir el modal de observaciones
-    alert('Función de observaciones no implementada aún');
+    if (typeof abrirModalNovedadesAdvanced !== 'function') {
+        console.error('[Despacho Anulados] abrirModalNovedadesAdvanced no está disponible');
+        alert('No se pudo abrir el modal de notas en este momento.');
+        return;
+    }
+
+    abrirModalNovedadesAdvanced(String(pedidoId));
+
+    const el = document.getElementById('modalNovedadesNumeroPedido');
+    if (el && numeroPedido) {
+        el.textContent = numeroPedido;
+    }
 }
 </script>
+@include('components.modals.novedades-advanced-modal')
 @endpush
+
+
 

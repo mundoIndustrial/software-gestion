@@ -17,10 +17,6 @@
             <div class="mb-6">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-md font-semibold text-slate-900">Historial de Novedades</h3>
-                    <button onclick="abrirModalAgregarNovedad()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors flex items-center gap-2">
-                        <span class="material-symbols-rounded text-sm">add</span>
-                        Agregar Novedad
-                    </button>
                 </div>
                 
                 <!-- Contenedor de novedades -->
@@ -382,14 +378,6 @@ function renderizarNovedades() {
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="text-xs text-slate-500">${novedad.fechaHora}</span>
-                    <div class="flex gap-1">
-                        <button onclick="editarNovedad('${novedad.id}')" class="p-1 text-blue-500 hover:bg-blue-50 rounded transition-colors" title="Editar novedad">
-                            <span class="material-symbols-rounded text-sm">edit</span>
-                        </button>
-                        <button onclick="eliminarNovedad('${novedad.id}')" class="p-1 text-red-500 hover:bg-red-50 rounded transition-colors" title="Eliminar novedad">
-                            <span class="material-symbols-rounded text-sm">delete</span>
-                        </button>
-                    </div>
                 </div>
             </div>
             <div class="text-sm text-slate-700 whitespace-pre-wrap pl-6">${novedad.texto}</div>
