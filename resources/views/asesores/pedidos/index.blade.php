@@ -1119,6 +1119,9 @@
                                 ${estadoTexto}
                             </span>
                         </div>
+                        <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
+                            ${pedido.fecha_creacion ? new Date(pedido.fecha_creacion).toLocaleDateString('es-ES') : '-'}
+                        </div>
                         <div style="display: flex; flex-direction: column; justify-content: center; color: #dc2626; font-size: 0.78rem; font-weight: 700; line-height: 1.1;">
                             ${pedido.dias_restantes_entrega !== null && pedido.dias_restantes_entrega !== undefined ? `
                                 <span>${pedido.dias_restantes_entrega} d&iacute;as</span>
@@ -1139,9 +1142,6 @@
                         </div>
                         <div style="display: flex; align-items: center; color: #374151; font-size: 0.8rem; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                             ${pedido.forma_pago || '-'}
-                        </div>
-                        <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
-                            ${pedido.fecha_creacion ? new Date(pedido.fecha_creacion).toLocaleDateString('es-ES') : '-'}
                         </div>
                         <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
                             -

@@ -141,6 +141,10 @@
         </span>
     </div>
 
+    <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
+        {{ $fechaCreacion }}
+    </div>
+
     <div style="display: flex; flex-direction: column; justify-content: center; color: #dc2626; font-size: 0.78rem; font-weight: 700; line-height: 1.1;">
         @if(isset($pedido->dias_restantes_entrega) && $pedido->dias_restantes_entrega !== null)
             <span>{{ $pedido->dias_restantes_entrega }} d&iacute;as</span>
@@ -196,10 +200,6 @@
          onclick="abrirModalCelda('Forma de Pago', '{{ $formaPago }}')"
          title="Click para ver completo">
         {{ $formaPago }}
-    </div>
-
-    <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
-        {{ $fechaCreacion }}
     </div>
 
     <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
