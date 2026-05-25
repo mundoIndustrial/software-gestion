@@ -111,6 +111,7 @@ class BuscarRecibosTallerUseCase
                     ->where('ppren.proceso', '=', 'Costura');
             })
             ->whereIn('rpp.tipo_recibo', ['REFLECTIVO', 'COSTURA'])
+            ->whereRaw("UPPER(TRIM(COALESCE(rpp.estado, ''))) <> 'ANULADO'")
             ->select(
                 'rpp.id',
                 'rpp.consecutivo_parcial as numero_recibo',
@@ -214,6 +215,7 @@ class BuscarRecibosTallerUseCase
             })
             ->join('prenda_bodega as pb', 'crp.prenda_bodega_id', '=', 'pb.id')
             ->where('rpp.tipo_recibo', 'CORTE-PARA-BODEGA')
+            ->whereRaw("UPPER(TRIM(COALESCE(rpp.estado, ''))) <> 'ANULADO'")
             ->select(
                 'rpp.id',
                 'rpp.consecutivo_parcial as numero_recibo',
