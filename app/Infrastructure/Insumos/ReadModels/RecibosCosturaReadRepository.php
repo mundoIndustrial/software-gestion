@@ -278,11 +278,12 @@ class RecibosCosturaReadRepository
             ]);
 
             $query->where(function ($q) use ($search, $searchIsNumeric, $esCorteBodega) {
-                $q->where('consecutivos_recibos_pedidos.consecutivo_actual', 'LIKE', "%{$search}%")
-                    ->orWhere('pedidos_produccion.cliente', 'LIKE', "%{$search}%");
+                $q->where('consecutivos_recibos_pedidos.consecutivo_actual', 'LIKE', "%{$search}%");
 
                 if ($esCorteBodega) {
                     $q->orWhere('prenda_bodega.descripcion', 'LIKE', "%{$search}%");
+                } else {
+                    $q->orWhere('pedidos_produccion.cliente', 'LIKE', "%{$search}%");
                 }
 
                 // Refuerzo para recibos numéricos exactos (ej: "48").
