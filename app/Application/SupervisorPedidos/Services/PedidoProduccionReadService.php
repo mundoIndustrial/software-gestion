@@ -608,7 +608,10 @@ class PedidoProduccionReadService
         $incluyeNoAprobadoCartera = in_array('no_aprobado', $filtrosCartera, true);
         $estadoSolicitado = trim((string) ($request->getEstado() ?? ''));
 
-        $estadosExcluidos = ['Entregado'];
+        $estadosExcluidos = [];
+        if (!$request->shouldIncludeDespacho()) {
+            $estadosExcluidos[] = 'Entregado';
+        }
         if ($estadoSolicitado !== 'Anulada') {
             $estadosExcluidos[] = 'RECHAZADO_CARTERA';
         }
