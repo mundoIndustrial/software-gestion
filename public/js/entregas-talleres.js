@@ -221,8 +221,9 @@ function initRecibosTallerSearch() {
     const clearButton = resultsForm.querySelector('.gooey-search-clear');
     const searchEndpoint = resultsForm.getAttribute('action');
     const tallerIdInput = resultsForm.querySelector('input[name="taller_id"]');
+    const estadoInput = resultsForm.querySelector('input[name="estado"]');
 
-    if (!searchInput || !searchEndpoint || !tallerIdInput) {
+    if (!searchInput || !searchEndpoint || !tallerIdInput || !estadoInput) {
         return;
     }
 
@@ -242,12 +243,14 @@ function initRecibosTallerSearch() {
         }
 
         url.searchParams.set('taller_id', tallerIdInput.value);
+        url.searchParams.set('estado', estadoInput.value || 'pendientes');
         window.history.pushState({ view: 'entregas_talleres_recibos', search: searchTerm }, '', url.toString());
     };
 
     const updateResults = (searchTerm) => {
         const url = new URL(searchEndpoint, window.location.origin);
         url.searchParams.set('taller_id', tallerIdInput.value);
+        url.searchParams.set('estado', estadoInput.value || 'pendientes');
 
         if (searchTerm) {
             url.searchParams.set('busqueda', searchTerm);
@@ -277,6 +280,14 @@ function initRecibosTallerSearch() {
                 console.error('Error en la búsqueda de recibos:', error);
                 resultsContent.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded empty-state-icon">error</span><p>Error al buscar recibos. Intenta de nuevo.</p></div>';
             });
+    };
+
+    const setActiveTab = (estado) => {
+        estadoInput.value = estado || 'pendientes';
+        const tabs = resultsContent.querySelectorAll('.tab-pill');
+        tabs.forEach((tab) => {
+            tab.classList.toggle('active', tab.dataset.estado === estadoInput.value);
+        });
     };
 
     toggleClear();
@@ -310,10 +321,24 @@ function initRecibosTallerSearch() {
         });
     }
 
+    resultsContent.addEventListener('click', (event) => {
+        const tab = event.target.closest('.tab-pill');
+        if (!tab || !resultsContent.contains(tab)) {
+            return;
+        }
+
+        const estado = tab.dataset.estado || 'pendientes';
+        setActiveTab(estado);
+        syncUrl(searchInput.value.trim());
+        updateResults(searchInput.value.trim());
+    });
+
     window.addEventListener('popstate', function() {
         const urlParams = new URLSearchParams(window.location.search);
         const searchTerm = urlParams.get('busqueda') || '';
+        const estado = urlParams.get('estado') || 'pendientes';
         searchInput.value = searchTerm;
+        estadoInput.value = estado;
         toggleClear();
         updateResults(searchTerm);
     });
@@ -343,11 +368,18 @@ function promptDelivery(talla, disponible, genero, color, safeId) {
         title: `Entrega Talla ${talla}`,
         text: `¿Cuántas unidades vas a entregar? (Máximo ${disponible})`,
         input: 'number',
-        inputValue: '',
+        inputValue: disponible,
         showCancelButton: true,
         confirmButtonText: 'Registrar',
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#2450ef',
+        didOpen: () => {
+            const input = Swal.getInput();
+            if (input) {
+                input.focus();
+                input.select();
+            }
+        },
         preConfirm: (value) => {
             if (!value || value < 1 || value > disponible) {
                 Swal.showValidationMessage(`Ingresa una cantidad válida entre 1 y ${disponible}`);
@@ -365,6 +397,8 @@ async function registrarEntrega(talla, cantidad, genero, color, safeId) {
     const container = document.getElementById('recibo-data');
     const reciboId = container.dataset.id;
     const esParcial = container.dataset.parcial;
+    const esBodega = container.dataset.esBodega || '0';
+    const prendaBodegaId = container.dataset.prendaBodegaId || '0';
     const routeRegistrar = container.dataset.routeRegistrar;
 
     try {
@@ -377,6 +411,8 @@ async function registrarEntrega(talla, cantidad, genero, color, safeId) {
             body: JSON.stringify({
                 recibo_id: reciboId,
                 es_parcial: esParcial,
+                es_bodega: esBodega,
+                prenda_bodega_id: prendaBodegaId,
                 talla: talla,
                 cantidad: cantidad,
                 genero: genero,
@@ -452,12 +488,14 @@ async function loadHistorial() {
     const dataContainer = document.getElementById('recibo-data');
     const reciboId = dataContainer.dataset.id;
     const esParcial = dataContainer.dataset.parcial;
+    const esBodega = dataContainer.dataset.esBodega || '0';
+    const prendaBodegaId = dataContainer.dataset.prendaBodegaId || '0';
     const routeHistorialBase = dataContainer.dataset.routeHistorial;
 
     container.innerHTML = '<div style="text-align:center; padding: 20px;">Cargando...</div>';
     
     try {
-        const response = await fetch(`${routeHistorialBase}?es_parcial=${esParcial}`);
+        const response = await fetch(`${routeHistorialBase}?es_parcial=${esParcial}&es_bodega=${esBodega}&prenda_bodega_id=${encodeURIComponent(prendaBodegaId)}`);
         const items = await response.json();
         
         if (items.length === 0) {

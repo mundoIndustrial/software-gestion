@@ -18,24 +18,24 @@
 
 @section('content')
 <div class="entregas-container">
-    <div class="results-header" style="justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 16px;">
-            <a href="javascript:history.back()" class="back-btn">
-                <span class="material-symbols-rounded">arrow_back</span>
-            </a>
-        </div>
-        <a href="{{ route('entregas-talleres.index') }}" class="back-btn">
-            <span class="material-symbols-rounded">close</span>
-        </a>
-    </div>
-
     <div class="results-content" style="padding-top: 20px;" 
          id="recibo-data" 
          data-id="{{ $recibo->id }}" 
          data-parcial="{{ $esParcial ? '1' : '0' }}"
+         data-es-bodega="{{ ($esBodega ?? false) ? '1' : '0' }}"
+         data-prenda-bodega-id="{{ $prendaBodegaId ?? 0 }}"
          data-route-registrar="{{ route('entregas-talleres.registrar') }}"
          data-route-historial="{{ route('entregas-talleres.historial', $recibo->id) }}"
          data-route-eliminar="{{ route('entregas-talleres.eliminar', ':id') }}">
+
+        <div class="detail-actions">
+            <a href="javascript:history.back()" class="back-btn detail-back-btn" aria-label="Volver">
+                <span class="material-symbols-rounded">arrow_back_ios_new</span>
+            </a>
+            <a href="{{ route('entregas-talleres.index') }}" class="back-btn detail-close-btn" aria-label="Cerrar">
+                <span class="material-symbols-rounded">close_small</span>
+            </a>
+        </div>
         
         <div class="detail-card">
             <div class="recibo-info">

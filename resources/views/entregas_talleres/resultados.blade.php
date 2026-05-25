@@ -19,24 +19,20 @@
 <div class="entregas-container">
     <div class="results-header">
         <a href="{{ route('entregas-talleres.index') }}" class="back-btn">
-            <span class="material-symbols-rounded">arrow_back</span>
+            <span class="material-symbols-rounded">arrow_back_ios_new</span>
         </a>
         <div class="results-header-copy">
-            <div class="section-label">Recibos asignados</div>
+            <div class="results-header-top">
+                <div class="section-label section-label-inline">Recibos asignados</div>
+            </div>
             <h2>{{ $taller ? $taller->name : 'Resultados de busqueda' }}</h2>
-            <p>
-                @if($taller)
-                    Filtrados por taller activo.
-                @else
-                    Busca un recibo por numero o por nombre de prenda.
-                @endif
-            </p>
         </div>
     </div>
 
     @if($taller)
         <form action="{{ route('entregas-talleres.buscar') }}" method="GET" class="results-search-form">
             <input type="hidden" name="taller_id" value="{{ $taller->id }}">
+            <input type="hidden" name="estado" value="{{ $estado ?? 'pendientes' }}">
             <div class="gooey-search-wrapper results-search-wrapper">
                 <span class="material-symbols-rounded gooey-search-icon">search</span>
                 <input
@@ -46,7 +42,7 @@
                     placeholder="Buscar recibo en este taller..."
                     value="{{ $busqueda }}"
                 >
-                <button class="gooey-search-clear" type="button" onclick="window.location.href='{{ route('entregas-talleres.buscar', ['taller_id' => $taller->id]) }}'">
+                <button class="gooey-search-clear" type="button">
                     <span class="material-symbols-rounded">close</span>
                 </button>
             </div>
@@ -54,8 +50,27 @@
     @endif
 
     <div class="results-content">
+        @if($taller)
+            <div class="recibos-tabs">
+                <button
+                    type="button"
+                    class="tab-pill {{ ($estado ?? 'pendientes') === 'pendientes' ? 'active' : '' }}"
+                    data-estado="pendientes"
+                >
+                    Pendientes
+                </button>
+                <button
+                    type="button"
+                    class="tab-pill {{ ($estado ?? 'pendientes') === 'completados' ? 'active' : '' }}"
+                    data-estado="completados"
+                >
+                    Completados
+                </button>
+            </div>
+        @endif
+
         @forelse($recibos as $recibo)
-            <div class="recibo-card" onclick="window.location.href='{{ route('entregas-talleres.show', $recibo->id) }}?es_parcial={{ $recibo->es_parcial }}'">
+            <div class="recibo-card" onclick="window.location.href='{{ route('entregas-talleres.show', $recibo->id) }}?es_parcial={{ $recibo->es_parcial }}&es_bodega={{ $recibo->es_bodega ?? 0 }}&prenda_bodega_id={{ $recibo->prenda_bodega_id ?? 0 }}'">
                 <div class="recibo-info">
                     <div class="recibo-id">Recibo #{{ $recibo->numero_recibo }} - {{ $recibo->tipo_recibo }}</div>
                     <div class="recibo-name">{{ $recibo->nombre_prenda }}</div>
@@ -71,7 +86,11 @@
                 <span class="material-symbols-rounded empty-state-icon">search_off</span>
                 <p>
                     @if($taller)
-                        No hay recibos asignados a este taller.
+                        @if(($estado ?? 'pendientes') === 'completados')
+                            No hay recibos completados para este taller.
+                        @else
+                            No hay recibos pendientes para este taller.
+                        @endif
                     @else
                         No se encontraron recibos para "{{ $busqueda }}"
                     @endif

@@ -27,6 +27,7 @@ class EntregasTalleresController extends Controller
     {
         $busqueda = trim((string) $request->input('busqueda', ''));
         $tallerId = $request->input('taller_id');
+        $estado = strtolower(trim((string) $request->input('estado', 'pendientes')));
         $taller = null;
 
         if ($tallerId) {
@@ -37,15 +38,17 @@ class EntregasTalleresController extends Controller
             return redirect()->route('entregas-talleres.index');
         }
 
-        $recibos = $useCase->execute($busqueda !== '' ? $busqueda : null, 0, $tallerId ? (int) $tallerId : null);
+        $recibos = $useCase->execute($busqueda !== '' ? $busqueda : null, 0, $tallerId ? (int) $tallerId : null, $estado);
 
-        return view('entregas_talleres.resultados', compact('recibos', 'busqueda', 'taller'));
+        return view('entregas_talleres.resultados', compact('recibos', 'busqueda', 'taller', 'estado'));
     }
 
     public function showRecibo(Request $request, $id, \App\Application\EntregasTalleres\UseCases\ObtenerDetalleReciboTallerUseCase $useCase)
     {
         $esParcial = $request->query('es_parcial') == '1';
-        $data = $useCase->execute($id, $esParcial);
+        $esBodega = $request->query('es_bodega') == '1';
+        $prendaBodegaId = (int) $request->query('prenda_bodega_id', 0);
+        $data = $useCase->execute($id, $esParcial, $esBodega, $prendaBodegaId);
 
         return view('entregas_talleres.detalle', [
             'recibo' => $data['recibo'],
@@ -54,7 +57,9 @@ class EntregasTalleresController extends Controller
             'encargado' => $data['encargado'],
             'tallasAgrupadas' => $data['tallasAgrupadas'],
             'entregasPorLlave' => $data['entregasPorLlave'],
-            'esParcial' => $data['esParcial']
+            'esParcial' => $data['esParcial'],
+            'esBodega' => $data['esBodega'] ?? $esBodega,
+            'prendaBodegaId' => $data['prendaBodegaId'] ?? $prendaBodegaId
         ]);
     }
 

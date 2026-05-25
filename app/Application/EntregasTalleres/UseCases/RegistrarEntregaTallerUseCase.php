@@ -4,6 +4,7 @@ namespace App\Application\EntregasTalleres\UseCases;
 
 use App\Models\ConsecutivoReciboPedido;
 use App\Models\ReciboPorPartes;
+use App\Models\PrendaBodega;
 use App\Models\EntregaReciboCostura;
 use Illuminate\Support\Facades\DB;
 
@@ -13,6 +14,8 @@ class RegistrarEntregaTallerUseCase
     {
         $reciboId = $data['recibo_id'];
         $esParcial = $data['es_parcial'] == '1';
+        $esBodega = ($data['es_bodega'] ?? '0') == '1';
+        $prendaBodegaId = (int) ($data['prenda_bodega_id'] ?? 0);
         $talla = $data['talla'];
         $genero = $data['genero'] ?? 'UNISEX';
         $color = $data['color'] ?? 'SIN COLOR';
@@ -20,13 +23,99 @@ class RegistrarEntregaTallerUseCase
 
         $colorParaGuardar = ($color === 'SIN COLOR') ? null : $color;
 
-        if ($esParcial) {
+        if ($esBodega) {
+            if ($esParcial) {
+                $recibo = ReciboPorPartes::with(['pedido', 'tallas'])->findOrFail($reciboId);
+                $consecutivoReciboId = null;
+                $reciboParcialId = $reciboId;
+                $bodegaId = $prendaBodegaId > 0 ? $prendaBodegaId : (int) ($recibo->prenda_pedido_id ?? 0);
+                $prendaId = $bodegaId;
+                $prendaBodega = $bodegaId > 0 ? PrendaBodega::with('tallas')->find($bodegaId) : null;
+
+                $tallaInfo = $recibo->tallas->where('talla', $talla)
+                    ->where('genero', $genero)
+                    ->where('color_nombre', $colorParaGuardar)
+                    ->first();
+
+                if (!$tallaInfo) {
+                    $msgColor = $colorParaGuardar ?? 'sin color';
+                    return ['success' => false, 'message' => "Talla {$talla} ({$genero}) - {$msgColor} no encontrada en este recibo parcial de bodega."];
+                }
+
+                $maxCantidad = $tallaInfo->cantidad;
+
+                $yaEntregado = EntregaReciboCostura::where('recibo_parcial_id', $reciboId)
+                    ->where('talla', $talla)
+                    ->where('genero', $genero)
+                    ->where('color_nombre', $colorParaGuardar)
+                    ->sum('cantidad_entregada');
+
+                $encargadoActual = DB::table('procesos_prenda')
+                    ->where(function ($q) use ($bodegaId) {
+                        $q->where('prenda_bodega_id', $bodegaId)
+                          ->orWhereNull('prenda_bodega_id');
+                    })
+                    ->where(function ($q) use ($recibo) {
+                        $q->where('numero_recibo_parcial', $recibo->consecutivo_parcial)
+                          ->orWhereNull('numero_recibo_parcial');
+                    })
+                    ->where(function ($q) use ($recibo) {
+                        $q->where('numero_recibo', $recibo->consecutivo_original)
+                          ->orWhereNull('numero_recibo');
+                    })
+                    ->whereRaw("COALESCE(NULLIF(TRIM(encargado), ''), '') <> ''")
+                    ->orderByRaw("CASE WHEN proceso = 'Costura' THEN 0 ELSE 1 END")
+                    ->orderByDesc('fecha_de_asignacion_encargado')
+                    ->orderByDesc('id')
+                    ->value('encargado') ?? 'Sin asignar';
+
+                $numeroReciboDisplay = $recibo->consecutivo_parcial;
+            } else {
+                $recibo = ConsecutivoReciboPedido::with(['pedido', 'prendaBodega.tallas'])->findOrFail($reciboId);
+                $consecutivoReciboId = $reciboId;
+                $reciboParcialId = null;
+                $prendaId = (int) ($recibo->prenda_bodega_id ?? 0);
+                $prendaBodega = $recibo->prendaBodega;
+
+                $tallaRow = $prendaBodega?->tallas->where('talla', $talla)
+                    ->where('genero', $genero)
+                    ->first();
+
+                if (!$tallaRow) {
+                    return ['success' => false, 'message' => "Talla {$talla} ({$genero}) no encontrada en bodega."];
+                }
+
+                $maxCantidad = $tallaRow->cantidad;
+
+                $yaEntregado = EntregaReciboCostura::where('consecutivo_recibo_id', $reciboId)
+                    ->where('talla', $talla)
+                    ->where('genero', $genero)
+                    ->where('color_nombre', $colorParaGuardar)
+                    ->sum('cantidad_entregada');
+
+                $encargadoActual = DB::table('procesos_prenda')
+                    ->where(function ($q) use ($recibo) {
+                        $q->where('prenda_bodega_id', $recibo->prenda_bodega_id)
+                          ->orWhereNull('prenda_bodega_id');
+                    })
+                    ->where(function ($q) use ($recibo) {
+                        $q->where('numero_recibo', $recibo->consecutivo_actual)
+                          ->orWhereNull('numero_recibo');
+                    })
+                    ->whereRaw("COALESCE(NULLIF(TRIM(encargado), ''), '') <> ''")
+                    ->orderByRaw("CASE WHEN proceso = 'Costura' THEN 0 ELSE 1 END")
+                    ->orderByDesc('fecha_de_asignacion_encargado')
+                    ->orderByDesc('id')
+                    ->value('encargado') ?? 'Sin asignar';
+
+                $numeroReciboDisplay = $recibo->consecutivo_actual;
+            }
+        } elseif ($esParcial) {
             $recibo = ReciboPorPartes::with(['pedido', 'prenda', 'tallas'])->findOrFail($reciboId);
             $consecutivoReciboId = null;
             $reciboParcialId = $reciboId;
             $prendaId = $recibo->prenda_pedido_id;
 
-            // Buscar la talla exacta con género y color
             $tallaInfo = $recibo->tallas->where('talla', $talla)
                 ->where('genero', $genero)
                 ->where('color_nombre', $colorParaGuardar)
@@ -38,7 +127,6 @@ class RegistrarEntregaTallerUseCase
             }
             $maxCantidad = $tallaInfo->cantidad;
 
-            // Sumar entregas previas usando las nuevas columnas
             $yaEntregado = EntregaReciboCostura::where('recibo_parcial_id', $reciboId)
                 ->where('talla', $talla)
                 ->where('genero', $genero)
@@ -59,7 +147,6 @@ class RegistrarEntregaTallerUseCase
             $reciboParcialId = null;
             $prendaId = $recibo->prenda_id;
 
-            // Buscar la talla exacta
             $tallaRow = $recibo->prenda->tallas->where('talla', $talla)
                 ->where('genero', $genero)
                 ->first();
@@ -78,7 +165,6 @@ class RegistrarEntregaTallerUseCase
                 $maxCantidad = $tallaRow->cantidad;
             }
 
-            // Sumar entregas previas
             $yaEntregado = EntregaReciboCostura::where('consecutivo_recibo_id', $reciboId)
                 ->where('talla', $talla)
                 ->where('genero', $genero)
@@ -101,7 +187,6 @@ class RegistrarEntregaTallerUseCase
             ];
         }
 
-        // Crear la entrega con las nuevas columnas
         EntregaReciboCostura::create([
             'prenda_pedido_id' => $prendaId,
             'consecutivo_recibo_id' => $consecutivoReciboId,
@@ -115,8 +200,7 @@ class RegistrarEntregaTallerUseCase
             'usuario_id' => auth()->id(),
         ]);
 
-        // VERIFICAR COMPLETADO TOTAL DEL RECIBO
-        $todoCompletado = $this->verificarCompletado($recibo, $esParcial, $reciboId);
+        $todoCompletado = $this->verificarCompletado($recibo, $esParcial, $esBodega, $reciboId);
 
         if ($todoCompletado) {
             $idReciboParaCompletado = $esParcial ? 0 : $reciboId;
@@ -141,16 +225,36 @@ class RegistrarEntregaTallerUseCase
         ];
     }
 
-    private function verificarCompletado($recibo, $esParcial, $reciboId)
+    private function verificarCompletado($recibo, $esParcial, $esBodega, $reciboId)
     {
         $requerimientos = [];
-        if ($esParcial) {
+
+        if ($esBodega) {
+            if ($esParcial) {
+                foreach (($recibo->tallas ?? collect()) as $t) {
+                    $colorKey = $t->color_nombre ?: 'NULL';
+                    $key = "{$t->talla}|{$t->genero}|{$colorKey}";
+                    $requerimientos[$key] = $t->cantidad;
+                }
+
+                $entregasTotales = EntregaReciboCostura::where('recibo_parcial_id', $reciboId)->get();
+            } else {
+                foreach (($recibo->prendaBodega?->tallas ?? collect()) as $t) {
+                    $colorKey = $t->color ?: 'NULL';
+                    $generoKey = $t->genero ?: 'UNISEX';
+                    $key = "{$t->talla}|{$generoKey}|{$colorKey}";
+                    $requerimientos[$key] = $t->cantidad;
+                }
+
+                $entregasTotales = EntregaReciboCostura::where('consecutivo_recibo_id', $reciboId)->get();
+            }
+        } elseif ($esParcial) {
             foreach ($recibo->tallas as $t) {
-                // Si el color es null en DB, lo tratamos como null aquí también para la llave
                 $colorKey = $t->color_nombre ?: 'NULL';
                 $key = "{$t->talla}|{$t->genero}|{$colorKey}";
                 $requerimientos[$key] = $t->cantidad;
             }
+
             $entregasTotales = EntregaReciboCostura::where('recibo_parcial_id', $reciboId)->get();
         } else {
             foreach ($recibo->prenda->tallas as $t) {
@@ -165,6 +269,7 @@ class RegistrarEntregaTallerUseCase
                     $requerimientos[$key] = $t->cantidad;
                 }
             }
+
             $entregasTotales = EntregaReciboCostura::where('consecutivo_recibo_id', $reciboId)->get();
         }
 
