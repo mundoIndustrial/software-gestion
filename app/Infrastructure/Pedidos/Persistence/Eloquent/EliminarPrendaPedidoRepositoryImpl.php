@@ -4,6 +4,7 @@ namespace App\Infrastructure\Pedidos\Persistence\Eloquent;
 
 use App\Domain\Pedidos\Repositories\EliminarPrendaPedidoRepository;
 use App\Models\ConsecutivoReciboPedido;
+use App\Models\News;
 use App\Models\PedidoProduccion;
 use App\Models\PedidosProcessImagenes;
 use App\Models\PedidosProcesosPrendaDetalle;
@@ -11,6 +12,7 @@ use App\Models\PrendaFotoPedido;
 use App\Models\PrendaFotoTelaPedido;
 use App\Models\PrendaPedido;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -64,11 +66,41 @@ final class EliminarPrendaPedidoRepositoryImpl implements EliminarPrendaPedidoRe
             return;
         }
 
+        $usuarioAutenticado = Auth::user();
+        $nombreUsuario = $usuarioAutenticado?->name ?? $pedido->asesora?->name ?? 'Sistema';
+        $rolUsuario = $usuarioAutenticado?->roles()?->first()?->name ?? 'asesor';
+        $rolLabel = ucfirst(str_replace('_', ' ', (string) $rolUsuario));
+        $fechaHora = now()->format('d/m/Y h:i A');
+
         $mensaje = "[ELIMINADA PRENDA] {$nombrePrenda} - Motivo: {$motivo}";
         $pedido->novedades = $pedido->novedades
             ? $pedido->novedades . "\n\n" . $mensaje
             : $mensaje;
         $pedido->save();
+
+        try {
+            News::create([
+                'event_type' => 'prenda_modificada',
+                'table_name' => 'prendas_pedido',
+                'record_id' => null,
+                'description' => "{$rolLabel} {$nombreUsuario} elimino la prenda \"{$nombrePrenda}\" en Pedido #{$pedido->numero_pedido}",
+                'user_id' => $usuarioAutenticado?->id,
+                'pedido' => $pedido->numero_pedido,
+                'metadata' => [
+                    'tipo' => 'prenda_eliminada',
+                    'pedido_id' => $pedido->id,
+                    'prenda_nombre' => $nombrePrenda,
+                    'motivo' => $motivo,
+                    'fecha' => $fechaHora,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('[EliminarPrendaPedidoRepository] No se pudo crear News de eliminacion', [
+                'pedido_id' => $pedido->id,
+                'prenda_nombre' => $nombrePrenda,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     private function esPedidoBorrador(PedidoProduccion $pedido): bool
