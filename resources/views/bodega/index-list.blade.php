@@ -850,7 +850,7 @@
                     }
 
                     const seRefrescoFila = refrescarYSubirPedido(num, e.record_id || e.id || null);
-                    if (!seRefrescoFila && ['pedido_creado', 'order_created', 'pedido_approved', 'pedido_aprobado', 'order_status_changed', 'epp_homologado', 'epp_agregado', 'prenda_modificada'].includes(e.event_type)) {
+                    if (!seRefrescoFila && ['pedido_creado', 'order_created', 'pedido_approved', 'pedido_aprobado', 'order_status_changed', 'epp_homologado', 'epp_agregado', 'prenda_agregada', 'prenda_modificada'].includes(e.event_type)) {
                         console.log('[BODEGA-LIST] Nuevo pedido detectado, insertando dinámicamente...');
                         const params = new URLSearchParams(window.location.search);
                         if ((params.get('page') || '1') === '1' && !params.has('search')) {

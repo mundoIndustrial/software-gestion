@@ -942,6 +942,13 @@
         const tbody = document.querySelector('table tbody');
         if (!tbody) return;
         let row = tbody.querySelector(`tr[data-pedido-id="${pedidoId}"]`);
+        if (!row && pedidoData?.numero_pedido) {
+            const numeroPedido = String(pedidoData.numero_pedido).trim();
+            row = Array.from(tbody.querySelectorAll('tr[data-pedido-id]')).find((tr) => {
+                const numeroCell = tr.querySelector('td:nth-child(2)');
+                return numeroCell && String(numeroCell.textContent || '').trim() === numeroPedido;
+            }) || null;
+        }
 
         // Si el pedido no existe en la tabla actual, intentamos insertarlo
         // cuando el estado corresponde a pendientes visibles en despacho.
@@ -1111,35 +1118,50 @@
                 console.log('[Despacho] 🚀 EVENTO RECIBIDO en pedidos.general:', e);
                 
                 const pedidoId = e?.pedido_id || e?.pedido?.id;
+                const pedidoNumero = e?.pedido?.numero_pedido || e?.numero_pedido || null;
                 console.log('[Despacho] Pedido ID extraído:', pedidoId);
                 
-                if (!pedidoId) {
-                    console.warn('[Despacho] No se pudo extraer pedido_id del evento');
-
-
+                if (!pedidoId && !pedidoNumero) {
+                    console.warn('[Despacho] No se pudo extraer pedido_id/numero_pedido del evento');
                     return;
                 }
 
-                if (__marcarEventoProcesado('channel:' + pedidoId + ':' + (e?.timestamp || e?.pedido?.updated_at || ''))) return;
-                console.log('[Despacho] ✅ Actualizando novedades para pedido:', pedidoId);
-                __moverPedidoAlInicioRealtime(pedidoId, e?.pedido || null);
+                const pedidoEventoRef = pedidoId || pedidoNumero;
+                if (__marcarEventoProcesado('channel:' + pedidoEventoRef + ':' + (e?.timestamp || e?.pedido?.updated_at || ''))) return;
+                console.log('[Despacho] ✅ Actualizando novedades para pedido:', pedidoEventoRef);
+                __moverPedidoAlInicioRealtime(pedidoEventoRef, e?.pedido || { numero_pedido: pedidoNumero });
 
                 const novedades = e?.pedido?.novedades;
                 if (typeof novedades === 'string') {
-                    const textarea = document.querySelector(`textarea.despacho-novedades-preview[data-pedido-id="${pedidoId}"]`);
+                    let textarea = document.querySelector(`textarea.despacho-novedades-preview[data-pedido-id="${pedidoId}"]`);
+                    if (!textarea && pedidoNumero) {
+                        const rowByNumero = Array.from(document.querySelectorAll('tr[data-pedido-id]')).find((tr) => {
+                            const numeroCell = tr.querySelector('td:nth-child(2)');
+                            return numeroCell && String(numeroCell.textContent || '').trim() === String(pedidoNumero).trim();
+                        });
+                        textarea = rowByNumero ? rowByNumero.querySelector('textarea.despacho-novedades-preview[data-pedido-id]') : null;
+                    }
                     if (textarea) {
                         console.log('[Despacho] Textarea encontrado, actualizando contenido');
                         textarea.value = novedades && novedades.trim() ? novedades : '—';
                         textarea.title = novedades || '';
                     } else {
-                        console.warn('[Despacho] Textarea NO encontrado para pedido:', pedidoId);
+                        console.warn('[Despacho] Textarea NO encontrado para pedido:', pedidoEventoRef);
                     }
                 }
 
-                const textarea2 = document.querySelector(`textarea.despacho-novedades-preview[data-pedido-id="${pedidoId}"]`);
+                let textarea2 = document.querySelector(`textarea.despacho-novedades-preview[data-pedido-id="${pedidoId}"]`);
+                if (!textarea2 && pedidoNumero) {
+                    const rowByNumero = Array.from(document.querySelectorAll('tr[data-pedido-id]')).find((tr) => {
+                        const numeroCell = tr.querySelector('td:nth-child(2)');
+                        return numeroCell && String(numeroCell.textContent || '').trim() === String(pedidoNumero).trim();
+                    });
+                    textarea2 = rowByNumero ? rowByNumero.querySelector('textarea.despacho-novedades-preview[data-pedido-id]') : null;
+                }
                 const count = __countNovedadesFromText(textarea2 ? textarea2.value : novedades);
                 console.log('[Despacho] Actualizando badge de novedades con count:', count);
-                __renderNovedadesBadge(String(pedidoId), count);
+                const targetPedidoId = textarea2?.getAttribute('data-pedido-id') || pedidoId || pedidoNumero;
+                __renderNovedadesBadge(String(targetPedidoId), count);
             });
 
         // Escuchar canales específicos de cada pedido visible en la página
@@ -1318,3 +1340,4 @@
         });
     });
 })();
+

@@ -1137,7 +1137,7 @@
                         <div style="display: flex; align-items: center; color: #374151; font-size: 0.85rem; font-weight: 500; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                             ${pedido.cliente || '-'}
                         </div>
-                        <div style="color: #374151; font-weight: 500; font-size: 0.8rem; text-align: left; white-space: normal; word-wrap: break-word; max-width: 150px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                        <div style="color: #374151; font-weight: 500; font-size: 0.8rem; text-align: left; white-space: pre-wrap; word-break: break-word; max-width: 320px;">
                             <span style="color: #d1d5db;">-</span>
                         </div>
                         <div style="display: flex; align-items: center; color: #374151; font-size: 0.8rem; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
