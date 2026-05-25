@@ -112,12 +112,27 @@ class VerPedidoOperarioUseCase
             ];
         }
 
+        $numeroReciboCostura = null;
+        $fechaCreacionPedido = $pedidoDB->created_at ? $pedidoDB->created_at->format('d/m/Y') : date('d/m/Y');
+
+        if ($parcialId > 0) {
+            $parcialMeta = DB::table('recibo_por_partes')
+                ->where('id', $parcialId)
+                ->first(['consecutivo_parcial', 'created_at']);
+
+            if ($parcialMeta) {
+                $numeroReciboCostura = (string) $parcialMeta->consecutivo_parcial;
+
+                if (!empty($parcialMeta->created_at)) {
+                    $fechaCreacionPedido = date('d/m/Y', strtotime((string) $parcialMeta->created_at));
+                }
+            }
+        }
+
         $fotos = $this->fotos->obtenerFotosPedido((int) $numeroPedido);
 
         $prendaIdRequest = $request->query('prenda_id');
         $consecutivoParcialParam = $request->query('consecutivo_parcial');
-
-        $numeroReciboCostura = null;
 
         if ($consecutivoParcialParam !== null && $consecutivoParcialParam !== '') {
             $numeroReciboCostura = (string) $consecutivoParcialParam;
@@ -171,12 +186,13 @@ class VerPedidoOperarioUseCase
                     'forma_pago' => $pedidoDB->forma_de_pago ?? 'N/A',
                     'estado' => $pedidoDB->estado ?? 'Pendiente',
                     'area' => 'Operarios',
-                    'fecha_creacion' => $pedidoDB->created_at ? $pedidoDB->created_at->format('d/m/Y') : date('d/m/Y'),
+                    'fecha_creacion' => $fechaCreacionPedido,
                     'fecha_estimada' => $pedidoDB->fecha_estimada ? $pedidoDB->fecha_estimada->format('d/m/Y') : null,
                     'descripcion' => $pedidoDB->descripcion ?? 'N/A',
                     'descripcion_prendas' => $pedidoDB->descripcion ?? 'N/A',
                     'cantidad' => $pedidoDB->total_prendas ?? 0,
                     'novedades' => $pedidoDB->novedades ?? 'Sin novedades',
+                    'numero_recibo_costura' => $numeroReciboCostura,
                 ],
                 'usuario' => $usuario,
                 'fotos' => $fotos,

@@ -324,6 +324,12 @@ class ObtenerDatosRecibosOperarioUseCase
             $fechaActivacionRecibo = $reciboActivacion?->created_at
                 ? (string) $reciboActivacion->created_at
                 : null;
+            if ($fechaActivacionRecibo === null && !empty($parcial->created_at)) {
+                $fechaActivacionRecibo = (string) $parcial->created_at;
+            }
+            $fechaCreacionParcial = !empty($parcial->created_at)
+                ? date('Y-m-d', strtotime((string) $parcial->created_at))
+                : ($fechaActivacionRecibo ? date('Y-m-d', strtotime((string) $fechaActivacionRecibo)) : now()->format('Y-m-d'));
 
             $esParcialBodega = $isBodegaOnly
                 && $reciboBodega
@@ -462,6 +468,9 @@ class ObtenerDatosRecibosOperarioUseCase
                     ],
                 ];
                 $responseData['fecha_activacion_recibo'] = $fechaActivacionRecibo;
+                $responseData['fecha_creacion'] = $fechaCreacionParcial;
+                $responseData['fecha_creacion'] = $fechaCreacionParcial;
+                $responseData['fecha_creacion'] = $fechaCreacionParcial;
 
                 return [
                     'status' => 200,
@@ -824,6 +833,7 @@ class ObtenerDatosRecibosOperarioUseCase
             }
 
             $responseData['fecha_activacion_recibo'] = $fechaActivacionRecibo;
+            $responseData['fecha_creacion'] = $fechaCreacionParcial;
 
             // Fallback defensivo: si por alguna incompatibilidad del transformador la prenda queda vaci­a,
             // construir una prenda mi­nima para que el recibo parcial siempre renderice descripcion/tallas.

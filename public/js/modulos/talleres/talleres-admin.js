@@ -1183,7 +1183,16 @@ function showOrdenes(search = '', page = 1) {
                                 <div class="rama-parte-header">
                                     <span class="rama-parte-numero">${numeroParte}</span>
                                     ${reciboParcialId ? `
-                                        <button type="button" class="btn-ver-recibo-parcial" data-recibo-parcial-id="${reciboParcialId}" title="Ver recibo parcial">
+                                        <button
+                                            type="button"
+                                            class="btn-ver-recibo-parcial"
+                                            data-recibo-parcial-id="${reciboParcialId}"
+                                            data-pedido-produccion-id="${orden.pedido_produccion_id || ''}"
+                                            data-prenda-id="${orden.prenda_id || ''}"
+                                            data-numero-recibo="${orden.numero_recibo || ''}"
+                                            data-tipo-recibo="${String(orden.tipo_recibo || '').trim().toUpperCase()}"
+                                            title="Ver recibo parcial"
+                                        >
                                             <span class="material-symbols-rounded">receipt_long</span>
                                         </button>
                                     ` : ''}
@@ -1266,9 +1275,30 @@ function initDistribucionEvents() {
     reciboButtons.forEach(btn => {
         btn.addEventListener('click', function() {
             const parcialId = this.dataset.reciboParcialId;
+            const tipoRecibo = String(this.dataset.tipoRecibo || '').trim().toUpperCase();
+            const pedidoProduccionId = Number(this.dataset.pedidoProduccionId || 0);
+            const prendaId = Number(this.dataset.prendaId || 0);
+            const numeroRecibo = String(this.dataset.numeroRecibo || '').trim();
+
             if (!parcialId) return;
-            if (typeof window.openReciboCorteBodegaParcialModal === 'function') {
-                window.openReciboCorteBodegaParcialModal(parcialId);
+
+            const esTipoCostura = ['COSTURA', 'COSTURA-BODEGA'].includes(tipoRecibo);
+
+            if (esTipoCostura && typeof window.pedidosRecibosModule?.abrirReciboParcial === 'function') {
+                if (pedidoProduccionId > 0 && prendaId > 0) {
+                    window.pedidosRecibosModule.abrirReciboParcial(
+                        pedidoProduccionId,
+                        prendaId,
+                        'costura',
+                        Number(parcialId),
+                        numeroRecibo ? `COSTURA ANEXO ${numeroRecibo}` : 'COSTURA ANEXO'
+                    );
+                    return;
+                }
+            }
+
+            if (tipoRecibo === 'CORTE-PARA-BODEGA' && typeof window.openReciboCorteBodegaParcialModal === 'function') {
+                window.openReciboCorteBodegaParcialModal(parcialId, tipoRecibo);
             } else if (typeof window.openReciboCorteBodegaModal === 'function') {
                 window.openReciboCorteBodegaModal(parcialId);
             } else {
@@ -1367,6 +1397,23 @@ function initReciboCompletoEvents() {
 
 async function applyReciboFechaToCosturaModal(numeroRecibo, tipoRecibo, apiRoute) {
     if (!apiRoute) return;
+    
+    // DEBUG: Log para ver qué se está intentando hacer
+    console.log('[applyReciboFechaToCosturaModal] Intentando aplicar fecha:', {
+        numeroRecibo,
+        tipoRecibo,
+        apiRoute,
+        esParcial: String(numeroRecibo || '').includes('.')
+    });
+    
+    // IMPORTANTE: Si es un recibo parcial (contiene punto, ej: "95.4"),
+    // NO intentar sobrescribir la fecha porque ya fue establecida por ReceiptRenderer
+    // desde los datos del recibo_por_partes
+    if (String(numeroRecibo || '').includes('.')) {
+        console.log('[applyReciboFechaToCosturaModal] Es un recibo parcial - NO sobrescribir fecha (ya fue establecida por ReceiptRenderer)');
+        return;
+    }
+    
     try {
         const url = new URL(apiRoute, window.location.origin);
         url.searchParams.set('numero_recibo', String(numeroRecibo || '').trim());

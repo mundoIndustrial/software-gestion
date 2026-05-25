@@ -318,8 +318,21 @@ function openReciboCorteBodegaModal(id) {
         });
 }
 
-function openReciboCorteBodegaParcialModal(id) {
-    console.log('[RCB] Abriendo modal parcial para id:', id);
+function aplicarTituloReciboCorteBodega(tipoRecibo = '') {
+    const tipoNormalizado = String(tipoRecibo || '').trim().toUpperCase();
+    const esReciboCostura = ['COSTURA', 'COSTURA-BODEGA'].includes(tipoNormalizado);
+    const titleNode = document.querySelector('#rcb-modal-wrapper .receipt-title');
+    if (!titleNode) return;
+
+    titleNode.innerHTML = esReciboCostura
+        ? 'RECIBO DE COSTURA'
+        : 'RECIBO DE CORTE<br>PARA BODEGA';
+}
+
+function openReciboCorteBodegaParcialModal(id, tipoRecibo = '') {
+    console.log('[RCB] Abriendo modal parcial para id:', id, 'tipo:', tipoRecibo);
+
+    aplicarTituloReciboCorteBodega(tipoRecibo);
 
     fetch(`/api/recibo-corte-bodega/parcial/${id}`)
         .then(response => {
@@ -339,13 +352,7 @@ function openReciboCorteBodegaParcialModal(id) {
 }
 
 function renderReciboCorteBodegaData(data) {
-    const tipoRecibo = String(data.tipo_recibo || '').trim().toUpperCase();
-    const title = tipoRecibo === 'COSTURA'
-        ? 'RECIBO DE COSTURA'
-        : 'RECIBO DE CORTE\nPARA BODEGA';
-    const titleHtml = title.replace('\n', '<br>');
-    const titleNode = document.querySelector('#rcb-modal-wrapper .receipt-title');
-    if (titleNode) titleNode.innerHTML = titleHtml;
+    aplicarTituloReciboCorteBodega(data.tipo_recibo);
 
     document.getElementById('rcb-day').textContent = data.dia;
     document.getElementById('rcb-month').textContent = data.mes;

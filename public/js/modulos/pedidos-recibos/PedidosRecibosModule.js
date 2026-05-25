@@ -574,13 +574,16 @@ export class PedidosRecibosModule {
 
             // Consecutivo real del ANEXO (viene del recibo parcial)
             const parcialData = parcialResult.data?.parcial || parcialResult.data || null;
-            const consecutivoAnexo = parcialData?.consecutivo_actual ?? parcialData?.numero_recibo ?? null;
+            const consecutivoAnexo = parcialData?.numero_recibo
+                ?? parcialData?.consecutivo_actual
+                ?? parcialData?.consecutivo_parcial
+                ?? null;
 
             // Para anexos: la fecha del recibo debe venir de pedidos_parciales.created_at
             // El renderer usa datosPedido.fecha para pintar los cuadros de fecha.
-            if (parcialData && parcialData.created_at) {
+            if (parcialData && (parcialData.created_at || parcialData.fecha_creacion)) {
                 // Normalizar a solo fecha para evitar desfases por zona horaria (ej: 23:00 -> dia siguiente)
-                const createdAtStr = String(parcialData.created_at);
+                const createdAtStr = String(parcialData.created_at || parcialData.fecha_creacion);
                 // Soportar formatos: "YYYY-MM-DD HH:MM:SS" o ISO "YYYY-MM-DDTHH:MM:SS..."
                 const soloFecha = createdAtStr.includes('T')
                     ? createdAtStr.split('T')[0]
@@ -716,8 +719,8 @@ export class PedidosRecibosModule {
                         tipo_recibo: String(parcialData?.tipo_recibo || tipoSintetico).toUpperCase(),
                         numero_recibo: consecutivoAnexo,
                         consecutivo_actual: consecutivoAnexo,
-                        created_at: parcialData?.created_at || null,
-                        fecha_activacion: parcialData?.fecha_activacion || null
+                        created_at: parcialData?.created_at || parcialData?.fecha_creacion || null,
+                        fecha_activacion: parcialData?.created_at || parcialData?.fecha_creacion || parcialData?.fecha_activacion || null
                     });
 
                     reciboIndice = 0;
@@ -813,10 +816,25 @@ export class PedidosRecibosModule {
             }
 
             // Inyectar fecha_activacion del parcial (si existe)
-            recibo.fecha_activacion = parcialData?.fecha_activacion || null;
+            // IMPORTANTE: usar fecha_creacion del parcial como fecha_activacion para mostrar en el modal
+            const fechaParcial = parcialData?.created_at || parcialData?.fecha_creacion || parcialData?.fecha_activacion;
+            recibo.fecha_activacion = fechaParcial || null;
             // Fallback de fecha para anexos antiguos sin fecha_activacion
-            recibo.created_at = parcialData?.created_at || recibo.created_at || null;
+            recibo.created_at = fechaParcial || recibo.created_at || null;
             recibo.fecha_aprobacion = parcialData?.updated_at || recibo.fecha_aprobacion || null;
+            
+            // DEBUG: Log para verificar que la fecha se está inyectando
+            console.log('[PedidosRecibosModule.abrirReciboParcial] Fechas inyectadas en recibo:', {
+                parcialId,
+                fechaParcial,
+                fecha_activacion: recibo.fecha_activacion,
+                created_at: recibo.created_at,
+                parcialData: {
+                    created_at: parcialData?.created_at,
+                    fecha_creacion: parcialData?.fecha_creacion,
+                    fecha_activacion: parcialData?.fecha_activacion
+                }
+            });
 
             // Inyectar snapshot propio del parcial (reflectivo): ubicaciones/observaciones/datos adicionales.
             if (parcialData && typeof parcialData === 'object') {

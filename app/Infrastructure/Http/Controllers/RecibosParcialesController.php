@@ -221,18 +221,17 @@ class RecibosParcialesController extends Controller
     public function show($id)
     {
         try {
-            $parcial = DB::table('pedidos_parciales')
+            $isReciboPorPartes = false;
+            $parcial = DB::table('recibo_por_partes')
                 ->where('id', $id)
                 ->first();
 
-            $isReciboPorPartes = false;
-            if (!$parcial) {
-                $parcial = DB::table('recibo_por_partes')
+            if ($parcial) {
+                $isReciboPorPartes = true;
+            } else {
+                $parcial = DB::table('pedidos_parciales')
                     ->where('id', $id)
                     ->first();
-                if ($parcial) {
-                    $isReciboPorPartes = true;
-                }
             }
 
             if (!$parcial) {
@@ -246,7 +245,37 @@ class RecibosParcialesController extends Controller
             
             // Normalizar campos si viene de recibo_por_partes
             if ($isReciboPorPartes) {
-                $parcialArray['consecutivo_actual'] = $parcialArray['consecutivo_parcial'] ?? 0;
+                $consecutivoOriginal = isset($parcialArray['consecutivo_original'])
+                    ? (int) $parcialArray['consecutivo_original']
+                    : 0;
+                $consecutivoParcialRaw = $parcialArray['consecutivo_parcial'] ?? null;
+                $consecutivoParcialNormalizado = $consecutivoParcialRaw !== null && $consecutivoParcialRaw !== ''
+                    ? rtrim(rtrim(number_format((float) $consecutivoParcialRaw, 1, '.', ''), '0'), '.')
+                    : '';
+                $numeroParte = $consecutivoParcialNormalizado;
+                if ($consecutivoOriginal > 0 && $consecutivoParcialNormalizado !== '') {
+                    $rawComoTexto = trim((string) $consecutivoParcialRaw);
+                    $prefijoOriginal = $consecutivoOriginal . '.';
+                    // Si el valor ya viene como "95.4", no lo volvemos a prefijar.
+                    if (!str_starts_with($rawComoTexto, $prefijoOriginal)) {
+                        $numeroParte = $prefijoOriginal . $consecutivoParcialNormalizado;
+                    } else {
+                        $numeroParte = $rawComoTexto;
+                    }
+                }
+
+                $parcialArray['consecutivo_actual'] = $numeroParte;
+                $parcialArray['numero_recibo'] = $numeroParte;
+                $parcialArray['numero_parte'] = $numeroParte;
+                $parcialArray['consecutivo_parcial'] = $consecutivoParcialNormalizado;
+            }
+
+            if (!empty($parcialArray['created_at'])) {
+                $parcialArray['fecha_creacion'] = $parcialArray['created_at'];
+                $parcialArray['fecha_activacion'] = $parcialArray['created_at'];
+            } elseif (!empty($parcialArray['updated_at'])) {
+                $parcialArray['fecha_creacion'] = $parcialArray['updated_at'];
+                $parcialArray['fecha_activacion'] = $parcialArray['updated_at'];
             }
 
             $parcialArray['ubicaciones'] = $this->decodeJsonField($parcialArray['ubicaciones'] ?? null, []);

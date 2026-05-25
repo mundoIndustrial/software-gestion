@@ -382,6 +382,7 @@ class ReciboCorteBodegaController extends Controller
             ->select(
                 'rpp.id',
                 'rpp.consecutivo_parcial',
+                'rpp.tipo_recibo',
                 'rpp.created_at',
                 'pp.nombre_prenda',
                 'pp.descripcion as descripcion_prenda'
@@ -408,6 +409,7 @@ class ReciboCorteBodegaController extends Controller
             'success' => true,
             'id' => (int) $parcial->id,
             'numero_recibo' => $numeroRecibo !== null ? (float) $numeroRecibo : null,
+            'tipo_recibo' => strtoupper(trim((string) ($parcial->tipo_recibo ?? 'COSTURA'))),
             'nombre' => $parcial->nombre_prenda ?: 'PRENDA',
             'descripcion' => $parcial->descripcion_prenda ?: '',
             'fecha' => $fecha->format('Y-m-d'),

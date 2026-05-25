@@ -13,88 +13,206 @@
     ).trim();
     const esReciboParcial = pedidoParcialIdParam !== '' || consecutivoParcialParam !== '' || tipoReciboUpper === 'PARCIAL';
 
-    // Unificar con la fuente que usa recibos-reflectivo:
-    // hidratar datos del parcial desde /api/recibos-parciales/{id} antes de renderizar.
-    if (esReciboParcial && pedidoParcialIdParam !== '' && !data?._parcialHydratedOperario) {
+    console.log('📱 [RECIBO MOBILE] Detectando parcial:', {
+        tipoReciboUpper,
+        consecutivoParcialParam,
+        pedidoParcialIdParam,
+        esReciboParcial,
+        urlSearch: window.location.search,
+        data_parcialHydrated: data?._parcialHydratedOperario
+    });
+
+    // IMPORTANTE: Si es un recibo parcial, obtener la fecha desde el API
+    if (esReciboParcial && pedidoParcialIdParam !== '') {
         const parcialIdNum = Number(pedidoParcialIdParam);
         if (Number.isFinite(parcialIdNum) && parcialIdNum > 0) {
-            data._parcialHydratedOperario = true;
+            // Hacer una llamada sincrónica (fetch con await) para obtener la fecha del parcial
+            fetch(`/api/recibos-parciales/${parcialIdNum}`)
+                .then(response => response.json())
+                .then(json => {
+                    if (json?.success && json?.data?.parcial) {
+                        const fechaParcial = json.data.parcial.created_at || json.data.parcial.fecha_creacion;
+                        if (fechaParcial) {
+                            console.log('📱 [RECIBO MOBILE] Fecha del parcial obtenida del API:', {
+                                fechaAnterior: data.fecha,
+                                fechaNueva: fechaParcial,
+                                parcialId: parcialIdNum
+                            });
+                            data.fecha = fechaParcial;
+                            
+                            // Actualizar los cuadros de fecha inmediatamente
+                            let fecha;
+                            if (typeof fechaParcial === 'string') {
+                                if (fechaParcial.includes('/')) {
+                                    const [day, month, year] = fechaParcial.split('/');
+                                    fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                                } else if (fechaParcial.includes('-')) {
+                                    const fechaParte = fechaParcial.split(' ')[0];
+                                    const [year, month, day] = fechaParte.split('-');
+                                    fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                                } else {
+                                    fecha = new Date(fechaParcial);
+                                }
+                            } else {
+                                fecha = new Date(fechaParcial);
+                            }
+                            
+                            if (!isNaN(fecha)) {
+                                const dayBox = document.getElementById('fecha-dia');
+                                const monthBox = document.getElementById('fecha-mes');
+                                const yearBox = document.getElementById('fecha-year');
+                                if (dayBox) {
+                                    dayBox.textContent = String(fecha.getDate()).padStart(2, '0');
+                                    console.log('📱 [RECIBO MOBILE] Día actualizado:', String(fecha.getDate()).padStart(2, '0'));
+                                }
+                                if (monthBox) {
+                                    monthBox.textContent = String(fecha.getMonth() + 1).padStart(2, '0');
+                                    console.log('📱 [RECIBO MOBILE] Mes actualizado:', String(fecha.getMonth() + 1).padStart(2, '0'));
+                                }
+                                if (yearBox) {
+                                    yearBox.textContent = fecha.getFullYear();
+                                    console.log('📱 [RECIBO MOBILE] Año actualizado:', fecha.getFullYear());
+                                }
+                            }
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('📱 [RECIBO MOBILE] Error al obtener fecha del parcial:', err);
+                });
+        }
+    }
+
+    // Unificar con la fuente que usa recibos-reflectivo:
+    // hidratar datos del parcial desde /api/recibos-parciales/{id} antes de renderizar.
+    if (esReciboParcial && pedidoParcialIdParam !== '') {
+        const parcialIdNum = Number(pedidoParcialIdParam);
+        if (Number.isFinite(parcialIdNum) && parcialIdNum > 0) {
+            // IMPORTANTE: Siempre intentar obtener la fecha del parcial, no solo la primera vez
             window.OrderDetailMobileService.getReciboParcial(parcialIdNum)
             .then(json => {
                 if (!json?.success || !json?.data) {
-                    window.llenarReciboCosturaMobile(data);
+                    console.log('📱 [RECIBO MOBILE] No se pudo obtener datos del parcial');
                     return;
                 }
 
-                const tallasParcial = Array.isArray(json.data.tallas) ? json.data.tallas : [];
-                const tallaColoresParcial = tallasParcial
-                    .filter(t => (t?.color_nombre || '').toString().trim() !== '')
-                    .map(t => ({
-                        genero: (t?.genero || 'CABALLERO').toString().toUpperCase(),
-                        talla: (t?.talla || '').toString().toUpperCase(),
-                        color_nombre: (t?.color_nombre || '').toString().trim(),
-                        cantidad: parseInt(t?.cantidad || 0, 10) || 0,
-                    }))
-                    .filter(t => t.talla !== '' && t.cantidad > 0);
-
-                if (Array.isArray(data?.prendas)) {
-                    data.prendas = data.prendas.map((prenda) => {
-                        const prendaParcialId = String(
-                            prenda?.recibos?.PARCIAL?.pedido_parcial_id ||
-                            prenda?.recibos?.PARCIAL?.id ||
-                            prenda?.procesos?.[0]?.pedido_parcial_id ||
-                            ''
-                        ).trim();
-
-                        if (prendaParcialId !== pedidoParcialIdParam) return prenda;
-
-                        if (tallasParcial.length > 0) {
-                            prenda.tallas = tallasParcial;
-                        }
-
-                        if (tallaColoresParcial.length > 0) {
-                            prenda.talla_colores = tallaColoresParcial;
-                        }
-
-                        if (Array.isArray(prenda.procesos)) {
-                            prenda.procesos = prenda.procesos.map((proc) => {
-                                const procParcialId = String(proc?.pedido_parcial_id || proc?.id || '').trim();
-                                if (procParcialId !== pedidoParcialIdParam && !proc?.es_parcial) return proc;
-                                if (tallaColoresParcial.length > 0) {
-                                    proc.talla_colores = tallaColoresParcial;
-                                }
-                                if (json?.data?.tallas_formato_colores && typeof json.data.tallas_formato_colores === 'object') {
-                                    proc.tallas = json.data.tallas_formato_colores;
-                                }
-                                return proc;
-                            });
-                        }
-
-                        if (prenda.recibos && typeof prenda.recibos === 'object') {
-                            const keys = Object.keys(prenda.recibos);
-                            keys.forEach((k) => {
-                                const rec = prenda.recibos[k];
-                                if (!rec || typeof rec !== 'object') return;
-                                const recParcialId = String(rec?.pedido_parcial_id || rec?.id || '').trim();
-                                if (recParcialId !== pedidoParcialIdParam) return;
-                                if (tallasParcial.length > 0) rec.tallas = tallasParcial;
-                                if (tallaColoresParcial.length > 0) rec.talla_colores = tallaColoresParcial;
-                                if (json?.data?.tallas_formato_colores && typeof json.data.tallas_formato_colores === 'object') {
-                                    rec.tallas_estructura = json.data.tallas_formato_colores;
-                                }
-                            });
-                        }
-
-                        return prenda;
+                // IMPORTANTE: Actualizar data.fecha con la fecha del parcial
+                if (json?.data?.created_at || json?.data?.fecha_creacion) {
+                    const fechaParcial = json.data.created_at || json.data.fecha_creacion;
+                    console.log('📱 [RECIBO MOBILE] Actualizando fecha del parcial:', {
+                        fechaAnterior: data.fecha,
+                        fechaNueva: fechaParcial,
+                        parcialId: parcialIdNum
                     });
+                    data.fecha = fechaParcial;
+                    
+                    // Actualizar los cuadros de fecha inmediatamente
+                    let fecha;
+                    if (typeof fechaParcial === 'string') {
+                        if (fechaParcial.includes('/')) {
+                            const [day, month, year] = fechaParcial.split('/');
+                            fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                        } else if (fechaParcial.includes('-')) {
+                            const fechaParte = fechaParcial.split(' ')[0];
+                            const [year, month, day] = fechaParte.split('-');
+                            fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                        } else {
+                            fecha = new Date(fechaParcial);
+                        }
+                    } else {
+                        fecha = new Date(fechaParcial);
+                    }
+                    
+                    if (!isNaN(fecha)) {
+                        const dayBox = document.getElementById('fecha-dia');
+                        const monthBox = document.getElementById('fecha-mes');
+                        const yearBox = document.getElementById('fecha-year');
+                        if (dayBox) {
+                            dayBox.textContent = String(fecha.getDate()).padStart(2, '0');
+                            console.log('📱 [RECIBO MOBILE] Día actualizado:', String(fecha.getDate()).padStart(2, '0'));
+                        }
+                        if (monthBox) {
+                            monthBox.textContent = String(fecha.getMonth() + 1).padStart(2, '0');
+                            console.log('📱 [RECIBO MOBILE] Mes actualizado:', String(fecha.getMonth() + 1).padStart(2, '0'));
+                        }
+                        if (yearBox) {
+                            yearBox.textContent = fecha.getFullYear();
+                            console.log('📱 [RECIBO MOBILE] Año actualizado:', fecha.getFullYear());
+                        }
+                    }
                 }
 
-                window.llenarReciboCosturaMobile(data);
+                // Hidratar tallas si no se han hidratado aún
+                if (!data?._parcialHydratedOperario) {
+                    data._parcialHydratedOperario = true;
+                    
+                    const tallasParcial = Array.isArray(json.data.tallas) ? json.data.tallas : [];
+                    const tallaColoresParcial = tallasParcial
+                        .filter(t => (t?.color_nombre || '').toString().trim() !== '')
+                        .map(t => ({
+                            genero: (t?.genero || 'CABALLERO').toString().toUpperCase(),
+                            talla: (t?.talla || '').toString().toUpperCase(),
+                            color_nombre: (t?.color_nombre || '').toString().trim(),
+                            cantidad: parseInt(t?.cantidad || 0, 10) || 0,
+                        }))
+                        .filter(t => t.talla !== '' && t.cantidad > 0);
+
+                    if (Array.isArray(data?.prendas)) {
+                        data.prendas = data.prendas.map((prenda) => {
+                            const prendaParcialId = String(
+                                prenda?.recibos?.PARCIAL?.pedido_parcial_id ||
+                                prenda?.recibos?.PARCIAL?.id ||
+                                prenda?.procesos?.[0]?.pedido_parcial_id ||
+                                ''
+                            ).trim();
+
+                            if (prendaParcialId !== pedidoParcialIdParam) return prenda;
+
+                            if (tallasParcial.length > 0) {
+                                prenda.tallas = tallasParcial;
+                            }
+
+                            if (tallaColoresParcial.length > 0) {
+                                prenda.talla_colores = tallaColoresParcial;
+                            }
+
+                            if (Array.isArray(prenda.procesos)) {
+                                prenda.procesos = prenda.procesos.map((proc) => {
+                                    const procParcialId = String(proc?.pedido_parcial_id || proc?.id || '').trim();
+                                    if (procParcialId !== pedidoParcialIdParam && !proc?.es_parcial) return proc;
+                                    if (tallaColoresParcial.length > 0) {
+                                        proc.talla_colores = tallaColoresParcial;
+                                    }
+                                    if (json?.data?.tallas_formato_colores && typeof json.data.tallas_formato_colores === 'object') {
+                                        proc.tallas = json.data.tallas_formato_colores;
+                                    }
+                                    return proc;
+                                });
+                            }
+
+                            if (prenda.recibos && typeof prenda.recibos === 'object') {
+                                const keys = Object.keys(prenda.recibos);
+                                keys.forEach((k) => {
+                                    const rec = prenda.recibos[k];
+                                    if (!rec || typeof rec !== 'object') return;
+                                    const recParcialId = String(rec?.pedido_parcial_id || rec?.id || '').trim();
+                                    if (recParcialId !== pedidoParcialIdParam) return;
+                                    if (tallasParcial.length > 0) rec.tallas = tallasParcial;
+                                    if (tallaColoresParcial.length > 0) rec.talla_colores = tallaColoresParcial;
+                                    if (json?.data?.tallas_formato_colores && typeof json.data.tallas_formato_colores === 'object') {
+                                        rec.tallas_estructura = json.data.tallas_formato_colores;
+                                    }
+                                });
+                            }
+
+                            return prenda;
+                        });
+                    }
+                }
             })
-            .catch(() => {
-                window.llenarReciboCosturaMobile(data);
+            .catch((err) => {
+                console.error('📱 [RECIBO MOBILE] Error al obtener datos del parcial:', err);
             });
-            return;
         }
     }
 
@@ -487,12 +605,12 @@
             const monthBox = document.getElementById('fecha-mes');
             const yearBox = document.getElementById('fecha-year');
             if (dayBox) {
-                dayBox.textContent = fecha.getDate();
-                console.log(' Día actualizado:', fecha.getDate());
+                dayBox.textContent = String(fecha.getDate()).padStart(2, '0');
+                console.log(' Día actualizado:', String(fecha.getDate()).padStart(2, '0'));
             }
             if (monthBox) {
-                monthBox.textContent = (fecha.getMonth() + 1);
-                console.log(' Mes actualizado:', fecha.getMonth() + 1);
+                monthBox.textContent = String(fecha.getMonth() + 1).padStart(2, '0');
+                console.log(' Mes actualizado:', String(fecha.getMonth() + 1).padStart(2, '0'));
             }
             if (yearBox) {
                 yearBox.textContent = fecha.getFullYear();

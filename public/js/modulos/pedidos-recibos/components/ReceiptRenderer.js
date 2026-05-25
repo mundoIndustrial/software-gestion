@@ -248,9 +248,11 @@ export class ReceiptRenderer {
      */
     static _llenarInformacionBasica(datosPedido, recibo = null) {
         // Fecha - Lógica para recibos de procesos
-        const dayBox = document.querySelector('.day-box');
-        const monthBox = document.querySelector('.month-box');
-        const yearBox = document.querySelector('.year-box');
+        // IMPORTANTE: Buscar dentro del modal de costura, no en todo el documento
+        const modalWrapper = document.getElementById('order-detail-modal-wrapper');
+        const dayBox = modalWrapper ? modalWrapper.querySelector('.day-box') : document.querySelector('.day-box');
+        const monthBox = modalWrapper ? modalWrapper.querySelector('.month-box') : document.querySelector('.month-box');
+        const yearBox = modalWrapper ? modalWrapper.querySelector('.year-box') : document.querySelector('.year-box');
 
         if (dayBox && monthBox && yearBox) {
             // Determinar si aplicar lógica de estado para recibos de costura
@@ -261,8 +263,32 @@ export class ReceiptRenderer {
             
             // Para recibos parciales (anexos) de costura, aplicar lógica de estado
             // Para recibos base de costura, usar fecha del pedido
-            const esReciboParcial = recibo && (recibo.es_parcial || recibo.origen === 'PARCIAL');
+            const esReciboParcial = recibo && (recibo.es_parcial || recibo.origen === 'PARCIAL' || recibo._esParcial);
             const aplicarLogicaEstado = (recibo && recibo.tipo_recibo && !esReciboCostura) || (esReciboCostura && esReciboParcial);
+            
+            console.log('[ReceiptRenderer._llenarInformacionBasica] Detectando tipo de recibo:', {
+                tieneRecibo: !!recibo,
+                esReciboCostura,
+                esReciboParcial,
+                aplicarLogicaEstado,
+                recibo: recibo ? {
+                    tipo_recibo: recibo.tipo_recibo,
+                    es_parcial: recibo.es_parcial,
+                    origen: recibo.origen,
+                    _esParcial: recibo._esParcial,
+                    fecha_activacion: recibo.fecha_activacion,
+                    created_at: recibo.created_at,
+                    tipo_proceso: recibo.tipo_proceso,
+                    nombre_proceso: recibo.nombre_proceso
+                } : null,
+                logicaDetallada: {
+                    'recibo && recibo.tipo_recibo': !!(recibo && recibo.tipo_recibo),
+                    '!esReciboCostura': !esReciboCostura,
+                    'esReciboCostura && esReciboParcial': esReciboCostura && esReciboParcial,
+                    'rama1': (recibo && recibo.tipo_recibo && !esReciboCostura),
+                    'rama2': (esReciboCostura && esReciboParcial)
+                }
+            });
             
             if (aplicarLogicaEstado) {
                 console.log('[ReceiptRenderer] Verificando estado de recibo:', {
@@ -278,14 +304,42 @@ export class ReceiptRenderer {
                 // Para parciales: usar fecha_activacion si existe
                 const tieneFechaActivacion = recibo.fecha_activacion && String(recibo.fecha_activacion).trim() !== '';
                 
+                console.log('[ReceiptRenderer._llenarInformacionBasica] Verificando fecha_activacion:', {
+                    tieneFechaActivacion,
+                    fecha_activacion: recibo.fecha_activacion,
+                    esReciboParcial,
+                    activo: recibo.activo,
+                    created_at: recibo.created_at
+                });
+                
                 if (tieneFechaActivacion) {
                     // Parcial con fecha_activacion: mostrar esa fecha
                     const fecha = Formatters.parsearFecha(recibo.fecha_activacion);
                     const { day, month, year } = Formatters.formatearFecha(fecha);
                     
+                    // DEBUG: Verificar que estamos llenando los elementos correctos
+                    console.log('[ReceiptRenderer] ANTES de establecer fecha:', {
+                        dayBox_id: dayBox.id,
+                        dayBox_class: dayBox.className,
+                        dayBox_parent: dayBox.parentElement?.className,
+                        dayBox_visible: window.getComputedStyle(dayBox).display !== 'none',
+                        dayBox_color: window.getComputedStyle(dayBox).color,
+                        dayBox_backgroundColor: window.getComputedStyle(dayBox).backgroundColor
+                    });
+                    
                     dayBox.textContent = day;
                     monthBox.textContent = month;
                     yearBox.textContent = year;
+                    
+                    // DEBUG: Verificar que se estableció correctamente
+                    console.log('[ReceiptRenderer] DESPUES de establecer fecha:', {
+                        dayBox_textContent: dayBox.textContent,
+                        monthBox_textContent: monthBox.textContent,
+                        yearBox_textContent: yearBox.textContent,
+                        dayBox_visible: window.getComputedStyle(dayBox).display !== 'none',
+                        dayBox_color: window.getComputedStyle(dayBox).color,
+                        dayBox_backgroundColor: window.getComputedStyle(dayBox).backgroundColor
+                    });
                     
                     console.log('[ReceiptRenderer] Fecha de activación del parcial establecida:', { 
                         day, 
