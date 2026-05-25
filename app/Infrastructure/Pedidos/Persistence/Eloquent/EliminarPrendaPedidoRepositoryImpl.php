@@ -72,7 +72,7 @@ final class EliminarPrendaPedidoRepositoryImpl implements EliminarPrendaPedidoRe
         $rolLabel = ucfirst(str_replace('_', ' ', (string) $rolUsuario));
         $fechaHora = now()->format('d/m/Y h:i A');
 
-        $mensaje = "[ELIMINADA PRENDA] {$nombrePrenda} - Motivo: {$motivo}";
+        $mensaje = "{$rolLabel}-{$nombreUsuario}-{$fechaHora} - Elimino la prenda \"{$nombrePrenda}\" - {$motivo}";
         $pedido->novedades = $pedido->novedades
             ? $pedido->novedades . "\n\n" . $mensaje
             : $mensaje;

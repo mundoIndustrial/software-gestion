@@ -135,7 +135,7 @@
                                                         
                                                         $texto = strtolower($nov['texto'] ?? $nov['text'] ?? $nov['description'] ?? '');
                                                         $esPrendaOEpp = str_contains($texto, 'prenda') || str_contains($texto, 'epp');
-                                                        $esActualizacion = str_contains($texto, 'modific') || str_contains($texto, 'agreg') || str_contains($texto, 'homolog');
+                                                        $esActualizacion = str_contains($texto, 'modific') || str_contains($texto, 'agreg') || str_contains($texto, 'homolog') || str_contains($texto, 'elimin');
                                                         
                                                         return $esAsesor && $esPrendaOEpp && $esActualizacion;
                                                     });
@@ -149,7 +149,7 @@
                                                         $lowerEntry = strtolower($trimmed);
                                                         $esAsesor = str_contains($lowerEntry, 'asesor') || str_contains($lowerEntry, 'asesora');
                                                         $esPrendaOEpp = str_contains($lowerEntry, 'prenda') || str_contains($lowerEntry, 'epp');
-                                                        $esActualizacion = str_contains($lowerEntry, 'modific') || str_contains($lowerEntry, 'agreg') || str_contains($lowerEntry, 'homolog');
+                                                        $esActualizacion = str_contains($lowerEntry, 'modific') || str_contains($lowerEntry, 'agreg') || str_contains($lowerEntry, 'homolog') || str_contains($lowerEntry, 'elimin');
                                                         
                                                         if ($esAsesor && $esPrendaOEpp && $esActualizacion) {
                                                             $novedades[] = ['texto' => $trimmed];
@@ -626,7 +626,7 @@
                         
                         let texto = (nov.texto || nov.text || nov.description || '').toLowerCase();
                         let esPrendaOEpp = texto.includes('prenda') || texto.includes('epp');
-                        let esActualizacion = texto.includes('modific') || texto.includes('agreg') || texto.includes('homolog');
+                        let esActualizacion = texto.includes('modific') || texto.includes('agreg') || texto.includes('homolog') || texto.includes('elimin');
                         
                         return esAsesor && esPrendaOEpp && esActualizacion;
                     });
@@ -640,7 +640,7 @@
                         let lowerEntry = trimmed.toLowerCase();
                         let esAsesor = lowerEntry.includes('asesor') || lowerEntry.includes('asesora');
                         let esPrendaOEpp = lowerEntry.includes('prenda') || lowerEntry.includes('epp');
-                        let esActualizacion = lowerEntry.includes('modific') || lowerEntry.includes('agreg') || lowerEntry.includes('homolog');
+                        let esActualizacion = lowerEntry.includes('modific') || lowerEntry.includes('agreg') || lowerEntry.includes('homolog') || lowerEntry.includes('elimin');
                         
                         if (esAsesor && esPrendaOEpp && esActualizacion) {
                             novedades.push({texto: trimmed});
@@ -657,7 +657,7 @@
                     let lowerEntry = trimmed.toLowerCase();
                     let esAsesor = lowerEntry.includes('asesor') || lowerEntry.includes('asesora');
                     let esPrendaOEpp = lowerEntry.includes('prenda') || lowerEntry.includes('epp');
-                    let esActualizacion = lowerEntry.includes('modific') || lowerEntry.includes('agreg') || lowerEntry.includes('homolog');
+                    let esActualizacion = lowerEntry.includes('modific') || lowerEntry.includes('agreg') || lowerEntry.includes('homolog') || lowerEntry.includes('elimin');
                     
                     if (esAsesor && esPrendaOEpp && esActualizacion) {
                         novedades.push({texto: trimmed});
