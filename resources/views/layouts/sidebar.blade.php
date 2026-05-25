@@ -587,7 +587,7 @@
             </ul>
           </li>
 
-          <!-- Entregas -->
+          {{-- Entregas
           <li class="submenu-item">
             <button class="menu-link submenu-toggle {{ request()->routeIs('entrega.*', 'entregas-completas.*') ? 'active' : '' }}"
                     aria-label="Gestionar entregas">
@@ -633,6 +633,7 @@
 
             </ul>
           </li>
+          --}}
 
 
           <!-- Tableros -->
@@ -663,7 +664,7 @@
             </ul>
           </li>
 
-          <!-- Vistas -->
+          {{-- Vistas
           <li class="submenu-item">
             <button class="menu-link submenu-toggle {{ request()->routeIs('vistas.*') ? 'active' : '' }}"
                     aria-label="Vistas del sistema">
@@ -698,6 +699,7 @@
               </li>
             </ul>
           </li>
+          --}}
         </ul>
       </li>
       </ul>
