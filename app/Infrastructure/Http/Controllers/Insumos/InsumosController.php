@@ -483,6 +483,7 @@ class InsumosController extends Controller
             if ($userRole === 'insumos') {
                 $estadosPermitidos = [
                     'En Ejecución',
+                    'En Ejecucion',
                     'PENDIENTE_INSUMOS',
                     'Pendiente_Insumos',
                     'Pendiente Tela',
@@ -490,7 +491,9 @@ class InsumosController extends Controller
                     'Pendiente Plotter',
                     'PENDIENTE_PLOTTER',
                     'Insumos Pedidos',
-                    'INSUMOS_PEDIDOS'
+                    'INSUMOS_PEDIDOS',
+                    'DEVUELTO_ASESOR',
+                    'Devuelto_Asesor',
                 ];
             }
             

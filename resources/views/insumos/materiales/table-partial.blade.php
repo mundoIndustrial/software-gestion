@@ -186,7 +186,7 @@
                                 {{-- Dropdown de Acciones (solo para no-patronistas) --}}
                                 @if(!$isPatronista)
                                     {{-- Boton Enviar a Produccion --}}
-                                    @if($esGestionReflectivo && !in_array($orden->estado, ['En Ejecución', 'En Ejecucion']) && $orden->area === 'Insumos')
+                                    @if($esGestionReflectivo && !in_array($orden->estado, ['En Ejecución', 'En Ejecucion']) && strtoupper(trim((string) $orden->area)) === 'INSUMOS')
                                         <button
                                             class="btn-enviar-produccion btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
                                             data-insumos-action="enviar-produccion-reflectivo"
@@ -330,7 +330,7 @@
                                     $estadoDisplay = str_replace('_', ' ', $estadoValor ?? 'N/A');
                                 }
 
-                                $estadosEditablesInsumos = ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'Insumos Pedidos', 'INSUMOS_PEDIDOS'];
+                                $estadosEditablesInsumos = ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'Insumos Pedidos', 'INSUMOS_PEDIDOS', 'DEVUELTO_ASESOR', 'Devuelto_Asesor', 'En Ejecución', 'En Ejecucion'];
                                 $puedeEditarInsumos = in_array($estadoValor, $estadosEditablesInsumos, true);
                                 $mostrarSelector = ($roleName !== 'insumos') || ($roleName === 'insumos' && $puedeEditarInsumos);
                             @endphp
@@ -350,6 +350,7 @@
                                             <option value="PENDIENTE_TELA" {{ in_array($estadoValor, ['Pendiente Tela', 'PENDIENTE_TELA']) ? 'selected' : '' }}>Pendiente&#10;Tela</option>
                                             <option value="PENDIENTE_PLOTTER" {{ in_array($estadoValor, ['Pendiente Plotter', 'PENDIENTE_PLOTTER']) ? 'selected' : '' }}>Pendiente&#10;Plotter</option>
                                             <option value="INSUMOS_PEDIDOS" {{ in_array($estadoValor, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos&#10;Pedidos</option>
+                                            <option value="DEVUELTO_ASESOR" {{ in_array($estadoValor, ['DEVUELTO_ASESOR', 'Devuelto_Asesor']) ? 'selected' : '' }}>Devuelto&#10;Asesor</option>
                                         @else
                                             <option value="No iniciado" {{ $estadoValor === 'No iniciado' ? 'selected' : '' }}>No iniciado</option>
                                             <option value="En Ejecución" {{ $estadoValor === 'En Ejecución' || $estadoValor === 'En Ejecucion' ? 'selected' : '' }}>En Ejecución</option>
