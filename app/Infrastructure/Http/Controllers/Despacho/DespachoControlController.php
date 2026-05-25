@@ -211,6 +211,36 @@ class DespachoControlController extends Controller
         }
     }
 
+    public function guardarAjusteCantidad(Request $request, PedidoProduccion $pedido): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'tipo_item' => 'required|string|in:prenda,epp',
+                'item_id' => 'required|integer',
+                'talla_id' => 'nullable|integer',
+                'talla_color_id' => 'nullable|integer',
+                'genero' => 'nullable|string|max:50',
+                'cantidad_original' => 'required|integer|min:0',
+                'cantidad_ajustada' => 'required|integer|min:0',
+                'motivo' => 'nullable|string|max:500',
+            ]);
+
+            return response()->json(
+                $this->service->guardarAjusteCantidad($pedido, $validated)
+            );
+        } catch (\Throwable $e) {
+            Log::error('Error al guardar ajuste de cantidad en despacho', [
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
     /**
      * Marcar todos los items de un pedido como entregados
      */

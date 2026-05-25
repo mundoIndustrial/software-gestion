@@ -6,8 +6,10 @@ use App\Application\Pedidos\Despacho\DTOs\ControlEntregasDTO;
 use App\Application\Pedidos\Despacho\Services\DespachoEstadoService;
 use App\Application\Pedidos\Despacho\UseCases\GuardarDespachoUseCase;
 use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
+use App\Infrastructure\Services\Despacho\DespachoRowHashService;
 use App\Events\DespachoPedidoActualizado;
 use App\Models\BodegaNota;
+use App\Models\DespachoAjusteDetalle;
 use App\Models\DesparChoParcialesModel;
 use App\Models\PedidoObservacionesDespacho;
 use App\Models\PedidoProduccion;
@@ -117,7 +119,150 @@ class DespachoControlApplicationService
 
         [$pendientesBodegueroText, $observacionesAsesoraText] = $this->buildTextosPendientesYAsesora($pedido);
 
-        return compact('pedido', 'prendas', 'epps', 'despachos', 'pendientesBodegueroText', 'observacionesAsesoraText');
+        $ajustesActivos = $this->obtenerAjustesActivosPorPedido($pedido->id);
+        $ajustesHistorial = $this->obtenerAjustesHistorialPorPedido($pedido->id);
+
+        return compact('pedido', 'prendas', 'epps', 'despachos', 'pendientesBodegueroText', 'observacionesAsesoraText', 'ajustesActivos', 'ajustesHistorial');
+    }
+
+    public function obtenerAjustesHistorialPorPedido(int $pedidoId): array
+    {
+        $ajustes = DespachoAjusteDetalle::query()
+            ->where('pedido_produccion_id', $pedidoId)
+            ->orderBy('revision')
+            ->orderBy('id')
+            ->get();
+
+        $map = [];
+        foreach ($ajustes as $ajuste) {
+            $key = strtolower((string) $ajuste->tipo_item)
+                . '|' . ((int) $ajuste->item_id)
+                . '|' . ((int) $ajuste->talla_id)
+                . '|' . ((int) ($ajuste->talla_color_id ?? 0))
+                . '|' . strtoupper((string) ($ajuste->genero ?? ''));
+
+            $map[$key] ??= [];
+            $map[$key][] = [
+                'id' => (int) $ajuste->id,
+                'revision' => (int) $ajuste->revision,
+                'cantidad_base' => (int) $ajuste->cantidad_base,
+                'cantidad_ajustada' => (int) $ajuste->cantidad_ajustada,
+                'diferencia' => (int) $ajuste->diferencia,
+                'estado' => (string) $ajuste->estado,
+            ];
+        }
+
+        return $map;
+    }
+
+    public function obtenerAjustesActivosPorPedido(int $pedidoId): array
+    {
+        $ajustes = DespachoAjusteDetalle::query()
+            ->where('pedido_produccion_id', $pedidoId)
+            ->where('estado', 'pendiente')
+            ->orderByDesc('revision')
+            ->get();
+
+        $map = [];
+        foreach ($ajustes as $ajuste) {
+            $key = strtolower((string) $ajuste->tipo_item)
+                . '|' . ((int) $ajuste->item_id)
+                . '|' . ((int) $ajuste->talla_id)
+                . '|' . ((int) ($ajuste->talla_color_id ?? 0))
+                . '|' . strtoupper((string) ($ajuste->genero ?? ''));
+
+            if (!isset($map[$key])) {
+                $map[$key] = [
+                    'id' => $ajuste->id,
+                    'row_hash' => $ajuste->row_hash,
+                    'revision' => $ajuste->revision,
+                    'cantidad_base' => (int) $ajuste->cantidad_base,
+                    'cantidad_ajustada' => (int) $ajuste->cantidad_ajustada,
+                    'diferencia' => (int) $ajuste->diferencia,
+                ];
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * @param array{tipo_item: string, item_id: int, talla_id?: int|null, talla_color_id?: int|null, genero?: string|null, cantidad_original: int, cantidad_ajustada: int, motivo?: string|null} $validated
+     */
+    public function guardarAjusteCantidad(PedidoProduccion $pedido, array $validated): array
+    {
+        $tipoItem = (string) $validated['tipo_item'];
+        $itemId = (int) $validated['item_id'];
+        $tallaId = isset($validated['talla_id']) ? (int) $validated['talla_id'] : 0;
+        $tallaColorId = isset($validated['talla_color_id']) ? (int) $validated['talla_color_id'] : 0;
+        $genero = strtoupper(trim((string) ($validated['genero'] ?? '')));
+        $cantidadOriginal = (int) $validated['cantidad_original'];
+        $cantidadAjustada = (int) $validated['cantidad_ajustada'];
+
+        if ($cantidadAjustada < 0) {
+            throw new \InvalidArgumentException('La cantidad ajustada no puede ser menor a 0.');
+        }
+        if ($cantidadAjustada > $cantidadOriginal) {
+            throw new \InvalidArgumentException('La cantidad ajustada no puede superar la cantidad original.');
+        }
+
+        $rowHash = DespachoRowHashService::generar(
+            $pedido->id,
+            $tipoItem,
+            $itemId,
+            $tallaId,
+            $tallaColorId,
+            $genero
+        );
+
+        $ultimo = DespachoAjusteDetalle::query()
+            ->where('pedido_produccion_id', $pedido->id)
+            ->where('row_hash', $rowHash)
+            ->orderByDesc('revision')
+            ->first();
+
+        $base = $ultimo ? (int) $ultimo->cantidad_ajustada : $cantidadOriginal;
+
+        if ($cantidadAjustada > $base) {
+            throw new \InvalidArgumentException("La cantidad ajustada ({$cantidadAjustada}) no puede superar la base vigente ({$base}).");
+        }
+
+        if ($ultimo && $ultimo->estado === 'pendiente') {
+            $ultimo->update(['estado' => 'descartada']);
+        }
+
+        $revision = ((int) ($ultimo?->revision ?? 0)) + 1;
+
+        $ajuste = DespachoAjusteDetalle::create([
+            'pedido_produccion_id' => $pedido->id,
+            'row_hash' => $rowHash,
+            'tipo_item' => $tipoItem,
+            'item_id' => $itemId,
+            'talla_id' => $tallaId,
+            'talla_color_id' => $tallaColorId,
+            'genero' => $genero !== '' ? $genero : null,
+            'revision' => $revision,
+            'cantidad_base' => $base,
+            'cantidad_ajustada' => $cantidadAjustada,
+            'diferencia' => max(0, $base - $cantidadAjustada),
+            'estado' => 'pendiente',
+            'motivo' => $validated['motivo'] ?? null,
+            'creado_por' => auth()->id() ?? 0,
+        ]);
+
+        return [
+            'success' => true,
+            'message' => 'Ajuste guardado correctamente',
+            'ajuste' => [
+                'id' => $ajuste->id,
+                'row_hash' => $ajuste->row_hash,
+                'revision' => $ajuste->revision,
+                'cantidad_base' => (int) $ajuste->cantidad_base,
+                'cantidad_ajustada' => (int) $ajuste->cantidad_ajustada,
+                'diferencia' => (int) $ajuste->diferencia,
+                'estado' => $ajuste->estado,
+            ],
+        ];
     }
 
     public function obtenerDatosPrint(PedidoProduccion $pedido): array

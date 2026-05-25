@@ -55,6 +55,10 @@ Route::prefix('despacho')
             ->name('despacho.deshacer-entregado')
             ->where('pedido', '[0-9]+');
 
+        Route::post('/{pedido}/ajustes-cantidad', [DespachoControlController::class, 'guardarAjusteCantidad'])
+            ->name('despacho.ajustes-cantidad.guardar')
+            ->where('pedido', '[0-9]+');
+
         Route::post('/observaciones/resumen', [DespachoObservacionesController::class, 'resumenObservaciones'])
             ->name('despacho.observaciones.resumen');
 

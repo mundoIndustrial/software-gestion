@@ -82,13 +82,13 @@ function mostrarNotificacionPedidoEntregadoLocal(numeroPedido) {
 
 // Funcion para mostrar historial de homologaciones
 function toggleHistorialEpp(btn, historialHomologaciones) {
-    console.log('🔽 [toggleHistorialEpp] boton "Ver cambios" clickeado', {
+    console.log('Ã°Å¸â€Â½ [toggleHistorialEpp] boton "Ver cambios" clickeado', {
         historialLength: historialHomologaciones?.length,
         historial: historialHomologaciones,
     });
     
     if (!Array.isArray(historialHomologaciones) || historialHomologaciones.length === 0) {
-        console.warn(' [toggleHistorialEpp] Sin historial o historial vacio');
+        console.warn(' [toggleHistorialEpp] Sin historial o historial vaciÂ­o');
         // Si Swal no esta disponible, usar alert
         if (window.Swal) {
             Swal.fire('Sin cambios', 'No hay cambios registrados para este EPP', 'info');
@@ -106,7 +106,7 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
             <table class="w-full border-collapse text-sm">
                 <thead style="position: sticky; top: 0; z-index: 10;">
                     <tr class="bg-blue-600 text-white shadow-md">
-                        <th class="px-2 py-3 text-center font-bold w-36 whitespace-nowrap">Version</th>
+                        <th class="px-2 py-3 text-center font-bold w-36 whitespace-nowrap">VersiÃ³n</th>
                         <th class="px-4 py-3 text-left font-bold">Nombre</th>
                         <th class="px-4 py-3 text-center font-bold w-36 whitespace-nowrap">Cantidad</th>
                         <th class="px-4 py-3 text-center font-bold w-32 whitespace-nowrap">Fecha & Hora</th>
@@ -120,7 +120,7 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
     tablaHtml += `
         <tr class="border-b border-gray-300 bg-green-50 hover:bg-green-100 transition">
             <td class="px-2 py-3 text-center">
-                <span class="inline-block bg-green-500 text-white font-bold px-2 py-1 rounded text-xs">● Original</span>
+                <span class="inline-block bg-green-500 text-white font-bold px-2 py-1 rounded text-xs">â— Original</span>
             </td>
             <td class="px-4 py-3 font-medium text-gray-800">${original.epp_nombre || original.nombre_completo || 'N/A'}</td>
             <td class="px-4 py-3 text-center font-semibold text-gray-800">${original.cantidad || 0}</td>
@@ -137,7 +137,7 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
             tablaHtml += `
                 <tr class="border-b border-gray-300 ${colorClass} transition">
                     <td class="px-2 py-3 text-center">
-                        <span class="inline-block bg-blue-500 text-white font-bold px-2 py-1 rounded text-xs">? #${i}</span>
+                        <span class="inline-block bg-blue-500 text-white font-bold px-2 py-1 rounded text-xs">→ #${i}</span>
                     </td>
                     <td class="px-4 py-3 font-medium text-gray-800">${cambio.epp_nombre || cambio.nombre_completo || 'N/A'}</td>
                     <td class="px-4 py-3 text-center font-semibold text-gray-800">${cambio.cantidad || 0}</td>
@@ -185,7 +185,7 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
         modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center;';
         modal.innerHTML = `
             <div style="background: white; border-radius: 8px; padding: 2rem; max-width: 800px; max-height: 80vh; overflow-y: auto; position: relative;">
-                <button style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 24px; cursor: pointer;" onclick="this.parentElement.parentElement.remove();">✕</button>
+                <button style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 24px; cursor: pointer;" onclick="this.parentElement.parentElement.remove();">âœ•</button>
                 <h2 style="margin-bottom: 1rem; font-size: 1.5rem; font-weight: bold;">Historial de Cambios</h2>
                 ${tablaHtml}
             </div>
@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <a href="{{ route('despacho.index') }}"
                        onclick="if (window.history.length > 1) { event.preventDefault(); window.history.back(); }"
                        class="px-3 py-2 text-slate-600 hover:text-slate-900 font-medium">
-                        ← Volver
+                        â† Volver
                     </a>
                     <button type="button"
                             onclick="abrirModalFactura({{ $pedido->id }})"
@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 onclick="toggleMenuImpresion(event)"
                                 class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded transition-colors inline-flex items-center gap-2">
                             Imprimir
-                            <span class="text-xs">▾</span>
+                            <span class="text-xs">â–¾</span>
                         </button>
                         <div id="imprimirMenuOpciones"
                              class="hidden absolute right-0 top-full mt-2 w-52 bg-white border border-slate-300 rounded-lg shadow-2xl ring-1 ring-black/10 z-[9999] overflow-hidden">
@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="flex gap-6 text-sm">
                 <div>
                     <span class="text-slate-500">Cliente:</span>
-                    <span class="font-medium text-slate-900 ml-2">{{ $pedido->cliente ?? '—' }}</span>
+                    <span class="font-medium text-slate-900 ml-2">{{ $pedido->cliente ?? 'â€”' }}</span>
                 </div>
                 <div>
                     <span class="text-slate-500">Asesor:</span>
@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div>
                     <span class="text-slate-500">Orden de Compra:</span>
-                    <span class="font-medium text-slate-900 ml-2">{{ $pedido->orden_compra ?? '—' }}</span>
+                    <span class="font-medium text-slate-900 ml-2">{{ $pedido->orden_compra ?? 'â€”' }}</span>
                 </div>
             </div>
         </div>
@@ -314,19 +314,13 @@ document.addEventListener('DOMContentLoaded', function() {
         <form id="formDespacho" class="bg-white overflow-hidden">
             @csrf
 
-            <div id="tabsAjustesGlobales" class="px-6 py-3 border-b border-slate-200 bg-slate-50">
-                <div class="flex items-center gap-2 flex-wrap text-xs">
-                    <span class="text-slate-500 font-medium mr-1">Vista cantidades:</span>
-                </div>
-            </div>
-
             <!-- Tabla de despacho -->
             <div class="overflow-x-auto lg:overflow-visible">
                 <table class="w-full text-sm min-w-[800px] lg:min-w-full border-collapse">
                     <thead class="bg-slate-50 border-b-2 border-slate-400 sticky top-0 z-50">
                         <tr>
-                            <th class="px-2 lg:px-4 py-3 text-left font-medium text-slate-700 text-xs lg:text-sm border-r border-slate-400">Descripcion</th>
-                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Genero</th>
+                            <th class="px-2 lg:px-4 py-3 text-left font-medium text-slate-700 text-xs lg:text-sm border-r border-slate-400">DescripciÃ³n</th>
+                            <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">GÃ©nero</th>
                             <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Talla</th>
                             <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-16 text-xs lg:text-sm border-r border-slate-400">Cantidad</th>
                             <th class="px-2 lg:px-4 py-3 text-center font-medium text-slate-700 w-32 text-xs lg:text-sm border-r border-slate-400">Entregar</th>
@@ -477,7 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                                 <button type="button" 
                                                                         class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center gap-1 relative"
                                                                         onclick="toggleHistorialEpp(this, {{ json_encode($primeraFila->historial_homologaciones ?? []) }})">
-                                                                    <span class="text-sm">🔽</span>
+                                                                    <span class="text-sm">Ã°Å¸â€Â½</span>
                                                                     <span>Ver cambios</span>
                                                                     <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($primeraFila->historial_homologaciones ?? []) > 0 ? count($primeraFila->historial_homologaciones) - 1 : 0 }}</span>
                                                                 </button>
@@ -520,11 +514,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                                     @if($tela || $color)
                                                     <div class="text-slate-900 mb-1 text-xs">
                                                         @if($tela && $color)
-                                                            <div>• Tela: {{ $tela }} - Color: {{ $color }}</div>
+                                                            <div>â€¢ Tela: {{ $tela }} - Color: {{ $color }}</div>
                                                         @elseif($tela)
-                                                            <div>• Tela: {{ $tela }}</div>
+                                                            <div>â€¢ Tela: {{ $tela }}</div>
                                                         @elseif($color)
-                                                            <div>• Color: {{ $color }}</div>
+                                                            <div>â€¢ Color: {{ $color }}</div>
                                                         @endif
                                                     </div>
                                                     @endif
@@ -542,13 +536,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                                     @endphp
                                                     <div class="text-slate-900 mb-1 text-xs space-y-0.5">
                                                         @if($manga)
-                                                            <div>• Manga:{{ $manga }}{{ $manga_obs && trim($manga_obs) !== '' ? " ($manga_obs)" : '' }}</div>
+                                                            <div>â€¢ Manga:{{ $manga }}{{ $manga_obs && trim($manga_obs) !== '' ? " ($manga_obs)" : '' }}</div>
                                                         @endif
                                                         @if($broche)
-                                                            <div>• {{ $broche }}{{ $broche_obs && trim($broche_obs) !== '' ? " ($broche_obs)" : '' }}</div>
+                                                            <div>â€¢ {{ $broche }}{{ $broche_obs && trim($broche_obs) !== '' ? " ($broche_obs)" : '' }}</div>
                                                         @endif
                                                         @if($bolsillos)
-                                                            <div>• Bolsillos{{ $bolsillos_obs && trim($bolsillos_obs) !== '' ? " ($bolsillos_obs)" : '' }}</div>
+                                                            <div>â€¢ Bolsillos{{ $bolsillos_obs && trim($bolsillos_obs) !== '' ? " ($bolsillos_obs)" : '' }}</div>
                                                         @endif
                                                     </div>
                                                 @endif
@@ -564,23 +558,23 @@ document.addEventListener('DOMContentLoaded', function() {
                                                                     }
                                                                     $ubicacionesStr = is_array($ubicaciones) ? implode(', ', $ubicaciones) : $ubicaciones;
                                                                 @endphp
-                                                                <div>• {{ $proc->nombre ?? $proc->tipo_proceso ?? $proc['tipo_proceso'] ?? 'Proceso' }}{{ $ubicacionesStr && trim($ubicacionesStr) !== '' ? " ($ubicacionesStr)" : '' }}</div>
+                                                                <div>â€¢ {{ $proc->nombre ?? $proc->tipo_proceso ?? $proc['tipo_proceso'] ?? 'Proceso' }}{{ $ubicacionesStr && trim($ubicacionesStr) !== '' ? " ($ubicacionesStr)" : '' }}</div>
                                                             @endforeach
                                                         </div>
                                                     </div>
                                                 @else
-                                                    <div class="text-slate-400 text-xs mt-1">— Sin procesos</div>
+                                                    <div class="text-slate-400 text-xs mt-1">â€” Sin procesos</div>
                                                 @endif
 
                                                     </td>
                                                     @php $isFirstRowOfColor = false; @endphp
                                                 @endif
 
-                                                {{-- CELDA DE GENERO: Solo en la primera fila de cada genero --}}
+                                                {{-- CELDA DE GÃ‰NERO: Solo en la primera fila de cada gÃ©nero --}}
                                                 @if($indexTalla === 0)
                                                     <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs col-genero" rowspan="{{ $rowSpanGenero }}">
                                                         @if(strtoupper($generoKey) === 'GENERICO')
-                                                            —
+                                                            â€”
                                                         @else
                                                             {{ $generoKey }}
                                                         @endif
@@ -589,7 +583,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                                 <td class="px-2 lg:px-4 py-3 text-center text-slate-600 col-talla">
                                                     @if(($t['talla'] ?? null) === 'SIN_ESPECIFICAR')
-                                                        —
+                                                        â€”
                                                     @else
                                                         {{ $t['talla'] }}
                                                     @endif
@@ -637,7 +631,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             data-genero="{{ $fila->genero }}"
                                             data-cantidad="{{ $fila->cantidadTotal }}">
                                             
-                                            {{-- CELDA DE DESCRIPCION: Solo en la primera fila del grupo --}}
+                                            {{-- CELDA DE DESCRIPCIÃ“N: Solo en la primera fila del grupo --}}
                                             @if($indexFila === 0)
                                                 <td class="px-2 lg:px-4 py-3 text-slate-900 text-xs col-descripcion" rowspan="{{ $rowSpan }}">
                                                     <div class="font-semibold text-slate-900 mb-1">
@@ -669,11 +663,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                                         @if($tela || $color)
                                                         <div class="text-slate-900 mb-1 text-xs">
                                                             @if($tela && $color)
-                                                                <div>• Tela: {{ $tela }} - Color: {{ $color }}</div>
+                                                                <div>â€¢ Tela: {{ $tela }} - Color: {{ $color }}</div>
                                                             @elseif($tela)
-                                                                <div>• Tela: {{ $tela }}</div>
+                                                                <div>â€¢ Tela: {{ $tela }}</div>
                                                             @elseif($color)
-                                                                <div>• Color: {{ $color }}</div>
+                                                                <div>â€¢ Color: {{ $color }}</div>
                                                             @endif
                                                         </div>
                                                         @endif
@@ -692,13 +686,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                                         @endphp
                                                         <div class="text-slate-900 mb-1 text-xs space-y-0.5">
                                                             @if($manga)
-                                                                <div>• Manga:{{ $manga }}{{ $manga_obs && trim($manga_obs) !== '' ? " ($manga_obs)" : '' }}</div>
+                                                                <div>â€¢ Manga:{{ $manga }}{{ $manga_obs && trim($manga_obs) !== '' ? " ($manga_obs)" : '' }}</div>
                                                             @endif
                                                             @if($broche)
-                                                                <div>• {{ $broche }}{{ $broche_obs && trim($broche_obs) !== '' ? " ($broche_obs)" : '' }}</div>
+                                                                <div>â€¢ {{ $broche }}{{ $broche_obs && trim($broche_obs) !== '' ? " ($broche_obs)" : '' }}</div>
                                                             @endif
                                                             @if($bolsillos)
-                                                                <div>• Bolsillos{{ $bolsillos_obs && trim($bolsillos_obs) !== '' ? " ($bolsillos_obs)" : '' }}</div>
+                                                                <div>â€¢ Bolsillos{{ $bolsillos_obs && trim($bolsillos_obs) !== '' ? " ($bolsillos_obs)" : '' }}</div>
                                                             @endif
                                                         </div>
                                                     @endif
@@ -715,28 +709,28 @@ document.addEventListener('DOMContentLoaded', function() {
                                                                         }
                                                                         $ubicacionesStr = is_array($ubicaciones) ? implode(', ', $ubicaciones) : $ubicaciones;
                                                                     @endphp
-                                                                    <div>• {{ $proc->nombre ?? $proc->tipo_proceso ?? $proc['tipo_proceso'] ?? 'Proceso' }}{{ $ubicacionesStr && trim($ubicacionesStr) !== '' ? " ($ubicacionesStr)" : '' }}</div>
+                                                                    <div>â€¢ {{ $proc->nombre ?? $proc->tipo_proceso ?? $proc['tipo_proceso'] ?? 'Proceso' }}{{ $ubicacionesStr && trim($ubicacionesStr) !== '' ? " ($ubicacionesStr)" : '' }}</div>
                                                                 @endforeach
                                                             </div>
                                                         </div>
                                                     @else
-                                                        <div class="text-slate-400 text-xs mt-1">— Sin procesos</div>
+                                                        <div class="text-slate-400 text-xs mt-1">â€” Sin procesos</div>
                                                     @endif
                                                 </td>
                                                 
                                                 {{-- CELDA DE GENERO: Solo en la primera fila del grupo --}}
                                                 <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs col-genero" rowspan="{{ $rowSpan }}">
                                                     @if($primeraFila && strtoupper($primeraFila->genero ?? '') === 'GENERICO')
-                                                        —
+                                                        â€”
                                                     @else
-                                                        {{ $primeraFila->genero ?? '—' }}
+                                                        {{ $primeraFila->genero ?? 'â€”' }}
                                                     @endif
                                                 </td>
                                             @endif
                                             
                                             <td class="px-2 lg:px-4 py-3 text-center text-slate-600 col-talla">
                                                 @if(($fila->talla ?? null) === 'SIN_ESPECIFICAR')
-                                                    —
+                                                    â€”
                                                 @else
                                                     {{ $fila->talla }}
                                                 @endif
@@ -803,7 +797,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 ]);
                                             @endphp
                                         </div>
-                                        @if($fila->objetoEpp && isset($fila->objetoEpp['observaciones']) && $fila->objetoEpp['observaciones'] && $fila->objetoEpp['observaciones'] !== '—' && $fila->objetoEpp['observaciones'] !== '-')
+                                        @if($fila->objetoEpp && isset($fila->objetoEpp['observaciones']) && $fila->objetoEpp['observaciones'] && $fila->objetoEpp['observaciones'] !== 'â€”' && $fila->objetoEpp['observaciones'] !== '-')
                                             <div class="text-slate-600 mt-1 text-xs">{{ $fila->objetoEpp['observaciones'] }}</div>
                                         @endif
                                         <div class="mt-2">
@@ -812,7 +806,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 <button type="button" 
                                                         class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center gap-1 relative"
                                                         onclick="toggleHistorialEpp(this, {{ json_encode($fila->historial_homologaciones ?? []) }})">
-                                                    <span class="text-sm">🔽</span>
+                                                    <span class="text-sm">Ã°Å¸â€Â½</span>
                                                     <span>Ver cambios</span>
                                                     <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($fila->historial_homologaciones ?? []) > 0 ? count($fila->historial_homologaciones) - 1 : 0 }}</span>
                                                 </button>
@@ -835,11 +829,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </td>
                                     
                                     <td class="px-2 lg:px-4 py-3 text-center text-slate-600 text-xs col-genero">
-                                        —
+                                        â€”
                                     </td>
                                     
                                     <td class="px-2 lg:px-4 py-3 text-center text-slate-600 col-talla">
-                                        —
+                                        â€”
                                     </td>
                                     
                                     <td class="px-2 lg:px-4 py-3 text-center font-medium text-slate-900 col-cantidad">
@@ -878,7 +872,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         @if($prendas->count() === 0 && $epps->count() === 0)
                             <tr>
                                 <td colspan="6" class="px-6 py-12 text-center text-slate-500">
-                                    No hay Items en este pedido
+                                    No hay IÂ­tems en este pedido
                                 </td>
                             </tr>
                         @endif
@@ -886,10 +880,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 </table>
             </div>
 
-            <!-- Info de Items -->
+            <!-- Info de IÂ­tems -->
             <div class="px-6 py-4 bg-slate-50 border-t-2 border-slate-400">
                 <div class="text-sm text-slate-600">
-                    <span class="font-medium">{{ $prendas->count() + $epps->count() }}</span> Items en total
+                    <span class="font-medium">{{ $prendas->count() + $epps->count() }}</span> IÂ­tems en total
                 </div>
             </div>
         </form>
@@ -926,7 +920,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <h2 class="text-lg font-semibold text-white"> Pedido</h2>
             <button onclick="cerrarModalFactura()" 
                     class="text-white hover:text-slate-200 text-2xl leading-none">
-                ✕
+                âœ•
             </button>
         </div>
         
@@ -953,7 +947,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- Header -->
         <div class="bg-orange-500 px-6 py-4 border-b border-orange-600">
             <h2 class="text-lg font-semibold text-white flex items-center">
-                <span class="mr-2">↶</span>
+                <span class="mr-2">â†¶</span>
                 Deshacer Entregado
             </h2>
         </div>
@@ -965,8 +959,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span class="text-orange-500 text-xl"></span>
                 </div>
                 <div>
-                    <h3 class="text-lg font-medium text-slate-900 mb-1">¿Deshacer marcado como entregado?</h3>
-                    <p class="text-slate-600 text-sm">El Item volvera a estado "Pendiente" y el pedido cambiara a "Pendiente" si todos los Items estan pendientes.</p>
+                    <h3 class="text-lg font-medium text-slate-900 mb-1">Ã‚Â¿Deshacer marcado como entregado?</h3>
+                    <p class="text-slate-600 text-sm">El IÂ­tem volvera a estado "Pendiente" y el pedido cambiara a "Pendiente" si todos los IÂ­tems estan pendientes.</p>
                 </div>
             </div>
         </div>
@@ -979,7 +973,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </button>
             <button id="btnConfirmarDeshacer" 
                     class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded transition-colors">
-                Si, deshacer entregado
+                SÃ­Â­, deshacer entregado
             </button>
         </div>
     </div>
@@ -1034,14 +1028,14 @@ async function cargarPendientesBodeguero() {
 
         const render = (items, target) => {
             if (!items.length) {
-                target.innerHTML = '<div class="text-slate-500 text-sm">— Sin observaciones</div>';
+                target.innerHTML = '<div class="text-slate-500 text-sm">â€” Sin observaciones</div>';
                 return;
             }
 
             target.innerHTML = items.map(item => {
                 const source = (item.source || 'despacho').toString();
                 const contenido = (item.contenido || '').toString();
-                const usuario = (item.usuario_nombre || '—').toString();
+                const usuario = (item.usuario_nombre || 'â€”').toString();
                 const rol = (item.usuario_rol || '').toString();
                 const fechaISO = item.updated_at || item.created_at || '';
                 let fechaTexto = '';
@@ -1082,7 +1076,7 @@ async function cargarPendientesBodeguero() {
 }
 
 /**
- * Marcar item como entregado
+ * Marcar iÂ­tem como entregado
  */
 async function marcarEntregado(button) {
     const fila = button.closest('tr');
@@ -1130,7 +1124,7 @@ async function marcarEntregado(button) {
             }
             
             // Cambiar el boton a estado "Entregado" con opcion de deshacer
-            button.innerHTML = '✓ Entregado <span class="ml-1 text-xs">(↶)</span>';
+            button.innerHTML = 'âœ“ Entregado <span class="ml-1 text-xs">(â†¶)</span>';
             button.classList.remove('bg-green-500', 'hover:bg-green-600');
             button.classList.add('bg-orange-500', 'hover:bg-orange-600');
             button.onclick = function() { deshacerEntregado(this); };
@@ -1141,7 +1135,6 @@ async function marcarEntregado(button) {
             // Agregar efecto visual a la fila: color azul pastel
             fila.style.backgroundColor = '#DBEAFE'; // bg-blue-100 (azul pastel)
             fila.dataset.entregado = '1';
-            inicializarAjustesCantidadesDespacho();
             
             console.log(' item marcado como entregado:', data);
         } else {
@@ -1255,12 +1248,11 @@ async function confirmarDeshacerEntregado() {
             // Quitar efecto visual de la fila
             fila.style.backgroundColor = '';
             fila.dataset.entregado = '0';
-            inicializarAjustesCantidadesDespacho();
             
             console.log(' Marcado como entregado deshecho:', data);
         } else {
             // Error: restaurar boton a estado entregado
-            button.innerHTML = '✓ Entregado <span class="ml-1 text-xs">(↶)</span>';
+            button.innerHTML = 'âœ“ Entregado <span class="ml-1 text-xs">(â†¶)</span>';
             button.classList.remove('bg-green-500', 'hover:bg-green-600');
             button.classList.add('bg-orange-500', 'hover:bg-orange-600');
             button.onclick = function() { deshacerEntregado(this); };
@@ -1272,7 +1264,7 @@ async function confirmarDeshacerEntregado() {
         console.error('Error al deshacer marcado como entregado:', error);
         
         // Restaurar boton a estado entregado
-        button.innerHTML = '✓ Entregado <span class="ml-1 text-xs">(↶)</span>';
+        button.innerHTML = 'âœ“ Entregado <span class="ml-1 text-xs">(â†¶)</span>';
         button.classList.remove('bg-green-500', 'hover:bg-green-600');
         button.classList.add('bg-orange-500', 'hover:bg-orange-600');
         button.onclick = function() { deshacerEntregado(this); };
@@ -1307,7 +1299,7 @@ async function cargarEstadoEntregas() {
                     const button = fila.querySelector('button[data-action="entrega"]');
                     if (button) {
                         // Marcar como entregado visualmente con opcion de deshacer
-                        button.innerHTML = '✓ Entregado <span class="ml-1 text-xs">(↶)</span>';
+                        button.innerHTML = 'âœ“ Entregado <span class="ml-1 text-xs">(â†¶)</span>';
                         button.classList.remove('bg-green-500', 'hover:bg-green-600');
                         button.classList.add('bg-orange-500', 'hover:bg-orange-600');
                         button.onclick = function() { deshacerEntregado(this); };
@@ -1326,9 +1318,7 @@ async function cargarEstadoEntregas() {
                 }
             });
             
-            console.log(' Estado de entregas cargado:', data.entregas.length, 'Items entregados');
-            sincronizarEstadoEntregadoFilas();
-            inicializarAjustesCantidadesDespacho();
+            console.log(' Estado de entregas cargado:', data.entregas.length, 'IÂ­tems entregados');
         }
     } catch (error) {
         console.error('Error al cargar estado de entregas:', error);
@@ -1379,8 +1369,6 @@ function cerrarMenuImpresion() {
 }
 
 window.despachoAjustesActivos = @json($ajustesActivos ?? []);
-window.despachoAjustesHistorial = @json($ajustesHistorial ?? []);
-window.despachoVistaSeleccionada = 'original';
 
 function construirClaveAjusteDespacho(fila) {
     const tipoItem = String(fila.dataset.tipo || '').trim().toLowerCase();
@@ -1391,189 +1379,53 @@ function construirClaveAjusteDespacho(fila) {
     return `${tipoItem}|${itemId}|${tallaId}|${tallaColorId}|${genero}`;
 }
 
-function construirTabsGlobalesAjustes() {
-    const wrap = document.getElementById('tabsAjustesGlobales');
-    if (!wrap) return;
-
-    const inner = wrap.querySelector('div');
-    if (!inner) return;
-
-    const params = new URLSearchParams(window.location.search);
-    const tabDesdeUrl = (params.get('tab') || '').toLowerCase();
-    if (tabDesdeUrl === 'pendientes' || tabDesdeUrl === 'original') {
-        window.despachoVistaSeleccionada = tabDesdeUrl;
-    }
-
-    const tabs = [
-        { label: 'Original', vista: 'original' },
-        { label: 'Pendientes', vista: 'pendientes' },
-    ];
-
-    tabs.forEach((tab, idx) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.dataset.vista = tab.vista;
-        const isActive = window.despachoVistaSeleccionada === tab.vista
-            || (window.despachoVistaSeleccionada !== 'pendientes' && idx === 0 && tab.vista === 'original');
-        btn.className = 'px-5 py-2 rounded-lg border text-sm font-semibold transition-colors ' + (isActive
-            ? 'bg-slate-900 text-white border-slate-900'
-            : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100');
-        btn.textContent = tab.label;
-        btn.addEventListener('click', () => {
-            window.despachoVistaSeleccionada = tab.vista;
-            inner.querySelectorAll('button[data-vista]').forEach((b) => {
-                b.className = 'px-5 py-2 rounded-lg border text-sm font-semibold transition-colors bg-white text-slate-700 border-slate-300 hover:bg-slate-100';
-            });
-            btn.className = 'px-5 py-2 rounded-lg border text-sm font-semibold transition-colors bg-slate-900 text-white border-slate-900';
-
-            const url = new URL(window.location.href);
-            url.searchParams.set('tab', tab.vista);
-            window.history.replaceState({}, '', url.toString());
-
-            inicializarAjustesCantidadesDespacho();
-        });
-        inner.appendChild(btn);
-    });
-}
-
-function cantidadPendiente(historial, original) {
-    if (!Array.isArray(historial) || historial.length === 0) {
-        return original;
-    }
-
-    const ultimo = [...historial]
-        .sort((a, b) => (parseInt(b.revision || 0, 10) || 0) - (parseInt(a.revision || 0, 10) || 0))[0];
-    return parseInt(ultimo?.cantidad_ajustada || original, 10) || original;
-}
-
 function inicializarAjustesCantidadesDespacho() {
-    const historialMap = window.despachoAjustesHistorial || {};
-    const vista = window.despachoVistaSeleccionada || 'original';
+    const ajustes = window.despachoAjustesActivos || {};
     document.querySelectorAll('#tablaDespacho tr[data-tipo]').forEach((fila) => {
         const cantidadCell = fila.querySelector('td.col-cantidad');
         if (!cantidadCell) return;
 
-        // Guardar cantidad original una sola vez para que no se pierda al re-renderizar tabs.
-        if (!fila.dataset.cantidadOriginalInicial) {
-            const originalTextoInicial = (cantidadCell.textContent || '').trim();
-            const originalInicial = parseInt(originalTextoInicial, 10);
-            if (!Number.isNaN(originalInicial)) {
-                fila.dataset.cantidadOriginalInicial = String(originalInicial);
-            }
-        }
-
-        const original = parseInt(fila.dataset.cantidadOriginalInicial || 'NaN', 10);
+        const originalTexto = (cantidadCell.textContent || '').trim();
+        const original = parseInt(originalTexto, 10);
         if (Number.isNaN(original)) return;
 
-        const rowKey = construirClaveAjusteDespacho(fila);
-        const historial = Array.isArray(historialMap[rowKey]) ? historialMap[rowKey] : [];
-        const tienePendiente = historial.length > 0;
-        const baseVigente = tienePendiente
-            ? (parseInt(historial[historial.length - 1].cantidad_ajustada || original, 10) || original)
-            : original;
-        const cantidadVista = vista === 'pendientes' ? cantidadPendiente(historial, original) : original;
-        const editable = vista === 'pendientes' && !filaEstaEntregada(fila);
+        const rowHash = construirClaveAjusteDespacho(fila);
+        const ajuste = ajustes[rowHash] || null;
+        const base = ajuste ? parseInt(ajuste.cantidad_base || original, 10) : original;
+        const ajustada = ajuste ? parseInt(ajuste.cantidad_ajustada || original, 10) : original;
+        const diferencia = Math.max(0, base - ajustada);
 
-        fila.dataset.vistaActiva = vista;
-        fila.dataset.rowHash = rowKey;
-        fila.dataset.cantidadOriginal = String(baseVigente);
-        fila.dataset.cantidadAjustada = String(cantidadVista);
+        fila.dataset.rowHash = rowHash;
+        fila.dataset.cantidadOriginal = String(base);
+        fila.dataset.cantidadAjustada = String(ajustada);
 
         cantidadCell.innerHTML = `
-            <div class="flex flex-col items-center gap-1 text-xs w-full">
-                <div class="text-slate-600">${vista === 'pendientes' ? 'Pendiente' : 'Original'}</div>
-                <input type="number" min="0" max="${cantidadVista}" value="${cantidadVista}" ${editable ? '' : 'disabled'} class="w-16 border border-slate-300 rounded px-1 py-0.5 text-center cantidad-ajustada-input ${editable ? '' : 'bg-slate-100 text-slate-500'}" />
+            <div class="flex flex-col items-center gap-1 text-xs">
+                <div class="text-slate-500">Orig: <span class="font-semibold text-slate-700">${base}</span></div>
+                <input type="number" min="0" max="${base}" value="${ajustada}" class="w-16 border border-slate-300 rounded px-1 py-0.5 text-center cantidad-ajustada-input" />
+                <div class="text-amber-700">Dif: -<span class="cantidad-dif">${diferencia}</span></div>
             </div>
         `;
 
         const input = cantidadCell.querySelector('.cantidad-ajustada-input');
-        if (!input) return;
-
-        if (!editable) {
-            return;
-        }
+        const difEl = cantidadCell.querySelector('.cantidad-dif');
+        if (!input || !difEl) return;
 
         input.addEventListener('input', () => {
             let val = parseInt(input.value || '0', 10);
             if (Number.isNaN(val)) val = 0;
             if (val < 0) val = 0;
-            if (val > cantidadVista) val = cantidadVista;
+            if (val > base) val = base;
             input.value = String(val);
+            difEl.textContent = String(Math.max(0, base - val));
             fila.dataset.cantidadAjustada = String(val);
         });
-
-        input.addEventListener('keydown', async (event) => {
-            if (event.key !== 'Enter') return;
-            event.preventDefault();
-
-            try {
-                input.disabled = true;
-                await guardarAjusteFilaDespacho(fila);
-                fila.dataset.cantidadOriginal = String(fila.dataset.cantidadAjustada || input.value);
-                input.disabled = false;
-
-                const box = cantidadCell.querySelector('.flex.flex-col');
-                if (box) {
-                    box.classList.add('bg-emerald-100', 'ring-1', 'ring-emerald-400', 'rounded');
-                    setTimeout(() => {
-                        box.classList.remove('bg-emerald-100', 'ring-1', 'ring-emerald-400', 'rounded');
-                    }, 1800);
-                }
-            } catch (error) {
-                input.disabled = false;
-                alert(error.message || 'No se pudo guardar el ajuste.');
-            }
-        });
     });
-}
-
-async function guardarAjusteFilaDespacho(fila) {
-    const input = fila.querySelector('.cantidad-ajustada-input');
-    if (!input) {
-        throw new Error('La fila no es editable.');
-    }
-    if (filaEstaEntregada(fila)) {
-        throw new Error('No se puede ajustar una fila entregada.');
-    }
-
-    const original = parseInt(fila.dataset.cantidadOriginal || '0', 10) || 0;
-    const ajustada = parseInt(fila.dataset.cantidadAjustada || '0', 10) || 0;
-    if (ajustada === original) {
-        return;
-    }
-
-    const csrf = document.querySelector('input[name="_token"]')?.value;
-    const payload = {
-        tipo_item: String(fila.dataset.tipo || '').toLowerCase(),
-        item_id: parseInt(fila.dataset.id || '0', 10) || 0,
-        talla_id: (parseInt(fila.dataset.tallaId || '0', 10) || 0) || null,
-        talla_color_id: (parseInt(fila.dataset.tallaColorId || '0', 10) || 0) || null,
-        genero: (fila.dataset.genero || '').trim() || null,
-        cantidad_original: original,
-        cantidad_ajustada: ajustada,
-    };
-
-    const res = await fetch(`/despacho/${window.pedidoId}/ajustes-cantidad`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrf,
-            'Accept': 'application/json',
-        },
-        body: JSON.stringify(payload),
-    });
-
-    const data = await res.json();
-    if (!res.ok || !data.success) {
-        throw new Error(data.message || 'No se pudo guardar el ajuste.');
-    }
 }
 
 async function guardarAjustesCantidadesDespacho() {
     const filas = Array.from(document.querySelectorAll('#tablaDespacho tr[data-tipo]'));
     const cambios = filas.filter((fila) => {
-        const input = fila.querySelector('.cantidad-ajustada-input');
-        if (!input || input.disabled) return false;
         const original = parseInt(fila.dataset.cantidadOriginal || '0', 10) || 0;
         const ajustada = parseInt(fila.dataset.cantidadAjustada || '0', 10) || 0;
         return ajustada !== original;
@@ -1615,12 +1467,14 @@ async function guardarAjustesCantidadesDespacho() {
     window.location.reload();
 }
 
+function md5(string) {
+    return window.CryptoJS ? CryptoJS.MD5(string).toString() : string;
+}
 // Cargar estado de entregas al cargar la pagina
 document.addEventListener('DOMContentLoaded', function () {
     sincronizarEstadoEntregadoFilas();
     cargarEstadoEntregas();
     cargarPendientesBodeguero();
-    construirTabsGlobalesAjustes();
     inicializarAjustesCantidadesDespacho();
 
     document.addEventListener('click', function (event) {
@@ -1952,14 +1806,14 @@ function generarHTMLFactura(datos) {
                                                 colorNombre = datosObj.color || colorNombre;
                                                 const cantidad = normalizarCantidadTalla(datosObj.cantidad ?? datosObj);
                                                 const ubicacionesDet = esEspecifico ? extraerUbicaciones(datosObj.ubicaciones) : '';
-                                                const obsDet = datosObj.observaciones || '—';
+                                                const obsDet = datosObj.observaciones || 'â€”';
 
                                                 return `
                                                 <tr style="border-bottom: 1px solid #f0f0f0;">
                                                     <td style="padding: 4px 6px; color: #1f2937; font-weight: 600;">${String(genero || '').toUpperCase()} ${tallaReal}</td>
                                                     <td style="padding: 4px 6px; color: #1f2937; font-weight: 600; text-align: center;">${cantidad}</td>
-                                                    <td style="padding: 4px 6px; color: #475569;">${colorNombre || '—'}</td>
-                                                    ${esEspecifico ? `<td style="padding: 4px 6px; color: #475569;">${ubicacionesDet || '—'}</td>` : ''}
+                                                    <td style="padding: 4px 6px; color: #475569;">${colorNombre || 'â€”'}</td>
+                                                    ${esEspecifico ? `<td style="padding: 4px 6px; color: #475569;">${ubicacionesDet || 'â€”'}</td>` : ''}
                                                     <td style="padding: 4px 6px; color: #475569;">${obsDet}</td>
                                                 </tr>
                                             `;
@@ -1982,9 +1836,9 @@ function generarHTMLFactura(datos) {
                                                         <tr style="border-bottom: 1px solid #f0f0f0;">
                                                             <td style="padding: 4px 6px; color: #1f2937; font-weight: 600;">${String(genero || '').toUpperCase()} ${tallaKey}</td>
                                                             <td style="padding: 4px 6px; color: #1f2937; font-weight: 600; text-align: center;">${cant}</td>
-                                                            <td style="padding: 4px 6px; color: #475569;">${item?.color || '—'}</td>
-                                                            ${esEspecifico ? `<td style="padding: 4px 6px; color: #475569;">—</td>` : ''}
-                                                            <td style="padding: 4px 6px; color: #475569;">—</td>
+                                                            <td style="padding: 4px 6px; color: #475569;">${item?.color || 'â€”'}</td>
+                                                            ${esEspecifico ? `<td style="padding: 4px 6px; color: #475569;">â€”</td>` : ''}
+                                                            <td style="padding: 4px 6px; color: #475569;">â€”</td>
                                                         </tr>
                                                     `;
                                                     }).join('');
@@ -1998,9 +1852,9 @@ function generarHTMLFactura(datos) {
                                                     <tr style="border-bottom: 1px solid #f0f0f0;">
                                                         <td style="padding: 4px 6px; color: #1f2937; font-weight: 600;">${String(genero || '').toUpperCase()} ${tallaReal}</td>
                                                         <td style="padding: 4px 6px; color: #1f2937; font-weight: 600; text-align: center;">${cantidad}</td>
-                                                        <td style="padding: 4px 6px; color: #475569;">${colorNombre || '—'}</td>
-                                                        ${esEspecifico ? `<td style="padding: 4px 6px; color: #475569;">—</td>` : ''}
-                                                        <td style="padding: 4px 6px; color: #475569;">—</td>
+                                                        <td style="padding: 4px 6px; color: #475569;">${colorNombre || 'â€”'}</td>
+                                                        ${esEspecifico ? `<td style="padding: 4px 6px; color: #475569;">â€”</td>` : ''}
+                                                        <td style="padding: 4px 6px; color: #475569;">â€”</td>
                                                     </tr>
                                                 `;
                                                 } else {
@@ -2009,9 +1863,9 @@ function generarHTMLFactura(datos) {
                                                     <tr style="border-bottom: 1px solid #f0f0f0;">
                                                         <td style="padding: 4px 6px; color: #1f2937; font-weight: 600;">${String(genero || '').toUpperCase()} ${tallaKey}</td>
                                                         <td style="padding: 4px 6px; color: #1f2937; font-weight: 600; text-align: center;">${cantidad}</td>
-                                                        <td style="padding: 4px 6px; color: #475569;">—</td>
-                                                        ${esEspecifico ? `<td style="padding: 4px 6px; color: #475569;">—</td>` : ''}
-                                                        <td style="padding: 4px 6px; color: #475569;">—</td>
+                                                        <td style="padding: 4px 6px; color: #475569;">â€”</td>
+                                                        ${esEspecifico ? `<td style="padding: 4px 6px; color: #475569;">â€”</td>` : ''}
+                                                        <td style="padding: 4px 6px; color: #475569;">â€”</td>
                                                     </tr>
                                                 `;
                                                 }
@@ -2030,7 +1884,7 @@ function generarHTMLFactura(datos) {
                         <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e5e7eb;">
                             <div style="font-weight: 600; color: #475569; font-size: 10px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px;">Imagenes</div>
                             <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                <div style="position: relative; cursor: pointer;" onclick="window._abrirGaleriaImagenes(${JSON.stringify(imagenes).replace(/\"/g, '&quot;')}, 'Imagenes de ${proc.tipo || proc.nombre || 'Proceso'}')">
+                                <div style="position: relative; cursor: pointer;" onclick="window._abrirGaleriaImagenes(${JSON.stringify(imagenes).replace(/\"/g, '&quot;')}, 'ImÃ¡genes de ${proc.tipo || proc.nombre || 'Proceso'}')">
                                     <img src="${primeraImagen}" style="width: 68px; height: 68px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;">
                                     ${imagenes.length > 1 ? `
                                         <div style="position: absolute; top: 4px; right: 4px; background: rgba(30, 64, 175, 0.9); color: white; font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 6px;">
@@ -2124,8 +1978,8 @@ function generarHTMLFactura(datos) {
                 // Verificar si hay colores para decidir que tabla mostrar
                 const tieneColores = todasLasTallas.some(t => t.colores && t.colores.length > 0);
                 
-                // Verificar si todas las tallas son "—" (UNISEX sin talla especifica)
-                const todasSinTalla = todasLasTallas.every(t => t.talla === '—');
+                // Verificar si todas las tallas son "â€”" (UNISEX sin talla especiÂ­fica)
+                const todasSinTalla = todasLasTallas.every(t => t.talla === 'â€”');
                 
                 if (tieneColores) {
                     // Tabla con colores
@@ -2228,8 +2082,8 @@ function generarHTMLFactura(datos) {
                     ${prenda.telas_array.map(tela => `
                         <div style="padding: 6px 0; border-bottom: 1px solid #f3f4f6;">
                             <span style="font-size: 13px; color: #374151;">
-                                <strong>Tela:</strong> ${tela.tela_nombre || '—'} 
-                                <strong style="margin-left: 12px;">Color:</strong> ${tela.color_nombre || '—'}
+                                <strong>Tela:</strong> ${tela.tela_nombre || 'â€”'} 
+                                <strong style="margin-left: 12px;">Color:</strong> ${tela.color_nombre || 'â€”'}
                                 ${tela.referencia ? `<strong style="margin-left: 12px;">Ref:</strong> ${tela.referencia}` : ''}
                             </span>
                         </div>
@@ -2239,7 +2093,7 @@ function generarHTMLFactura(datos) {
         } else if (prenda.tela || prenda.color) {
             telaHTML = `
                 <div style="margin-bottom: 12px; font-size: 13px; color: #374151;">
-                    <strong>Tela:</strong> ${prenda.tela || '—'} 
+                    <strong>Tela:</strong> ${prenda.tela || 'â€”'} 
                     ${prenda.color ? `<strong style="margin-left: 12px;">Color:</strong> ${prenda.color}` : ''}
                 </div>
             `;
@@ -2256,7 +2110,7 @@ function generarHTMLFactura(datos) {
                     ${prenda.descripcion ? `<div style="font-size: 14px; color: #6b7280; margin-top: 2px;">${prenda.descripcion}</div>` : ''}
                 </div>
                 
-                <!-- Telas (movido aqui) -->
+                <!-- Telas (movido aquiÂ­) -->
                 ${telaHTML}
                 
                 <!-- Imagen pequena -->
@@ -2335,7 +2189,7 @@ function generarHTMLFactura(datos) {
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px; margin-bottom: 8px; border-left: 3px solid #3b82f6; border-radius: 2px; background: #f8fafc;">
                             <div style="flex: 1;">
                                 <div style="font-weight: 700; color: #1e40af; margin-bottom: 4px;">${epp.nombre_completo || epp.nombre}</div>
-                                ${epp.observaciones && epp.observaciones !== '—' && epp.observaciones !== '-' ? `<div style="font-size: 11px; color: #475569;">${epp.observaciones}</div>` : ''}
+                                ${epp.observaciones && epp.observaciones !== 'â€”' && epp.observaciones !== '-' ? `<div style="font-size: 11px; color: #475569;">${epp.observaciones}</div>` : ''}
                                 ${imagenesHTML}
                             </div>
                             <div style="font-weight: 600; color: #1e40af; font-size: 14px; margin-left: 12px; margin-top: 4px;">
@@ -2374,7 +2228,7 @@ function generarHTMLFactura(datos) {
                 <div style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">FACTURA DE PEDIDO</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 12px; margin-top: 12px;">
                     <div>
-                        <div style="font-size: 10px; opacity: 0.8;">Numero</div>
+                        <div style="font-size: 10px; opacity: 0.8;">NÂºmero</div>
                         <div style="font-weight: 600;">${datos.numero_pedido}</div>
                     </div>
                     <div>
@@ -2426,18 +2280,17 @@ function generarHTMLFactura(datos) {
  */
 function imprimirTablaVacia(modo = 'all') {
     cerrarMenuImpresion();
-    sincronizarEstadoEntregadoFilas();
-    const pendientesBodegueroText = @json($pendientesBodegueroText ?? '— Sin observaciones');
-    const observacionesAsesoraText = @json($observacionesAsesoraText ?? '— Sin observaciones');
-    const mostrarAsesora = String(observacionesAsesoraText ?? '').trim() !== '' && String(observacionesAsesoraText ?? '') !== '— Sin observaciones';
+    const pendientesBodegueroText = @json($pendientesBodegueroText ?? 'â€” Sin observaciones');
+    const observacionesAsesoraText = @json($observacionesAsesoraText ?? 'â€” Sin observaciones');
+    const mostrarAsesora = String(observacionesAsesoraText ?? '').trim() !== '' && String(observacionesAsesoraText ?? '') !== 'â€” Sin observaciones';
 
     // Construir tabla HTML con 11 columnas para impresion
     let tablaHTML = `
         <table style="width: 100%; border-collapse: collapse; border: 2px solid #000;">
             <thead style="background: #f1f5f9; border-bottom: 2px solid #000;">
                 <tr>
-                    <th style="padding: 8px 4px; text-align: left; font-weight: 600; font-size: 11px; border: 1px solid #000;">Descripcion</th>
-                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 60px;">Genero</th>
+                    <th style="padding: 8px 4px; text-align: left; font-weight: 600; font-size: 11px; border: 1px solid #000;">DescripciÃ³n</th>
+                    <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 60px;">GÃ©nero</th>
                     <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 50px;">Talla</th>
                     <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 60px;">Cantidad</th>
                     <th style="padding: 8px 4px; text-align: center; font-weight: 600; font-size: 11px; border: 1px solid #000; width: 60px;">Pendiente</th>
@@ -2482,7 +2335,7 @@ function imprimirTablaVacia(modo = 'all') {
             cursor = cursor.previousElementSibling;
         }
 
-        return '—';
+        return 'â€”';
     };
 
     const limpiarCell = (cell) => {
@@ -2491,24 +2344,6 @@ function imprimirTablaVacia(modo = 'all') {
         clone.querySelectorAll('button').forEach(btn => btn.remove());
         clone.querySelectorAll('script').forEach(s => s.remove());
         return clone.textContent.trim();
-    };
-
-    const obtenerCantidadParaImprimir = (fila, modoActual) => {
-        const original = parseInt(fila.dataset.cantidadOriginalInicial || '0', 10) || 0;
-
-        if (modoActual === 'all') {
-            return String(original);
-        }
-
-        if (modoActual === 'pending') {
-            const key = construirClaveAjusteDespacho(fila);
-            const historial = Array.isArray((window.despachoAjustesHistorial || {})[key])
-                ? (window.despachoAjustesHistorial || {})[key]
-                : [];
-            return String(cantidadPendiente(historial, original));
-        }
-
-        return String(original);
     };
 
     const registros = filas.map((fila) => {
@@ -2527,9 +2362,9 @@ function imprimirTablaVacia(modo = 'all') {
             id,
             claveGrupo: `${tipo}-${id}-${descripcionTexto}`,
             descripcionHtml,
-            genero: limpiarCell(generoCell) || (fila.dataset.genero || '').trim() || '—',
-            talla: limpiarCell(tallaCell) || '—',
-            cantidad: obtenerCantidadParaImprimir(fila, modo),
+            genero: limpiarCell(generoCell) || (fila.dataset.genero || '').trim() || 'Ã¯Â¿Â½',
+            talla: limpiarCell(tallaCell) || 'Ã¯Â¿Â½',
+            cantidad: limpiarCell(cantidadCell) || '0',
         };
     });
 
@@ -2576,7 +2411,7 @@ if (filas.length === 0) {
         tablaHTML += `
             <tr>
                 <td colspan="11" style="padding: 12px; text-align: center; font-size: 11px; border: 1px solid #000;">
-                    No hay Items pendientes para imprimir.
+                    No hay IÂ­tems pendientes para imprimir.
                 </td>
             </tr>
         `;
@@ -2590,7 +2425,7 @@ if (filas.length === 0) {
     const pendientesHTML = `
         <div style="margin-top: 10px; font-size: 12px; color: #000;">
             <strong>Pendientes bodeguero:</strong>
-            <div style="margin-top: 6px; white-space: pre-wrap; font-size: 11px; color: #000;">${String(pendientesBodegueroText ?? '— Sin observaciones').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+            <div style="margin-top: 6px; white-space: pre-wrap; font-size: 11px; color: #000;">${String(pendientesBodegueroText ?? 'â€” Sin observaciones').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
         </div>
         ${mostrarAsesora ? `
             <div style="margin-top: 10px; font-size: 12px; color: #000;">
@@ -2668,16 +2503,16 @@ if (filas.length === 0) {
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 20px; border: 3px solid #000; border-radius: 10px; background: #f9fafb;">
                 <div style="text-align: left;">
                     <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: bold; color: #000;">Despacho - Pedido {{ $pedido->numero_pedido }}</h2>
-                    <p style="margin: 6px 0; font-size: 14px; color: #000;"><strong>Cliente:</strong> {{ $pedido->cliente ?? '—' }}</p>
-                    <p style="margin: 6px 0; font-size: 13px; color: #333;"><strong>Fecha de creacion:</strong> {{ $pedido->created_at ? $pedido->created_at->format('d/m/Y H:i') : '—' }}</p>
-                    <p style="margin: 6px 0; font-size: 13px; color: #333;"><strong>Orden de Compra:</strong> {{ $pedido->orden_compra ?? '—' }}</p>
+                    <p style="margin: 6px 0; font-size: 14px; color: #000;"><strong>Cliente:</strong> {{ $pedido->cliente ?? 'â€”' }}</p>
+                    <p style="margin: 6px 0; font-size: 13px; color: #333;"><strong>Fecha de creaciÃ³n:</strong> {{ $pedido->created_at ? $pedido->created_at->format('d/m/Y H:i') : 'â€”' }}</p>
+                    <p style="margin: 6px 0; font-size: 13px; color: #333;"><strong>Orden de Compra:</strong> {{ $pedido->orden_compra ?? 'â€”' }}</p>
                 </div>
                 <div style="text-align: center; flex: 1; margin: 0 20px;">
                     <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #000;">Observaciones</h3>
                     <div style="text-align: center; font-size: 12px; color: #000; line-height: 1.6; white-space: pre-wrap;">{{ $pedido->observaciones ?? 'Sin observaciones' }}</div>
                 </div>
                 <div style="text-align: right;">
-                    <p style="margin: 0; font-size: 11px; color: #666;"><strong>Fecha de impresion:</strong></p>
+                    <p style="margin: 0; font-size: 11px; color: #666;"><strong>Fecha de impresiÃ³n:</strong></p>
                     <p style="margin: 0; font-size: 10px; color: #666;">` + new Date().toLocaleString('es-CO', { 
                         year: 'numeric', 
                         month: '2-digit', 
