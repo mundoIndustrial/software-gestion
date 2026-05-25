@@ -651,14 +651,12 @@ function generarHtmlTallasParaEncargado(tallas, moduloId, asignaciones) {
                 
                 html += `
                     <div style="background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem;">
+                        ${colorDisplay ? `
                         <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-                            ${colorDisplay ? `
-                                <span style="display: inline-block; width: 16px; height: 16px; ${colorStyle} border-radius: 4px; margin-right: 0.5rem;"></span>
-                                <span style="font-size: 0.875rem; font-weight: 500; color: #374151;">${color}</span>
-                            ` : `
-                                <span style="font-size: 0.875rem; font-weight: 500; color: #6b7280;">Sin color</span>
-                            `}
+                            <span style="display: inline-block; width: 16px; height: 16px; ${colorStyle} border-radius: 4px; margin-right: 0.5rem;"></span>
+                            <span style="font-size: 0.875rem; font-weight: 500; color: #374151;">${color}</span>
                         </div>
+                        ` : ''}
                         <div style="display: grid; gap: 0.5rem;">
                 `;
                 
@@ -674,6 +672,11 @@ function generarHtmlTallasParaEncargado(tallas, moduloId, asignaciones) {
                     const maxDisponible = getMaxDisponibleParaModulo(tallaIdUnico, moduloId);
                     const disponible = getDisponibleRestanteGlobal(tallaIdUnico);
                     const isSelected = asignado > 0;
+                    
+                    // NO mostrar tallas con disponibilidad 0
+                    if (disponible <= 0 && !isSelected) {
+                        return;
+                    }
                     
                     if (asignado > maxDisponible) {
                         window.actualizarAsignacion(tallaIdUnico, moduloId, maxDisponible);
@@ -836,14 +839,12 @@ function generarHtmlTallasParaParte(tallasParte, moduloId, asignaciones) {
             
             html += `
                 <div style="background: #fafafa; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.5rem;">
+                    ${colorDisplay ? `
                     <div style="display: flex; align-items: center; margin-bottom: 0.25rem; font-size: 0.75rem;">
-                        ${colorDisplay ? `
-                            <span style="display: inline-block; width: 12px; height: 12px; ${colorStyle} border-radius: 3px; margin-right: 0.4rem;"></span>
-                            <span style="font-weight: 500; color: #374151;">${color}</span>
-                        ` : `
-                            <span style="font-weight: 500; color: #6b7280;">Sin color</span>
-                        `}
+                        <span style="display: inline-block; width: 12px; height: 12px; ${colorStyle} border-radius: 3px; margin-right: 0.4rem;"></span>
+                        <span style="font-weight: 500; color: #374151;">${color}</span>
                     </div>
+                    ` : ''}
                     <div style="display: grid; gap: 0.4rem;">
             `;
             
@@ -959,14 +960,12 @@ window.renderTallasDisponibles = function() {
             
             html += `
                 <div style="background: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.75rem;">
+                    ${colorDisplay ? `
                     <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-                        ${colorDisplay ? `
-                            <span style="display: inline-block; width: 16px; height: 16px; ${colorStyle} border-radius: 4px; margin-right: 0.5rem;"></span>
-                            <span style="font-size: 0.875rem; font-weight: 500; color: #374151;">${color}</span>
-                        ` : `
-                            <span style="font-size: 0.875rem; font-weight: 500; color: #6b7280;">Sin color</span>
-                        `}
+                        <span style="display: inline-block; width: 16px; height: 16px; ${colorStyle} border-radius: 4px; margin-right: 0.5rem;"></span>
+                        <span style="font-size: 0.875rem; font-weight: 500; color: #374151;">${color}</span>
                     </div>
+                    ` : ''}
                     <div style="display: grid; gap: 0.5rem;">
             `;
             
@@ -2682,14 +2681,12 @@ window.renderTallasDisponiblesTallerEdicion = function() {
 
             html += `
                 <div style="background: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.75rem;">
+                    ${colorDisplay ? `
                     <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-                        ${colorDisplay ? `
-                            <span style="display: inline-block; width: 16px; height: 16px; ${colorStyle} border-radius: 4px; margin-right: 0.5rem;"></span>
-                            <span style="font-size: 0.875rem; font-weight: 500; color: #374151;">${color}</span>
-                        ` : `
-                            <span style="font-size: 0.875rem; font-weight: 500; color: #6b7280;">Sin color</span>
-                        `}
+                        <span style="display: inline-block; width: 16px; height: 16px; ${colorStyle} border-radius: 4px; margin-right: 0.5rem;"></span>
+                        <span style="font-size: 0.875rem; font-weight: 500; color: #374151;">${color}</span>
                     </div>
+                    ` : ''}
                     <div style="display: grid; gap: 0.5rem;">
             `;
 

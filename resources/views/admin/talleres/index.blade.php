@@ -245,7 +245,7 @@
                         <label>Nombre del Taller</label>
                         <div class="input-with-icon">
                             <span class="material-symbols-rounded">person</span>
-                            <input type="text" name="name" required placeholder="Nombre completo o comercial">
+                            <input type="text" name="name" required placeholder="Nombre completo">
                         </div>
                     </div>
                 </div>
