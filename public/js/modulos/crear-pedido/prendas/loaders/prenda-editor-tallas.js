@@ -16,9 +16,10 @@ class PrendaEditorTallas {
      * Cargar tallas y cantidades
      */
     static cargar(prenda) {
+        const tallasNormalizadas = this._resolverTallas(prenda || {});
         console.log(' [Tallas] Cargando:', {
-            generos: Object.keys(prenda.cantidad_talla || {}),
-            estructura: typeof prenda.cantidad_talla
+            generos: Object.keys(tallasNormalizadas || {}),
+            estructura: typeof tallasNormalizadas
         });
         
         const container = document.getElementById('tarjetas-generos-container');
@@ -31,7 +32,7 @@ class PrendaEditorTallas {
         container.innerHTML = '';
         console.log('[Tallas]  Tarjetas limpias');
         
-        const tallasData = prenda.tallasRelacionales || prenda.cantidad_talla;
+        const tallasData = tallasNormalizadas;
         if (!tallasData) {
             console.warn(' [Tallas] Sin datos de tallas');
             return;
@@ -124,7 +125,7 @@ class PrendaEditorTallas {
         this._actualizarTotal();
         
         //  Replicar a global para que sea editable
-        const tallasAUsar = prenda.cantidad_talla || prenda.tallasRelacionales;
+        const tallasAUsar = tallasNormalizadas;
         if (tallasAUsar) {
             globalThis.tallasRelacionales = JSON.parse(JSON.stringify(tallasAUsar));
             console.log('[Carga]  Tallas replicadas en globalThis.tallasRelacionales');
@@ -298,7 +299,8 @@ class PrendaEditorTallas {
      * Marcar géneros como seleccionados
      */
     static marcarGeneros(prenda) {
-        if (!prenda.cantidad_talla) return;
+        const tallasData = this._resolverTallas(prenda || {});
+        if (!tallasData) return;
         
         //  PRIMERO: Desmarcar TODOS los géneros
         ['dama', 'caballero', 'sobremedida'].forEach(genero => {
@@ -311,7 +313,7 @@ class PrendaEditorTallas {
         });
         
         // 🟢 LUEGO: Marcar SOLO los que tienen datos reales (tallas con cantidades > 0)
-        Object.entries(prenda.cantidad_talla).forEach(([genero, tallas]) => {
+        Object.entries(tallasData).forEach(([genero, tallas]) => {
             // Verificar si este género tiene al menos una talla con cantidad > 0
             const tieneDatos = Object.values(tallas || {}).some(val => parseInt(val) > 0);
             
@@ -326,6 +328,68 @@ class PrendaEditorTallas {
                 }
             }
         });
+    }
+
+    /**
+     * Resolver tallas desde cualquier estructura soportada.
+     * Prioriza fuentes normalizadas y cae a variantes/tallas legacy.
+     * @private
+     */
+    static _resolverTallas(prenda) {
+        const fuentes = [
+            prenda.tallasRelacionales,
+            prenda.cantidad_talla,
+            prenda.generosConTallas,
+            prenda.tallas
+        ];
+
+        for (const fuente of fuentes) {
+            const normalizada = this._normalizarFuenteTallas(fuente);
+            if (normalizada) return normalizada;
+        }
+
+        return this._construirDesdeVariantes(prenda.variantes);
+    }
+
+    static _normalizarFuenteTallas(fuente) {
+        if (!fuente || typeof fuente !== 'object') return null;
+        if (Array.isArray(fuente)) return null;
+
+        const resultado = {};
+        Object.entries(fuente).forEach(([generoRaw, tallasRaw]) => {
+            if (!tallasRaw || typeof tallasRaw !== 'object' || Array.isArray(tallasRaw)) return;
+            const genero = String(generoRaw).toUpperCase().trim();
+            resultado[genero] = {};
+
+            Object.entries(tallasRaw).forEach(([tallaRaw, cantidadRaw]) => {
+                const cantidad = parseInt(cantidadRaw, 10) || 0;
+                if (cantidad > 0) {
+                    resultado[genero][String(tallaRaw).trim()] = cantidad;
+                }
+            });
+
+            if (Object.keys(resultado[genero]).length === 0) {
+                delete resultado[genero];
+            }
+        });
+
+        return Object.keys(resultado).length > 0 ? resultado : null;
+    }
+
+    static _construirDesdeVariantes(variantes) {
+        if (!Array.isArray(variantes) || variantes.length === 0) return null;
+
+        const resultado = {};
+        variantes.forEach((v) => {
+            const genero = String(v?.genero || 'DAMA').toUpperCase().trim();
+            const talla = String(v?.talla || '').trim();
+            const cantidad = parseInt(v?.cantidad, 10) || 0;
+            if (!talla || cantidad <= 0) return;
+            if (!resultado[genero]) resultado[genero] = {};
+            resultado[genero][talla] = (resultado[genero][talla] || 0) + cantidad;
+        });
+
+        return Object.keys(resultado).length > 0 ? resultado : null;
     }
 
     /**

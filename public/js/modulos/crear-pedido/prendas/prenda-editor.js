@@ -208,7 +208,12 @@ class PrendaEditor {
             PrendaEditorTallas.cargar(prenda);
             PrendaEditorTallas.marcarGeneros(prenda);
             // Replicar a global para edicion
-            if (prenda.cantidad_talla || prenda.tallasRelacionales) {
+            if (typeof PrendaEditorTallas._resolverTallas === 'function') {
+                const tallas = PrendaEditorTallas._resolverTallas(prenda);
+                if (tallas) {
+                    window.tallasRelacionales = JSON.parse(JSON.stringify(tallas));
+                }
+            } else if (prenda.cantidad_talla || prenda.tallasRelacionales) {
                 const tallas = prenda.cantidad_talla || prenda.tallasRelacionales;
                 window.tallasRelacionales = JSON.parse(JSON.stringify(tallas));
             }
