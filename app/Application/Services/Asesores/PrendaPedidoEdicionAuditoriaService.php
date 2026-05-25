@@ -54,6 +54,20 @@ class PrendaPedidoEdicionAuditoriaService
         );
     }
 
+    public function registrarEppHomologado(
+        int $pedidoId,
+        int $pedidoEppId,
+        int $eppIdHomologado,
+        bool $notificar = true
+    ): void {
+        PedidoAnexoHistorial::registrarEppHomologado(
+            $pedidoId,
+            $pedidoEppId,
+            $eppIdHomologado,
+            $notificar
+        );
+    }
+
     public function obtenerNombresColores(array $colorIds): array
     {
         if (empty($colorIds)) {

@@ -172,4 +172,36 @@ class PedidoAnexoHistorial extends Model
 
         return $anexo;
     }
+
+    /**
+     * Registra que se homologó un EPP de un pedido ya existente.
+     */
+    public static function registrarEppHomologado(
+        int $pedidoProduccionId,
+        int $pedidoEppId,
+        int $eppId,
+        bool $notificar = true
+    ): self {
+        $anexo = self::create([
+            'pedido_produccion_id' => $pedidoProduccionId,
+            'tipo'                 => 'EPP',
+            'referencia_id'        => $pedidoEppId,
+            'descripcion'          => 'EPP HOMOLOGADO #' . $eppId,
+            'created_by'           => auth()->id(),
+        ]);
+
+        if ($notificar) {
+            $pedido = $anexo->pedido;
+            News::create([
+                'event_type' => 'epp_homologado',
+                'table_name' => 'pedido_anexos_historial',
+                'record_id' => $anexo->id,
+                'description' => "Se ha HOMOLOGADO un EPP en la Orden #" . ($pedido->numero_pedido ?? $pedido->id),
+                'user_id' => auth()->id(),
+                'pedido' => $pedido->numero_pedido ?? $pedido->id,
+            ]);
+        }
+
+        return $anexo;
+    }
 }

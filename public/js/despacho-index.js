@@ -925,6 +925,63 @@
     }
 
     // ==================== WEBSOCKET / REALTIME ====================
+    const __despachoEventosProcesados = new Set();
+    function __marcarEventoProcesado(clave) {
+        if (!clave) return false;
+        if (__despachoEventosProcesados.has(clave)) return true;
+        __despachoEventosProcesados.add(clave);
+        if (__despachoEventosProcesados.size > 500) {
+            const first = __despachoEventosProcesados.values().next().value;
+            if (first) __despachoEventosProcesados.delete(first);
+        }
+        return false;
+    }
+
+    function __moverPedidoAlInicioRealtime(pedidoId, pedidoData = null) {
+        if (!pedidoId) return;
+        const tbody = document.querySelector('table tbody');
+        if (!tbody) return;
+        let row = tbody.querySelector(`tr[data-pedido-id="${pedidoId}"]`);
+
+        // Si el pedido no existe en la tabla actual, intentamos insertarlo
+        // cuando el estado corresponde a pendientes visibles en despacho.
+        if (!row && pedidoData) {
+            const estado = String(pedidoData.estado || '').toLowerCase();
+            const estadosDespacho = [
+                'pendiente_cartera',
+                'pendiente insumos',
+                'pendiente_insumos',
+                'pendiente',
+                'en ejecución',
+                'en_ejecucion',
+                'en produccion',
+                'en_produccion',
+                'no iniciado',
+                'no_iniciado',
+                'aprobado_supervisor',
+                'pendiente_supervisor'
+            ];
+            const esVisible = estadosDespacho.some((s) => estado.includes(s));
+            if (esVisible && pedidoData.id) {
+                insertarNuevoPedidoEnTabla(pedidoData);
+                row = tbody.querySelector(`tr[data-pedido-id="${pedidoId}"]`);
+            }
+        }
+
+        if (!row) return;
+        const firstDataRow = Array.from(tbody.querySelectorAll('tr')).find((tr) => tr.hasAttribute('data-pedido-id'));
+        if (firstDataRow && firstDataRow !== row) {
+            tbody.insertBefore(row, firstDataRow);
+        }
+        if (pedidoData && typeof pedidoData.novedades === 'string') {
+            const textarea = row.querySelector(`textarea.despacho-novedades-preview[data-pedido-id="${pedidoId}"]`);
+            if (textarea) {
+                textarea.value = pedidoData.novedades.trim() ? pedidoData.novedades : '-';
+                textarea.title = pedidoData.novedades || '';
+            }
+        }
+    }
+
     function setupObservacionesRealtime() {
         // Usar window.waitForEcho para esperar a que Echo esté disponible
         if (typeof window.waitForEcho !== 'function') {
@@ -954,6 +1011,9 @@
                 }
                 
                 console.log('[Despacho] ✅ Procesando actualización de pedido:', pedido.id);
+                const dupKey = 'custom:' + pedido.id + ':' + (event.detail?.timestamp || '');
+                if (__marcarEventoProcesado(dupKey)) return;
+                __moverPedidoAlInicioRealtime(pedido.id, pedido);
                 
                 // Actualizar novedades si existen
                 if (pedido.novedades) {
@@ -1055,10 +1115,14 @@
                 
                 if (!pedidoId) {
                     console.warn('[Despacho] No se pudo extraer pedido_id del evento');
+
+
                     return;
                 }
 
+                if (__marcarEventoProcesado('channel:' + pedidoId + ':' + (e?.timestamp || e?.pedido?.updated_at || ''))) return;
                 console.log('[Despacho] ✅ Actualizando novedades para pedido:', pedidoId);
+                __moverPedidoAlInicioRealtime(pedidoId, e?.pedido || null);
 
                 const novedades = e?.pedido?.novedades;
                 if (typeof novedades === 'string') {
@@ -1206,6 +1270,8 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        // Suscribir realtime primero para no perder eventos mientras cargan previews.
+        setupObservacionesRealtime();
         
         try {
             const rows = Array.from(document.querySelectorAll('tr[data-pedido-id]'));
@@ -1220,9 +1286,6 @@
                 // Refresh badges after loading previews
                 await refrescarBadgesObservacionesDespacho();
                 refrescarBadgesNovedadesDespacho();
-
-                // Setup WebSocket para tiempo real
-                setupObservacionesRealtime();
             };
             ejecutar();
         } catch (e) {
@@ -1255,4 +1318,3 @@
         });
     });
 })();
-

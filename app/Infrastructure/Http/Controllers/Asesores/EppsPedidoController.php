@@ -123,10 +123,11 @@ class EppsPedidoController
                 implode(', ', auth()?->user()?->getRoleNames()?->toArray() ?? ['Asesor'])
             );
 
-            $this->prendaPedidoEdicionAuditoriaService->registrarEppNuevo(
+            $this->prendaPedidoEdicionAuditoriaService->registrarEppHomologado(
                 (int) $id,
                 (int) $resultado['epp_id_nuevo'],
-                (int) ($resultado['cambios']['epp_id_nuevo'] ?? 0)
+                (int) ($resultado['cambios']['epp_id_nuevo'] ?? 0),
+                false
             );
 
             return $this->json($resultado, 200);
