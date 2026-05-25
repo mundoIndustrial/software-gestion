@@ -309,74 +309,7 @@ function openReciboCorteBodegaModal(id) {
             console.log('[RCB] Datos recibidos:', data);
 
             if (data.success) {
-                // Llenar datos
-                document.getElementById('rcb-day').textContent = data.dia;
-                document.getElementById('rcb-month').textContent = data.mes;
-                document.getElementById('rcb-year').textContent = data.ano;
-
-                document.getElementById('rcb-prenda-title').textContent = 'PRENDA 1';
-                document.getElementById('rcb-prenda-desc').textContent = data.descripcion || '';
-                document.getElementById('rcb-total-qty').textContent = data.total;
-                const numeroRecibo = Number(data.numero_recibo ?? 0);
-                document.getElementById('rcb-order-pedido').textContent = numeroRecibo > 0 ? `#${numeroRecibo}` : '#';
-
-                // Llenar tallas
-                const tallasList = document.getElementById('rcb-tallas-list');
-                tallasList.innerHTML = '';
-
-                const grupos = new Map(); // genero -> color -> ["M:12", "L:11"]
-                const sinGenero = [];
-
-                data.tallas.forEach((item) => {
-                    const genero = (item.genero || '').toString().trim().toUpperCase();
-                    const tallaValor = (item.talla || '').toString().trim().toUpperCase();
-                    const color = (item.color || '').toString().trim().toUpperCase();
-                    const cantidad = parseInt(item.cantidad || '0', 10);
-                    if (cantidad <= 0) return;
-
-                    const esSoloCantidad = tallaValor === '' || tallaValor === 'UNICA';
-                    if (genero === '') {
-                        const detalle = esSoloCantidad ? `${cantidad}` : `${tallaValor}:${cantidad}`;
-                        sinGenero.push(detalle);
-                        return;
-                    }
-
-                    if (!grupos.has(genero)) grupos.set(genero, new Map());
-                    const porColor = grupos.get(genero);
-                    const colorKey = color !== '' ? color : 'SIN COLOR';
-                    if (!porColor.has(colorKey)) porColor.set(colorKey, []);
-
-                    if (esSoloCantidad) {
-                        porColor.get(colorKey).push(`${cantidad}`);
-                    } else {
-                        porColor.get(colorKey).push(`${tallaValor}:${cantidad}`);
-                    }
-                });
-
-                grupos.forEach((porColor, genero) => {
-                    const bloque = document.createElement('div');
-                    let html = `<span style="color: #1f2937;"><strong>${genero}</strong></span><br>`;
-                    porColor.forEach((detalles, color) => {
-                        const lineaColor = color === 'SIN COLOR'
-                            ? `${detalles.join(', ')}`
-                            : `${color}: ${detalles.join(', ')}`;
-                        html += `<span style="color: red;"><strong>${lineaColor}</strong></span><br>`;
-                    });
-                    bloque.innerHTML = html;
-                    tallasList.appendChild(bloque);
-                });
-
-                if (sinGenero.length > 0) {
-                    const span = document.createElement('div');
-                    span.innerHTML = `<span style="color: red;"><strong>${sinGenero.join(', ')}</strong></span><br>`;
-                    tallasList.appendChild(span);
-                }
-
-                // Mostrar modal
-                document.getElementById('rcb-modal-wrapper').classList.add('is-visible');
-                document.getElementById('rcb-modal-overlay').classList.add('is-visible');
-                document.getElementById('rcb-floating-buttons').classList.add('is-visible');
-                resetReciboCorteBodegaZoom();
+                renderReciboCorteBodegaData(data);
             }
         })
         .catch(error => {
@@ -384,6 +317,105 @@ function openReciboCorteBodegaModal(id) {
             alert('Error al cargar el recibo: ' + error.message);
         });
 }
+
+function openReciboCorteBodegaParcialModal(id) {
+    console.log('[RCB] Abriendo modal parcial para id:', id);
+
+    fetch(`/api/recibo-corte-bodega/parcial/${id}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Error al cargar el recibo parcial');
+            return response.json();
+        })
+        .then(data => {
+            console.log('[RCB] Datos parcial recibidos:', data);
+            if (data.success) {
+                renderReciboCorteBodegaData(data);
+            }
+        })
+        .catch(error => {
+            console.error('[RCB] Error parcial:', error);
+            alert('Error al cargar el recibo parcial: ' + error.message);
+        });
+}
+
+function renderReciboCorteBodegaData(data) {
+    const tipoRecibo = String(data.tipo_recibo || '').trim().toUpperCase();
+    const title = tipoRecibo === 'COSTURA'
+        ? 'RECIBO DE COSTURA'
+        : 'RECIBO DE CORTE\nPARA BODEGA';
+    const titleHtml = title.replace('\n', '<br>');
+    const titleNode = document.querySelector('#rcb-modal-wrapper .receipt-title');
+    if (titleNode) titleNode.innerHTML = titleHtml;
+
+    document.getElementById('rcb-day').textContent = data.dia;
+    document.getElementById('rcb-month').textContent = data.mes;
+    document.getElementById('rcb-year').textContent = data.ano;
+
+    document.getElementById('rcb-prenda-title').textContent = 'PRENDA 1';
+    document.getElementById('rcb-prenda-desc').textContent = data.descripcion || '';
+    document.getElementById('rcb-total-qty').textContent = data.total;
+    const numeroRecibo = Number(data.numero_recibo ?? 0);
+    document.getElementById('rcb-order-pedido').textContent = numeroRecibo > 0 ? `#${numeroRecibo}` : '#';
+
+    const tallasList = document.getElementById('rcb-tallas-list');
+    tallasList.innerHTML = '';
+
+    const grupos = new Map();
+    const sinGenero = [];
+
+    data.tallas.forEach((item) => {
+        const genero = (item.genero || '').toString().trim().toUpperCase();
+        const tallaValor = (item.talla || '').toString().trim().toUpperCase();
+        const color = (item.color || '').toString().trim().toUpperCase();
+        const cantidad = parseInt(item.cantidad || '0', 10);
+        if (cantidad <= 0) return;
+
+        const esSoloCantidad = tallaValor === '' || tallaValor === 'UNICA';
+        if (genero === '') {
+            const detalle = esSoloCantidad ? `${cantidad}` : `${tallaValor}:${cantidad}`;
+            sinGenero.push(detalle);
+            return;
+        }
+
+        if (!grupos.has(genero)) grupos.set(genero, new Map());
+        const porColor = grupos.get(genero);
+        const colorKey = color !== '' ? color : 'SIN COLOR';
+        if (!porColor.has(colorKey)) porColor.set(colorKey, []);
+
+        if (esSoloCantidad) {
+            porColor.get(colorKey).push(`${cantidad}`);
+        } else {
+            porColor.get(colorKey).push(`${tallaValor}:${cantidad}`);
+        }
+    });
+
+    grupos.forEach((porColor, genero) => {
+        const bloque = document.createElement('div');
+        let html = `<span style="color: #1f2937;"><strong>${genero}</strong></span><br>`;
+        porColor.forEach((detalles, color) => {
+            const lineaColor = color === 'SIN COLOR'
+                ? `${detalles.join(', ')}`
+                : `${color}: ${detalles.join(', ')}`;
+            html += `<span style="color: red;"><strong>${lineaColor}</strong></span><br>`;
+        });
+        bloque.innerHTML = html;
+        tallasList.appendChild(bloque);
+    });
+
+    if (sinGenero.length > 0) {
+        const span = document.createElement('div');
+        span.innerHTML = `<span style="color: red;"><strong>${sinGenero.join(', ')}</strong></span><br>`;
+        tallasList.appendChild(span);
+    }
+
+    document.getElementById('rcb-modal-wrapper').classList.add('is-visible');
+    document.getElementById('rcb-modal-overlay').classList.add('is-visible');
+    document.getElementById('rcb-floating-buttons').classList.add('is-visible');
+    resetReciboCorteBodegaZoom();
+}
+
+window.renderReciboCorteBodegaData = renderReciboCorteBodegaData;
+window.openReciboCorteBodegaParcialModal = openReciboCorteBodegaParcialModal;
 
 function closeReciboCorteBodegaModal() {
     document.getElementById('rcb-modal-wrapper').classList.remove('is-visible');
@@ -410,6 +442,7 @@ function printReciboCorteBodegaModal() {
     const total = (document.getElementById('rcb-total-qty')?.textContent || '').trim();
     const tallasText = (document.getElementById('rcb-tallas-list')?.innerText || '').trim();
     const numeroRecibo = (document.getElementById('rcb-order-pedido')?.textContent || '').trim();
+    const receiptTitle = (document.querySelector('#rcb-modal-wrapper .receipt-title')?.innerHTML || 'RECIBO DE CORTE<br>PARA BODEGA').trim();
 
     const esc = (value) => String(value || '')
         .replace(/&/g, '&amp;')
@@ -482,7 +515,7 @@ function printReciboCorteBodegaModal() {
           </div>
         </div>
         <div class="header-right">
-          <div class="receipt-title-print">RECIBO DE CORTE<br>PARA BODEGA</div>
+          <div class="receipt-title-print">${receiptTitle}</div>
           <div class="recibo-number-print">${esc(numeroRecibo)}</div>
         </div>
       </div>

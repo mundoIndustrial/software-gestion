@@ -187,7 +187,9 @@ class ObtenerOrdenesAsignadasUseCase
                 esDividido: $esDividido,
                 encargadoDisplay: $esDividido ? 'Distribuido en talleres' : ($primerRecibo->taller_encargado ?? 'Sin asignar'),
                 distribucion: $esDividido ? 'Ver Distribución' : 'Sin dividir',
-                distribucionDetalles: $distribucionDetalles
+                distribucionDetalles: $distribucionDetalles,
+                pedidoProduccionId: isset($primerRecibo->pedido_produccion_id) ? (int) $primerRecibo->pedido_produccion_id : null,
+                prendaId: isset($primerRecibo->prenda_id) ? (int) $primerRecibo->prenda_id : null
             );
 
             $ordenes[] = $orden->toArray();
@@ -232,6 +234,7 @@ class ObtenerOrdenesAsignadasUseCase
 
                 $distribucion[] = [
                     'numero_recibo_parte' => $numeroParte,
+                    'recibo_parcial_id' => $recibo->id ?? null,
                     'talla' => $tallaNombre,
                     'cantidad' => $cantidadTotal,
                     'taller_nombre' => $recibo->taller_encargado ?? 'Sin asignar',

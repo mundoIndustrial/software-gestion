@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Role;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class TalleresController extends Controller
 {
@@ -144,6 +146,107 @@ class TalleresController extends Controller
         }
     }
 
+    public function apiReciboCompleto(Request $request)
+    {
+        try {
+            $numeroRecibo = trim((string) $request->query('numero_recibo', ''));
+            $tipoRecibo = strtoupper(trim((string) $request->query('tipo_recibo', '')));
+
+            if ($numeroRecibo === '' || $tipoRecibo === '') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Parámetros incompletos'
+                ], 422);
+            }
+
+            // CORTE-PARA-BODEGA: resolver por consecutivo base
+            if ($tipoRecibo === 'CORTE-PARA-BODEGA') {
+                $prendaBodegaId = DB::table('consecutivos_recibos_pedidos')
+                    ->where('tipo_recibo', 'CORTE-PARA-BODEGA')
+                    ->where('consecutivo_actual', $numeroRecibo)
+                    ->orderByDesc('id')
+                    ->value('prenda_bodega_id');
+
+                if (!$prendaBodegaId) {
+                    return response()->json(['success' => false, 'message' => 'Recibo no encontrado'], 404);
+                }
+
+                $prenda = DB::table('prenda_bodega')->where('id', $prendaBodegaId)->first();
+                if (!$prenda) {
+                    return response()->json(['success' => false, 'message' => 'Prenda no encontrada'], 404);
+                }
+
+                $tallas = DB::table('prenda_tallas_bodega')
+                    ->where('prenda_bodega_id', $prendaBodegaId)
+                    ->get(['talla', 'genero', 'color', 'cantidad']);
+
+                $fecha = Carbon::parse($prenda->created_at);
+                return response()->json([
+                    'success' => true,
+                    'tipo_recibo' => 'CORTE-PARA-BODEGA',
+                    'numero_recibo' => (float) $numeroRecibo,
+                    'descripcion' => $prenda->descripcion ?? '',
+                    'dia' => $fecha->format('d'),
+                    'mes' => $fecha->format('m'),
+                    'ano' => $fecha->format('Y'),
+                    'tallas' => $tallas->map(fn($t) => [
+                        'talla' => $t->talla,
+                        'genero' => $t->genero,
+                        'color' => $t->color,
+                        'cantidad' => (int) $t->cantidad,
+                    ])->toArray(),
+                    'total' => (int) $tallas->sum('cantidad'),
+                ]);
+            }
+
+            // COSTURA: resolver por consecutivo base
+            $reciboBase = DB::table('consecutivos_recibos_pedidos')
+                ->where('tipo_recibo', 'COSTURA')
+                ->where('consecutivo_actual', $numeroRecibo)
+                ->orderByDesc('id')
+                ->first();
+
+            if (!$reciboBase || !$reciboBase->prenda_id) {
+                return response()->json(['success' => false, 'message' => 'Recibo de costura no encontrado'], 404);
+            }
+
+            $prenda = DB::table('prendas_pedido')->where('id', $reciboBase->prenda_id)->first();
+            $tallasColor = DB::table('prenda_pedido_tallas as ppt')
+                ->leftJoin('prenda_pedido_talla_colores as ppc', 'ppc.prenda_pedido_talla_id', '=', 'ppt.id')
+                ->where('ppt.prenda_pedido_id', $reciboBase->prenda_id)
+                ->get([
+                    'ppt.talla',
+                    'ppt.genero',
+                    DB::raw('COALESCE(ppc.color_nombre, "") as color'),
+                    DB::raw('COALESCE(ppc.cantidad, ppt.cantidad) as cantidad')
+                ]);
+
+            $fecha = Carbon::parse($reciboBase->created_at);
+            return response()->json([
+                'success' => true,
+                'tipo_recibo' => 'COSTURA',
+                'numero_recibo' => (float) $numeroRecibo,
+                'descripcion' => $prenda->descripcion ?? ($prenda->nombre_prenda ?? ''),
+                'dia' => $fecha->format('d'),
+                'mes' => $fecha->format('m'),
+                'ano' => $fecha->format('Y'),
+                'tallas' => $tallasColor->map(fn($t) => [
+                    'talla' => $t->talla,
+                    'genero' => $t->genero,
+                    'color' => $t->color,
+                    'cantidad' => (int) $t->cantidad,
+                ])->toArray(),
+                'total' => (int) $tallasColor->sum('cantidad'),
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error en apiReciboCompleto: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener recibo completo'
+            ], 500);
+        }
+    }
+
     public function toggleStatus($id, \App\Application\Talleres\UseCases\ToggleEstadoTallerUseCase $useCase)
     {
         $result = $useCase->execute($id);
@@ -187,4 +290,3 @@ class TalleresController extends Controller
         return response()->json(['success' => true, 'message' => 'Taller actualizado correctamente.']);
     }
 }
-

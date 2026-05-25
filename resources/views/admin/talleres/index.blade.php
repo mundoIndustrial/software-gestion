@@ -63,7 +63,8 @@
           data-route-actualizar-precio="{{ route('talleres.actualizar-precio', ':id') }}"
           data-route-store="{{ route('talleres.store') }}"
           data-route-update="{{ route('talleres.update', ':id') }}"
-          data-route-api-ordenes="{{ route('talleres.api.ordenes') }}">
+          data-route-api-ordenes="{{ route('talleres.api.ordenes') }}"
+          data-route-api-recibo-completo="{{ route('talleres.api.recibo-completo') }}">
           
         <!-- Vista 1: Grid de Talleres -->
         <div id="viewTalleres" class="view-container">
@@ -218,6 +219,19 @@
         </div>
     </main>
 
+    @include('components.orders-components.recibo-corte-bodega-detail-modal')
+
+    <!-- Modal detalle de recibo/pedido (COSTURA) -->
+    <div id="modal-overlay"
+         style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none; pointer-events: auto;"
+         onclick="closeModalOverlay()"></div>
+    <div id="order-detail-modal-wrapper"
+         style="width: 90%; max-width: 672px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
+        <x-orders-components.order-detail-modal />
+    </div>
+    <x-orders-components.order-tracking-modal />
+    <div id="dropdowns-container" style="position: fixed; top: 0; left: 0; z-index: 999999; pointer-events: none; width: 0; height: 0; overflow: visible;"></div>
+
     <!-- Modal Nuevo Taller -->
     <div id="modalNewTaller" class="modal-talleres">
         <div class="modal-content-talleres">
@@ -277,5 +291,9 @@
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
+    <script src="{{ asset('js/ordersjs/order-detail-modal-manager.js') }}"></script>
+    <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
+    <script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}"></script>
     <script src="{{ asset('js/modulos/talleres/talleres-admin.js') }}?v={{ time() }}"></script>
 @endpush

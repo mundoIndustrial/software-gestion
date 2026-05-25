@@ -603,6 +603,11 @@ input:checked + .slider:before {
     text-align: center;
 }
 
+.col-acciones {
+    width: 90px;
+    text-align: center;
+}
+
 /* Información de prenda */
 .prenda-nombre {
     font-weight: 600;
@@ -945,6 +950,8 @@ input:checked + .slider:before {
 .rama-parte-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 10px;
     margin-bottom: 12px;
 }
 
@@ -955,6 +962,30 @@ input:checked + .slider:before {
     background: #dbeafe;
     padding: 4px 12px;
     border-radius: 4px;
+}
+
+.btn-ver-recibo-parcial {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-ver-recibo-parcial .material-symbols-rounded {
+    font-size: 18px;
+}
+
+.btn-ver-recibo-parcial:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    transform: translateY(-1px);
 }
 
 .rama-tallas {
@@ -1068,4 +1099,28 @@ input:checked + .slider:before {
 
 .btn-ver-distribucion.expanded .material-symbols-rounded {
     transform: rotate(180deg);
+}
+
+.btn-ver-recibo-completo {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-ver-recibo-completo:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    transform: translateY(-1px);
+}
+
+.btn-ver-recibo-completo .material-symbols-rounded {
+    font-size: 18px;
 }

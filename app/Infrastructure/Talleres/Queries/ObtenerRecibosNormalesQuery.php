@@ -49,6 +49,7 @@ class ObtenerRecibosNormalesQuery
         $recibosCostura = $queryCostura->select(
             'crp.id',
             'crp.consecutivo_actual as numero_recibo',
+            'crp.pedido_produccion_id',
             'pp.id as prenda_id',
             'pp.nombre_prenda',
             'pp.descripcion as descripcion_prenda',
@@ -88,6 +89,7 @@ class ObtenerRecibosNormalesQuery
         $recibosBodega = $queryBodega->select(
             'crp.id',
             'crp.consecutivo_actual as numero_recibo',
+            DB::raw('NULL as pedido_produccion_id'),
             DB::raw('NULL as prenda_id'),
             'pb.nombre as nombre_prenda',
             'pb.descripcion as descripcion_prenda',

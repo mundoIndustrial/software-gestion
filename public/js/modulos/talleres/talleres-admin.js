@@ -1101,7 +1101,7 @@ function showOrdenes(search = '', page = 1) {
                 return;
             }
 
-            let html = '<div class="table-container"><table class="table-ordenes"><thead><tr><th class="col-numero">Nº ORDEN</th><th>DESCRIPCIÓN</th><th class="col-cantidad">CANT. TOTAL</th><th>PROGRESO TOTAL</th><th>ENCARGADO</th><th>DISTRIBUCIÓN</th></tr></thead><tbody>';
+            let html = '<div class="table-container"><table class="table-ordenes"><thead><tr><th class="col-acciones">ACCIONES</th><th class="col-numero">Nº ORDEN</th><th>DESCRIPCIÓN</th><th class="col-cantidad">CANT. TOTAL</th><th>PROGRESO TOTAL</th><th>ENCARGADO</th><th>DISTRIBUCIÓN</th></tr></thead><tbody>';
 
             data.ordenes.forEach(orden => {
                 const rowClass = orden.es_dividido ? 'orden-dividida' : '';
@@ -1111,6 +1111,16 @@ function showOrdenes(search = '', page = 1) {
                 // Fila principal
                 html += `
                     <tr class="${rowClass}" data-orden-id="${orden.id}">
+                        <td class="col-acciones">
+                            <button class="btn-ver-recibo-completo"
+                                data-numero-recibo="${orden.numero_recibo}"
+                                data-tipo-recibo="${orden.tipo_recibo}"
+                                data-pedido-produccion-id="${orden.pedido_produccion_id ?? ''}"
+                                data-prenda-id="${orden.prenda_id ?? ''}"
+                                title="Ver recibo completo">
+                                <span class="material-symbols-rounded">visibility</span>
+                            </button>
+                        </td>
                         <td class="col-numero"><strong>${etiquetaOrden} #${orden.numero_recibo}</strong></td>
                         <td>
                             <div class="prenda-nombre">${orden.descripcion}</div>
@@ -1147,7 +1157,7 @@ function showOrdenes(search = '', page = 1) {
                 // Si está dividida, agregar fila expandible con distribución
                 if (orden.es_dividido) {
                     html += `<tr class="distribucion-expandible" id="distribucion-${orden.id}" style="display: none;">
-                        <td colspan="6">
+                        <td colspan="7">
                             <div class="distribucion-container">
                                 <div class="distribucion-titulo">
                                     <span class="material-symbols-rounded">call_split</span>
@@ -1167,10 +1177,16 @@ function showOrdenes(search = '', page = 1) {
                     // Renderizar cada parte con sus tallas como ramas
                     Object.keys(partesPorNumero).forEach(numeroParte => {
                         const tallas = partesPorNumero[numeroParte];
+                        const reciboParcialId = tallas.find(t => t?.recibo_parcial_id)?.recibo_parcial_id || '';
                         html += `
                             <div class="rama-parte">
                                 <div class="rama-parte-header">
                                     <span class="rama-parte-numero">${numeroParte}</span>
+                                    ${reciboParcialId ? `
+                                        <button type="button" class="btn-ver-recibo-parcial" data-recibo-parcial-id="${reciboParcialId}" title="Ver recibo parcial">
+                                            <span class="material-symbols-rounded">receipt_long</span>
+                                        </button>
+                                    ` : ''}
                                 </div>
                                 <div class="rama-tallas">`;
                         
@@ -1216,6 +1232,7 @@ function showOrdenes(search = '', page = 1) {
 
             // Inicializar eventos de distribución
             initDistribucionEvents();
+            initReciboCompletoEvents();
             
             // Inicializar eventos de paginación
             initPaginationEvents(search);
@@ -1231,6 +1248,7 @@ function showOrdenes(search = '', page = 1) {
  */
 function initDistribucionEvents() {
     const expandButtons = document.querySelectorAll('.btn-ver-distribucion');
+    const reciboButtons = document.querySelectorAll('.btn-ver-recibo-parcial');
     
     expandButtons.forEach(btn => {
         btn.addEventListener('click', function() {
@@ -1244,6 +1262,176 @@ function initDistribucionEvents() {
             }
         });
     });
+
+    reciboButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const parcialId = this.dataset.reciboParcialId;
+            if (!parcialId) return;
+            if (typeof window.openReciboCorteBodegaParcialModal === 'function') {
+                window.openReciboCorteBodegaParcialModal(parcialId);
+            } else if (typeof window.openReciboCorteBodegaModal === 'function') {
+                window.openReciboCorteBodegaModal(parcialId);
+            } else {
+                Swal.fire('Error', 'El modal de recibo no está disponible en esta vista.', 'error');
+            }
+        });
+    });
+}
+
+function initReciboCompletoEvents() {
+    const buttons = document.querySelectorAll('.btn-ver-recibo-completo');
+    const mainContainer = document.querySelector('.main-container');
+    const apiRoute = mainContainer?.dataset?.routeApiReciboCompleto;
+
+    buttons.forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const numeroRecibo = String(this.dataset.numeroRecibo || '').trim();
+            const tipoRecibo = String(this.dataset.tipoRecibo || '').trim().toUpperCase();
+            const pedidoProduccionId = String(this.dataset.pedidoProduccionId || '').trim();
+            const prendaId = String(this.dataset.prendaId || '').trim();
+            if (!numeroRecibo || !tipoRecibo) return;
+
+            try {
+                // COSTURA se abre con el modal completo de pedido (order-detail-modal-wrapper)
+                if (tipoRecibo === 'COSTURA') {
+                    if (
+                        typeof window.pedidosRecibosModule !== 'undefined' &&
+                        window.pedidosRecibosModule &&
+                        typeof window.pedidosRecibosModule.abrirRecibo === 'function' &&
+                        pedidoProduccionId &&
+                        prendaId
+                    ) {
+                        window.pedidosRecibosModule.abrirRecibo(
+                            Number(pedidoProduccionId),
+                            Number(prendaId),
+                            'costura'
+                        );
+                        applyReciboFechaToCosturaModal(numeroRecibo, tipoRecibo, apiRoute);
+                        setTimeout(normalizeCosturaModalForTalleres, 60);
+                        return;
+                    }
+
+                    if (typeof window.verFactura === 'function') {
+                        window.verFactura(numeroRecibo);
+                        applyReciboFechaToCosturaModal(numeroRecibo, tipoRecibo, apiRoute);
+                        setTimeout(normalizeCosturaModalForTalleres, 60);
+                        return;
+                    }
+                    const pedidoLimpio = numeroRecibo.replace('#', '');
+                    let costuraResponse = await fetch(`/registros/${pedidoLimpio}`);
+                    if (!costuraResponse.ok) {
+                        costuraResponse = await fetch(`/orders/${pedidoLimpio}`);
+                    }
+                    if (!costuraResponse.ok) {
+                        throw new Error('No se pudo cargar el recibo de costura');
+                    }
+                    const costuraData = await costuraResponse.json();
+                    window.dispatchEvent(new CustomEvent('load-order-detail', { detail: costuraData }));
+                    applyReciboFechaToCosturaModal(numeroRecibo, tipoRecibo, apiRoute);
+                    setTimeout(normalizeCosturaModalForTalleres, 60);
+                    return;
+                }
+
+                if (!apiRoute) {
+                    throw new Error('Ruta de recibo completo no disponible');
+                }
+
+                const url = new URL(apiRoute, window.location.origin);
+                url.searchParams.set('numero_recibo', numeroRecibo);
+                url.searchParams.set('tipo_recibo', tipoRecibo);
+
+                const response = await fetch(url.toString());
+                const raw = await response.text();
+                let data = null;
+                try {
+                    data = JSON.parse(raw);
+                } catch (e) {
+                    throw new Error(`Respuesta inválida del servidor (${response.status})`);
+                }
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'No se pudo obtener el recibo');
+                }
+
+                if (typeof window.renderReciboCorteBodegaData === 'function') {
+                    window.renderReciboCorteBodegaData(data);
+                } else {
+                    throw new Error('Modal no disponible');
+                }
+            } catch (error) {
+                console.error('Error abriendo recibo completo:', error);
+                Swal.fire('Error', error.message || 'No se pudo abrir el recibo', 'error');
+            }
+        });
+    });
+}
+
+async function applyReciboFechaToCosturaModal(numeroRecibo, tipoRecibo, apiRoute) {
+    if (!apiRoute) return;
+    try {
+        const url = new URL(apiRoute, window.location.origin);
+        url.searchParams.set('numero_recibo', String(numeroRecibo || '').trim());
+        url.searchParams.set('tipo_recibo', String(tipoRecibo || '').trim().toUpperCase());
+        const response = await fetch(url.toString());
+        const data = await response.json();
+        if (!response.ok || !data?.success) return;
+
+        const dia = String(data.dia || '').padStart(2, '0');
+        const mes = String(data.mes || '').padStart(2, '0');
+        const ano = String(data.ano || '');
+        if (!dia || !mes || !ano) return;
+
+        const paintFecha = () => {
+            const wrapper = document.getElementById('order-detail-modal-wrapper');
+            if (!wrapper) return false;
+
+            const dayBox = wrapper.querySelector('.day-box');
+            const monthBox = wrapper.querySelector('.month-box');
+            const yearBox = wrapper.querySelector('.year-box');
+            if (!dayBox || !monthBox || !yearBox) return false;
+
+            dayBox.textContent = dia;
+            monthBox.textContent = mes;
+            yearBox.textContent = ano;
+            return true;
+        };
+
+        // Pintar ahora y reintentar tras renders tardíos del modal.
+        paintFecha();
+        setTimeout(paintFecha, 80);
+        setTimeout(paintFecha, 220);
+        setTimeout(paintFecha, 500);
+        setTimeout(paintFecha, 900);
+    } catch (error) {
+        console.warn('No se pudo aplicar la fecha del recibo en modal de costura:', error);
+    }
+}
+
+function normalizeCosturaModalForTalleres() {
+    const rcbFloating = document.getElementById('rcb-floating-buttons');
+    if (rcbFloating) {
+        rcbFloating.classList.remove('is-visible');
+    }
+
+    const wrapper = document.getElementById('order-detail-modal-wrapper');
+    if (wrapper) {
+        wrapper.style.top = '50%';
+        wrapper.style.maxHeight = '';
+        wrapper.style.overflowY = 'visible';
+        wrapper.style.overflowX = 'visible';
+        wrapper.style.paddingRight = '0';
+    }
+
+    const btnFactura = document.getElementById('btn-factura');
+    const btnGaleria = document.getElementById('btn-galeria');
+    if (btnFactura) {
+        btnFactura.title = 'Ver galería';
+        btnFactura.innerHTML = '<i class="fas fa-images"></i>';
+    }
+    if (btnGaleria) {
+        btnGaleria.style.display = 'none';
+        btnGaleria.style.visibility = 'hidden';
+        btnGaleria.style.zIndex = '-1';
+    }
 }
 
 /**

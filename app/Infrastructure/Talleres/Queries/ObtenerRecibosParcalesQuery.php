@@ -56,6 +56,8 @@ class ObtenerRecibosParcalesQuery
         return $query->select(
             'rpp.id',
             'rpp.consecutivo_parcial as numero_recibo',
+            'rpp.pedido_produccion_id',
+            'rpp.prenda_pedido_id as prenda_id',
             DB::raw('COALESCE(pp.nombre_prenda, pb.nombre, "N/A") as nombre_prenda'),
             DB::raw('COALESCE(pp.descripcion, pb.descripcion, "N/A") as descripcion_prenda'),
             DB::raw('COALESCE(clientes.nombre, "Bodega") as cliente'),

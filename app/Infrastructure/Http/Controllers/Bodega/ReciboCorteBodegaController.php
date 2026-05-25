@@ -373,4 +373,56 @@ class ReciboCorteBodegaController extends Controller
             'total' => $totalCantidad,
         ]);
     }
+
+    public function showParcial($id)
+    {
+        $parcial = DB::table('recibo_por_partes as rpp')
+            ->leftJoin('prendas_pedido as pp', 'rpp.prenda_pedido_id', '=', 'pp.id')
+            ->where('rpp.id', $id)
+            ->select(
+                'rpp.id',
+                'rpp.consecutivo_parcial',
+                'rpp.created_at',
+                'pp.nombre_prenda',
+                'pp.descripcion as descripcion_prenda'
+            )
+            ->first();
+
+        if (!$parcial) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Recibo parcial no encontrado',
+            ], 404);
+        }
+
+        $tallas = DB::table('recibos_por_partes_tallas')
+            ->where('recibo_por_partes_id', $id)
+            ->select('talla', 'genero', 'color_nombre as color', 'cantidad')
+            ->get();
+
+        $totalCantidad = (int) $tallas->sum('cantidad');
+        $fecha = $parcial->created_at ? \Carbon\Carbon::parse($parcial->created_at) : now();
+        $numeroRecibo = $parcial->consecutivo_parcial;
+
+        return response()->json([
+            'success' => true,
+            'id' => (int) $parcial->id,
+            'numero_recibo' => $numeroRecibo !== null ? (float) $numeroRecibo : null,
+            'nombre' => $parcial->nombre_prenda ?: 'PRENDA',
+            'descripcion' => $parcial->descripcion_prenda ?: '',
+            'fecha' => $fecha->format('Y-m-d'),
+            'dia' => $fecha->format('d'),
+            'mes' => $fecha->format('m'),
+            'ano' => $fecha->format('Y'),
+            'tallas' => $tallas->map(function ($t) {
+                return [
+                    'talla' => $t->talla,
+                    'genero' => $t->genero ?: $this->inferirGeneroDesdeTalla($t->talla),
+                    'color' => $t->color,
+                    'cantidad' => (int) $t->cantidad,
+                ];
+            })->toArray(),
+            'total' => $totalCantidad,
+        ]);
+    }
 }
