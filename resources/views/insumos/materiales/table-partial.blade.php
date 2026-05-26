@@ -330,7 +330,7 @@
                                     $estadoDisplay = str_replace('_', ' ', $estadoValor ?? 'N/A');
                                 }
 
-                                $estadosEditablesInsumos = ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'Insumos Pedidos', 'INSUMOS_PEDIDOS', 'DEVUELTO_ASESOR', 'Devuelto_Asesor', 'En Ejecución', 'En Ejecucion'];
+                                $estadosEditablesInsumos = ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'Insumos Pedidos', 'INSUMOS_PEDIDOS', 'DEVUELTO_ASESOR', 'Devuelto_Asesor'];
                                 $puedeEditarInsumos = in_array($estadoValor, $estadosEditablesInsumos, true);
                                 $mostrarSelector = ($roleName !== 'insumos') || ($roleName === 'insumos' && $puedeEditarInsumos);
                             @endphp

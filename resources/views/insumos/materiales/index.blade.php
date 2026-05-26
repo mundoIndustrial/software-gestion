@@ -453,7 +453,7 @@
                                         }
                                         
                                         // Determinar si el rol insumos puede editar este estado
-                                        $estadosEditablesInsumos = ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'Insumos Pedidos', 'INSUMOS_PEDIDOS', 'DEVUELTO_ASESOR', 'Devuelto_Asesor', 'En Ejecución', 'En Ejecucion'];
+                                        $estadosEditablesInsumos = ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'Insumos Pedidos', 'INSUMOS_PEDIDOS', 'DEVUELTO_ASESOR', 'Devuelto_Asesor'];
                                         $puedeEditarInsumos = in_array($orden->estado, $estadosEditablesInsumos);
                                         
                                         // Mostrar selector solo si no es insumos, o si es insumos y el estado es editable
