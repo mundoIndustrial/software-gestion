@@ -136,29 +136,68 @@ class ReciboCorteBodegaController extends Controller
 
         // Obtener encargados más recientes por número de recibo
         $encargadosMap = [];
+        $encargadosPorAreaMap = [];
         if (!empty($numerosRecibo)) {
+            $hasPrendaBodegaColumnForEncargados = Schema::hasColumn('procesos_prenda', 'prenda_bodega_id');
             $encargados = DB::table('procesos_prenda')
                 ->whereIn('numero_recibo', $numerosRecibo)
                 ->whereNotNull('encargado')
-                ->orderByDesc('fecha_de_asignacion_encargado')
+                ->orderByRaw("COALESCE(fecha_de_asignacion_encargado, updated_at, created_at, fecha_inicio) DESC")
                 ->orderByDesc('id')
-                ->select('numero_recibo', 'encargado')
-                ->get()
-                ->groupBy('numero_recibo')
-                ->map(function ($rows) {
-                    return $rows->first()->encargado;
-                })
-                ->toArray();
-            
-            $encargadosMap = $encargados;
+                ->select(array_filter([
+                    'numero_recibo',
+                    'encargado',
+                    'proceso',
+                    $hasPrendaBodegaColumnForEncargados ? 'prenda_bodega_id' : null,
+                ]))
+                ->get();
+
+            $normalizarTexto = static function (?string $valor): string {
+                $texto = strtolower(trim((string) $valor));
+                $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $texto);
+                if ($ascii !== false) {
+                    $texto = $ascii;
+                }
+                $texto = preg_replace('/[^a-z0-9]+/', '', $texto);
+                return (string) $texto;
+            };
+
+            foreach ($encargados as $row) {
+                $numero = (int) ($row->numero_recibo ?? 0);
+                if ($numero <= 0) {
+                    continue;
+                }
+
+                $procesoKey = $normalizarTexto((string) ($row->proceso ?? ''));
+                $prendaBodegaId = $hasPrendaBodegaColumnForEncargados ? (int) ($row->prenda_bodega_id ?? 0) : 0;
+
+                if (!isset($encargadosMap[$numero])) {
+                    $encargadosMap[$numero] = $row->encargado;
+                }
+
+                if ($procesoKey !== '') {
+                    $keyGeneral = $numero . '|*|' . $procesoKey;
+                    if (!isset($encargadosPorAreaMap[$keyGeneral])) {
+                        $encargadosPorAreaMap[$keyGeneral] = $row->encargado;
+                    }
+
+                    if ($prendaBodegaId > 0) {
+                        $keyEspecifica = $numero . '|' . $prendaBodegaId . '|' . $procesoKey;
+                        if (!isset($encargadosPorAreaMap[$keyEspecifica])) {
+                            $encargadosPorAreaMap[$keyEspecifica] = $row->encargado;
+                        }
+                    }
+                }
+            }
         }
 
         return response()->json([
             'success' => true,
-            'data' => $prendas->map(function ($prenda) use ($recibosMap, $fallbackProcesoMap, $encargadosMap) {
+            'data' => $prendas->map(function ($prenda) use ($recibosMap, $fallbackProcesoMap, $encargadosMap, $encargadosPorAreaMap) {
                 $numeroRecibo = $recibosMap[$prenda->id]['numero_recibo'] ?? null;
                 $pedidoProduccionId = $recibosMap[$prenda->id]['pedido_produccion_id'] ?? null;
                 $prendaId = $recibosMap[$prenda->id]['prenda_id'] ?? null;
+                $areaActual = $recibosMap[$prenda->id]['area'] ?? null;
 
                 if ((!$pedidoProduccionId || !$prendaId) && $numeroRecibo) {
                     $keyEspecifica = ((int) $numeroRecibo) . ':' . ((int) $prenda->id);
@@ -171,7 +210,26 @@ class ReciboCorteBodegaController extends Controller
                     }
                 }
 
-                $encargado = $numeroRecibo ? ($encargadosMap[$numeroRecibo] ?? null) : null;
+                $encargado = null;
+                if ($numeroRecibo) {
+                    $normalizarTexto = static function (?string $valor): string {
+                        $texto = strtolower(trim((string) $valor));
+                        $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $texto);
+                        if ($ascii !== false) {
+                            $texto = $ascii;
+                        }
+                        $texto = preg_replace('/[^a-z0-9]+/', '', $texto);
+                        return (string) $texto;
+                    };
+
+                    $areaKey = $normalizarTexto((string) $areaActual);
+                    $keyEspecificaArea = ((int) $numeroRecibo) . '|' . ((int) $prenda->id) . '|' . $areaKey;
+                    $keyGeneralArea = ((int) $numeroRecibo) . '|*|' . $areaKey;
+
+                    $encargado = $encargadosPorAreaMap[$keyEspecificaArea]
+                        ?? $encargadosPorAreaMap[$keyGeneralArea]
+                        ?? ($encargadosMap[$numeroRecibo] ?? null);
+                }
 
                 return [
                     'id' => $prenda->id,
