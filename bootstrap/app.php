@@ -92,8 +92,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'restrict-bodega-roles' => \App\Http\Middleware\RestrictBodegaRoles::class,
             'restrict-gestion-bodega' => \App\Http\Middleware\RestrictGestionBodega::class,
             'restrict-gestor-epp' => \App\Http\Middleware\RestrictGestorEpp::class,
+            'restrict-lavanderia-role' => \App\Http\Middleware\RestrictLavanderiaRole::class,
             'block-costura-reflectivo-dashboard' => \App\Http\Middleware\BlockCosturaReflectivoDashboard::class,
             'idempotency' => \App\Http\Middleware\IdempotencyKeyMiddleware::class,
+            'lavanderia-access' => \App\Http\Middleware\LavanderiaAccess::class,
         ]);
         
         //  TESTING: Deshabilitar CSRF para Postman
@@ -116,6 +118,9 @@ return Application::configure(basePath: dirname(__DIR__))
         
         // Restrict gestor_epp role to /epp routes only
         $middleware->append(\App\Http\Middleware\RestrictGestorEpp::class);
+        
+        // Restrict gestor-lavanderia role to /gestion-lavanderia routes only
+        $middleware->append(\App\Http\Middleware\RestrictLavanderiaRole::class);
         
         //  Add memory cleanup middleware to prevent memory exhaustion
         $middleware->append(\App\Http\Middleware\CleanupMemoryAfterRequest::class);

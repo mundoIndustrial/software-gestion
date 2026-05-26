@@ -24,7 +24,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        \Log::info(' AuthenticatedSessionController::store() INICIADO');
+        \Log::info('=== AuthenticatedSessionController::store() INICIADO ===');
         
         $request->authenticate();
 
@@ -36,10 +36,19 @@ class AuthenticatedSessionController extends Controller
         // Redirigir según el rol del usuario (SIN permitir rutas no autorizadas)
         $user = Auth::user();
         
-        \Log::info(' Usuario autenticado', [
+        \Log::info('Usuario después de authenticate', [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+        ]);
+        
+        // Recargar el usuario para asegurar que tiene los datos más recientes
+        $user = \App\Models\User::find($user->id);
+        
+        \Log::info('Usuario después de find', [
             'user_id' => $user->id,
             'user_name' => $user->name,
             'roles_ids' => json_encode($user->roles_ids ?? []),
+            'roles_ids_type' => gettype($user->roles_ids),
         ]);
 
         if ($user && $user->hasRole('visualizador_recibos_logo')) {
@@ -63,11 +72,25 @@ class AuthenticatedSessionController extends Controller
             return redirect(route('epp.gestion', absolute: false));
         }
         
+        // Gestor Lavandería - Solo acceso a gestión de lavandería
+        \Log::info('=== VERIFICANDO ROL GESTOR-LAVANDERIA ===', [
+            'user_id' => $user->id,
+            'roles_ids' => $user->roles_ids,
+            'has_role_result' => $user->hasRole('gestor-lavanderia'),
+            'roles_collection' => $user->roles->pluck('name')->toArray(),
+        ]);
+        
+        if ($user && $user->hasRole('gestor-lavanderia')) {
+            \Log::info('=== REDIRIGIENDO A GESTION-LAVANDERIA ===');
+            return redirect(route('gestion-lavanderia.index', absolute: false));
+        }
+        
         \Log::info('Login usuario - Roles check', [
             'user_id' => $user->id,
             'roles_ids' => $user->roles_ids,
             'role' => $user->role,
             'role_name' => $user->role ? ($user->role->name ?? 'sin nombre') : 'null',
+            'has_gestor_lavanderia' => $user->hasRole('gestor-lavanderia'),
         ]);
 
         // Verificar primero si tiene rol Despacho en roles_ids

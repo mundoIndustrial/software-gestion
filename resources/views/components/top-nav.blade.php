@@ -16,6 +16,8 @@
                 <h1 class="page-title">Seguimiento Entregas Despacho</h1>
             @elseif(request()->is('users'))
                 <h1 class="page-title">Gestión de Usuarios</h1>
+            @elseif(request()->is('gestion-lavanderia*'))
+                <h1 class="page-title">Gestión de Lavandería</h1>
             @else
                 <h1 class="page-title">@yield('page-title', 'Dashboard')</h1>
             @endif
