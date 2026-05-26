@@ -130,6 +130,13 @@
         padding: 0.4rem 0.5rem;
         outline: none;
     }
+    .insumo-textarea {
+        min-height: 36px;
+        max-height: 220px;
+        resize: none;
+        overflow: hidden;
+        line-height: 1.25;
+    }
     .insumo-input:focus {
         border-color: #0ea5e9;
         box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15);
@@ -305,7 +312,7 @@
                             <tbody id="insumosRows">
                                 <tr>
                                     <td><input class="insumo-input qty-input" type="number" min="0" step="1" name="items[0][cantidad]" placeholder="0"></td>
-                                    <td><input class="insumo-input" type="text" name="items[0][descripcion]" placeholder="Escribe manualmente el insumo"></td>
+                                    <td><textarea class="insumo-input insumo-textarea" name="items[0][descripcion]" placeholder="Escribe manualmente el insumo"></textarea></td>
                                     <td style="text-align:center;"><button type="button" class="btn-row-remove" data-remove-row>Quitar</button></td>
                                 </tr>
                             </tbody>
@@ -329,12 +336,17 @@
     document.addEventListener('DOMContentLoaded', function () {
         const rowsBody = document.getElementById('insumosRows');
         const addRowBtn = document.getElementById('addRowBtn');
+        const autoGrow = function (textarea) {
+            if (!textarea) return;
+            textarea.style.height = 'auto';
+            textarea.style.height = `${Math.min(textarea.scrollHeight, 220)}px`;
+        };
 
         const refreshIndexes = function () {
             const rows = rowsBody.querySelectorAll('tr');
             rows.forEach((row, index) => {
                 const cantidad = row.querySelector('input[name*="[cantidad]"]');
-                const descripcion = row.querySelector('input[name*="[descripcion]"]');
+                const descripcion = row.querySelector('textarea[name*="[descripcion]"]');
                 if (cantidad) cantidad.name = `items[${index}][cantidad]`;
                 if (descripcion) descripcion.name = `items[${index}][descripcion]`;
             });
@@ -355,10 +367,11 @@
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td><input class="insumo-input qty-input" type="number" min="0" step="1" name="items[${index}][cantidad]" placeholder="0"></td>
-                <td><input class="insumo-input" type="text" name="items[${index}][descripcion]" placeholder="Escribe manualmente el insumo"></td>
+                <td><textarea class="insumo-input insumo-textarea" name="items[${index}][descripcion]" placeholder="Escribe manualmente el insumo"></textarea></td>
                 <td style="text-align:center;"><button type="button" class="btn-row-remove" data-remove-row>Quitar</button></td>
             `;
             rowsBody.appendChild(row);
+            autoGrow(row.querySelector('.insumo-textarea'));
         });
 
         rowsBody.addEventListener('click', function (event) {
@@ -367,6 +380,15 @@
                 removeRow(target);
             }
         });
+
+        rowsBody.addEventListener('input', function (event) {
+            const target = event.target;
+            if (target && target.matches('.insumo-textarea')) {
+                autoGrow(target);
+            }
+        });
+
+        rowsBody.querySelectorAll('.insumo-textarea').forEach(autoGrow);
     });
 </script>
 @endpush
