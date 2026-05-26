@@ -1,0 +1,914 @@
+:root {
+    --primary-color: #2450ef;
+    --secondary-color: #6366f1;
+    --bg-color: #f8fafc;
+    --card-bg: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --accent-blue: #3b82f6;
+    --accent-green: #10b981;
+    --accent-orange: #f97316;
+    --accent-red: #ef4444;
+    --radius-lg: 24px;
+    --radius-md: 16px;
+    --radius-sm: 12px;
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.lavanderia-container {
+    background: var(--bg-color);
+    min-height: 100vh;
+    padding: 20px;
+    font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.lavanderia-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ===== SECCIÓN: REGISTRAR SALIDA ===== */
+.salida-section {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 32px;
+    box-shadow: var(--shadow-md);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.section-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--primary-color);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+
+.section-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.section-subtitle {
+    margin: 4px 0 0 0;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* Formulario de Salida */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.search-wrapper {
+    position: relative;
+}
+
+.form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-input,
+.form-select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.form-input:focus,
+.form-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(36, 80, 239, 0.1);
+}
+
+.form-input::placeholder {
+    color: #cbd5e1;
+}
+
+/* Grid responsivo */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+@media (min-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .form-grid.full {
+        grid-template-columns: 1fr;
+    }
+}
+
+.search-input-large {
+    padding: 18px 20px 18px 50px !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+    border: 2px solid #cbd5e1 !important;
+}
+
+.search-input-large::placeholder {
+    color: #cbd5e1;
+    font-weight: 400;
+}
+
+.search-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+    font-size: 18px;
+}
+
+.autocomplete-results {
+    position: fixed;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1001;
+    display: none;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.autocomplete-results.active {
+    display: block;
+}
+
+.autocomplete-item {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    font-size: 14px;
+}
+
+.autocomplete-item:hover {
+    background: #f8fafc;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+/* Firma Digital */
+.signature-section {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.signature-canvas-wrapper {
+    border: 2px dashed #cbd5e1;
+    border-radius: var(--radius-sm);
+    background: #f8fafc;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+#signatureCanvas {
+    display: block;
+    width: 100%;
+    height: 150px;
+    background: white;
+    border-radius: 8px;
+    cursor: crosshair;
+    touch-action: none;
+}
+
+.signature-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-clear-signature {
+    flex: 1;
+    padding: 10px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-clear-signature:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+/* Botones */
+.btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+    width: 100%;
+}
+
+.btn-primary:hover {
+    background: #1f3fb8;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(36, 80, 239, 0.2);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-primary:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: var(--text-main);
+    width: 100%;
+}
+
+.btn-secondary:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+/* ===== SECCIÓN: TABLA DE CONTROL ===== */
+.control-section {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-md);
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.control-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.control-table thead {
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.control-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 1px;
+}
+
+.control-table td {
+    padding: 20px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: top;
+}
+
+.control-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+/* Columna: Recibo / Tipo */
+.recibo-tipo-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.recibo-numero {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.recibo-tipo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+}
+
+.tipo-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tipo-costura {
+    background: #fed7aa;
+    color: #92400e;
+}
+
+.tipo-corte {
+    background: #bfdbfe;
+    color: #1e40af;
+}
+
+.tipo-estampado {
+    background: #fecaca;
+    color: #7f1d1d;
+}
+
+.tipo-bordado {
+    background: #d8b4fe;
+    color: #6b21a8;
+}
+
+/* Columna: Cliente */
+.cliente-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cliente-nombre {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.cliente-subtexto {
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* Columna: Prenda / Tallas */
+.prenda-tallas-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.prenda-nombre {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.tallas-enviadas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.talla-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+}
+
+/* Badges de Estado */
+.badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-partial {
+    background: #fed7aa;
+    color: #92400e;
+}
+
+.badge-completed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+/* Información de Movimiento */
+.movement-info {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.movement-info strong {
+    color: var(--text-main);
+}
+
+.signature-preview {
+    width: 60px;
+    height: 40px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.signature-preview:hover {
+    border-color: var(--primary-color);
+    background: #f0f4ff;
+}
+
+/* Acciones */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-action {
+    padding: 8px 12px;
+    font-size: 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 600;
+}
+
+.btn-action-primary {
+    background: var(--accent-green);
+    color: white;
+}
+
+.btn-action-primary:hover {
+    background: #059669;
+}
+
+.btn-action-secondary {
+    background: #e2e8f0;
+    color: var(--text-main);
+}
+
+.btn-action-secondary:hover {
+    background: #cbd5e1;
+}
+
+/* ===== INFORMACIÓN DEL RECIBO ===== */
+.recibo-info-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-md);
+    padding: 16px;
+}
+
+.info-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
+}
+
+.info-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.info-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* ===== SELECCIÓN DE TALLAS ===== */
+.tallas-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.talla-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.talla-item:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.talla-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.talla-item-content {
+    flex: 1;
+}
+
+.talla-nombre {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 2px;
+}
+
+.talla-cantidad {
+    font-size: 13px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.talla-item.checked {
+    border-color: var(--primary-color);
+    background: #f0f4ff;
+}
+
+.talla-input-cantidad {
+    width: 80px;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.talla-input-cantidad:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(36, 80, 239, 0.1);
+}
+
+/* ===== PASOS ===== */
+.paso-contenedor {
+    display: none;
+}
+
+.paso-contenedor.active {
+    display: block;
+}
+
+/* El primer paso siempre está activo por defecto */
+#paso1 {
+    display: block !important;
+}
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 20px;
+    padding-top: 40px;
+    overflow-y: auto;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    border-radius: var(--radius-lg);
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-salida-content {
+    max-width: 700px;
+    width: 100%;
+}
+
+.modal-header {
+    padding: 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    color: var(--text-main);
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    gap: 12px;
+}
+
+.modal-footer .btn {
+    flex: 1;
+}
+
+/* ===== ESTADO VACÍO ===== */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-icon {
+    font-size: 48px;
+    color: #cbd5e1;
+    margin-bottom: 16px;
+}
+
+.empty-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0 0 8px 0;
+}
+
+.empty-text {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .lavanderia-container {
+        padding: 12px;
+    }
+
+    .salida-section,
+    .control-section {
+        padding: 16px;
+        border-radius: 16px;
+    }
+
+    .section-title {
+        font-size: 18px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .control-table {
+        font-size: 12px;
+    }
+
+    .control-table th {
+        font-size: 10px;
+        padding: 12px 8px;
+    }
+
+    .control-table td {
+        padding: 16px 8px;
+    }
+
+    .recibo-numero {
+        font-size: 16px;
+    }
+
+    .cliente-nombre {
+        font-size: 14px;
+    }
+
+    .prenda-nombre {
+        font-size: 14px;
+    }
+
+    .talla-badge {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .btn-action {
+        width: 100%;
+    }
+
+    .modal-content {
+        max-width: 100%;
+        border-radius: 16px 16px 0 0;
+    }
+
+    #signatureCanvas {
+        height: 120px;
+    }
+
+    .table-wrapper {
+        font-size: 12px;
+    }
+
+    /* Tarjetas para móvil */
+    .control-table {
+        display: none;
+    }
+
+    .control-table.mobile-view {
+        display: block;
+    }
+
+    .mobile-card {
+        background: #f8fafc;
+        border-radius: var(--radius-md);
+        padding: 16px;
+        margin-bottom: 12px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .mobile-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        cursor: pointer;
+    }
+
+    .mobile-card-title {
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .mobile-card-toggle {
+        font-size: 20px;
+        transition: transform 0.3s ease;
+    }
+
+    .mobile-card-toggle.open {
+        transform: rotate(180deg);
+    }
+
+    .mobile-card-content {
+        display: none;
+        padding-top: 12px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .mobile-card-content.open {
+        display: block;
+    }
+
+    .mobile-card-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 13px;
+    }
+
+    .mobile-card-label {
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    .mobile-card-value {
+        color: var(--text-main);
+        font-weight: 600;
+    }
+}
+
+@media (max-width: 480px) {
+    .lavanderia-container {
+        padding: 8px;
+    }
+
+    .salida-section,
+    .control-section {
+        padding: 12px;
+        margin-bottom: 16px;
+    }
+
+    .section-title {
+        font-size: 16px;
+    }
+
+    .btn {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 16px;
+    }
+
+    .form-label {
+        font-size: 12px;
+    }
+
+    .form-input,
+    .form-select {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+}

@@ -14,6 +14,18 @@ Route::middleware(['auth', 'lavanderia-access'])->prefix('gestion-lavanderia')->
     Route::get('/', [LavanderiaController::class, 'index'])
         ->name('index');
     
+    // API: Buscar recibos
+    Route::get('/api/search-recibos', [LavanderiaController::class, 'searchRecibos'])
+        ->name('api.search-recibos');
+    
+    // API: Obtener movimientos
+    Route::get('/api/movimientos', [LavanderiaController::class, 'getMovimientos'])
+        ->name('api.movimientos');
+    
+    // API: Registrar salida
+    Route::post('/api/registrar-salida', [LavanderiaController::class, 'registrarSalida'])
+        ->name('api.registrar-salida');
+    
     // Ruta de diagnóstico
     Route::get('/diagnostico', function() {
         $user = auth()->user();
