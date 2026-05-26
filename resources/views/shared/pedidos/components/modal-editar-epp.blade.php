@@ -630,22 +630,40 @@
             resultadosDiv.innerHTML = '<div style="padding: 10px; color: #ef4444;">No se encontraron EPPs</div>';
             return;
         }
-        
-        let html = '';
+
+        resultadosDiv.innerHTML = '';
         resultados.forEach(epp => {
-            const nombre = epp.nombre_completo;
-            html += `
-                <div onclick="seleccionarEppBuscador(${epp.id}, '${nombre.replace(/'/g, "\\'")}', ${epp.id})" 
-                     style="padding: 12px; border-bottom: 1px solid #e5e7eb; cursor: pointer; transition: background 0.2s;"
-                     onmouseover="this.style.background='#f3f4f6'"
-                     onmouseout="this.style.background='white'">
-                    <div style="font-weight: 500; color: #1f2937;">${nombre}</div>
-                    <div style="font-size: 0.85rem; color: #6b7280;">ID: ${epp.id}</div>
-                </div>
-            `;
+            const nombre = epp.nombre_completo || '';
+            const item = document.createElement('div');
+            item.style.padding = '12px';
+            item.style.borderBottom = '1px solid #e5e7eb';
+            item.style.cursor = 'pointer';
+            item.style.transition = 'background 0.2s';
+
+            item.addEventListener('mouseover', () => {
+                item.style.background = '#f3f4f6';
+            });
+            item.addEventListener('mouseout', () => {
+                item.style.background = 'white';
+            });
+            item.addEventListener('click', () => {
+                seleccionarEppBuscador(epp.id, nombre, epp.id);
+            });
+
+            const nombreDiv = document.createElement('div');
+            nombreDiv.style.fontWeight = '500';
+            nombreDiv.style.color = '#1f2937';
+            nombreDiv.textContent = nombre;
+
+            const idDiv = document.createElement('div');
+            idDiv.style.fontSize = '0.85rem';
+            idDiv.style.color = '#6b7280';
+            idDiv.textContent = `ID: ${epp.id}`;
+
+            item.appendChild(nombreDiv);
+            item.appendChild(idDiv);
+            resultadosDiv.appendChild(item);
         });
-        
-        resultadosDiv.innerHTML = html;
     }
     
     function seleccionarEppBuscador(eppId, eppNombre, eppEppId) {
