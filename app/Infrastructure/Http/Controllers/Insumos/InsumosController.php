@@ -26,6 +26,9 @@ use App\Application\Insumos\Services\RecibosQueryService;
 use App\Models\PedidoProduccion;
 use App\Models\ConsecutivoReciboPedido;
 use App\Models\ProcesoPrenda;
+use App\Models\PedidoAnchoGeneral;
+use App\Models\PedidoMetrajeColor;
+use App\Models\PrendaTallasBodega;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -301,6 +304,8 @@ class InsumosController extends Controller
     public function guardarMateriales(Request $request, $ordenId)
     {
         try {
+            $tipoRecibo = strtoupper(trim((string) $request->input('tipo_recibo', $request->query('tipo_recibo', ''))));
+            $esBodega = $tipoRecibo === 'CORTE-PARA-BODEGA';
             $validated = $request->validate([
                 'materiales' => 'array',
                 'materiales.*.nombre' => 'required|string',
@@ -311,7 +316,10 @@ class InsumosController extends Controller
                 'materiales.*.fecha_despacho' => 'nullable|date',
                 'materiales.*.observaciones' => 'nullable|string',
                 'materiales.*.recibido' => 'boolean',
-                'prenda_id' => 'nullable|integer|exists:prendas_pedido,id',
+                'prenda_id' => 'nullable|integer',
+                'prenda_bodega_id' => 'nullable|integer',
+                'numero_recibo' => 'nullable|integer',
+                'tipo_recibo' => 'nullable|string',
             ]);
 
             // Buscar el PedidoProduccion por ID para obtener su numero_pedido
@@ -320,7 +328,10 @@ class InsumosController extends Controller
             $resultado = $this->guardarMaterialesDetalladosUseCase->execute(
                 $pedidoProduccion->numero_pedido,
                 $validated['materiales'] ?? [],
-                $validated['prenda_id'] ?? null
+                $esBodega ? null : ($validated['prenda_id'] ?? null),
+                $esBodega ? (($validated['prenda_bodega_id'] ?? null) ? (int) $validated['prenda_bodega_id'] : null) : null,
+                $esBodega ? (($validated['numero_recibo'] ?? null) ? (int) $validated['numero_recibo'] : null) : null,
+                $tipoRecibo !== '' ? $tipoRecibo : null
             );
 
             return response()->json($resultado, 200);
@@ -381,12 +392,51 @@ class InsumosController extends Controller
     public function obtenerMateriales($pedido)
     {
         try {
-            // Buscar el PedidoProduccion por ID para obtener su numero_pedido
-            $pedidoProduccion = PedidoProduccion::findOrFail((int) $pedido);
+            $prendaBodegaId = (int) request('prenda_bodega_id', 0);
+            $numeroRecibo = (int) request('numero_recibo', 0);
+            $tipoRecibo = strtoupper(trim((string) request('tipo_recibo', '')));
+            $pedidoProduccion = null;
+
+            if ((int) $pedido > 0) {
+                $pedidoProduccion = PedidoProduccion::find((int) $pedido);
+            }
+
+            if (!$pedidoProduccion && !empty($pedido)) {
+                $pedidoProduccion = PedidoProduccion::where('numero_pedido', (string) $pedido)->first();
+            }
+
+            if (
+                !$pedidoProduccion &&
+                $prendaBodegaId > 0 &&
+                $tipoRecibo === 'CORTE-PARA-BODEGA'
+            ) {
+                $pedidoProduccionId = ConsecutivoReciboPedido::query()
+                    ->where('prenda_bodega_id', $prendaBodegaId)
+                    ->whereNotNull('pedido_produccion_id')
+                    ->orderByDesc('id')
+                    ->value('pedido_produccion_id');
+
+                if ($pedidoProduccionId) {
+                    $pedidoProduccion = PedidoProduccion::find((int) $pedidoProduccionId);
+                }
+            }
+
+            if (!$pedidoProduccion) {
+                throw new \RuntimeException('No se pudo resolver el pedido para cargar insumos.');
+            }
             
+            $prendaId = request('prenda_id') ? (int) request('prenda_id') : null;
+            if ($tipoRecibo === 'CORTE-PARA-BODEGA') {
+                // En bodega, prenda_id no corresponde a prendas_pedido; evitamos filtrar mal.
+                $prendaId = null;
+            }
+
             $resultado = $this->obtenerMaterialesPedidoUseCase->execute(
                 $pedidoProduccion->numero_pedido,
-                request('prenda_id') ? (int) request('prenda_id') : null
+                $prendaId,
+                $prendaBodegaId > 0 ? $prendaBodegaId : null,
+                $numeroRecibo > 0 ? $numeroRecibo : null,
+                $tipoRecibo !== '' ? $tipoRecibo : null
             );
 
             return response()->json($resultado);
@@ -624,6 +674,33 @@ class InsumosController extends Controller
     public function obtenerColoresPrenda($numeroPedido, $prendaId)
     {
         try {
+            $tipoRecibo = strtoupper(trim((string) request('tipo_recibo', '')));
+            $prendaBodegaId = (int) request('prenda_bodega_id', 0);
+            if ($tipoRecibo === 'CORTE-PARA-BODEGA' || $prendaBodegaId > 0) {
+                $targetPrendaBodegaId = $prendaBodegaId > 0 ? $prendaBodegaId : (int) $prendaId;
+                $colores = PrendaTallasBodega::query()
+                    ->where('prenda_bodega_id', $targetPrendaBodegaId)
+                    ->whereNotNull('color')
+                    ->where('color', '!=', '')
+                    ->pluck('color')
+                    ->map(fn ($c) => strtoupper(trim((string) $c)))
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->map(fn ($c) => ['nombre' => $c, 'color' => ['nombre' => $c]])
+                    ->values()
+                    ->all();
+
+                return response()->json([
+                    'success' => true,
+                    'tipo' => 'piezas',
+                    'modo' => 'piezas',
+                    'colores' => $colores,
+                    'data' => $colores,
+                    'esMatriz' => false,
+                ]);
+            }
+
             return response()->json(
                 $this->obtenerColoresPrendaUseCase->execute((string) $numeroPedido, (int) $prendaId)
             );
@@ -641,6 +718,41 @@ class InsumosController extends Controller
     public function obtenerAnchoMetrajePrenda($numeroPedido, $prendaId)
     {
         try {
+            $tipoRecibo = strtoupper(trim((string) request('tipo_recibo', '')));
+            $prendaBodegaId = (int) request('prenda_bodega_id', 0);
+            if ($tipoRecibo === 'CORTE-PARA-BODEGA' || $prendaBodegaId > 0) {
+                $targetPrendaBodegaId = $prendaBodegaId > 0 ? $prendaBodegaId : (int) $prendaId;
+                $numeroRecibo = (int) request('numero_recibo', 0);
+
+                $anchoQuery = PedidoAnchoGeneral::query()
+                    ->where('prenda_bodega_id', $targetPrendaBodegaId);
+                $metrajeQuery = PedidoMetrajeColor::query()
+                    ->where('prenda_bodega_id', $targetPrendaBodegaId);
+                if ($numeroRecibo > 0) {
+                    $anchoQuery->where('numero_recibo', $numeroRecibo);
+                    $metrajeQuery->where('numero_recibo', $numeroRecibo);
+                }
+
+                $anchoGeneral = $anchoQuery->latest()->first();
+                $metrajesPorColor = $metrajeQuery->get();
+                $tipoModoGuardado = $anchoGeneral?->tipo_modo ?? ($metrajesPorColor->first()->tipo_modo ?? null);
+                $data = $metrajesPorColor->map(fn ($m) => [
+                    'color' => $m->color,
+                    'metraje' => $m->metraje,
+                    'talla' => null,
+                ])->values()->all();
+
+                return response()->json([
+                    'success' => true,
+                    'ancho' => $anchoGeneral?->ancho,
+                    'ancho_general' => $anchoGeneral?->ancho,
+                    'metraje' => $anchoGeneral?->metraje,
+                    'contenido_mano' => $anchoGeneral?->contenido_mano,
+                    'data' => $data,
+                    'tipo_modo' => $tipoModoGuardado,
+                ]);
+            }
+
             return response()->json(
                 $this->obtenerAnchoMetrajePrendaUseCase->execute((string) $numeroPedido, (int) $prendaId)
             );
@@ -660,11 +772,36 @@ class InsumosController extends Controller
     {
         try {
             $validated = $request->validated();
+            $tipoRecibo = strtoupper(trim((string) $request->input('tipo_recibo', $request->query('tipo_recibo', ''))));
+            $prendaBodegaId = (int) $request->input('prenda_bodega_id', $request->query('prenda_bodega_id', 0));
+            $numeroRecibo = (int) $request->input('numero_recibo', 0);
+
+            if ($numeroRecibo <= 0 && $prendaBodegaId > 0) {
+                $numeroRecibo = (int) ConsecutivoReciboPedido::query()
+                    ->where('prenda_bodega_id', $prendaBodegaId)
+                    ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
+                    ->orderByDesc('id')
+                    ->value('consecutivo_actual');
+            }
+
+            $validated['tipo_recibo'] = $tipoRecibo;
+            if ($prendaBodegaId > 0) {
+                $validated['prenda_bodega_id'] = $prendaBodegaId;
+            }
+            if ($numeroRecibo > 0) {
+                $validated['numero_recibo'] = $numeroRecibo;
+            }
+
+            $prendaId = (int) ($validated['prenda_pedido_id'] ?? 0);
+            if ($prendaId <= 0 && $prendaBodegaId > 0) {
+                // Fallback para CORTE-PARA-BODEGA: permitir guardar usando prenda_bodega_id.
+                $prendaId = $prendaBodegaId;
+            }
 
             return response()->json(
                 $this->guardarAnchoMetrajePrendaUseCase->execute(
                     (string) $numeroPedido,
-                    (int) $validated['prenda_pedido_id'],
+                    $prendaId,
                     $validated
                 )
             );
@@ -682,6 +819,41 @@ class InsumosController extends Controller
     public function eliminarAnchoMetrajePrenda(Request $request, $numeroPedido)
     {
         try {
+            $tipoRecibo = strtoupper(trim((string) $request->input('tipo_recibo', $request->query('tipo_recibo', ''))));
+            $prendaBodegaId = (int) $request->input('prenda_bodega_id', $request->query('prenda_bodega_id', 0));
+            $numeroRecibo = (int) $request->input('numero_recibo', $request->query('numero_recibo', 0));
+
+            if ($tipoRecibo === 'CORTE-PARA-BODEGA' || $prendaBodegaId > 0) {
+                $targetPrendaBodegaId = $prendaBodegaId > 0
+                    ? $prendaBodegaId
+                    : (int) $request->input('prenda_id', 0);
+
+                if ($targetPrendaBodegaId <= 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'prenda_bodega_id es requerido para eliminar en CORTE-PARA-BODEGA',
+                    ], 422);
+                }
+
+                $anchoQuery = PedidoAnchoGeneral::query()
+                    ->where('prenda_bodega_id', $targetPrendaBodegaId);
+                $metrajeQuery = PedidoMetrajeColor::query()
+                    ->where('prenda_bodega_id', $targetPrendaBodegaId);
+
+                if ($numeroRecibo > 0) {
+                    $anchoQuery->where('numero_recibo', $numeroRecibo);
+                    $metrajeQuery->where('numero_recibo', $numeroRecibo);
+                }
+
+                $anchoQuery->delete();
+                $metrajeQuery->delete();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Ancho y metraje eliminados correctamente',
+                ]);
+            }
+
             // Validar datos
             $validated = $request->validate([
                 'prenda_id' => 'required|integer|exists:prendas_pedido,id'
@@ -707,6 +879,22 @@ class InsumosController extends Controller
     public function obtenerReciboPrenda($numeroPedido, $prendaId)
     {
         try {
+            $tipoRecibo = strtoupper(trim((string) request('tipo_recibo', '')));
+            $prendaBodegaId = (int) request('prenda_bodega_id', 0);
+            if ($tipoRecibo === 'CORTE-PARA-BODEGA' || $prendaBodegaId > 0) {
+                $targetPrendaBodegaId = $prendaBodegaId > 0 ? $prendaBodegaId : (int) $prendaId;
+                $recibo = ConsecutivoReciboPedido::query()
+                    ->where('prenda_bodega_id', $targetPrendaBodegaId)
+                    ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
+                    ->orderByDesc('id')
+                    ->value('consecutivo_actual');
+
+                return response()->json([
+                    'success' => !empty($recibo),
+                    'recibo' => $recibo,
+                ]);
+            }
+
             return response()->json(
                 $this->obtenerReciboPrendaUseCase->execute((string) $numeroPedido, (int) $prendaId)
             );

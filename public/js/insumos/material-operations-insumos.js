@@ -4,8 +4,13 @@
  */
 
 function guardarInsumosModal() {
-    const pedido = document.getElementById('modalPedido').textContent;
+    const modal = document.getElementById('insumosModal');
+    const pedidoTexto = document.getElementById('modalPedido')?.textContent?.trim() || '';
+    const pedido = (modal?.dataset?.pedidoRouteSegment || pedidoTexto || '0').trim();
     const prendaId = document.getElementById('modalPrendaId').value;
+    const tipoRecibo = (modal?.dataset?.tipoRecibo || '').trim();
+    const prendaBodegaId = (modal?.dataset?.prendaBodegaId || '').trim();
+    const numeroRecibo = (modal?.dataset?.numeroRecibo || '').trim();
     const materiales = [];
 
     const tbody = document.getElementById('insumosTableBody');
@@ -49,13 +54,25 @@ function guardarInsumosModal() {
         }
     });
 
+    const body = {
+        materiales,
+        prenda_id: prendaId || null,
+        tipo_recibo: tipoRecibo || null,
+        prenda_bodega_id: prendaBodegaId ? Number(prendaBodegaId) : null,
+        numero_recibo: numeroRecibo ? Number(numeroRecibo) : null,
+    };
+
+    if (String(tipoRecibo).toUpperCase() === 'CORTE-PARA-BODEGA') {
+        body.prenda_id = null;
+    }
+
     fetch(`/insumos/materiales/${pedido}/guardar`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
         },
-        body: JSON.stringify({ materiales, prenda_id: prendaId || null }),
+        body: JSON.stringify(body),
     })
         .then(response => response.json())
         .then(data => {

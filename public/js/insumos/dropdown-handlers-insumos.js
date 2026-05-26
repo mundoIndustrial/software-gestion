@@ -195,10 +195,12 @@ function crearDropdownAcciones(event, button) {
 
     const pedidoProduccionId = button.getAttribute('data-pedido-produccion-id');
     const prendaId           = button.getAttribute('data-prenda-id');
+    const prendaBodegaId     = button.getAttribute('data-prenda-bodega-id') || '';
     const reciboId           = button.getAttribute('data-recibo-id');
     const consecutivo        = button.getAttribute('data-consecutivo');
     const estado             = button.getAttribute('data-estado');
     const tipoRecibo         = button.getAttribute('data-tipo-recibo');
+    const numeroPedido       = button.closest('tr')?.getAttribute('data-orden-pedido') || '';
     const rect               = button.getBoundingClientRect();
 
     const dropdown = document.createElement('div');
@@ -221,6 +223,8 @@ function crearDropdownAcciones(event, button) {
         <button data-insumos-action="dropdown-acciones-gestionar-insumos"
             data-pedido-produccion-id="${pedidoProduccionId}"
             data-prenda-id="${prendaId}"
+            data-prenda-bodega-id="${prendaBodegaId}"
+            data-numero-pedido="${numeroPedido}"
             data-consecutivo="${consecutivo}"
             data-estado="${estado}"
             data-tipo-recibo="${tipoRecibo}"
@@ -236,6 +240,9 @@ function crearDropdownAcciones(event, button) {
         <button data-insumos-action="dropdown-acciones-ancho-metraje"
             data-pedido-produccion-id="${pedidoProduccionId}"
             data-prenda-id="${prendaId}"
+            data-prenda-bodega-id="${prendaBodegaId}"
+            data-numero-pedido="${numeroPedido}"
+            data-tipo-recibo="${tipoRecibo}"
             style="
             width:100%;text-align:left;padding:0.875rem 1rem;border:none;
             background:transparent;cursor:pointer;color:#374151;font-size:0.875rem;

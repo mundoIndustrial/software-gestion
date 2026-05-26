@@ -4,7 +4,13 @@ namespace App\Domain\Insumos\Repositories;
 
 interface MaterialesReadRepository
 {
-    public function obtenerMaterialesPedido(string $numeroPedido, ?int $prendaId = null): array;
+    public function obtenerMaterialesPedido(
+        string $numeroPedido,
+        ?int $prendaId = null,
+        ?int $prendaBodegaId = null,
+        ?int $numeroRecibo = null,
+        ?string $tipoRecibo = null
+    ): array;
 
     public function marcarTodasNotificacionesLeidas(int $userId): array;
 
@@ -14,4 +20,3 @@ interface MaterialesReadRepository
 
     public function obtenerOpcionesFiltro(string $column, string $tipoRecibo = 'COSTURA'): array;
 }
-

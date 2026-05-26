@@ -16,6 +16,7 @@ class MaterialesOrdenInsumos extends Model
         'numero_pedido',
         'numero_recibo',
         'prenda_id',
+        'prenda_bodega_id',
         'fecha_orden',
         'fecha_pago',
         'fecha_despacho',
@@ -77,4 +78,3 @@ class MaterialesOrdenInsumos extends Model
         return max(0, $diasHabiles - 1);
     }
 }
-

@@ -522,10 +522,12 @@
                     await ensureFeatures(['modalHandlers', 'insumosModals']);
                     const pedidoProduccionId = btn.getAttribute('data-pedido-produccion-id');
                     const prendaId = btn.getAttribute('data-prenda-id');
+                    const prendaBodegaId = btn.getAttribute('data-prenda-bodega-id');
+                    const numeroPedido = btn.getAttribute('data-numero-pedido');
                     const consecutivo = btn.getAttribute('data-consecutivo');
                     const estado = btn.getAttribute('data-estado');
                     const tipoRecibo = btn.getAttribute('data-tipo-recibo');
-                    safeCall('abrirModalInsumos', [pedidoProduccionId, prendaId, consecutivo, estado, tipoRecibo], 'abrirModalInsumos no esta disponible');
+                    safeCall('abrirModalInsumos', [pedidoProduccionId, prendaId, consecutivo, estado, tipoRecibo, prendaBodegaId, numeroPedido], 'abrirModalInsumos no esta disponible');
                     safeCall('cerrarDropdownAcciones', [], 'cerrarDropdownAcciones no esta disponible');
                     break;
                 }
@@ -535,7 +537,10 @@
                     await ensureFeatures(['modalHandlers', 'insumosModals']);
                     const pedidoProduccionId = btn.getAttribute('data-pedido-produccion-id');
                     const prendaId = btn.getAttribute('data-prenda-id');
-                    safeCall('abrirModalAnchoMetraje', [pedidoProduccionId, prendaId], 'abrirModalAnchoMetraje no esta disponible');
+                    const prendaBodegaId = btn.getAttribute('data-prenda-bodega-id');
+                    const numeroPedido = btn.getAttribute('data-numero-pedido');
+                    const tipoRecibo = btn.getAttribute('data-tipo-recibo');
+                    safeCall('abrirModalAnchoMetraje', [pedidoProduccionId, prendaId, prendaBodegaId, numeroPedido, tipoRecibo], 'abrirModalAnchoMetraje no esta disponible');
                     safeCall('cerrarDropdownAcciones', [], 'cerrarDropdownAcciones no esta disponible');
                     break;
                 }

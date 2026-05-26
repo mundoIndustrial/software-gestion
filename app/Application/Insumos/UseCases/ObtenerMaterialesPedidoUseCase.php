@@ -11,9 +11,20 @@ class ObtenerMaterialesPedidoUseCase
     ) {
     }
 
-    public function execute(string $numeroPedido, ?int $prendaId = null): array
+    public function execute(
+        string $numeroPedido,
+        ?int $prendaId = null,
+        ?int $prendaBodegaId = null,
+        ?int $numeroRecibo = null,
+        ?string $tipoRecibo = null
+    ): array
     {
-        return $this->repository->obtenerMaterialesPedido($numeroPedido, $prendaId);
+        return $this->repository->obtenerMaterialesPedido(
+            $numeroPedido,
+            $prendaId,
+            $prendaBodegaId,
+            $numeroRecibo,
+            $tipoRecibo
+        );
     }
 }
-

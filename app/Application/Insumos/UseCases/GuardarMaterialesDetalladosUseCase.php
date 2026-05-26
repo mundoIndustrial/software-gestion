@@ -11,9 +11,22 @@ class GuardarMaterialesDetalladosUseCase
     ) {
     }
 
-    public function execute(string $numeroPedido, array $materiales, ?int $prendaId = null): array
+    public function execute(
+        string $numeroPedido,
+        array $materiales,
+        ?int $prendaId = null,
+        ?int $prendaBodegaId = null,
+        ?int $numeroRecibo = null,
+        ?string $tipoRecibo = null
+    ): array
     {
-        return $this->repository->guardarMaterialesDetallados($numeroPedido, $materiales, $prendaId);
+        return $this->repository->guardarMaterialesDetallados(
+            $numeroPedido,
+            $materiales,
+            $prendaId,
+            $prendaBodegaId,
+            $numeroRecibo,
+            $tipoRecibo
+        );
     }
 }
-

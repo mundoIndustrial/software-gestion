@@ -338,6 +338,7 @@
                                                 data-insumos-action="acciones-dropdown"
                                                 data-pedido-produccion-id="{{ $pedidoProduccionId }}"
                                                 data-prenda-id="{{ $orden->prenda_id ?? '' }}"
+                                                data-prenda-bodega-id="{{ $orden->prenda_bodega_id ?? '' }}"
                                                 data-recibo-id="{{ $reciboId }}"
                                                 data-consecutivo="{{ $orden->consecutivo_actual }}"
                                                 data-estado="{{ $orden->estado ?? '' }}"

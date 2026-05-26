@@ -11,6 +11,8 @@ class PedidoAnchoGeneral extends Model
     protected $fillable = [
         'pedido_produccion_id',
         'prenda_pedido_id',
+        'prenda_bodega_id',
+        'numero_recibo',
         'ancho',
         'metraje',
         'tipo_modo',

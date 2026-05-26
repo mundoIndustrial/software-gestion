@@ -11,6 +11,8 @@ class PedidoMetrajeColor extends Model
     protected $fillable = [
         'pedido_produccion_id',
         'prenda_pedido_id',
+        'prenda_bodega_id',
+        'numero_recibo',
         'color',
         'metraje',
         'tipo_modo',

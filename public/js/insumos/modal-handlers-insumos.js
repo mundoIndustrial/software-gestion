@@ -4,6 +4,45 @@
  */
 let openOrderDetailModalHandler = null;
 let pedidosRecibosModuleInstance = null;
+const DYNAMIC_CLOSE_BUTTON_ID = 'btn-cerrar-modal-dinamico';
+
+function ensureDynamicCloseButton() {
+    let btnCerrar = document.getElementById(DYNAMIC_CLOSE_BUTTON_ID);
+    if (btnCerrar) return btnCerrar;
+
+    btnCerrar = document.createElement('button');
+    btnCerrar.id = DYNAMIC_CLOSE_BUTTON_ID;
+    btnCerrar.type = 'button';
+    btnCerrar.title = 'Cerrar';
+    btnCerrar.innerHTML = '<i class="fas fa-times"></i>';
+    btnCerrar.style.cssText = [
+        'position: fixed',
+        'right: 10px',
+        'top: 10px',
+        'width: 40px',
+        'height: 40px',
+        'border-radius: 50%',
+        'background: rgba(255, 255, 255, 0.95)',
+        'border: none',
+        'color: #333',
+        'cursor: pointer',
+        'display: flex',
+        'align-items: center',
+        'justify-content: center',
+        'font-size: 24px',
+        'transition: 0.3s',
+        'box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2)',
+        'z-index: 10001',
+        'font-weight: bold',
+    ].join(';');
+
+    btnCerrar.addEventListener('click', function () {
+        closeModalOverlay();
+    });
+
+    document.body.appendChild(btnCerrar);
+    return btnCerrar;
+}
 
 async function resolveOpenOrderDetailModalHandler() {
     if (typeof openOrderDetailModalHandler === 'function') {
@@ -40,7 +79,7 @@ async function resolveOpenOrderDetailModalHandler() {
     return openOrderDetailModalHandler;
 }
 
-function abrirModalInsumos(pedido, prendaId) {
+function abrirModalInsumos(pedido, prendaId, _consecutivo = null, _estado = null, tipoRecibo = 'COSTURA', prendaBodegaId = null, numeroPedido = null) {
     const modal = document.getElementById('insumosModal');
     if (!modal) {
         console.error('[modal-handlers-insumos] Modal insumos no encontrado');
@@ -62,10 +101,21 @@ function abrirModalInsumos(pedido, prendaId) {
     if (prendaInput) prendaInput.value = prendaId || '';
     if (prendaNombre) prendaNombre.textContent = prendaId ? 'Cargando...' : 'General';
 
-    let url = `/insumos/api/materiales/${pedido}`;
-    if (prendaId) {
-        url += `?prenda_id=${prendaId}`;
-    }
+    const esReciboBodega = String(tipoRecibo || '').toUpperCase() === 'CORTE-PARA-BODEGA';
+    const pedidoId = parseInt(pedido, 10) || 0;
+    const numeroPedidoFallback = String(numeroPedido || '').trim();
+    const pedidoRouteSegment = pedidoId > 0 ? String(pedidoId) : (numeroPedidoFallback || '0');
+    modal.dataset.pedidoRouteSegment = pedidoRouteSegment;
+    modal.dataset.tipoRecibo = esReciboBodega ? 'CORTE-PARA-BODEGA' : String(tipoRecibo || 'COSTURA');
+    modal.dataset.prendaBodegaId = prendaBodegaId ? String(prendaBodegaId) : '';
+    modal.dataset.numeroRecibo = _consecutivo ? String(_consecutivo) : '';
+    const qs = new URLSearchParams();
+    if (prendaId && !esReciboBodega) qs.set('prenda_id', String(prendaId));
+    if (prendaBodegaId) qs.set('prenda_bodega_id', String(prendaBodegaId));
+    if (esReciboBodega) qs.set('tipo_recibo', 'CORTE-PARA-BODEGA');
+    if (esReciboBodega && _consecutivo) qs.set('numero_recibo', String(_consecutivo));
+    const query = qs.toString();
+    const url = `/insumos/api/materiales/${encodeURIComponent(pedidoRouteSegment)}${query ? `?${query}` : ''}`;
 
     fetch(url)
         .then((response) => response.json())
@@ -115,6 +165,7 @@ function abrirDetalleRecibo(pedidoId, prendaId, tipoRecibo, esParcial = false, p
     const parsedPedidoParcialId = pedidoParcialId ? (parseInt(pedidoParcialId, 10) || null) : null;
 
     if (tipoReciboNormalizado === 'CORTE-PARA-BODEGA') {
+        ensureDynamicCloseButton();
         toggleCamposCabeceraRecibo(false);
         ajustarPosicionNumeroPedido(true);
         configurarBotonImpresionRecibo(true);
@@ -148,6 +199,9 @@ function abrirDetalleRecibo(pedidoId, prendaId, tipoRecibo, esParcial = false, p
             }
 
             return handler(parsedPedidoId, parsedPrendaId, tipoRecibo, null, { esParcial: false });
+        })
+        .then(() => {
+            ensureDynamicCloseButton();
         })
         .catch((error) => {
             console.error('[modal-handlers-insumos] Error cargando PedidosRecibosModule:', error);
@@ -305,7 +359,7 @@ function abrirDetalleReciboCorteBodega(prendaBodegaId) {
 
             return payload;
         })
-        .then((data) => {
+        .then(async (data) => {
             const overlay = document.getElementById('modal-overlay');
             const wrapper = document.getElementById('order-detail-modal-wrapper');
             const floatingButtons = document.getElementById('floating-buttons-container');
@@ -367,7 +421,6 @@ function abrirDetalleReciboCorteBodega(prendaBodegaId) {
             const descripcionText = document.getElementById('descripcion-text');
             const title = document.getElementById('receipt-title');
             const pedido = document.getElementById('order-pedido');
-            const anchoMetraje = document.getElementById('order-ancho-metraje');
 
             if (dayBox) dayBox.textContent = String(data.dia || '--');
             if (monthBox) monthBox.textContent = String(data.mes || '--');
@@ -378,7 +431,30 @@ function abrirDetalleReciboCorteBodega(prendaBodegaId) {
             if (descripcionText) descripcionText.innerHTML = descripcionHtml;
             if (title) title.innerHTML = 'RECIBO DE CORTE<br>PARA BODEGA';
             if (pedido) pedido.textContent = numeroRecibo;
-            if (anchoMetraje) anchoMetraje.style.display = 'none';
+
+            // Cargar y renderizar ancho/metraje para CORTE-PARA-BODEGA
+            try {
+                const numeroReciboPlano = Number(data.numero_recibo || 0);
+                const qs = new URLSearchParams({
+                    prenda_bodega_id: String(prendaBodegaId),
+                    tipo_recibo: 'CORTE-PARA-BODEGA',
+                });
+                if (numeroReciboPlano > 0) {
+                    qs.set('numero_recibo', String(numeroReciboPlano));
+                }
+                const endpoint = `/insumos/materiales/${encodeURIComponent(String(prendaBodegaId))}/obtener-ancho-metraje-prenda/${encodeURIComponent(String(prendaBodegaId))}?${qs.toString()}`;
+                const anchoResp = await fetch(endpoint, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                const anchoData = await anchoResp.json().catch(() => ({}));
+                if (anchoResp.ok && anchoData?.success) {
+                    renderAnchoMetrajeInOrderDetail(anchoData);
+                } else {
+                    renderAnchoMetrajeInOrderDetail(null);
+                }
+            } catch (_) {
+                renderAnchoMetrajeInOrderDetail(null);
+            }
 
             // Refuerzo visual para CORTE-PARA-BODEGA
             toggleCamposCabeceraRecibo(false);
@@ -407,9 +483,82 @@ function abrirDetalleReciboCorteBodega(prendaBodegaId) {
         });
 }
 
+function renderAnchoMetrajeInOrderDetail(data) {
+    const contenedor = document.getElementById('order-ancho-metraje');
+    const vistaNormal = document.getElementById('ancho-metraje-normal');
+    const vistaMano = document.getElementById('ancho-metraje-mano');
+    const anchoSpan = document.getElementById('ancho-valor');
+    const metrajeSpan = document.getElementById('metraje-valor');
+    const metrajesContainer = document.getElementById('metrajes-por-color-container');
+    const contenidoMano = document.getElementById('contenido-mano');
+    const observacionesMano = document.getElementById('observaciones-mano');
+    const contenidoObservaciones = document.getElementById('contenido-observaciones');
+
+    if (!contenedor) return;
+
+    if (metrajesContainer) metrajesContainer.innerHTML = '';
+    if (contenidoMano) contenidoMano.textContent = '';
+    if (observacionesMano) observacionesMano.style.display = 'none';
+    if (contenidoObservaciones) contenidoObservaciones.textContent = '';
+    if (anchoSpan) anchoSpan.textContent = '--';
+    if (metrajeSpan) metrajeSpan.textContent = '--';
+    if (metrajeSpan?.closest('span')) metrajeSpan.closest('span').style.display = 'block';
+
+    const sinDatos = !data || !data.tipo_modo || (
+        Array.isArray(data.data) && data.data.length === 0 &&
+        !data.ancho && !data.metraje && !data.contenido_mano
+    );
+    if (sinDatos) {
+        contenedor.style.display = 'none';
+        return;
+    }
+
+    contenedor.style.display = 'block';
+    const tipoModo = String(data.tipo_modo || '').toLowerCase();
+
+    if (tipoModo === 'mano') {
+        if (vistaNormal) vistaNormal.classList.add('hidden-view');
+        if (vistaMano) vistaMano.style.display = 'block';
+        if (contenidoMano) contenidoMano.textContent = String(data.contenido_mano || '-');
+        return;
+    }
+
+    if (vistaNormal) vistaNormal.classList.remove('hidden-view');
+    if (vistaMano) vistaMano.style.display = 'none';
+
+    if (anchoSpan) {
+        anchoSpan.textContent = data.ancho ? `${data.ancho}` : '--';
+    }
+
+    const metrajesValidos = (Array.isArray(data.data) ? data.data : [])
+        .filter((item) => item && item.color && item.metraje);
+
+    if (tipoModo === 'normal') {
+        if (metrajeSpan) metrajeSpan.textContent = data.metraje ? `${data.metraje} m` : '--';
+        metrajesValidos.forEach((item) => {
+            if (!metrajesContainer) return;
+            const span = document.createElement('span');
+            span.textContent = `${String(item.color).toUpperCase()}: ${item.metraje} m`;
+            metrajesContainer.appendChild(span);
+        });
+        return;
+    }
+
+    if (metrajeSpan?.closest('span')) {
+        metrajeSpan.closest('span').style.display = 'none';
+    }
+    metrajesValidos.forEach((item) => {
+        if (!metrajesContainer) return;
+        const span = document.createElement('span');
+        span.textContent = `${String(item.color).toUpperCase()}: ${item.metraje} m`;
+        metrajesContainer.appendChild(span);
+    });
+}
+
 function closeModalOverlay() {
     const overlay = document.getElementById('modal-overlay');
     const wrapper = document.getElementById('order-detail-modal-wrapper');
+    const btnCerrarDinamico = document.getElementById(DYNAMIC_CLOSE_BUTTON_ID);
 
     if (overlay) {
         overlay.style.display = 'none';
@@ -417,6 +566,10 @@ function closeModalOverlay() {
 
     if (wrapper) {
         wrapper.style.display = 'none';
+    }
+
+    if (btnCerrarDinamico) {
+        btnCerrarDinamico.remove();
     }
 }
 

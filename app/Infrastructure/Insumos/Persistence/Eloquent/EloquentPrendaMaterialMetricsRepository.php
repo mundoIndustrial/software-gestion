@@ -63,16 +63,40 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
     public function guardarAnchoMetrajePrenda(string $numeroPedido, int $prendaId, array $datos): array
     {
         try {
-            $pedido = $this->resolverPedidoPorNumeroOId($numeroPedido);
             $tipoModoNuevo = $datos['tipo_modo'] ?? 'normal';
+            $prendaBodegaId = isset($datos['prenda_bodega_id']) ? (int) $datos['prenda_bodega_id'] : null;
+            $numeroRecibo = isset($datos['numero_recibo']) ? (int) $datos['numero_recibo'] : null;
+            $esBodega = strtoupper((string) ($datos['tipo_recibo'] ?? '')) === 'CORTE-PARA-BODEGA' || ($prendaBodegaId ?? 0) > 0;
+            $pedidoId = null;
 
-            $anchoExistente = PedidoAnchoGeneral::where('pedido_produccion_id', $pedido->id)
-                ->where('prenda_pedido_id', $prendaId)
-                ->first();
+            if (!$esBodega) {
+                $pedido = $this->resolverPedidoPorNumeroOId($numeroPedido);
+                $pedidoId = (int) $pedido->id;
+            } else {
+                // En CORTE-PARA-BODEGA NO dependemos de pedido_produccion_id para evitar colisiones
+                // con el índice único legacy (pedido_produccion_id, prenda_pedido_id).
+                $pedidoId = null;
+            }
 
-            $metrajeExistente = PedidoMetrajeColor::where('pedido_produccion_id', $pedido->id)
-                ->where('prenda_pedido_id', $prendaId)
-                ->first();
+            $anchoExistenteQuery = PedidoAnchoGeneral::query();
+            $metrajeExistenteQuery = PedidoMetrajeColor::query();
+            if ($pedidoId === null) {
+                $anchoExistenteQuery->whereNull('pedido_produccion_id');
+                $metrajeExistenteQuery->whereNull('pedido_produccion_id');
+            } else {
+                $anchoExistenteQuery->where('pedido_produccion_id', $pedidoId);
+                $metrajeExistenteQuery->where('pedido_produccion_id', $pedidoId);
+            }
+            if ($esBodega && ($prendaBodegaId ?? 0) > 0) {
+                $anchoExistenteQuery->where('prenda_bodega_id', $prendaBodegaId);
+                $metrajeExistenteQuery->where('prenda_bodega_id', $prendaBodegaId);
+            } else {
+                $anchoExistenteQuery->where('prenda_pedido_id', $prendaId);
+                $metrajeExistenteQuery->where('prenda_pedido_id', $prendaId);
+            }
+            $anchoExistente = $anchoExistenteQuery->first();
+
+            $metrajeExistente = $metrajeExistenteQuery->first();
 
             $tipoModoExistente = null;
             if ($anchoExistente && $anchoExistente->tipo_modo) {
@@ -82,24 +106,44 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
             }
 
             if ($tipoModoExistente && $tipoModoNuevo !== $tipoModoExistente) {
-                PedidoAnchoGeneral::where('pedido_produccion_id', $pedido->id)
-                    ->where('prenda_pedido_id', $prendaId)
-                    ->delete();
+                $deleteAnchoQuery = PedidoAnchoGeneral::query();
+                $deleteMetrajeQuery = PedidoMetrajeColor::query();
+                if ($pedidoId === null) {
+                    $deleteAnchoQuery->whereNull('pedido_produccion_id');
+                    $deleteMetrajeQuery->whereNull('pedido_produccion_id');
+                } else {
+                    $deleteAnchoQuery->where('pedido_produccion_id', $pedidoId);
+                    $deleteMetrajeQuery->where('pedido_produccion_id', $pedidoId);
+                }
+                if ($esBodega && ($prendaBodegaId ?? 0) > 0) {
+                    $deleteAnchoQuery->where('prenda_bodega_id', $prendaBodegaId);
+                    $deleteMetrajeQuery->where('prenda_bodega_id', $prendaBodegaId);
+                } else {
+                    $deleteAnchoQuery->where('prenda_pedido_id', $prendaId);
+                    $deleteMetrajeQuery->where('prenda_pedido_id', $prendaId);
+                }
+                $deleteAnchoQuery->delete();
 
-                PedidoMetrajeColor::where('pedido_produccion_id', $pedido->id)
-                    ->where('prenda_pedido_id', $prendaId)
-                    ->delete();
+                $deleteMetrajeQuery->delete();
 
-                \Log::info("Limpieza automatica de datos anteriores: pedido {$pedido->numero_pedido}, prenda {$prendaId}, cambio de {$tipoModoExistente} a {$tipoModoNuevo}");
+                \Log::info("Limpieza automatica de datos anteriores: pedido {$numeroPedido}, prenda {$prendaId}, cambio de {$tipoModoExistente} a {$tipoModoNuevo}");
             }
 
             if (empty($datos['color'])) {
+                $match = [
+                    'pedido_produccion_id' => $pedidoId,
+                ];
+                if ($esBodega && ($prendaBodegaId ?? 0) > 0) {
+                    $match['prenda_bodega_id'] = $prendaBodegaId;
+                } else {
+                    $match['prenda_pedido_id'] = $prendaId;
+                }
                 PedidoAnchoGeneral::updateOrCreate(
+                    $match,
                     [
-                        'pedido_produccion_id' => $pedido->id,
-                        'prenda_pedido_id' => $prendaId,
-                    ],
-                    [
+                        'prenda_pedido_id' => ($esBodega && ($prendaBodegaId ?? 0) > 0) ? null : ($prendaId ?: null),
+                        'prenda_bodega_id' => ($esBodega && ($prendaBodegaId ?? 0) > 0) ? $prendaBodegaId : null,
+                        'numero_recibo' => $numeroRecibo,
                         'ancho' => $datos['ancho'] ?? null,
                         'metraje' => $datos['metraje'] ?? null,
                         'contenido_mano' => $datos['contenido_mano'] ?? null,
@@ -109,15 +153,22 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
             }
 
             if (!empty($datos['color']) && ($datos['metraje'] ?? null) !== null) {
+                $match = [
+                    'pedido_produccion_id' => $pedidoId,
+                    'color' => $datos['color'],
+                ];
+                if ($esBodega && ($prendaBodegaId ?? 0) > 0) {
+                    $match['prenda_bodega_id'] = $prendaBodegaId;
+                } else {
+                    $match['prenda_pedido_id'] = $prendaId;
+                }
                 PedidoMetrajeColor::updateOrCreate(
+                    $match,
                     [
-                        'pedido_produccion_id' => $pedido->id,
-                        'prenda_pedido_id' => $prendaId,
-                        'color' => $datos['color'],
-                    ],
-                    [
+                        'prenda_pedido_id' => ($esBodega && ($prendaBodegaId ?? 0) > 0) ? null : ($prendaId ?: null),
+                        'prenda_bodega_id' => ($esBodega && ($prendaBodegaId ?? 0) > 0) ? $prendaBodegaId : null,
+                        'numero_recibo' => $numeroRecibo,
                         'metraje' => $datos['metraje'],
-                        'ancho' => $datos['ancho'] ?? null,
                         'tipo_modo' => $tipoModoNuevo,
                     ]
                 );
@@ -252,4 +303,3 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
         return PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
     }
 }
-

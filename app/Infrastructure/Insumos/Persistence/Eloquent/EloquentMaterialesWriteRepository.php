@@ -8,9 +8,17 @@ use App\Models\PedidoProduccion;
 
 class EloquentMaterialesWriteRepository implements MaterialesWriteRepository
 {
-    public function guardarMaterialesDetallados(string $numeroPedido, array $materiales, ?int $prendaId = null): array
+    public function guardarMaterialesDetallados(
+        string $numeroPedido,
+        array $materiales,
+        ?int $prendaId = null,
+        ?int $prendaBodegaId = null,
+        ?int $numeroRecibo = null,
+        ?string $tipoRecibo = null
+    ): array
     {
         $orden = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+        $esBodega = strtoupper(trim((string) $tipoRecibo)) === 'CORTE-PARA-BODEGA' || ($prendaBodegaId ?? 0) > 0;
 
         $materialesGuardados = 0;
         $materialesEliminados = 0;
@@ -27,14 +35,21 @@ class EloquentMaterialesWriteRepository implements MaterialesWriteRepository
                     'nombre_material' => $material['nombre'],
                 ];
 
-                if ($prendaId) {
+                if ($esBodega && ($prendaBodegaId ?? 0) > 0) {
+                    $matchCriteria['prenda_bodega_id'] = $prendaBodegaId;
+                    if (($numeroRecibo ?? 0) > 0) {
+                        $matchCriteria['numero_recibo'] = $numeroRecibo;
+                    }
+                } elseif ($prendaId) {
                     $matchCriteria['prenda_id'] = $prendaId;
                 }
 
                 MaterialesOrdenInsumos::updateOrCreate(
                     $matchCriteria,
                     [
-                        'prenda_id' => $prendaId,
+                        'prenda_id' => $esBodega ? null : $prendaId,
+                        'prenda_bodega_id' => ($esBodega && ($prendaBodegaId ?? 0) > 0) ? $prendaBodegaId : null,
+                        'numero_recibo' => ($esBodega && ($numeroRecibo ?? 0) > 0) ? $numeroRecibo : null,
                         'fecha_orden' => $material['fecha_orden'] ?? null,
                         'fecha_pedido' => $material['fecha_pedido'] ?? null,
                         'fecha_pago' => $material['fecha_pago'] ?? null,
@@ -54,7 +69,12 @@ class EloquentMaterialesWriteRepository implements MaterialesWriteRepository
                 'nombre_material' => $material['nombre'],
             ];
 
-            if ($prendaId) {
+            if ($esBodega && ($prendaBodegaId ?? 0) > 0) {
+                $deleteCriteria['prenda_bodega_id'] = $prendaBodegaId;
+                if (($numeroRecibo ?? 0) > 0) {
+                    $deleteCriteria['numero_recibo'] = $numeroRecibo;
+                }
+            } elseif ($prendaId) {
                 $deleteCriteria['prenda_id'] = $prendaId;
             }
 
@@ -125,4 +145,3 @@ class EloquentMaterialesWriteRepository implements MaterialesWriteRepository
         ];
     }
 }
-

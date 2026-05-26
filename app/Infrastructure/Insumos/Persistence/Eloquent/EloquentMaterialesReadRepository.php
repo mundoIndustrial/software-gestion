@@ -17,12 +17,27 @@ class EloquentMaterialesReadRepository implements MaterialesReadRepository
     ) {
     }
 
-    public function obtenerMaterialesPedido(string $numeroPedido, ?int $prendaId = null): array
+    public function obtenerMaterialesPedido(
+        string $numeroPedido,
+        ?int $prendaId = null,
+        ?int $prendaBodegaId = null,
+        ?int $numeroRecibo = null,
+        ?string $tipoRecibo = null
+    ): array
     {
         PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
 
         $query = MaterialesOrdenInsumos::where('numero_pedido', $numeroPedido);
-        if ($prendaId) {
+
+        $tipoReciboNormalizado = strtoupper(trim((string) $tipoRecibo));
+        $esBodega = $tipoReciboNormalizado === 'CORTE-PARA-BODEGA' || ($prendaBodegaId ?? 0) > 0;
+
+        if ($esBodega && ($prendaBodegaId ?? 0) > 0) {
+            $query->where('prenda_bodega_id', $prendaBodegaId);
+            if (($numeroRecibo ?? 0) > 0) {
+                $query->where('numero_recibo', $numeroRecibo);
+            }
+        } elseif ($prendaId) {
             $query->where('prenda_id', $prendaId);
         }
 

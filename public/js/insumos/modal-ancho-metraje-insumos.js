@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Modal Ancho y Metraje - Insumos Module (FASE 3)
  * Funciones para gestionar el modal de ancho y metraje por prenda
  * 
@@ -18,10 +18,10 @@
 
 /**
  * Abre el modal de Ancho y Metraje para una prenda especifica
- * Detecta si es prenda combinada (múltiples colores) o normal
+ * Detecta si es prenda combinada (multiples colores) o normal
  * El usuario puede elegir guardar normal o por color
  */
-function abrirModalAnchoMetraje(pedido, prendaId) {
+function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroPedido = null, tipoRecibo = 'COSTURA') {
     const modal = document.getElementById('modalAnchoMetraje');
     if (!modal) {
         console.error('[abrirModalAnchoMetraje] Modal no encontrado: modalAnchoMetraje');
@@ -29,9 +29,23 @@ function abrirModalAnchoMetraje(pedido, prendaId) {
     }
     
     modal.style.display = 'flex';
+
+    const pedidoNum = parseInt(pedido, 10) || 0;
+    const pedidoSegment = pedidoNum > 0 ? String(pedidoNum) : String(numeroPedido || '').trim();
+    const esReciboBodega = String(tipoRecibo || '').toUpperCase() === 'CORTE-PARA-BODEGA';
+    const query = new URLSearchParams();
+    if (prendaBodegaId) query.set('prenda_bodega_id', String(prendaBodegaId));
+    if (esReciboBodega) query.set('tipo_recibo', 'CORTE-PARA-BODEGA');
+    const qs = query.toString() ? `?${query.toString()}` : '';
+
+    if (!pedidoSegment) {
+        console.error('[abrirModalAnchoMetraje] No se pudo resolver pedido para construir URL', { pedido, numeroPedido, prendaId, prendaBodegaId, tipoRecibo });
+        showToast('No se pudo resolver el pedido para ancho/metraje', 'error');
+        return;
+    }
     
-    // Obtener el número de recibo
-    fetch(`/insumos/materiales/${pedido}/obtener-recibo-prenda/${prendaId}`)
+    // Obtener el numero de recibo
+    fetch(`/insumos/materiales/${encodeURIComponent(pedidoSegment)}/obtener-recibo-prenda/${prendaId}${qs}`)
         .then(r => r.json())
         .then(data => {
             if (data.success && data.recibo) {
@@ -46,8 +60,10 @@ function abrirModalAnchoMetraje(pedido, prendaId) {
         });
     
     // Guardar pedido y prenda en el modal para usarlos despues
-    modal.dataset.pedido = pedido;
+    modal.dataset.pedido = pedidoSegment;
     modal.dataset.prendaId = prendaId;
+    modal.dataset.prendaBodegaId = prendaBodegaId || '';
+    modal.dataset.tipoRecibo = tipoRecibo || 'COSTURA';
 
     // Limpiar inputs
     document.getElementById('anchoInput').value = '';
@@ -67,13 +83,13 @@ function abrirModalAnchoMetraje(pedido, prendaId) {
     document.getElementById('anchoMetrajeLoading').classList.remove('hidden');
     actualizarIndicadorModo('normal', null, false);
 
-    console.log('[abrirModalAnchoMetraje] Abriendo modal para pedido:', pedido, 'prenda:', prendaId);
+    console.log('[abrirModalAnchoMetraje] Abriendo modal para pedido:', pedidoSegment, 'prenda:', prendaId);
 
     if (prendaId) {
-        // Cargar colores y datos para rellenar los inputs según el modo seleccionado
+        // Cargar colores y datos para rellenar los inputs segun el modo seleccionado
         Promise.all([
-            fetch(`/insumos/materiales/${pedido}/obtener-colores-prenda/${prendaId}`).then(r => r.json()),
-            fetch(`/insumos/materiales/${pedido}/obtener-ancho-metraje-prenda/${prendaId}`).then(r => r.json())
+            fetch(`/insumos/materiales/${encodeURIComponent(pedidoSegment)}/obtener-colores-prenda/${prendaId}${qs}`).then(r => r.json()),
+            fetch(`/insumos/materiales/${encodeURIComponent(pedidoSegment)}/obtener-ancho-metraje-prenda/${prendaId}${qs}`).then(r => r.json())
         ])
         .then(([coloresData, datosData]) => {
             console.log('[abrirModalAnchoMetraje] Datos cargados:', { coloresData, datosData });
@@ -107,7 +123,7 @@ function abrirModalAnchoMetraje(pedido, prendaId) {
             
             console.log('[abrirModalAnchoMetraje] tipo_modo guardado:', tipoModoGuardado, 'tiene datos:', tieneDatosGuardados);
             
-            // Determinar si mostrar opción "POR PIEZA"
+            // Determinar si mostrar opcion "POR PIEZA"
             const tieneMultiplesColores = coloresData.success && 
                                          coloresData.modo === 'piezas' && 
                                          coloresData.colores && 
@@ -230,7 +246,7 @@ async function confirmarCambioModoAntesDeGuardar(modal, modoSeleccionado) {
         return !!result.isConfirmed;
     }
 
-    return window.confirm(`${mensaje}\n\n¿Deseas continuar?`);
+    return window.confirm(`${mensaje}\n\nÂ¿Deseas continuar?`);
 }
 
 function actualizarEstadoGuardadoModal(modal, modo) {
@@ -240,7 +256,7 @@ function actualizarEstadoGuardadoModal(modal, modo) {
 }
 
 /**
- * Genera inputs dinámicos para cada color (modo por color)
+ * Genera inputs dinamicos para cada color (modo por color)
  * Estructura: Ancho General + Metraje por Color
  */
 function generarInputsPorColor(coloresData, datosData) {
@@ -716,6 +732,10 @@ function confirmarEliminarAnchoMetraje() {
     const modal = document.getElementById('modalAnchoMetraje');
     const prendaId = modal.dataset.prendaId;
     const pedido = modal.dataset.pedido;
+    const prendaBodegaId = modal.dataset.prendaBodegaId ? parseInt(modal.dataset.prendaBodegaId, 10) : null;
+    const tipoRecibo = modal.dataset.tipoRecibo || 'COSTURA';
+    const numeroReciboTexto = (document.getElementById('anchoMetrajeRecibo')?.textContent || '').replace('#', '').trim();
+    const numeroRecibo = numeroReciboTexto && !Number.isNaN(Number(numeroReciboTexto)) ? Number(numeroReciboTexto) : null;
     
     if (!prendaId) {
         showToast('Error: No se encontro la informacion de la prenda', 'error');
@@ -730,7 +750,10 @@ function confirmarEliminarAnchoMetraje() {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
         },
         body: JSON.stringify({
-            prenda_id: prendaId
+            prenda_id: prendaId,
+            prenda_bodega_id: prendaBodegaId,
+            numero_recibo: numeroRecibo,
+            tipo_recibo: tipoRecibo
         })
     })
     .then(response => response.json())
@@ -742,7 +765,7 @@ function confirmarEliminarAnchoMetraje() {
             // Recargar el modal (vacio)
             setTimeout(() => {
                 cerrarModalAnchoMetraje();
-                abrirModalAnchoMetraje(pedido, prendaId);
+                abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId, pedido, tipoRecibo);
             }, 800);
         } else {
             showToast('Error al eliminar los datos: ' + (data.message || ''), 'error');
@@ -781,6 +804,15 @@ function guardarAnchoMetraje() {
 }
 
 function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
+    const prendaBodegaId = modal.dataset.prendaBodegaId ? parseInt(modal.dataset.prendaBodegaId, 10) : null;
+    const tipoRecibo = modal.dataset.tipoRecibo || 'COSTURA';
+    const numeroReciboTexto = (document.getElementById('anchoMetrajeRecibo')?.textContent || '').replace('#', '').trim();
+    const numeroRecibo = numeroReciboTexto && !Number.isNaN(Number(numeroReciboTexto)) ? Number(numeroReciboTexto) : null;
+    const extraPayload = {
+        prenda_bodega_id: prendaBodegaId,
+        numero_recibo: numeroRecibo,
+        tipo_recibo: tipoRecibo,
+    };
     
     if (modoSeleccionado === 'normal') {
         // GUARDAR MODO NORMAL
@@ -831,7 +863,8 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                 color: null,
                 tipo_modo: 'normal',
                 ancho: ancho,
-                metraje: metraje
+                metraje: metraje,
+                ...extraPayload
             })
         })
         .then(response => response.json())
@@ -880,7 +913,8 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                             color: null,
                             tipo_modo: 'color',
                             ancho: anchoGeneral,
-                            metraje: null
+                            metraje: null,
+                            ...extraPayload
                         })
                     }).then(r => r.json())
                 );
@@ -907,7 +941,8 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                                 color: colorNombre,
                                 tipo_modo: 'color',
                                 ancho: null,
-                                metraje: metraje
+                                metraje: metraje,
+                                ...extraPayload
                             })
                         }).then(r => r.json())
                     );
@@ -957,7 +992,8 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                             color: null,
                             tipo_modo: 'pieza',
                             ancho: anchoGeneral,
-                            metraje: null
+                            metraje: null,
+                            ...extraPayload
                         })
                     }).then(r => r.json())
                 );
@@ -984,7 +1020,8 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                                 color: colorNombre,
                                 tipo_modo: 'pieza',
                                 ancho: null,
-                                metraje: metraje
+                                metraje: metraje,
+                                ...extraPayload
                             })
                         }).then(r => r.json())
                     );
@@ -1034,7 +1071,8 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                 tipo_modo: 'mano',
                 ancho: null,
                 metraje: null,
-                contenido_mano: contenidoMano
+                contenido_mano: contenidoMano,
+                ...extraPayload
             })
         })
         .then(response => response.json())
@@ -1142,3 +1180,5 @@ if (document.readyState === 'loading') {
 } else {
     exportModalAnchoMetraje();
 }
+
+
