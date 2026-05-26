@@ -479,13 +479,28 @@ function abrirVisorImagenRcb(indice, fotos) {
 }
 
 function toggleFactura() {
+    console.log('[RCB] toggleFactura() click');
     const card = document.getElementById('rcb-order-card');
     const galeria = document.getElementById('galeria-modal-costura-rcb');
     const galeriaBody = document.getElementById('rcb-galeria-body');
-    if (!card || !galeria || !galeriaBody) return;
-    if (galeriaBody.children.length === 0) return;
+    if (!card || !galeria || !galeriaBody) {
+        console.warn('[RCB] toggleFactura abortado: faltan nodos', {
+            card: !!card,
+            galeria: !!galeria,
+            galeriaBody: !!galeriaBody,
+        });
+        return;
+    }
+    if (galeriaBody.children.length === 0) {
+        console.warn('[RCB] toggleFactura abortado: galeria sin items');
+        return;
+    }
 
     const galeriaVisible = galeria.style.display !== 'none';
+    console.log('[RCB] toggleFactura estado', {
+        galeriaVisible,
+        items: galeriaBody.children.length,
+    });
     card.style.display = galeriaVisible ? 'block' : 'none';
     galeria.style.display = galeriaVisible ? 'none' : 'flex';
 }
@@ -613,15 +628,21 @@ function renderReciboCorteBodegaData(data) {
     const galeriaBody = document.getElementById('rcb-galeria-body');
     const card = document.getElementById('rcb-order-card');
     const galeria = document.getElementById('galeria-modal-costura-rcb');
-    if (fotosGrid) {
-        const fotos = Array.isArray(data.fotos) ? data.fotos : [];
-        const urlsGaleria = [];
-        fotosGrid.innerHTML = '';
-        if (galeriaBody) galeriaBody.innerHTML = '';
-        fotos.forEach((foto, index) => {
-            const url = String(foto?.url || '').trim();
-            if (!url) return;
-            urlsGaleria.push(url);
+    const fotos = Array.isArray(data.fotos) ? data.fotos : [];
+    const urlsGaleria = [];
+    if (fotosGrid) fotosGrid.innerHTML = '';
+    if (galeriaBody) galeriaBody.innerHTML = '';
+
+    fotos.forEach((foto, index) => {
+        const rawUrl = foto?.ruta || foto?.url || foto?.ruta_webp || foto?.ruta_original || foto?.path || foto?.imagen || '';
+        const urlNormalizada = String(rawUrl || '').trim();
+        const url = urlNormalizada && !urlNormalizada.startsWith('http') && !urlNormalizada.startsWith('/')
+            ? `/storage/${urlNormalizada.replace(/^\/+/, '')}`
+            : urlNormalizada;
+        if (!url) return;
+        urlsGaleria.push(url);
+
+        if (fotosGrid) {
             const item = document.createElement('a');
             item.className = 'rcb-foto-thumb';
             item.href = 'javascript:void(0)';
@@ -632,25 +653,27 @@ function renderReciboCorteBodegaData(data) {
                 abrirVisorImagenRcb(index, window.__galeriaImagenes || urlsGaleria);
             });
             fotosGrid.appendChild(item);
+        }
 
-            if (galeriaBody) {
-                const cardGaleria = document.createElement('div');
-                cardGaleria.className = 'rcb-galeria-card';
-                cardGaleria.innerHTML = `
-                    <img src="${url}" alt="Imagen ${index + 1}" loading="lazy">
-                    <div class="rcb-galeria-card-footer">
-                        <div style="font-size: .75rem; color: #6b7280;">Imagen ${index + 1}</div>
-                    </div>
-                `;
-                cardGaleria.addEventListener('click', () => {
-                    abrirVisorImagenRcb(index, window.__galeriaImagenes || urlsGaleria);
-                });
-                galeriaBody.appendChild(cardGaleria);
-            }
-        });
-        window.__galeriaImagenes = urlsGaleria;
-        if (fotosSection) fotosSection.style.display = 'none';
-    }
+        if (galeriaBody) {
+            const cardGaleria = document.createElement('div');
+            cardGaleria.className = 'rcb-galeria-card';
+            cardGaleria.innerHTML = `
+                <img src="${url}" alt="Imagen ${index + 1}" loading="lazy">
+                <div class="rcb-galeria-card-footer">
+                    <div style="font-size: .75rem; color: #6b7280;">Imagen ${index + 1}</div>
+                </div>
+            `;
+            cardGaleria.addEventListener('click', () => {
+                abrirVisorImagenRcb(index, window.__galeriaImagenes || urlsGaleria);
+            });
+            galeriaBody.appendChild(cardGaleria);
+        }
+    });
+
+    console.log('[RCB] fotos detectadas para galeria:', urlsGaleria.length);
+    window.__galeriaImagenes = urlsGaleria;
+    if (fotosSection) fotosSection.style.display = 'none';
 
     if (card) card.style.display = 'block';
     if (galeria) galeria.style.display = 'none';

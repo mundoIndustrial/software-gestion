@@ -5,6 +5,9 @@
 let openOrderDetailModalHandler = null;
 let pedidosRecibosModuleInstance = null;
 const DYNAMIC_CLOSE_BUTTON_ID = 'btn-cerrar-modal-dinamico';
+let bodegaGaleriaFotos = [];
+let bodegaGaleriaTitulo = 'PRENDA';
+let isBodegaReciboActive = false;
 
 function ensureDynamicCloseButton() {
     let btnCerrar = document.getElementById(DYNAMIC_CLOSE_BUTTON_ID);
@@ -165,6 +168,7 @@ function abrirDetalleRecibo(pedidoId, prendaId, tipoRecibo, esParcial = false, p
     const parsedPedidoParcialId = pedidoParcialId ? (parseInt(pedidoParcialId, 10) || null) : null;
 
     if (tipoReciboNormalizado === 'CORTE-PARA-BODEGA') {
+        isBodegaReciboActive = true;
         ensureDynamicCloseButton();
         toggleCamposCabeceraRecibo(false);
         ajustarPosicionNumeroPedido(true);
@@ -184,6 +188,7 @@ function abrirDetalleRecibo(pedidoId, prendaId, tipoRecibo, esParcial = false, p
 
     toggleCamposCabeceraRecibo(true);
     ajustarPosicionNumeroPedido(false);
+    isBodegaReciboActive = false;
     configurarBotonesFlotantesBodega(false);
     configurarBotonImpresionRecibo(false);
 
@@ -234,18 +239,36 @@ function configurarBotonesFlotantesBodega(esBodega) {
     const btnGaleria = document.getElementById('btn-galeria');
 
     if (esBodega) {
+        console.log('[BODEGA_UI] configurando botones flotantes en modo bodega');
+        const galeriaNativaExiste = Boolean(
+            document.getElementById('galeria-modal-costura') ||
+            document.getElementById('galeria-modal-costura-rcb')
+        );
         if (btnFactura) {
             btnFactura.title = 'Ver galería';
             btnFactura.innerHTML = '<i class="fas fa-images"></i>';
             btnFactura.style.display = 'flex';
-            btnFactura.onclick = function (event) {
-                if (event) event.preventDefault();
-                toggleFacturaFallback();
-            };
+            // Solo forzar onclick fallback si NO hay galería nativa en el DOM.
+            if (!galeriaNativaExiste) {
+                btnFactura.onclick = function (event) {
+                    if (event) event.preventDefault();
+                    console.log('[BODEGA_UI] click en btn-factura (modo bodega fallback)');
+                    toggleFacturaFallback();
+                };
+            }
+            console.log('[BODEGA_UI] btn-factura listo para toggleFacturaFallback');
+        } else {
+            console.warn('[BODEGA_UI] btn-factura no encontrado');
         }
         if (btnGaleria) {
-            btnGaleria.style.display = 'none';
-            btnGaleria.onclick = null;
+            // Si ya existe galería nativa, respetar el layout original (2 botones).
+            btnGaleria.style.display = galeriaNativaExiste ? 'flex' : 'none';
+            if (!galeriaNativaExiste) {
+                btnGaleria.onclick = null;
+            }
+            console.log('[BODEGA_UI] btn-galeria modo bodega, nativa:', galeriaNativaExiste);
+        } else {
+            console.warn('[BODEGA_UI] btn-galeria no encontrado');
         }
         return;
     }
@@ -426,6 +449,11 @@ function abrirDetalleReciboCorteBodega(prendaBodegaId) {
             const descripcion = (data.descripcion || '').trim() || 'Sin descripcion';
             const total = Number(data.total || 0);
             const tallas = Array.isArray(data.tallas) ? data.tallas : [];
+            bodegaGaleriaTitulo = String(data.prenda || data.prenda_nombre || 'PRENDA 1').trim().toUpperCase();
+            bodegaGaleriaFotos = (Array.isArray(data.fotos) ? data.fotos : [])
+                .map((f) => String(f?.url || '').trim())
+                .filter(Boolean);
+            console.log('[BODEGA_UI] fotos recibidas para galeria:', bodegaGaleriaFotos.length);
 
             const tallasPorGenero = tallas.reduce((acc, tallaRow) => {
                 const genero = String(tallaRow.genero || 'UNISEX').toUpperCase();
@@ -619,24 +647,49 @@ function closeModalOverlay() {
     if (btnCerrarDinamico) {
         btnCerrarDinamico.remove();
     }
+    isBodegaReciboActive = false;
 }
 
 function toggleFacturaFallback() {
+    console.log('[BODEGA_UI] toggleFacturaFallback() inicio');
     const wrapper = document.getElementById('order-detail-modal-wrapper');
-    if (!wrapper) return;
+    if (!wrapper) {
+        console.warn('[BODEGA_UI] wrapper no encontrado: #order-detail-modal-wrapper');
+        return;
+    }
 
     const card = wrapper.querySelector('.order-detail-card');
-    const galeria =
+    let galeria =
         document.getElementById('galeria-modal-costura') ||
         document.getElementById('galeria-modal-costura-rcb');
 
-    if (!card || !galeria) return;
+    if (!card) {
+        console.warn('[BODEGA_UI] card no encontrada: .order-detail-card');
+        return;
+    }
+    if (!galeria) {
+        console.log('[BODEGA_UI] galeria nativa no encontrada, creando galeria inline fallback');
+        galeria = ensureBodegaInlineGallery(wrapper);
+    }
 
-    const estaEnGaleria = galeria.style.display === 'flex';
+    if (!galeria) {
+        console.warn('[BODEGA_UI] no fue posible construir galeria inline');
+        return;
+    }
+
+    const estaEnGaleria = galeria.style.display === 'flex' || galeria.style.display === 'block';
+    console.log('[BODEGA_UI] estado galeria actual:', {
+        display: galeria.style.display,
+        estaEnGaleria,
+    });
+
     if (estaEnGaleria) {
-        if (window.GalleryManager && typeof window.GalleryManager.cerrarGaleria === 'function') {
+        console.log('[BODEGA_UI] cerrando galeria para volver al recibo');
+        if (!isBodegaReciboActive && window.GalleryManager && typeof window.GalleryManager.cerrarGaleria === 'function') {
+            console.log('[BODEGA_UI] usando GalleryManager.cerrarGaleria()');
             window.GalleryManager.cerrarGaleria();
         } else {
+            console.log('[BODEGA_UI] fallback manual cerrar galeria');
             galeria.style.display = 'none';
             card.style.display = 'block';
         }
@@ -648,11 +701,15 @@ function toggleFacturaFallback() {
         return;
     }
 
-    if (window.pedidosRecibosModule && typeof window.pedidosRecibosModule.abrirGaleria === 'function') {
+    console.log('[BODEGA_UI] abriendo galeria');
+    if (!isBodegaReciboActive && window.pedidosRecibosModule && typeof window.pedidosRecibosModule.abrirGaleria === 'function') {
+        console.log('[BODEGA_UI] usando pedidosRecibosModule.abrirGaleria()');
         window.pedidosRecibosModule.abrirGaleria();
-    } else if (typeof window.toggleGaleria === 'function') {
+    } else if (!isBodegaReciboActive && typeof window.toggleGaleria === 'function') {
+        console.log('[BODEGA_UI] usando window.toggleGaleria()');
         window.toggleGaleria();
     } else {
+        console.log('[BODEGA_UI] fallback manual abrir galeria');
         galeria.style.display = 'flex';
         card.style.display = 'none';
     }
@@ -662,6 +719,54 @@ function toggleFacturaFallback() {
         btnFactura.innerHTML = '<i class="fas fa-receipt"></i>';
         btnFactura.title = 'Ver recibo';
     }
+}
+
+function ensureBodegaInlineGallery(wrapper) {
+    const fotos = Array.isArray(bodegaGaleriaFotos) ? bodegaGaleriaFotos.filter(Boolean) : [];
+    if (fotos.length === 0) {
+        if (window.Swal) {
+            window.Swal.fire('Sin imágenes', 'Este recibo no tiene imágenes de referencia.', 'info');
+        }
+        return null;
+    }
+
+    window.__galeriaImagenes = fotos;
+
+    let galeria = document.getElementById('galeria-modal-costura');
+    if (!galeria) {
+        galeria = document.createElement('div');
+        galeria.id = 'galeria-modal-costura';
+        galeria.style.cssText = 'width:668px;max-width:100%;margin:0 auto;padding:0;display:none;flex-direction:column;min-height:520px;max-height:820px;overflow-y:auto;background:#fff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.1);';
+        wrapper.querySelector('.order-detail-modal-container')?.appendChild(galeria);
+    }
+
+    const cards = fotos.map((url, i) => `
+        <div style="border:2px solid #e5e7eb;border-radius:12px;overflow:hidden;cursor:pointer;transition:all .3s ease;background:white;box-shadow:0 2px 8px rgba(0,0,0,.08);" onclick="if(typeof window.abrirModalImagenProcesoGrande==='function'){window.abrirModalImagenProcesoGrande(${i}, window.__galeriaImagenes||[]);}" onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='scale(1.03)'; this.style.boxShadow='0 8px 16px rgba(59,130,246,.3)';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,.08)';">
+            <img src="${url}" alt="${bodegaGaleriaTitulo}" style="width:100%;height:220px;object-fit:cover;display:block;">
+            <div style="padding:.75rem;background:#f9fafb;">
+                <div style="font-size:.875rem;font-weight:600;color:#1f2937;margin-bottom:.25rem;">${bodegaGaleriaTitulo}</div>
+                <div style="font-size:.75rem;color:#6b7280;">Imagen ${i + 1}</div>
+            </div>
+        </div>
+    `).join('');
+
+    galeria.innerHTML = `
+        <div style="background:#fff;display:flex;flex-direction:column;width:100%;height:100%;box-sizing:border-box;border-radius:12px;overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:16px 12px;border-radius:12px 12px 0 0;position:sticky;top:0;z-index:100;">
+                <h2 style="text-align:center;margin:0;font-size:1.4rem;font-weight:700;color:#fff;letter-spacing:1px;">GALERÍA</h2>
+            </div>
+            <div style="padding:24px;flex:1;overflow-y:auto;background:#fff;">
+                <div style="padding:1.5rem;border-bottom:1px solid #e5e7eb;">
+                    <h3 style="margin:0 0 1rem 0;font-size:1.25rem;font-weight:600;color:#1f2937;">${bodegaGaleriaTitulo}</h3>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
+                        ${cards}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    return galeria;
 }
 
 function initModalHandlersInsumos() {
