@@ -15,6 +15,38 @@ function getCsrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 }
 
+function esErrorCsrf(status, message = '') {
+    const msg = String(message || '').toLowerCase();
+    return Number(status) === 419 || msg.includes('csrf token mismatch');
+}
+
+function mostrarAlertaSesionExpirada() {
+    const modalExistente = document.getElementById('modalSesionExpiradaNovedades');
+    if (modalExistente) {
+        modalExistente.remove();
+    }
+
+    const html = `
+        <div id="modalSesionExpiradaNovedades" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100007;display:flex;align-items:center;justify-content:center;padding:1rem;">
+            <div style="background:#fff;border-radius:12px;box-shadow:0 20px 40px rgba(0,0,0,.25);width:min(100%,460px);overflow:hidden;">
+                <div style="padding:1rem 1.25rem;border-bottom:1px solid #fecaca;background:#dc2626;display:flex;align-items:center;gap:.55rem;">
+                    <span class="material-symbols-rounded" style="color:#fff;font-size:20px;line-height:1;">warning</span>
+                    <h3 style="margin:0;color:#fff;font-size:1rem;font-weight:700;">Sesion expirada</h3>
+                </div>
+                <div style="padding:1rem 1.25rem;">
+                    <p style="margin:0;color:#374151;font-size:.95rem;">Tu sesion expiro por inactividad. Recarga la pagina para continuar.</p>
+                </div>
+                <div style="background:#f9fafb;padding:1rem 1.25rem;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:.55rem;">
+                    <button type="button" onclick="document.getElementById('modalSesionExpiradaNovedades')?.remove()" style="border:0;border-radius:10px;background:#94a3b8;color:#fff;font-weight:600;padding:.6rem .95rem;cursor:pointer;">Cerrar</button>
+                    <button type="button" onclick="window.location.reload()" style="border:0;border-radius:10px;background:#16a34a;color:#fff;font-weight:600;padding:.6rem .95rem;cursor:pointer;">Recargar pagina</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', html);
+}
+
 /**
  * Forzar estilo de overlay/modal para vistas sin utilidades CSS
  */
@@ -419,8 +451,13 @@ async function guardarNovedad() {
             })
         });
 
-        const result = await response.json();
+        const result = await response.json().catch(() => null);
         console.log('[guardarNovedad]Respuesta API:', result);
+
+        if (esErrorCsrf(response.status, result?.message)) {
+            mostrarAlertaSesionExpirada();
+            return;
+        }
 
         if (result.success) {
             console.log('[guardarNovedad]  Éxito al guardar');
@@ -444,6 +481,10 @@ async function guardarNovedad() {
 
     } catch (error) {
         console.error('[guardarNovedad] 💥 Error:', error);
+        if (esErrorCsrf(error?.status, error?.message)) {
+            mostrarAlertaSesionExpirada();
+            return;
+        }
         mostrarAlerta(' Error', 'Error de conexión al guardar la novedad', 'error');
     } finally {
         // Restaurar botón
@@ -635,8 +676,14 @@ async function eliminarNovedad(novedadId) {
                         }
                     });
 
-                    const result = await response.json();
+                    const result = await response.json().catch(() => null);
                     console.log('[eliminarNovedad]Respuesta DELETE:', result);
+
+                    if (esErrorCsrf(response.status, result?.message)) {
+                        cerrarModalConfirmarEliminar();
+                        mostrarAlertaSesionExpirada();
+                        return;
+                    }
 
                     if (result.success) {
                         console.log('[eliminarNovedad]  Eliminación exitosa');
@@ -657,6 +704,11 @@ async function eliminarNovedad(novedadId) {
                     }
                 } catch (error) {
                     console.error('[eliminarNovedad] 💥 Error en DELETE:', error);
+                    if (esErrorCsrf(error?.status, error?.message)) {
+                        cerrarModalConfirmarEliminar();
+                        mostrarAlertaSesionExpirada();
+                        return;
+                    }
                     mostrarAlerta(' Error', 'Error de conexión al eliminar la novedad', 'error');
                 } finally {
                     // Restaurar botón (por si el modal no se cierra inmediatamente)
@@ -915,7 +967,13 @@ async function guardarEdicionNovedad(novedadId) {
             })
         });
         
-        const result = await response.json();
+        const result = await response.json().catch(() => null);
+
+        if (esErrorCsrf(response.status, result?.message)) {
+            cerrarModalEditarNovedad();
+            mostrarAlertaSesionExpirada();
+            return;
+        }
         
         if (result.success) {
             mostrarModalExito('Novedad actualizada correctamente', 'Éxito');
@@ -933,6 +991,11 @@ async function guardarEdicionNovedad(novedadId) {
         
     } catch (error) {
         console.error('[guardarEdicionNovedad] Error:', error);
+        if (esErrorCsrf(error?.status, error?.message)) {
+            cerrarModalEditarNovedad();
+            mostrarAlertaSesionExpirada();
+            return;
+        }
         mostrarAlerta(' Error', 'Error de conexión al actualizar la novedad', 'error');
     } finally {
         // Restaurar botón
