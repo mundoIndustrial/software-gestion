@@ -324,7 +324,7 @@
 
                                                     <div class="orden-buttons">
                                                         <button type="button" class="btn-ver-recibos"
-                                                                onclick="abrirDetallesRecibos('{{ $resultado['numero_pedido'] }}', {{ $resultado['prenda_id'] }}, '{{ addslashes((string) $resultado['nombre_prenda']) }}', '{{ $resultado['tipo_recibo'] }}', null, '{{ $numeroReciboExterno }}', {{ $resultado['recibo_id'] }}); return false;">
+                                                                onclick="abrirDetallesRecibos('{{ $resultado['numero_pedido'] }}', {{ $resultado['prenda_id'] }}, '{{ addslashes((string) $resultado['nombre_prenda']) }}', '{{ $resultado['tipo_recibo'] }}', {{ $resultado['id_parcial'] ?? 'null' }}, '{{ $numeroReciboExterno }}', {{ $resultado['recibo_id'] }}); return false;">
                                                             <span class="material-symbols-rounded">visibility</span>
                                                             VER RECIBO
                                                         </button>

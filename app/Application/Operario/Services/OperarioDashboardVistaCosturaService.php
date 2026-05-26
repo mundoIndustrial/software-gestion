@@ -139,6 +139,15 @@ class OperarioDashboardVistaCosturaService
                 $consecutivoActual = (string) ($row->consecutivo_actual ?? '');
                 $consecutivoInicial = (string) ($row->consecutivo_inicial ?? $consecutivoActual);
                 $fechaCreacion = $row->created_at ?? null;
+                $notas = (string) ($row->notas ?? '');
+                $parcialId = null;
+
+                if ($notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
+                    $parcialId = (int) ($matches[1] ?? 0);
+                    if ($parcialId <= 0) {
+                        $parcialId = null;
+                    }
+                }
 
                 return [
                     'recibo_id' => (int) ($row->id ?? 0),
@@ -153,7 +162,8 @@ class OperarioDashboardVistaCosturaService
                     'estado' => $estado,
                     'consecutivo_actual' => $consecutivoActual,
                     'consecutivo_inicial' => $consecutivoInicial,
-                    'notas' => (string) ($row->notas ?? ''),
+                    'notas' => $notas,
+                    'id_parcial' => $parcialId,
                     'fecha_creacion' => $fechaCreacion,
                     'area_label' => strtoupper($area !== '' ? $area : 'OTRA ÁREA'),
                     'estado_label' => strtoupper($estado !== '' ? $estado : 'SIN ESTADO'),

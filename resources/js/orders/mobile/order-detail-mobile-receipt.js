@@ -8,10 +8,48 @@
     const tipoReciboUpper = (tipoReciboDataset || '').toString().trim().toUpperCase();
     const urlParams = new URLSearchParams(window.location.search);
     const consecutivoParcialParam = String(urlParams.get('consecutivo_parcial') || '').trim();
-    const pedidoParcialIdParam = String(
+    const reciboIdParamRaw = String(urlParams.get('recibo_id') || '').trim();
+    let pedidoParcialIdParam = String(
         urlParams.get('pedido_parcial_id') || urlParams.get('parcial_id') || ''
     ).trim();
-    const esReciboParcial = pedidoParcialIdParam !== '' || consecutivoParcialParam !== '' || tipoReciboUpper === 'PARCIAL';
+    let esReciboParcial = pedidoParcialIdParam !== '' || consecutivoParcialParam !== '' || tipoReciboUpper === 'PARCIAL';
+
+    // Compatibilidad: en algunas vistas (ej. vista-costura) puede venir solo `recibo_id`.
+    // Intentamos resolver `pedido_parcial_id` desde los datos cargados para renderizar
+    // tallas del anexo/parcial y no las tallas completas de la prenda.
+    if (!esReciboParcial && reciboIdParamRaw !== '' && Array.isArray(data?.prendas)) {
+        for (const prenda of data.prendas) {
+            const recibosPrenda = prenda?.recibos;
+            if (!recibosPrenda || typeof recibosPrenda !== 'object') continue;
+
+            for (const value of Object.values(recibosPrenda)) {
+                if (!value || typeof value !== 'object') continue;
+
+                const idReciboInterno = String(
+                    value?.recibo_id ||
+                    value?.consecutivo_recibo_id ||
+                    value?.id ||
+                    ''
+                ).trim();
+
+                if (idReciboInterno !== '' && idReciboInterno === reciboIdParamRaw) {
+                    const parcialInferido = String(
+                        value?.pedido_parcial_id ||
+                        value?.parcial_id ||
+                        ''
+                    ).trim();
+
+                    if (parcialInferido !== '') {
+                        pedidoParcialIdParam = parcialInferido;
+                        esReciboParcial = true;
+                    }
+                    break;
+                }
+            }
+
+            if (esReciboParcial) break;
+        }
+    }
 
     console.log('📱 [RECIBO MOBILE] Detectando parcial:', {
         tipoReciboUpper,
@@ -320,7 +358,7 @@
     const esVistaOperario = (window.location?.pathname || '').toString().includes('/operario/');
     const resolverProcesoRealParcial = () => {
         let procesoParcialReal = null;
-        const parcialIdParam = String(new URLSearchParams(window.location.search).get('parcial_id') || '').trim();
+        const parcialIdParam = String(pedidoParcialIdParam || '').trim();
 
         if (Array.isArray(data?.prendas)) {
             for (const prenda of data.prendas) {
@@ -432,7 +470,7 @@
         if (tipoReciboUpper === 'PARCIAL') {
             // Resolver dinámicamente el proceso real del parcial (puede ser COSTURA, REFLECTIVO, etc.)
             let procesoParcialReal = null;
-            const parcialIdParam = String(new URLSearchParams(window.location.search).get('parcial_id') || '').trim();
+            const parcialIdParam = String(pedidoParcialIdParam || '').trim();
 
             if (Array.isArray(data?.prendas)) {
                 for (const prenda of data.prendas) {
