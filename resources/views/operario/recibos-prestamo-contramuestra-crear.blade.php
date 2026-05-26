@@ -33,14 +33,14 @@
 @section('content')
     @php
         $hoy = now();
-        $numeroOrdenDemo = 1;
+        $numeroOrden = isset($numeroOrden) ? (int) $numeroOrden : 1;
     @endphp
 
     <div class="recibo-page">
         <div class="page-top-actions">
             <a class="btn-soft" href="{{ route('operario.recibos-prestamo.index') }}">Volver</a>
         </div>
-        <form class="recibo-card" method="POST" action="#" autocomplete="off">
+        <form class="recibo-card" method="POST" action="{{ route('operario.recibos-prestamo.contramuestra.store') }}" autocomplete="off">
             @csrf
             <header class="recibo-head">
                 <h2>RECIBO DE PRÉSTAMO DE CONTRAMUESTRA COSTURA</h2>
@@ -53,7 +53,7 @@
                     </div>
                     <div class="meta-field">
                         <label class="meta-label">Número de Orden</label>
-                        <input class="meta-value" type="text" value="N° {{ $numeroOrdenDemo }}" readonly>
+                        <input class="meta-value" type="text" value="N° {{ $numeroOrden }}" readonly>
                     </div>
                     <div class="meta-field">
                         <label class="meta-label" for="nombre_costurero_contra">Nombre del Costurero(a)</label>

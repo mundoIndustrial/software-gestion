@@ -7,6 +7,7 @@ use App\Infrastructure\Http\Controllers\Operario\OperarioNovedadesController;
 use App\Infrastructure\Http\Controllers\Operario\OperarioNotificacionesController;
 use App\Infrastructure\Http\Controllers\Operario\OperarioPedidosController;
 use App\Infrastructure\Http\Controllers\Operario\OperarioRecibosController;
+use App\Infrastructure\Http\Controllers\Operario\OperarioRecibosPrestamoController;
 use App\Infrastructure\Http\Controllers\ControlCalidad\ControlCalidadController;
 
 // ========================================
@@ -14,9 +15,13 @@ use App\Infrastructure\Http\Controllers\ControlCalidad\ControlCalidadController;
 // ========================================
 Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operario.')->group(function () {
     Route::get('/dashboard', [OperarioDashboardController::class, 'dashboard'])->name('dashboard');
-    Route::view('/recibos-prestamo', 'operario.recibos-prestamo')->name('recibos-prestamo.index');
-    Route::view('/recibos-prestamo/insumos/crear', 'operario.recibos-prestamo-insumos-crear')->name('recibos-prestamo.insumos.crear');
-    Route::view('/recibos-prestamo/contramuestra/crear', 'operario.recibos-prestamo-contramuestra-crear')->name('recibos-prestamo.contramuestra.crear');
+    Route::get('/recibos-prestamo', [OperarioRecibosPrestamoController::class, 'index'])->name('recibos-prestamo.index');
+    Route::get('/recibos-prestamo/insumos/crear', [OperarioRecibosPrestamoController::class, 'createInsumos'])->name('recibos-prestamo.insumos.crear');
+    Route::post('/recibos-prestamo/insumos', [OperarioRecibosPrestamoController::class, 'storeInsumos'])->name('recibos-prestamo.insumos.store');
+    Route::get('/recibos-prestamo/insumos/{id}', [OperarioRecibosPrestamoController::class, 'showInsumos'])->name('recibos-prestamo.insumos.show');
+    Route::get('/recibos-prestamo/contramuestra/crear', [OperarioRecibosPrestamoController::class, 'createContramuestra'])->name('recibos-prestamo.contramuestra.crear');
+    Route::post('/recibos-prestamo/contramuestra', [OperarioRecibosPrestamoController::class, 'storeContramuestra'])->name('recibos-prestamo.contramuestra.store');
+    Route::get('/recibos-prestamo/contramuestra/{id}', [OperarioRecibosPrestamoController::class, 'showContramuestra'])->name('recibos-prestamo.contramuestra.show');
     Route::get('/mis-pedidos', [OperarioController::class, 'misPedidos'])->name('mis-pedidos');
     Route::get('/pedido/{numeroPedido}', [OperarioController::class, 'verPedido'])->name('ver-pedido');
     Route::get('/api/pedidos', [OperarioController::class, 'obtenerPedidosJson'])->name('api.pedidos');

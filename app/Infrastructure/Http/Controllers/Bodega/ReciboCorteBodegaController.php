@@ -3,14 +3,37 @@
 namespace App\Infrastructure\Http\Controllers\Bodega;
 
 use App\Models\PrendaBodega;
+use App\Models\PrendaBodegaFoto;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
 
 class ReciboCorteBodegaController extends Controller
 {
+    private function normalizarUrlStorageLocal(string $ruta): string
+    {
+        $valor = trim($ruta);
+        if ($valor === '') {
+            return '';
+        }
+
+        // Si viene absoluta, extraer solo path para evitar host/IP incorrecto.
+        if (preg_match('#^https?://#i', $valor) === 1) {
+            $path = parse_url($valor, PHP_URL_PATH);
+            $valor = is_string($path) ? $path : $valor;
+        }
+
+        $valor = str_replace('\\', '/', $valor);
+        $valor = preg_replace('#^/storage/#', '', $valor);
+        $valor = ltrim($valor, '/');
+
+        return '/storage/' . $valor;
+    }
+
     private function inferirGeneroDesdeTalla(?string $talla): ?string
     {
         $valor = strtoupper(trim((string) $talla));
@@ -35,7 +58,7 @@ class ReciboCorteBodegaController extends Controller
     {
         $esAdmin = (bool) (auth()->user()?->hasRole('admin'));
 
-        $prendasQuery = PrendaBodega::with('tallas')
+        $prendasQuery = PrendaBodega::with(['tallas', 'fotos'])
             ->orderBy('created_at', 'desc');
 
         if ($esAdmin) {
@@ -241,6 +264,12 @@ class ReciboCorteBodegaController extends Controller
                     'descripcion' => $prenda->descripcion,
                     'total_cantidad' => $prenda->tallas->sum('cantidad'),
                     'cantidad_tallas' => $prenda->tallas->count(),
+                    'fotos' => $prenda->fotos->map(fn($f) => [
+                        'id' => (int) $f->id,
+                        'ruta' => $f->ruta,
+                        'url' => $this->normalizarUrlStorageLocal((string) $f->ruta),
+                        'orden' => (int) ($f->orden ?? 0),
+                    ])->toArray(),
                     'fecha' => $prenda->created_at->format('Y-m-d H:i'),
                     'fecha_corta' => $prenda->created_at->format('d/m/Y'),
                     'encargado' => $encargado,
@@ -256,7 +285,18 @@ class ReciboCorteBodegaController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $prendasInput = $request->input('prendas');
+        if (!$prendasInput && $request->filled('prendas_json')) {
+            $prendasInput = json_decode((string) $request->input('prendas_json'), true);
+        }
+        if (!is_array($prendasInput)) {
+            $prendasInput = [];
+        }
+
+        $validated = validator([
+            'prendas' => $prendasInput,
+            'prenda_imagenes' => $request->file('prenda_imagenes', []),
+        ], [
             'prendas' => 'required|array|min:1',
             'prendas.*.nombre' => 'nullable|string|max:255',
             'prendas.*.descripcion' => 'required|string',
@@ -265,7 +305,10 @@ class ReciboCorteBodegaController extends Controller
             'prendas.*.tallas.*.genero' => 'nullable|string|in:dama,caballero,unisex,DAMA,CABALLERO,UNISEX',
             'prendas.*.tallas.*.color' => 'nullable|string|max:100',
             'prendas.*.tallas.*.cantidad' => 'required|integer|min:1',
-        ]);
+            'prenda_imagenes' => 'nullable|array',
+            'prenda_imagenes.*' => 'nullable|array',
+            'prenda_imagenes.*.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:5120',
+        ])->validate();
 
         if (!Schema::hasColumn('consecutivos_recibos_pedidos', 'prenda_bodega_id')) {
             return response()->json([
@@ -288,7 +331,7 @@ class ReciboCorteBodegaController extends Controller
                 ], 200);
             }
 
-            $prendas = DB::transaction(function () use ($validated) {
+            $prendas = DB::transaction(function () use ($validated, $request) {
                 $registroMaestro = DB::table('consecutivos_recibos')
                     ->where('tipo_recibo', 'CORTE-PARA-BODEGA')
                     ->lockForUpdate()
@@ -317,7 +360,7 @@ class ReciboCorteBodegaController extends Controller
                 $siguienteConsecutivo = max($consecutivoActual + 1, $consecutivoInicial);
 
                 $resultado = [];
-                foreach ($validated['prendas'] as $prendaData) {
+                foreach ($validated['prendas'] as $prendaIndex => $prendaData) {
                     $descripcion = trim((string) ($prendaData['descripcion'] ?? ''));
                     $nombre = trim((string) ($prendaData['nombre'] ?? ''));
                     $nombrePersistir = $nombre !== '' ? $nombre : $descripcion;
@@ -358,6 +401,36 @@ class ReciboCorteBodegaController extends Controller
                         ]);
                     }
 
+                    $imagenesPrenda = $request->file("prenda_imagenes.$prendaIndex", []);
+                    foreach ((array) $imagenesPrenda as $orden => $archivo) {
+                        if (!$archivo || !$archivo->isValid()) {
+                            continue;
+                        }
+
+                        $numeroReciboCarpeta = (int) $siguienteConsecutivo;
+                        $directorio = "bodega/{$numeroReciboCarpeta}";
+                        if (!Storage::disk('public')->exists($directorio)) {
+                            Storage::disk('public')->makeDirectory($directorio);
+                        }
+
+                        $nombreArchivo = bin2hex(random_bytes(20)) . '.webp';
+                        $ruta = "{$directorio}/{$nombreArchivo}";
+
+                        $imageManager = ImageManager::gd();
+                        $imagen = $imageManager->read($archivo->getRealPath());
+                        if (method_exists($imagen, 'orient')) {
+                            $imagen = $imagen->orient();
+                        }
+                        $contenidoWebp = $imagen->toWebp(85)->toString();
+                        Storage::disk('public')->put($ruta, $contenidoWebp);
+
+                        PrendaBodegaFoto::create([
+                            'prenda_bodega_id' => $prenda->id,
+                            'ruta' => $ruta,
+                            'orden' => (int) $orden,
+                        ]);
+                    }
+
                     $resultado[] = [
                         'id' => $prenda->id,
                         'numero_recibo' => $siguienteConsecutivo,
@@ -395,7 +468,7 @@ class ReciboCorteBodegaController extends Controller
 
     public function show($id)
     {
-        $prenda = PrendaBodega::with('tallas')->find($id);
+        $prenda = PrendaBodega::with(['tallas', 'fotos'])->find($id);
 
         if (!$prenda) {
             return response()->json([
@@ -427,6 +500,12 @@ class ReciboCorteBodegaController extends Controller
                 'genero' => $t->genero ?: $this->inferirGeneroDesdeTalla($t->talla),
                 'color' => $t->color,
                 'cantidad' => $t->cantidad,
+            ])->toArray(),
+            'fotos' => $prenda->fotos->map(fn($f) => [
+                'id' => (int) $f->id,
+                'ruta' => $f->ruta,
+                'url' => $this->normalizarUrlStorageLocal((string) $f->ruta),
+                'orden' => (int) ($f->orden ?? 0),
             ])->toArray(),
             'total' => $totalCantidad,
         ]);

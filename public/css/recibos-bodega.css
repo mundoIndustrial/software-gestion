@@ -900,12 +900,13 @@ tr.recibo-atrasado-row:hover > td {
 }
 
 .tipo-talla-empty {
-    border: 1px dashed #cbd5e1;
-    background: #fff;
-    color: #475569;
+    border: 1px dashed #93c5fd;
+    background: #eff6ff;
+    color: #1e3a8a;
     border-radius: 12px;
     padding: 10px 12px;
-    font-size: 12px;
+    font-size: 12.5px;
+    font-weight: 600;
 }
 
 .tipo-talla-pills {
@@ -943,13 +944,15 @@ tr.recibo-atrasado-row:hover > td {
     border-color: #60a5fa;
     background: #dbeafe;
     color: #1e3a8a;
+    transform: translateY(-1px) scale(1.03);
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.22);
 }
 
 .tipo-talla-pill.is-selected {
     border-color: #3b82f6;
-    background: #dbeafe;
-    color: #1e3a8a;
-    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, .25);
+    background: #bfdbfe;
+    color: #172554;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, .3), inset 0 0 0 1px rgba(59, 130, 246, .25);
 }
 
 .tipo-talla-row {
@@ -961,10 +964,20 @@ tr.recibo-atrasado-row:hover > td {
 
 .tipo-talla-row.is-normal {
     grid-template-columns: minmax(0, 1fr) 120px 34px;
+    padding: 8px;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    background: #f8fbff;
 }
 
 .tipo-talla-row.is-color {
     grid-template-columns: minmax(0, 1fr) 120px 34px;
+}
+
+.tipo-talla-row.is-normal:focus-within {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .18);
 }
 
 .tipo-talla-row input {
@@ -1398,6 +1411,99 @@ tr.recibo-atrasado-row:hover > td {
     cursor: pointer;
 }
 
+#reciboBodegaCreateModal .prenda-imagenes-section {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    background: #f8fbff;
+}
+
+#reciboBodegaCreateModal .prenda-imagenes-input {
+    width: 100%;
+    margin-top: 6px;
+}
+
+#reciboBodegaCreateModal .prenda-imagenes-dropzone {
+    margin-top: 6px;
+    border: 2px dashed #93c5fd;
+    border-radius: 12px;
+    padding: 16px 12px;
+    text-align: center;
+    background: #eff6ff;
+    color: #1e3a8a;
+    cursor: pointer;
+    transition: all .18s ease;
+}
+
+#reciboBodegaCreateModal .prenda-imagenes-dropzone strong {
+    display: block;
+    font-size: 14px;
+}
+
+#reciboBodegaCreateModal .prenda-imagenes-dropzone span {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #334155;
+}
+
+#reciboBodegaCreateModal .prenda-imagenes-dropzone:hover,
+#reciboBodegaCreateModal .prenda-imagenes-dropzone.is-dragover {
+    border-color: #2563eb;
+    background: #dbeafe;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .16);
+}
+
+#reciboBodegaCreateModal .prenda-imagenes-help {
+    display: block;
+    margin-top: 6px;
+    color: #475569;
+    font-size: 12px;
+}
+
+#reciboBodegaCreateModal .prenda-imagenes-preview {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+#reciboBodegaCreateModal .prenda-imagen-preview-item {
+    position: relative;
+    width: 66px;
+    height: 66px;
+    border-radius: 10px;
+    border: 1px solid #bfdbfe;
+    overflow: hidden;
+    background: #fff;
+}
+
+#reciboBodegaCreateModal .prenda-imagen-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+#reciboBodegaCreateModal .prenda-imagen-preview-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.82);
+    color: #fff;
+    font-size: 12px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
 @media (max-width: 768px) {
     #reciboBodegaCreateModal .custom-recibo-modal__dialog {
         width: 100vw;
@@ -1458,4 +1564,67 @@ tr.recibo-atrasado-row:hover > td {
 
 .tipo-talla-modal__footer #confirmarTipoTallaGeneroBtn:disabled {
     opacity: 0.55 !important;
+}
+
+.tipo-talla-helper {
+    margin: 2px 0 8px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #bfdbfe;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1e3a8a;
+}
+
+.tipo-talla-row.is-cantidad-only {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.tipo-talla-row.is-cantidad-only .modal-cantidad-input {
+    width: min(100%, 420px);
+    min-height: 60px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.02em;
+    border: 2px solid #2563eb;
+    background: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+
+.tipo-talla-row.is-cantidad-only .modal-cantidad-input:focus {
+    border-color: #1d4ed8;
+    background: #dbeafe;
+    box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.24);
+}
+
+/* Override fuerte para que el bloque/color destaque claramente */
+#tipoTallaGeneroGrid .tipo-talla-color-block.is-active {
+    border-color: #2563eb !important;
+    background: #eff6ff !important;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2) !important;
+}
+
+#tipoTallaGeneroGrid .tipo-talla-color-head input.modal-color-grupo-input {
+    border: 2px solid #93c5fd !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    padding: 11px 12px !important;
+}
+
+#tipoTallaGeneroGrid .tipo-talla-color-head input.modal-color-grupo-input::placeholder {
+    color: #1d4ed8 !important;
+    opacity: 0.85;
+    font-weight: 700;
+}
+
+#tipoTallaGeneroGrid .tipo-talla-color-head input.modal-color-grupo-input:focus {
+    border-color: #1d4ed8 !important;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, .22) !important;
 }

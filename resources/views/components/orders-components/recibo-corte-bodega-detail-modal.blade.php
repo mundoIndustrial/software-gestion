@@ -5,7 +5,7 @@
 
 <div id="rcb-modal-wrapper" style="width: 90%; max-width: 672px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
     <div class="order-detail-modal-container" style="display: flex; flex-direction: column; width: 100%; height: 100%;">
-        <div class="order-detail-card" style="display: block;">
+        <div id="rcb-order-card" class="order-detail-card" style="display: block;">
             <img src="{{ asset('images/logo2.png') }}" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
 
             <div id="rcb-date" class="order-date">
@@ -32,17 +32,22 @@
                     </div>
                 </div>
             </div>
-
             <h2 class="receipt-title">RECIBO DE CORTE<br>PARA BODEGA</h2>
             <div id="rcb-order-pedido" class="pedido-number">#</div>
 
+        </div>
+        <div id="galeria-modal-costura-rcb" class="rcb-galeria-modal" style="display:none;">
+            <div class="rcb-galeria-header">
+                <h2>GALERÍA</h2>
+            </div>
+            <div id="rcb-galeria-body" class="rcb-galeria-body"></div>
         </div>
     </div>
 </div>
 
 <div id="rcb-floating-buttons" class="rcb-floating-buttons-outside">
-    <button id="rcb-btn-close" type="button" title="Cerrar" onclick="closeReciboCorteBodegaModal()">
-        <i class="fas fa-times"></i>
+    <button id="btn-factura" type="button" title="Ver galería" onclick="toggleFactura()">
+        <i class="fas fa-images"></i>
     </button>
     <button id="rcb-btn-print" type="button" title="Imprimir" onclick="printReciboCorteBodegaModal()">
         <i class="fas fa-print"></i>
@@ -51,6 +56,9 @@
         <i class="fas fa-search-plus"></i>
     </button>
 </div>
+<button id="btn-cerrar-modal-dinamico-rcb" type="button" title="Cerrar" onclick="closeReciboCorteBodegaModal()">
+    <i class="fas fa-times"></i>
+</button>
 
 <style>
 .rcb-modal-overlay {
@@ -99,25 +107,131 @@
     text-align: right !important;
 }
 
-#rcb-btn-close {
-    width: 56px;
-    height: 56px;
+#btn-cerrar-modal-dinamico-rcb {
+    position: fixed;
+    right: 10px;
+    top: 10px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
     border: none;
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: #fff;
-    display: flex;
+    color: #333;
+    cursor: pointer;
+    display: none;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-    font-size: 22px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-size: 24px;
+    transition: 0.3s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    z-index: 10001;
+    font-weight: bold;
 }
 
-#rcb-btn-close:hover {
-    transform: scale(1.05);
-    filter: brightness(0.95);
+#btn-cerrar-modal-dinamico-rcb.is-visible {
+    display: flex;
+}
+
+#btn-cerrar-modal-dinamico-rcb:hover {
+    transform: scale(1.04);
+    background: #fff;
+}
+
+.rcb-fotos-section {
+    margin: 10px 0 8px;
+}
+
+.rcb-fotos-grid {
+    margin-top: 6px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.rcb-foto-thumb {
+    display: block;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #dbeafe;
+    background: #fff;
+}
+
+.rcb-foto-thumb img {
+    display: block;
+    width: 100%;
+    height: 72px;
+    object-fit: contain;
+    background: #f8fafc;
+}
+
+.rcb-galeria-modal {
+    width: 668px;
+    max-width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 520px;
+    max-height: 820px;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.rcb-galeria-header {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    padding: 16px 12px;
+    border-radius: 12px 12px 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.rcb-galeria-header h2 {
+    text-align: center;
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 1px;
+}
+
+.rcb-galeria-body {
+    padding: 24px;
+    background: #fff;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.rcb-galeria-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all .3s ease;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.rcb-galeria-card:hover {
+    border-color: #3b82f6;
+    transform: scale(1.03);
+    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
+}
+
+.rcb-galeria-card img {
+    width: 100%;
+    height: 220px;
+    object-fit: contain;
+    display: block;
+    background: #f8fafc;
+}
+
+.rcb-galeria-card-footer {
+    padding: 0.75rem;
+    background: #f9fafb;
 }
 
 /* Fecha del recibo de corte: igual al diseño de referencia */
@@ -186,6 +300,27 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+#btn-factura {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e40af, #0ea5e9);
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#btn-factura:hover {
+    transform: scale(1.05);
+    filter: brightness(0.95);
+}
+
 #rcb-btn-zoom {
     width: 56px;
     height: 56px;
@@ -244,11 +379,11 @@
         display: none !important;
     }
 
-    #rcb-btn-close {
+    #rcb-btn-zoom {
         display: none !important;
     }
 
-    #rcb-btn-zoom {
+    #btn-cerrar-modal-dinamico-rcb {
         display: none !important;
     }
 
@@ -295,6 +430,64 @@ function applyReciboCorteBodegaZoom(zoomLevel = 1) {
 function resetReciboCorteBodegaZoom() {
     rcbReceiptZoomState.current = 1;
     applyReciboCorteBodegaZoom(1);
+}
+
+function abrirVisorImagenRcb(indice, fotos) {
+    const images = Array.isArray(fotos) ? fotos.filter(Boolean) : [];
+    if (images.length === 0) return;
+
+    if (typeof window.abrirModalImagenProcesoGrande === 'function') {
+        window.abrirModalImagenProcesoGrande(indice, images);
+        return;
+    }
+
+    let current = Math.max(0, Math.min(Number(indice || 0), images.length - 1));
+    const existing = document.getElementById('rcb-image-viewer-fallback');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'rcb-image-viewer-fallback';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10020;display:flex;align-items:center;justify-content:center;';
+
+    const render = () => {
+        modal.innerHTML = `
+            <button type="button" data-close="1" style="position:absolute;top:16px;right:16px;width:42px;height:42px;border-radius:50%;border:none;background:#fff;color:#111;font-size:24px;cursor:pointer;">×</button>
+            <button type="button" data-prev="1" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;border:none;background:rgba(255,255,255,.85);font-size:22px;cursor:pointer;" ${current === 0 ? 'disabled' : ''}>‹</button>
+            <img src="${images[current]}" alt="Imagen ${current + 1}" style="max-width:92vw;max-height:86vh;object-fit:contain;background:#0b1220;border-radius:10px;">
+            <button type="button" data-next="1" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;border:none;background:rgba(255,255,255,.85);font-size:22px;cursor:pointer;" ${current === images.length - 1 ? 'disabled' : ''}>›</button>
+            <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:#fff;font-weight:700;">${current + 1} / ${images.length}</div>
+        `;
+    };
+
+    render();
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal || e.target.closest('[data-close="1"]')) {
+            modal.remove();
+            return;
+        }
+        if (e.target.closest('[data-prev="1"]') && current > 0) {
+            current -= 1;
+            render();
+            return;
+        }
+        if (e.target.closest('[data-next="1"]') && current < images.length - 1) {
+            current += 1;
+            render();
+        }
+    });
+    document.body.appendChild(modal);
+}
+
+function toggleFactura() {
+    const card = document.getElementById('rcb-order-card');
+    const galeria = document.getElementById('galeria-modal-costura-rcb');
+    const galeriaBody = document.getElementById('rcb-galeria-body');
+    if (!card || !galeria || !galeriaBody) return;
+    if (galeriaBody.children.length === 0) return;
+
+    const galeriaVisible = galeria.style.display !== 'none';
+    card.style.display = galeriaVisible ? 'block' : 'none';
+    galeria.style.display = galeriaVisible ? 'none' : 'flex';
 }
 
 function openReciboCorteBodegaModal(id) {
@@ -415,9 +608,57 @@ function renderReciboCorteBodegaData(data) {
         tallasList.appendChild(span);
     }
 
+    const fotosSection = document.getElementById('rcb-fotos-section');
+    const fotosGrid = document.getElementById('rcb-fotos-grid');
+    const galeriaBody = document.getElementById('rcb-galeria-body');
+    const card = document.getElementById('rcb-order-card');
+    const galeria = document.getElementById('galeria-modal-costura-rcb');
+    if (fotosGrid) {
+        const fotos = Array.isArray(data.fotos) ? data.fotos : [];
+        const urlsGaleria = [];
+        fotosGrid.innerHTML = '';
+        if (galeriaBody) galeriaBody.innerHTML = '';
+        fotos.forEach((foto, index) => {
+            const url = String(foto?.url || '').trim();
+            if (!url) return;
+            urlsGaleria.push(url);
+            const item = document.createElement('a');
+            item.className = 'rcb-foto-thumb';
+            item.href = 'javascript:void(0)';
+            item.title = `Imagen ${index + 1}`;
+            item.innerHTML = `<img src="${url}" alt="Imagen recibo ${index + 1}" loading="lazy">`;
+            item.addEventListener('click', (event) => {
+                event.preventDefault();
+                abrirVisorImagenRcb(index, window.__galeriaImagenes || urlsGaleria);
+            });
+            fotosGrid.appendChild(item);
+
+            if (galeriaBody) {
+                const cardGaleria = document.createElement('div');
+                cardGaleria.className = 'rcb-galeria-card';
+                cardGaleria.innerHTML = `
+                    <img src="${url}" alt="Imagen ${index + 1}" loading="lazy">
+                    <div class="rcb-galeria-card-footer">
+                        <div style="font-size: .75rem; color: #6b7280;">Imagen ${index + 1}</div>
+                    </div>
+                `;
+                cardGaleria.addEventListener('click', () => {
+                    abrirVisorImagenRcb(index, window.__galeriaImagenes || urlsGaleria);
+                });
+                galeriaBody.appendChild(cardGaleria);
+            }
+        });
+        window.__galeriaImagenes = urlsGaleria;
+        if (fotosSection) fotosSection.style.display = 'none';
+    }
+
+    if (card) card.style.display = 'block';
+    if (galeria) galeria.style.display = 'none';
+
     document.getElementById('rcb-modal-wrapper').classList.add('is-visible');
     document.getElementById('rcb-modal-overlay').classList.add('is-visible');
     document.getElementById('rcb-floating-buttons').classList.add('is-visible');
+    document.getElementById('btn-cerrar-modal-dinamico-rcb')?.classList.add('is-visible');
     resetReciboCorteBodegaZoom();
 }
 
@@ -428,6 +669,11 @@ function closeReciboCorteBodegaModal() {
     document.getElementById('rcb-modal-wrapper').classList.remove('is-visible');
     document.getElementById('rcb-modal-overlay').classList.remove('is-visible');
     document.getElementById('rcb-floating-buttons').classList.remove('is-visible');
+    document.getElementById('btn-cerrar-modal-dinamico-rcb')?.classList.remove('is-visible');
+    const card = document.getElementById('rcb-order-card');
+    const galeria = document.getElementById('galeria-modal-costura-rcb');
+    if (card) card.style.display = 'block';
+    if (galeria) galeria.style.display = 'none';
     resetReciboCorteBodegaZoom();
 }
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PrendaBodega extends Model
 {
@@ -18,6 +19,11 @@ class PrendaBodega extends Model
     public function tallas()
     {
         return $this->hasMany(PrendaTallasBodega::class, 'prenda_bodega_id');
+    }
+
+    public function fotos(): HasMany
+    {
+        return $this->hasMany(PrendaBodegaFoto::class, 'prenda_bodega_id')->orderBy('orden');
     }
 
     public function user()

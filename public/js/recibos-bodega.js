@@ -260,6 +260,7 @@ document.addEventListener('DOMContentLoaded', function () {
         genero: null,
         tipoSeleccionado: null,
         modoCarga: 'normal',
+        modoSeleccionado: false,
         etapa: 'modo',
         detallesSeleccionados: [],
     };
@@ -285,10 +286,9 @@ document.addEventListener('DOMContentLoaded', function () {
         row.className = `tipo-talla-row ${modo === 'normal' ? 'is-normal' : ''}`;
         const datalistId = LISTA_TALLAS_POR_TIPO[tipo] || 'tallas-sugeridas-list';
         if (modo === 'cantidad') {
-            row.classList.add('is-normal');
+            row.classList.add('is-normal', 'is-cantidad-only');
             row.innerHTML = `
-                <input type="number" class="modal-cantidad-input" min="1" placeholder="Cantidad" value="${detalle.cantidad || ''}">
-                <button type="button" class="tipo-talla-remove">x</button>
+                <input type="number" class="modal-cantidad-input" min="1" placeholder="INGREGE LA CANTIDAD" value="${detalle.cantidad || ''}">
             `;
         } else if (modo === 'normal') {
             row.innerHTML = `
@@ -325,10 +325,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function actualizarUIWizard() {
         const etapa = tipoTallaState.etapa;
-        if (tipoTallaModoActions) tipoTallaModoActions.style.display = etapa === 'modo' ? '' : 'none';
-        if (tipoTallaTipoActions) tipoTallaTipoActions.style.display = etapa === 'tipo' ? '' : 'none';
-        if (tipoTallaBackBtn) tipoTallaBackBtn.style.display = etapa === 'modo' ? 'none' : '';
-        if (tipoTallaGrid) tipoTallaGrid.style.display = etapa === 'captura' ? '' : 'none';
+        if (tipoTallaModoActions) {
+            tipoTallaModoActions.style.setProperty('display', 'grid', 'important');
+        }
+        if (tipoTallaTipoActions) {
+            const mostrarTipo = tipoTallaState.modoSeleccionado && tipoTallaState.modoCarga !== 'cantidad';
+            tipoTallaTipoActions.style.setProperty('display', mostrarTipo ? 'grid' : 'none', 'important');
+        }
+        if (tipoTallaBackBtn) tipoTallaBackBtn.style.display = 'none';
+        if (tipoTallaGrid) {
+            if (etapa === 'captura') {
+                tipoTallaGrid.style.setProperty('display', 'block', 'important');
+            } else {
+                tipoTallaGrid.style.setProperty('display', 'none', 'important');
+            }
+        }
         setStepVisual(tipoTallaStepModo, etapa === 'modo', etapa === 'tipo' || etapa === 'captura');
         setStepVisual(tipoTallaStepTipo, etapa === 'tipo', etapa === 'captura');
         setStepVisual(tipoTallaStepCaptura, etapa === 'captura', false);
@@ -392,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }).join('');
         block.innerHTML = `
             <div class="tipo-talla-color-head">
-                <input type="text" class="modal-color-grupo-input" placeholder="Color (ej: AZUL REY)" value="${color}">
+                <input type="text" class="modal-color-grupo-input" placeholder="Ingrese el color" value="${color}">
                 <button type="button" class="tipo-talla-remove-color-block">x</button>
             </div>
             <div class="tipo-talla-block-pills">${tallasPillsHtml}</div>
@@ -484,6 +495,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (tipoTallaState.modoCarga !== 'cantidad' && tipoTallaState.modoCarga !== 'color') {
+            const helper = document.createElement('div');
+            helper.className = 'tipo-talla-helper';
+            helper.textContent = 'Selecciona una talla para agregar cantidad.';
+            tipoTallaGrid.appendChild(helper);
+
             const pillsWrap = document.createElement('div');
             pillsWrap.className = 'tipo-talla-pills';
             (TALLAS_POR_TIPO[tipo] || []).forEach((talla) => {
@@ -510,6 +526,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     } else {
                         tipoTallaGrid.appendChild(row);
                     }
+                    row.querySelector('.modal-cantidad-input')?.focus();
                     actualizarConfirmarModal();
                     sincronizarEstadoPills();
                 });
@@ -518,7 +535,7 @@ document.addEventListener('DOMContentLoaded', function () {
             tipoTallaGrid.appendChild(pillsWrap);
             const emptyState = document.createElement('div');
             emptyState.className = 'tipo-talla-empty';
-            emptyState.textContent = 'No hay tallas agregadas. Usa el botón para crear una fila.';
+            emptyState.textContent = 'Aun no agregas tallas. Toca una talla para continuar.';
             tipoTallaGrid.appendChild(emptyState);
         } else {
             const emptyState = document.createElement('div');
@@ -527,30 +544,40 @@ document.addEventListener('DOMContentLoaded', function () {
             tipoTallaGrid.appendChild(emptyState);
         }
 
-        const addBtn = document.createElement('button');
-        addBtn.type = 'button';
-        addBtn.className = 'btn btn-outline-primary tipo-talla-add-btn';
-        addBtn.textContent = tipoTallaState.modoCarga === 'cantidad'
-            ? '+ Agregar cantidad'
-            : tipoTallaState.modoCarga === 'color'
+        if (tipoTallaState.modoCarga === 'cantidad') {
+            const hasRows = Boolean(tipoTallaGrid.querySelector('.tipo-talla-row'));
+            if (!hasRows) {
+                const emptyRef = tipoTallaGrid.querySelector('.tipo-talla-empty');
+                if (emptyRef) emptyRef.remove();
+                const autoRow = crearFilaDetalleModal(tipo, tipoTallaState.modoCarga);
+                tipoTallaGrid.appendChild(autoRow);
+                autoRow.querySelector('.modal-cantidad-input')?.focus();
+            }
+        } else if (tipoTallaState.modoCarga === 'color') {
+            const addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.className = 'btn btn-outline-primary tipo-talla-add-btn';
+            addBtn.textContent = tipoTallaState.modoCarga === 'color'
                 ? '+ Agregar color'
                 : '+ Agregar talla';
-        addBtn.addEventListener('click', function () {
-            const emptyRef = tipoTallaGrid.querySelector('.tipo-talla-empty');
-            if (emptyRef) emptyRef.remove();
-            if (tipoTallaState.modoCarga === 'color') {
-                const groupsWrap = tipoTallaGrid.querySelector('.tipo-talla-color-groups');
-                const block = crearBloqueColorModal(tipo);
-                groupsWrap?.appendChild(block);
-                activarBloqueColor(block);
-                const colorInput = block.querySelector('.modal-color-grupo-input');
-                colorInput?.focus();
-            } else {
-                tipoTallaGrid.insertBefore(crearFilaDetalleModal(tipo, tipoTallaState.modoCarga), addBtn);
-            }
-            actualizarConfirmarModal();
-        });
-        tipoTallaGrid.appendChild(addBtn);
+            addBtn.addEventListener('click', function () {
+                const emptyRef = tipoTallaGrid.querySelector('.tipo-talla-empty');
+                if (emptyRef) emptyRef.remove();
+                if (tipoTallaState.modoCarga === 'color') {
+                    const groupsWrap = tipoTallaGrid.querySelector('.tipo-talla-color-groups');
+                    const block = crearBloqueColorModal(tipo);
+                    groupsWrap?.appendChild(block);
+                    activarBloqueColor(block);
+                    const colorInput = block.querySelector('.modal-color-grupo-input');
+                    colorInput?.focus();
+                } else {
+                    tipoTallaGrid.insertBefore(crearFilaDetalleModal(tipo, tipoTallaState.modoCarga), addBtn);
+                }
+                actualizarConfirmarModal();
+            });
+            tipoTallaGrid.appendChild(addBtn);
+        }
+
         actualizarConfirmarModal();
         sincronizarEstadoPills();
     }
@@ -562,6 +589,7 @@ document.addEventListener('DOMContentLoaded', function () {
             tipoTallaState.genero = genero;
             tipoTallaState.tipoSeleccionado = null;
             tipoTallaState.modoCarga = 'normal';
+            tipoTallaState.modoSeleccionado = false;
             tipoTallaState.etapa = 'modo';
             tipoTallaState.detallesSeleccionados = [];
             tipoTallaModalText.textContent = `Configura tallas para ${toGeneroLabel(genero)}.`;
@@ -576,12 +604,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (btn.dataset.modoCargaSelect === 'cantidad') {
                     btn.style.display = genero === 'unisex' ? '' : 'none';
                 }
-            });
-
-            tipoTallaModal.querySelectorAll('[data-tipo-talla-select]').forEach((btn) => {
-                const isActive = btn.dataset.tipoTallaSelect === 'letra';
-                btn.classList.toggle('btn-primary', isActive);
-                btn.classList.toggle('btn-outline-primary', !isActive);
             });
 
             tipoTallaModal.querySelectorAll('[data-tipo-talla-select]').forEach((btn) => {
@@ -610,6 +632,7 @@ document.addEventListener('DOMContentLoaded', function () {
         tipoTallaState.genero = null;
         tipoTallaState.tipoSeleccionado = null;
         tipoTallaState.modoCarga = 'normal';
+        tipoTallaState.modoSeleccionado = false;
         tipoTallaState.etapa = 'modo';
         tipoTallaState.detallesSeleccionados = [];
     }
@@ -685,6 +708,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const closeModal = () => {
         modal.classList.remove('is-open');
         document.body.style.overflow = '';
+        limpiarImagenesPrendas();
         if (previousActiveElement) {
             previousActiveElement.focus();
             previousActiveElement = null;
@@ -693,11 +717,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const openModal = () => {
         previousActiveElement = document.activeElement;
+        limpiarImagenesPrendas();
         modal.classList.add('is-open');
         document.body.style.overflow = 'hidden';
         const firstInput = form.querySelector('input, textarea, button[type="submit"]');
         if (firstInput) setTimeout(() => firstInput.focus(), 100);
     };
+
+    function limpiarImagenesPrendas() {
+        prendasContainer.querySelectorAll('.prenda-imagenes-input').forEach((input) => {
+            input.value = '';
+        });
+        prendasContainer.querySelectorAll('.prenda-imagenes-preview').forEach((preview) => {
+            preview.innerHTML = '';
+        });
+    }
 
     openBtn?.addEventListener('click', openModal);
 
@@ -793,8 +827,18 @@ document.addEventListener('DOMContentLoaded', function () {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
         console.log('[FORM] CSRF Token:', csrfToken ? 'Presente' : 'NO ENCONTRADO');
 
-        const payload = { prendas: prendas };
-        console.log('[FORM] Enviando payload:', JSON.stringify(payload));
+        const multipartData = new FormData();
+        multipartData.append('prendas_json', JSON.stringify(prendas));
+
+        const prendaCards = prendasContainer.querySelectorAll('.prenda-card');
+        prendaCards.forEach((card) => {
+            const index = parseInt(card.dataset.prendaIndex || '0', 10);
+            const imageInput = card.querySelector('.prenda-imagenes-input');
+            const files = Array.from(imageInput?.files || []);
+            files.forEach((file) => {
+                multipartData.append(`prenda_imagenes[${index}][]`, file);
+            });
+        });
 
         const originalSubmitText = submitBtn ? submitBtn.innerHTML : '';
         if (submitBtn) {
@@ -805,10 +849,9 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/api/recibo-corte-bodega', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken,
             },
-            body: JSON.stringify(payload),
+            body: multipartData,
         })
         .then(async response => {
             console.log('[FETCH] Response status:', response.status, response.statusText);
@@ -935,6 +978,114 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    function setFilesEnInput(input, files) {
+        const dt = new DataTransfer();
+        files.forEach((file) => dt.items.add(file));
+        input.files = dt.files;
+    }
+
+    function renderPrendaImagenesPreview(prendaCard, imageInput, files) {
+        const prendaIndex = prendaCard?.dataset?.prendaIndex || '0';
+        const preview = prendaCard?.querySelector(`[data-prenda-imagenes-preview="${prendaIndex}"]`);
+        if (!preview) return;
+
+        preview.innerHTML = '';
+        files.slice(0, 12).forEach((file, index) => {
+            const item = document.createElement('div');
+            item.className = 'prenda-imagen-preview-item';
+            item.dataset.previewIndex = String(index);
+
+            const img = document.createElement('img');
+            img.alt = 'Vista previa';
+            img.src = URL.createObjectURL(file);
+            img.onload = () => URL.revokeObjectURL(img.src);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'prenda-imagen-preview-remove';
+            removeBtn.dataset.removePreviewIndex = String(index);
+            removeBtn.setAttribute('aria-label', 'Eliminar imagen');
+            removeBtn.textContent = '×';
+
+            item.appendChild(img);
+            item.appendChild(removeBtn);
+            preview.appendChild(item);
+        });
+    }
+
+    prendasContainer.addEventListener('change', function (event) {
+        const imageInput = event.target.closest('.prenda-imagenes-input');
+        if (!imageInput) return;
+
+        const prendaCard = imageInput.closest('.prenda-card');
+        const files = Array.from(imageInput.files || []).filter((file) => /^image\//i.test(file.type));
+        setFilesEnInput(imageInput, files);
+        renderPrendaImagenesPreview(prendaCard, imageInput, files);
+    });
+
+    prendasContainer.addEventListener('click', function (event) {
+        const removePreviewBtn = event.target.closest('[data-remove-preview-index]');
+        if (removePreviewBtn) {
+            const prendaCard = removePreviewBtn.closest('.prenda-card');
+            const input = prendaCard?.querySelector('.prenda-imagenes-input');
+            const removeIndex = parseInt(removePreviewBtn.dataset.removePreviewIndex || '-1', 10);
+            if (!input || removeIndex < 0) return;
+
+            const files = Array.from(input.files || []);
+            const filesActualizados = files.filter((_, idx) => idx !== removeIndex);
+            setFilesEnInput(input, filesActualizados);
+            renderPrendaImagenesPreview(prendaCard, input, filesActualizados);
+            return;
+        }
+
+        const dropzone = event.target.closest('.prenda-imagenes-dropzone');
+        if (!dropzone) return;
+        const prendaCard = dropzone.closest('.prenda-card');
+        const input = prendaCard?.querySelector('.prenda-imagenes-input');
+        input?.click();
+    });
+
+    prendasContainer.addEventListener('keydown', function (event) {
+        const dropzone = event.target.closest('.prenda-imagenes-dropzone');
+        if (!dropzone) return;
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        const prendaCard = dropzone.closest('.prenda-card');
+        const input = prendaCard?.querySelector('.prenda-imagenes-input');
+        input?.click();
+    });
+
+    prendasContainer.addEventListener('dragover', function (event) {
+        const dropzone = event.target.closest('.prenda-imagenes-dropzone');
+        if (!dropzone) return;
+        event.preventDefault();
+        dropzone.classList.add('is-dragover');
+    });
+
+    prendasContainer.addEventListener('dragleave', function (event) {
+        const dropzone = event.target.closest('.prenda-imagenes-dropzone');
+        if (!dropzone) return;
+        if (dropzone.contains(event.relatedTarget)) return;
+        dropzone.classList.remove('is-dragover');
+    });
+
+    prendasContainer.addEventListener('drop', function (event) {
+        const dropzone = event.target.closest('.prenda-imagenes-dropzone');
+        if (!dropzone) return;
+        event.preventDefault();
+        dropzone.classList.remove('is-dragover');
+
+        const files = Array.from(event.dataTransfer?.files || []).filter((file) => /^image\//i.test(file.type));
+        if (files.length === 0) return;
+
+        const prendaCard = dropzone.closest('.prenda-card');
+        const input = prendaCard?.querySelector('.prenda-imagenes-input');
+        if (!input) return;
+
+        setFilesEnInput(input, files);
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
     prendasContainer.addEventListener('click', function (event) {
         const generoToggleInput = event.target.closest('.genero-check-input[data-genero-toggle]');
         if (generoToggleInput) return;
@@ -984,6 +1135,7 @@ document.addEventListener('DOMContentLoaded', function () {
     tipoTallaModal.querySelectorAll('[data-modo-carga-select]').forEach((btn) => {
         btn.addEventListener('click', function () {
             tipoTallaState.modoCarga = btn.dataset.modoCargaSelect || 'normal';
+            tipoTallaState.modoSeleccionado = true;
             if (tipoTallaState.genero !== 'unisex' && tipoTallaState.modoCarga === 'cantidad') {
                 tipoTallaState.modoCarga = 'normal';
             }
@@ -999,22 +1151,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (tipoTallaConfirmarBtn) tipoTallaConfirmarBtn.disabled = true;
                 return;
             }
-
+            // Mostrar tipo debajo en la misma vista y limpiar captura previa.
             tipoTallaState.tipoSeleccionado = null;
             tipoTallaState.etapa = 'tipo';
-            if (tipoTallaGrid) tipoTallaGrid.innerHTML = '';
+            if (tipoTallaGrid) {
+                tipoTallaGrid.innerHTML = '';
+            }
+            tipoTallaModal.querySelectorAll('[data-tipo-talla-select]').forEach((b) => {
+                b.classList.toggle('btn-primary', false);
+                b.classList.toggle('btn-outline-primary', true);
+            });
             actualizarUIWizard();
         });
     });
 
     tipoTallaBackBtn?.addEventListener('click', function () {
-        if (tipoTallaState.etapa === 'captura') {
-            tipoTallaState.tipoSeleccionado = null;
-            tipoTallaState.etapa = 'tipo';
-            if (tipoTallaGrid) tipoTallaGrid.innerHTML = '';
-        } else if (tipoTallaState.etapa === 'tipo') {
-            tipoTallaState.etapa = 'modo';
-        }
+        // Ya no se usa en modo apilado.
         actualizarUIWizard();
     });
 

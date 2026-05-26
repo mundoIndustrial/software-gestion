@@ -87,6 +87,24 @@
                                         <textarea name="prenda[0]" rows="3" class="form-textarea form-textarea-no-resize" placeholder="Ej: Polo roja con bolsillo frontal" required></textarea>
                                     </div>
                                 </div>
+                                <div class="prenda-imagenes-section">
+                                    <label class="form-label-small" for="prendaImagenes_0">Imágenes de referencia</label>
+                                    <input
+                                        id="prendaImagenes_0"
+                                        type="file"
+                                        class="prenda-imagenes-input"
+                                        name="prenda_imagenes[0][]"
+                                        accept="image/*"
+                                        multiple
+                                        hidden
+                                    >
+                                    <div class="prenda-imagenes-dropzone" data-prenda-dropzone="0" tabindex="0" role="button" aria-label="Subir imágenes">
+                                        <strong>Arrastra imágenes aquí</strong>
+                                        <span>o haz clic para seleccionar</span>
+                                    </div>
+                                    <small class="prenda-imagenes-help">Puedes seleccionar una o varias imágenes.</small>
+                                    <div class="prenda-imagenes-preview" data-prenda-imagenes-preview="0"></div>
+                                </div>
 
                                 <div class="tallas-section">
                                     <label class="form-label-small">Tallas, color y cantidad</label>

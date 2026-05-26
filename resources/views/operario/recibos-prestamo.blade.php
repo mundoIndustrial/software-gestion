@@ -103,6 +103,16 @@
         display: grid;
         gap: 0.75rem;
     }
+    .flash-success {
+        border: 1px solid #bbf7d0;
+        background: #f0fdf4;
+        color: #166534;
+        border-radius: 12px;
+        padding: 0.7rem 0.8rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+    }
     .recibo-card-mobile {
         border: 1px solid #e4eaf3;
         border-radius: 16px;
@@ -134,7 +144,8 @@
         display: flex;
         gap: 0.5rem;
     }
-    .recibo-actions button {
+    .recibo-actions button,
+    .recibo-actions a {
         flex: 1;
         border: 1px solid #d2dceb;
         border-radius: 10px;
@@ -144,8 +155,11 @@
         font-weight: 600;
         padding: 0.5rem 0.55rem;
         cursor: pointer;
+        text-align: center;
+        text-decoration: none;
     }
-    .recibo-actions button:last-child {
+    .recibo-actions button:last-child,
+    .recibo-actions a:last-child {
         background: #fff7ed;
         border-color: #fed7aa;
         color: #9a3412;
@@ -166,22 +180,6 @@
     @php
         $tabActiva = request()->query('tab', 'insumos');
         $tabActiva = in_array($tabActiva, ['insumos', 'contramuestra'], true) ? $tabActiva : 'insumos';
-        $demoRecibos = [
-            [
-                'numero' => 1,
-                'tipo' => 'Préstamo de Insumos',
-                'tipo_key' => 'insumos',
-                'responsable' => 'Tatiana',
-                'fecha' => '26/05/2026 09:12',
-            ],
-            [
-                'numero' => 2,
-                'tipo' => 'Préstamo de Contramuestra Costura',
-                'tipo_key' => 'contramuestra',
-                'responsable' => 'Tatiana',
-                'fecha' => '25/05/2026 16:40',
-            ],
-        ];
     @endphp
 
     <div class="prestamos-wrap">
@@ -202,48 +200,49 @@
             <div class="list-title">
                 <h3>Recibos Registrados</h3>
             </div>
+            @if(session('success'))
+                <div class="flash-success">{{ session('success') }}</div>
+            @endif
 
             <div class="tab-panel {{ $tabActiva === 'insumos' ? 'active' : '' }}" data-panel="insumos">
                 <a href="{{ route('operario.recibos-prestamo.insumos.crear') }}" class="add-btn" style="display:inline-block;text-align:center;text-decoration:none;">+ Agregar préstamo de insumos</a>
                 <div class="recibos-cards">
-                    @foreach($demoRecibos as $recibo)
-                        @if($recibo['tipo_key'] === 'insumos')
-                            <article class="recibo-card-mobile">
-                                <div class="recibo-top">
-                                    <p class="recibo-num">N° {{ $recibo['numero'] }}</p>
-                                </div>
-                                <p class="recibo-meta"><strong>Tipo:</strong> {{ $recibo['tipo'] }}</p>
-                                <p class="recibo-meta"><strong>Responsable:</strong> {{ $recibo['responsable'] }}</p>
-                                <p class="recibo-meta"><strong>Fecha:</strong> {{ $recibo['fecha'] }}</p>
-                                <div class="recibo-actions">
-                                    <button type="button">Ver</button>
-                                    <button type="button">Anular</button>
-                                </div>
-                            </article>
-                        @endif
-                    @endforeach
+                    @forelse(($recibosInsumos ?? []) as $recibo)
+                        <article class="recibo-card-mobile">
+                            <div class="recibo-top">
+                                <p class="recibo-num">N° {{ $recibo->numero_orden }}</p>
+                            </div>
+                            <p class="recibo-meta"><strong>Tipo:</strong> Préstamo de Insumos</p>
+                            <p class="recibo-meta"><strong>Responsable:</strong> {{ $recibo->nombre_costurero }}</p>
+                            <p class="recibo-meta"><strong>Fecha:</strong> {{ \Carbon\Carbon::parse($recibo->fecha)->format('d/m/Y') }}</p>
+                            <div class="recibo-actions">
+                                <a href="{{ route('operario.recibos-prestamo.insumos.show', $recibo->id) }}">Ver</a>
+                            </div>
+                        </article>
+                    @empty
+                        <p class="recibo-meta">Sin recibos registrados.</p>
+                    @endforelse
                 </div>
             </div>
 
             <div class="tab-panel {{ $tabActiva === 'contramuestra' ? 'active' : '' }}" data-panel="contramuestra">
                 <a href="{{ route('operario.recibos-prestamo.contramuestra.crear') }}" class="add-btn" style="display:inline-block;text-align:center;text-decoration:none;">+ Agregar préstamo de contramuestra</a>
                 <div class="recibos-cards">
-                    @foreach($demoRecibos as $recibo)
-                        @if($recibo['tipo_key'] === 'contramuestra')
-                            <article class="recibo-card-mobile">
-                                <div class="recibo-top">
-                                    <p class="recibo-num">N° {{ $recibo['numero'] }}</p>
-                                </div>
-                                <p class="recibo-meta"><strong>Tipo:</strong> {{ $recibo['tipo'] }}</p>
-                                <p class="recibo-meta"><strong>Responsable:</strong> {{ $recibo['responsable'] }}</p>
-                                <p class="recibo-meta"><strong>Fecha:</strong> {{ $recibo['fecha'] }}</p>
-                                <div class="recibo-actions">
-                                    <button type="button">Ver</button>
-                                    <button type="button">Anular</button>
-                                </div>
-                            </article>
-                        @endif
-                    @endforeach
+                    @forelse(($recibosContramuestra ?? []) as $recibo)
+                        <article class="recibo-card-mobile">
+                            <div class="recibo-top">
+                                <p class="recibo-num">N° {{ $recibo->numero_orden }}</p>
+                            </div>
+                            <p class="recibo-meta"><strong>Tipo:</strong> Préstamo de Contramuestra Costura</p>
+                            <p class="recibo-meta"><strong>Responsable:</strong> {{ $recibo->nombre_costurero }}</p>
+                            <p class="recibo-meta"><strong>Fecha:</strong> {{ \Carbon\Carbon::parse($recibo->fecha)->format('d/m/Y') }}</p>
+                            <div class="recibo-actions">
+                                <a href="{{ route('operario.recibos-prestamo.contramuestra.show', $recibo->id) }}">Ver</a>
+                            </div>
+                        </article>
+                    @empty
+                        <p class="recibo-meta">Sin recibos registrados.</p>
+                    @endforelse
                 </div>
             </div>
         </section>
