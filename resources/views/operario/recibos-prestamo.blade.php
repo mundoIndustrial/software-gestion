@@ -194,7 +194,7 @@
             </div>
 
             <div class="tab-panel active" data-panel="insumos">
-                <button type="button" class="add-btn">+ Agregar préstamo de insumos</button>
+                <a href="{{ route('operario.recibos-prestamo.insumos.crear') }}" class="add-btn" style="display:inline-block;text-align:center;text-decoration:none;">+ Agregar préstamo de insumos</a>
                 <div class="recibos-cards">
                     @foreach($demoRecibos as $recibo)
                         @if($recibo['tipo_key'] === 'insumos')
