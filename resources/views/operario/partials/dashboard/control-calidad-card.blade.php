@@ -48,8 +48,11 @@
             <div class="orden-prendas">
                 <p class="prendas-label">
                     <strong>{{ $prenda['nombre_prenda'] }}</strong>
-                    @if(!empty($prenda['descripcion']))
-                        <br>{!! nl2br(e($prenda['descripcion'])) !!}
+                    @php
+                        $descripcionPrenda = trim(strip_tags(html_entity_decode((string) ($prenda['descripcion'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+                    @endphp
+                    @if($descripcionPrenda !== '')
+                        <br>{!! nl2br(e($descripcionPrenda)) !!}
                     @endif
                 </p>
             </div>

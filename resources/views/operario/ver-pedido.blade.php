@@ -1297,6 +1297,17 @@
         const urlParams = new URLSearchParams(window.location.search);
         const tipoReciboParam = String(urlParams.get('tipo_recibo') || '').trim().toUpperCase();
         const consecutivoParcialParam = String(urlParams.get('consecutivo_parcial') || '').trim();
+        const consecutivoReciboParam = String(urlParams.get('consecutivo_recibo') || '').trim();
+        const reciboIdParam = String(urlParams.get('recibo_id') || '').trim();
+        const prendaIdParam = Number(urlParams.get('prenda_id') || 0);
+        if (consecutivoReciboParam) {
+            const headerElement = document.getElementById('header-numero-recibo');
+            if (headerElement) {
+                headerElement.textContent = '#' + consecutivoReciboParam;
+            }
+            numeroReciboActual = consecutivoReciboParam;
+            return;
+        }
         if (tipoReciboParam === 'PARCIAL' && consecutivoParcialParam) {
             const headerElement = document.getElementById('header-numero-recibo');
             if (headerElement) {
@@ -1321,8 +1332,35 @@
         
         if (procesoActualSeleccionado) {
             prendas = prendas.filter(p => {
+                const idPrendaActual = Number(p?.id || p?.prenda_pedido_id || p?.prenda_id || 0);
+                if (prendaIdParam > 0 && idPrendaActual === prendaIdParam) {
+                    return true;
+                }
+
                 if (p.recibos && typeof p.recibos === 'object') {
-                    return p.recibos[procesoActualSeleccionado] !== null && p.recibos[procesoActualSeleccionado] !== undefined;
+                    if (reciboIdParam !== '') {
+                        for (const value of Object.values(p.recibos)) {
+                            if (!value || typeof value !== 'object') continue;
+                            const idRecibo = String(value.recibo_id || value.consecutivo_recibo_id || value.id || '').trim();
+                            if (idRecibo !== '' && idRecibo === reciboIdParam) {
+                                return true;
+                            }
+                        }
+                    }
+
+                    const directo = p.recibos[procesoActualSeleccionado];
+                    if (directo !== null && directo !== undefined) {
+                        return true;
+                    }
+
+                    const procUpper = String(procesoActualSeleccionado || '').trim().toUpperCase();
+                    for (const [key, value] of Object.entries(p.recibos)) {
+                        const keyUpper = String(key || '').trim().toUpperCase();
+                        const tipoInterno = String(value?.tipo_recibo || value?.proceso || '').trim().toUpperCase();
+                        if ((keyUpper === procUpper || tipoInterno === procUpper) && value !== null && value !== undefined) {
+                            return true;
+                        }
+                    }
                 }
                 return false;
             });

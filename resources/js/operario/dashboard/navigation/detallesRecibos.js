@@ -52,6 +52,11 @@
         }
 
         console.log(' Pedido Parcial ID:', pedidoParcialId);
+    } else if (consecutivoParcial !== null && consecutivoParcial !== undefined && String(consecutivoParcial).trim() !== '') {
+        // Para recibos no parciales, conservar el consecutivo clickeado para evitar cruces
+        // cuando existen varios procesos para la misma prenda.
+        params.append('consecutivo_recibo', String(consecutivoParcial).trim());
+        console.log(' Consecutivo recibo:', String(consecutivoParcial).trim());
     }
 
     if (params.toString()) {
@@ -70,4 +75,3 @@
         return false;
     }
 }
-

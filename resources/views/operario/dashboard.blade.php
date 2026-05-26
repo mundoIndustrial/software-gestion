@@ -172,8 +172,11 @@
                                         <div class="orden-prendas">
                                             <p class="prendas-label">
                                                 <strong>{{ $recibo['nombre_prenda'] }}</strong>
-                                                @if($recibo['descripcion'])
-                                                    <br>{!! nl2br(e($recibo['descripcion'])) !!}
+                                                @php
+                                                    $descripcionRecibo = trim(strip_tags(html_entity_decode((string) ($recibo['descripcion'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+                                                @endphp
+                                                @if($descripcionRecibo !== '')
+                                                    <br>{!! nl2br(e($descripcionRecibo)) !!}
                                                 @endif
                                             </p>        
                                         </div>
@@ -309,8 +312,11 @@
                                                     <div class="orden-prendas">
                                                         <p class="prendas-label">
                                                             <strong>{{ $resultado['nombre_prenda'] }}</strong>
-                                                            @if(!empty($resultado['descripcion']))
-                                                                <br>{!! nl2br(e($resultado['descripcion'])) !!}
+                                                            @php
+                                                                $descripcionResultado = trim(strip_tags(html_entity_decode((string) ($resultado['descripcion'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+                                                            @endphp
+                                                            @if($descripcionResultado !== '')
+                                                                <br>{!! nl2br(e($descripcionResultado)) !!}
                                                             @endif
                                                         </p>
                                                     </div>

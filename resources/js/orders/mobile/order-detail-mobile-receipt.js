@@ -8,11 +8,29 @@
     const tipoReciboUpper = (tipoReciboDataset || '').toString().trim().toUpperCase();
     const urlParams = new URLSearchParams(window.location.search);
     const consecutivoParcialParam = String(urlParams.get('consecutivo_parcial') || '').trim();
+    const consecutivoReciboParam = String(urlParams.get('consecutivo_recibo') || '').trim();
     const reciboIdParamRaw = String(urlParams.get('recibo_id') || '').trim();
     let pedidoParcialIdParam = String(
         urlParams.get('pedido_parcial_id') || urlParams.get('parcial_id') || ''
     ).trim();
     let esReciboParcial = pedidoParcialIdParam !== '' || consecutivoParcialParam !== '' || tipoReciboUpper === 'PARCIAL';
+
+    const normalizarDescripcionPlano = (rawValue) => {
+        const raw = String(rawValue ?? '').trim();
+        if (!raw) return '';
+
+        const textarea = document.createElement('textarea');
+        textarea.innerHTML = raw;
+        const decoded = textarea.value;
+
+        const container = document.createElement('div');
+        container.innerHTML = decoded;
+
+        return (container.textContent || container.innerText || '')
+            .replace(/\u00a0/g, ' ')
+            .replace(/\r\n?/g, '\n')
+            .trim();
+    };
 
     // Compatibilidad: en algunas vistas (ej. vista-costura) puede venir solo `recibo_id`.
     // Intentamos resolver `pedido_parcial_id` desde los datos cargados para renderizar
@@ -353,6 +371,34 @@
         });
     }
     
+    // Si la URL trae recibo_id, forzar proceso y consecutivo del recibo exacto
+    let procesoForzadoPorReciboId = null;
+    let consecutivoForzadoPorReciboId = null;
+    if (reciboIdParamRaw !== '' && Array.isArray(data?.prendas)) {
+        for (const prenda of data.prendas) {
+            if (!prenda?.recibos || typeof prenda.recibos !== 'object' || Array.isArray(prenda.recibos)) continue;
+
+            for (const [key, reciboVal] of Object.entries(prenda.recibos)) {
+                if (!reciboVal || typeof reciboVal !== 'object') continue;
+
+                const idReciboInterno = String(
+                    reciboVal?.recibo_id ||
+                    reciboVal?.consecutivo_recibo_id ||
+                    reciboVal?.id ||
+                    ''
+                ).trim();
+
+                if (idReciboInterno !== '' && idReciboInterno === reciboIdParamRaw) {
+                    procesoForzadoPorReciboId = String(reciboVal?.tipo_recibo || key || '').trim().toUpperCase();
+                    consecutivoForzadoPorReciboId = reciboVal?.consecutivo_actual ?? reciboVal?.consecutivo ?? null;
+                    break;
+                }
+            }
+
+            if (procesoForzadoPorReciboId) break;
+        }
+    }
+
     // Filtrar procesos según el rol del usuario y la vista actual
     let procesosFiltrados = todosProcesos;
     const esVistaOperario = (window.location?.pathname || '').toString().includes('/operario/');
@@ -467,7 +513,12 @@
         if (tieneCostu) procesosFiltrados.push('COSTURA');
         if (tieneCosturaBodega) procesosFiltrados.push('COSTURA-BODEGA');
 
-        if (tipoReciboUpper === 'PARCIAL') {
+        if (procesoForzadoPorReciboId) {
+            procesosFiltrados = [procesoForzadoPorReciboId];
+            window.procesoCarouselIndex = 0;
+            window.procesoActualSeleccionado = procesoForzadoPorReciboId;
+            console.log(' [FILTRO PROCESOS] Vista operario - proceso forzado por recibo_id:', procesoForzadoPorReciboId, 'recibo_id:', reciboIdParamRaw);
+        } else if (tipoReciboUpper === 'PARCIAL') {
             // Resolver dinámicamente el proceso real del parcial (puede ser COSTURA, REFLECTIVO, etc.)
             let procesoParcialReal = null;
             const parcialIdParam = String(pedidoParcialIdParam || '').trim();
@@ -525,7 +576,7 @@
             window.procesoCarouselIndex = 0;
             window.procesoActualSeleccionado = procesosFiltrados[0] || null;
             console.log(' [FILTRO PROCESOS] Vista operario - tipo_recibo=PARCIAL mapeado a proceso:', window.procesoActualSeleccionado);
-        } else if (tipoReciboUpper && todosProcesos.includes(tipoReciboUpper)) {
+        } else if (tipoReciboUpper && (todosProcesos.includes(tipoReciboUpper) || reciboIdParamRaw !== '')) {
             procesosFiltrados = [tipoReciboUpper];
             window.procesoCarouselIndex = 0;
             window.procesoActualSeleccionado = tipoReciboUpper;
@@ -852,13 +903,69 @@
     console.log('📱 [RECIBO MOBILE] Procesos disponibles:', procesosDisponibles);
     console.log('📱 [RECIBO MOBILE] Total prendas ANTES de filtrar:', todasLasPrendas.length);
     
+    const tieneReciboObjetivoUrl = reciboIdParamRaw !== '' || consecutivoReciboParam !== '';
+    const coincideReciboObjetivo = (reciboVal) => {
+        if (!reciboVal || typeof reciboVal !== 'object') return false;
+
+        const idReciboInterno = String(
+            reciboVal?.recibo_id ||
+            reciboVal?.consecutivo_recibo_id ||
+            reciboVal?.id ||
+            ''
+        ).trim();
+
+        const consecutivoInterno = String(
+            reciboVal?.consecutivo_actual ||
+            reciboVal?.consecutivo ||
+            ''
+        ).trim();
+
+        const coincidePorId = reciboIdParamRaw !== '' && idReciboInterno !== '' && idReciboInterno === reciboIdParamRaw;
+        const coincidePorConsecutivo = consecutivoReciboParam !== '' && consecutivoInterno !== '' && consecutivoInterno === consecutivoReciboParam;
+
+        return coincidePorId || coincidePorConsecutivo;
+    };
+
     // SIEMPRE filtrar prendas por el proceso seleccionado (cada recibo = 1 prenda)
     if (procesoActualSeleccionado && todasLasPrendas.length > 0) {
         console.log('📱 [RECIBO MOBILE]  FILTRANDO prendas para proceso:', procesoActualSeleccionado);
         todasLasPrendas = todasLasPrendas.filter(function(prenda) {
+            const prendaIdActual = Number(prenda?.id || prenda?.prenda_pedido_id || prenda?.prenda_id || 0);
+            const esPrendaObjetivo = prendaIdFromUrl > 0 && prendaIdActual > 0 && prendaIdActual === prendaIdFromUrl;
+
+            // Si llegamos por URL a una prenda específica, nunca excluirla por mismatch de llaves
+            // (hay payloads donde tipo_recibo=COSTURA pero la llave de recibos llega como COSTURA-BODEGA).
+            if (esPrendaObjetivo) {
+                return true;
+            }
+
+            // Cuando viene recibo específico por URL, priorizar esa coincidencia
+            // para evitar perder la prenda por diferencias de llave/proceso.
+            if (tieneReciboObjetivoUrl && prenda.recibos && typeof prenda.recibos === 'object') {
+                const entradasRecibos = Object.values(prenda.recibos);
+                const matchRecibo = entradasRecibos.some((value) => coincideReciboObjetivo(value));
+                if (matchRecibo) {
+                    return true;
+                }
+            }
+
             // Opción 1: Buscar en recibos
             if (prenda.recibos && typeof prenda.recibos === 'object') {
-                const tieneProc = prenda.recibos[procesoActualSeleccionado] !== null && prenda.recibos[procesoActualSeleccionado] !== undefined;
+                const valorDirecto = prenda.recibos[procesoActualSeleccionado];
+                let tieneProc = valorDirecto !== null && valorDirecto !== undefined;
+
+                // Fallback: match por llave case-insensitive y por tipo_recibo interno.
+                if (!tieneProc) {
+                    const procesoUpper = String(procesoActualSeleccionado || '').trim().toUpperCase();
+                    for (const [key, value] of Object.entries(prenda.recibos)) {
+                        const keyUpper = String(key || '').trim().toUpperCase();
+                        const tipoInterno = String(value?.tipo_recibo || value?.proceso || '').trim().toUpperCase();
+                        if ((keyUpper === procesoUpper || tipoInterno === procesoUpper) && value !== null && value !== undefined) {
+                            tieneProc = true;
+                            break;
+                        }
+                    }
+                }
                 console.log('📱 [RECIBO MOBILE] Prenda:', prenda.nombre, '- Tiene', procesoActualSeleccionado + '?:', tieneProc, 'Valor:', prenda.recibos[procesoActualSeleccionado]);
                 return tieneProc;
             }
@@ -1308,7 +1415,10 @@
 
             // 2.5. Descripción de la prenda (campo descripcion de prendas_pedido)
             if (prenda.descripcion && prenda.descripcion.trim()) {
-                html += `<span style="display: block; margin-top: 2px; white-space: pre-line;">— ${prenda.descripcion.trim().toUpperCase()}</span>`;
+                const descripcionLimpia = normalizarDescripcionPlano(prenda.descripcion);
+                if (descripcionLimpia) {
+                    html += `<span style="display: block; margin-top: 2px; white-space: pre-line;">— ${descripcionLimpia.toUpperCase()}</span>`;
+                }
             }
 
             // 3. Manga
@@ -1915,7 +2025,13 @@
         } catch (e) {
             // noop
         }
-        if (numeroPedidoElement && todasLasPrendas && todasLasPrendas.length > 0) {
+        if (numeroPedidoElement && consecutivoReciboParam !== '') {
+            numeroPedidoElement.textContent = '#' + consecutivoReciboParam;
+            console.log(' [NUMERO RECIBO ACTUALIZADO] forzado por consecutivo_recibo URL → #' + consecutivoReciboParam);
+        } else if (numeroPedidoElement && consecutivoForzadoPorReciboId !== null && consecutivoForzadoPorReciboId !== undefined && String(consecutivoForzadoPorReciboId).trim() !== '') {
+            numeroPedidoElement.textContent = '#' + String(consecutivoForzadoPorReciboId).trim();
+            console.log(' [NUMERO RECIBO ACTUALIZADO] forzado por recibo_id', reciboIdParamRaw, '→ #' + String(consecutivoForzadoPorReciboId).trim());
+        } else if (numeroPedidoElement && todasLasPrendas && todasLasPrendas.length > 0) {
             let reciboBuscado = null;
             
             // Obtener las prendas actualmente visibles en el carousel

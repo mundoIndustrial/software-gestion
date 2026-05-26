@@ -41,6 +41,14 @@
         text-align: center;
         cursor: pointer;
         transition: all 0.2s ease;
+        text-decoration: none;
+        -webkit-text-decoration: none;
+    }
+    .tipo-btn:link,
+    .tipo-btn:visited,
+    .tipo-btn:hover,
+    .tipo-btn:active {
+        text-decoration: none;
     }
     .tipo-btn.active {
         background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
@@ -156,6 +164,8 @@
 
 @section('content')
     @php
+        $tabActiva = request()->query('tab', 'insumos');
+        $tabActiva = in_array($tabActiva, ['insumos', 'contramuestra'], true) ? $tabActiva : 'insumos';
         $demoRecibos = [
             [
                 'numero' => 1,
@@ -177,14 +187,14 @@
     <div class="prestamos-wrap">
         <section class="prestamos-form-card">
             <div class="tipo-grid">
-                <button type="button" class="tipo-btn active" data-tipo="insumos">
+                <a href="{{ route('operario.recibos-prestamo.index', ['tab' => 'insumos']) }}" class="tipo-btn {{ $tabActiva === 'insumos' ? 'active' : '' }}" data-tipo="insumos">
                     <strong>PRESTAMO DE INSUMOS</strong>
                     <span>Para salida temporal de insumos del área.</span>
-                </button>
-                <button type="button" class="tipo-btn" data-tipo="contramuestra">
+                </a>
+                <a href="{{ route('operario.recibos-prestamo.index', ['tab' => 'contramuestra']) }}" class="tipo-btn {{ $tabActiva === 'contramuestra' ? 'active' : '' }}" data-tipo="contramuestra">
                     <strong>PRESTAMO DE CONTRAMUESTRA COSTURA</strong>
                     <span>Para contramuestras solicitadas a costura.</span>
-                </button>
+                </a>
             </div>
         </section>
 
@@ -193,7 +203,7 @@
                 <h3>Recibos Registrados</h3>
             </div>
 
-            <div class="tab-panel active" data-panel="insumos">
+            <div class="tab-panel {{ $tabActiva === 'insumos' ? 'active' : '' }}" data-panel="insumos">
                 <a href="{{ route('operario.recibos-prestamo.insumos.crear') }}" class="add-btn" style="display:inline-block;text-align:center;text-decoration:none;">+ Agregar préstamo de insumos</a>
                 <div class="recibos-cards">
                     @foreach($demoRecibos as $recibo)
@@ -215,7 +225,7 @@
                 </div>
             </div>
 
-            <div class="tab-panel" data-panel="contramuestra">
+            <div class="tab-panel {{ $tabActiva === 'contramuestra' ? 'active' : '' }}" data-panel="contramuestra">
                 <a href="{{ route('operario.recibos-prestamo.contramuestra.crear') }}" class="add-btn" style="display:inline-block;text-align:center;text-decoration:none;">+ Agregar préstamo de contramuestra</a>
                 <div class="recibos-cards">
                     @foreach($demoRecibos as $recibo)
@@ -239,24 +249,3 @@
         </section>
     </div>
 @endsection
-
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const botones = document.querySelectorAll('.tipo-btn');
-        const panels = document.querySelectorAll('.tab-panel');
-
-        botones.forEach((btn) => {
-            btn.addEventListener('click', function () {
-                botones.forEach((b) => b.classList.remove('active'));
-                this.classList.add('active');
-
-                const tipo = this.dataset.tipo;
-                panels.forEach((panel) => {
-                    panel.classList.toggle('active', panel.dataset.panel === tipo);
-                });
-            });
-        });
-    });
-</script>
-@endpush
