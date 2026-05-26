@@ -14,6 +14,7 @@ use App\Infrastructure\Http\Controllers\ControlCalidad\ControlCalidadController;
 // ========================================
 Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operario.')->group(function () {
     Route::get('/dashboard', [OperarioDashboardController::class, 'dashboard'])->name('dashboard');
+    Route::view('/recibos-prestamo', 'operario.recibos-prestamo')->name('recibos-prestamo.index');
     Route::get('/mis-pedidos', [OperarioController::class, 'misPedidos'])->name('mis-pedidos');
     Route::get('/pedido/{numeroPedido}', [OperarioController::class, 'verPedido'])->name('ver-pedido');
     Route::get('/api/pedidos', [OperarioController::class, 'obtenerPedidosJson'])->name('api.pedidos');

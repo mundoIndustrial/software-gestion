@@ -453,7 +453,7 @@ export function initReciboFilters() {
                         data-numero-recibo="${recibo.consecutivo_actual}"
                         data-tipo-recibo="${tipoRecibo}">
                         <span class="material-symbols-rounded">share</span>
-                        VER DISTRIBUCI�N
+                        VER DISTRIBUCIÓN
                   </button>`
                 : '';
 
@@ -501,7 +501,7 @@ export function initReciboFilters() {
 
         ordenesList.innerHTML = htmlRecibos;
         
-        // Reinicializar la paginaci�n despu�s de cargar los recibos de Control de Calidad
+        // Reinicializar la paginacion despues de cargar los recibos de Control de Calidad
         window.__updateDashboardPagination?.();
     }
 
@@ -519,23 +519,23 @@ export function initReciboFilters() {
             return;
         }
 
-        // Buscar si ya existe la secci�n de distribuci�n (como hermano de la orden-card)
+        // Buscar si ya existe la sección de distribución (como hermano de la orden-card)
         let distribucionSection = ordenCard?.nextElementSibling;
         
-        // Validar que sea la secci�n de distribuci�n correcta
+        // Validar que sea la sección de distribución correcta
         if (distribucionSection && !distribucionSection.classList.contains('distribucion-parciales-cc-section')) {
             distribucionSection = null;
         }
         
         if (distribucionSection) {
-            if (DASHBOARD_DEBUG) console.log('[DISTRIBUCION_CC] Secci�n encontrada, iniciando toggle');
+            if (DASHBOARD_DEBUG) console.log('[DISTRIBUCION_CC] Sección encontrada, iniciando toggle');
             
             // Si ya existe, toggle (mostrar/ocultar)
             const isHidden = distribucionSection.style.display === 'none';
             distribucionSection.style.display = isHidden ? 'block' : 'none';
             
-            // Cambiar el texto del bot�n
-            btn.innerHTML = isHidden ? '<span class="material-symbols-rounded">visibility_off</span> OCULTAR' : '<span class="material-symbols-rounded">share</span> VER DISTRIBUCI�N';
+            // Cambiar el texto del boton
+            btn.innerHTML = isHidden ? '<span class="material-symbols-rounded">visibility_off</span> OCULTAR' : '<span class="material-symbols-rounded">share</span> VER DISTRIBUCIÓN';
             
             if (DASHBOARD_DEBUG) console.log('[DISTRIBUCION_CC] Toggle completado');
             return;
@@ -572,7 +572,7 @@ export function initReciboFilters() {
         })
         .catch(error => {
             console.error('[DISTRIBUCION_CC] Error en fetch:', error);
-            alert('Error al cargar distribuci�n');
+            alert('Error al cargar distribución');
         });
     }
 
@@ -583,14 +583,14 @@ export function initReciboFilters() {
         if (DASHBOARD_DEBUG) console.log('[DISTRIBUCION_CC CARDS] Preparando cards con', totalParciales, 'parciales');
 
         if (!ordenCard) {
-            console.error('[DISTRIBUCION_CC CARDS] No se encontr� orden card');
+            console.error('[DISTRIBUCION_CC CARDS] No se encontró orden card');
             return;
         }
 
         // Crear el HTML de las tarjetas
         const cardsHTML = crearHTMLDistribucionCards_CC(parciales, numeroRecibo, totalParciales);
 
-        // Crear contenedor de distribuci�n
+        // Crear contenedor de distribución
         const distribucionSection = document.createElement('div');
         distribucionSection.className = 'distribucion-parciales-cc-section';
         distribucionSection.innerHTML = cardsHTML;
@@ -598,7 +598,7 @@ export function initReciboFilters() {
         // Insertar despues de la orden-card
         ordenCard.insertAdjacentElement('afterend', distribucionSection);
 
-        // Cambiar el texto del bot�n a "OCULTAR"
+        // Cambiar el texto del botón a "OCULTAR"
         if (btn) {
             btn.innerHTML = '<span class="material-symbols-rounded">visibility_off</span> OCULTAR';
         }

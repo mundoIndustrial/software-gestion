@@ -302,6 +302,10 @@
                                     <span class="material-symbols-rounded">construction</span>
                                     <span>Entregas Talleres</span>
                                 </a>
+                                <a href="{{ route('operario.recibos-prestamo.index') }}" class="menu-item">
+                                    <span class="material-symbols-rounded">receipt_long</span>
+                                    <span>Recibos Prestamo y Contramuestra</span>
+                                </a>
                             @endif
                             <div class="menu-divider"></div>
                         @endif
