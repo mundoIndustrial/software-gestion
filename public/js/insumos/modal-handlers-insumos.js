@@ -234,6 +234,10 @@ function configurarBotonImpresionRecibo(esBodega) {
     if (esBodega) {
         btnPrint.onclick = async function () {
             try {
+                if (typeof imprimirReciboBodegaDesdeModal === 'function') {
+                    imprimirReciboBodegaDesdeModal();
+                    return;
+                }
                 await resolveOpenOrderDetailModalHandler();
                 if (typeof window.printReceiptModal === 'function') {
                     window.printReceiptModal();
@@ -283,43 +287,54 @@ function imprimirReciboBodegaDesdeModal() {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Recibo Corte Bodega</title>
-  <link rel="stylesheet" href="/css/order-detail-modal.css">
-  <link rel="stylesheet" href="/css/print-order-detail-modal.css" media="print">
+  <style>
+    @page { size: A4; margin: 8mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; color: #111; background: #fff; }
+    body.singlepage { width: 100%; min-height: 100vh; display: flex; justify-content: center; }
+    .page { width: 100%; max-width: 180mm; margin: 0 auto; }
+    .receipt-card { border: 3px solid #111; border-radius: 18px; padding: 14px; }
+    .order-logo { width: 150px; height: 56px; object-fit: contain; display: block; margin: 0 auto 8px; }
+    .header-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+    .order-date { width: 128px; background: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; border-radius: 10px; padding: 6px; color: #fff; text-align: center; }
+    .fec-label { font-weight: 700; font-size: 11px; margin-bottom: 4px; }
+    .date-boxes { display: flex; gap: 4px; justify-content: center; }
+    .date-box { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #111; border-radius: 4px; min-width: 36px; padding: 4px; font-size: 12px; font-weight: 800; }
+    .header-right { text-align: right; flex: 1; }
+    .receipt-title-print { font-weight: 900; text-transform: uppercase; font-size: 16px; line-height: 1.1; margin: 0; }
+    .recibo-number-print { font-size: 14px; font-weight: 800; margin-top: 2px; }
+    .prenda-info { margin: 8px 0 6px; font-size: 13px; font-weight: 800; text-transform: uppercase; }
+    .desc { margin: 0 0 8px; font-size: 12px; font-weight: 600; text-transform: uppercase; color: #374151; }
+    .section h4 { margin: 0 0 5px; font-size: 12px; font-weight: 900; text-transform: uppercase; }
+    .tallas-resumen { color: #d32f2f; font-weight: 900; white-space: pre-line; font-size: 11px; line-height: 1.3; text-transform: uppercase; }
+    .total-line { margin-top: 8px; padding-top: 4px; border-top: 1.5px solid #1f2937; color: #1f2937; font-weight: 800; font-size: 12px; width: 160px; }
+  </style>
 </head>
 <body class="singlepage">
   <div class="page">
     <div class="receipt-card">
       <img src="/images/logo2.png" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
-      <div id="order-date" class="order-date">
-        <div class="fec-label">FECHA</div>
-        <div class="date-boxes">
-          <div class="date-box day-box">${esc(day)}</div>
-          <div class="date-box month-box">${esc(month)}</div>
-          <div class="date-box year-box">${esc(year)}</div>
-        </div>
-      </div>
-
-      <div class="header-right">
-        <div class="receipt-title-print">RECIBO DE CORTE<br>PARA BODEGA</div>
-        <div class="recibo-number-print">${esc(numeroRecibo)}</div>
-      </div>
-
-      <div class="prenda-info">
-        <div class="prenda-name">PRENDA 1</div>
-        <div style="margin-top: 6px; color: #212529; font-weight: 700;">${esc(descripcion || '-')}</div>
-      </div>
-
-      <div class="section">
-        <h4>TALLAS:</h4>
-        <div class="tallas-resumen" style="color: inherit; font-weight: 900; white-space: pre-line;">
-          <div style="display: inline-block; min-width: 100px; margin-bottom: 18px;">
-            ${tallasHtml}
-            <div style="border-top: 1px solid #9ca3af; margin-top: 1px; padding-top: 1px;">
-              <span style="color: black; font-weight: 900;">TOTAL: ${esc(total || '0')}</span>
-            </div>
+      <div class="header-row">
+        <div class="order-date">
+          <div class="fec-label">FECHA</div>
+          <div class="date-boxes">
+            <div class="date-box day-box">${esc(day)}</div>
+            <div class="date-box month-box">${esc(month)}</div>
+            <div class="date-box year-box">${esc(year)}</div>
           </div>
         </div>
+        <div class="header-right">
+          <div class="receipt-title-print">RECIBO DE CORTE<br>PARA BODEGA</div>
+          <div class="recibo-number-print">${esc(numeroRecibo)}</div>
+        </div>
       </div>
+      <div class="prenda-info">PRENDA 1</div>
+      <div class="desc">${esc(descripcion || '-')}</div>
+      <div class="section">
+        <h4>TALLAS:</h4>
+        <div class="tallas-resumen">${tallasHtml}</div>
+      </div>
+      <div class="total-line">TOTAL: ${esc(total || '0')}</div>
     </div>
   </div>
 <script>
