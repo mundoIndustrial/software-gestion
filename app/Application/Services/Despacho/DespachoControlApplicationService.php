@@ -223,10 +223,6 @@ class DespachoControlApplicationService
 
         $base = $ultimo ? (int) $ultimo->cantidad_ajustada : $cantidadOriginal;
 
-        if ($cantidadAjustada > $base) {
-            throw new \InvalidArgumentException("La cantidad ajustada ({$cantidadAjustada}) no puede superar la base vigente ({$base}).");
-        }
-
         if ($ultimo && $ultimo->estado === 'pendiente') {
             $ultimo->update(['estado' => 'descartada']);
         }

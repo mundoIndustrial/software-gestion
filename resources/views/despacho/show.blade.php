@@ -1455,23 +1455,38 @@ function inicializarAjustesCantidadesDespacho() {
 
         // Guardar cantidad original una sola vez para que no se pierda al re-renderizar tabs.
         if (!fila.dataset.cantidadOriginalInicial) {
-            const originalTextoInicial = (cantidadCell.textContent || '').trim();
-            const originalInicial = parseInt(originalTextoInicial, 10);
-            if (!Number.isNaN(originalInicial)) {
-                fila.dataset.cantidadOriginalInicial = String(originalInicial);
+            const originalDesdeData = parseInt(fila.dataset.cantidad || '', 10);
+            if (!Number.isNaN(originalDesdeData)) {
+                fila.dataset.cantidadOriginalInicial = String(originalDesdeData);
+            } else {
+                const originalTextoInicial = (cantidadCell.textContent || '').trim();
+                const originalInicial = parseInt(originalTextoInicial, 10);
+                if (!Number.isNaN(originalInicial)) {
+                    fila.dataset.cantidadOriginalInicial = String(originalInicial);
+                }
             }
         }
 
         const original = parseInt(fila.dataset.cantidadOriginalInicial || 'NaN', 10);
         if (Number.isNaN(original)) return;
 
+        // Mantener sincronizado por si el backend ya renderizo un valor real por data-atributo.
+        const originalDesdeData = parseInt(fila.dataset.cantidad || '', 10);
+        if (!Number.isNaN(originalDesdeData) && originalDesdeData !== original) {
+            fila.dataset.cantidadOriginalInicial = String(originalDesdeData);
+        }
+
+        const originalFinal = parseInt(fila.dataset.cantidadOriginalInicial || 'NaN', 10);
+        if (Number.isNaN(originalFinal)) return;
+
         const rowKey = construirClaveAjusteDespacho(fila);
         const historial = Array.isArray(historialMap[rowKey]) ? historialMap[rowKey] : [];
         const tienePendiente = historial.length > 0;
         const baseVigente = tienePendiente
-            ? (parseInt(historial[historial.length - 1].cantidad_ajustada || original, 10) || original)
-            : original;
-        const cantidadVista = vista === 'pendientes' ? cantidadPendiente(historial, original) : original;
+            ? (parseInt(historial[historial.length - 1].cantidad_ajustada || originalFinal, 10) || originalFinal)
+            : originalFinal;
+        const cantidadVista = vista === 'pendientes' ? cantidadPendiente(historial, originalFinal) : originalFinal;
+        const maxEditable = originalFinal;
         const editable = vista === 'pendientes' && !filaEstaEntregada(fila);
 
         fila.dataset.vistaActiva = vista;
@@ -1482,7 +1497,7 @@ function inicializarAjustesCantidadesDespacho() {
         cantidadCell.innerHTML = `
             <div class="flex flex-col items-center gap-1 text-xs w-full">
                 <div class="text-slate-600">${vista === 'pendientes' ? 'Pendiente' : 'Original'}</div>
-                <input type="number" min="0" max="${cantidadVista}" value="${cantidadVista}" ${editable ? '' : 'disabled'} class="w-16 border border-slate-300 rounded px-1 py-0.5 text-center cantidad-ajustada-input ${editable ? '' : 'bg-slate-100 text-slate-500'}" />
+                <input type="number" min="0" max="${maxEditable}" value="${cantidadVista}" ${editable ? '' : 'disabled'} class="w-16 border border-slate-300 rounded px-1 py-0.5 text-center cantidad-ajustada-input ${editable ? '' : 'bg-slate-100 text-slate-500'}" />
             </div>
         `;
 
@@ -1497,7 +1512,7 @@ function inicializarAjustesCantidadesDespacho() {
             let val = parseInt(input.value || '0', 10);
             if (Number.isNaN(val)) val = 0;
             if (val < 0) val = 0;
-            if (val > cantidadVista) val = cantidadVista;
+            if (val > maxEditable) val = maxEditable;
             input.value = String(val);
             fila.dataset.cantidadAjustada = String(val);
         });
@@ -1537,6 +1552,7 @@ async function guardarAjusteFilaDespacho(fila) {
     }
 
     const original = parseInt(fila.dataset.cantidadOriginal || '0', 10) || 0;
+    const originalReal = parseInt(fila.dataset.cantidadOriginalInicial || String(original), 10) || original;
     const ajustada = parseInt(fila.dataset.cantidadAjustada || '0', 10) || 0;
     if (ajustada === original) {
         return;
@@ -1549,7 +1565,7 @@ async function guardarAjusteFilaDespacho(fila) {
         talla_id: (parseInt(fila.dataset.tallaId || '0', 10) || 0) || null,
         talla_color_id: (parseInt(fila.dataset.tallaColorId || '0', 10) || 0) || null,
         genero: (fila.dataset.genero || '').trim() || null,
-        cantidad_original: original,
+        cantidad_original: originalReal,
         cantidad_ajustada: ajustada,
     };
 
@@ -1567,6 +1583,18 @@ async function guardarAjusteFilaDespacho(fila) {
     if (!res.ok || !data.success) {
         throw new Error(data.message || 'No se pudo guardar el ajuste.');
     }
+
+    const key = construirClaveAjusteDespacho(fila);
+    const historialMap = window.despachoAjustesHistorial || {};
+    const historial = Array.isArray(historialMap[key]) ? historialMap[key] : [];
+    if (data.ajuste) {
+        historial.push(data.ajuste);
+        historialMap[key] = historial;
+        window.despachoAjustesHistorial = historialMap;
+    }
+
+    fila.dataset.cantidadOriginal = String(ajustada);
+    fila.dataset.cantidadAjustada = String(ajustada);
 }
 
 async function guardarAjustesCantidadesDespacho() {
@@ -1596,13 +1624,15 @@ async function guardarAjustesCantidadesDespacho() {
 
         const csrf = document.querySelector('input[name="_token"]')?.value;
         for (const fila of cambios) {
+            const originalBase = parseInt(fila.dataset.cantidadOriginal || '0', 10) || 0;
+            const originalReal = parseInt(fila.dataset.cantidadOriginalInicial || String(originalBase), 10) || originalBase;
             const payload = {
                 tipo_item: String(fila.dataset.tipo || '').toLowerCase(),
                 item_id: parseInt(fila.dataset.id || '0', 10) || 0,
                 talla_id: (parseInt(fila.dataset.tallaId || '0', 10) || 0) || null,
                 talla_color_id: (parseInt(fila.dataset.tallaColorId || '0', 10) || 0) || null,
                 genero: (fila.dataset.genero || '').trim() || null,
-                cantidad_original: parseInt(fila.dataset.cantidadOriginal || '0', 10) || 0,
+                cantidad_original: originalReal,
                 cantidad_ajustada: parseInt(fila.dataset.cantidadAjustada || '0', 10) || 0,
             };
 
@@ -1620,9 +1650,21 @@ async function guardarAjustesCantidadesDespacho() {
             if (!res.ok || !data.success) {
                 throw new Error(data.message || 'No se pudo guardar un ajuste.');
             }
-        }
 
-        window.location.reload();
+            const ajustada = parseInt(fila.dataset.cantidadAjustada || '0', 10) || 0;
+            const key = construirClaveAjusteDespacho(fila);
+            const historialMap = window.despachoAjustesHistorial || {};
+            const historial = Array.isArray(historialMap[key]) ? historialMap[key] : [];
+            if (data.ajuste) {
+                historial.push(data.ajuste);
+                historialMap[key] = historial;
+                window.despachoAjustesHistorial = historialMap;
+            }
+
+            fila.dataset.cantidadOriginal = String(ajustada);
+            fila.dataset.cantidadAjustada = String(ajustada);
+        }
+        alert('Ajustes guardados correctamente.');
     } catch (error) {
         alert(error.message || 'Error guardando ajustes.');
     } finally {
@@ -2520,6 +2562,19 @@ function imprimirTablaVacia(modo = 'all') {
         }
 
         if (modoActual === 'pending') {
+            const inputActual = fila.querySelector('.cantidad-ajustada-input');
+            if (inputActual && !inputActual.disabled) {
+                const valorInput = parseInt(inputActual.value || '0', 10);
+                if (!Number.isNaN(valorInput)) {
+                    return String(Math.max(0, Math.min(valorInput, original)));
+                }
+            }
+
+            const valorDataset = parseInt(fila.dataset.cantidadAjustada || '', 10);
+            if (!Number.isNaN(valorDataset)) {
+                return String(Math.max(0, Math.min(valorDataset, original)));
+            }
+
             const key = construirClaveAjusteDespacho(fila);
             const historial = Array.isArray((window.despachoAjustesHistorial || {})[key])
                 ? (window.despachoAjustesHistorial || {})[key]
@@ -2721,5 +2776,3 @@ if (filas.length === 0) {
 </script>
 
 @endsection
-
-
