@@ -168,6 +168,7 @@ function abrirDetalleRecibo(pedidoId, prendaId, tipoRecibo, esParcial = false, p
         ensureDynamicCloseButton();
         toggleCamposCabeceraRecibo(false);
         ajustarPosicionNumeroPedido(true);
+        configurarBotonesFlotantesBodega(true);
         configurarBotonImpresionRecibo(true);
         if (!parsedPrendaId) {
             if (window.Swal) {
@@ -183,6 +184,7 @@ function abrirDetalleRecibo(pedidoId, prendaId, tipoRecibo, esParcial = false, p
 
     toggleCamposCabeceraRecibo(true);
     ajustarPosicionNumeroPedido(false);
+    configurarBotonesFlotantesBodega(false);
     configurarBotonImpresionRecibo(false);
 
     resolveOpenOrderDetailModalHandler()
@@ -224,6 +226,37 @@ function ajustarPosicionNumeroPedido(esBodega) {
         pedido.style.transform = 'translateY(28px)';
     } else {
         pedido.style.transform = '';
+    }
+}
+
+function configurarBotonesFlotantesBodega(esBodega) {
+    const btnFactura = document.getElementById('btn-factura');
+    const btnGaleria = document.getElementById('btn-galeria');
+
+    if (esBodega) {
+        if (btnFactura) {
+            btnFactura.title = 'Ver galería';
+            btnFactura.innerHTML = '<i class="fas fa-images"></i>';
+            btnFactura.style.display = 'flex';
+            btnFactura.onclick = function (event) {
+                if (event) event.preventDefault();
+                toggleFacturaFallback();
+            };
+        }
+        if (btnGaleria) {
+            btnGaleria.style.display = 'none';
+            btnGaleria.onclick = null;
+        }
+        return;
+    }
+
+    if (btnFactura) {
+        btnFactura.title = 'Ver factura';
+        btnFactura.innerHTML = '<i class="fas fa-receipt"></i>';
+        btnFactura.style.display = 'flex';
+    }
+    if (btnGaleria) {
+        btnGaleria.style.display = 'flex';
     }
 }
 
@@ -588,6 +621,49 @@ function closeModalOverlay() {
     }
 }
 
+function toggleFacturaFallback() {
+    const wrapper = document.getElementById('order-detail-modal-wrapper');
+    if (!wrapper) return;
+
+    const card = wrapper.querySelector('.order-detail-card');
+    const galeria =
+        document.getElementById('galeria-modal-costura') ||
+        document.getElementById('galeria-modal-costura-rcb');
+
+    if (!card || !galeria) return;
+
+    const estaEnGaleria = galeria.style.display === 'flex';
+    if (estaEnGaleria) {
+        if (window.GalleryManager && typeof window.GalleryManager.cerrarGaleria === 'function') {
+            window.GalleryManager.cerrarGaleria();
+        } else {
+            galeria.style.display = 'none';
+            card.style.display = 'block';
+        }
+        const btnFactura = document.getElementById('btn-factura');
+        if (btnFactura) {
+            btnFactura.innerHTML = '<i class="fas fa-images"></i>';
+            btnFactura.title = 'Ver galería';
+        }
+        return;
+    }
+
+    if (window.pedidosRecibosModule && typeof window.pedidosRecibosModule.abrirGaleria === 'function') {
+        window.pedidosRecibosModule.abrirGaleria();
+    } else if (typeof window.toggleGaleria === 'function') {
+        window.toggleGaleria();
+    } else {
+        galeria.style.display = 'flex';
+        card.style.display = 'none';
+    }
+
+    const btnFactura = document.getElementById('btn-factura');
+    if (btnFactura) {
+        btnFactura.innerHTML = '<i class="fas fa-receipt"></i>';
+        btnFactura.title = 'Ver recibo';
+    }
+}
+
 function initModalHandlersInsumos() {
     const insumosModal = document.getElementById('insumosModal');
     if (!insumosModal || insumosModal.dataset.insumosOverlayBound === '1') {
@@ -609,6 +685,11 @@ window.insumosHandlers.modalHandlers = {
     abrirDetalleRecibo,
     closeModalOverlay,
 };
+
+// Compatibilidad para botones inline onclick="toggleFactura()".
+if (typeof window.toggleFactura !== 'function') {
+    window.toggleFactura = toggleFacturaFallback;
+}
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initModalHandlersInsumos);
