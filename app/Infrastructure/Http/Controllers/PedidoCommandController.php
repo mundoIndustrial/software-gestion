@@ -19,6 +19,7 @@ use App\Application\Pedidos\DTOs\ActualizarPedidoCamposDTO;
 use App\Application\Pedidos\DTOs\CambiarEstadoPedidoDTO;
 use App\Domain\Pedidos\Exceptions\PedidoNoEncontrado;
 use App\Domain\Pedidos\Exceptions\EstadoPedidoInvalido;
+use App\Models\PedidoProduccion;
 
 /**
  * PedidoCommandController
@@ -143,6 +144,15 @@ class PedidoCommandController extends Controller
             $usuario = auth()->user();
             $usuarioId = (int) ($usuario?->id ?? 0);
             $pedidoId = $this->resolverPedidoIdAsesorUseCase->ejecutar((string) $id, $usuarioId);
+            $pedido = PedidoProduccion::query()->select(['id', 'estado'])->find($pedidoId);
+
+            if ($pedido && in_array($this->normalizarEstado($pedido->estado), ['pendiente insumos', 'pendiente_insumos', 'entregado'], true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se puede anular un pedido en estado Pendiente Insumos o Entregado.',
+                ], 422);
+            }
+
             $nombreUsuario = $usuario?->name ?: 'Sistema';
 
             $rolUsuario = 'Sin rol';
@@ -182,6 +192,21 @@ class PedidoCommandController extends Controller
                 'message' => 'Error al anular pedido: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    private function normalizarEstado(?string $estado): string
+    {
+        $estado = trim((string) $estado);
+        if ($estado === '') {
+            return '';
+        }
+
+        $estadoSinTildes = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $estado);
+        if ($estadoSinTildes === false) {
+            $estadoSinTildes = $estado;
+        }
+
+        return strtolower(trim($estadoSinTildes));
     }
 
     /**

@@ -48,6 +48,28 @@ function mostrarBloqueoAnulacionPorEjecucion() {
         }
     });
 }
+
+function mostrarBloqueoAnulacionPorPendienteInsumos() {
+    Swal.fire({
+        title: 'No se puede anular',
+        text: 'Este pedido esta en estado Pendiente Insumos. Comunicate con el equipo de insumos para gestionar la anulacion.',
+        icon: 'info',
+        confirmButtonColor: '#2563eb',
+        confirmButtonText: 'Entendido',
+        position: 'center'
+    });
+}
+
+function mostrarBloqueoAnulacionPorEntregado() {
+    Swal.fire({
+        title: 'No se puede anular',
+        text: 'Este pedido ya esta en estado Entregado y no se puede anular.',
+        icon: 'info',
+        confirmButtonColor: '#2563eb',
+        confirmButtonText: 'Entendido',
+        position: 'center'
+    });
+}
 /**
  * Funcionalidad para anular pedidos - Asesores
  */
@@ -61,6 +83,16 @@ function confirmarAnularPedido(pedidoId, numeroPedido, estadoPedido = null) {
 
     if (estadoNormalizado === 'en ejecucion') {
         mostrarBloqueoAnulacionPorEjecucion();
+        return;
+    }
+
+    if (estadoNormalizado === 'pendiente insumos' || estadoNormalizado === 'pendiente_insumos') {
+        mostrarBloqueoAnulacionPorPendienteInsumos();
+        return;
+    }
+
+    if (estadoNormalizado === 'entregado') {
+        mostrarBloqueoAnulacionPorEntregado();
         return;
     }
     Swal.fire({
@@ -488,4 +520,3 @@ function confirmarCorreccionEnServidor(pedidoId, numeroPedido) {
         });
     });
 }
-
