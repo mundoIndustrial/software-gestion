@@ -1486,6 +1486,7 @@
     align-items: center;
     justify-content: center;
     min-height: 300px;
+    overflow: hidden;
 }
 
 .firma-preview-image-large {
@@ -1493,6 +1494,7 @@
     max-height: 400px;
     border-radius: 8px;
     transition: transform 0.3s ease;
+    object-fit: contain;
 }
 
 .firma-controls {

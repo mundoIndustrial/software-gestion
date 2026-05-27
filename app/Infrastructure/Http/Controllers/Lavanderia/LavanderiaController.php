@@ -144,6 +144,7 @@ class LavanderiaController extends Controller
                     'novedad' => $movimiento->novedad,
                     'fechaMovimiento' => $movimiento->fecha_movimiento?->format('Y-m-d H:i') ?? '-',
                     'firmaMovimiento' => $movimiento->firma_movimiento,
+                    'fechaFirma' => $movimiento->fecha_firma?->format('Y-m-d H:i') ?? null,
                     'tallas' => $movimiento->tallas->map(function ($talla) {
                         return [
                             'talla' => $talla->talla,
@@ -196,10 +197,11 @@ class LavanderiaController extends Controller
             $filename = 'img_' . time() . '.webp';
             $file->move($storagePath, $filename);
 
-            // Guardar ruta en la base de datos y cambiar estado a COMPLETADO
+            // Guardar ruta en la base de datos, cambiar estado a COMPLETADO y guardar fecha_firma
             $firmaPath = 'storage/firmas/' . $movimiento->id . '/' . $filename;
             $movimiento->update([
                 'firma_movimiento' => $firmaPath,
+                'fecha_firma' => now(),
                 'estado' => 'COMPLETADO'
             ]);
 
@@ -209,7 +211,8 @@ class LavanderiaController extends Controller
                 'data' => [
                     'id' => $movimiento->id,
                     'estadoFirma' => 'FIRMADO',
-                    'firma_url' => '/' . $firmaPath
+                    'firma_url' => '/' . $firmaPath,
+                    'fecha_firma' => $movimiento->fecha_firma->format('Y-m-d H:i')
                 ]
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {

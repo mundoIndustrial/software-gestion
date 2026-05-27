@@ -560,9 +560,79 @@ class LavanderiaManager {
             if (firmaImg) {
                 firmaImg.src = '/' + firmaUrl;
                 firmaImg.dataset.rotation = 0; // Inicializar rotación
+                firmaImg.style.transform = 'rotate(0deg) scale(1)'; // Reset transform
             }
+            
+            // Buscar el movimiento para obtener la fecha_firma
+            const movementCard = event.target.closest('.movement-card');
+            if (movementCard) {
+                const buttons = movementCard.querySelectorAll('[data-movement-id]');
+                let movementId = null;
+                buttons.forEach(btn => {
+                    if (btn.dataset.movementId) {
+                        movementId = btn.dataset.movementId;
+                    }
+                });
+                
+                const movement = this.allMovements.find(m => m.id == movementId);
+                
+                if (movement && movement.fechaFirma) {
+                    // Mostrar fecha_firma en el modal
+                    let fechaFirmaElement = modal.querySelector('#fechaFirmaDisplay');
+                    if (!fechaFirmaElement) {
+                        fechaFirmaElement = document.createElement('div');
+                        fechaFirmaElement.id = 'fechaFirmaDisplay';
+                        fechaFirmaElement.style.cssText = 'text-align: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid #f1f5f9;';
+                        modal.querySelector('.modal-body').appendChild(fechaFirmaElement);
+                    }
+                    fechaFirmaElement.innerHTML = `
+                        <p style="margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Fecha de Firma</p>
+                        <p style="margin: 8px 0 0 0; font-size: 16px; color: #1e293b; font-weight: 600;">${movement.fechaFirma}</p>
+                    `;
+                }
+            }
+            
             modal.classList.add('active');
+
+            // Recalcular una vez que el modal está activo y renderizado para asegurar dimensiones correctas
+            if (firmaImg) {
+                setTimeout(() => {
+                    this.actualizarTransformacionFirma(firmaImg, 0);
+                }, 100);
+            }
         }
+    }
+
+    actualizarTransformacionFirma(firmaImg, rotation) {
+        if (!firmaImg) return;
+        
+        // Reset transform para calcular el tamaño original renderizado por CSS
+        firmaImg.style.transform = 'none';
+        
+        const renderedWidth = firmaImg.offsetWidth;
+        const renderedHeight = firmaImg.offsetHeight;
+        
+        const container = firmaImg.parentElement;
+        if (!container) {
+            firmaImg.style.transform = `rotate(${rotation}deg)`;
+            return;
+        }
+        
+        const containerStyle = window.getComputedStyle(container);
+        const containerWidth = container.clientWidth - parseFloat(containerStyle.paddingLeft) - parseFloat(containerStyle.paddingRight);
+        const containerHeight = container.clientHeight - parseFloat(containerStyle.paddingTop) - parseFloat(containerStyle.paddingBottom);
+        
+        const isRotated = (rotation % 180 !== 0);
+        
+        let scale = 1;
+        if (isRotated && renderedWidth > 0 && renderedHeight > 0) {
+            // Dimensiones visuales rotadas: ancho es renderedHeight, alto es renderedWidth
+            const scaleX = containerWidth / renderedHeight;
+            const scaleY = containerHeight / renderedWidth;
+            scale = Math.min(1, scaleX, scaleY);
+        }
+        
+        firmaImg.style.transform = `rotate(${rotation}deg) scale(${scale})`;
     }
 
     rotarFirmaIzquierda() {
@@ -571,7 +641,7 @@ class LavanderiaManager {
             let rotation = parseInt(firmaImg.dataset.rotation) || 0;
             rotation = (rotation - 90 + 360) % 360;
             firmaImg.dataset.rotation = rotation;
-            firmaImg.style.transform = `rotate(${rotation}deg)`;
+            this.actualizarTransformacionFirma(firmaImg, rotation);
         }
     }
 
@@ -581,7 +651,7 @@ class LavanderiaManager {
             let rotation = parseInt(firmaImg.dataset.rotation) || 0;
             rotation = (rotation + 90) % 360;
             firmaImg.dataset.rotation = rotation;
-            firmaImg.style.transform = `rotate(${rotation}deg)`;
+            this.actualizarTransformacionFirma(firmaImg, rotation);
         }
     }
 

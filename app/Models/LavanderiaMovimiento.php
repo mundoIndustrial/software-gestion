@@ -17,12 +17,14 @@ class LavanderiaMovimiento extends Model
         'tipo_movimiento',
         'fecha_movimiento',
         'firma_movimiento',
+        'fecha_firma',
         'novedad',
         'estado',
     ];
 
     protected $casts = [
         'fecha_movimiento' => 'datetime',
+        'fecha_firma' => 'datetime',
     ];
 
     /**
