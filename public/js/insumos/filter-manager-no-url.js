@@ -139,19 +139,19 @@ function renderFilterModal(column, valores, modal) {
             </div>
             
             <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <input type="text" id="filterSearch" placeholder="Buscar..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <input type="text" id="filterSearchInsumosModal" placeholder="Buscar..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
                 <button onclick="selectAllFilters('${column}')" style="padding: 10px 12px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">✓ Todos</button>
                 <button onclick="deselectAllFilters('${column}')" style="padding: 10px 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">✗ Ninguno</button>
             </div>
             
             <div id="filterListInsumos" style="max-height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px;">
-                ${valores.slice(0, 50).map(val => `
+                ${valores.map(val => `
                     <label style="display: flex; align-items: center; padding: 10px; cursor: pointer;">
                         <input type="checkbox" value="${val}" class="filter-checkbox-item" ${selectedValues.includes(val) ? 'checked' : ''} style="margin-right: 10px;">
                         <span>${val.replaceAll('_', ' ')}</span>
                     </label>
                 `).join('')}
-                ${valores.length > 50 ? '<p style="text-align: center; color: #999; font-size: 12px;">Mostrando 50 de ' + valores.length + ' valores</p>' : ''}
+                <p style="text-align: center; color: #999; font-size: 12px;">Mostrando ${valores.length} valores</p>
             </div>
             
             <div style="display: flex; gap: 10px; margin-top: 20px;">
@@ -162,16 +162,21 @@ function renderFilterModal(column, valores, modal) {
     `;
     
     // Agregar listener de búsqueda
-    const searchInput = document.getElementById('filterSearch');
+    const searchInput = document.getElementById('filterSearchInsumosModal');
     if (searchInput) {
-        searchInput.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            document.querySelectorAll('.filter-checkbox-item').forEach(cb => {
+        const applyFilterVisibility = () => {
+            const searchTerm = String(searchInput.value || '').toLowerCase().trim();
+            const checkboxes = modal.querySelectorAll('.filter-checkbox-item');
+            checkboxes.forEach(cb => {
                 const label = cb.parentElement;
-                const text = label.textContent.toLowerCase();
-                label.style.display = text.includes(searchTerm) ? '' : 'none';
+                const text = String(label.textContent || '').toLowerCase();
+                label.style.display = text.includes(searchTerm) ? 'flex' : 'none';
             });
-        });
+        };
+
+        searchInput.addEventListener('input', applyFilterVisibility);
+        // Forzar estado inicial visible para evitar interferencias de otros scripts globales.
+        applyFilterVisibility();
     }
 }
 

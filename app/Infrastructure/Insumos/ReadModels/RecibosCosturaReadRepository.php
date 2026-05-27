@@ -82,7 +82,11 @@ class RecibosCosturaReadRepository
                 $q->whereIn('consecutivos_recibos_pedidos.estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER', 'INSUMOS_PEDIDOS', 'DEVUELTO_ASESOR', 'Devuelto_Asesor', 'ANULADO', 'Anulada'])
                     ->orWhereIn('consecutivos_recibos_pedidos.area', ['CORTE', 'COSTURA', 'ANULADO']);
             });
-            $query->whereRaw('UPPER(TRIM(consecutivos_recibos_pedidos.area)) = ?', ['INSUMOS']);
+            // Mostrar también recibos anulados cuyo flujo ya movió el área a ANULADO.
+            $query->whereIn(
+                DB::raw('UPPER(TRIM(consecutivos_recibos_pedidos.area))'),
+                ['INSUMOS', 'ANULADO']
+            );
         } else {
             // Para REFLECTIVO: solo mostrar recibos del área "Insumos"
             $query->where(function ($q) {

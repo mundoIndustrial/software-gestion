@@ -43,7 +43,9 @@ class DebugRecibosQuery extends Command
 
         $this->line("Total recibos: {$recibos->count()}");
         foreach ($recibos as $r) {
-            $this->line("  - Consecutivo: {$r->consecutivo_actual}, Estado: {$r->estado}, Activo: {$r->activo}");
+            $this->line(
+                "  - ID: {$r->id}, Consecutivo: {$r->consecutivo_actual}, Estado: {$r->estado}, Area: {$r->area}, Activo: {$r->activo}"
+            );
         }
         $this->line("");
 
@@ -72,9 +74,60 @@ class DebugRecibosQuery extends Command
         $this->line("  Estado del pedido: {$pedido->estado}");
         $this->line("  ¿No está excluido por PENDIENTE_SUPERVISOR? " . ($noExcluido ? "✓ SÍ" : "❌ NO"));
 
+        // 3.1 Verificar condiciones exactas del WHERE de buildBaseQuery(COSTURA)
+        $this->line("3.1. VERIFICANDO WHERE REAL DE /insumos/materiales (COSTURA):");
+        $recibosQueCumplenEstadoArea = $recibos->filter(function ($r) {
+            $estado = strtoupper(trim((string) ($r->estado ?? '')));
+            $area = strtoupper(trim((string) ($r->area ?? '')));
+
+            $estadosPermitidos = [
+                'PENDIENTE_INSUMOS',
+                'PENDIENTE_TELA',
+                'PENDIENTE_PLOTTER',
+                'INSUMOS_PEDIDOS',
+                'DEVUELTO_ASESOR',
+                'ANULADO',
+                'ANULADA',
+            ];
+
+            $areasPermitidas = ['CORTE', 'COSTURA', 'ANULADO'];
+
+            $cumpleGrupoEstadoArea = in_array($estado, $estadosPermitidos, true)
+                || in_array($area, $areasPermitidas, true);
+
+            $cumpleAreaVisible = in_array($area, ['INSUMOS', 'ANULADO'], true);
+
+            return $cumpleGrupoEstadoArea && $cumpleAreaVisible;
+        });
+
+        $this->line("  - Recibos COSTURA que cumplen TODO el WHERE real: {$recibosQueCumplenEstadoArea->count()}");
+        foreach ($recibos as $r) {
+            $estado = strtoupper(trim((string) ($r->estado ?? '')));
+            $area = strtoupper(trim((string) ($r->area ?? '')));
+            $estadosPermitidos = [
+                'PENDIENTE_INSUMOS',
+                'PENDIENTE_TELA',
+                'PENDIENTE_PLOTTER',
+                'INSUMOS_PEDIDOS',
+                'DEVUELTO_ASESOR',
+                'ANULADO',
+                'ANULADA',
+            ];
+            $areasPermitidas = ['CORTE', 'COSTURA', 'ANULADO'];
+            $cumpleGrupo = in_array($estado, $estadosPermitidos, true) || in_array($area, $areasPermitidas, true);
+            $cumpleAreaVisible = in_array($area, ['INSUMOS', 'ANULADO'], true);
+            $this->line(
+                "    · Recibo {$r->consecutivo_actual}: grupo(estado/area)=" . ($cumpleGrupo ? 'SI' : 'NO')
+                . ", area visible (INSUMOS/ANULADO)=" . ($cumpleAreaVisible ? 'SI' : 'NO')
+            );
+        }
+
         // Verdict
         $this->line("\n" . str_repeat("=", 50));
-        if (($recibosPendienteInsumos > 0 || $tieneAreaCorte || $tieneAreaCreacion) && $noExcluido) {
+        if (
+            (($recibosPendienteInsumos > 0 || $tieneAreaCorte || $tieneAreaCreacion) && $noExcluido)
+            || $recibosQueCumplenEstadoArea->count() > 0
+        ) {
             $this->info("✓ EL PEDIDO DEBERÍA APARECER EN LA QUERY");
         } else {
             $this->error("❌ EL PEDIDO NO DEBERÍA APARECER EN LA QUERY");
