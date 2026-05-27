@@ -455,6 +455,23 @@
                 });
         }
 
+        function cargarBadgeSidebarDevueltoAsesor() {
+            const badgeDevueltoAsesor = document.getElementById('devueltoAsesorCountMenu');
+            if (!badgeDevueltoAsesor) return;
+
+            fetchSidebarOrderCounts()
+                .then(data => {
+                    const payload = data?.data || data;
+                    const total = Number(payload?.devueltoAsesoraCount || 0);
+                    badgeDevueltoAsesor.textContent = String(total);
+                    badgeDevueltoAsesor.style.display = 'inline-flex';
+                })
+                .catch(() => {
+                    badgeDevueltoAsesor.textContent = '0';
+                    badgeDevueltoAsesor.style.display = 'inline-flex';
+                });
+        }
+
         function isSupervisorPedidosIndexView() {
             const path = (window.location.pathname || '').replace(/\/+$/, '');
             const search = window.location.search || '';
@@ -479,6 +496,7 @@
             cargarBadgeSidebarPedidos();
             cargarBadgeSidebarControlCalidad();
             cargarBadgeSidebarPendienteCartera();
+            cargarBadgeSidebarDevueltoAsesor();
         }, 300);
 
         function bootstrapSidebarBadges() {
@@ -489,6 +507,7 @@
             cargarBadgeSidebarPedidos();
             cargarBadgeSidebarControlCalidad();
             cargarBadgeSidebarPendienteCartera();
+            cargarBadgeSidebarDevueltoAsesor();
             onEchoReady(() => iniciarRealtimeBadgeSidebarPedidos());
         }
 

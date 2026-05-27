@@ -198,7 +198,7 @@ class PedidoProduccionReadService
     }
 
     /**
-     * @return array{total:int,logo:int}
+     * @return array{total:int,logo:int,cartera_no_aprobado:int,devuelto_a_asesora:int}
      */
     public function getPendingOrdersCount(): array
     {
@@ -230,11 +230,18 @@ class PedidoProduccionReadService
 
         $this->applyCarteraProductionVisibilityFilter($carteraNoAprobadoQuery);
         $pendientesCarteraNoAprobado = (clone $carteraNoAprobadoQuery)->count();
+        $devueltoAsesoraCount = PedidoProduccion::query()
+            ->where('estado', 'DEVUELTO_A_ASESORA')
+            ->whereNull('ocultado_en')
+            ->whereNotNull('numero_pedido')
+            ->where('numero_pedido', '!=', '')
+            ->count();
 
         return [
             'total' => (int) $totalPendientes,
             'logo' => (int) $pendientesLogo,
             'cartera_no_aprobado' => (int) $pendientesCarteraNoAprobado,
+            'devuelto_a_asesora' => (int) $devueltoAsesoraCount,
         ];
     }
 

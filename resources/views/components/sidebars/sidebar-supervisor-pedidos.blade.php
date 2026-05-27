@@ -1,3 +1,12 @@
+@php
+    $devueltoAsesorInicial = \App\Models\PedidoProduccion::query()
+        ->where('estado', 'DEVUELTO_A_ASESORA')
+        ->whereNull('ocultado_en')
+        ->whereNotNull('numero_pedido')
+        ->where('numero_pedido', '!=', 0)
+        ->count();
+@endphp
+
 <!-- Sidebar Supervisor de Pedidos -->
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
@@ -20,7 +29,7 @@
             <ul class="menu-list" role="navigation">
                 <li class="menu-item">
                     <a href="{{ route('supervisor-pedidos.index') }}"
-                       class="menu-link {{ request()->routeIs('supervisor-pedidos.index') && request()->query('estado') !== 'Anulada' && request()->query('aprobacion_cartera') !== 'no_aprobado' ? 'active' : '' }}"
+                       class="menu-link {{ request()->routeIs('supervisor-pedidos.index') && request()->query('estado') !== 'Anulada' && request()->query('estado') !== 'DEVUELTO_A_ASESORA' && request()->query('aprobacion_cartera') !== 'no_aprobado' ? 'active' : '' }}"
                        style="display:flex;align-items:center;gap:0.5rem;">
                         <span class="material-symbols-rounded">pending_actions</span>
                         <span class="menu-label">Pedidos</span>
@@ -34,6 +43,15 @@
                         <span class="material-symbols-rounded">account_balance_wallet</span>
                         <span class="menu-label">Pendiente Cartera</span>
                         <span class="badge-alert" id="pendienteCarteraCountMenu" style="display: inline-flex;">0</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{ route('supervisor-pedidos.index', ['estado' => 'DEVUELTO_A_ASESORA']) }}"
+                       class="menu-link {{ request()->routeIs('supervisor-pedidos.index') && request()->query('estado') === 'DEVUELTO_A_ASESORA' ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">assignment_return</span>
+                        <span class="menu-label">Devuelto Asesor</span>
+                        <span class="badge-alert" id="devueltoAsesorCountMenu" style="display: inline-flex;">{{ $devueltoAsesorInicial }}</span>
                     </a>
                 </li>
                 @php

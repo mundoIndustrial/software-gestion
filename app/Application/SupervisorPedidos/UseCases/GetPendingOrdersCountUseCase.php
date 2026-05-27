@@ -20,10 +20,11 @@ class GetPendingOrdersCountUseCase
             $totalPendientes = (int) ($counts['total'] ?? 0);
             $pendientesLogo = (int) ($counts['logo'] ?? 0);
             $pendientesCarteraNoAprobado = (int) ($counts['cartera_no_aprobado'] ?? 0);
+            $devueltoAsesoraCount = (int) ($counts['devuelto_a_asesora'] ?? 0);
 
-            Log::info('[GetPendingOrdersCountUseCase] Total pendientes: ' . $totalPendientes . ', Logo: ' . $pendientesLogo . ', Cartera no aprobado: ' . $pendientesCarteraNoAprobado);
+            Log::info('[GetPendingOrdersCountUseCase] Total pendientes: ' . $totalPendientes . ', Logo: ' . $pendientesLogo . ', Cartera no aprobado: ' . $pendientesCarteraNoAprobado . ', Devuelto a asesora: ' . $devueltoAsesoraCount);
 
-            return new GetPendingOrdersCountResponse($totalPendientes, $pendientesLogo, $pendientesCarteraNoAprobado);
+            return new GetPendingOrdersCountResponse($totalPendientes, $pendientesLogo, $pendientesCarteraNoAprobado, $devueltoAsesoraCount);
         } catch (\Exception $e) {
             Log::error('[GetPendingOrdersCountUseCase] Error: ' . $e->getMessage());
             throw $e;

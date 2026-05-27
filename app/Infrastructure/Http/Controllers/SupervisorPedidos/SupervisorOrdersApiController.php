@@ -106,6 +106,7 @@ class SupervisorOrdersApiController extends Controller
                 'count' => $response->getTotalPendientes(),
                 'pendientesLogo' => $response->getPendientesLogo(),
                 'pendientesCarteraNoAprobado' => $response->getPendientesCarteraNoAprobado(),
+                'devueltoAsesoraCount' => $response->getDevueltoAsesoraCount(),
             ],
         ]);
     }
