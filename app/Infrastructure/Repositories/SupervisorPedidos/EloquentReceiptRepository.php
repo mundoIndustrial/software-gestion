@@ -432,6 +432,8 @@ class EloquentReceiptRepository implements ReceiptRepository
 
     public function findPendingQualityControlReceipts(array $filters): array
     {
+        $areasFiltradas = $filters['area'] ?? [];
+
         $query = DB::table('consecutivos_recibos_pedidos as crp')
             ->join('pedidos_produccion as p', 'crp.pedido_produccion_id', '=', 'p.id')
             ->leftJoin('users as u', 'p.asesor_id', '=', 'u.id')
@@ -448,12 +450,18 @@ class EloquentReceiptRepository implements ReceiptRepository
                 'crp.tipo_recibo',
                 'crp.color_costura',
                 'crp.color_control_calidad',
+                'crp.color_entrega',
                 'crp.area',
             ])
             ->whereRaw('UPPER(TRIM(crp.tipo_recibo)) IN (?, ?)', ['COSTURA', 'REFLECTIVO'])
             ->where('crp.activo', 1)
-            ->whereRaw('LOWER(TRIM(crp.area)) IN (?, ?)', ['control calidad', 'control de calidad'])
             ->orderBy('p.created_at', 'desc');
+
+        // Comportamiento por defecto del listado: mostrar Control Calidad.
+        // Si llega un filtro de área explícito (ej. Entrega), respetarlo.
+        if (empty($areasFiltradas)) {
+            $query->whereRaw('LOWER(TRIM(crp.area)) IN (?, ?)', ['control calidad', 'control de calidad']);
+        }
 
         $this->applyPendingReceiptFilters($query, $filters);
 

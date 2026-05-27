@@ -334,6 +334,39 @@ class SupervisorReceiptsController extends Controller
     }
 
     /**
+     * Guardar color de fila en vista de Entrega
+     */
+    public function guardarColorEntrega(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'numero_recibo' => 'required|string',
+            'color' => 'required|string|max:100',
+        ]);
+
+        $updated = DB::table('consecutivos_recibos_pedidos')
+            ->where('consecutivo_actual', trim((string) $validated['numero_recibo']))
+            ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA', 'REFLECTIVO'])
+            ->whereRaw('LOWER(TRIM(area)) = ?', ['entrega'])
+            ->update([
+                'color_entrega' => trim((string) $validated['color']),
+                'updated_at' => now(),
+            ]);
+
+        if ($updated <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró recibo de Entrega para actualizar color',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Color de Entrega guardado correctamente',
+            'receiptNumber' => $validated['numero_recibo'],
+        ]);
+    }
+
+    /**
      * Guardar color de fila en vista de Bordado y Estampado (Logo)
      */
     public function guardarColorBordadoEstampado(Request $request): JsonResponse
@@ -555,7 +588,7 @@ class SupervisorReceiptsController extends Controller
         $response = $this->getPendingSewingReceiptsUseCase->execute($requestDTO);
         $diasAntiguedad = (int) $request->input('dias_antiguedad', 0);
 
-        $areasPermitidas = ['insumos', 'corte', 'costura'];
+        $areasPermitidas = ['insumos', 'corte', 'costura', 'entrega'];
 
         $receipts = collect($response->getReceipts())
             ->filter(function ($item) use ($areasPermitidas) {
@@ -776,6 +809,7 @@ class SupervisorReceiptsController extends Controller
             asesor: $request->filled('asesor') ? $request->asesor : null,
             prendas: $request->filled('prendas') ? $request->prendas : null,
             fechaCreacion: $request->filled('fecha_creacion') ? $request->fecha_creacion : null,
+            area: $request->input('area'),
             busqueda: $request->input('busqueda')
         );
 
@@ -812,20 +846,39 @@ class SupervisorReceiptsController extends Controller
     public function pendientesControlCalidad(Request $request)
     {
         $verTodos = filter_var($request->query('ver_todos', false), FILTER_VALIDATE_BOOLEAN);
+        $esVistaEntrega = $request->routeIs('supervisor-pedidos.pendientes-entrega');
         $requestDTO = new GetPendingSewingReceiptsRequest(
             numeroRecibo: $request->filled('numero_recibo') ? $request->numero_recibo : null,
             cliente: $request->filled('cliente') ? $request->cliente : null,
             asesor: $request->filled('asesor') ? $request->asesor : null,
             prendas: $request->filled('prendas') ? $request->prendas : null,
             fechaCreacion: $request->filled('fecha_creacion') ? $request->fecha_creacion : null,
+            area: $request->input('area'),
             busqueda: $request->input('busqueda')
         );
 
         $response = $this->getPendingQualityControlReceiptsUseCase->execute($requestDTO);
         $allReceipts = collect($response->getReceipts())
-            ->when(!$verTodos, function ($collection) {
-                return $collection->filter(function ($proceso) {
-                    $color = mb_strtolower(trim((string) data_get($proceso, 'color_control_calidad', '')));
+            ->when($esVistaEntrega, function ($collection) {
+                return $collection->map(function ($proceso) {
+                    if (is_array($proceso)) {
+                        $proceso['color_control_calidad'] = null;
+                        return $proceso;
+                    }
+
+                    if (is_object($proceso)) {
+                        $proceso->color_control_calidad = null;
+                    }
+
+                    return $proceso;
+                });
+            })
+            ->when(!$verTodos, function ($collection) use ($esVistaEntrega) {
+                return $collection->filter(function ($proceso) use ($esVistaEntrega) {
+                    $colorField = $esVistaEntrega
+                        ? 'color_entrega'
+                        : 'color_control_calidad';
+                    $color = mb_strtolower(trim((string) data_get($proceso, $colorField, '')));
                     return $color !== '#e0f2fe';
                 });
             });
@@ -849,6 +902,15 @@ class SupervisorReceiptsController extends Controller
         );
 
         return view('supervisor-pedidos.pendientes-control-calidad', compact('procesosConCantidad'));
+    }
+
+    /**
+     * Pendientes de Entrega (usa la misma vista de Control Calidad filtrada por área Entrega)
+     */
+    public function pendientesEntrega(Request $request)
+    {
+        $request->merge(['area' => 'Entrega']);
+        return $this->pendientesControlCalidad($request);
     }
 
     /**

@@ -113,6 +113,8 @@ Route::middleware(['web', 'auth:web', 'role:supervisor_pedidos,admin'])
             ->name('recibos.guardar-color-reflectivo');
         Route::post('/recibos/guardar-color-control-calidad', [SupervisorReceiptsController::class, 'guardarColorControlCalidad'])
             ->name('recibos.guardar-color-control-calidad');
+        Route::post('/recibos/guardar-color-entrega', [SupervisorReceiptsController::class, 'guardarColorEntrega'])
+            ->name('recibos.guardar-color-entrega');
         Route::post('/recibos/guardar-color-bordado-estampado', [SupervisorReceiptsController::class, 'guardarColorBordadoEstampado'])
             ->name('recibos.guardar-color-bordado-estampado');
         Route::get('/recibos-procesos/observacion', [SupervisorReceiptsController::class, 'obtenerObservacionReciboProceso'])

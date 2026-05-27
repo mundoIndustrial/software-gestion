@@ -5,10 +5,6 @@
         ->whereNotNull('numero_pedido')
         ->where('numero_pedido', '!=', 0)
         ->count();
-    $prendasDevueltasInicial = \App\Models\ConsecutivosRecibosPedidos::query()
-        ->whereRaw("UPPER(TRIM(COALESCE(estado, ''))) = 'DEVUELTO_ASESOR'")
-        ->distinct('prenda_id')
-        ->count('prenda_id');
 @endphp
 
 <!-- Sidebar Supervisor de Pedidos -->
@@ -58,20 +54,12 @@
                         <span class="badge-alert" id="devueltoAsesorCountMenu" style="display: inline-flex;">{{ $devueltoAsesorInicial }}</span>
                     </a>
                 </li>
-                <li class="menu-item">
-                    <a href="{{ route('supervisor-pedidos.prendas-devueltas') }}"
-                       class="menu-link {{ request()->routeIs('supervisor-pedidos.prendas-devueltas') ? 'active' : '' }}"
-                       style="display:flex;align-items:center;gap:0.5rem;">
-                        <span class="material-symbols-rounded">checkroom</span>
-                        <span class="menu-label">Prendas Devueltas</span>
-                        <span class="badge-alert" style="display: inline-flex;">{{ $prendasDevueltasInicial }}</span>
-                    </a>
-                </li>
                 @php
                     $pendientesActivo = request()->routeIs(
                         'supervisor-pedidos.pendientes-bordado-estampado',
                         'supervisor-pedidos.pendientes-costura',
                         'supervisor-pedidos.pendientes-reflectivo',
+                        'supervisor-pedidos.pendientes-entrega',
                         'supervisor-pedidos.pendientes-control-calidad',
                         'gestion-bodega.pendientes-costura'
                     );
@@ -106,6 +94,14 @@
                                style="display:flex;align-items:center;gap:0.5rem;">
                                 <span class="material-symbols-rounded">flare</span>
                                 <span class="menu-label">Pendiente Reflectivo</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="{{ route('supervisor-pedidos.pendientes-entrega') }}"
+                               class="menu-link {{ request()->routeIs('supervisor-pedidos.pendientes-entrega') ? 'active' : '' }}"
+                               style="display:flex;align-items:center;gap:0.5rem;">
+                                <span class="material-symbols-rounded">local_shipping</span>
+                                <span class="menu-label">Pendiente Entrega</span>
                             </a>
                         </li>
                         <li class="submenu-item">

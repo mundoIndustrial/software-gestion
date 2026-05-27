@@ -1,8 +1,13 @@
 @extends('supervisor-pedidos.layout')
 
-@section('title', 'Pendiente Control Calidad')
-@section('page-title', 'Pendiente Control Calidad')
-@section('search-action', route('supervisor-pedidos.pendientes-control-calidad'))
+@php
+    $esVistaEntrega = request()->routeIs('supervisor-pedidos.pendientes-entrega') || request()->query('area') === 'Entrega';
+    $tituloVista = $esVistaEntrega ? 'Pendiente Entrega' : 'Pendiente Control Calidad';
+@endphp
+
+@section('title', $tituloVista)
+@section('page-title', $tituloVista)
+@section('search-action', route($esVistaEntrega ? 'supervisor-pedidos.pendientes-entrega' : 'supervisor-pedidos.pendientes-control-calidad'))
 
 @push('styles')
 <style>
@@ -210,6 +215,40 @@
         <div class="col-12">
             <div class="supervisor-pedidos-container">
                 <div id="supervisorPendientesControlCalidadContent">
+                <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <button type="button" onclick="generarReporteEntrega()" style="
+                        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                        color: white;
+                        border: none;
+                        padding: 0.75rem 1.5rem;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                    " onmouseover="this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.4)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.boxShadow='none'; this.style.transform='translateY(0)';">
+                        <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
+                        Generar Reporte
+                    </button>
+                    <button type="button" id="btnToggleAzulesEntrega" onclick="toggleFiltroAzulesEntrega()" style="
+                        background: #1d4ed8;
+                        color: white;
+                        border: none;
+                        padding: 0.75rem 1.25rem;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                    ">
+                        <i class="fas fa-eye" style="font-size: 0.95rem;"></i>
+                        Ver todos
+                    </button>
+                </div>
                 <!-- Tabla de Ordenes -->
                 <div class="control-calidad-table-frame" style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
                     <!-- Contenedor con Scroll -->
@@ -270,8 +309,13 @@
                                 </div>
                             @else
                                 @foreach($procesosConCantidad as $proceso)
-                                    <div data-row="processo" data-pedido-id="{{ $proceso['pedido_id'] }}" data-prenda-id="{{ $proceso['prenda_id'] ?? '' }}" data-numero-recibo="{{ $proceso['numero_recibo'] }}" data-es-parcial="{{ !empty($proceso['es_parcial']) ? 'true' : 'false' }}" data-pedido-parcial-id="{{ $proceso['pedido_parcial_id'] ?? '' }}" data-color-stored="{{ $proceso['color_control_calidad'] ?? '' }}" style="
-                                        --row-bg-color: {{ $proceso['color_control_calidad'] ?: '#ffffff' }};
+                                    @php
+                                        $colorFila = $esVistaEntrega
+                                            ? ($proceso['color_entrega'] ?? '')
+                                            : ($proceso['color_control_calidad'] ?? '');
+                                    @endphp
+                                    <div data-row="processo" data-pedido-id="{{ $proceso['pedido_id'] }}" data-prenda-id="{{ $proceso['prenda_id'] ?? '' }}" data-numero-recibo="{{ $proceso['numero_recibo'] }}" data-es-parcial="{{ !empty($proceso['es_parcial']) ? 'true' : 'false' }}" data-pedido-parcial-id="{{ $proceso['pedido_parcial_id'] ?? '' }}" data-color-stored="{{ $colorFila }}" style="
+                                        --row-bg-color: {{ $colorFila ?: '#ffffff' }};
                                         display: grid;
                                         grid-template-columns: 110px 170px 110px 110px 200px 120px 200px 160px 130px 100px;
                                         gap: 0.15rem;
@@ -482,6 +526,69 @@
 <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
 <script src="{{ asset('js/recibos-novedades.js') }}?v={{ time() }}"></script>
 <script>
+const esVistaPendienteEntrega = @json($esVistaEntrega);
+
+function esRutaEntregaUrl(urlString) {
+    try {
+        const url = new URL(urlString, window.location.origin);
+        return url.pathname.startsWith('/supervisor-pedidos/pendientes-entrega');
+    } catch (e) {
+        return false;
+    }
+}
+
+function actualizarEstadoBotonVerTodosEntrega() {
+    const btn = document.getElementById('btnToggleAzulesEntrega');
+    if (!btn) return;
+
+    const url = new URL(window.location.href);
+    const mostrandoTodos = url.searchParams.get('ver_todos') === '1';
+    btn.innerHTML = mostrandoTodos
+        ? '<i class="fas fa-eye-slash" style="font-size: 0.95rem;"></i> Ocultar azules'
+        : '<i class="fas fa-eye" style="font-size: 0.95rem;"></i> Ver todos';
+}
+
+function toggleFiltroAzulesEntrega() {
+    const url = new URL(window.location.href);
+    const mostrandoTodos = url.searchParams.get('ver_todos') === '1';
+    if (mostrandoTodos) {
+        url.searchParams.delete('ver_todos');
+    } else {
+        url.searchParams.set('ver_todos', '1');
+    }
+    url.searchParams.delete('page');
+    navegarPendientesControlCalidad(url.toString());
+}
+
+function generarReporteEntrega() {
+    const source = new URL(window.location.href);
+    source.searchParams.set('area', 'Entrega');
+    const reporteUrl = new URL('{{ route("supervisor-pedidos.pendientes-costura.reporte") }}', window.location.origin);
+
+    const keys = ['numero_recibo', 'cliente', 'asesor', 'prendas', 'fecha_creacion', 'area', 'busqueda', 'dias_antiguedad', 'ver_todos'];
+    keys.forEach((key) => {
+        const value = source.searchParams.get(key);
+        if (value !== null && value !== '') {
+            reporteUrl.searchParams.set(key, value);
+        }
+    });
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = reporteUrl.toString();
+    form.style.display = 'none';
+
+    const csrf = document.createElement('input');
+    csrf.type = 'hidden';
+    csrf.name = '_token';
+    csrf.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    form.appendChild(csrf);
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+
 let filtroActual = null;
 
 // Fallback de zoom para el modal de detalle cuando no existe el handler global.
@@ -701,6 +808,10 @@ inicializarBusquedaGeneralControlCalidad();
 
 function construirUrlApiPendientesControlCalidad(urlString) {
     const source = new URL(urlString, window.location.origin);
+    const esEntregaDestino = esRutaEntregaUrl(source.toString());
+    if (esEntregaDestino) {
+        source.searchParams.set('area', 'Entrega');
+    }
     return `/api/supervisor-pedidos/recibos/pendientes-control-calidad${source.search || ''}`;
 }
 
@@ -721,6 +832,7 @@ window.navegarPendientesControlCalidad = async function navegarPendientesControl
         container.style.opacity = '0.6';
         container.style.pointerEvents = 'none';
         const source = new URL(urlString, window.location.origin);
+        const esEntregaDestino = esRutaEntregaUrl(source.toString());
 
         const apiUrl = construirUrlApiPendientesControlCalidad(source.toString());
         const res = await fetch(apiUrl, {
@@ -747,6 +859,7 @@ window.navegarPendientesControlCalidad = async function navegarPendientesControl
                 showActions: true,
                 actionMode: 'modal',
                 actionHandlerName: 'openReciboControlCalidadModalFromRow',
+                colorField: esEntregaDestino ? 'color_entrega' : 'color_control_calidad',
                 showReceiptType: true,
                 showRemainingDays: false
             })).join('');
@@ -781,6 +894,7 @@ window.navegarPendientesControlCalidad = async function navegarPendientesControl
         }
 
         actualizarIndicadoresFiltros();
+        actualizarEstadoBotonVerTodosEntrega();
         inicializarSelectorColores();
         inicializarBusquedaGeneralControlCalidad();
         window.dispatchEvent(new Event('supervisorPedidos:filtersUpdated'));
@@ -795,6 +909,7 @@ window.navegarPendientesControlCalidad = async function navegarPendientesControl
 
 window.addEventListener('popstate', function() {
     navegarPendientesControlCalidad(window.location.href, { pushState: false });
+    actualizarEstadoBotonVerTodosEntrega();
 });
 
 document.addEventListener('click', function(e) {
@@ -816,7 +931,9 @@ document.addEventListener('click', function(e) {
         return;
     }
 
-    if (!path.startsWith('/supervisor-pedidos/pendientes-control-calidad')) return;
+    const esRutaControlCalidad = path.startsWith('/supervisor-pedidos/pendientes-control-calidad');
+    const esRutaPendienteEntrega = path.startsWith('/supervisor-pedidos/pendientes-entrega');
+    if (!esRutaControlCalidad && !esRutaPendienteEntrega) return;
     e.preventDefault();
     navegarPendientesControlCalidad(urlAbs);
 });
@@ -875,6 +992,8 @@ if (document.readyState === 'loading') {
     inicializarSelectorColores();
 }
 
+actualizarEstadoBotonVerTodosEntrega();
+
 // Re-render inicial desde API para evitar desalineaciones del HTML server-side.
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
@@ -887,9 +1006,12 @@ if (document.readyState === 'loading') {
 // Funcion para guardar el color en la BD
 async function guardarColorCostura(reciboId, color) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const endpoint = esRutaEntregaUrl(window.location.href)
+        ? '/api/supervisor-pedidos/recibos/guardar-color-entrega'
+        : '/api/supervisor-pedidos/recibos/guardar-color-control-calidad';
 
     try {
-        const response = await fetch('/api/supervisor-pedidos/recibos/guardar-color-control-calidad', {
+        const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

@@ -120,6 +120,7 @@ class SupervisorReceiptsApiController extends Controller
     public function pendingQualityControl(Request $request): JsonResponse
     {
         $verTodos = filter_var($request->query('ver_todos', false), FILTER_VALIDATE_BOOLEAN);
+        $esVistaEntrega = mb_strtolower(trim((string) $request->input('area', ''))) === 'entrega';
         $requestDTO = new GetPendingSewingReceiptsRequest(
             numeroRecibo: $request->filled('numero_recibo') ? $request->input('numero_recibo') : null,
             cliente: $request->filled('cliente') ? $request->input('cliente') : null,
@@ -132,9 +133,24 @@ class SupervisorReceiptsApiController extends Controller
 
         $response = $this->getPendingQualityControlReceiptsUseCase->execute($requestDTO);
         $procesos = collect($response->getReceipts())
-            ->when(!$verTodos, function ($collection) {
-                return $collection->filter(function ($proceso) {
-                    $color = mb_strtolower(trim((string) data_get($proceso, 'color_control_calidad', '')));
+            ->when($esVistaEntrega, function ($collection) {
+                return $collection->map(function ($proceso) {
+                    if (is_array($proceso)) {
+                        $proceso['color_control_calidad'] = null;
+                        return $proceso;
+                    }
+
+                    if (is_object($proceso)) {
+                        $proceso->color_control_calidad = null;
+                    }
+
+                    return $proceso;
+                });
+            })
+            ->when(!$verTodos, function ($collection) use ($esVistaEntrega) {
+                return $collection->filter(function ($proceso) use ($esVistaEntrega) {
+                    $colorField = $esVistaEntrega ? 'color_entrega' : 'color_control_calidad';
+                    $color = mb_strtolower(trim((string) data_get($proceso, $colorField, '')));
                     return $color !== '#e0f2fe';
                 });
             })

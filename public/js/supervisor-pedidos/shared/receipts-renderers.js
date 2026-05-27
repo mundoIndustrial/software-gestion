@@ -81,7 +81,16 @@
         const actionMode = options.actionMode || 'link';
         const actionHandlerName = String(options.actionHandlerName || 'openReciboCosturaModalFromRow');
         const getReceiptUrl = typeof options.getReceiptUrl === 'function' ? options.getReceiptUrl : null;
-        const color = proceso?.color_control_calidad || proceso?.color_reflectivo || proceso?.color_costura || '';
+        const colorField = String(options.colorField || '').trim();
+        const color = colorField
+            ? String(proceso?.[colorField] || '')
+            : (
+                proceso?.color_control_calidad
+                || proceso?.color_entrega
+                || proceso?.color_reflectivo
+                || proceso?.color_costura
+                || ''
+            );
         const rowBaseColor = color || '#ffffff';
         const area = proceso?.area || '';
         const numeroRecibo = String(proceso?.numero_recibo || '');
