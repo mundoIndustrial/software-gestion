@@ -110,11 +110,14 @@ class RecibosViewTransformer
             $prendaIdVista = $tipoRecibo === 'CORTE-PARA-BODEGA'
                 ? ($recibo->prenda_bodega_id ?? null)
                 : ($recibo->prenda_id ?? null);
+            $numeroPedidoOriginal = $recibo->numero_pedido_original
+                ?? $recibo->numero_pedido
+                ?? null;
 
             return (object) [
                 'id' => $recibo->id,
                 'numero_pedido' => $recibo->consecutivo_actual,
-                'numero_pedido_original' => $recibo->numero_pedido_original,
+                'numero_pedido_original' => $numeroPedidoOriginal,
                 'cliente' => $cliente,
                 'estado' => $recibo->recibo_estado ?? $recibo->pedido_estado,
                 'area' => $recibo->recibo_area ?? $recibo->pedido_area,

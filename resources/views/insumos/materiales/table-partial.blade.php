@@ -250,7 +250,7 @@
                         </td>
                         @if($mostrarColumnaPedido)
                             <td class="py-4 px-6">
-                                <span class="font-medium text-gray-800">{{ $orden->numero_pedido_original ?? 'N/A' }}</span>
+                                <span class="font-medium text-gray-800">{{ $orden->numero_pedido_original ?? $orden->numero_pedido ?? 'N/A' }}</span>
                             </td>
                         @endif
                         <td class="py-4 px-6">
@@ -332,7 +332,10 @@
 
                                 $estadosEditablesInsumos = ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'Insumos Pedidos', 'INSUMOS_PEDIDOS'];
                                 $puedeEditarInsumos = in_array($estadoValor, $estadosEditablesInsumos, true);
-                                $mostrarSelector = ($roleName !== 'insumos') || ($roleName === 'insumos' && $puedeEditarInsumos);
+                                $estadoBloqueado = in_array($estadoValor, ['En Ejecución', 'En Ejecucion'], true);
+                                $mostrarSelector = !$estadoBloqueado && (
+                                    ($roleName !== 'insumos') || ($roleName === 'insumos' && $puedeEditarInsumos)
+                                );
                             @endphp
 
                             @if($mostrarSelector)

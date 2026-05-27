@@ -370,11 +370,11 @@
                                 <td class="py-4 px-6">
                                     <span class="font-bold text-blue-600 text-lg">{{ $orden->consecutivo_actual ?? 'N/A' }}</span>
                                 </td>
-                                @if($mostrarColumnaPedido)
-                                    <td class="py-4 px-6">
-                                        <span class="font-medium text-gray-800">{{ $orden->numero_pedido_original ?? 'N/A' }}</span>
-                                    </td>
-                                @endif
+                                    @if($mostrarColumnaPedido)
+                                        <td class="py-4 px-6">
+                                            <span class="font-medium text-gray-800">{{ $orden->numero_pedido_original ?? $orden->numero_pedido ?? 'N/A' }}</span>
+                                        </td>
+                                    @endif
                                 <td class="py-4 px-6">
                                     <span class="font-medium text-gray-800">{{ $orden->cliente ?? 'N/A' }}</span>
                                 </td>
@@ -455,9 +455,12 @@
                                         // Determinar si el rol insumos puede editar este estado
                                         $estadosEditablesInsumos = ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'Insumos Pedidos', 'INSUMOS_PEDIDOS'];
                                         $puedeEditarInsumos = in_array($orden->estado, $estadosEditablesInsumos);
+                                        $estadoBloqueado = in_array($orden->estado, ['En Ejecución', 'En Ejecucion'], true);
                                         
                                         // Mostrar selector solo si no es insumos, o si es insumos y el estado es editable
-                                        $mostrarSelector = ($currentRoleName !== 'insumos') || ($currentRoleName === 'insumos' && $puedeEditarInsumos);
+                                        $mostrarSelector = !$estadoBloqueado && (
+                                            ($currentRoleName !== 'insumos') || ($currentRoleName === 'insumos' && $puedeEditarInsumos)
+                                        );
                                     @endphp
                                     
                                     @if($mostrarSelector)
