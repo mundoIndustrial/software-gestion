@@ -541,7 +541,12 @@ class ProcesosPrendaDetalleController extends Controller
         }
 
         $usuario = auth()->user();
-        if (!$usuario->hasRole('supervisor') && !$usuario->hasRole('supervisor_pedidos')) {
+        if (
+            !$usuario->hasRole('supervisor')
+            && !$usuario->hasRole('supervisor_pedidos')
+            && !$usuario->hasRole('admin')
+            && !$usuario->hasRole('supervisor-admin')
+        ) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tiene permisos para realizar esta acción',
@@ -605,7 +610,12 @@ class ProcesosPrendaDetalleController extends Controller
         }
 
         $usuario = auth()->user();
-        if (!$usuario->hasRole('supervisor') && !$usuario->hasRole('supervisor_pedidos')) {
+        if (
+            !$usuario->hasRole('supervisor')
+            && !$usuario->hasRole('supervisor_pedidos')
+            && !$usuario->hasRole('admin')
+            && !$usuario->hasRole('supervisor-admin')
+        ) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tiene permisos para realizar esta acción',

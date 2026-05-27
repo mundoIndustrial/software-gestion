@@ -167,11 +167,18 @@
         padding: 16px;
         cursor: pointer;
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-start;
         align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
         transition: background 0.2s;
         user-select: none;
         position: relative;
+    }
+
+    .prenda-header > div:first-child {
+        min-width: 220px;
+        margin-right: auto;
     }
 
     .prenda-header:hover {
@@ -188,20 +195,45 @@
         border-left: 4px solid #3b82f6;
     }
 
+    .prenda-header.devuelta {
+        background: #cbd5e1 !important;
+        border-left: 5px solid #475569;
+        box-shadow: inset 0 0 0 1px #94a3b8;
+    }
+
+    .prenda-header.devuelta.expanded {
+        background: #bfc9d8 !important;
+        border-bottom: 2px solid #475569;
+    }
+
+    .prenda-header.devuelta .prenda-title {
+        color: #111827;
+        font-weight: 700;
+    }
+
+    .prenda-header.devuelta .prenda-subtitle {
+        color: #334155;
+        font-weight: 600;
+    }
+
     .btn-entregar-prenda {
         background: #10b981;
         color: white;
         border: none;
-        padding: 6px 16px;
+        padding: 0;
         border-radius: 6px;
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
         display: flex;
         align-items: center;
-        gap: 6px;
-        margin-left: 12px;
+        gap: 0;
+        margin-left: 0;
+        width: 34px;
+        height: 34px;
+        min-height: 34px;
+        justify-content: center;
     }
 
     .btn-entregar-prenda:hover {
@@ -252,7 +284,7 @@
         background: #0f766e;
         color: white;
         border: none;
-        padding: 6px 12px;
+        padding: 0;
         border-radius: 6px;
         font-size: 12px;
         font-weight: 600;
@@ -260,8 +292,12 @@
         transition: all 0.2s;
         display: flex;
         align-items: center;
-        gap: 6px;
-        margin-left: 8px;
+        gap: 0;
+        margin-left: 0;
+        width: 34px;
+        height: 34px;
+        min-height: 34px;
+        justify-content: center;
     }
 
     .btn-ver-entregas-prenda:hover {
@@ -283,6 +319,22 @@
         margin-top: 4px;
     }
 
+    .badge-prenda-devuelta {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: 8px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #b91c1c;
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        vertical-align: middle;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
     .prenda-chevron {
         width: 24px;
         height: 24px;
@@ -291,6 +343,7 @@
         justify-content: center;
         transition: transform 0.2s;
         color: #3b82f6;
+        margin-left: auto;
     }
 
     .prenda-chevron.expanded {
@@ -361,6 +414,10 @@
         background: #6b7280; /* Gris */
     }
 
+    .proceso-estado.devuelto_asesor {
+        background: #6b7280;
+    }
+
     .proceso-estado.anulado s {
         text-decoration: line-through;
         text-decoration-color: currentColor;
@@ -421,6 +478,28 @@
         transform: translateY(-1px);
     }
 
+    .btn-devolver-asesora {
+        background: #b91c1c;
+        color: white;
+        border: none;
+        padding: 0;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0;
+        min-height: 34px;
+        width: 34px;
+        height: 34px;
+        justify-content: center;
+    }
+
+    .btn-devolver-asesora:hover {
+        background: #991b1b;
+        transform: translateY(-1px);
+    }
+
     .btn-recibo-parcial {
         background: #8b5cf6;
         color: white;
@@ -444,7 +523,7 @@
         position: relative;
         display: flex;
         align-items: center;
-        min-width: 165px;
+        min-width: 150px;
     }
 
     .select-recibo-parcial {
@@ -455,12 +534,13 @@
         background: #8b5cf6;
         color: white;
         border: none;
-        padding: 8px 34px 8px 12px;
+        padding: 7px 34px 7px 12px;
         border-radius: 4px;
         font-size: 12px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
+        min-height: 34px;
     }
 
     .select-recibo-parcial:hover,
@@ -547,6 +627,36 @@
         padding: 2px 6px;
         border-radius: 3px;
         margin-left: 8px;
+    }
+
+    @media (max-width: 768px) {
+        .prenda-header {
+            padding: 12px;
+            gap: 6px;
+        }
+
+        .prenda-header > div:first-child {
+            min-width: 100%;
+            margin-right: 0;
+        }
+
+        .btn-entregar-prenda,
+        .btn-ver-entregas-prenda,
+        .btn-devolver-asesora {
+            width: 30px;
+            height: 30px;
+            min-height: 30px;
+            font-size: 12px;
+        }
+
+        .recibo-parcial-select-wrapper {
+            min-width: 135px;
+        }
+
+        .select-recibo-parcial {
+            font-size: 11px;
+            min-height: 30px;
+        }
     }
 
     @keyframes slideIn {
@@ -991,17 +1101,20 @@
 
                 console.log('[DEBUG RECIBO BASE] reciboBaseActual:', reciboBaseActual);
 
-                if (reciboBaseActual) {
-                    // Nuevo formato: objeto con datos completos
-                    if (typeof reciboBaseActual === 'object' && reciboBaseActual.activo !== undefined) {
-                        const estadoNormalizado = String(reciboBaseActual.estado || '').toUpperCase().trim();
-                        const estaAnulado = estadoNormalizado === 'ANULADO' || estadoNormalizado === 'ANULADA';
-                        console.log('[DEBUG RECIBO BASE] estadoNormalizado:', estadoNormalizado, 'activo:', reciboBaseActual.activo);
-                        estadoRecibo = estaAnulado ? 'ANULADO' : (reciboBaseActual.activo === 1 ? 'APROBADO' : 'PENDIENTE');
-                        console.log('[DEBUG RECIBO BASE] estadoRecibo calculado:', estadoRecibo);
-                        numeroRecibo = reciboBaseActual.consecutivo_actual || null;
-                        activoValue = reciboBaseActual.activo;
-                    } 
+                    if (reciboBaseActual) {
+                        // Nuevo formato: objeto con datos completos
+                        if (typeof reciboBaseActual === 'object' && reciboBaseActual.activo !== undefined) {
+                            const estadoNormalizado = String(reciboBaseActual.estado || '').toUpperCase().trim();
+                            const estaAnulado = estadoNormalizado === 'ANULADO' || estadoNormalizado === 'ANULADA';
+                            const estaDevueltoAsesor = estadoNormalizado === 'DEVUELTO_ASESOR';
+                            console.log('[DEBUG RECIBO BASE] estadoNormalizado:', estadoNormalizado, 'activo:', reciboBaseActual.activo);
+                            estadoRecibo = estaAnulado
+                                ? 'ANULADO'
+                                : (estaDevueltoAsesor ? 'DEVUELTO_ASESOR' : (reciboBaseActual.activo === 1 ? 'APROBADO' : 'PENDIENTE'));
+                            console.log('[DEBUG RECIBO BASE] estadoRecibo calculado:', estadoRecibo);
+                            numeroRecibo = reciboBaseActual.consecutivo_actual || null;
+                            activoValue = reciboBaseActual.activo;
+                        } 
                     // Formato antiguo: solo el número de consecutivo
                     else if (reciboBaseActual) {
                         estadoRecibo = 'APROBADO';
@@ -1106,12 +1219,31 @@
             const estadoEntrega = resolverEstadoEntregaPrenda(prenda, recibos);
             const estaEntregada = estadoEntrega === 'completo';
             const entregaParcial = estadoEntrega === 'parcial';
+            const prendaDevuelta = recibosFiltered.some((r) => String(r?.estado || '').toUpperCase() === 'DEVUELTO_ASESOR');
             const claseEntregada = estaEntregada ? 'entregada' : '';
+            const claseDevuelta = prendaDevuelta ? 'devuelta' : '';
+            const badgeDevueltaHtml = prendaDevuelta
+                ? '<span class="badge-prenda-devuelta"><i class="fas fa-rotate-left"></i>Devuelta a asesora</span>'
+                : '';
             const claseBotonEntregado = estaEntregada ? 'entregado' : '';
             const textoBoton = estaEntregada ? 'Deshacer' : (entregaParcial ? 'Parcial' : 'Entregar');
             const colorBoton = estaEntregada ? '#f59e0b' : (entregaParcial ? '#2563eb' : '#10b981');
             const iconoBoton = estaEntregada ? 'fa-rotate-left' : (entregaParcial ? 'fa-layer-group' : 'fa-check-circle');
             const ocultarBotonEntregar = window.location.pathname.includes('/registros');
+            const rolesUsuarioPrenda = Array.isArray(window.selectorRecibosState?.usuarioRoles)
+                ? window.selectorRecibosState.usuarioRoles.map((r) => String(r || '').toLowerCase())
+                : [];
+            const usuarioEsSupervisorPrenda = !!window.selectorRecibosState?.esSupervisorPedidos || !!window.selectorRecibosState?.esSupervisor;
+            const puedeGestionarDevolucion = usuarioEsSupervisorPrenda
+                || rolesUsuarioPrenda.includes('supervisor_pedidos')
+                || rolesUsuarioPrenda.includes('supervisor')
+                || rolesUsuarioPrenda.includes('supervisor-admin')
+                || rolesUsuarioPrenda.includes('supervisor_produccion')
+                || rolesUsuarioPrenda.includes('lider_produccion')
+                || rolesUsuarioPrenda.includes('admin')
+                || window.location.pathname.includes('/supervisor-pedidos');
+            const pedidoEstadoPrenda = String(window.selectorRecibosState?.pedidoEstado || '').toUpperCase();
+            const pedidoAprobadoParaDevolucion = pedidoEstadoPrenda !== 'PENDIENTE_SUPERVISOR';
             
             // Depuración completa de datos de la prenda
             console.log('[PRENDA-DEBUG] Datos completos de la prenda:', {
@@ -1179,16 +1311,19 @@
             }
             
             const botonEntregarHtml = ocultarBotonEntregar ? '' : `
-                        <button class="btn-entregar-prenda ${claseBotonEntregado}" onclick="event.stopPropagation(); toggleEntregarPrenda(this, ${prenda.id || prendaIdx})" style="background: ${colorBoton};" title="${entregaParcial ? 'La prenda tiene entregas parciales registradas' : ''}">
+                        <button class="btn-entregar-prenda ${claseBotonEntregado}" onclick="event.stopPropagation(); toggleEntregarPrenda(this, ${prenda.id || prendaIdx})" style="background: ${colorBoton};" title="${entregaParcial ? 'La prenda tiene entregas parciales registradas' : textoBoton}">
                             <i class="fas ${iconoBoton}"></i>
-                            <span>${textoBoton}</span>
                         </button>`;
 
             const botonVerEntregasHtml = `
                         <button class="btn-ver-entregas-prenda" onclick="event.stopPropagation(); abrirHistorialEntregasPrenda(${prenda.id || prendaIdx})" title="Ver entregas parciales enviadas a despacho">
                             <i class="fas fa-history"></i>
-                            <span>Ver entregas</span>
                         </button>`;
+
+            const botonDevolverPrendaHtml = (puedeGestionarDevolucion && pedidoAprobadoParaDevolucion) ? `
+                        <button class="btn-devolver-asesora" onclick="event.stopPropagation(); devolverPrendaAAsesora(${prenda.id || prendaIdx})" title="Devolver prenda completa a asesora para revisión">
+                            <i class="fas fa-arrow-rotate-left"></i>
+                        </button>` : '';
 
             const botonGenerarReciboCosturaHtml = ocultarBotonEntregar ? '' : `
                         <div class="recibo-parcial-select-wrapper" onclick="event.stopPropagation();" title="Selecciona el tipo de recibo por talla">
@@ -1209,13 +1344,14 @@
 
             html += `
                 <div class="prenda-accordion">
-                    <div class="prenda-header ${claseEntregada}" onclick="togglePrendaAccordion(this, '${idAccordion}')" data-prenda-id="${prenda.id || prendaIdx}" data-estado-entrega="${estadoEntrega}">
+                    <div class="prenda-header ${claseEntregada} ${claseDevuelta}" onclick="togglePrendaAccordion(this, '${idAccordion}')" data-prenda-id="${prenda.id || prendaIdx}" data-estado-entrega="${estadoEntrega}" data-estado-devolucion="${prendaDevuelta ? 'devuelta' : 'normal'}">
                         <div style="flex: 1;">
-                            <p class="prenda-title">${prenda.nombre || 'Prenda sin nombre'}${indicadorBodega}</p>
+                            <p class="prenda-title">${prenda.nombre || 'Prenda sin nombre'}${indicadorBodega}${badgeDevueltaHtml}</p>
                             <p class="prenda-subtitle">${totalRecibos} recibo(s)</p>
                         </div>
                         ${botonEntregarHtml}
                         ${botonVerEntregasHtml}
+                        ${botonDevolverPrendaHtml}
                         ${botonGenerarReciboCosturaHtml}
                         ${fechaEntregaHtml}
                         <div class="prenda-chevron">▼</div>
@@ -1292,23 +1428,38 @@
                     }
                     
                     //  CRÍTICO: Solo supervisor_pedidos puede activar/desactivar recibos
-                    const usuarioEsSupervisor = window.selectorRecibosState?.esSupervisorPedidos || window.selectorRecibosState?.esSupervisor;
+                    const rolesUsuario = Array.isArray(window.selectorRecibosState?.usuarioRoles)
+                        ? window.selectorRecibosState.usuarioRoles.map((r) => String(r || '').toLowerCase())
+                        : [];
+                    const usuarioEsSupervisor = !!window.selectorRecibosState?.esSupervisorPedidos || !!window.selectorRecibosState?.esSupervisor;
+                    const puedeGestionarDevolucion = usuarioEsSupervisor
+                        || rolesUsuario.includes('supervisor_pedidos')
+                        || rolesUsuario.includes('supervisor')
+                        || rolesUsuario.includes('supervisor-admin')
+                        || rolesUsuario.includes('supervisor_produccion')
+                        || rolesUsuario.includes('lider_produccion')
+                        || rolesUsuario.includes('admin')
+                        || window.location.pathname.includes('/supervisor-pedidos');
                     
                     // Variables básicas del recibo
                     const tipoStringLower = String(tipoString || '').toLowerCase();
                     
                     // Para recibos base (costura), no usar el botón general de activación
                     const esReciboBaseCostura = recibo.es_base && (tipoStringLower === 'costura' || tipoStringLower === 'costura-bodega');
-                    const puedeModificarRecibo = puedeActivar && usuarioEsSupervisor && !esReciboBaseCostura;
+                    const puedeModificarRecibo = puedeActivar && puedeGestionarDevolucion && !esReciboBaseCostura;
                     
                     // Verificar si este proceso base tiene anexos/parciales creados
                     const tieneAnexos = !esParcial && recibos.some(r => r.es_parcial && String(r.tipo).toLowerCase() === tipoStringLower);
                     const puedeModificarReciboFinal = puedeModificarRecibo && !tieneAnexos;
                     
-                    const puedeDesactivarRecibo = estaActivo && usuarioEsSupervisor;
+                    const puedeDesactivarRecibo = estaActivo && puedeGestionarDevolucion;
                     
                     // Botón Anular aparece cuando estado es APROBADO (independientemente de numero_recibo)
-                    const puedeAnularRecibo = recibo.estado === 'APROBADO' && usuarioEsSupervisor;
+                    const puedeAnularRecibo = recibo.estado === 'APROBADO' && puedeGestionarDevolucion;
+                    const reciboId = Number(recibo.consecutivo_recibo_id || 0);
+                    const puedeDevolverAAsesora = puedeGestionarDevolucion
+                        && reciboId > 0
+                        && String(recibo.estado || '').toUpperCase() !== 'ANULADO';
                     
                     const reciboClass = estaActivo ? 'recibo-activo' : '';
                     
@@ -1322,7 +1473,7 @@
                     const pedidoEstado = window.selectorRecibosState?.pedidoEstado;
                     const pedidoYaAprobado = pedidoEstado && String(pedidoEstado).toUpperCase() !== 'PENDIENTE_SUPERVISOR';
 
-                    const puedeActivarBaseCostura = recibo.es_base && tipoStringLower === 'costura' && puedeActivar && pedidoYaAprobado && usuarioEsSupervisor;
+                    const puedeActivarBaseCostura = recibo.es_base && tipoStringLower === 'costura' && puedeActivar && pedidoYaAprobado && puedeGestionarDevolucion;
                     
                     // DEBUG: Mostrar decisión de visibilidad del botón
                     console.log(`🔘 Prenda ${prenda.id}: esSupervisorRecibos=${esSupervisorRecibos}, esSupervisorPedidos=${window.selectorRecibosState?.esSupervisorPedidos}`);
@@ -1703,6 +1854,238 @@
             alert('Error al anular el recibo: ' + error.message);
         }
     };
+
+    window.devolverReciboAAsesora = async function(reciboId, prendaId, tipoProceso) {
+        try {
+            if (!reciboId) {
+                throw new Error('No se encontró el recibo a devolver.');
+            }
+
+            if (typeof Swal === 'undefined') {
+                const motivoFallback = prompt('Ingresa el motivo para devolver esta prenda a asesora:');
+                if (!motivoFallback || motivoFallback.trim().length < 10) {
+                    return;
+                }
+                await ejecutarDevolucionAAsesora(reciboId, motivoFallback.trim());
+                return;
+            }
+
+            const result = await Swal.fire({
+                title: 'Devolver a asesora',
+                html: `<p style="margin:0 0 8px 0; color:#4b5563;">Prenda #${prendaId} - ${tipoProceso}</p>`,
+                input: 'textarea',
+                inputLabel: 'Motivo de la revisión',
+                inputPlaceholder: 'Ej: Ajustar cantidades o especificaciones del proceso...',
+                inputAttributes: {
+                    maxlength: 500,
+                    minlength: 10,
+                },
+                inputValidator: (value) => {
+                    const motivo = String(value || '').trim();
+                    if (!motivo) return 'Debes ingresar un motivo.';
+                    if (motivo.length < 10) return 'El motivo debe tener al menos 10 caracteres.';
+                    return null;
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Devolver',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#b91c1c',
+                reverseButtons: true,
+            });
+
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            await ejecutarDevolucionAAsesora(reciboId, String(result.value || '').trim());
+        } catch (error) {
+            console.error('[devolverReciboAAsesora] Error:', error);
+            if (typeof Swal !== 'undefined') {
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo devolver',
+                    text: error?.message || 'Error inesperado al devolver el recibo.',
+                    confirmButtonColor: '#dc2626',
+                });
+            } else {
+                alert(error?.message || 'Error inesperado al devolver el recibo.');
+            }
+        }
+    };
+
+    window.devolverPrendaAAsesora = async function(prendaId) {
+        try {
+            const prenda = obtenerPrendaSelector(prendaId);
+            if (!prenda) {
+                throw new Error('No se encontró la prenda en el selector.');
+            }
+
+            const reciboIds = obtenerReciboIdsDePrenda(prendaId, prenda);
+            if (reciboIds.length === 0) {
+                throw new Error('La prenda no tiene recibos asociados para devolver.');
+            }
+
+            let motivo = '';
+            if (typeof Swal === 'undefined') {
+                const motivoFallback = prompt(`Ingresa el motivo para devolver la prenda "${prenda.nombre || prendaId}":`);
+                if (!motivoFallback || motivoFallback.trim().length < 10) {
+                    return;
+                }
+                motivo = motivoFallback.trim();
+            } else {
+                const result = await Swal.fire({
+                    title: 'Devolver prenda completa',
+                    html: `<p style="margin:0 0 8px 0; color:#4b5563;">${prenda.nombre || `Prenda #${prendaId}`}</p><p style="margin:0; color:#6b7280; font-size:13px;">Se devolverán ${reciboIds.length} recibo(s)/proceso(s) asociados.</p>`,
+                    input: 'textarea',
+                    inputLabel: 'Motivo de la revisión',
+                    inputPlaceholder: 'Ej: Ajustar diseño, cantidades o especificaciones de la prenda...',
+                    inputAttributes: {
+                        maxlength: 500,
+                        minlength: 10,
+                    },
+                    inputValidator: (value) => {
+                        const text = String(value || '').trim();
+                        if (!text) return 'Debes ingresar un motivo.';
+                        if (text.length < 10) return 'El motivo debe tener al menos 10 caracteres.';
+                        return null;
+                    },
+                    showCancelButton: true,
+                    confirmButtonText: 'Devolver prenda',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#b91c1c',
+                    reverseButtons: true,
+                });
+
+                if (!result.isConfirmed) {
+                    return;
+                }
+
+                motivo = String(result.value || '').trim();
+            }
+
+            let ok = 0;
+            const errores = [];
+            for (const reciboId of reciboIds) {
+                try {
+                    await ejecutarDevolucionAAsesora(reciboId, motivo, { silentSuccess: true });
+                    ok += 1;
+                } catch (error) {
+                    errores.push(`Recibo #${reciboId}: ${error?.message || 'Error desconocido'}`);
+                }
+            }
+
+            if (typeof Swal !== 'undefined') {
+                if (errores.length > 0) {
+                    await Swal.fire({
+                        icon: 'warning',
+                        title: 'Devolución parcial',
+                        html: `<div style="text-align:left;"><p style="margin-bottom:8px;">Se devolvieron ${ok} de ${reciboIds.length} recibos.</p><p style="margin:0; font-size:12px; color:#6b7280;">${errores.slice(0, 4).join('<br>')}</p></div>`,
+                        confirmButtonColor: '#f59e0b',
+                    });
+                } else {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Prenda devuelta',
+                        text: 'La prenda completa fue devuelta a asesora para revisión.',
+                        confirmButtonColor: '#16a34a',
+                    });
+                }
+            } else if (errores.length > 0) {
+                alert(`Se devolvieron ${ok} de ${reciboIds.length} recibos.\n\n${errores.slice(0, 4).join('\n')}`);
+            }
+
+            const pedidoId = Number(window.selectorRecibosState?.pedidoId || 0);
+            if (pedidoId > 0) {
+                await cargarDatosRecibos(pedidoId);
+            }
+        } catch (error) {
+            console.error('[devolverPrendaAAsesora] Error:', error);
+            if (typeof Swal !== 'undefined') {
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo devolver la prenda',
+                    text: error?.message || 'Error inesperado al devolver la prenda.',
+                    confirmButtonColor: '#dc2626',
+                });
+            } else {
+                alert(error?.message || 'Error inesperado al devolver la prenda.');
+            }
+        }
+    };
+
+    function obtenerReciboIdsDePrenda(prendaId, prenda = null) {
+        const ids = new Set();
+        const prendaIdNum = Number(prendaId || prenda?.id || 0);
+
+        // Fuente principal (segura): solo recibos renderizados dentro del acordeón de esta prenda.
+        const contenedor = document.getElementById(`prenda-${prendaIdNum}`);
+        if (contenedor) {
+            const items = contenedor.querySelectorAll('.proceso-item[data-prenda-id][data-recibo-id]');
+            items.forEach((item) => {
+                const itemPrendaId = Number(item.getAttribute('data-prenda-id') || 0);
+                if (itemPrendaId !== prendaIdNum) {
+                    return;
+                }
+                const reciboId = Number(item.getAttribute('data-recibo-id') || 0);
+                if (reciboId > 0) {
+                    ids.add(reciboId);
+                }
+            });
+        }
+
+        // Fallback mínimo: solo COSTURA de la prenda actual, por si aún no hay items renderizados.
+        if (ids.size === 0 && prenda && prenda.recibos) {
+            const costura = prenda.recibos.COSTURA || prenda.recibos['COSTURA-BODEGA'] || null;
+            if (costura && typeof costura === 'object') {
+                const rid = Number(costura.id || costura.consecutivo_recibo_id || 0);
+                if (rid > 0) {
+                    ids.add(rid);
+                }
+            }
+        }
+
+        return Array.from(ids);
+    }
+
+    async function ejecutarDevolucionAAsesora(reciboId, motivo, options = {}) {
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const enSupervisorPedidos = window.location.pathname.includes('/supervisor-pedidos');
+        const endpoint = enSupervisorPedidos
+            ? `/api/supervisor-pedidos/recibos/${reciboId}/pasar-revisar`
+            : `/insumos/materiales/${reciboId}/pasar-revisar`;
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrf,
+            },
+            body: JSON.stringify({ motivo }),
+        });
+
+        let result = {};
+        try {
+            result = await response.json();
+        } catch (e) {}
+
+        if (!response.ok || !result?.success) {
+            throw new Error(result?.message || `No se pudo devolver el recibo (HTTP ${response.status}).`);
+        }
+
+        if (!options?.silentSuccess && typeof Swal !== 'undefined') {
+            await Swal.fire({
+                icon: 'success',
+                title: 'Prenda devuelta',
+                text: result.message || 'Se devolvió correctamente a asesora para revisión.',
+                confirmButtonColor: '#16a34a',
+            });
+        }
+
+        const pedidoId = Number(window.selectorRecibosState?.pedidoId || 0);
+        if (!options?.silentSuccess && pedidoId > 0) {
+            await cargarDatosRecibos(pedidoId);
+        }
+    }
 
     /**
      * Ejecuta la anulación de un recibo normal

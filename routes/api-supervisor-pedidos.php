@@ -136,6 +136,9 @@ Route::middleware(['web', 'auth:web', 'role:supervisor_pedidos,admin'])
         Route::post('/recibos/{id}/fecha-llegada', [SupervisorReceiptsController::class, 'guardarFechaLlegadaRecibo'])
             ->whereNumber('id')
             ->name('recibos.fecha-llegada');
+        Route::post('/recibos/{id}/pasar-revisar', [SupervisorReceiptsController::class, 'pasarReciboARevision'])
+            ->whereNumber('id')
+            ->name('recibos.pasar-revisar');
 
         Route::get('/notificaciones', [SupervisorNotificationsController::class, 'getNotifications'])
             ->name('notificaciones.index');

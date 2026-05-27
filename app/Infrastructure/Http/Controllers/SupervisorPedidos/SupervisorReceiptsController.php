@@ -178,6 +178,41 @@ class SupervisorReceiptsController extends Controller
     }
 
     /**
+     * Pasar recibo a revisión para asesora (estado DEVUELTO_ASESOR).
+     */
+    public function pasarReciboARevision(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'motivo' => 'required|string|min:10|max:500',
+        ]);
+
+        $resultado = DB::transaction(function () use ($id, $validated) {
+            $recibo = \App\Models\ConsecutivosRecibosPedidos::query()
+                ->lockForUpdate()
+                ->findOrFail($id);
+
+            $recibo->update([
+                'estado' => 'DEVUELTO_ASESOR',
+                'notas' => $validated['motivo'],
+            ]);
+
+            \Log::info('[SupervisorPedidos][pasarReciboARevision] Recibo pasado a revisión', [
+                'recibo_id' => (int) $recibo->id,
+                'pedido_produccion_id' => (int) $recibo->pedido_produccion_id,
+                'nuevo_estado_recibo' => $recibo->estado,
+            ]);
+
+            return $recibo->fresh();
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Recibo pasado a revisión correctamente',
+            'data' => $resultado,
+        ]);
+    }
+
+    /**
      * Obtener detalles de un recibo específico
      */
     public function obtenerDetallesProceso($id): JsonResponse
