@@ -23,6 +23,20 @@
 <script>
 // Definir funciones ANTES de renderizar el HTML para que estan disponibles en los onclick
 window.entregarTodo = function(pedidoId, numeroPedido) {
+    const row = document.querySelector(`tr[data-pedido-id="${pedidoId}"]`);
+    const estadoPedido = row?.dataset?.estado || '';
+
+    if (estadoPedido === 'PENDIENTE_SUPERVISOR') {
+        Swal.fire({
+            title: 'Entrega completa no permitida',
+            text: `El pedido #${numeroPedido} está en estado PENDIENTE SUPERVISOR. Debes entregarlo manualmente por prendas o EPPs.`,
+            icon: 'info',
+            confirmButtonColor: '#3b82f6',
+            confirmButtonText: 'Entendido'
+        });
+        return;
+    }
+
     Swal.fire({
         title: '¿Marcar como entregado?',
         html: `<span style="color: #ef4444; font-weight: bold;">Este pedido ya no lo verá producción.</span><br><br>¿Estás seguro de marcar <strong>TODOS los ítems del pedido #${numeroPedido}</strong> como entregados?<br><br><span style="color: #ef4444; font-weight: bold;">Esta acción marcará el pedido como completado.</span>`,
@@ -187,7 +201,8 @@ window.mostrarNotificacionExito = function(numeroPedido) {
                                     @if($pedido->estado_entrega === 'completo') bg-blue-100
                                     @elseif($pedido->estado_entrega === 'parcial') bg-yellow-100
                                     @endif" 
-                                    data-pedido-id="{{ $pedido->id }}">
+                                    data-pedido-id="{{ $pedido->id }}"
+                                    data-estado="{{ $pedido->estado }}">
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-slate-500">
                                         <a href="{{ route('despacho.show', $pedido->id) }}"
                                            class="inline-block px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition-colors">
