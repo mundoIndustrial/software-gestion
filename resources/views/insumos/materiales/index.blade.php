@@ -453,7 +453,7 @@
                                         }
                                         
                                         // Determinar si el rol insumos puede editar este estado
-                                        $estadosEditablesInsumos = ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'Insumos Pedidos', 'INSUMOS_PEDIDOS', 'DEVUELTO_ASESOR', 'Devuelto_Asesor'];
+                                        $estadosEditablesInsumos = ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'Insumos Pedidos', 'INSUMOS_PEDIDOS'];
                                         $puedeEditarInsumos = in_array($orden->estado, $estadosEditablesInsumos);
                                         
                                         // Mostrar selector solo si no es insumos, o si es insumos y el estado es editable
@@ -477,7 +477,6 @@
                                                     <option value="PENDIENTE_TELA" {{ in_array($orden->estado, ['Pendiente Tela', 'PENDIENTE_TELA']) ? 'selected' : '' }}>Pendiente&#10;Tela</option>
                                                     <option value="PENDIENTE_PLOTTER" {{ in_array($orden->estado, ['Pendiente Plotter', 'PENDIENTE_PLOTTER']) ? 'selected' : '' }}>Pendiente&#10;Plotter</option>
                                                     <option value="INSUMOS_PEDIDOS" {{ in_array($orden->estado, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos&#10;Pedidos</option>
-                                                    <option value="DEVUELTO_ASESOR" {{ in_array($orden->estado, ['DEVUELTO_ASESOR', 'Devuelto_Asesor']) ? 'selected' : '' }}>Devuelto&#10;Asesor</option>
                                                 @else
                                                     {{-- Todas las opciones para otros roles --}}
                                                     <option value="No iniciado" {{ $orden->estado === 'No iniciado' ? 'selected' : '' }}>No iniciado</option>

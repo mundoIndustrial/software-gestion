@@ -330,7 +330,7 @@
                                     $estadoDisplay = str_replace('_', ' ', $estadoValor ?? 'N/A');
                                 }
 
-                                $estadosEditablesInsumos = ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'Insumos Pedidos', 'INSUMOS_PEDIDOS', 'DEVUELTO_ASESOR', 'Devuelto_Asesor'];
+                                $estadosEditablesInsumos = ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'Insumos Pedidos', 'INSUMOS_PEDIDOS'];
                                 $puedeEditarInsumos = in_array($estadoValor, $estadosEditablesInsumos, true);
                                 $mostrarSelector = ($roleName !== 'insumos') || ($roleName === 'insumos' && $puedeEditarInsumos);
                             @endphp
@@ -350,7 +350,6 @@
                                             <option value="PENDIENTE_TELA" {{ in_array($estadoValor, ['Pendiente Tela', 'PENDIENTE_TELA']) ? 'selected' : '' }}>Pendiente&#10;Tela</option>
                                             <option value="PENDIENTE_PLOTTER" {{ in_array($estadoValor, ['Pendiente Plotter', 'PENDIENTE_PLOTTER']) ? 'selected' : '' }}>Pendiente&#10;Plotter</option>
                                             <option value="INSUMOS_PEDIDOS" {{ in_array($estadoValor, ['Insumos Pedidos', 'INSUMOS_PEDIDOS']) ? 'selected' : '' }}>Insumos&#10;Pedidos</option>
-                                            <option value="DEVUELTO_ASESOR" {{ in_array($estadoValor, ['DEVUELTO_ASESOR', 'Devuelto_Asesor']) ? 'selected' : '' }}>Devuelto&#10;Asesor</option>
                                         @else
                                             <option value="No iniciado" {{ $estadoValor === 'No iniciado' ? 'selected' : '' }}>No iniciado</option>
                                             <option value="En Ejecución" {{ $estadoValor === 'En Ejecución' || $estadoValor === 'En Ejecucion' ? 'selected' : '' }}>En Ejecución</option>
