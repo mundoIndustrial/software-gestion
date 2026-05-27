@@ -720,7 +720,7 @@ export class ReceiptRenderer {
                 
                 // Actualizar ancho en la barra inferior (aplica a todos los modos)
                 if (anchoSpan && data.ancho) {
-                    anchoSpan.textContent = data.ancho + ' m';
+                    anchoSpan.textContent = String(data.ancho);
                 }
 
                 if (tipoModo === 'normal') {
@@ -741,7 +741,7 @@ export class ReceiptRenderer {
                     
                     if (metrajeSpan) {
                         const metrajeGeneral = data.metraje || null;
-                        metrajeSpan.textContent = metrajeGeneral ? metrajeGeneral + ' m' : '--';
+                        metrajeSpan.textContent = metrajeGeneral ? String(metrajeGeneral) : '--';
                         // Mostrar metraje en modo normal
                         metrajeSpan.closest('span').style.display = 'block';
                     }
@@ -754,7 +754,7 @@ export class ReceiptRenderer {
                         contenedorMetrajes.innerHTML = '';
                         metrajesValidos.forEach(item => {
                             const span = document.createElement('span');
-                            span.textContent = `${item.color.toUpperCase()}: ${item.metraje} m`;
+                            span.textContent = `${item.color.toUpperCase()}: ${item.metraje}`;
                             contenedorMetrajes.appendChild(span);
                         });
                     }
@@ -790,7 +790,7 @@ export class ReceiptRenderer {
                             if (metrajesValidos.length > 0) {
                                 metrajesValidos.forEach(item => {
                                     const span = document.createElement('span');
-                                    span.textContent = `${item.color.toUpperCase()}: ${item.metraje} m`;
+                                    span.textContent = `${item.color.toUpperCase()}: ${item.metraje}`;
                                     contenedorMetrajes.appendChild(span);
                                 });
                             }
@@ -828,7 +828,7 @@ export class ReceiptRenderer {
                             if (metrajesValidos.length > 0) {
                                 metrajesValidos.forEach(item => {
                                     const span = document.createElement('span');
-                                    span.textContent = `${item.color.toUpperCase()}: ${item.metraje} m`;
+                                    span.textContent = `${item.color.toUpperCase()}: ${item.metraje}`;
                                     contenedorMetrajes.appendChild(span);
                                 });
                             }
@@ -897,7 +897,7 @@ export class ReceiptRenderer {
                             contenedorMetrajes.innerHTML = '';
                             metrajesValidos.forEach(item => {
                                 const span = document.createElement('span');
-                                span.textContent = `${item.color.toUpperCase()}: ${item.metraje} m`;
+                                span.textContent = `${item.color.toUpperCase()}: ${item.metraje}`;
                                 contenedorMetrajes.appendChild(span);
                             });
                         }
@@ -945,7 +945,7 @@ export class ReceiptRenderer {
             
             html = html.replace(regex, (match, contenido, cierre) => {
                 if (!contenido.includes('Metraje:')) {
-                    return `${contenido.trim()} - Metraje: ${metraje} m${cierre}`;
+                    return `${contenido.trim()} - Metraje: ${metraje}${cierre}`;
                 }
                 return match;
             });

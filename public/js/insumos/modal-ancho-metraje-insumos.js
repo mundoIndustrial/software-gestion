@@ -288,14 +288,12 @@ function generarInputsPorColor(coloresData, datosData) {
             Ancho General (se aplica a todos los colores)
         </h3>
         <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Ancho (m):</label>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Ancho:</label>
             <input 
-                type="number" 
+                type="text" 
                 id="anchoGeneralInput"
                 class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="0.00"
-                step="0.01"
-                min="0"
+                placeholder="Ingresa ancho..."
                 value="${anchoGeneralGuardado}"
             >
         </div>
@@ -352,11 +350,9 @@ function generarInputsPorColor(coloresData, datosData) {
                 ${colorNombre}${tallasInfo}
             </label>
             <input 
-                type="number" 
+                type="text" 
                 class="colorMetraje w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
-                placeholder="0.00"
-                step="0.01"
-                min="0"
+                placeholder="Ingresa metraje..."
                 data-color="${colorNombre}"
                 data-talla=""
                 value="${metrajeGuardado}"
@@ -401,14 +397,12 @@ function generarInputsPorTallaColor(coloresData, datosData) {
             Ancho General (se aplica a todos los colores)
         </h3>
         <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Ancho (m):</label>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Ancho:</label>
             <input 
-                type="number" 
+                type="text" 
                 id="anchoGeneralPiezaInput"
                 class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="0.00"
-                step="0.01"
-                min="0"
+                placeholder="Ingresa ancho..."
                 value="${anchoGeneralGuardado}"
             >
         </div>
@@ -818,28 +812,22 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
         // GUARDAR MODO NORMAL
         const anchoVal = document.getElementById('anchoInput').value.trim();
         const metrajeVal = document.getElementById('metrajeInput').value.trim();
-        const ancho = anchoVal ? parseFloat(anchoVal) : null;
-        const metraje = metrajeVal ? parseFloat(metrajeVal) : null;
-        
-        // Validar
-        if (anchoVal && (isNaN(ancho) || ancho <= 0)) {
-            showToast('El ancho debe ser un Numero mayor a 0', 'warning');
-            return;
-        }
-        
-        if (metrajeVal && (isNaN(metraje) || metraje <= 0)) {
-            showToast('El metraje debe ser un Numero mayor a 0', 'warning');
-            return;
-        }
+        const ancho = anchoVal || null;
+        const metraje = metrajeVal || null;
         
         // Guardar datos globales para compatibilidad
-        if (typeof window.actualizarAnchoMetrajeUniversal === 'function') {
-            window.actualizarAnchoMetrajeUniversal(ancho || 0, metraje || 0, pedido);
+        const anchoNum = Number(anchoVal);
+        const metrajeNum = Number(metrajeVal);
+        const puedeActualizarUniversal = anchoVal !== '' && metrajeVal !== '' &&
+            Number.isFinite(anchoNum) && Number.isFinite(metrajeNum);
+
+        if (puedeActualizarUniversal && typeof window.actualizarAnchoMetrajeUniversal === 'function') {
+            window.actualizarAnchoMetrajeUniversal(anchoNum, metrajeNum, pedido);
         } else {
-            console.warn('[guardarAnchoMetraje] window.actualizarAnchoMetrajeUniversal no esta disponible, actualizando datos globalmente...');
+            console.warn('[guardarAnchoMetraje] No se actualiza vista universal: ancho/metraje no numericos o helper no disponible.');
             window.datosAnchoMetraje = {
-                ancho: parseFloat(ancho || 0),
-                metraje: parseFloat(metraje || 0),
+                ancho: anchoVal || null,
+                metraje: metrajeVal || null,
                 pedido: pedido || 'SIN PEDIDO',
                 fecha: new Date().toISOString(),
                 modulo: window.location.pathname
@@ -899,8 +887,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
         // Guardar ancho general si existe
         const anchoGeneralInput = document.getElementById('anchoGeneralInput');
         if (anchoGeneralInput && anchoGeneralInput.value.trim()) {
-            const anchoGeneral = parseFloat(anchoGeneralInput.value.trim());
-            if (!isNaN(anchoGeneral) && anchoGeneral > 0) {
+            const anchoGeneral = anchoGeneralInput.value.trim();
                 promises.push(
                     fetch(`/insumos/materiales/${pedido}/guardar-ancho-metraje-prenda`, {
                         method: 'POST',
@@ -918,7 +905,6 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                         })
                     }).then(r => r.json())
                 );
-            }
         }
         
         // Guardar metrajes por color
@@ -927,8 +913,6 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
             const metrajeVal = input.value.trim();
             
             if (metrajeVal) {
-                const metraje = parseFloat(metrajeVal);
-                if (!isNaN(metraje) && metraje > 0) {
                     promises.push(
                         fetch(`/insumos/materiales/${pedido}/guardar-ancho-metraje-prenda`, {
                             method: 'POST',
@@ -941,12 +925,11 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                                 color: colorNombre,
                                 tipo_modo: 'color',
                                 ancho: null,
-                                metraje: metraje,
+                                metraje: metrajeVal,
                                 ...extraPayload
                             })
                         }).then(r => r.json())
                     );
-                }
             }
         });
         
@@ -978,8 +961,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
         // Guardar ancho general si existe
         const anchoGeneralPiezaInput = document.getElementById('anchoGeneralPiezaInput');
         if (anchoGeneralPiezaInput && anchoGeneralPiezaInput.value.trim()) {
-            const anchoGeneral = parseFloat(anchoGeneralPiezaInput.value.trim());
-            if (!isNaN(anchoGeneral) && anchoGeneral > 0) {
+            const anchoGeneral = anchoGeneralPiezaInput.value.trim();
                 promises.push(
                     fetch(`/insumos/materiales/${pedido}/guardar-ancho-metraje-prenda`, {
                         method: 'POST',
@@ -997,7 +979,6 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                         })
                     }).then(r => r.json())
                 );
-            }
         }
         
         // Guardar metrajes por color (mismos inputs que color)
@@ -1006,8 +987,6 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
             const metrajeVal = input.value.trim();
             
             if (metrajeVal) {
-                const metraje = parseFloat(metrajeVal);
-                if (!isNaN(metraje) && metraje > 0) {
                     promises.push(
                         fetch(`/insumos/materiales/${pedido}/guardar-ancho-metraje-prenda`, {
                             method: 'POST',
@@ -1020,12 +999,11 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                                 color: colorNombre,
                                 tipo_modo: 'pieza',
                                 ancho: null,
-                                metraje: metraje,
+                                metraje: metrajeVal,
                                 ...extraPayload
                             })
                         }).then(r => r.json())
                     );
-                }
             }
         });
         
@@ -1138,9 +1116,11 @@ function actualizarReciboConAnchoMetraje() {
     }
     
     // Actualizar el contenido
+    const anchoTexto = (ancho ?? '').toString().trim();
+    const metrajeTexto = (metraje ?? '').toString().trim();
     anchoMetrajeElement.innerHTML = `
-        ANCHO DISPONIBLE: ${ancho.toFixed(2)} m<br>
-        METRAJE DISPONIBLE: ${metraje.toFixed(2)} m
+        ANCHO DISPONIBLE: ${anchoTexto || '-'}<br>
+        METRAJE DISPONIBLE: ${metrajeTexto || '-'}
     `;
     
     console.log('[actualizarReciboConAnchoMetraje] Recibo actualizado con ancho y metraje');
@@ -1180,5 +1160,3 @@ if (document.readyState === 'loading') {
 } else {
     exportModalAnchoMetraje();
 }
-
-

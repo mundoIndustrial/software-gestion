@@ -610,11 +610,11 @@ function renderAnchoMetrajeInOrderDetail(data) {
         .filter((item) => item && item.color && item.metraje);
 
     if (tipoModo === 'normal') {
-        if (metrajeSpan) metrajeSpan.textContent = data.metraje ? `${data.metraje} m` : '--';
+        if (metrajeSpan) metrajeSpan.textContent = data.metraje ? `${data.metraje}` : '--';
         metrajesValidos.forEach((item) => {
             if (!metrajesContainer) return;
             const span = document.createElement('span');
-            span.textContent = `${String(item.color).toUpperCase()}: ${item.metraje} m`;
+            span.textContent = `${String(item.color).toUpperCase()}: ${item.metraje}`;
             metrajesContainer.appendChild(span);
         });
         return;
@@ -626,7 +626,7 @@ function renderAnchoMetrajeInOrderDetail(data) {
     metrajesValidos.forEach((item) => {
         if (!metrajesContainer) return;
         const span = document.createElement('span');
-        span.textContent = `${String(item.color).toUpperCase()}: ${item.metraje} m`;
+        span.textContent = `${String(item.color).toUpperCase()}: ${item.metraje}`;
         metrajesContainer.appendChild(span);
     });
 }

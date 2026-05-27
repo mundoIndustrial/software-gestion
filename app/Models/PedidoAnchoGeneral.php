@@ -23,8 +23,6 @@ class PedidoAnchoGeneral extends Model
     ];
 
     protected $casts = [
-        'ancho' => 'decimal:2',
-        'metraje' => 'decimal:2',
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
     ];

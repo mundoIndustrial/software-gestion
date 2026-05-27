@@ -10,8 +10,8 @@ namespace App\Application\Pedidos\DTOs;
 class ObtenerAnchoMetrajePrendaResponse
 {
     public function __construct(
-        private ?float $ancho,
-        private ?float $metraje,
+        private ?string $ancho,
+        private ?string $metraje,
         private ?string $contenidoMano,
         private ?string $tipoModo,
         private array $data = []
@@ -29,17 +29,17 @@ class ObtenerAnchoMetrajePrendaResponse
         ];
     }
 
-    public function getAncho(): ?float
+    public function getAncho(): ?string
     {
         return $this->ancho;
     }
 
-    public function getMetraje(): ?float
+    public function getMetraje(): ?string
     {
         return $this->metraje;
     }
 
-    public function getContenidoMano(): ?float
+    public function getContenidoMano(): ?string
     {
         return $this->contenidoMano;
     }

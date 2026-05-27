@@ -61,8 +61,8 @@ class ObtenerAnchoMetrajePrendaUseCase implements ObtenerAnchoMetrajePrendaUseCa
             ]);
 
             return new ObtenerAnchoMetrajePrendaResponse(
-                ancho: !is_null($anchoGeneral?->ancho) ? (float)$anchoGeneral->ancho : null,
-                metraje: !is_null($anchoGeneral?->metraje) ? (float)$anchoGeneral->metraje : null,
+                ancho: !is_null($anchoGeneral?->ancho) ? (string) $anchoGeneral->ancho : null,
+                metraje: !is_null($anchoGeneral?->metraje) ? (string) $anchoGeneral->metraje : null,
                 contenidoMano: $anchoGeneral?->contenido_mano,
                 tipoModo: $tipoModo,
                 data: $data
@@ -126,7 +126,6 @@ class ObtenerAnchoMetrajePrendaUseCase implements ObtenerAnchoMetrajePrendaUseCa
         return $this->{$method}(...$arguments);
     }
 }
-
 
 
 

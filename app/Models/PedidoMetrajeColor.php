@@ -21,7 +21,6 @@ class PedidoMetrajeColor extends Model
     ];
 
     protected $casts = [
-        'metraje' => 'decimal:2',
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
     ];

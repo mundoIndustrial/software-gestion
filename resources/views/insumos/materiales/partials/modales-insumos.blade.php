@@ -190,25 +190,21 @@
                     </p>
                 </div>
                 <div>
-                    <label class="block text-base font-bold text-gray-800 mb-2">Ancho (m):</label>
+                    <label class="block text-base font-bold text-gray-800 mb-2">Ancho:</label>
                     <input 
-                        type="number" 
+                        type="text" 
                         id="anchoInput" 
                         class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                        placeholder="Ingresa el ancho en metros..."
-                        step="0.01"
-                        min="0"
+                        placeholder="Ingresa el ancho..."
                     >
                 </div>
                 <div>
-                    <label class="block text-base font-bold text-gray-800 mb-2">Metraje (m):</label>
+                    <label class="block text-base font-bold text-gray-800 mb-2">Metraje:</label>
                     <input 
-                        type="number" 
+                        type="text" 
                         id="metrajeInput" 
                         class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                        placeholder="Ingresa el metraje en metros..."
-                        step="0.01"
-                        min="0"
+                        placeholder="Ingresa el metraje..."
                     >
                 </div>
             </div>

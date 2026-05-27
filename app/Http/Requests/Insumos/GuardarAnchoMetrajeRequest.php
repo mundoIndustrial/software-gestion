@@ -22,8 +22,8 @@ class GuardarAnchoMetrajeRequest extends FormRequest
             'tela' => 'nullable|string|max:100',
             'talla' => 'nullable|string|max:50',
             'tipo_modo' => 'nullable|in:normal,color,pieza,mano',
-            'ancho' => 'nullable|numeric|min:0',
-            'metraje' => 'nullable|numeric|min:0',
+            'ancho' => 'nullable|string|max:255',
+            'metraje' => 'nullable|string|max:255',
             'contenido_mano' => 'nullable|string|max:5000',
         ];
     }
@@ -33,10 +33,9 @@ class GuardarAnchoMetrajeRequest extends FormRequest
         return [
             'prenda_pedido_id.exists' => 'La prenda de pedido seleccionada no existe',
             'prenda_bodega_id.exists' => 'La prenda de bodega seleccionada no existe',
-            'ancho.numeric' => 'El ancho debe ser un numero',
-            'metraje.numeric' => 'El metraje debe ser un numero',
+            'ancho.string' => 'El ancho debe ser texto',
+            'metraje.string' => 'El metraje debe ser texto',
             'tipo_modo.in' => 'El tipo de modo es invalido',
         ];
     }
 }
-
