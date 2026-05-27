@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
 
 class LavanderiaController extends Controller
 {
@@ -117,7 +118,7 @@ class LavanderiaController extends Controller
                 'consecutivoRecibo.prenda',
                 'tallas'
             ])
-            ->orderBy('fecha_salida', 'desc')
+            ->orderBy('fecha_movimiento', 'desc')
             ->get()
             ->map(function ($movimiento) {
                 // Obtener cliente del pedido de producción
@@ -126,14 +127,23 @@ class LavanderiaController extends Controller
                     $cliente = $movimiento->consecutivoRecibo->pedido->cliente ?? 'Sin cliente';
                 }
 
+                // Determinar estado de firma
+                $estadoFirma = 'PENDIENTE FIRMA';
+                if ($movimiento->firma_movimiento && $movimiento->firma_movimiento !== 'pendiente') {
+                    $estadoFirma = 'FIRMADO';
+                }
+
                 return [
                     'id' => $movimiento->id,
                     'recibo' => $movimiento->numero_recibo,
                     'cliente' => $cliente,
                     'prenda' => $movimiento->consecutivoRecibo?->prenda?->nombre_prenda ?? 'Sin prenda',
                     'estado' => $movimiento->estado,
-                    'fechaSalida' => $movimiento->fecha_salida?->format('Y-m-d H:i') ?? '-',
-                    'fechaLlegada' => $movimiento->fecha_llegada?->format('Y-m-d H:i') ?? '-',
+                    'estadoFirma' => $estadoFirma,
+                    'tipoMovimiento' => $movimiento->tipo_movimiento,
+                    'novedad' => $movimiento->novedad,
+                    'fechaMovimiento' => $movimiento->fecha_movimiento?->format('Y-m-d H:i') ?? '-',
+                    'firmaMovimiento' => $movimiento->firma_movimiento,
                     'tallas' => $movimiento->tallas->map(function ($talla) {
                         return [
                             'talla' => $talla->talla,
@@ -163,22 +173,78 @@ class LavanderiaController extends Controller
     }
 
     /**
+     * Guardar firma de movimiento
+     */
+    public function guardarFirmaSalida(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'movimiento_id' => 'required|integer|exists:lavanderia_movimientos,id',
+                'firma' => 'required|file|mimes:webp,png,jpg,jpeg|max:5120',
+            ]);
+
+            $movimiento = \App\Models\LavanderiaMovimiento::findOrFail($validated['movimiento_id']);
+            
+            // Crear directorio si no existe
+            $storagePath = storage_path('app/public/firmas/' . $movimiento->id);
+            if (!file_exists($storagePath)) {
+                mkdir($storagePath, 0755, true);
+            }
+
+            // Guardar archivo WebP
+            $file = $request->file('firma');
+            $filename = 'img_' . time() . '.webp';
+            $file->move($storagePath, $filename);
+
+            // Guardar ruta en la base de datos y cambiar estado a COMPLETADO
+            $firmaPath = 'storage/firmas/' . $movimiento->id . '/' . $filename;
+            $movimiento->update([
+                'firma_movimiento' => $firmaPath,
+                'estado' => 'COMPLETADO'
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Firma guardada exitosamente',
+                'data' => [
+                    'id' => $movimiento->id,
+                    'estadoFirma' => 'FIRMADO',
+                    'firma_url' => '/' . $firmaPath
+                ]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validación fallida',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error en guardarFirmaSalida:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar firma: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Registrar salida de lavandería
      */
     public function registrarSalida(Request $request): JsonResponse
     {
         \Log::info('Iniciando registrarSalida', [
             'request_data' => $request->all(),
-            'headers' => $request->headers->all()
         ]);
 
         try {
-            // Obtener datos sin validación estricta primero
             $data = $request->all();
             
             \Log::info('Datos recibidos:', $data);
 
-            // Validación básica
             if (empty($data['recibo_id']) || empty($data['numero_recibo']) || empty($data['tipo_recibo']) || empty($data['tallas'])) {
                 return response()->json([
                     'success' => false,
@@ -192,8 +258,10 @@ class LavanderiaController extends Controller
                 'consecutivo_recibo_pedido_id' => (int)$data['recibo_id'],
                 'numero_recibo' => (int)$data['numero_recibo'],
                 'tipo_recibo' => $data['tipo_recibo'],
-                'fecha_salida' => now(),
-                'firma_salida' => 'pendiente',
+                'tipo_movimiento' => $data['tipo_movimiento'] ?? 'SALIDA',
+                'fecha_movimiento' => now(),
+                'firma_movimiento' => 'pendiente',
+                'novedad' => $data['novedad'] ?? null,
                 'estado' => 'PENDIENTE'
             ]);
 

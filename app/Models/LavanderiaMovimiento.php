@@ -14,17 +14,15 @@ class LavanderiaMovimiento extends Model
         'consecutivo_recibo_pedido_id',
         'numero_recibo',
         'tipo_recibo',
-        'fecha_salida',
-        'firma_salida',
-        'fecha_llegada',
-        'firma_llegada',
+        'tipo_movimiento',
+        'fecha_movimiento',
+        'firma_movimiento',
         'novedad',
         'estado',
     ];
 
     protected $casts = [
-        'fecha_salida' => 'datetime',
-        'fecha_llegada' => 'datetime',
+        'fecha_movimiento' => 'datetime',
     ];
 
     /**

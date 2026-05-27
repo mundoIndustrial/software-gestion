@@ -26,6 +26,10 @@ Route::middleware(['auth', 'lavanderia-access'])->prefix('gestion-lavanderia')->
     Route::post('/api/registrar-salida', [LavanderiaController::class, 'registrarSalida'])
         ->name('api.registrar-salida');
     
+    // API: Guardar firma de salida
+    Route::post('/api/guardar-firma-salida', [LavanderiaController::class, 'guardarFirmaSalida'])
+        ->name('api.guardar-firma-salida');
+    
     // Ruta de diagnóstico
     Route::get('/diagnostico', function() {
         $user = auth()->user();
