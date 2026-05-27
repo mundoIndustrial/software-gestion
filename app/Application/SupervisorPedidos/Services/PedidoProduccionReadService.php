@@ -225,7 +225,7 @@ class PedidoProduccionReadService
             ->whereNull('ocultado_en')
             ->whereNotNull('numero_pedido')
             ->where('numero_pedido', '!=', '')
-            ->whereNotIn('estado', ['RECHAZADO_CARTERA', 'Entregado', 'Anulada'])
+            ->where('estado', 'pendiente_cartera')
             ->whereNull('aprobado_por_cartera_en');
 
         $this->applyCarteraProductionVisibilityFilter($carteraNoAprobadoQuery);
@@ -711,7 +711,8 @@ class PedidoProduccionReadService
 
         $query->where(function ($q) {
             $q->whereNull('area')
-                ->orWhereRaw("LOWER(TRIM(area)) <> 'despacho'");
+                ->orWhereRaw("LOWER(TRIM(area)) <> 'despacho'")
+                ->orWhereRaw("UPPER(TRIM(COALESCE(estado, ''))) NOT IN ('ENTREGADO', 'FINALIZADA', 'FINALIZADO')");
         });
     }
 
@@ -850,6 +851,12 @@ class PedidoProduccionReadService
         if ($request->getAprobacionCartera()) {
             $filtrosCartera = array_values(array_filter(array_map('trim', explode(',', (string) $request->getAprobacionCartera()))));
             if (!empty($filtrosCartera)) {
+                if (in_array('no_aprobado', $filtrosCartera, true)) {
+                    // Regla de negocio solicitada:
+                    // "No aprobado por cartera" solo debe listar estado pendiente_cartera.
+                    $query->where('estado', 'pendiente_cartera');
+                }
+
                 $query->where(function ($q) use ($filtrosCartera) {
                     foreach ($filtrosCartera as $filtro) {
                         if ($filtro === 'no_aprobado') {
