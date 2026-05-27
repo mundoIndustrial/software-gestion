@@ -33,6 +33,8 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])
             ->name('pendientes-reflectivo');
         Route::get('/pendientes-control-calidad', [SupervisorReceiptsController::class, 'pendientesControlCalidad'])
             ->name('pendientes-control-calidad');
+        Route::get('/prendas-devueltas', [SupervisorReceiptsController::class, 'prendasDevueltas'])
+            ->name('prendas-devueltas');
         Route::get('/estadisticas-asesoras', [SupervisorOrdersController::class, 'estadisticasAsesoras'])
             ->name('estadisticas-asesoras');
         Route::get('/entregas-recibidas', [SupervisorOrdersController::class, 'entregasRecibidas'])

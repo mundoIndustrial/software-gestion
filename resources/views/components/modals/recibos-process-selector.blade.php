@@ -1219,7 +1219,29 @@
             const estadoEntrega = resolverEstadoEntregaPrenda(prenda, recibos);
             const estaEntregada = estadoEntrega === 'completo';
             const entregaParcial = estadoEntrega === 'parcial';
-            const prendaDevuelta = recibosFiltered.some((r) => String(r?.estado || '').toUpperCase() === 'DEVUELTO_ASESOR');
+            const prendaDevueltaDesdeLista = recibosFiltered.some((r) => String(r?.estado || '').toUpperCase() === 'DEVUELTO_ASESOR');
+            const prendaDevueltaDesdeDatos = (() => {
+                const estadoEsDevuelto = (valor) => String(valor || '').toUpperCase() === 'DEVUELTO_ASESOR';
+                const recibosObj = prenda?.recibos || {};
+
+                // Recibos base u otros objetos dentro de prenda.recibos
+                for (const value of Object.values(recibosObj)) {
+                    if (!value) continue;
+                    if (Array.isArray(value)) continue;
+                    if (typeof value === 'object' && estadoEsDevuelto(value.estado)) return true;
+                }
+
+                // Parciales dentro de prenda.recibos.parciales
+                const parciales = Array.isArray(recibosObj.parciales) ? recibosObj.parciales : [];
+                if (parciales.some((p) => estadoEsDevuelto(p?.estado))) return true;
+
+                // Procesos adicionales de la prenda
+                const procesos = Array.isArray(prenda?.procesos) ? prenda.procesos : [];
+                if (procesos.some((p) => estadoEsDevuelto(p?.estado))) return true;
+
+                return false;
+            })();
+            const prendaDevuelta = prendaDevueltaDesdeLista || prendaDevueltaDesdeDatos;
             const claseEntregada = estaEntregada ? 'entregada' : '';
             const claseDevuelta = prendaDevuelta ? 'devuelta' : '';
             const badgeDevueltaHtml = prendaDevuelta

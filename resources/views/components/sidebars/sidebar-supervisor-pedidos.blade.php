@@ -5,6 +5,10 @@
         ->whereNotNull('numero_pedido')
         ->where('numero_pedido', '!=', 0)
         ->count();
+    $prendasDevueltasInicial = \App\Models\ConsecutivosRecibosPedidos::query()
+        ->whereRaw("UPPER(TRIM(COALESCE(estado, ''))) = 'DEVUELTO_ASESOR'")
+        ->distinct('prenda_id')
+        ->count('prenda_id');
 @endphp
 
 <!-- Sidebar Supervisor de Pedidos -->
@@ -52,6 +56,15 @@
                         <span class="material-symbols-rounded">assignment_return</span>
                         <span class="menu-label">Devuelto Asesor</span>
                         <span class="badge-alert" id="devueltoAsesorCountMenu" style="display: inline-flex;">{{ $devueltoAsesorInicial }}</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{ route('supervisor-pedidos.prendas-devueltas') }}"
+                       class="menu-link {{ request()->routeIs('supervisor-pedidos.prendas-devueltas') ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">checkroom</span>
+                        <span class="menu-label">Prendas Devueltas</span>
+                        <span class="badge-alert" style="display: inline-flex;">{{ $prendasDevueltasInicial }}</span>
                     </a>
                 </li>
                 @php

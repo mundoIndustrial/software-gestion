@@ -480,6 +480,64 @@ class SupervisorReceiptsController extends Controller
     }
 
     /**
+     * Listado de prendas devueltas a asesora para corrección.
+     */
+    public function prendasDevueltas(Request $request)
+    {
+        $busqueda = trim((string) $request->input('busqueda', ''));
+
+        $query = DB::table('consecutivos_recibos_pedidos as crp')
+            ->join('pedidos_produccion as ped', 'ped.id', '=', 'crp.pedido_produccion_id')
+            ->leftJoin('prendas_pedido as pr', 'pr.id', '=', 'crp.prenda_id')
+            ->leftJoin('users as asesor', 'asesor.id', '=', 'ped.asesor_id')
+            ->whereRaw("UPPER(TRIM(COALESCE(crp.estado, ''))) = 'DEVUELTO_ASESOR'")
+            ->whereNull('ped.ocultado_en')
+            ->whereNotNull('ped.numero_pedido')
+            ->where('ped.numero_pedido', '!=', 0);
+
+        if ($busqueda !== '') {
+            $query->where(function ($q) use ($busqueda) {
+                $q->where('ped.numero_pedido', 'like', "%{$busqueda}%")
+                    ->orWhere('ped.cliente', 'like', "%{$busqueda}%")
+                    ->orWhere('pr.nombre_prenda', 'like', "%{$busqueda}%")
+                    ->orWhere('asesor.name', 'like', "%{$busqueda}%")
+                    ->orWhere('crp.tipo_recibo', 'like', "%{$busqueda}%")
+                    ->orWhere('crp.consecutivo_actual', 'like', "%{$busqueda}%");
+            });
+        }
+
+        $prendasDevueltas = $query
+            ->select([
+                'ped.id as pedido_id',
+                'ped.numero_pedido',
+                'ped.cliente',
+                'ped.fecha',
+                'asesor.name as asesor_nombre',
+                'pr.id as prenda_id',
+                'pr.nombre_prenda as prenda_nombre',
+                DB::raw('MAX(crp.updated_at) as ultima_devolucion_en'),
+                DB::raw('COUNT(crp.id) as recibos_devueltos'),
+            ])
+            ->groupBy([
+                'ped.id',
+                'ped.numero_pedido',
+                'ped.cliente',
+                'ped.fecha',
+                'asesor.name',
+                'pr.id',
+                'pr.nombre_prenda',
+            ])
+            ->orderByDesc(DB::raw('MAX(crp.updated_at)'))
+            ->paginate(25)
+            ->withQueryString();
+
+        return view('supervisor-pedidos.prendas-devueltas', [
+            'prendasDevueltas' => $prendasDevueltas,
+            'busqueda' => $busqueda,
+        ]);
+    }
+
+    /**
      * Descargar reporte CSV de pendientes de costura, agrupado por area.
      */
     public function reportePendientesCostura(Request $request)

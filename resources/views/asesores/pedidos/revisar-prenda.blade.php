@@ -369,9 +369,15 @@
             return;
         }
 
+        const prendaIdNumerico = Number(prendaId);
+        if (!prendaIdNumerico || prendaIdNumerico <= 0) {
+            alert('No se pudo identificar la prenda para editar. Recarga la página e intenta de nuevo.');
+            return;
+        }
+
         const prendaBase = {
-            id: Number(prendaId),
-            prenda_pedido_id: Number(prendaId),
+            id: prendaIdNumerico,
+            prenda_pedido_id: prendaIdNumerico,
             nombre_prenda: nombrePrenda || 'PRENDA'
         };
 
@@ -384,6 +390,10 @@
         const aceptar = document.getElementById('revisarConfirmAceptar');
         if (!modal || !aceptar) return;
 
+        modal.removeAttribute('aria-hidden');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('role', 'dialog');
+
         const nuevoAceptar = aceptar.cloneNode(true);
         aceptar.parentNode.replaceChild(nuevoAceptar, aceptar);
         nuevoAceptar.addEventListener('click', () => {
@@ -392,11 +402,18 @@
         });
 
         modal.style.display = 'flex';
+        setTimeout(() => nuevoAceptar.focus(), 0);
     }
 
     function cerrarConfirmAprobar() {
         const modal = document.getElementById('revisarConfirmModal');
-        if (modal) modal.style.display = 'none';
+        if (modal) {
+            if (document.activeElement && modal.contains(document.activeElement)) {
+                document.activeElement.blur();
+            }
+            modal.style.display = 'none';
+            modal.setAttribute('aria-hidden', 'true');
+        }
     }
 
     async function ejecutarAprobarRecibo(reciboId) {

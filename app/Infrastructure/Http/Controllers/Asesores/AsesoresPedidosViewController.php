@@ -287,11 +287,12 @@ final class AsesoresPedidosViewController extends Controller
             $query = ConsecutivoReciboPedido::query()
                 ->with([
                     'pedido:id,numero_pedido,asesor_id',
+                    'pedido.prendas:id,pedido_produccion_id,nombre_prenda',
                     'prenda:id,pedido_produccion_id,nombre_prenda',
                     'prenda.fotos:id,prenda_pedido_id,ruta_original,ruta_webp',
                 ])
                 ->where('activo', 1)
-                ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['COSTURA'])
+                ->whereRaw("UPPER(TRIM(COALESCE(tipo_recibo, ''))) IN (?, ?)", ['COSTURA', 'COSTURA-BODEGA'])
                 ->whereRaw(
                     "UPPER(REPLACE(TRIM(COALESCE(estado, '')), ' ', '_')) IN (?, ?)",
                     ['DEVUELTO_ASESOR', 'DEVUELTO_A_ASESOR']
@@ -337,12 +338,20 @@ final class AsesoresPedidosViewController extends Controller
                     ->values()
                     ->all() ?? [];
 
+                $prendaRelacion = $recibo->prenda;
+                $prendaFallback = $recibo->pedido?->prendas
+                    ?->sortBy('id')
+                    ->first();
+
+                $prendaId = (int) ($recibo->prenda_id ?: ($prendaRelacion->id ?? 0) ?: ($prendaFallback->id ?? 0));
+                $nombrePrenda = (string) ($prendaRelacion->nombre_prenda ?? $prendaFallback->nombre_prenda ?? 'PRENDA');
+
                 return [
                     'id' => $recibo->id,
                     'pedido_produccion_id' => (int) $recibo->pedido_produccion_id,
-                    'prenda_id' => (int) $recibo->prenda_id,
+                    'prenda_id' => $prendaId,
                     'numero_pedido' => (string) ($recibo->pedido?->numero_pedido ?? ''),
-                    'nombre_prenda' => (string) ($recibo->prenda?->nombre_prenda ?? 'PRENDA'),
+                    'nombre_prenda' => $nombrePrenda,
                     'tipo_recibo' => (string) $recibo->tipo_recibo,
                     'consecutivo_actual' => (int) ($recibo->consecutivo_actual ?? 0),
                     'estado' => $this->formatEstadoRecibo($recibo->estado),
@@ -397,8 +406,8 @@ final class AsesoresPedidosViewController extends Controller
             }
 
             $tipo = strtoupper(trim((string) $recibo->tipo_recibo));
-            if ($tipo !== 'COSTURA') {
-                return response()->json(['success' => false, 'message' => 'Solo aplica para recibos de COSTURA.'], 422);
+            if (!in_array($tipo, ['COSTURA', 'COSTURA-BODEGA'], true)) {
+                return response()->json(['success' => false, 'message' => 'Solo aplica para recibos de COSTURA o COSTURA-BODEGA.'], 422);
             }
 
             $estadoNormalizado = strtoupper(str_replace(' ', '_', trim((string) ($recibo->estado ?? ''))));

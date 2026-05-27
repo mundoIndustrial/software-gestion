@@ -381,6 +381,14 @@ final class PrendaEdicionBloqueoService
             return null;
         }
 
+        if ($this->prendaTieneConsecutivoDevueltoAsesor($pedidoId, $prendaId)) {
+            return null;
+        }
+
+        if ($this->pedidoTieneConsecutivoDevueltoAsesor($pedidoId)) {
+            return null;
+        }
+
         $mensaje = "Esta prenda de bodega ya tiene procesos asociados, por ende no se puede editar. Comunicate con el lider de produccion.";
 
         Log::info('[PrendaEdicionBloqueo] BLOQUEADA_POR_BODEGA_TIENE_PROCESOS', [
@@ -423,6 +431,10 @@ final class PrendaEdicionBloqueoService
 
         if ($pedidoTienePrendasDeBodega) {
             if ($this->prendaTieneConsecutivoDevueltoAsesor($pedidoId, $prendaId)) {
+                return null;
+            }
+
+            if ($this->pedidoTieneConsecutivoDevueltoAsesor($pedidoId)) {
                 return null;
             }
 
@@ -497,6 +509,28 @@ final class PrendaEdicionBloqueoService
         $consecutivos = DB::table('consecutivos_recibos_pedidos')
             ->where('pedido_produccion_id', $pedidoId)
             ->where('prenda_id', $prendaId)
+            ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
+            ->whereNotNull('consecutivo_actual')
+            ->get(['estado']);
+
+        if ($consecutivos->isEmpty()) {
+            return false;
+        }
+
+        foreach ($consecutivos as $consecutivo) {
+            $estadoNormalizado = $this->normalizarTexto((string) ($consecutivo->estado ?? ''));
+            if (in_array($estadoNormalizado, self::ESTADOS_CONSECUTIVO_HABILITAN_EDICION, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function pedidoTieneConsecutivoDevueltoAsesor(int $pedidoId): bool
+    {
+        $consecutivos = DB::table('consecutivos_recibos_pedidos')
+            ->where('pedido_produccion_id', $pedidoId)
             ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
             ->whereNotNull('consecutivo_actual')
             ->get(['estado']);
