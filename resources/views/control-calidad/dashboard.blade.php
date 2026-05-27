@@ -1731,6 +1731,7 @@
             const numeroPedido = orden.numero_pedido || orden.pedido || '';
             const prendaId = orden.prenda_id || recibo.prenda_id || '';
             const parcialId = orden.parcial_id || recibo.parcial_id || '';
+            const targetReciboId = esParcial ? parcialId : (recibo.id || orden.id || '');
             const areaActual = orden.proceso_actual || recibo.area || 'Control Calidad';
             const cardKey = esParcial ? `parcial-${parcialId}` : `recibo-${recibo.id || orden.id || ''}`;
             const urlVerRecibo = construirUrlVerRecibo(orden, recibo, tipoRecibo, numeroPedido, prendaId);
@@ -1794,11 +1795,11 @@
                                 <span class="material-symbols-rounded">comment</span>
                                 AGREGAR NOVEDAD
                             </button>
-                            <button class="btn-completar-recibo" data-recibo-id="${recibo.id || orden.id || ''}" data-es-parcial="${esParcial ? '1' : '0'}" data-parcial-id="${parcialId}" data-completado="${completadoArea ? '1' : '0'}" style="${completadoArea ? 'display: none;' : ''}" onclick="toggleCompletarRecibo(this); event.stopPropagation();">
+                            <button class="btn-completar-recibo" data-recibo-id="${targetReciboId}" data-es-parcial="${esParcial ? '1' : '0'}" data-parcial-id="${parcialId}" data-completado="${completadoArea ? '1' : '0'}" style="${completadoArea ? 'display: none;' : ''}" onclick="toggleCompletarRecibo(this); event.stopPropagation();">
                                 <span class="material-symbols-rounded">done</span>
                                 COMPLETAR
                             </button>
-                            <button class="btn-deshacer-recibo" data-recibo-id="${recibo.id || orden.id || ''}" data-es-parcial="${esParcial ? '1' : '0'}" data-parcial-id="${parcialId}" style="${completadoArea ? '' : 'display: none;'}" onclick="deshacerCompletarRecibo(this); event.stopPropagation();">
+                            <button class="btn-deshacer-recibo" data-recibo-id="${targetReciboId}" data-es-parcial="${esParcial ? '1' : '0'}" data-parcial-id="${parcialId}" style="${completadoArea ? '' : 'display: none;'}" onclick="deshacerCompletarRecibo(this); event.stopPropagation();">
                                 <span class="material-symbols-rounded">undo</span>
                                 DESHACER
                             </button>
@@ -1964,13 +1965,13 @@
 
     window.toggleCompletarRecibo = async function(btn) {
         const reciboId = btn.dataset.reciboId;
-        if (!reciboId) {
-            return;
-        }
-
         const yaCompletado = btn.dataset.completado === '1';
         const esParcial = btn.dataset.esParcial === '1';
         const parcialId = btn.dataset.parcialId || reciboId;
+        const targetId = esParcial ? parcialId : reciboId;
+        if (!targetId) {
+            return;
+        }
         if (yaCompletado) {
             return;
         }
@@ -1980,7 +1981,7 @@
         }
 
         try {
-            const response = await fetch(`/control-calidad/api/recibos/${reciboId}/completar`, {
+            const response = await fetch(`/control-calidad/api/recibos/${targetId}/completar`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2025,14 +2026,15 @@
 
     window.deshacerCompletarRecibo = async function(btn) {
         const reciboId = btn.dataset.reciboId;
-        if (!reciboId) {
-            return;
-        }
         const esParcial = btn.dataset.esParcial === '1';
         const parcialId = btn.dataset.parcialId || reciboId;
+        const targetId = esParcial ? parcialId : reciboId;
+        if (!targetId) {
+            return;
+        }
 
         try {
-            const response = await fetch(`/control-calidad/api/recibos/${reciboId}/deshacer`, {
+            const response = await fetch(`/control-calidad/api/recibos/${targetId}/deshacer`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',

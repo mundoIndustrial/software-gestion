@@ -130,12 +130,10 @@ class ControlCalidadController extends Controller
                 ->where('tipo_recibo', $recibo->tipo_recibo)
                 ->exists();
 
+            // Fuente de verdad para parciales: tabla recibo_por_partes.
+            // No inferir parcial desde texto en "notas" para evitar IDs cruzados.
             $parcialId = null;
-            $notas = isset($recibo->notas) ? (string) $recibo->notas : '';
-            if ($notas !== '' && preg_match('/parcial_id:(\d+)/i', $notas, $matches)) {
-                $parcialId = (int) $matches[1];
-            }
-            $esParcial = $parcialId !== null;
+            $esParcial = false;
 
             return [
                 'prenda_id' => $prenda->id ?? 0,
