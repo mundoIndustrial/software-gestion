@@ -213,11 +213,54 @@ function actualizarEstilosModoCards() {
     });
 }
 
+function leerAnchoCompartidoTemporal(modal) {
+    if (!modal) return '';
+    return (modal.dataset.anchoCompartido || '').trim();
+}
+
+function resolverAnchoGeneralInicial(modal, datosData) {
+    const anchoTemporal = leerAnchoCompartidoTemporal(modal);
+    if (anchoTemporal) {
+        return anchoTemporal;
+    }
+
+    let anchoGeneralGuardado = '';
+    if (datosData && datosData.success) {
+        if (datosData.ancho_general) {
+            anchoGeneralGuardado = datosData.ancho_general;
+        } else if (datosData.ancho) {
+            anchoGeneralGuardado = datosData.ancho;
+        } else if (datosData.data && Array.isArray(datosData.data)) {
+            const datosGeneral = datosData.data.find(d => d.ancho && !d.talla);
+            if (datosGeneral) {
+                anchoGeneralGuardado = datosGeneral.ancho || '';
+            }
+        }
+    }
+
+    if (anchoGeneralGuardado) {
+        modal.dataset.anchoCompartido = String(anchoGeneralGuardado);
+    }
+    return anchoGeneralGuardado;
+}
+
+function registrarSyncAnchoCompartido(input, modal) {
+    if (!input || !modal) return;
+    input.addEventListener('input', () => {
+        modal.dataset.anchoCompartido = input.value.trim();
+    });
+}
+
 function requiereConfirmacionCambioModo(modal, modoSeleccionado) {
     const modoGuardado = modal.tipoModoGuardado;
     const tieneDatosGuardados = modal.tieneDatosGuardados;
 
     if (!modoGuardado || !tieneDatosGuardados) {
+        return false;
+    }
+
+    // Solo pedir confirmacion de reemplazo al pasar a modo Manual.
+    if (modoSeleccionado !== 'mano') {
         return false;
     }
 
@@ -231,13 +274,22 @@ async function confirmarCambioModoAntesDeGuardar(modal, modoSeleccionado) {
 
     const modoAnterior = getModoLabel(modal.tipoModoGuardado);
     const modoNuevo = getModoLabel(modoSeleccionado);
-    const mensaje = `Vas a reemplazar los datos de "${modoAnterior}" por "${modoNuevo}".`;
+    const tituloAdvertencia = 'Cambio de modo';
+    const mensaje = `Se eliminaran los datos previos de ancho y metraje guardados en "${modoAnterior}" y se reemplazaran por "${modoNuevo}".`;
+    const mensajeHtml = `
+        <span style="color:#dc2626;font-weight:800;">SE ELIMINARA</span>
+        <span> el ancho y metraje previo guardado en "<strong>${modoAnterior}</strong>" y se reemplazara por "<strong>${modoNuevo}</strong>".</span>
+    `;
 
     if (window.Swal && typeof window.Swal.fire === 'function') {
         const result = await window.Swal.fire({
-            title: 'Confirmar cambio de modo',
-            text: mensaje,
+            title: tituloAdvertencia,
+            html: mensajeHtml,
             icon: 'warning',
+            target: document.body,
+            customClass: {
+                container: 'swal-ancho-metraje-superpuesto',
+            },
             showCancelButton: true,
             confirmButtonText: 'Guardar y reemplazar',
             cancelButtonText: 'Revisar',
@@ -246,7 +298,7 @@ async function confirmarCambioModoAntesDeGuardar(modal, modoSeleccionado) {
         return !!result.isConfirmed;
     }
 
-    return window.confirm(`${mensaje}\n\nÂ¿Deseas continuar?`);
+    return window.confirm(`${tituloAdvertencia}\n\n${mensaje}\n\nÂ¿Deseas continuar?`);
 }
 
 function actualizarEstadoGuardadoModal(modal, modo) {
@@ -261,6 +313,7 @@ function actualizarEstadoGuardadoModal(modal, modo) {
  */
 function generarInputsPorColor(coloresData, datosData) {
     const container = document.getElementById('colorInputsContainer');
+    const modal = document.getElementById('modalAnchoMetraje');
     container.innerHTML = '';
     
     // PRIMERO: Crear input de ANCHO GENERAL
@@ -268,19 +321,7 @@ function generarInputsPorColor(coloresData, datosData) {
     anchoGeneralDiv.className = 'bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm';
     
     // Buscar ancho general: puede estar en datosData.ancho_general o dentro de data[]
-    let anchoGeneralGuardado = '';
-    if (datosData.success) {
-        if (datosData.ancho_general) {
-            anchoGeneralGuardado = datosData.ancho_general;
-        } else if (datosData.ancho) {
-            anchoGeneralGuardado = datosData.ancho;
-        } else if (datosData.data && Array.isArray(datosData.data)) {
-            const datosGeneral = datosData.data.find(d => d.ancho && !d.talla);
-            if (datosGeneral) {
-                anchoGeneralGuardado = datosGeneral.ancho || '';
-            }
-        }
-    }
+    const anchoGeneralGuardado = resolverAnchoGeneralInicial(modal, datosData);
     
     anchoGeneralDiv.innerHTML = `
         <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
@@ -299,6 +340,7 @@ function generarInputsPorColor(coloresData, datosData) {
         </div>
     `;
     container.appendChild(anchoGeneralDiv);
+    registrarSyncAnchoCompartido(anchoGeneralDiv.querySelector('#anchoGeneralInput'), modal);
     
     // SEGUNDO: Crear inputs de METRAJE por color
     const metrajeDiv = document.createElement('div');
@@ -370,6 +412,7 @@ function generarInputsPorColor(coloresData, datosData) {
  */
 function generarInputsPorTallaColor(coloresData, datosData) {
     const container = document.getElementById('piezaInputsContainer');
+    const modal = document.getElementById('modalAnchoMetraje');
     container.innerHTML = '';
     
     // PRIMERO: Crear input de ANCHO GENERAL
@@ -377,19 +420,7 @@ function generarInputsPorTallaColor(coloresData, datosData) {
     anchoGeneralDiv.className = 'bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm';
     
     // Buscar ancho general: puede estar en datosData.ancho_general o dentro de data[]
-    let anchoGeneralGuardado = '';
-    if (datosData.success) {
-        if (datosData.ancho_general) {
-            anchoGeneralGuardado = datosData.ancho_general;
-        } else if (datosData.ancho) {
-            anchoGeneralGuardado = datosData.ancho;
-        } else if (datosData.data && Array.isArray(datosData.data)) {
-            const datosGeneral = datosData.data.find(d => d.ancho && !d.talla);
-            if (datosGeneral) {
-                anchoGeneralGuardado = datosGeneral.ancho || '';
-            }
-        }
-    }
+    const anchoGeneralGuardado = resolverAnchoGeneralInicial(modal, datosData);
     
     anchoGeneralDiv.innerHTML = `
         <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
@@ -408,6 +439,7 @@ function generarInputsPorTallaColor(coloresData, datosData) {
         </div>
     `;
     container.appendChild(anchoGeneralDiv);
+    registrarSyncAnchoCompartido(anchoGeneralDiv.querySelector('#anchoGeneralPiezaInput'), modal);
     
     // SEGUNDO: Crear inputs de METRAJE por color
     const metrajeDiv = document.createElement('div');
@@ -1127,6 +1159,13 @@ function actualizarReciboConAnchoMetraje() {
 }
 
 function exportModalAnchoMetraje() {
+    if (!document.getElementById('swalAnchoMetrajeLayerStyle')) {
+        const style = document.createElement('style');
+        style.id = 'swalAnchoMetrajeLayerStyle';
+        style.textContent = '.swal-ancho-metraje-superpuesto{z-index:1100000 !important;}';
+        document.head.appendChild(style);
+    }
+
     document.addEventListener('change', function (event) {
         const target = event.target;
         if (!(target instanceof HTMLInputElement)) {
