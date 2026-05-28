@@ -69,7 +69,7 @@ class VerPedidoOperarioUseCase
         ]);
 
         if ($isBodegaOnly) {
-            $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega'])->find($reciboId);
+            $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega.fotos'])->find($reciboId);
             
             \Log::info('[VerPedidoOperarioUseCase] Recibo de bodega encontrado?', [
                 'encontrado' => !!$reciboBodega,
@@ -129,7 +129,20 @@ class VerPedidoOperarioUseCase
             }
         }
 
-        $fotos = $this->fotos->obtenerFotosPedido((int) $numeroPedido);
+        if ($isBodegaOnly && $reciboBodega && $reciboBodega->prendaBodega) {
+            $fotos = [];
+            if ($reciboBodega->prendaBodega->fotos) {
+                foreach ($reciboBodega->prendaBodega->fotos as $foto) {
+                    $rutaCompleta = $foto->url;
+                    if (!str_starts_with($rutaCompleta, 'http') && !str_starts_with($rutaCompleta, '/storage/') && !str_starts_with($rutaCompleta, 'storage/')) {
+                        $rutaCompleta = '/storage/' . $rutaCompleta;
+                    }
+                    $fotos[] = $rutaCompleta;
+                }
+            }
+        } else {
+            $fotos = $this->fotos->obtenerFotosPedido((int) $numeroPedido);
+        }
 
         $prendaIdRequest = $request->query('prenda_id');
         $consecutivoParcialParam = $request->query('consecutivo_parcial');

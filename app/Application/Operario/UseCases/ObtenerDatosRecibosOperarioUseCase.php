@@ -45,7 +45,7 @@ class ObtenerDatosRecibosOperarioUseCase
         $reciboBodega = null;
 
         if ($reciboId > 0) {
-            $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega'])->find($reciboId);
+            $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega.fotos'])->find($reciboId);
         }
 
         // Fallback bodega: si llega parcial_id sin recibo_id, resolver recibo base.
@@ -57,7 +57,7 @@ class ObtenerDatosRecibosOperarioUseCase
             if ($parcialBodega) {
                 $tipoParcialUpper = strtoupper(trim((string) ($parcialBodega->tipo_recibo ?? '')));
                 if (in_array($tipoParcialUpper, ['CORTE-PARA-BODEGA', 'BODEGA'], true)) {
-                    $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega'])
+                    $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega.fotos'])
                         ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
                         ->where('consecutivo_actual', (int) ($parcialBodega->consecutivo_original ?? 0))
                         ->where('prenda_bodega_id', (int) ($parcialBodega->prenda_pedido_id ?? 0))
@@ -425,6 +425,21 @@ class ObtenerDatosRecibosOperarioUseCase
                     'created_at' => $fechaActivacionRecibo,
                 ];
 
+                $imagenes = [];
+                if ($reciboBodega && $reciboBodega->prendaBodega && $reciboBodega->prendaBodega->fotos) {
+                    foreach ($reciboBodega->prendaBodega->fotos as $foto) {
+                        $rutaCompleta = $foto->url;
+                        if (!str_starts_with($rutaCompleta, 'http') && !str_starts_with($rutaCompleta, '/storage/') && !str_starts_with($rutaCompleta, 'storage/')) {
+                            $rutaCompleta = '/storage/' . $rutaCompleta;
+                        }
+                        $imagenes[] = [
+                            'id' => $foto->id,
+                            'url' => $rutaCompleta,
+                            'ruta_webp' => $rutaCompleta,
+                        ];
+                    }
+                }
+
                 $responseData = [
                     'id' => null,
                     'numero_pedido' => $reciboBodega->consecutivo_actual,
@@ -444,6 +459,7 @@ class ObtenerDatosRecibosOperarioUseCase
                             'cantidad' => (int) ($reciboBodega->cantidad ?? 0),
                             'tallas' => $tallasParcial,
                             'talla_colores' => $tallaColoresParcial,
+                            'imagenes' => $imagenes,
                             'procesos' => [
                                 [
                                     'proceso' => 'CORTE-PARA-BODEGA',
@@ -1098,7 +1114,7 @@ class ObtenerDatosRecibosOperarioUseCase
 
         if ($isBodegaOnly) {
             $reciboId = (int) $request->query('recibo_id');
-            $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega'])->find($reciboId);
+            $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega.fotos'])->find($reciboId);
             $prendaBodegaId = (int) ($reciboBodega->prenda_bodega_id ?? 0);
 
             $tallasBodegaRows = collect();
@@ -1152,6 +1168,21 @@ class ObtenerDatosRecibosOperarioUseCase
                 $descripcionBodega = 'Recibo de Bodega';
             }
 
+            $imagenes = [];
+            if ($reciboBodega && $reciboBodega->prendaBodega && $reciboBodega->prendaBodega->fotos) {
+                foreach ($reciboBodega->prendaBodega->fotos as $foto) {
+                    $rutaCompleta = $foto->url;
+                    if (!str_starts_with($rutaCompleta, 'http') && !str_starts_with($rutaCompleta, '/storage/') && !str_starts_with($rutaCompleta, 'storage/')) {
+                        $rutaCompleta = '/storage/' . $rutaCompleta;
+                    }
+                    $imagenes[] = [
+                        'id' => $foto->id,
+                        'url' => $rutaCompleta,
+                        'ruta_webp' => $rutaCompleta,
+                    ];
+                }
+            }
+
             $responseData = [
                 'id' => null,
                 'numero_pedido' => $reciboBodega->consecutivo_actual,
@@ -1171,6 +1202,16 @@ class ObtenerDatosRecibosOperarioUseCase
                         'cantidad' => $reciboBodega->cantidad ?? 0,
                         'tallas' => $tallasBodega,
                         'talla_colores' => $tallaColoresBodega,
+                        'imagenes' => $imagenes,
+                        'recibos' => [
+                            $reciboBodega->tipo_recibo => [
+                                'id' => $reciboBodega->id,
+                                'consecutivo_actual' => $reciboBodega->consecutivo_actual,
+                                'tipo_recibo' => $reciboBodega->tipo_recibo,
+                                'cantidad' => $reciboBodega->cantidad ?? 0,
+                                'estado' => $reciboBodega->estado ?? 'PENDIENTE'
+                            ]
+                        ],
                         'procesos' => [
                             [
                                 'proceso' => $reciboBodega->tipo_recibo,
