@@ -199,6 +199,7 @@ class InsumosController extends Controller
             $estadosBadgeBodega = [
                 'PENDIENTE_INSUMOS',
                 'PENDIENTE_TELA',
+                'PENDIENTE_METRAJE',
                 'PENDIENTE_PLOTTER',
                 'INSUMOS_PEDIDOS',
             ];
@@ -513,6 +514,8 @@ class InsumosController extends Controller
                 'Pendiente_Insumos',
                 'Pendiente Tela',
                 'PENDIENTE_TELA',
+                'Pendiente Metraje',
+                'PENDIENTE_METRAJE',
                 'Pendiente Plotter',
                 'PENDIENTE_PLOTTER',
                 'Insumos Pedidos',
@@ -538,6 +541,8 @@ class InsumosController extends Controller
                     'Pendiente_Insumos',
                     'Pendiente Tela',
                     'PENDIENTE_TELA',
+                    'Pendiente Metraje',
+                    'PENDIENTE_METRAJE',
                     'Pendiente Plotter',
                     'PENDIENTE_PLOTTER',
                     'Insumos Pedidos',

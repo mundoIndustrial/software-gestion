@@ -79,7 +79,7 @@ class RecibosCosturaReadRepository
         // Para REFLECTIVO y CORTE-PARA-BODEGA evitamos mezclar reglas de área/estado de costura.
         if (strtoupper(trim($tipoRecibo)) === 'COSTURA') {
             $query->where(function ($q) {
-                $q->whereIn('consecutivos_recibos_pedidos.estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER', 'INSUMOS_PEDIDOS', 'DEVUELTO_ASESOR', 'Devuelto_Asesor', 'ANULADO', 'Anulada'])
+                $q->whereIn('consecutivos_recibos_pedidos.estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_METRAJE', 'PENDIENTE_PLOTTER', 'INSUMOS_PEDIDOS', 'DEVUELTO_ASESOR', 'Devuelto_Asesor', 'ANULADO', 'Anulada'])
                     ->orWhereIn('consecutivos_recibos_pedidos.area', ['CORTE', 'COSTURA', 'ANULADO']);
             });
             // Mostrar también recibos anulados cuyo flujo ya movió el área a ANULADO.
@@ -225,6 +225,7 @@ class RecibosCosturaReadRepository
                     fn($v) => match ($v) {
                         'Pendiente Insumos' => 'PENDIENTE_INSUMOS',
                         'Pendiente Tela' => 'PENDIENTE_TELA',
+                        'Pendiente Metraje' => 'PENDIENTE_METRAJE',
                         'Pendiente Plotter' => 'PENDIENTE_PLOTTER',
                         'Devuelto Asesor' => 'DEVUELTO_ASESOR',
                         'Devuelto_Asesor' => 'DEVUELTO_ASESOR',

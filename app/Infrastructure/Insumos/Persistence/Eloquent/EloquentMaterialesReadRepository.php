@@ -159,6 +159,7 @@ class EloquentMaterialesReadRepository implements MaterialesReadRepository
                     $q->whereIn('consecutivos_recibos_pedidos.estado', [
                         'PENDIENTE_INSUMOS',
                         'PENDIENTE_TELA',
+                        'PENDIENTE_METRAJE',
                         'PENDIENTE_PLOTTER',
                         'INSUMOS_PEDIDOS',
                         'DEVUELTO_ASESOR',

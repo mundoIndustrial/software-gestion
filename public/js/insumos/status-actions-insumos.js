@@ -338,6 +338,8 @@ function obtenerEstadoInfo(estado) {
         'Pendiente Insumos': { display: 'Pendiente Insumos', clase: 'bg-amber-500 text-white' },
         'PENDIENTE_TELA': { display: 'Pendiente Tela', clase: 'bg-yellow-400 text-gray-900' },
         'Pendiente Tela': { display: 'Pendiente Tela', clase: 'bg-yellow-400 text-gray-900' },
+        'PENDIENTE_METRAJE': { display: 'Pendiente Metraje', clase: 'bg-cyan-500 text-white' },
+        'Pendiente Metraje': { display: 'Pendiente Metraje', clase: 'bg-cyan-500 text-white' },
         'PENDIENTE_PLOTTER': { display: 'Pendiente Plotter', clase: 'bg-gray-400 text-white' },
         'Pendiente Plotter': { display: 'Pendiente Plotter', clase: 'bg-gray-400 text-white' },
         'INSUMOS_PEDIDOS': { display: 'Insumos Pedidos', clase: 'bg-green-500 text-white' },
@@ -539,6 +541,8 @@ function actualizarColorSelect(selectElement, estado) {
         selectElement.classList.add('bg-amber-500', 'text-white');
     } else if (estado === 'Pendiente Tela' || estado === 'PENDIENTE_TELA') {
         selectElement.classList.add('bg-yellow-400', 'text-gray-900');
+    } else if (estado === 'Pendiente Metraje' || estado === 'PENDIENTE_METRAJE') {
+        selectElement.classList.add('bg-cyan-500', 'text-white');
     } else if (estado === 'Pendiente Plotter' || estado === 'PENDIENTE_PLOTTER') {
         selectElement.classList.add('bg-gray-400', 'text-white');
     } else if (estado === 'DEVUELTO_ASESOR') {
@@ -644,6 +648,8 @@ function exportStatusActionsInsumos() {
             'Pendiente Insumos': { bg: '#f97316', color: '#ffffff', border: '#ea580c' },
             'Pendiente Tela': { bg: '#f59e0b', color: '#ffffff', border: '#d97706' },
             'PENDIENTE_TELA': { bg: '#f59e0b', color: '#ffffff', border: '#d97706' },
+            'Pendiente Metraje': { bg: '#06b6d4', color: '#ffffff', border: '#0891b2' },
+            'PENDIENTE_METRAJE': { bg: '#06b6d4', color: '#ffffff', border: '#0891b2' },
             'Pendiente Plotter': { bg: '#9ca3af', color: '#ffffff', border: '#6b7280' },
             'PENDIENTE_PLOTTER': { bg: '#9ca3af', color: '#ffffff', border: '#6b7280' },
             'Insumos Pedidos': { bg: '#10b981', color: '#ffffff', border: '#059669' },

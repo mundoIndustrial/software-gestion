@@ -59,7 +59,7 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
                 ];
             }
 
-            if (!in_array($estadoAnterior, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'INSUMOS_PEDIDOS', 'Insumos Pedidos'], true)) {
+            if (!in_array($estadoAnterior, ['PENDIENTE_INSUMOS', 'Pendiente_Insumos', 'PENDIENTE_TELA', 'Pendiente Tela', 'PENDIENTE_METRAJE', 'Pendiente Metraje', 'PENDIENTE_PLOTTER', 'Pendiente Plotter', 'INSUMOS_PEDIDOS', 'Insumos Pedidos'], true)) {
                 Log::warning('[cambiarEstadoRecibo] Estado anterior no valido', [
                     'estadoAnterior' => $estadoAnterior,
                 ]);
@@ -96,7 +96,7 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
             $recibosPendientes = ConsecutivoReciboPedido::where('pedido_produccion_id', $recibo->pedido_produccion_id)
                 ->where('tipo_recibo', 'COSTURA')
                 ->where('activo', 1)
-                ->whereIn('estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER', 'INSUMOS_PEDIDOS'])
+                ->whereIn('estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_METRAJE', 'PENDIENTE_PLOTTER', 'INSUMOS_PEDIDOS'])
                 ->count();
 
             // Solo actualizar pedidos_produccion si el recibo se aprueba para producciom)
@@ -155,7 +155,7 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
                 ->toArray();
 
             $query = ConsecutivoReciboPedido::where('tipo_recibo', 'COSTURA')
-                ->whereIn('estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER'])
+                ->whereIn('estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_METRAJE', 'PENDIENTE_PLOTTER'])
                 ->where('activo', 1);
 
             if (!empty($vistosIds)) {
@@ -228,7 +228,7 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
     {
         try {
             $recibos = ConsecutivoReciboPedido::where('tipo_recibo', 'COSTURA')
-                ->whereIn('estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_PLOTTER'])
+                ->whereIn('estado', ['PENDIENTE_INSUMOS', 'PENDIENTE_TELA', 'PENDIENTE_METRAJE', 'PENDIENTE_PLOTTER'])
                 ->with(['pedido', 'prenda'])
                 ->orderBy('fecha_estimada_de_entrega', 'asc')
                 ->get();
@@ -280,6 +280,7 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
             'Pendiente_Insumos' => 'PENDIENTE_INSUMOS',
             'Insumos Pedidos' => 'INSUMOS_PEDIDOS',
             'Pendiente Tela' => 'PENDIENTE_TELA',
+            'Pendiente Metraje' => 'PENDIENTE_METRAJE',
             'Pendiente Plotter' => 'PENDIENTE_PLOTTER',
             'Devuelto_Asesor' => 'DEVUELTO_ASESOR',
             default => trim($estado),
@@ -374,5 +375,4 @@ class EloquentRecibosPendientesRepository implements RecibosPendientesRepository
         return strtolower(trim(Str::ascii($estado))) === 'en ejecucion';
     }
 }
-
 
