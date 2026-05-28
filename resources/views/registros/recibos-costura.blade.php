@@ -6,11 +6,13 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-                        <div class="recibos-area-tabs" role="tablist" aria-label="Filtrar por área">
+            <div class="recibos-area-tabs" role="tablist" aria-label="Filtrar por área">
                 <button type="button" class="recibos-area-tab is-active" data-area-tab="all" aria-pressed="true">Todos</button>
                 <button type="button" class="recibos-area-tab" data-area-tab="corte" aria-pressed="false">Corte</button>
                 <button type="button" class="recibos-area-tab" data-area-tab="costura" aria-pressed="false">Costura</button>
                 <button type="button" class="recibos-area-tab" data-area-tab="control-calidad" aria-pressed="false">Control Calidad</button>
+                <button type="button" class="recibos-area-tab" data-area-tab="entrega" aria-pressed="false">Entrega</button>
+                <button type="button" class="recibos-area-tab" data-area-tab="despacho" aria-pressed="false">Despacho</button>
             </div>
             <!-- Table Component -->
             <x-recibos.recibos-costura-table :recibos="$recibos" :totalCantidadGlobal="$totalCantidadGlobal ?? 0" />
@@ -443,6 +445,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (lower.includes('control calidad') || lower.includes('control de calidad')) return 'control-calidad';
         if (lower.includes('corte')) return 'corte';
         if (lower.includes('costura')) return 'costura';
+        if (lower.includes('entrega')) return 'entrega';
+        if (lower.includes('despacho')) return 'despacho';
         return 'all';
     };
 
@@ -450,8 +454,11 @@ document.addEventListener('DOMContentLoaded', function () {
         'all': '',
         'corte': 'Corte',
         'costura': 'Costura',
-        'control-calidad': 'Control Calidad,Control de Calidad'
+        'control-calidad': 'Control Calidad,Control de Calidad',
+        'entrega': 'Entrega',
+        'despacho': 'Despacho'
     };
+
 
     const setActiveTabUI = (targetTab) => {
         tabs.forEach((tab) => {
@@ -494,8 +501,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    setActiveTabUI(getTabFromAreaParam(areaParam));
+    const activeTab = getTabFromAreaParam(areaParam);
+    setActiveTabUI(activeTab);
 });
 </script>
 @endpush
-

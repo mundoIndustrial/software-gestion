@@ -301,6 +301,9 @@ class ConsecutivoReciboPedidoRepository
         // Aplicar filtro de área
         if (isset($filtros['area']) && !empty($filtros['area'])) {
             $query->whereIn('consecutivos_recibos_pedidos.area', $filtros['area']);
+        } elseif (!empty($filtros['__exclude_despacho_default'])) {
+            // Vista "Todos": excluir despacho desde query para mantener paginacion consistente.
+            $query->whereRaw("UPPER(TRIM(COALESCE(consecutivos_recibos_pedidos.area, ''))) <> 'DESPACHO'");
         }
 
         // Aplicar filtro de cliente

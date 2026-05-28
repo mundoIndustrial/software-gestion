@@ -140,6 +140,12 @@ class GetSewingReceiptsUseCase
             }
         }
 
+        // Regla de vista "Todos": cuando no se filtra por área explícita,
+        // excluir Despacho desde backend para evitar páginas vacías por paginación.
+        if (!array_key_exists('area', $filtros)) {
+            $filtros['__exclude_despacho_default'] = true;
+        }
+
         // Agregar termino de busqueda
         if ($request->has('search') && !empty($request->input('search'))) {
             $filtros['search'] = $request->input('search');
