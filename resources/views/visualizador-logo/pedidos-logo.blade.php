@@ -43,12 +43,12 @@
                     <div style="{{ $isMinimalLogoRole ? 'zoom: 0.75;' : 'zoom: 0.75;' }}">
                     <!-- Header -->
                     <div style="
-                        min-width: {{ $isMinimalLogoRole ? '900px' : '1900px' }};
+                        min-width: {{ $isMinimalLogoRole ? '1080px' : '2150px' }};
                         background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
                         color: white;
                         padding: 1rem 1.5rem;
                         display: grid;
-                        grid-template-columns: {{ $isBordador ? '100px 200px 120px 340px 180px 140px' : ($isMinimalLogoRole ? '100px 200px 340px 180px 140px' : '100px 120px 200px 300px 170px 230px 190px 260px 160px') }};
+                        grid-template-columns: {{ $isBordador ? '100px 200px 120px 340px 180px 140px' : ($isMinimalLogoRole ? '100px 200px 340px 120px 180px 140px' : '100px 120px 200px 300px 120px 170px 230px 190px 260px 160px') }};
                         gap: 1rem;
                         font-weight: 700;
                         font-size: 0.9rem;
@@ -92,6 +92,9 @@
                                 </div>
                             @endif
                         </div>
+                        @if(!$isBordador)
+                            <div style="color: #cbd5e1;">Cantidad</div>
+                        @endif
                         <div style="color: #cbd5e1;">Fecha Creación</div>
                         @if($isBordador)
                             <div style="color: #cbd5e1;">Completado</div>
@@ -1011,9 +1014,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (window.__isDisenadorLogos) {
                 return `
                     <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-pedido-parcial-id="${pedidoParcialId || ''}" data-consecutivo-recibo-id="${consecutivoReciboId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
-                        min-width: 900px;
+                        min-width: 1080px;
                         display: grid;
-                        grid-template-columns: 100px 200px 340px 180px 140px;
+                        grid-template-columns: 100px 200px 340px 120px 180px 140px;
                         gap: 1rem;
                         padding: 1rem 1.5rem;
                         align-items: center;
@@ -1047,6 +1050,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div style="font-weight: 700; color: #0ea5e9; font-size: 0.95rem;">${numeroRecibo}</div>
                         <div style="color: #334155; font-size: 0.95rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${nombreCliente}</div>
+                        <div style="font-weight: 700; color: #0f172a; font-size: 0.95rem; text-align: center;">${recibo.cantidad_total || '-'}</div>
                         <div style="color: #64748b; font-size: 0.95rem;">${formatearFecha(fechaCreacion)}</div>
                         <div style="font-size: 0.95rem; font-weight: 700;">
                             ${(() => {
@@ -1082,9 +1086,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             return `
                 <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-area="${area}" data-total-dias="${totalDias}" data-fecha-creacion-recibo="${fechaCreacionRecibo || ''}" data-fecha-entrega="${fechaEntrega || ''}" data-pedido-parcial-id="${pedidoParcialId || ''}" data-consecutivo-recibo-id="${consecutivoReciboId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
-                    min-width: 1860px;
+                    min-width: 2150px;
                     display: grid;
-                    grid-template-columns: 100px 120px 200px 300px 170px 230px 190px 260px 160px;
+                    grid-template-columns: 100px 120px 200px 300px 120px 170px 230px 190px 260px 160px;
                     gap: 1rem;
                     padding: 1rem 1.5rem;
                     align-items: center;
@@ -1120,6 +1124,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div style="font-weight: 700; color: #0ea5e9; font-size: 0.95rem;">${numeroRecibo}</div>
                     <div data-field="total_dias" style="color: #0f172a; font-weight: 800; font-size: 0.95rem; text-align: center;">${totalDias}</div>
                     <div style="color: #334155; font-size: 0.95rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${nombreCliente}</div>
+                    <div style="font-weight: 700; color: #0f172a; font-size: 0.95rem; text-align: center;">${recibo.cantidad_total || '-'}</div>
                     <div style="color: #64748b; font-size: 0.95rem;">${formatearFecha(fechaCreacion)}</div>
                     <div style="display: flex; align-items: center; justify-content: flex-start;">
                         <select data-proceso-id="${procesoPrendaDetalleId}" data-field="area" style="width: fit-content; max-width: 100%; display: inline-block; padding: 6px 12px; border-radius: 20px; border: 1px solid #e5e7eb; font-weight: 800; font-size: 12px; cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); transition: all 0.2s ease;">

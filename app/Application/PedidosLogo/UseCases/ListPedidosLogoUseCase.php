@@ -99,11 +99,11 @@ final class ListPedidosLogoUseCase
                 $pedidoParcialId = $proceso['pedido_parcial_id'];
             }
 
+            // Obtener tallas para calcular cantidad total
+            $tallas = $this->obtenerTallasPrenda($proceso->prenda_pedido_id, $proceso->pedido_parcial_id);
+            $cantidadTotal = $this->calcularCantidadTotalTallas($tallas);
+
             if ($isMinimalLogoRole) {
-                // Obtener tallas para calcular cantidad total
-                $tallas = $this->obtenerTallasPrenda($proceso->prenda_pedido_id, $proceso->pedido_parcial_id);
-                $cantidadTotal = $this->calcularCantidadTotalTallas($tallas);
-                
                 return [
                     'id' => $proceso->id,
                     'numero_recibo' => $proceso->numero_recibo_consecutivo,
@@ -143,6 +143,7 @@ final class ListPedidosLogoUseCase
                 'es_parcial' => (bool)($proceso->es_parcial ?? false),
                 'pedido_parcial_id' => $pedidoParcialId,
                 'fecha_activacion' => $proceso->fecha_activacion ?? null,
+                'cantidad_total' => $cantidadTotal,
             ];
         });
 
