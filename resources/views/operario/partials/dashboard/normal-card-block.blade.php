@@ -1,4 +1,4 @@
-﻿                        @php
+                        @php
                             $prendaOriginal = $prenda ?? [];
                             $prenda = array_merge([
                                 'numero_pedido' => '',
@@ -112,9 +112,17 @@
                                     $tipoDistribucion = $normal['tipo_distribucion'] ?? null;
                                     
                                     // Determinar el texto a mostrar
+                                    $nombresCosturaReflectivoNormalizados = collect($nombresCosturaReflectivo ?? [])
+                                        ->map(fn ($name) => strtolower(trim((string) $name)))
+                                        ->filter(fn ($name) => $name !== '')
+                                        ->all();
+
+                                    $encargadoLower = strtolower(trim((string) $encargadoVista));
+                                    $esEncargadoModulo = str_starts_with($encargadoLower, 'modulo') || in_array($encargadoLower, $nombresCosturaReflectivoNormalizados, true);
+
                                     if ($tipoDistribucion === 'modulos') {
                                         $textoEncargadoVista = 'DISTRIBUIDO EN MÓDULOS';
-                                    } elseif ($tipoDistribucion === 'talleres') {
+                                    } elseif ($tipoDistribucion === 'talleres' && !$esEncargadoModulo) {
                                         $textoEncargadoVista = 'DISTRIBUIDO EN TALLERES';
                                     } else {
                                         $textoEncargadoVista = $encargadoVista ? strtoupper($encargadoVista) : 'SIN ENCARGADO';
