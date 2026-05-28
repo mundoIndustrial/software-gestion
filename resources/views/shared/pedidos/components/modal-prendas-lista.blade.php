@@ -84,8 +84,27 @@
         }
     }
 
+    function _obtenerPrendaDesdeDataAttribute(elemento) {
+        const card = elemento?.closest('[data-prenda]');
+        const rawValue = card?.getAttribute('data-prenda') || '';
+        if (!rawValue) {
+            return null;
+        }
+
+        try {
+            return JSON.parse(decodeURIComponent(rawValue));
+        } catch (error) {
+            console.error('[ListaPrendas] Error parseando data-prenda:', error, rawValue);
+            return null;
+        }
+    }
+
     async function intentarEditarPrendaDesdeLista(elemento, idx) {
-        const item = JSON.parse(elemento.closest('[data-prenda]').getAttribute('data-prenda'));
+        const item = _obtenerPrendaDesdeDataAttribute(elemento);
+        if (!item) {
+            _mostrarModalPrendaBloqueadaDesdeLista('No fue posible leer los datos de la prenda. Cierra y abre de nuevo la lista.');
+            return;
+        }
         const pedidoId = window.datosEdicionPedido?.id;
         const card = elemento.closest('[data-prenda]');
         const mensajeBloqueo = card?.getAttribute('data-bloqueo-mensaje') || '';
@@ -124,7 +143,11 @@
     }
 
     async function intentarEliminarPrendaDesdeLista(elemento, idx) {
-        const item = JSON.parse(elemento.closest('[data-prenda]').getAttribute('data-prenda'));
+        const item = _obtenerPrendaDesdeDataAttribute(elemento);
+        if (!item) {
+            _mostrarModalPrendaBloqueadaDesdeLista('No fue posible leer los datos de la prenda. Cierra y abre de nuevo la lista.');
+            return;
+        }
         const pedidoId = window.datosEdicionPedido?.id;
         const card = elemento.closest('[data-prenda]');
         const mensajeBloqueo = card?.getAttribute('data-bloqueo-mensaje') || '';
@@ -256,7 +279,7 @@
                     if (!cantidad && item.cantidad) cantidad = item.cantidad;
                     
                     // Serializar item para inyectarlo como dato literal en el onclick
-                    const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
+                    const itemJson = encodeURIComponent(JSON.stringify(item));
                     const cardStyle = bloqueadaInicial
                         ? 'background: #f3f4f6; border: 2px solid #9ca3af; border-radius: 8px; padding: 1rem; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease;'
                         : 'background: white; border: 2px solid #1e40af; border-radius: 8px; padding: 1rem; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease;';
