@@ -32,6 +32,24 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
+function normalizeHtmlToPlainText(value) {
+    const raw = String(value ?? '').trim();
+    if (!raw) return '-';
+
+    const decoder = document.createElement('textarea');
+    decoder.innerHTML = raw;
+    const decoded = decoder.value || raw;
+
+    const container = document.createElement('div');
+    container.innerHTML = decoded;
+
+    const plainText = (container.textContent || container.innerText || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    return plainText || '-';
+}
+
 function formatDateTime(value) {
     if (!value) return '--';
     const date = new Date(value);
@@ -76,6 +94,19 @@ function renderBadgeOnMenuOption(opcionBodega, pendingCount) {
     }
 }
 
+function syncButtonBadgeFromMenuOption(opcionBodega, pedidoId) {
+    if (!opcionBodega || !pedidoId) return;
+
+    const menuBadge = opcionBodega.querySelector('[data-bodega-pendientes-badge]');
+    if (!menuBadge) return;
+
+    const button = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${String(pedidoId).trim()}"]`);
+    if (!button) return;
+
+    const menuCount = normalizeCount(menuBadge.textContent);
+    renderBadgeOnVerButton(button, menuCount);
+}
+
 async function fetchBatchSummaries(pedidoIds) {
     const uniqueIds = Array.from(new Set((pedidoIds || []).map((id) => String(id).trim()).filter(Boolean)));
     if (uniqueIds.length === 0) return new Map();
@@ -113,11 +144,12 @@ async function fetchBatchSummaries(pedidoIds) {
     return map;
 }
 
-async function getSummaryByPedidoId(pedidoId) {
+async function getSummaryByPedidoId(pedidoId, options = {}) {
     const key = String(pedidoId ?? '').trim();
     if (!key) return null;
+    const force = options?.force === true;
 
-    if (summaryCache.has(key)) return summaryCache.get(key);
+    if (!force && summaryCache.has(key)) return summaryCache.get(key);
     if (summaryInFlight.has(key)) return summaryInFlight.get(key);
 
     const promise = (async () => {
@@ -223,7 +255,7 @@ function renderBodegaNovedadesContent(payload) {
     body.innerHTML = data.map((item) => {
         const contenido = escapeHtml(item?.contenido || '').replace(/\n/g, '<br>');
         const prendaNombre = escapeHtml(item?.prenda_nombre || '-');
-        const prendaDescripcion = escapeHtml(item?.prenda_descripcion || '-');
+        const prendaDescripcion = escapeHtml(normalizeHtmlToPlainText(item?.prenda_descripcion));
         const talla = escapeHtml(item?.talla || '-');
         const genero = escapeHtml(item?.genero || '-');
         const cantidad = normalizeCount(item?.cantidad);
@@ -343,8 +375,10 @@ async function refreshVerButtonsBodegaBadges(options = {}) {
 
 async function updateMenuOptionBadge(opcionBodega, pedidoId) {
     if (!opcionBodega || !pedidoId) return;
-    const resumen = await getSummaryByPedidoId(pedidoId);
-    renderBadgeOnMenuOption(opcionBodega, resumen?.notes_count ?? 0);
+    const resumen = await getSummaryByPedidoId(pedidoId, { force: true });
+    const count = resumen?.notes_count ?? 0;
+    renderBadgeOnMenuOption(opcionBodega, count);
+    syncButtonBadgeFromMenuOption(opcionBodega, pedidoId);
 }
 
 function initBodegaBadgesManager() {

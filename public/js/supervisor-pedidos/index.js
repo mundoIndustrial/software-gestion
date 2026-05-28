@@ -119,6 +119,24 @@ function _spEscapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
+function _spNormalizeHtmlToPlainText(value) {
+    const raw = String(value ?? '').trim();
+    if (!raw) return '-';
+
+    const decoder = document.createElement('textarea');
+    decoder.innerHTML = raw;
+    const decoded = decoder.value || raw;
+
+    const container = document.createElement('div');
+    container.innerHTML = decoded;
+
+    const plainText = (container.textContent || container.innerText || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    return plainText || '-';
+}
+
 function _spEscapeJsSingle(value) {
     return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
@@ -696,6 +714,14 @@ function scheduleDeferredBodegaBadgesPrefetch() {
         spBodegaDeferredPrefetchScheduled = false;
         const visibleButtons = getVisibleVerButtons();
         if (visibleButtons.length === 0) {
+            // Si la tabla aun no termina de renderizar, reintentar antes de desistir.
+            spBodegaDeferredPrefetchAttempts += 1;
+            if (spBodegaDeferredPrefetchAttempts <= 10) {
+                spBodegaDeferredPrefetchTimer = window.setTimeout(() => {
+                    scheduleDeferredBodegaBadgesPrefetch();
+                }, 350);
+                return;
+            }
             spBodegaDeferredPrefetchCompleted = true;
             return;
         }
@@ -713,7 +739,10 @@ function scheduleDeferredBodegaBadgesPrefetch() {
             spBodegaDeferredPrefetchTimer = window.setTimeout(() => {
                 scheduleDeferredBodegaBadgesPrefetch();
             }, 450);
+            return;
         }
+        // Ultimo fallback: usar implementacion legacy para pintar contador al cargar.
+        refreshVerButtonsBodegaBadges().catch(() => {});
     };
 
     if ('requestIdleCallback' in window) {
@@ -786,6 +815,9 @@ async function _spRenderBodegaBadge(opcionBodega, pedidoId) {
     if (!opcionBodega) return;
     if (_spUseModernBodegaManager() && window.spBodegaBadgesManager?.updateMenuOptionBadge) {
         await window.spBodegaBadgesManager.updateMenuOptionBadge(opcionBodega, pedidoId);
+        const menuBadge = opcionBodega.querySelector('[data-bodega-pendientes-badge]');
+        const menuCount = _spNormalizePendingCount(menuBadge?.textContent);
+        _spSyncButtonBadgeFromPedidoId(pedidoId, menuCount);
         return;
     }
     const badge = opcionBodega.querySelector('[data-bodega-pendientes-badge]');
@@ -803,6 +835,8 @@ async function _spRenderBodegaBadge(opcionBodega, pedidoId) {
         badge.textContent = '0';
         opcionBodega.style.backgroundColor = '#ffffff';
     }
+
+    _spSyncButtonBadgeFromPedidoId(pedidoId, notesCount);
 }
 
 function _spRenderBadgeOnVerButton(button, pendingCount) {
@@ -823,6 +857,29 @@ function _spRenderBadgeOnVerButton(button, pendingCount) {
         badge.style.display = 'none';
         badge.textContent = '0';
     }
+}
+
+function _spForceRenderBadgeOnVerButton(button, pendingCount) {
+    if (!button) return;
+    const badge = button.querySelector('[data-bodega-button-badge]');
+    if (!badge) return;
+
+    const count = _spNormalizePendingCount(pendingCount);
+    if (count > 0) {
+        badge.style.display = 'inline-block';
+        badge.textContent = count > 99 ? '99+' : String(count);
+    } else {
+        badge.style.display = 'none';
+        badge.textContent = '0';
+    }
+}
+
+function _spSyncButtonBadgeFromPedidoId(pedidoId, pendingCount) {
+    const key = String(pedidoId || '').trim();
+    if (!key) return;
+    const button = document.querySelector(`.btn-ver-dropdown[data-pedido-id="${key}"]`);
+    if (!button) return;
+    _spForceRenderBadgeOnVerButton(button, pendingCount);
 }
 
 async function refreshVerButtonsBodegaBadges() {
@@ -1020,7 +1077,7 @@ function _spRenderBodegaNovedadesContent(payload) {
     const rows = data.map((item) => {
         const contenido = _spEscapeHtml(item?.contenido || '').replace(/\n/g, '<br>');
         const prendaNombre = _spEscapeHtml(item?.prenda_nombre || '-');
-        const prendaDescripcion = _spEscapeHtml(item?.prenda_descripcion || '-');
+        const prendaDescripcion = _spEscapeHtml(_spNormalizeHtmlToPlainText(item?.prenda_descripcion));
         const numeroPedido = _spEscapeHtml(item?.numero_pedido || payload?.numero_pedido || '-');
         const talla = _spEscapeHtml(item?.talla || '-');
         const genero = _spEscapeHtml(item?.genero || '-');
@@ -1604,6 +1661,9 @@ document.addEventListener('click', function(e) {
     if (btnVerDropdown) {
         e.preventDefault();
         e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') {
+            e.stopImmediatePropagation();
+        }
         const menu = getOrCreateVerMenu(btnVerDropdown);
         const isOpen = menu.style.display === 'block';
         closeAllVerMenus(menu.id);
