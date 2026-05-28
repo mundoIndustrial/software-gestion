@@ -11,9 +11,8 @@ class ObtenerAnchoMetrajePrendaInsumosUseCase
     ) {
     }
 
-    public function execute(string $numeroPedido, int $prendaId): array
+    public function execute(string $numeroPedido, int $prendaId, ?int $numeroRecibo = null): array
     {
-        return $this->repository->obtenerAnchoMetrajePrenda($numeroPedido, $prendaId);
+        return $this->repository->obtenerAnchoMetrajePrenda($numeroPedido, $prendaId, $numeroRecibo);
     }
 }
-

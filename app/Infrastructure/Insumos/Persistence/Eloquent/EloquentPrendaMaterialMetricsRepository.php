@@ -11,19 +11,23 @@ use App\Models\PrendaPedidoTalla;
 
 class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRepository
 {
-    public function obtenerAnchoMetrajePrenda(string $numeroPedido, int $prendaId): array
+    public function obtenerAnchoMetrajePrenda(string $numeroPedido, int $prendaId, ?int $numeroRecibo = null): array
     {
         try {
             $pedido = $this->resolverPedidoPorNumeroOId($numeroPedido);
 
-            $anchoGeneral = PedidoAnchoGeneral::where('pedido_produccion_id', $pedido->id)
-                ->where('prenda_pedido_id', $prendaId)
-                ->latest()
-                ->first();
+            $anchoQuery = PedidoAnchoGeneral::where('pedido_produccion_id', $pedido->id)
+                ->where('prenda_pedido_id', $prendaId);
+            $metrajeQuery = PedidoMetrajeColor::where('pedido_produccion_id', $pedido->id)
+                ->where('prenda_pedido_id', $prendaId);
 
-            $metrajesPorColor = PedidoMetrajeColor::where('pedido_produccion_id', $pedido->id)
-                ->where('prenda_pedido_id', $prendaId)
-                ->get();
+            if (($numeroRecibo ?? 0) > 0) {
+                $anchoQuery->where('numero_recibo', $numeroRecibo);
+                $metrajeQuery->where('numero_recibo', $numeroRecibo);
+            }
+
+            $anchoGeneral = $anchoQuery->latest()->first();
+            $metrajesPorColor = $metrajeQuery->get();
 
             $tipoModoGuardado = null;
             if ($anchoGeneral && $anchoGeneral->tipo_modo) {
@@ -68,6 +72,16 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
             $numeroRecibo = isset($datos['numero_recibo']) ? (int) $datos['numero_recibo'] : null;
             $esBodega = strtoupper((string) ($datos['tipo_recibo'] ?? '')) === 'CORTE-PARA-BODEGA' || ($prendaBodegaId ?? 0) > 0;
             $pedidoId = null;
+            \Log::info('[PrendaMaterialMetricsRepository] guardar inicio', [
+                'numero_pedido' => $numeroPedido,
+                'prenda_id' => $prendaId,
+                'pedido_id' => $pedidoId,
+                'prenda_bodega_id' => $prendaBodegaId,
+                'numero_recibo' => $numeroRecibo,
+                'tipo_recibo' => $datos['tipo_recibo'] ?? null,
+                'tipo_modo' => $tipoModoNuevo,
+                'color' => $datos['color'] ?? null,
+            ]);
 
             if (!$esBodega) {
                 $pedido = $this->resolverPedidoPorNumeroOId($numeroPedido);
@@ -93,6 +107,10 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
             } else {
                 $anchoExistenteQuery->where('prenda_pedido_id', $prendaId);
                 $metrajeExistenteQuery->where('prenda_pedido_id', $prendaId);
+            }
+            if (($numeroRecibo ?? 0) > 0) {
+                $anchoExistenteQuery->where('numero_recibo', $numeroRecibo);
+                $metrajeExistenteQuery->where('numero_recibo', $numeroRecibo);
             }
             $anchoExistente = $anchoExistenteQuery->first();
 
@@ -122,6 +140,10 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
                     $deleteAnchoQuery->where('prenda_pedido_id', $prendaId);
                     $deleteMetrajeQuery->where('prenda_pedido_id', $prendaId);
                 }
+                if (($numeroRecibo ?? 0) > 0) {
+                    $deleteAnchoQuery->where('numero_recibo', $numeroRecibo);
+                    $deleteMetrajeQuery->where('numero_recibo', $numeroRecibo);
+                }
                 $deleteAnchoQuery->delete();
 
                 $deleteMetrajeQuery->delete();
@@ -138,6 +160,13 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
                 } else {
                     $match['prenda_pedido_id'] = $prendaId;
                 }
+                if (($numeroRecibo ?? 0) > 0) {
+                    $match['numero_recibo'] = $numeroRecibo;
+                }
+                \Log::info('[PrendaMaterialMetricsRepository] upsert ancho_general', [
+                    'match' => $match,
+                    'numero_recibo' => $numeroRecibo,
+                ]);
                 PedidoAnchoGeneral::updateOrCreate(
                     $match,
                     [
@@ -162,6 +191,13 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
                 } else {
                     $match['prenda_pedido_id'] = $prendaId;
                 }
+                if (($numeroRecibo ?? 0) > 0) {
+                    $match['numero_recibo'] = $numeroRecibo;
+                }
+                \Log::info('[PrendaMaterialMetricsRepository] upsert metraje_color', [
+                    'match' => $match,
+                    'numero_recibo' => $numeroRecibo,
+                ]);
                 PedidoMetrajeColor::updateOrCreate(
                     $match,
                     [
@@ -173,6 +209,27 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
                     ]
                 );
             }
+
+            $debugAncho = PedidoAnchoGeneral::query()
+                ->where('pedido_produccion_id', $pedidoId)
+                ->where('prenda_pedido_id', $prendaId)
+                ->orderByDesc('id')
+                ->first();
+            $debugMetraje = PedidoMetrajeColor::query()
+                ->where('pedido_produccion_id', $pedidoId)
+                ->where('prenda_pedido_id', $prendaId)
+                ->when(($numeroRecibo ?? 0) > 0, fn ($q) => $q->where('numero_recibo', $numeroRecibo))
+                ->orderByDesc('id')
+                ->first();
+            \Log::info('[PrendaMaterialMetricsRepository] guardado resultado', [
+                'pedido_id' => $pedidoId,
+                'prenda_id' => $prendaId,
+                'numero_recibo_esperado' => $numeroRecibo,
+                'ancho_general_id' => $debugAncho?->id,
+                'ancho_general_numero_recibo' => $debugAncho?->numero_recibo,
+                'metraje_color_id' => $debugMetraje?->id,
+                'metraje_color_numero_recibo' => $debugMetraje?->numero_recibo,
+            ]);
 
             return [
                 'success' => true,

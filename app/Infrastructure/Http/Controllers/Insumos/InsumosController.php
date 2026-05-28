@@ -758,8 +758,14 @@ class InsumosController extends Controller
                 ]);
             }
 
+            $numeroRecibo = (int) request('numero_recibo', 0);
+
             return response()->json(
-                $this->obtenerAnchoMetrajePrendaUseCase->execute((string) $numeroPedido, (int) $prendaId)
+                $this->obtenerAnchoMetrajePrendaUseCase->execute(
+                    (string) $numeroPedido,
+                    (int) $prendaId,
+                    $numeroRecibo > 0 ? $numeroRecibo : null
+                )
             );
         } catch (\Exception $e) {
             \Log::error('Error al obtener ancho/metraje de prenda: ' . $e->getMessage());
@@ -780,6 +786,15 @@ class InsumosController extends Controller
             $tipoRecibo = strtoupper(trim((string) $request->input('tipo_recibo', $request->query('tipo_recibo', ''))));
             $prendaBodegaId = (int) $request->input('prenda_bodega_id', $request->query('prenda_bodega_id', 0));
             $numeroRecibo = (int) $request->input('numero_recibo', 0);
+            \Log::info('[InsumosController] guardarAnchoMetrajePrenda payload inicial', [
+                'numero_pedido' => (string) $numeroPedido,
+                'prenda_pedido_id' => $validated['prenda_pedido_id'] ?? null,
+                'prenda_bodega_id' => $prendaBodegaId > 0 ? $prendaBodegaId : null,
+                'tipo_recibo' => $tipoRecibo,
+                'numero_recibo_recibido' => $numeroRecibo > 0 ? $numeroRecibo : null,
+                'tipo_modo' => $validated['tipo_modo'] ?? null,
+                'color' => $validated['color'] ?? null,
+            ]);
 
             if ($numeroRecibo <= 0 && $prendaBodegaId > 0) {
                 $numeroRecibo = (int) ConsecutivoReciboPedido::query()
@@ -796,6 +811,15 @@ class InsumosController extends Controller
             if ($numeroRecibo > 0) {
                 $validated['numero_recibo'] = $numeroRecibo;
             }
+            \Log::info('[InsumosController] guardarAnchoMetrajePrenda payload final', [
+                'numero_pedido' => (string) $numeroPedido,
+                'prenda_pedido_id' => $validated['prenda_pedido_id'] ?? null,
+                'prenda_bodega_id' => $validated['prenda_bodega_id'] ?? null,
+                'tipo_recibo' => $validated['tipo_recibo'] ?? null,
+                'numero_recibo_final' => $validated['numero_recibo'] ?? null,
+                'tipo_modo' => $validated['tipo_modo'] ?? null,
+                'color' => $validated['color'] ?? null,
+            ]);
 
             $prendaId = (int) ($validated['prenda_pedido_id'] ?? 0);
             if ($prendaId <= 0 && $prendaBodegaId > 0) {

@@ -33,10 +33,10 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
     const pedidoNum = parseInt(pedido, 10) || 0;
     const pedidoSegment = pedidoNum > 0 ? String(pedidoNum) : String(numeroPedido || '').trim();
     const esReciboBodega = String(tipoRecibo || '').toUpperCase() === 'CORTE-PARA-BODEGA';
-    const query = new URLSearchParams();
-    if (prendaBodegaId) query.set('prenda_bodega_id', String(prendaBodegaId));
-    if (esReciboBodega) query.set('tipo_recibo', 'CORTE-PARA-BODEGA');
-    const qs = query.toString() ? `?${query.toString()}` : '';
+    const queryBase = new URLSearchParams();
+    if (prendaBodegaId) queryBase.set('prenda_bodega_id', String(prendaBodegaId));
+    if (esReciboBodega) queryBase.set('tipo_recibo', 'CORTE-PARA-BODEGA');
+    const qsBase = queryBase.toString() ? `?${queryBase.toString()}` : '';
 
     if (!pedidoSegment) {
         console.error('[abrirModalAnchoMetraje] No se pudo resolver pedido para construir URL', { pedido, numeroPedido, prendaId, prendaBodegaId, tipoRecibo });
@@ -44,19 +44,18 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
         return;
     }
     
-    // Obtener el numero de recibo
-    fetch(`/insumos/materiales/${encodeURIComponent(pedidoSegment)}/obtener-recibo-prenda/${prendaId}${qs}`)
+    const obtenerNumeroRecibo = () => fetch(`/insumos/materiales/${encodeURIComponent(pedidoSegment)}/obtener-recibo-prenda/${prendaId}${qsBase}`)
         .then(r => r.json())
         .then(data => {
-            if (data.success && data.recibo) {
-                document.getElementById('anchoMetrajeRecibo').textContent = data.recibo;
-            } else {
-                document.getElementById('anchoMetrajeRecibo').textContent = '-';
-            }
+            const recibido = data?.success && data?.recibo ? Number(data.recibo) : 0;
+            const numeroRecibo = Number.isFinite(recibido) && recibido > 0 ? recibido : null;
+            document.getElementById('anchoMetrajeRecibo').textContent = numeroRecibo ? String(numeroRecibo) : '-';
+            return numeroRecibo;
         })
         .catch(error => {
             console.error('Error al obtener recibo:', error);
             document.getElementById('anchoMetrajeRecibo').textContent = '-';
+            return null;
         });
     
     // Guardar pedido y prenda en el modal para usarlos despues
@@ -87,10 +86,18 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
 
     if (prendaId) {
         // Cargar colores y datos para rellenar los inputs segun el modo seleccionado
-        Promise.all([
-            fetch(`/insumos/materiales/${encodeURIComponent(pedidoSegment)}/obtener-colores-prenda/${prendaId}${qs}`).then(r => r.json()),
-            fetch(`/insumos/materiales/${encodeURIComponent(pedidoSegment)}/obtener-ancho-metraje-prenda/${prendaId}${qs}`).then(r => r.json())
-        ])
+        obtenerNumeroRecibo().then((numeroRecibo) => {
+            const queryLectura = new URLSearchParams(queryBase);
+            if (numeroRecibo) {
+                queryLectura.set('numero_recibo', String(numeroRecibo));
+            }
+            const qsLectura = queryLectura.toString() ? `?${queryLectura.toString()}` : '';
+
+            return Promise.all([
+                fetch(`/insumos/materiales/${encodeURIComponent(pedidoSegment)}/obtener-colores-prenda/${prendaId}${qsLectura}`).then(r => r.json()),
+                fetch(`/insumos/materiales/${encodeURIComponent(pedidoSegment)}/obtener-ancho-metraje-prenda/${prendaId}${qsLectura}`).then(r => r.json())
+            ]);
+        })
         .then(([coloresData, datosData]) => {
             console.log('[abrirModalAnchoMetraje] Datos cargados:', { coloresData, datosData });
             
@@ -144,6 +151,7 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
             
             // Ocultar loading
             document.getElementById('anchoMetrajeLoading').classList.add('hidden');
+        })
         })
         .catch(error => {
             console.error('[abrirModalAnchoMetraje] Error al cargar datos:', error);
