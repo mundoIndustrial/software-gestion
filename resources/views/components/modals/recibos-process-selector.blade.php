@@ -1947,6 +1947,28 @@
                 throw new Error('La prenda no tiene recibos asociados para devolver.');
             }
 
+            if (typeof Swal !== 'undefined') {
+                const confirmacionExcepcional = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Acción para casos excepcionales',
+                    html: `<p style="margin:0 0 8px 0; color:#4b5563;">Esta opción se usa solo en situaciones especiales.</p><p style="margin:0; color:#6b7280; font-size:13px;">La prenda será devuelta a la asesora para que la corrija y continúe el proceso.</p>`,
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, devolver prenda',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#b91c1c',
+                    reverseButtons: true,
+                });
+
+                if (!confirmacionExcepcional.isConfirmed) {
+                    return;
+                }
+            } else {
+                const confirmar = confirm('Este botón es para casos excepcionales. La prenda será devuelta a la asesora para que la corrija. ¿Deseas continuar?');
+                if (!confirmar) {
+                    return;
+                }
+            }
+
             let motivo = '';
             if (typeof Swal === 'undefined') {
                 const motivoFallback = prompt(`Ingresa el motivo para devolver la prenda "${prenda.nombre || prendaId}":`);
