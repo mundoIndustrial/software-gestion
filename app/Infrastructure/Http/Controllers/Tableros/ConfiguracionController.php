@@ -438,12 +438,14 @@ class ConfiguracionController extends Controller
         }
 
         try {
+            $sessionTimeZone = $this->getDatabaseSessionTimeZone();
+
             fwrite($handle, "-- Backup de la base de datos: {$database}\n");
             fwrite($handle, "-- Fecha: " . date('Y-m-d H:i:s') . "\n");
             fwrite($handle, "-- Generado por Mundo Industrial\n\n");
             fwrite($handle, "SET FOREIGN_KEY_CHECKS=0;\n");
             fwrite($handle, "SET SQL_MODE = \"NO_AUTO_VALUE_ON_ZERO\";\n");
-            fwrite($handle, "SET time_zone = \"+00:00\";\n\n");
+            fwrite($handle, "SET time_zone = '{$sessionTimeZone}';\n\n");
 
             $tables = DB::select('SHOW TABLES');
             $tableKey = 'Tables_in_' . $database;
@@ -500,5 +502,13 @@ class ConfiguracionController extends Controller
         }
 
         return "'" . addslashes((string) $value) . "'";
+    }
+
+    private function getDatabaseSessionTimeZone(): string
+    {
+        $timezone = DB::selectOne('SELECT @@session.time_zone as tz');
+        $tz = $timezone->tz ?? 'SYSTEM';
+
+        return $tz === 'SYSTEM' ? 'SYSTEM' : (string) $tz;
     }
 }
