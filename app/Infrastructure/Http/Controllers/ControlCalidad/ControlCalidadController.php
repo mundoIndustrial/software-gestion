@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ConsecutivoReciboPedido;
 use App\Models\ProcesoPrenda;
 use App\Models\PrendaReciboCompletado;
+use App\Models\PrendaPedidoTalla;
 use App\Models\ReciboPorPartes;
 use App\Models\PedidoProduccion;
 use App\Application\Operario\UseCases\GetPedidoDataOperarioUseCase;
@@ -331,18 +332,37 @@ class ControlCalidadController extends Controller
             ];
         });
 
-        // Obtener los consecutivos_original de los recibos que tienen parciales
-        $consecutivosOriginalesConParciales = $prendasConRecibos
-            ->filter(fn ($item) => $item['tiene_parciales'] ?? false)
-            ->flatMap(fn ($item) => $item['recibos'] ?? [])
-            ->pluck('consecutivo_actual')
-            ->toArray();
+        // Regla UI: si existe al menos un parcial visible en C.C. para un recibo original,
+        // ocultar la tarjeta del recibo original y mostrar solo las tarjetas parciales.
+        $llavesOriginalConParcialVisible = $parcialesConRecibos
+            ->map(function ($parcial) {
+                $pedidoId = (int) ($parcial['pedido_id'] ?? 0);
+                $prendaId = (int) ($parcial['prenda_id'] ?? 0);
+                $consecutivoOriginal = trim((string) ($parcial['recibos'][0]['consecutivo_inicial'] ?? ''));
 
-        // Filtrar parciales: excluir aquellos cuyo consecutivo_original ya está siendo mostrado en la lista
-        $parcialesConRecibos = $parcialesConRecibos->filter(function ($parcial) use ($consecutivosOriginalesConParciales) {
-            $consecutivoOriginal = $parcial['recibos'][0]['consecutivo_inicial'] ?? null;
-            return !in_array($consecutivoOriginal, $consecutivosOriginalesConParciales);
-        })->values();
+                if ($pedidoId <= 0 || $prendaId <= 0 || $consecutivoOriginal === '') {
+                    return null;
+                }
+
+                return "{$pedidoId}|{$prendaId}|{$consecutivoOriginal}";
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if (!empty($llavesOriginalConParcialVisible)) {
+            $prendasConRecibos = $prendasConRecibos
+                ->filter(function ($item) use ($llavesOriginalConParcialVisible) {
+                    $pedidoId = (int) ($item['pedido_id'] ?? 0);
+                    $prendaId = (int) ($item['prenda_id'] ?? 0);
+                    $consecutivoActual = trim((string) ($item['recibos'][0]['consecutivo_actual'] ?? ''));
+                    $llave = "{$pedidoId}|{$prendaId}|{$consecutivoActual}";
+
+                    return !in_array($llave, $llavesOriginalConParcialVisible, true);
+                })
+                ->values();
+        }
 
         $prendasConRecibos = $prendasConRecibos
             ->concat($parcialesConRecibos)
@@ -934,13 +954,44 @@ class ControlCalidadController extends Controller
                 ->distinct('numero_recibo_parcial')
                 ->count('numero_recibo_parcial');
 
-        $todosParcialesEnEntrega = $parcialesEnEntrega >= $totalParciales;
+        // Regla estricta: el recibo original solo puede pasar a Entrega
+        // cuando TODOS los parciales asociados estén completados en C.C.
+        $parcialesCompletadosEnCC = DB::table('prenda_recibo_completado')
+            ->where('area', 'Control de Calidad')
+            ->whereIn('id_parcial', $parcialesRelacionados->pluck('id')->all())
+            ->distinct()
+            ->count('id_parcial');
+
+        // Validar cobertura real del recibo original por cantidades de tallas:
+        // la suma de tallas registradas en todas las partes debe cubrir el total
+        // de tallas de la prenda original.
+        $cantidadTotalPrendaOriginal = PrendaPedidoTalla::query()
+            ->where('prenda_pedido_id', (int) $parcial->prenda_pedido_id)
+            ->with('coloresAsignados')
+            ->get()
+            ->sum(fn (PrendaPedidoTalla $talla) => (int) $talla->obtenerCantidadTotal());
+
+        $cantidadTotalParcializada = $parcialesRelacionados->isEmpty()
+            ? 0
+            : (int) DB::table('recibos_por_partes_tallas')
+                ->whereIn('recibo_por_partes_id', $parcialesRelacionados->pluck('id')->all())
+                ->sum('cantidad');
+
+        $coberturaCompletaPorCantidades = $cantidadTotalPrendaOriginal > 0
+            && $cantidadTotalParcializada >= $cantidadTotalPrendaOriginal;
+
+        $todosParcialesEnEntrega = $parcialesEnEntrega >= $totalParciales
+            && $parcialesCompletadosEnCC >= $totalParciales
+            && $coberturaCompletaPorCantidades;
 
         $consecutivoOriginalNum = (int) $parcial->consecutivo_original;
         $queryReciboPadre = ConsecutivoReciboPedido::query()
             ->where('pedido_produccion_id', $parcial->pedido_produccion_id)
+            ->where('prenda_id', (int) $parcial->prenda_pedido_id)
             ->where('consecutivo_actual', $consecutivoOriginalNum)
             ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim((string) $parcial->tipo_recibo))]);
+
+        $reciboPadre = (clone $queryReciboPadre)->first();
 
         $queryProcesoEntregaPadre = ProcesoPrenda::query()
             ->where('numero_pedido', $numeroPedido)
@@ -974,7 +1025,13 @@ class ControlCalidadController extends Controller
             return true;
         }
 
-        $queryReciboPadre->update(['area' => 'Control Calidad']);
+        // Si el recibo padre fue devuelto manualmente a Costura,
+        // no debemos sobrescribirlo al sincronizar parciales.
+        $areaPadreActual = strtolower(trim((string) ($reciboPadre?->area ?? '')));
+        if ($areaPadreActual !== 'costura') {
+            $queryReciboPadre->update(['area' => 'Control Calidad']);
+        }
+
         $queryProcesoEntregaPadre->delete();
         
         return false;
