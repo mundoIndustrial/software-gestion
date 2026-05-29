@@ -21,7 +21,7 @@
  * Detecta si es prenda combinada (multiples colores) o normal
  * El usuario puede elegir guardar normal o por color
  */
-function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroPedido = null, tipoRecibo = 'COSTURA') {
+function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroPedido = null, tipoRecibo = 'COSTURA', numeroReciboInicial = null) {
     const modal = document.getElementById('modalAnchoMetraje');
     if (!modal) {
         console.error('[abrirModalAnchoMetraje] Modal no encontrado: modalAnchoMetraje');
@@ -44,7 +44,16 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
         return;
     }
     
-    const obtenerNumeroRecibo = () => fetch(`/insumos/materiales/${encodeURIComponent(pedidoSegment)}/obtener-recibo-prenda/${prendaId}${qsBase}`)
+    const numeroReciboForzado = Number(numeroReciboInicial);
+    const tieneNumeroReciboForzado = Number.isFinite(numeroReciboForzado) && numeroReciboForzado > 0;
+
+    const obtenerNumeroRecibo = () => {
+        if (tieneNumeroReciboForzado) {
+            document.getElementById('anchoMetrajeRecibo').textContent = String(numeroReciboForzado);
+            return Promise.resolve(numeroReciboForzado);
+        }
+
+        return fetch(`/insumos/materiales/${encodeURIComponent(pedidoSegment)}/obtener-recibo-prenda/${prendaId}${qsBase}`)
         .then(r => r.json())
         .then(data => {
             const recibido = data?.success && data?.recibo ? Number(data.recibo) : 0;
@@ -57,12 +66,14 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
             document.getElementById('anchoMetrajeRecibo').textContent = '-';
             return null;
         });
+    };
     
     // Guardar pedido y prenda en el modal para usarlos despues
     modal.dataset.pedido = pedidoSegment;
     modal.dataset.prendaId = prendaId;
     modal.dataset.prendaBodegaId = prendaBodegaId || '';
     modal.dataset.tipoRecibo = tipoRecibo || 'COSTURA';
+    modal.dataset.numeroRecibo = tieneNumeroReciboForzado ? String(numeroReciboForzado) : '';
 
     // Limpiar inputs
     document.getElementById('anchoInput').value = '';
@@ -798,7 +809,7 @@ function confirmarEliminarAnchoMetraje() {
             // Recargar el modal (vacio)
             setTimeout(() => {
                 cerrarModalAnchoMetraje();
-                abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId, pedido, tipoRecibo);
+                abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId, pedido, tipoRecibo, modal.dataset.numeroRecibo || null);
             }, 800);
         } else {
             showToast('Error al eliminar los datos: ' + (data.message || ''), 'error');

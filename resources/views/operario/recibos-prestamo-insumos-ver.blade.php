@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="{{ asset('css/order-detail-modal-mobile.css') }}" media="screen and (max-width: 768px)">
 <link rel="stylesheet" href="{{ asset('css/print-order-detail-modal.css') }}" media="print">
 <style>
-    #mobile-numero-pedido { top: 120px !important; right: 12px !important; }
+    #mobile-numero-pedido { top: 152px !important; right: 12px !important; }
 
     .ver-pedido-fullscreen {
         position: fixed;
@@ -80,6 +80,21 @@
         padding: 1rem;
     }
 
+    /* Desktop: evitar compresión del recibo */
+    .pedido-modal-section .order-detail-modal-container {
+        transform: none !important;
+        min-height: auto !important;
+        width: 100% !important;
+        max-width: 980px !important;
+        padding: 1rem !important;
+    }
+
+    .pedido-modal-section .order-detail-card {
+        width: 764px !important;
+        max-width: 764px !important;
+        margin: 0 auto !important;
+    }
+
     .fotos-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -120,6 +135,10 @@
         .pedido-content { padding: 0; }
         .pedido-modal-section { padding: 0; }
         .tab-btn { font-size: .75rem; }
+        .pedido-modal-section .order-detail-card {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
         #order-descripcion {
             position: relative;
             top: auto;

@@ -539,8 +539,9 @@
                     const prendaId = btn.getAttribute('data-prenda-id');
                     const prendaBodegaId = btn.getAttribute('data-prenda-bodega-id');
                     const numeroPedido = btn.getAttribute('data-numero-pedido');
+                    const consecutivo = btn.getAttribute('data-consecutivo');
                     const tipoRecibo = btn.getAttribute('data-tipo-recibo');
-                    safeCall('abrirModalAnchoMetraje', [pedidoProduccionId, prendaId, prendaBodegaId, numeroPedido, tipoRecibo], 'abrirModalAnchoMetraje no esta disponible');
+                    safeCall('abrirModalAnchoMetraje', [pedidoProduccionId, prendaId, prendaBodegaId, numeroPedido, tipoRecibo, consecutivo], 'abrirModalAnchoMetraje no esta disponible');
                     safeCall('cerrarDropdownAcciones', [], 'cerrarDropdownAcciones no esta disponible');
                     break;
                 }
