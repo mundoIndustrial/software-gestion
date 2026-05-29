@@ -54,7 +54,13 @@ class OperarioRecibosPrestamoController extends Controller
             ->select('cantidad', 'descripcion', 'orden_fila')
             ->where('recibo_prestamo_insumo_id', $id)
             ->orderBy('orden_fila')
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                $cantidadRaw = (float) $item->cantidad;
+                $esEntero = fmod($cantidadRaw, 1.0) == 0.0;
+                $item->cantidad = $esEntero ? (int) $cantidadRaw : $cantidadRaw;
+                return $item;
+            });
 
         return view('operario.recibos-prestamo-insumos-ver', [
             'recibo' => $recibo,

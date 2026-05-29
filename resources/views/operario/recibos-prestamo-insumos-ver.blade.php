@@ -176,7 +176,7 @@
         <div id="tab-orden" class="tab-content active">
             <div class="pedido-modal-section">
                 <div class="order-detail-modal-container order-detail-modal-container--mobile-full" style="max-width: 100%; padding: 0.5rem; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; background: transparent;">
-                    <div class="order-detail-card order-detail-card--mobile-full" style="position: relative; width: 100%; max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <div class="order-detail-card order-detail-card--mobile-full" style="position: relative; width: 100%; max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); min-height: auto; display: flex; flex-direction: column; padding-bottom: 120px;">
                         <img src="{{ asset('images/logo2.png') }}" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
 
                         <div id="order-date" class="order-date">
@@ -188,7 +188,7 @@
                             </div>
                         </div>
 
-                        <div id="order-descripcion" class="order-descripcion" style="margin-bottom: 20px;">
+                        <div id="order-descripcion" class="order-descripcion" style="margin-bottom: 0;">
                             <div id="mobile-descripcion">
                                 <div class="prenda-item" style="margin-bottom: 16px; line-height: 1.4; font-size: 0.75rem; color: #333;">
                                     <strong style="font-size: 13.4px;">COSTURERO - <span style="font-weight: 700;">{{ $recibo->nombre_costurero }}</span></strong>
@@ -199,9 +199,9 @@
                                             <div style="width: 80px; text-align: right;">CANTIDAD</div>
                                         </div>
                                         @forelse($items as $item)
-                                            <div style="display: flex; gap: 1rem; margin-bottom: 4px; font-size: 11px;">
+                                            <div style="display: flex; gap: 1rem; margin-bottom: 4px; font-size: 11px; border: 1px solid #d1d5db; padding: 6px 8px; border-radius: 4px;">
                                                 <div style="flex: 1;">{{ $item->descripcion }}</div>
-                                                <div style="width: 80px; text-align: right;">{{ number_format((float) $item->cantidad, 2, ',', '.') }}</div>
+                                                <div style="width: 80px; text-align: right;">{{ $item->cantidad }}</div>
                                             </div>
                                         @empty
                                             <span style="display:block; color:#64748b;">Sin items registrados.</span>
@@ -211,7 +211,22 @@
                             </div>
                         </div>
 
-                        <h2 class="receipt-title" id="receipt-title-mobile">RECIBO PRESTAMO DE INSUMOS</h2>
+                        <table style="width: 100%; border-collapse: collapse; margin-top: auto; border: 1px solid #d1d5db; position: absolute; bottom: 0; left: 0; right: 0;">
+                            <tbody>
+                                <tr>
+                                    <td style="flex: 1; border: 1px solid #d1d5db; padding: 12px 8px; text-align: center; width: 50%;">
+                                        <div style="font-weight: 700; font-size: 10px; color: #374151; margin-bottom: 30px;">FIRMA MENSAJERO</div>
+                                        <div style="height: 1px;"></div>
+                                    </td>
+                                    <td style="flex: 1; border: 1px solid #d1d5db; padding: 12px 8px; text-align: center; width: 50%;">
+                                        <div style="font-weight: 700; font-size: 10px; color: #374151; margin-bottom: 30px;">FIRMA COSTURERO</div>
+                                        <div style="height: 1px;"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h2 class="receipt-title" id="receipt-title-mobile">RECIBO PRESTAMO<br>DE INSUMOS</h2>
                         <div class="pedido-number" id="mobile-numero-pedido">#{{ $recibo->numero_orden }}</div>
                     </div>
                 </div>
