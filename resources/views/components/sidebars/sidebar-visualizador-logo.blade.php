@@ -56,6 +56,19 @@
                 </li>
             </ul>
         </div>
+
+        <div class="menu-section">
+            <span class="menu-section-title">Supervisión</span>
+            <ul class="menu-list" role="navigation">
+                <li class="menu-item">
+                    <a href="{{ route('visualizador-logo.pedidos-visualizacion') }}"
+                       class="menu-link {{ request()->routeIs('visualizador-logo.pedidos-visualizacion') ? 'active' : '' }}">
+                        <span class="material-symbols-rounded">visibility</span>
+                        <span class="menu-label">Ver Pedidos</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
     </div>
 
     <div class="sidebar-footer">

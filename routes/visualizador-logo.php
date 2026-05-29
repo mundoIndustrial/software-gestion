@@ -35,6 +35,11 @@ Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_prod
     Route::get('/disenos-logo', [VisualizadorLogoController::class, 'disenosLogo'])->name('disenos-logo');
     Route::get('/disenos-logo/data', [VisualizadorLogoController::class, 'disenosLogoData'])->name('disenos-logo.data');
 
+    // Visualización de Pedidos (solo lectura)
+    Route::get('/pedidos-visualizacion', [VisualizadorLogoController::class, 'pedidosVisualizacion'])->name('pedidos-visualizacion');
+    Route::get('/pedidos-visualizacion/data', [VisualizadorLogoController::class, 'pedidosVisualizacionData'])->name('pedidos-visualizacion.data');
+    Route::get('/pedidos-visualizacion/{pedidoId}/datos', [VisualizadorLogoController::class, 'pedidoVisualizacionDatos'])->name('pedidos-visualizacion.datos');
+
     // Disenos adjuntos del recibo (solo diseñador-logos/admin)
     Route::post('/pedidos-logo/disenos', [DisenosLogoPedidoController::class, 'store'])
         ->middleware('role:admin,diseñador-logos,visualizador_cotizaciones_logo')

@@ -4,12 +4,22 @@ namespace App\Infrastructure\Http\Controllers\VisualizadorLogo;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cotizacion;
+use App\Models\PedidoProduccion;
+use App\Application\SupervisorPedidos\UseCases\ListOrdersUseCase;
+use App\Application\SupervisorPedidos\DTOs\ListOrdersRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\View;
 
 final class VisualizadorLogoController extends Controller
 {
+    private ListOrdersUseCase $listOrdersUseCase;
+
+    public function __construct(ListOrdersUseCase $listOrdersUseCase)
+    {
+        $this->listOrdersUseCase = $listOrdersUseCase;
+    }
     public function dashboard()
     {
         return view('visualizador-logo.dashboard');
@@ -103,6 +113,83 @@ final class VisualizadorLogoController extends Controller
     public function disenosLogo()
     {
         return view('visualizador-logo.disenos-logo');
+    }
+
+    public function pedidosVisualizacion()
+    {
+        return view('visualizador-logo.pedidos-visualizacion');
+    }
+
+    public function pedidosVisualizacionData(Request $request)
+    {
+        try {
+            $params = $request->query();
+            $params['user_id'] = $request->user()?->id;
+
+            $response = $this->listOrdersUseCase->execute(new ListOrdersRequest($params));
+            
+            // Obtener los datos de la respuesta
+            $ordenes = $response->getOrdenes();
+            $estados = $response->getEstados();
+            $pedidosSeleccionados = $response->getPedidosSeleccionados();
+
+            // Convertir el paginator a array incluyendo información de paginación
+            $ordenesArray = [
+                'data' => $ordenes->items(),
+                'current_page' => $ordenes->currentPage(),
+                'last_page' => $ordenes->lastPage(),
+                'per_page' => $ordenes->perPage(),
+                'total' => $ordenes->total(),
+                'from' => $ordenes->firstItem(),
+                'to' => $ordenes->lastItem(),
+            ];
+
+            return response()->json([
+                'success' => true,
+                'ordenes' => $ordenesArray,
+                'estados' => $estados,
+                'pedidosSeleccionados' => $pedidosSeleccionados,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('[VisualizadorLogo] Error en pedidosVisualizacionData: ' . $e->getMessage());
+            Log::error('[VisualizadorLogo] Stack trace: ' . $e->getTraceAsString());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cargar los pedidos',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function pedidoVisualizacionDatos(Request $request, $pedidoId)
+    {
+        try {
+            $pedido = PedidoProduccion::with([
+                'asesora:id,name',
+                'cliente:id,nombre',
+                'prendas',
+            ])->findOrFail($pedidoId);
+
+            return response()->json([
+                'success' => true,
+                'orden' => [
+                    'id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cliente' => $pedido->cliente?->nombre ?? $pedido->cliente,
+                    'estado' => $pedido->estado,
+                    'forma_de_pago' => $pedido->forma_de_pago,
+                    'fecha_pedido' => $pedido->created_at,
+                    'asesora' => $pedido->asesora?->name,
+                    'prendas_count' => $pedido->prendas->count(),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('[VisualizadorLogo] Error en pedidoVisualizacionDatos: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cargar el pedido',
+            ], 500);
+        }
     }
 
     public function disenosLogoData(Request $request)

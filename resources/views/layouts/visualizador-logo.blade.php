@@ -21,7 +21,7 @@
                 <div class="search-container">
                     <div class="search-input-wrapper">
                         <i class="fas fa-search search-icon"></i>
-                        <input type="text" id="search-input" placeholder="Buscar por cliente o número de cotización..." class="search-input">
+                        <input type="text" id="search-input" placeholder="Buscar por cliente o número de pedido..." class="search-input">
                         <button id="clear-search" class="clear-search-btn" style="display: none;">
                             <i class="fas fa-times"></i>
                         </button>
