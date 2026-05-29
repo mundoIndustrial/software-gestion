@@ -366,8 +366,21 @@ class ControlCalidadController extends Controller
 
         $prendasConRecibos = $prendasConRecibos
             ->concat($parcialesConRecibos)
-            ->sortBy(fn ($item) => $item['fecha_creacion'] ?? now())
             ->values();
+
+        if ($activeTab === 'REFLECTIVO') {
+            $prendasConRecibos = $prendasConRecibos
+                ->sortBy(function ($item) {
+                    $consecutivo = (string) ($item['recibos'][0]['consecutivo_actual'] ?? '');
+                    $consecutivo = str_replace(',', '.', trim($consecutivo));
+                    return is_numeric($consecutivo) ? (float) $consecutivo : INF;
+                })
+                ->values();
+        } else {
+            $prendasConRecibos = $prendasConRecibos
+                ->sortBy(fn ($item) => $item['fecha_creacion'] ?? now())
+                ->values();
+        }
 
         return view('control-calidad.dashboard', [
             'usuario' => $usuario,
