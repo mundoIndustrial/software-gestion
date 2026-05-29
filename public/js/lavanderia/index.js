@@ -10,6 +10,7 @@ import { MovementsHandler } from './movements-handler.js';
 import { SignatureHandler } from './signature-handler.js';
 import { RegistrationHandler } from './registration-handler.js';
 import { MultiReceiptHandler } from './multi-receipt-handler.js';
+import { ManualPrendaHandler } from './manual-prenda-handler.js';
 
 class LavanderiaManager {
     constructor() {
@@ -22,9 +23,10 @@ class LavanderiaManager {
         this.searchHandler = new SearchHandler(this.apiSearchUrl);
         this.tallasHandler = new TallasHandler();
         this.multiReceiptHandler = new MultiReceiptHandler();
+        this.manualPrendaHandler = new ManualPrendaHandler();
         this.movementsHandler = new MovementsHandler(this.apiSearchUrl);
         this.signatureHandler = new SignatureHandler(this.apiSearchUrl);
-        this.registrationHandler = new RegistrationHandler(this.apiSearchUrl, this.tallasHandler, this.multiReceiptHandler);
+        this.registrationHandler = new RegistrationHandler(this.apiSearchUrl, this.tallasHandler, this.multiReceiptHandler, this.manualPrendaHandler);
         
         this.init();
     }
@@ -88,6 +90,40 @@ class LavanderiaManager {
             btnRegistrar.addEventListener('click', () => this.registrationHandler.registrarSalida());
         } else {
             console.warn('[LavanderiaManager] btnRegistrarSalida no encontrado');
+        }
+
+        // Botón agregar prenda manual
+        const btnAgregarPrendaManual = document.getElementById('btnAgregarPrendaManual');
+        if (btnAgregarPrendaManual) {
+            btnAgregarPrendaManual.addEventListener('click', () => {
+                const form = document.getElementById('formAgregarPrendaManual');
+                if (form) {
+                    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+                }
+            });
+        }
+
+        // Botón cerrar formulario prenda manual
+        const btnCerrarFormPrenda = document.getElementById('btnCerrarFormPrenda');
+        if (btnCerrarFormPrenda) {
+            btnCerrarFormPrenda.addEventListener('click', () => {
+                const form = document.getElementById('formAgregarPrendaManual');
+                if (form) {
+                    form.style.display = 'none';
+                }
+                const inputDescripcion = document.getElementById('inputDescripcionPrenda');
+                if (inputDescripcion) inputDescripcion.value = '';
+                const selectGeneroPrendaManual = document.getElementById('selectGeneroPrendaManual');
+                if (selectGeneroPrendaManual) selectGeneroPrendaManual.value = '';
+            });
+        }
+
+        // Botón agregar tallas manual
+        const btnAgregarTallasManual = document.getElementById('btnAgregarTallasManual');
+        if (btnAgregarTallasManual) {
+            btnAgregarTallasManual.addEventListener('click', () => {
+                this.registrationHandler.agregarPrendaManual();
+            });
         }
 
         // Firma - Limpiar

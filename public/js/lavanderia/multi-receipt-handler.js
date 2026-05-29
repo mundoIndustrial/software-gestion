@@ -28,10 +28,10 @@ class MultiReceiptHandler {
 
         if (recibo.tipo_recibo_original === 'CORTE-PARA-BODEGA') {
             // Para BODEGA, obtener prenda_bodega_id
-            prendaBodegaId = recibo.prendaBodega?.id || null;
+            prendaBodegaId = recibo.prenda_bodega_id || recibo.prendaBodega?.id || null;
         } else {
             // Para COSTURA, obtener prenda_id
-            prendaId = recibo.prenda?.id || null;
+            prendaId = recibo.prenda_id || recibo.prenda?.id || null;
         }
 
         this.selectedRecibos.push({

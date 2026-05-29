@@ -119,19 +119,70 @@
                 </div>
             </div>
 
-            <!-- Recibos Seleccionados -->
-            <div style="margin-top: 24px;">
-                <label class="form-label">Recibos Seleccionados</label>
-                <div id="recibosSeleccionadosContainer" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; min-height: 100px; background: #f8fafc;">
-                    <p style="color: #94a3b8; text-align: center; margin: 0;">No hay recibos seleccionados</p>
+            <!-- Opción: Agregar Prenda Manual -->
+            <div style="margin-top: 16px; display: flex; gap: 8px;">
+                <button type="button" class="btn btn-secondary" id="btnAgregarPrendaManual" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span class="material-symbols-rounded">add</span>
+                    Agregar Prenda Manual
+                </button>
+            </div>
+
+            <!-- Formulario: Agregar Prenda Manual (Oculto) -->
+            <div id="formAgregarPrendaManual" style="display: none; margin-top: 24px; padding: 16px; background: #f0f9ff; border: 1px solid #bfdbfe; border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <label class="form-label" style="margin: 0;">Agregar Prenda Manual</label>
+                    <button type="button" class="btn-close-form" id="btnCerrarFormPrenda" style="background: none; border: none; color: #64748b; cursor: pointer; font-size: 20px; padding: 0;">
+                        <span class="material-symbols-rounded">close</span>
+                    </button>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Género</label>
+                    <select id="selectGeneroPrendaManual" class="form-select">
+                        <option value="">Selecciona un género</option>
+                        <option value="DAMA">Dama</option>
+                        <option value="CABALLERO">Caballero</option>
+                        <option value="UNISEX">Unisex</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Descripción de la Prenda</label>
+                    <textarea 
+                        id="inputDescripcionPrenda" 
+                        class="form-input" 
+                        placeholder="Ej: Camiseta blanca, Pantalón azul, etc..."
+                        style="resize: vertical; min-height: 60px; font-family: inherit;"
+                    ></textarea>
+                </div>
+
+                <button type="button" class="btn btn-primary" id="btnAgregarTallasManual" style="width: 100%; margin-top: 12px;">
+                    <span class="material-symbols-rounded">check_circle</span>
+                    Agregar Tallas
+                </button>
+            </div>
+
+            <!-- Tallas por Recibo (Modal de Selección) -->
+            <div id="tallasSection" style="display: none; margin-top: 24px;">
+                <label class="form-label">Seleccionar Tallas</label>
+                <div id="tallasContenedor" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; background: #f8fafc;">
+                    <!-- Se llena dinámicamente -->
                 </div>
             </div>
 
-            <!-- Tallas por Recibo -->
-            <div id="tallasSection" style="display: none; margin-top: 24px;">
-                <label class="form-label">Prendas por Talla</label>
-                <div id="tallasContenedor" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; background: #f8fafc;">
-                    <!-- Se llena dinámicamente -->
+            <!-- Recibos Seleccionados con Tallas -->
+            <div style="margin-top: 24px;">
+                <label class="form-label">Recibos Agregados</label>
+                <div id="recibosSeleccionadosContainer" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; min-height: 100px; background: #f8fafc;">
+                    <p style="color: #94a3b8; text-align: center; margin: 0;">No hay recibos agregados</p>
+                </div>
+            </div>
+
+            <!-- Prendas Manuales Agregadas -->
+            <div style="margin-top: 24px;">
+                <label class="form-label">Prendas Manuales Agregadas</label>
+                <div id="prendasManualContainer" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; min-height: 100px; background: #f8fafc;">
+                    <p style="color: #94a3b8; text-align: center; margin: 0;">No hay prendas manuales agregadas</p>
                 </div>
             </div>
 

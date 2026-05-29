@@ -13,7 +13,7 @@ class LavanderiaMovimientoTalla extends Model
         'lavanderia_movimiento_id',
         'prenda_id',
         'prenda_bodega_id',
-        'tipo_prenda',
+        'prenda_agregada_id',
         'talla',
         'genero',
         'color',
@@ -51,16 +51,28 @@ class LavanderiaMovimientoTalla extends Model
     }
 
     /**
+     * Relación: Una talla pertenece a una prenda agregada manualmente
+     */
+    public function prendaAgregada(): BelongsTo
+    {
+        return $this->belongsTo(LavanderiaPrendaAgregada::class, 'prenda_agregada_id');
+    }
+
+    /**
      * Obtiene el nombre de la prenda según el tipo
      */
     public function getPrendaNombre(): string
     {
-        if ($this->tipo_prenda === 'BODEGA' && $this->prendaBodega) {
+        if ($this->prenda_bodega_id && $this->prendaBodega) {
             return $this->prendaBodega->nombre ?? 'Sin prenda';
         }
         
-        if ($this->tipo_prenda === 'COSTURA' && $this->prenda) {
+        if ($this->prenda_id && $this->prenda) {
             return $this->prenda->nombre_prenda ?? 'Sin prenda';
+        }
+
+        if ($this->prenda_agregada_id && $this->prendaAgregada) {
+            return $this->prendaAgregada->descripcion ?? 'Sin prenda';
         }
         
         return 'Sin prenda';

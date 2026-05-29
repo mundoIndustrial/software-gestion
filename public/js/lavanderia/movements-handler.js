@@ -192,6 +192,85 @@ class MovementsHandler {
         const tipoMovimiento = m.tipoMovimiento || 'SALIDA';
         const tipoMovimientoBadgeClass = tipoMovimiento === 'ENTRADA' ? 'badge-entrada' : 'badge-salida';
         const tipoMovimientoIcon = tipoMovimiento === 'ENTRADA' ? 'arrow_downward' : 'arrow_upward';
+
+        const prendasManualesHtml = Array.isArray(m.prendasManuales) && m.prendasManuales.length > 0
+            ? m.prendasManuales.map(prenda => {
+                const generoLabel = prenda.genero || 'Sin género';
+                const tallasPorGenero = Array.isArray(prenda.tallas) && prenda.tallas.length > 0
+                    ? Object.values(prenda.tallas.reduce((acc, talla) => {
+                        const genero = (talla.genero || generoLabel || 'Sin género').toString();
+                        if (!acc[genero]) {
+                            acc[genero] = {
+                                genero,
+                                tallas: []
+                            };
+                        }
+                        acc[genero].tallas.push(talla);
+                        return acc;
+                    }, {}))
+                    : [];
+
+                return `
+                    <div style="
+                        background: #fffbeb;
+                        border: 1px solid #fcd34d;
+                        border-radius: 8px;
+                        padding: 12px;
+                        margin-bottom: 8px;
+                    ">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span style="font-weight: 700; font-size: 14px; color: #1e293b;">
+                                    Prenda Manual
+                                </span>
+                                <span style="font-size: 12px; color: #92400e; font-weight: 600;">
+                                    ${generoLabel}
+                                </span>
+                            </div>
+                            <span style="
+                                background: #f59e0b;
+                                color: white;
+                                padding: 2px 8px;
+                                border-radius: 12px;
+                                font-size: 11px;
+                                font-weight: 600;
+                            ">
+                                MANUAL
+                            </span>
+                        </div>
+                        <div style="font-size: 13px; color: #64748b; margin-bottom: 8px;">
+                            <strong>Descripción:</strong> ${prenda.descripcion}
+                        </div>
+                        ${tallasPorGenero.length > 0
+                            ? tallasPorGenero.map(grupo => `
+                                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #fcd34d;">
+                                    <div style="font-size: 12px; font-weight: 700; color: #92400e; margin-bottom: 8px;">
+                                        ${grupo.genero}
+                                    </div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                        ${grupo.tallas.map(t => `
+                                            <span class="talla-badge" style="
+                                                display: inline-block;
+                                                background: #fef3c7;
+                                                color: #92400e;
+                                                border: 1px solid #f59e0b;
+                                                padding: 4px 8px;
+                                                border-radius: 4px;
+                                                font-size: 12px;
+                                                font-weight: 500;
+                                            ">
+                                                ${t.talla}: ${t.cantidad_enviada}
+                                            </span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `).join('')
+                            : '<span style="color: #94a3b8; font-size: 13px;">Sin tallas</span>'
+                        }
+                    </div>
+                `;
+            }).join('')
+            : '';
         
         // Renderizar múltiples recibos con sus tallas agrupadas
         const recibosHtml = m.recibos.map(recibo => {
@@ -303,6 +382,8 @@ class MovementsHandler {
                     </div>
                 </div>
 
+                ${prendasManualesHtml ? '<div class="card-divider"></div><div class="card-section"><div class="card-label">Prendas manuales (' + m.prendasManuales.length + ')</div><div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">' + prendasManualesHtml + '</div></div>' : ''}
+
                 <div class="card-divider"></div>
 
                 <div class="card-section-row">
@@ -343,11 +424,37 @@ class MovementsHandler {
             return;
         }
 
-        const filteredMovements = this.getFilteredMovements().filter(m => 
-            String(m.recibo).toLowerCase().includes(query.toLowerCase()) ||
-            String(m.cliente).toLowerCase().includes(query.toLowerCase()) ||
-            String(m.prenda).toLowerCase().includes(query.toLowerCase())
-        );
+        const searchTerm = query.toLowerCase();
+        const filteredMovements = this.getFilteredMovements().filter(m => {
+            const recibosText = Array.isArray(m.recibos)
+                ? m.recibos.map(recibo => [
+                    recibo.numero_recibo,
+                    recibo.cliente,
+                    recibo.prenda,
+                    recibo.tipo_recibo_mostrar
+                ].filter(Boolean).join(' ')).join(' ')
+                : '';
+
+            const prendasManualesText = Array.isArray(m.prendasManuales)
+                ? m.prendasManuales.map(prenda => [
+                    prenda.descripcion,
+                    prenda.genero,
+                    prenda.id ? `#${prenda.id}` : ''
+                ].filter(Boolean).join(' ')).join(' ')
+                : '';
+
+            const textoCompleto = [
+                m.id,
+                m.tipoMovimiento,
+                m.estadoFirma,
+                m.novedad,
+                m.fechaMovimiento,
+                recibosText,
+                prendasManualesText
+            ].filter(Boolean).join(' ').toLowerCase();
+
+            return textoCompleto.includes(searchTerm);
+        });
 
         this.renderMovements(filteredMovements);
         

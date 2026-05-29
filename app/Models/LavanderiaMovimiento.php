@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\LavanderiaPrendaAgregada;
 
 class LavanderiaMovimiento extends Model
 {
@@ -38,5 +39,12 @@ class LavanderiaMovimiento extends Model
     {
         return $this->hasMany(LavanderiaMovimientoTalla::class, 'lavanderia_movimiento_id');
     }
-}
 
+    /**
+     * Relación: Un movimiento tiene muchas prendas agregadas manuales
+     */
+    public function prendasAgregadas(): HasMany
+    {
+        return $this->hasMany(LavanderiaPrendaAgregada::class, 'lavanderia_movimiento_id');
+    }
+}
