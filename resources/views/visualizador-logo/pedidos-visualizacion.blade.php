@@ -359,11 +359,6 @@ document.addEventListener('DOMContentLoaded', function() {
         container.style.visibility = 'visible';
         container.style.opacity = '1';
         
-        // Scroll al contenedor de paginación
-        setTimeout(() => {
-            container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 100);
-        
         // Event listeners para paginación
         container.querySelectorAll('.page-link').forEach(link => {
             link.addEventListener('click', function(e) {
