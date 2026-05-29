@@ -108,16 +108,6 @@
         color: #999;
     }
 
-    /* Mantener la descripción en el bloque central del recibo en desktop */
-    #order-descripcion {
-        position: absolute;
-        top: 240px;
-        left: 20px;
-        right: 20px;
-        bottom: 120px;
-        overflow-y: auto;
-    }
-
     @media (max-width: 768px) {
         .order-detail-modal-container--mobile-full {
             padding: 2px !important;
@@ -171,8 +161,8 @@
     <div class="pedido-content">
         <div id="tab-orden" class="tab-content active">
             <div class="pedido-modal-section">
-                <div class="order-detail-modal-container order-detail-modal-container--mobile-full" style="max-width: 100%; padding: 0.5rem; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; background: transparent;">
-                    <div class="order-detail-card order-detail-card--mobile-full" style="position: relative; width: 100%; max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); min-height: auto; display: flex; flex-direction: column; padding-bottom: 120px;">
+                <div class="order-detail-modal-container order-detail-modal-container--mobile-full" style="max-width: 100%; padding: 0.5rem; display: flex; justify-content: center; align-items: flex-start; background: transparent;">
+                    <div class="order-detail-card order-detail-card--mobile-full" style="position: relative; width: 100%; max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; padding-bottom: 120px;">
                         <img src="{{ asset('images/logo2.png') }}" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
 
                         <div id="order-date" class="order-date">
@@ -207,7 +197,7 @@
                             </div>
                         </div>
 
-                        <table style="width: 100%; border-collapse: collapse; margin-top: auto; border: 1px solid #d1d5db; position: absolute; bottom: 0; left: 0; right: 0;">
+                        <table style="width: 100%; border-collapse: collapse; border: 1px solid #d1d5db; position: absolute; bottom: 0; left: 0; right: 0;">
                             <tbody>
                                 <tr>
                                     <td style="flex: 1; border: 1px solid #d1d5db; padding: 12px 8px; text-align: center; width: 50%;">
