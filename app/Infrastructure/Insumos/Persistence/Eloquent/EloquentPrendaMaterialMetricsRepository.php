@@ -160,7 +160,7 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
                 } else {
                     $match['prenda_pedido_id'] = $prendaId;
                 }
-                if (($numeroRecibo ?? 0) > 0) {
+                if ($esBodega && ($numeroRecibo ?? 0) > 0) {
                     $match['numero_recibo'] = $numeroRecibo;
                 }
                 \Log::info('[PrendaMaterialMetricsRepository] upsert ancho_general', [
@@ -191,7 +191,7 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
                 } else {
                     $match['prenda_pedido_id'] = $prendaId;
                 }
-                if (($numeroRecibo ?? 0) > 0) {
+                if ($esBodega && ($numeroRecibo ?? 0) > 0) {
                     $match['numero_recibo'] = $numeroRecibo;
                 }
                 \Log::info('[PrendaMaterialMetricsRepository] upsert metraje_color', [

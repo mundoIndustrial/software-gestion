@@ -152,7 +152,6 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
             // Ocultar loading
             document.getElementById('anchoMetrajeLoading').classList.add('hidden');
         })
-        })
         .catch(error => {
             console.error('[abrirModalAnchoMetraje] Error al cargar datos:', error);
             showToast('Error al cargar los datos', 'error');
