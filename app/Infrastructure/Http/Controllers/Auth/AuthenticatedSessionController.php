@@ -239,6 +239,11 @@ class AuthenticatedSessionController extends Controller
                 return redirect(route('operario.dashboard', absolute: false));
             }
 
+            // Visualizador Ordenes Produccion - Dashboard de operario (solo lectura)
+            if ($roleName === 'visualizador_ordenes_produccion') {
+                return redirect(route('operario.dashboard', absolute: false));
+            }
+
             // Vista Costura - Dashboard de operario
             if ($roleName === 'vista-costura') {
                 return redirect(route('operario.dashboard', absolute: false));

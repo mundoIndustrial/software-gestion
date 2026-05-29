@@ -405,7 +405,7 @@ class OperarioDashboardVistaCosturaService
 
             $ordenarLiderReflectivoPorCreacion = ($usuario?->hasRole('lider-reflectivo') ?? false)
                 && in_array($filtroReciboActual, ['costura', 'reflectivo'], true);
-            $ordenarPorFechaAsignacionProceso = $usuario?->hasAnyRole(['costurero', 'lider-reflectivo', 'administrador-costura']) ?? false;
+            $ordenarPorFechaAsignacionProceso = $usuario?->hasAnyRole(['costurero', 'lider-reflectivo', 'administrador-costura', 'visualizador_ordenes_produccion']) ?? false;
             $ordenarPorFechaCreacion = $usuario?->hasRole('vista-costura') ?? false;
             $ordenarPorFechaAsignacionCorte = $usuario?->hasRole('cortador') ?? false;
 
@@ -503,7 +503,7 @@ class OperarioDashboardVistaCosturaService
         $rolDashboardActual = $usuario?->hasRole('administrador-costura') ? 'administrador-costura'
             : ($usuario?->hasRole('vista-costura') ? 'vista-costura'
                 : ($usuario?->hasRole('costura-reflectivo') ? 'costura-reflectivo'
-                    : ($usuario?->hasRole('lider-reflectivo') ? 'lider-reflectivo'
+                    : (($usuario?->hasRole('lider-reflectivo') || $usuario?->hasRole('visualizador_ordenes_produccion')) ? 'lider-reflectivo'
                         : ($usuario?->hasRole('confeccion-sobremedida') ? 'confeccion-sobremedida'
                             : ($usuario?->hasRole('costurero') ? 'costurero'
                                 : (($usuario?->hasRole('cortador') || $usuario?->hasRole('visualizador_plooter')) ? 'cortador'
@@ -673,7 +673,7 @@ class OperarioDashboardVistaCosturaService
 
             if ($usuario?->hasRole('vista-costura')) {
                 $esReflectivo = $filtroReciboActual === 'reflectivo' ? 'reflectivo' : ($filtroReciboActual === 'bodega' ? 'bodega' : 'costura');
-            } elseif (($usuario?->hasRole('costura-reflectivo')) || ($usuario?->hasRole('lider-reflectivo'))) {
+            } elseif (($usuario?->hasRole('costura-reflectivo')) || ($usuario?->hasRole('lider-reflectivo')) || ($usuario?->hasRole('visualizador_ordenes_produccion'))) {
                 $tiposParaFiltro = [];
                 if ($tieneCostura) {
                     $tiposParaFiltro[] = 'costura';
@@ -692,7 +692,7 @@ class OperarioDashboardVistaCosturaService
             $displayInicial = '';
             if ($usuario?->hasRole('vista-costura')) {
                 $displayInicial = '';
-            } elseif (($usuario?->hasRole('costura-reflectivo')) || ($usuario?->hasRole('lider-reflectivo'))) {
+            } elseif (($usuario?->hasRole('costura-reflectivo')) || ($usuario?->hasRole('lider-reflectivo')) || ($usuario?->hasRole('visualizador_ordenes_produccion'))) {
                 if ($filtroReciboActual === 'reflectivo') {
                     $displayInicial = ($mostrarReflectivoEnFiltro && ($busquedaActiva || !$reflectivoCompletadoEnCard)) ? '' : 'none';
                 } elseif ($filtroReciboActual === 'bodega') {
@@ -774,8 +774,8 @@ class OperarioDashboardVistaCosturaService
                 $encargadoCosturaLider = strtolower(trim((string) ($reciboCosturaFiltroCard['encargado_costura'] ?? '')));
                 $encargadoCosturaEsReflectivo = $encargadoCosturaLider !== '' && $nombresCosturaReflectivo->contains($encargadoCosturaLider);
             }
-            $debeOmitirseEnLiderReflectivo = ($usuario?->hasRole('lider-reflectivo') && $filtroReciboActual === 'costura' && !$mostrarReflectivoEnFiltro && $sinEncargadoCosturaLider)
-                || (($usuario?->hasRole('lider-reflectivo') && $filtroReciboActual === 'costura' && !$mostrarReflectivoEnFiltro && $tieneCostura) && !$encargadoCosturaEsReflectivo);
+            $debeOmitirseEnLiderReflectivo = (($usuario?->hasRole('lider-reflectivo')) && $filtroReciboActual === 'costura' && !$mostrarReflectivoEnFiltro && $sinEncargadoCosturaLider)
+                || ((($usuario?->hasRole('lider-reflectivo')) && $filtroReciboActual === 'costura' && !$mostrarReflectivoEnFiltro && $tieneCostura) && !$encargadoCosturaEsReflectivo);
 
             // Obtener información de distribución del recibo original
             $pedidoId = (int) ($prenda['pedido_id'] ?? $prenda['pedido_id_accion'] ?? 0);

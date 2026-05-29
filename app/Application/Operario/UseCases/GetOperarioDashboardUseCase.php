@@ -391,13 +391,13 @@ class GetOperarioDashboardUseCase
 
                     return $prenda;
                 });
-            } elseif ($busquedaVistaCostura !== '' && ($usuario->hasRole('lider-reflectivo') || $usuario->hasRole('costura-reflectivo'))) {
+            } elseif ($busquedaVistaCostura !== '' && ($usuario->hasRole('lider-reflectivo') || $usuario->hasRole('costura-reflectivo') || $usuario->hasRole('visualizador_ordenes_produccion'))) {
                 $prendasConRecibos = $this->filtrarPrendasPorBusquedaVistaCostura($prendasConRecibos, $busquedaVistaCostura);
             }
 
             if (
                 $filtroRecibo === 'costura'
-                && ($usuario->hasRole('lider-reflectivo') || $usuario->hasRole('costura-reflectivo'))
+                && ($usuario->hasRole('lider-reflectivo') || $usuario->hasRole('costura-reflectivo') || $usuario->hasRole('visualizador_ordenes_produccion'))
             ) {
                 $prendasConRecibos = $this->ordenarPrendasPorCreatedAtCostura($prendasConRecibos);
             }

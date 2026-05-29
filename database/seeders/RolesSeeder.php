@@ -86,6 +86,11 @@ class RolesSeeder extends Seeder
                 'description' => 'Visualizador de Recibos Bordado/Estampado - Solo puede acceder a la vista de recibos bordado y estampado',
                 'requires_credentials' => true,
             ],
+            [
+                'name' => 'visualizador_ordenes_produccion',
+                'description' => 'Visualizador de ordenes de produccion (costura/reflectivo) en modo solo lectura',
+                'requires_credentials' => false,
+            ],
         ];
 
         foreach ($roles as $role) {

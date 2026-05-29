@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
             InventarioTelasSeeder::class, // Seeder para inventario de telas con stock
             EppSeeder::class, // Seeder para EPP con categorías e imágenes
             BordadoRoleSeeder::class, // Seeder para rol de Bordado
+            AddVisualizadorOrdenesProduccionRoleSeeder::class, // Seeder para rol visualizador de ordenes de produccion
         ]);
     }
 }

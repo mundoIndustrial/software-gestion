@@ -177,7 +177,10 @@ class User extends Authenticatable
         }
 
         // Si es string, buscar por nombre en roles usando el accessor (case-insensitive)
-        return $this->roles->pluck('name')->map(fn($name) => strtolower($name))->contains(strtolower($role));
+        $roleName = strtolower((string) $role);
+        $userRoleNames = $this->roles->pluck('name')->map(fn($name) => strtolower($name));
+
+        return $userRoleNames->contains($roleName);
     }
 
     /**

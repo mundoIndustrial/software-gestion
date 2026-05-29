@@ -83,10 +83,11 @@
         : (auth()->user()->hasRole('vista-costura') ? 'vista-costura'
         : (auth()->user()->hasRole('costura-reflectivo') ? 'costura-reflectivo'
         : (auth()->user()->hasRole('lider-reflectivo') ? 'lider-reflectivo'
+        : (auth()->user()->hasRole('visualizador_ordenes_produccion') ? 'lider-reflectivo'
         : (auth()->user()->hasRole('confeccion-sobremedida') ? 'confeccion-sobremedida'
         : (auth()->user()->hasRole('costurero') ? 'costurero'
         : (auth()->user()->hasRole('cortador') || auth()->user()->hasRole('visualizador_plooter') ? 'cortador'
-        : (auth()->user()->hasRole('bodeguero') ? 'bodeguero' : 'default')))))));
+        : (auth()->user()->hasRole('bodeguero') ? 'bodeguero' : 'default'))))))));
 @endphp
 <body data-user-role="{{ $rolOperarioLayout }}" data-module="operario">
     @php

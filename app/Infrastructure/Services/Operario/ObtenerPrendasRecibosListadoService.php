@@ -91,6 +91,25 @@ class ObtenerPrendasRecibosListadoService
             return $item['prenda_id'] . ($parcialId ? '_' . $prefix . $parcialId : '');
         });
 
+        if ($tipoOperario === 'visualizador_ordenes_produccion') {
+            $resultadoFinal = $resultadoFinal->filter(function (array $item) {
+                $recibos = collect($item['recibos'] ?? []);
+                if ($recibos->isEmpty()) {
+                    return false;
+                }
+
+                return $recibos->contains(function (array $recibo) {
+                    $tipoRecibo = strtoupper(trim((string) ($recibo['tipo_recibo'] ?? '')));
+                    if ($tipoRecibo !== 'COSTURA') {
+                        return false;
+                    }
+
+                    $encargado = strtolower(trim((string) ($recibo['encargado_costura'] ?? '')));
+                    return $encargado !== '' && $encargado !== 'sin encargado';
+                });
+            })->values();
+        }
+
         return $this->supportService->ordenarResultadoFinalPorTipoOperario($resultadoFinal, $tipoOperario);
     }
 
@@ -812,6 +831,14 @@ class ObtenerPrendasRecibosListadoService
 
     private function aplicarFiltroAreaFinalPorTipoOperario(Collection $recibos, string $tipoOperario, ?string $filtroRecibo = null): Collection
     {
+        if ($tipoOperario === 'visualizador_ordenes_produccion') {
+            return $recibos->filter(function ($recibo) {
+                $tipoRecibo = strtoupper(trim((string) ($recibo->tipo_recibo ?? '')));
+                $area = strtolower(trim((string) ($recibo->area ?? '')));
+                return $tipoRecibo === 'COSTURA' && $area === 'costura';
+            })->values();
+        }
+
         if ($tipoOperario === 'vista-costura') {
             return $recibos->filter(function ($recibo) {
                 $area = strtolower(trim((string) ($recibo->area ?? '')));

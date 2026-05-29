@@ -75,6 +75,15 @@ class CrearRolesOperariosSeeder extends Seeder
             ]
         );
 
+        // Crear rol Visualizador Ordenes Produccion (solo lectura)
+        Role::firstOrCreate(
+            ['name' => 'visualizador_ordenes_produccion'],
+            [
+                'description' => 'Visualizador de ordenes de produccion (costura/reflectivo) en modo solo lectura',
+                'requires_credentials' => false,
+            ]
+        );
+
         $this->command->info(' Roles de operarios creados exitosamente');
     }
 }

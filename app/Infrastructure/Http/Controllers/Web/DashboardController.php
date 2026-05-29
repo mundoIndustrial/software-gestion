@@ -104,7 +104,7 @@ class DashboardController extends Controller
                 return redirect()->route('cotizaciones.pendientes');
             }
 
-            if ($roleName === 'cortador' || $roleName === 'costurero' || $roleName === 'vista-costura') {
+            if ($roleName === 'cortador' || $roleName === 'costurero' || $roleName === 'vista-costura' || $roleName === 'visualizador_ordenes_produccion') {
                 \Log::info(' Redirigiendo a operario.dashboard');
                 return redirect()->route('operario.dashboard');
             }

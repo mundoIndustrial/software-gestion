@@ -35,6 +35,10 @@ class ObtenerPrendasRecibosSupportService
             $tiposRecibo = ['COSTURA', 'REFLECTIVO'];
         }
 
+        if ($tipoOperario === 'visualizador_ordenes_produccion') {
+            $tiposRecibo = ['COSTURA'];
+        }
+
         if ($filtroRecibo === 'bodega') {
             return ['CORTE-PARA-BODEGA'];
         }
@@ -105,7 +109,7 @@ class ObtenerPrendasRecibosSupportService
             $query->whereIn('area', ['Corte']);
         }
 
-        if (in_array($tipoOperario, ['costurero', 'confeccion-sobremedida', 'costura-reflectivo'], true)) {
+        if (in_array($tipoOperario, ['costurero', 'confeccion-sobremedida', 'costura-reflectivo', 'visualizador_ordenes_produccion'], true)) {
             $query->whereIn('area', ['Costura']);
         }
 
@@ -337,6 +341,10 @@ class ObtenerPrendasRecibosSupportService
     {
         if ($usuario->hasRole('lider-reflectivo')) {
             return 'costura-reflectivo';
+        }
+
+        if ($usuario->hasRole('visualizador_ordenes_produccion')) {
+            return 'visualizador_ordenes_produccion';
         }
 
         if ($usuario->hasRole('costura-reflectivo')) {
