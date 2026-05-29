@@ -166,10 +166,6 @@
             <span class="material-symbols-rounded">description</span>
             LA ORDEN
         </button>
-        <button type="button" class="tab-btn" data-tab="fotos">
-            <span class="material-symbols-rounded">image</span>
-            FOTOS (0)
-        </button>
     </div>
 
     <div class="pedido-content">
@@ -232,35 +228,7 @@
                 </div>
             </div>
         </div>
-
-        <div id="tab-fotos" class="tab-content">
-            <div class="fotos-grid" id="fotos-grid">
-                <div class="empty-fotos">
-                    <span class="material-symbols-rounded">image_not_supported</span>
-                    <p>No hay fotos disponibles para este pedido</p>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const buttons = document.querySelectorAll('.tab-btn');
-        const tabs = document.querySelectorAll('.tab-content');
-
-        buttons.forEach((btn) => {
-            btn.addEventListener('click', function () {
-                const target = this.dataset.tab;
-
-                buttons.forEach((b) => b.classList.remove('active'));
-                tabs.forEach((t) => t.classList.remove('active'));
-
-                this.classList.add('active');
-                const pane = document.getElementById('tab-' + target);
-                if (pane) pane.classList.add('active');
-            });
-        });
-    });
-</script>
 @endsection
