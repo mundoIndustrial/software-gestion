@@ -329,7 +329,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (cliente) cliente.textContent = orden.cliente || 'Sin cliente';
             
             const descripcion = document.querySelector('#descripcion-text');
-            if (descripcion) descripcion.textContent = orden.descripcion || 'Sin descripci?n';
+            if (descripcion) {
+                // Decodificar entidades HTML antes de mostrar
+                const textarea = document.createElement('textarea');
+                textarea.innerHTML = orden.descripcion || 'Sin descripción';
+                const descripcionDecodificada = textarea.value;
+                descripcion.innerHTML = descripcionDecodificada;
+            }
             
             const asesora = document.querySelector('#asesora-value');
             if (asesora) asesora.textContent = orden.asesora || 'Sin asesora';
