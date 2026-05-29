@@ -83,7 +83,7 @@
     </div>
 </div>
 
-<!-- MODAL: REGISTRAR MOVIMIENTO -->
+<!-- MODAL: REGISTRAR MOVIMIENTO (MÚLTIPLES RECIBOS) -->
 <div class="modal" id="modalSalida">
     <div class="modal-content modal-salida-content">
         <div class="modal-header">
@@ -95,6 +95,7 @@
             </button>
         </div>
         <div class="modal-body">
+            <!-- Tipo de Movimiento -->
             <div class="form-group">
                 <label class="form-label">Tipo de Movimiento</label>
                 <select id="selectTipoMovimiento" class="form-select">
@@ -103,58 +104,53 @@
                 </select>
             </div>
 
+            <!-- Búsqueda de Recibos -->
             <div class="form-group">
-                <label class="form-label">Número de Recibo</label>
+                <label class="form-label">Buscar Recibos</label>
                 <div class="search-wrapper">
                     <input 
                         type="text" 
                         id="searchRecibo" 
                         class="form-input search-input-large" 
-                        placeholder="Ejemplo: C-101, B-201..."
+                        placeholder="Busca por número de recibo..."
                         autocomplete="off"
                     >
                     <div class="autocomplete-results"></div>
                 </div>
             </div>
 
-            <!-- Información del Recibo (se muestra después de seleccionar) -->
-            <div id="reciboInfo" style="display: none; margin-top: 20px;">
-                <div class="recibo-info-card">
-                    <div class="info-row">
-                        <span class="info-label">Cliente</span>
-                        <span class="info-value" id="infoCliente">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Prenda a Despachar</span>
-                        <span class="info-value" id="infoPrenda">-</span>
-                    </div>
+            <!-- Recibos Seleccionados -->
+            <div style="margin-top: 24px;">
+                <label class="form-label">Recibos Seleccionados</label>
+                <div id="recibosSeleccionadosContainer" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; min-height: 100px; background: #f8fafc;">
+                    <p style="color: #94a3b8; text-align: center; margin: 0;">No hay recibos seleccionados</p>
                 </div>
-
-                <!-- Selección de Tallas -->
-                <div style="margin-top: 24px;">
-                    <h3 class="form-label" style="margin-bottom: 16px;">Prendas por Talla para la Salida</h3>
-                    <div id="tallasContainer" class="tallas-container">
-                        <!-- Se llena dinámicamente -->
-                    </div>
-                </div>
-
-                <!-- Campo de Novedad -->
-                <div style="margin-top: 24px;">
-                    <label class="form-label">Novedad (Opcional)</label>
-                    <textarea 
-                        id="inputNovedad" 
-                        class="form-input" 
-                        placeholder="Describe cualquier novedad o incidencia..."
-                        style="resize: vertical; min-height: 80px; font-family: inherit;"
-                    ></textarea>
-                </div>
-
-                <!-- Botón Registrar -->
-                <button type="button" class="btn btn-primary" id="btnRegistrarSalida" style="margin-top: 24px; width: 100%;">
-                    <span class="material-symbols-rounded">check_circle</span>
-                    Registrar Movimiento
-                </button>
             </div>
+
+            <!-- Tallas por Recibo -->
+            <div id="tallasSection" style="display: none; margin-top: 24px;">
+                <label class="form-label">Prendas por Talla</label>
+                <div id="tallasContenedor" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; background: #f8fafc;">
+                    <!-- Se llena dinámicamente -->
+                </div>
+            </div>
+
+            <!-- Campo de Novedad -->
+            <div style="margin-top: 24px;">
+                <label class="form-label">Novedad (Opcional)</label>
+                <textarea 
+                    id="inputNovedad" 
+                    class="form-input" 
+                    placeholder="Describe cualquier novedad o incidencia..."
+                    style="resize: vertical; min-height: 80px; font-family: inherit;"
+                ></textarea>
+            </div>
+
+            <!-- Botón Registrar -->
+            <button type="button" class="btn btn-primary" id="btnRegistrarSalida" style="margin-top: 24px; width: 100%;">
+                <span class="material-symbols-rounded">check_circle</span>
+                Registrar Movimiento
+            </button>
         </div>
     </div>
 </div>

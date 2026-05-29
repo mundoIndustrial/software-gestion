@@ -139,26 +139,62 @@ class LavanderiaController extends Controller
     {
         try {
             $movimientos = \App\Models\LavanderiaMovimiento::with([
-                'consecutivoRecibo.pedido',
-                'consecutivoRecibo.prenda',
-                'consecutivoRecibo.prendaBodega',
-                'tallas'
+                'recibos.recibo.pedido',
+                'recibos.recibo.prenda',
+                'recibos.recibo.prendaBodega',
+                'tallas.prenda',
+                'tallas.prendaBodega'
             ])
             ->orderBy('fecha_movimiento', 'desc')
             ->get()
             ->map(function ($movimiento) {
-                // Obtener cliente del pedido de producción
-                $cliente = 'Sin cliente';
-                if ($movimiento->consecutivoRecibo && $movimiento->consecutivoRecibo->pedido) {
-                    $cliente = $movimiento->consecutivoRecibo->pedido->cliente ?? 'Sin cliente';
-                }
+                // Obtener información de los recibos
+                $recibosInfo = $movimiento->recibos->map(function ($reciboMovimiento) {
+                    $recibo = $reciboMovimiento->recibo;
+                    
+                    // Obtener cliente del pedido
+                    $cliente = 'Sin cliente';
+                    if ($recibo && $recibo->pedido) {
+                        $cliente = $recibo->pedido->cliente ?? 'Sin cliente';
+                    }
 
-                // Obtener prenda según el tipo de recibo
-                $prenda = 'Sin prenda';
-                if ($movimiento->tipo_recibo === 'CORTE-PARA-BODEGA') {
-                    $prenda = $movimiento->consecutivoRecibo?->prendaBodega?->nombre ?? 'Sin prenda';
-                } else {
-                    $prenda = $movimiento->consecutivoRecibo?->prenda?->nombre_prenda ?? 'Sin prenda';
+                    // Obtener prenda según el tipo de recibo
+                    $prenda = 'Sin prenda';
+                    if ($reciboMovimiento->tipo_recibo === 'CORTE-PARA-BODEGA') {
+                        $prenda = $recibo?->prendaBodega?->nombre ?? 'Sin prenda';
+                    } else {
+                        $prenda = $recibo?->prenda?->nombre_prenda ?? 'Sin prenda';
+                    }
+
+                    return [
+                        'id' => $reciboMovimiento->id,
+                        'recibo_id' => $reciboMovimiento->consecutivo_recibo_pedido_id,
+                        'numero_recibo' => $reciboMovimiento->numero_recibo,
+                        'tipo_recibo' => $reciboMovimiento->tipo_recibo,
+                        'tipo_recibo_mostrar' => $reciboMovimiento->tipo_recibo === 'CORTE-PARA-BODEGA' ? 'BODEGA' : $reciboMovimiento->tipo_recibo,
+                        'cliente' => $cliente,
+                        'prenda' => $prenda,
+                    ];
+                })->toArray();
+
+                // Agrupar tallas por género
+                $tallasPorGenero = [];
+                foreach ($movimiento->tallas as $talla) {
+                    $genero = $talla->genero ?? 'Sin género';
+                    $key = $genero;
+
+                    if (!isset($tallasPorGenero[$key])) {
+                        $tallasPorGenero[$key] = [
+                            'genero' => $genero,
+                            'tallas' => []
+                        ];
+                    }
+
+                    $tallasPorGenero[$key]['tallas'][] = [
+                        'talla' => $talla->talla,
+                        'cantidad_enviada' => $talla->cantidad_enviada,
+                        'cantidad_recibida' => $talla->cantidad_recibida,
+                    ];
                 }
 
                 // Determinar estado de firma
@@ -167,16 +203,9 @@ class LavanderiaController extends Controller
                     $estadoFirma = 'FIRMADO';
                 }
 
-                // Convertir tipo_recibo para mostrar
-                $tipoReciboMostrar = $movimiento->tipo_recibo === 'CORTE-PARA-BODEGA' ? 'BODEGA' : $movimiento->tipo_recibo;
-
                 return [
                     'id' => $movimiento->id,
-                    'recibo' => $movimiento->numero_recibo,
-                    'tipo_recibo' => $movimiento->tipo_recibo,
-                    'tipo_recibo_mostrar' => $tipoReciboMostrar,
-                    'cliente' => $cliente,
-                    'prenda' => $prenda,
+                    'recibos' => $recibosInfo,
                     'estado' => $movimiento->estado,
                     'estadoFirma' => $estadoFirma,
                     'tipoMovimiento' => $movimiento->tipo_movimiento,
@@ -184,14 +213,7 @@ class LavanderiaController extends Controller
                     'fechaMovimiento' => $movimiento->fecha_movimiento?->format('Y-m-d H:i') ?? '-',
                     'firmaMovimiento' => $movimiento->firma_movimiento,
                     'fechaFirma' => $movimiento->fecha_firma?->format('Y-m-d H:i') ?? null,
-                    'tallas' => $movimiento->tallas->map(function ($talla) {
-                        return [
-                            'talla' => $talla->talla,
-                            'genero' => $talla->genero,
-                            'cantidad_enviada' => $talla->cantidad_enviada,
-                            'cantidad_recibida' => $talla->cantidad_recibida,
-                        ];
-                    })->toArray()
+                    'tallasPorGenero' => array_values($tallasPorGenero)
                 ];
             });
 
@@ -274,7 +296,7 @@ class LavanderiaController extends Controller
     }
 
     /**
-     * Registrar salida de lavandería
+     * Registrar salida de lavandería (múltiples recibos)
      */
     public function registrarSalida(Request $request): JsonResponse
     {
@@ -287,22 +309,16 @@ class LavanderiaController extends Controller
             
             \Log::info('Datos recibidos:', $data);
 
-            if (empty($data['recibo_id']) || empty($data['numero_recibo']) || empty($data['tipo_recibo']) || empty($data['tallas'])) {
+            if (empty($data['recibos']) || !is_array($data['recibos']) || empty($data['tallas'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Faltan campos requeridos',
+                    'message' => 'Faltan campos requeridos (recibos, tallas)',
                     'received' => $data
                 ], 422);
             }
 
-            // Convertir "BODEGA" a "CORTE-PARA-BODEGA" para guardar en BD
-            $tipoReciboOriginal = $data['tipo_recibo'] === 'BODEGA' ? 'CORTE-PARA-BODEGA' : $data['tipo_recibo'];
-
             // Crear movimiento
             $movimiento = \App\Models\LavanderiaMovimiento::create([
-                'consecutivo_recibo_pedido_id' => (int)$data['recibo_id'],
-                'numero_recibo' => (int)$data['numero_recibo'],
-                'tipo_recibo' => $tipoReciboOriginal,
                 'tipo_movimiento' => $data['tipo_movimiento'] ?? 'SALIDA',
                 'fecha_movimiento' => now(),
                 'firma_movimiento' => 'pendiente',
@@ -312,16 +328,40 @@ class LavanderiaController extends Controller
 
             \Log::info('Movimiento creado:', ['id' => $movimiento->id]);
 
+            // Crear registros de recibos asociados al movimiento
+            foreach ($data['recibos'] as $recibo) {
+                \App\Models\LavanderiaMovimientoRecibo::create([
+                    'lavanderia_movimiento_id' => $movimiento->id,
+                    'consecutivo_recibo_pedido_id' => (int)$recibo['recibo_id'],
+                    'numero_recibo' => (int)$recibo['numero_recibo'],
+                    'tipo_recibo' => $recibo['tipo_recibo'],
+                ]);
+            }
+
+            \Log::info('Recibos asociados al movimiento:', ['cantidad' => count($data['recibos'])]);
+
             // Crear registros de tallas
             foreach ($data['tallas'] as $talla) {
-                \App\Models\LavanderiaMovimientoTalla::create([
+                $tipoPrenda = $talla['tipo_prenda'] ?? 'COSTURA';
+                
+                $tallaData = [
                     'lavanderia_movimiento_id' => $movimiento->id,
                     'talla' => $talla['talla'],
                     'genero' => $talla['genero'] ?? null,
                     'color' => null,
                     'cantidad_enviada' => (int)$talla['cantidad_enviada'],
-                    'cantidad_recibida' => 0
-                ]);
+                    'cantidad_recibida' => 0,
+                    'tipo_prenda' => $tipoPrenda,
+                ];
+
+                // Agregar relación a prenda según el tipo
+                if ($tipoPrenda === 'BODEGA') {
+                    $tallaData['prenda_bodega_id'] = $talla['prenda_bodega_id'] ?? null;
+                } else {
+                    $tallaData['prenda_id'] = $talla['prenda_id'] ?? null;
+                }
+
+                \App\Models\LavanderiaMovimientoTalla::create($tallaData);
             }
 
             \Log::info('Salida registrada exitosamente', ['movimiento_id' => $movimiento->id]);
@@ -331,7 +371,7 @@ class LavanderiaController extends Controller
                 'message' => 'Salida registrada exitosamente',
                 'data' => [
                     'id' => $movimiento->id,
-                    'numero_recibo' => $movimiento->numero_recibo
+                    'recibos_count' => count($data['recibos'])
                 ]
             ]);
         } catch (\Exception $e) {

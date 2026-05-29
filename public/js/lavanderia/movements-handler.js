@@ -186,10 +186,6 @@ class MovementsHandler {
      * Crea el HTML de una tarjeta de movimiento
      */
     createMovementCard(m) {
-        const tallasHtml = m.tallas.map(t => 
-            `<span class="talla-badge">Talla ${t.talla}: ${t.cantidad_enviada}</span>`
-        ).join('');
-
         const firmaBadgeClass = m.estadoFirma === 'FIRMADO' ? 'badge-firmado' : 'badge-pendiente';
         const firmaIcon = m.estadoFirma === 'FIRMADO' ? 'check_circle' : 'schedule';
         
@@ -197,27 +193,87 @@ class MovementsHandler {
         const tipoMovimientoBadgeClass = tipoMovimiento === 'ENTRADA' ? 'badge-entrada' : 'badge-salida';
         const tipoMovimientoIcon = tipoMovimiento === 'ENTRADA' ? 'arrow_downward' : 'arrow_upward';
         
-        let colorTipo = '#2450ef';
-        let bgColorTipo = '#f0f4ff';
-        
-        if (m.tipo_recibo_mostrar === 'BODEGA') {
-            colorTipo = '#059669';
-            bgColorTipo = '#f0fdf4';
-        }
+        // Renderizar múltiples recibos con sus tallas agrupadas
+        const recibosHtml = m.recibos.map(recibo => {
+            let colorTipo = '#2450ef';
+            let bgColorTipo = '#f0f4ff';
+            
+            if (recibo.tipo_recibo_mostrar === 'BODEGA') {
+                colorTipo = '#059669';
+                bgColorTipo = '#f0fdf4';
+            }
+
+            const clienteHtml = recibo.tipo_recibo_mostrar !== 'BODEGA'
+                ? `<div style="font-size: 13px; color: #64748b; margin-top: 4px;">
+                    <strong>Cliente:</strong> ${recibo.cliente}
+                  </div>`
+                : '';
+
+            // Agrupar tallas por género para este recibo
+            const tallasPorGeneroHtml = m.tallasPorGenero && m.tallasPorGenero.length > 0 
+                ? m.tallasPorGenero.map(grupo => {
+                    return `
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid ${colorTipo}20;">
+                            <div style="font-size: 12px; font-weight: 600; color: ${colorTipo}; margin-bottom: 8px;">
+                                ${grupo.genero}
+                            </div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                ${grupo.tallas.map(t => 
+                                    `<span class="talla-badge" style="
+                                        background: ${bgColorTipo};
+                                        color: ${colorTipo};
+                                        border: 1px solid ${colorTipo};
+                                        padding: 4px 8px;
+                                        border-radius: 4px;
+                                        font-size: 12px;
+                                        font-weight: 500;
+                                    ">
+                                        ${t.talla}: ${t.cantidad_enviada}
+                                    </span>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    `;
+                }).join('')
+                : '';
+
+            return `
+                <div style="
+                    background: ${bgColorTipo};
+                    border: 1px solid ${colorTipo};
+                    border-radius: 8px;
+                    padding: 12px;
+                    margin-bottom: 8px;
+                ">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <span style="font-weight: 700; font-size: 14px; color: #1e293b;">
+                            Recibo #${recibo.numero_recibo}
+                        </span>
+                        <span style="
+                            background: ${colorTipo};
+                            color: white;
+                            padding: 2px 8px;
+                            border-radius: 12px;
+                            font-size: 11px;
+                            font-weight: 600;
+                        ">
+                            ${recibo.tipo_recibo_mostrar}
+                        </span>
+                    </div>
+                    ${clienteHtml}
+                    <div style="font-size: 13px; color: #64748b; margin-top: 4px;">
+                        <strong>Prenda:</strong> ${recibo.prenda}
+                    </div>
+                    ${tallasPorGeneroHtml}
+                </div>
+            `;
+        }).join('');
         
         const novedadHtml = m.novedad 
             ? `<div class="card-section">
                 <div class="card-label">Novedad</div>
                 <p style="margin: 8px 0 0 0; font-size: 14px; color: #1e293b;">${m.novedad}</p>
               </div>`
-            : '';
-
-        const clienteHtml = m.tipo_recibo_mostrar !== 'BODEGA'
-            ? `<div class="card-section">
-                <div class="card-label">Cliente</div>
-                <div class="card-value">${m.cliente}</div>
-              </div>
-              <div class="card-divider"></div>`
             : '';
 
         const firmaButtonText = tipoMovimiento === 'ENTRADA' ? 'Firmar entrada' : 'Firmar salida';
@@ -232,10 +288,7 @@ class MovementsHandler {
             <div class="movement-card">
                 <div class="card-header-top">
                     <div class="card-section">
-                        <div class="card-label">Recibo / Tipo</div>
-                        <div class="card-value">
-                            ${m.recibo}-<span style="color: ${colorTipo}; font-weight: 700;">${m.tipo_recibo_mostrar}</span>
-                        </div>
+                        <div class="card-label">Recibos (${m.recibos.length})</div>
                     </div>
                     <div class="card-fecha">
                         ${m.fechaMovimiento}
@@ -244,13 +297,9 @@ class MovementsHandler {
 
                 <div class="card-divider"></div>
 
-                ${clienteHtml}
-
                 <div class="card-section">
-                    <div class="card-label">Prenda / Tallas</div>
-                    <div class="card-value">${m.prenda}</div>
-                    <div class="tallas-enviadas" style="margin-top: 8px;">
-                        ${tallasHtml}
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        ${recibosHtml}
                     </div>
                 </div>
 

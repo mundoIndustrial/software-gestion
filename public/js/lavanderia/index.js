@@ -9,6 +9,7 @@ import { TallasHandler } from './tallas-handler.js';
 import { MovementsHandler } from './movements-handler.js';
 import { SignatureHandler } from './signature-handler.js';
 import { RegistrationHandler } from './registration-handler.js';
+import { MultiReceiptHandler } from './multi-receipt-handler.js';
 
 class LavanderiaManager {
     constructor() {
@@ -20,9 +21,10 @@ class LavanderiaManager {
         
         this.searchHandler = new SearchHandler(this.apiSearchUrl);
         this.tallasHandler = new TallasHandler();
+        this.multiReceiptHandler = new MultiReceiptHandler();
         this.movementsHandler = new MovementsHandler(this.apiSearchUrl);
         this.signatureHandler = new SignatureHandler(this.apiSearchUrl);
-        this.registrationHandler = new RegistrationHandler(this.apiSearchUrl, this.tallasHandler);
+        this.registrationHandler = new RegistrationHandler(this.apiSearchUrl, this.tallasHandler, this.multiReceiptHandler);
         
         this.init();
     }
@@ -184,8 +186,7 @@ class LavanderiaManager {
         // Evento: Recibo seleccionado
         window.addEventListener('reciboSelected', (e) => {
             const recibo = e.detail;
-            this.registrationHandler.currentRecibo = recibo;
-            this.registrationHandler.showReciboInfo(recibo);
+            this.registrationHandler.handleReciboSelected(recibo);
         });
 
         // Evento: Abrir modal de firma

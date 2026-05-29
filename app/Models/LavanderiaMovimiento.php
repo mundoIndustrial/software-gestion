@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LavanderiaMovimiento extends Model
@@ -11,9 +10,6 @@ class LavanderiaMovimiento extends Model
     protected $table = 'lavanderia_movimientos';
 
     protected $fillable = [
-        'consecutivo_recibo_pedido_id',
-        'numero_recibo',
-        'tipo_recibo',
         'tipo_movimiento',
         'fecha_movimiento',
         'firma_movimiento',
@@ -28,11 +24,11 @@ class LavanderiaMovimiento extends Model
     ];
 
     /**
-     * Relación: Un movimiento pertenece a un recibo
+     * Relación: Un movimiento tiene muchos recibos
      */
-    public function consecutivoRecibo(): BelongsTo
+    public function recibos(): HasMany
     {
-        return $this->belongsTo(ConsecutivoReciboPedido::class, 'consecutivo_recibo_pedido_id');
+        return $this->hasMany(LavanderiaMovimientoRecibo::class, 'lavanderia_movimiento_id');
     }
 
     /**
@@ -43,3 +39,4 @@ class LavanderiaMovimiento extends Model
         return $this->hasMany(LavanderiaMovimientoTalla::class, 'lavanderia_movimiento_id');
     }
 }
+
