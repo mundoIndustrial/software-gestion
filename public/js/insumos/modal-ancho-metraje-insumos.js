@@ -269,6 +269,13 @@ function registrarSyncAnchoCompartido(input, modal) {
     });
 }
 
+function normalizarClaveColor(valor) {
+    return String(valor || '')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toUpperCase();
+}
+
 function requiereConfirmacionCambioModo(modal, modoSeleccionado) {
     const modoGuardado = modal.tipoModoGuardado;
     const tieneDatosGuardados = modal.tieneDatosGuardados;
@@ -390,7 +397,10 @@ function generarInputsPorColor(coloresData, datosData) {
         // Buscar metraje guardado para este color (sin talla)
         let metrajeGuardado = '';
         if (datosData.success && datosData.data && Array.isArray(datosData.data)) {
-            const datosColor = datosData.data.find(d => d.color === colorNombre && !d.talla);
+            const colorNombreKey = normalizarClaveColor(colorNombre);
+            const datosColor = datosData.data.find(d =>
+                normalizarClaveColor(d?.color) === colorNombreKey && !d.talla
+            );
             if (datosColor) {
                 metrajeGuardado = datosColor.metraje || '';
             }
@@ -489,7 +499,10 @@ function generarInputsPorTallaColor(coloresData, datosData) {
         // Buscar metraje guardado para este color (sin talla)
         let metrajeGuardado = '';
         if (datosData.success && datosData.data && Array.isArray(datosData.data)) {
-            const datosColor = datosData.data.find(d => d.color === colorNombre && !d.talla);
+            const colorNombreKey = normalizarClaveColor(colorNombre);
+            const datosColor = datosData.data.find(d =>
+                normalizarClaveColor(d?.color) === colorNombreKey && !d.talla
+            );
             if (datosColor) {
                 metrajeGuardado = datosColor.metraje || '';
             }
@@ -959,7 +972,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
         
         // Guardar metrajes por color
         document.querySelectorAll('#colorInputsContainer .colorMetraje').forEach(input => {
-            const colorNombre = input.dataset.color;
+            const colorNombre = (input.dataset.color || '').trim();
             const metrajeVal = input.value.trim();
             
             if (metrajeVal) {
@@ -1033,7 +1046,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
         
         // Guardar metrajes por color (mismos inputs que color)
         document.querySelectorAll('#piezaInputsContainer .colorMetraje').forEach(input => {
-            const colorNombre = input.dataset.color;
+            const colorNombre = (input.dataset.color || '').trim();
             const metrajeVal = input.value.trim();
             
             if (metrajeVal) {
