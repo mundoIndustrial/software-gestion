@@ -749,14 +749,14 @@
 
 @media (max-width: 768px) {
     .modal {
-        align-items: center;
+        align-items: flex-start;
         justify-content: center;
         padding: 16px;
-        padding-top: 20px;
+        padding-top: 60px;
     }
 
     .modal-content {
-        border-radius: 20px;
+        border-radius: 32px;
         max-height: 85vh;
     }
 
@@ -1046,6 +1046,15 @@
     .modal-body,
     .modal-footer {
         padding: 16px;
+    }
+
+    .modal {
+        align-items: flex-start;
+        padding-top: 80px;
+    }
+
+    .modal-content {
+        border-radius: 36px;
     }
 
     .form-label {

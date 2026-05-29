@@ -213,10 +213,10 @@
         </div>
         <div class="modal-body">
             <div class="firma-controls">
-                <button type="button" class="btn-rotar-firma" id="btnRotarIzquierda" onclick="lavanderiaManager.rotarFirmaIzquierda()">
+                <button type="button" class="btn-rotar-firma" id="btnRotarIzquierda">
                     <span class="material-symbols-rounded">rotate_left</span>
                 </button>
-                <button type="button" class="btn-rotar-firma" id="btnRotarDerecha" onclick="lavanderiaManager.rotarFirmaDerecha()">
+                <button type="button" class="btn-rotar-firma" id="btnRotarDerecha">
                     <span class="material-symbols-rounded">rotate_right</span>
                 </button>
             </div>
@@ -234,7 +234,8 @@
 
 @push('scripts')
     <script>
-        const apiSearchUrl = "{{ route('gestion-lavanderia.api.search-recibos') }}";
+        window.apiSearchUrl = "{{ route('gestion-lavanderia.api.search-recibos') }}";
     </script>
-    <script src="{{ asset('js/lavanderia/lavanderia.js') }}"></script>
+    <script src="{{ asset('js/lavanderia/diagnostics.js') }}"></script>
+    <script type="module" src="{{ asset('js/lavanderia/index.js') }}"></script>
 @endpush

@@ -1,0 +1,229 @@
+/**
+ * LAVANDERÍA MODULE - Index
+ * Orquesta todos los módulos de lavandería
+ */
+
+import { showToast, debounce } from './utilities.js';
+import { SearchHandler } from './search-handler.js';
+import { TallasHandler } from './tallas-handler.js';
+import { MovementsHandler } from './movements-handler.js';
+import { SignatureHandler } from './signature-handler.js';
+import { RegistrationHandler } from './registration-handler.js';
+
+class LavanderiaManager {
+    constructor() {
+        this.apiSearchUrl = window.apiSearchUrl || '';
+        if (!this.apiSearchUrl) {
+            console.error('[LavanderiaManager] apiSearchUrl no está definido');
+            return;
+        }
+        
+        this.searchHandler = new SearchHandler(this.apiSearchUrl);
+        this.tallasHandler = new TallasHandler();
+        this.movementsHandler = new MovementsHandler(this.apiSearchUrl);
+        this.signatureHandler = new SignatureHandler(this.apiSearchUrl);
+        this.registrationHandler = new RegistrationHandler(this.apiSearchUrl, this.tallasHandler);
+        
+        this.init();
+    }
+
+    init() {
+        try {
+            this.setupEventListeners();
+            this.setupCustomEvents();
+            this.movementsHandler.loadMovements();
+            
+            // Ocultar pantalla de carga
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen) {
+                loadingScreen.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('[LavanderiaManager] Error en init:', error);
+        }
+    }
+
+    /**
+     * Configura los event listeners del DOM
+     */
+    setupEventListeners() {
+        // Búsqueda de movimientos
+        const searchMovimientosInput = document.getElementById('searchMovimientosInput');
+        if (searchMovimientosInput) {
+            searchMovimientosInput.addEventListener('input', debounce((e) => {
+                const query = e.target.value.trim();
+                this.movementsHandler.searchMovements(query);
+            }, 300));
+        } else {
+            console.warn('[LavanderiaManager] searchMovimientosInput no encontrado');
+        }
+
+        // Botón abrir modal
+        const btnAbrirModal = document.getElementById('btnAbrirModalSalida');
+        if (btnAbrirModal) {
+            btnAbrirModal.addEventListener('click', () => this.registrationHandler.openModalSalida());
+        } else {
+            console.warn('[LavanderiaManager] btnAbrirModalSalida no encontrado');
+        }
+
+        // Búsqueda de recibos
+        const searchInput = document.getElementById('searchRecibo');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => this.searchHandler.handleSearch(e));
+            searchInput.addEventListener('blur', () => {
+                setTimeout(() => {
+                    const results = document.querySelector('.autocomplete-results');
+                    if (results) results.classList.remove('active');
+                }, 200);
+            });
+        } else {
+            console.warn('[LavanderiaManager] searchRecibo no encontrado');
+        }
+
+        // Botón registrar
+        const btnRegistrar = document.getElementById('btnRegistrarSalida');
+        if (btnRegistrar) {
+            btnRegistrar.addEventListener('click', () => this.registrationHandler.registrarSalida());
+        } else {
+            console.warn('[LavanderiaManager] btnRegistrarSalida no encontrado');
+        }
+
+        // Firma - Limpiar
+        const btnLimpiar = document.getElementById('btnLimpiarFirma');
+        if (btnLimpiar) {
+            btnLimpiar.addEventListener('click', () => {
+                if (this.signatureHandler.signatureCapture) {
+                    this.signatureHandler.signatureCapture.clear();
+                }
+            });
+        }
+
+        // Firma - Cancelar
+        const btnCancelarFirma = document.getElementById('btnCancelarFirma');
+        if (btnCancelarFirma) {
+            btnCancelarFirma.addEventListener('click', () => {
+                document.getElementById('modalFirmaSalida').classList.remove('active');
+            });
+        }
+
+        // Firma - Guardar
+        const btnGuardarFirma = document.getElementById('btnGuardarFirma');
+        if (btnGuardarFirma) {
+            btnGuardarFirma.addEventListener('click', () => this.signatureHandler.guardarFirma());
+        }
+
+        // Firma - Rotar izquierda
+        const btnRotarIzquierda = document.getElementById('btnRotarIzquierda');
+        if (btnRotarIzquierda) {
+            btnRotarIzquierda.addEventListener('click', () => this.signatureHandler.rotarFirmaIzquierda());
+        }
+
+        // Firma - Rotar derecha
+        const btnRotarDerecha = document.getElementById('btnRotarDerecha');
+        if (btnRotarDerecha) {
+            btnRotarDerecha.addEventListener('click', () => this.signatureHandler.rotarFirmaDerecha());
+        }
+
+        // Tabs
+        const tabButtons = document.querySelectorAll('.tab-button');
+        if (tabButtons.length > 0) {
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const tabType = e.currentTarget.dataset.tab;
+                    this.movementsHandler.filterMovementsByTab(tabType);
+                });
+            });
+        } else {
+            console.warn('[LavanderiaManager] tab-button no encontrados');
+        }
+
+        // Paginación
+        const btnPrevPage = document.getElementById('btnPrevPage');
+        const btnNextPage = document.getElementById('btnNextPage');
+
+        if (btnPrevPage) {
+            btnPrevPage.addEventListener('click', () => {
+                if (this.movementsHandler.currentPage > 1) {
+                    this.movementsHandler.currentPage--;
+                    this.movementsHandler.renderPaginatedMovements();
+                }
+            });
+        }
+
+        if (btnNextPage) {
+            btnNextPage.addEventListener('click', () => {
+                const totalPages = this.movementsHandler.getTotalPages();
+                if (this.movementsHandler.currentPage < totalPages) {
+                    this.movementsHandler.currentPage++;
+                    this.movementsHandler.renderPaginatedMovements();
+                }
+            });
+        }
+
+        // Modales - Cerrar
+        document.querySelectorAll('.modal-close').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.target.closest('.modal').classList.remove('active');
+            });
+        });
+
+        // Modales - Cerrar al hacer clic fuera
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+    }
+
+    /**
+     * Configura los eventos personalizados
+     */
+    setupCustomEvents() {
+        // Evento: Recibo seleccionado
+        window.addEventListener('reciboSelected', (e) => {
+            const recibo = e.detail;
+            this.registrationHandler.currentRecibo = recibo;
+            this.registrationHandler.showReciboInfo(recibo);
+        });
+
+        // Evento: Abrir modal de firma
+        window.addEventListener('openFirmaModal', (e) => {
+            this.signatureHandler.openModalFirmaSalida(e.detail.movementId);
+        });
+
+        // Evento: Abrir modal de ver firma
+        window.addEventListener('openVerFirmaModal', (e) => {
+            this.signatureHandler.openModalVerFirma(e.detail.firmaUrl);
+        });
+
+        // Evento: Recargar movimientos
+        window.addEventListener('reloadMovements', () => {
+            this.movementsHandler.loadMovements();
+        });
+
+        // Evento: Mostrar toast
+        window.addEventListener('showToast', (e) => {
+            const { title, message, type } = e.detail;
+            showToast(title, message, type);
+        });
+    }
+}
+
+// Inicializar inmediatamente
+function initLavanderia() {
+    console.log('[Lavandería] Inicializando módulo...');
+    window.lavanderiaManager = new LavanderiaManager();
+    console.log('[Lavandería] Módulo inicializado');
+}
+
+// Intentar inicializar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLavanderia);
+} else {
+    // El DOM ya está listo
+    initLavanderia();
+}
+
+export { LavanderiaManager };
