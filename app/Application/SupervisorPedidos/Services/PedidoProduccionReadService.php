@@ -714,6 +714,36 @@ class PedidoProduccionReadService
                 ->orWhereRaw("LOWER(TRIM(area)) <> 'despacho'")
                 ->orWhereRaw("UPPER(TRIM(COALESCE(estado, ''))) NOT IN ('ENTREGADO', 'FINALIZADA', 'FINALIZADO')");
         });
+
+        // Cuando NO se activa "ver todos despacho", ocultar tambien pedidos
+        // que ya no tienen prendas pendientes de entrega, aunque su estado
+        // todavia no haya sido normalizado a ENTREGADO/FINALIZADO.
+        $query->whereRaw("(
+            SELECT COUNT(*)
+            FROM prendas_pedido pp
+            LEFT JOIN prenda_entregas pe ON pe.prenda_pedido_id = pp.id
+            WHERE pp.pedido_produccion_id = pedidos_produccion.id
+              AND pp.deleted_at IS NULL
+              AND NOT (
+                COALESCE(pe.entregado, 0) = 1
+                OR (
+                    COALESCE((
+                        SELECT SUM(ppt.cantidad)
+                        FROM prenda_pedido_tallas ppt
+                        WHERE ppt.prenda_pedido_id = pp.id
+                    ), 0) > 0
+                    AND COALESCE((
+                        SELECT SUM(pem.cantidad_entregada)
+                        FROM prenda_entrega_movimientos pem
+                        WHERE pem.prenda_pedido_id = pp.id
+                    ), 0) >= COALESCE((
+                        SELECT SUM(ppt.cantidad)
+                        FROM prenda_pedido_tallas ppt
+                        WHERE ppt.prenda_pedido_id = pp.id
+                    ), 0)
+                )
+              )
+        ) > 0");
     }
 
     private function applyEppOnlyFilter($query): void
