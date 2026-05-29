@@ -129,8 +129,11 @@
                                 <div class="orden-prendas">
                                     <p class="prendas-label">
                                         <strong>{{ $prenda['nombre_prenda'] }}</strong>
-                                        @if($prenda['descripcion'])
-                                            — {{ $prenda['descripcion'] }}
+                                        @php
+                                            $descripcionPrenda = trim(strip_tags(html_entity_decode((string) ($prenda['descripcion'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+                                        @endphp
+                                        @if($descripcionPrenda !== '')
+                                            - {{ $descripcionPrenda }}
                                         @endif
                                     </p>
                                 </div>
@@ -1333,6 +1336,15 @@
             .replace(/'/g, '&#039;');
     }
 
+    function limpiarDescripcionTarjeta(texto) {
+        const normalizado = String(texto ?? '').replace(/\r\n?/g, '\n');
+        const decodificador = document.createElement('textarea');
+        decodificador.innerHTML = normalizado;
+        const decodificado = decodificador.value;
+
+        return decodificado.replace(/<[^>]*>/g, '').trim();
+    }
+
     function tokenCsrf() {
         return document.querySelector('meta[name="csrf-token"]')?.content || '';
     }
@@ -1751,7 +1763,7 @@
             card.dataset.parcialId = String(parcialId || '');
             card.dataset.reciboIdOrigen = String(orden.recibo_id_origen || recibo.recibo_id_origen || '');
             card.dataset.numeroRecibo = String(consecutivoActual || recibo.id || orden.id || '');
-
+            const descripcionTarjeta = escaparHtml(limpiarDescripcionTarjeta(orden.descripcion || ''));
             card.innerHTML = `
                 <div class="orden-border ${esParcial ? 'en-proceso' : ''}"></div>
                 <div class="orden-body ${completadoArea ? 'recibo-completado-area' : ''}">
@@ -1766,17 +1778,17 @@
 
                         <div class="orden-cliente">
                             <p class="cliente-label">CLIENTE</p>
-                            <p class="cliente-name">${orden.cliente || ''}</p>
+                            <p class="cliente-name">${escaparHtml(orden.cliente || '')}</p>
                         </div>
 
                         <div class="orden-prendas">
-                            <p class="prendas-label"><strong>${orden.nombre_prenda || 'Pedido'}</strong>${orden.descripcion ? ` — ${orden.descripcion}` : ''}</p>
+                            <p class="prendas-label"><strong>${escaparHtml(orden.nombre_prenda || 'Pedido')}</strong>${descripcionTarjeta ? ` - ${descripcionTarjeta}` : ''}</p>
                         </div>
 
                         ${areaActual ? `
                             <div class="orden-cliente">
                                 <p class="cliente-label">ÁREA ACTUAL</p>
-                                <p class="cliente-name">${areaActual}</p>
+                                <p class="cliente-name">${escaparHtml(areaActual)}</p>
                             </div>
                         ` : ''}
 
