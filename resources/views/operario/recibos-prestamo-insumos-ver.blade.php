@@ -188,18 +188,21 @@
                             </div>
                         </div>
 
-                        <div id="order-descripcion" class="order-descripcion" style="margin-bottom: 50px;">
+                        <div id="order-descripcion" class="order-descripcion" style="margin-bottom: 20px;">
                             <div id="mobile-descripcion">
                                 <div class="prenda-item" style="margin-bottom: 16px; line-height: 1.4; font-size: 0.75rem; color: #333;">
-                                    <strong style="font-size: 13.4px;">NOMBRE DEL COSTURERO ASIGNADO</strong><br>
-                                    <span style="display:block; margin-top: 6px; margin-bottom: 12px;">{{ $recibo->nombre_costurero }}</span>
+                                    <strong style="font-size: 13.4px;">COSTURERO - <span style="font-weight: 700;">{{ $recibo->nombre_costurero }}</span></strong>
 
-                                    <strong style="font-size: 13.4px;">DETALLE</strong><br>
                                     <div style="margin-top: 8px;">
+                                        <div style="display: flex; gap: 1rem; margin-bottom: 6px; font-weight: 700; font-size: 11px; color: #374151;">
+                                            <div style="flex: 1;">DESCRIPCIÓN</div>
+                                            <div style="width: 80px; text-align: right;">CANTIDAD</div>
+                                        </div>
                                         @forelse($items as $item)
-                                            <span style="display:block; margin-bottom: 4px;">
-                                                {{ number_format((float) $item->cantidad, 2, ',', '.') }} - {{ $item->descripcion }}
-                                            </span>
+                                            <div style="display: flex; gap: 1rem; margin-bottom: 4px; font-size: 11px;">
+                                                <div style="flex: 1;">{{ $item->descripcion }}</div>
+                                                <div style="width: 80px; text-align: right;">{{ number_format((float) $item->cantidad, 2, ',', '.') }}</div>
+                                            </div>
                                         @empty
                                             <span style="display:block; color:#64748b;">Sin items registrados.</span>
                                         @endforelse
@@ -208,7 +211,7 @@
                             </div>
                         </div>
 
-                        <h2 class="receipt-title" id="receipt-title-mobile">RECIBO DE PRÉSTAMO DE INSUMOS</h2>
+                        <h2 class="receipt-title" id="receipt-title-mobile">RECIBO PRESTAMO DE INSUMOS</h2>
                         <div class="pedido-number" id="mobile-numero-pedido">#{{ $recibo->numero_orden }}</div>
                     </div>
                 </div>
