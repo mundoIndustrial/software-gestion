@@ -330,11 +330,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const descripcion = document.querySelector('#descripcion-text');
             if (descripcion) {
-                // Decodificar entidades HTML antes de mostrar
-                const textarea = document.createElement('textarea');
-                textarea.innerHTML = orden.descripcion || 'Sin descripción';
-                const descripcionDecodificada = textarea.value;
-                descripcion.innerHTML = descripcionDecodificada;
+                // Limpiar la descripción de &NBSP; y &nbsp; (tanto mayúsculas como minúsculas)
+                let descripcionLimpia = (orden.descripcion || 'Sin descripción')
+                    .replace(/&NBSP;/g, ' ')
+                    .replace(/&nbsp;/g, ' ')
+                    .replace(/&amp;NBSP;/g, ' ')
+                    .replace(/&amp;nbsp;/g, ' ');
+                
+                // Usar textContent para mostrar como texto plano
+                descripcion.textContent = descripcionLimpia;
             }
             
             const asesora = document.querySelector('#asesora-value');

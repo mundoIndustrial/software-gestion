@@ -833,6 +833,10 @@ export class Formatters {
      */
     static _formatearTextoMonoespaciadoHTML(texto) {
         return String(texto ?? '')
+            .replace(/&NBSP;/g, ' ')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;NBSP;/g, ' ')
+            .replace(/&amp;nbsp;/g, ' ')
             .replace(/\r?\n/g, '<br>');
     }
 
