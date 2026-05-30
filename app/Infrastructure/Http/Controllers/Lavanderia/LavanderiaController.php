@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Http\Controllers\Lavanderia;
 
 use App\Http\Controllers\Controller;
+use App\Application\Lavanderia\UseCases\ObtenerOrdenesSeguimientoLavanderiaUseCase;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
@@ -24,6 +25,111 @@ class LavanderiaController extends Controller
     public function seguimiento(): View
     {
         return view('seguimiento-lavanderia.index');
+    }
+
+    /**
+     * API: listar órdenes del seguimiento de lavandería
+     */
+    public function apiOrdenesSeguimiento(
+        Request $request,
+        ObtenerOrdenesSeguimientoLavanderiaUseCase $useCase
+    ): JsonResponse {
+        $page = max(1, (int) $request->query('page', 1));
+        $perPage = min(max(1, (int) $request->query('per_page', 25)), 100);
+        $search = trim((string) $request->query('search', ''));
+
+        $ordenes = $useCase->execute($page, $perPage, $search);
+
+        return response()->json([
+            'success' => true,
+            'data' => $ordenes->items(),
+            'pagination' => [
+                'current_page' => $ordenes->currentPage(),
+                'last_page' => $ordenes->lastPage(),
+                'per_page' => $ordenes->perPage(),
+                'total' => $ordenes->total(),
+                'from' => $ordenes->firstItem(),
+                'to' => $ordenes->lastItem(),
+            ],
+        ]);
+    }
+
+    /**
+     * Obtener movimientos de un recibo específico en seguimiento de lavandería
+     */
+    public function apiMovimientosRecibo(int $reciboId): JsonResponse
+    {
+        try {
+            $movimientos = \App\Models\LavanderiaMovimientoRecibo::where('consecutivo_recibo_pedido_id', $reciboId)
+                ->with([
+                    'movimiento.tallas.prenda',
+                    'movimiento.tallas.prendaBodega',
+                    'recibo.prenda',
+                    'recibo.prendaBodega',
+                    'recibo.pedido'
+                ])
+                ->get()
+                ->map(function ($reciboMovimiento) {
+                    $movimiento = $reciboMovimiento->movimiento;
+                    $recibo = $reciboMovimiento->recibo;
+
+                    // Obtener prenda según el tipo de recibo
+                    $prenda = 'Sin prenda';
+                    if ($reciboMovimiento->tipo_recibo === 'CORTE-PARA-BODEGA') {
+                        $prenda = $recibo?->prendaBodega?->nombre ?? 'Sin prenda';
+                    } else {
+                        $prenda = $recibo?->prenda?->nombre_prenda ?? 'Sin prenda';
+                    }
+
+                    // Obtener todas las tallas del movimiento
+                    $tallas = $movimiento->tallas
+                        ->map(function ($talla) {
+                            return [
+                                'talla' => $talla->talla,
+                                'cantidad_enviada' => $talla->cantidad_enviada,
+                                'cantidad_recibida' => $talla->cantidad_recibida,
+                                'genero' => $talla->genero,
+                                'color' => $talla->color,
+                            ];
+                        })
+                        ->values()
+                        ->toArray();
+
+                    return [
+                        'id' => $movimiento->id,
+                        'tipo_movimiento' => $movimiento->tipo_movimiento,
+                        'fecha_movimiento' => $movimiento->fecha_movimiento?->format('Y-m-d H:i') ?? '-',
+                        'estado' => $movimiento->estado,
+                        'novedad' => $movimiento->novedad,
+                        'prenda' => $prenda,
+                        'tallas' => $tallas,
+                    ];
+                })
+                ->sortByDesc('fecha_movimiento')
+                ->values();
+
+            // Agrupar por tipo de movimiento
+            $movimientosAgrupados = [
+                'entradas' => $movimientos->filter(fn($m) => $m['tipo_movimiento'] === 'ENTRADA')->values(),
+                'salidas' => $movimientos->filter(fn($m) => $m['tipo_movimiento'] === 'SALIDA')->values(),
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $movimientosAgrupados,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en apiMovimientosRecibo:', [
+                'recibo_id' => $reciboId,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener movimientos del recibo'
+            ], 500);
+        }
     }
 
     /**

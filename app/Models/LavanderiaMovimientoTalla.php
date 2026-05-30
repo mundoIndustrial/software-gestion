@@ -11,6 +11,7 @@ class LavanderiaMovimientoTalla extends Model
 
     protected $fillable = [
         'lavanderia_movimiento_id',
+        'lavanderia_movimiento_recibo_id',
         'prenda_id',
         'prenda_bodega_id',
         'prenda_agregada_id',
@@ -32,6 +33,14 @@ class LavanderiaMovimientoTalla extends Model
     public function movimiento(): BelongsTo
     {
         return $this->belongsTo(LavanderiaMovimiento::class, 'lavanderia_movimiento_id');
+    }
+
+    /**
+     * Relación: Una talla pertenece a un recibo de movimiento
+     */
+    public function reciboMovimiento(): BelongsTo
+    {
+        return $this->belongsTo(LavanderiaMovimientoRecibo::class, 'lavanderia_movimiento_recibo_id');
     }
 
     /**

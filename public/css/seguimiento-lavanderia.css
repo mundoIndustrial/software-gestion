@@ -1,0 +1,308 @@
+/**
+ * SEGUIMIENTO LAVANDERÍA - Estilos
+ */
+
+/* ============================================
+   MODAL OVERLAY
+   ============================================ */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+.modal-overlay.show {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ============================================
+   MODAL CONTENT
+   ============================================ */
+.modal-content {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 700px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    z-index: 1000;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translate(-50%, -40%);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    padding: 24px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #94a3b8;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.modal-close-btn:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+/* ============================================
+   MOVIMIENTOS SECTIONS
+   ============================================ */
+.movimientos-section {
+    margin-bottom: 24px;
+}
+
+.movimientos-section:last-child {
+    margin-bottom: 0;
+}
+
+.section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.section-title.entradas {
+    border-bottom-color: #10b981;
+    color: #10b981;
+}
+
+.section-title.salidas {
+    border-bottom-color: #f59e0b;
+    color: #f59e0b;
+}
+
+/* ============================================
+   MOVIMIENTO ITEM
+   ============================================ */
+.movimiento-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+}
+
+.movimiento-item:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.movimiento-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.movimiento-info {
+    flex: 1;
+}
+
+.movimiento-fecha {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.movimiento-prenda {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.movimiento-descripcion {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1e293b;
+    margin-bottom: 4px;
+    line-height: 1.5;
+}
+
+.movimiento-estado {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.movimiento-estado.completado {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.movimiento-estado.pendiente {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* ============================================
+   TALLAS CONTAINER
+   ============================================ */
+.tallas-container {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #cbd5e1;
+}
+
+.tallas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+}
+
+.talla-badge {
+    background: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 8px;
+    text-align: center;
+    font-size: 12px;
+}
+
+.talla-badge-label {
+    font-weight: 600;
+    color: #1e293b;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.talla-badge-value {
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+.empty-state {
+    text-align: center;
+    padding: 32px 24px;
+    color: #94a3b8;
+}
+
+.empty-state-icon {
+    font-size: 40px;
+    color: #cbd5e1;
+    display: block;
+    margin-bottom: 12px;
+}
+
+/* ============================================
+   LOADING SPINNER
+   ============================================ */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #2450ef;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   BUTTON VER DETALLES
+   ============================================ */
+.btn-ver-detalles {
+    background: #2450ef;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-ver-detalles:hover {
+    background: #1e40af;
+    box-shadow: 0 4px 12px rgba(36, 80, 239, 0.3);
+}
+
+.btn-ver-detalles:active {
+    transform: scale(0.98);
+}
+
+/* ============================================
+   MAIN CONTAINER
+   ============================================ */
+.seguimiento-lavanderia-main {
+    min-height: 100vh;
+}

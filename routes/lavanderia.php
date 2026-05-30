@@ -49,4 +49,10 @@ Route::middleware(['auth', 'supervisor-access'])->prefix('seguimiento-lavanderia
     
     Route::get('/', [LavanderiaController::class, 'seguimiento'])
         ->name('index');
+
+    Route::get('/api/ordenes', [LavanderiaController::class, 'apiOrdenesSeguimiento'])
+        ->name('api.ordenes');
+
+    Route::get('/api/movimientos-recibo/{reciboId}', [LavanderiaController::class, 'apiMovimientosRecibo'])
+        ->name('api.movimientos-recibo');
 });
