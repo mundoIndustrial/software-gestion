@@ -96,6 +96,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'block-costura-reflectivo-dashboard' => \App\Http\Middleware\BlockCosturaReflectivoDashboard::class,
             'idempotency' => \App\Http\Middleware\IdempotencyKeyMiddleware::class,
             'lavanderia-access' => \App\Http\Middleware\LavanderiaAccess::class,
+            'redirect-visualizador-pedidos' => \App\Http\Middleware\RedirectVisualizadorPedidos::class,
         ]);
         
         //  TESTING: Deshabilitar CSRF para Postman
@@ -121,6 +122,9 @@ return Application::configure(basePath: dirname(__DIR__))
         
         // Restrict gestor-lavanderia role to /gestion-lavanderia routes only
         $middleware->append(\App\Http\Middleware\RestrictLavanderiaRole::class);
+        
+        // Redirect visualizador-pedidos to their module
+        $middleware->append(\App\Http\Middleware\RedirectVisualizadorPedidos::class);
         
         //  Add memory cleanup middleware to prevent memory exhaustion
         $middleware->append(\App\Http\Middleware\CleanupMemoryAfterRequest::class);

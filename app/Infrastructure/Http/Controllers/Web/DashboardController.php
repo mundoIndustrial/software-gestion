@@ -119,6 +119,11 @@ class DashboardController extends Controller
                 return redirect()->route('visualizador-logo.dashboard');
             }
 
+            if ($roleName === 'visualizador-pedidos') {
+                \Log::info(' Redirigiendo a visualizador-pedidos.index');
+                return redirect()->route('visualizador-pedidos.index');
+            }
+
             if ($roleName === 'supervisor_gerencia') {
                 \Log::info(' Redirigiendo a registros.recibos-costura');
                 return redirect()->route('registros.recibos-costura');

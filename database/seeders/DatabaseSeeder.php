@@ -35,6 +35,7 @@ class DatabaseSeeder extends Seeder
             EppSeeder::class, // Seeder para EPP con categorías e imágenes
             BordadoRoleSeeder::class, // Seeder para rol de Bordado
             AddVisualizadorOrdenesProduccionRoleSeeder::class, // Seeder para rol visualizador de ordenes de produccion
+            AddVisualizadorPedidosRoleSeeder::class, // Seeder para rol visualizador de pedidos
         ]);
     }
 }
