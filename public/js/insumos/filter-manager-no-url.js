@@ -161,6 +161,33 @@ function renderFilterModal(column, valores, modal) {
         </div>
     `;
     
+    // IMPORTANTE: Agregar listener específico para checkboxes con máxima prioridad
+    setTimeout(() => {
+        const filterList = document.getElementById('filterListInsumos');
+        if (filterList) {
+            filterList.addEventListener('click', function(e) {
+                // Si el click fue en un checkbox o su label, asegurar que funcione
+                const checkbox = e.target.closest('input[type="checkbox"]');
+                const label = e.target.closest('label');
+                
+                if (checkbox) {
+                    // El checkbox fue clickeado directamente, dejar que funcione
+                    e.stopPropagation();
+                } else if (label) {
+                    // El label fue clickeado, toggle el checkbox manualmente
+                    const cb = label.querySelector('input[type="checkbox"]');
+                    if (cb) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        cb.checked = !cb.checked;
+                    }
+                }
+            }, true); // Usar capture phase para ejecutar ANTES que otros listeners
+            
+            console.log('[FilterManager] Listener de checkboxes configurado con prioridad');
+        }
+    }, 0);
+    
     // Agregar listener de búsqueda
     const searchInput = document.getElementById('filterSearchInsumosModal');
     if (searchInput) {

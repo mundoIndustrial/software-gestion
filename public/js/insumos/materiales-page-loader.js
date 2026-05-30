@@ -408,6 +408,14 @@
         document.documentElement.dataset.insumosDelegated = '1';
 
         document.addEventListener('click', async function (event) {
+            // IMPORTANTE: No interferir con elementos de formulario (inputs, checkboxes, etc.)
+            const isFormElement = event.target.matches('input, select, textarea, label') || 
+                                  event.target.closest('label');
+            if (isFormElement) {
+                // Dejar que los elementos de formulario funcionen normalmente
+                return;
+            }
+            
             const btn = event.target.closest('[data-insumos-action]');
             if (!btn) return;
 

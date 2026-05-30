@@ -52,8 +52,7 @@
         <li class="menu-item">
           <a href="{{ route('insumos.materiales.index') }}"
              class="menu-link {{ request()->routeIs('insumos.materiales.*') && !request()->routeIs('insumos.materiales.reflectivo') ? 'active' : '' }}"
-             aria-label="Control de Insumos"
-             onclick="window.location.href = this.href; return true;">
+             aria-label="Control de Insumos">
             <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
             <span class="menu-label">Control de Insumos</span>
             @if($conteoPendientesInsumos > 0)
@@ -68,8 +67,7 @@
         <li class="menu-item">
           <a href="{{ route('insumos.materiales.reflectivo') }}"
              class="menu-link {{ request()->routeIs('insumos.materiales.reflectivo') ? 'active' : '' }}"
-             aria-label="Gestion Reflectivo"
-             onclick="window.location.href = this.href; return true;">
+             aria-label="Gestion Reflectivo">
             <span class="material-symbols-rounded" aria-hidden="true">visibility</span>
             <span class="menu-label">Gestion Reflectivo</span>
             @if($conteoReflectivoInsumos > 0)
@@ -132,39 +130,42 @@
 </aside>
 
 <script>
-// Forzar navegación en enlaces del sidebar - ejecutar inmediatamente
+// Solución para navegación del sidebar sin interferir con otros elementos
 (function() {
-    function forceNavigation() {
-        const sidebarLinks = document.querySelectorAll('.sidebar .menu-link[href]');
-        console.log('[Sidebar] Configurando', sidebarLinks.length, 'enlaces');
+    'use strict';
+    
+    function setupSidebarNavigation() {
+        const sidebar = document.querySelector('aside.sidebar');
+        if (!sidebar) return;
         
-        sidebarLinks.forEach(link => {
-            const href = link.getAttribute('href');
-            if (href && href !== '#' && !href.startsWith('javascript:')) {
-                // Remover listeners previos clonando el elemento
-                const newLink = link.cloneNode(true);
-                link.parentNode.replaceChild(newLink, link);
+        // Interceptar clicks SOLO en el sidebar, con alta prioridad
+        sidebar.addEventListener('click', function(e) {
+            // Buscar si el click fue en un enlace del menú
+            const menuLink = e.target.closest('.menu-link[href]');
+            
+            if (menuLink && sidebar.contains(menuLink)) {
+                const href = menuLink.getAttribute('href');
                 
-                // Agregar nuevo listener con máxima prioridad (capture phase)
-                newLink.addEventListener('click', function(e) {
+                // Solo procesar enlaces válidos
+                if (href && href !== '#' && !href.startsWith('javascript:')) {
                     e.preventDefault();
                     e.stopPropagation();
-                    e.stopImmediatePropagation();
                     console.log('[Sidebar] Navegando a:', href);
+                    
+                    // Navegar inmediatamente
                     window.location.href = href;
-                }, true);
+                }
             }
-        });
-        console.log('[Sidebar] Enlaces configurados para navegación forzada');
+        }, true); // Usar capture phase para ejecutar antes que otros listeners
+        
+        console.log('[Sidebar] Sistema de navegación configurado');
     }
     
+    // Ejecutar cuando el DOM esté listo
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', forceNavigation);
+        document.addEventListener('DOMContentLoaded', setupSidebarNavigation);
     } else {
-        forceNavigation();
+        setupSidebarNavigation();
     }
-    
-    // Reintentar después de que otros scripts se carguen
-    setTimeout(forceNavigation, 1000);
 })();
 </script>
