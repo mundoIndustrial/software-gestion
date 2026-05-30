@@ -714,9 +714,14 @@ function showRecibos(tallerId, tallerName) {
                             </span>
                         </td>
                         <td>
-                            <button class="btn-action btn-ver-entregas" data-taller-id="${data.taller_id}" data-recibo-id="${recibo.id}" data-es-parcial="${recibo.es_parcial}" data-recibo-numero="${recibo.numero_recibo}" data-cliente="${recibo.cliente}" data-prenda="${recibo.nombre_prenda}">
-                                Ver Entregas <span style="font-size: 10px;">&#10095;</span>
-                            </button>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <button class="btn-action btn-expandir-detalles" data-recibo-id="${recibo.id}" data-es-parcial="${recibo.es_parcial}" title="Ver detalles aquí">
+                                    <span class="material-symbols-rounded" style="font-size: 16px;">expand_more</span>
+                                </button>
+                                <button class="btn-action btn-ver-entregas" data-taller-id="${data.taller_id}" data-recibo-id="${recibo.id}" data-es-parcial="${recibo.es_parcial}" data-recibo-numero="${recibo.numero_recibo}" data-cliente="${recibo.cliente}" data-prenda="${recibo.nombre_prenda}">
+                                    Ver Entregas <span style="font-size: 10px;">&#10095;</span>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -754,6 +759,57 @@ function showRecibos(tallerId, tallerName) {
                     });
             });
 
+            // Event delegation para el botón Expandir Detalles - Acordeón
+            recibosContent.addEventListener('click', function(e) {
+                const btn = e.target.closest('.btn-expandir-detalles');
+                if (!btn) return;
+                
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const reciboId = btn.getAttribute('data-recibo-id');
+                const esParcial = btn.getAttribute('data-es-parcial');
+                const reciboRow = btn.closest('tr');
+                
+                // Crear o encontrar la fila del acordeón
+                let accordionRow = reciboRow.nextElementSibling;
+                if (!accordionRow || !accordionRow.classList.contains('recibo-accordion-row')) {
+                    accordionRow = document.createElement('tr');
+                    accordionRow.className = 'recibo-accordion-row';
+                    accordionRow.innerHTML = `
+                        <td colspan="6">
+                            <div class="recibo-accordion-content" style="padding: 20px; text-align: center; color: #64748b;">
+                                <div style="font-size: 1.5rem; margin-bottom: 10px;">⏳</div>
+                                <p>Cargando entregas...</p>
+                            </div>
+                        </td>
+                    `;
+                    reciboRow.parentNode.insertBefore(accordionRow, reciboRow.nextSibling);
+                }
+                
+                // Toggle del acordeón
+                if (accordionRow.style.display === 'none' || !accordionRow.style.display) {
+                    // Cerrar otros acordeones
+                    document.querySelectorAll('.recibo-accordion-row').forEach(row => {
+                        if (row !== accordionRow) {
+                            row.style.display = 'none';
+                        }
+                    });
+                    
+                    // Abrir este acordeón
+                    accordionRow.style.display = 'table-row';
+                    
+                    // Cargar entregas
+                    const contentDiv = accordionRow.querySelector('.recibo-accordion-content');
+                    if (contentDiv.textContent.includes('Cargando')) {
+                        cargarEntregasAcordeon(reciboId, esParcial, contentDiv);
+                    }
+                } else {
+                    accordionRow.style.display = 'none';
+                }
+            });
+            
+            // Manejador para el botón Ver Entregas original (ir a otra vista)
             document.querySelectorAll('.btn-ver-entregas').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const tallerId = this.getAttribute('data-taller-id');
@@ -1918,3 +1974,113 @@ function loadNovedades(reciboId, esParcial) {
             `;
         });
 }
+
+
+/**
+ * Cargar entregas en el acordeón
+ */
+function cargarEntregasAcordeon(reciboId, esParcial, contentDiv) {
+    const esParcialParam = esParcial === '1' ? '1' : '0';
+    const mainContainer = document.querySelector('.main-container');
+    const tallerId = currentState.selectedTaller?.id;
+    
+    if (!tallerId) {
+        contentDiv.innerHTML = '<div style="padding: 30px; text-align: center; color: #ef4444;"><div style="font-size: 2rem; margin-bottom: 10px;">❌</div><p>Error: No se encontró el ID del taller</p></div>';
+        return;
+    }
+    
+    // Usar el mismo endpoint que usa el botón "Ver Entregas"
+    const apiRoute = mainContainer.dataset.routeApiEntregas
+        .replace(':taller_id', tallerId)
+        .replace(':recibo_id', reciboId)
+        .replace(':es_parcial', esParcialParam);
+    
+    fetch(apiRoute)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Datos completos del recibo:', data);
+            console.log('Estructura de data:', Object.keys(data));
+            console.log('data.entregas:', data.entregas);
+            console.log('data.total:', data.total);
+            
+            // Verificar si hay datos
+            if (!data) {
+                contentDiv.innerHTML = '<div style="padding: 30px; text-align: center; color: #64748b;"><div style="font-size: 2rem; margin-bottom: 10px;">📭</div><p>No se recibieron datos del servidor</p></div>';
+                return;
+            }
+
+            let html = '<div style="padding: 20px;">';
+
+            // Tabla de prendas asignadas
+            html += `
+                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <thead>
+                        <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Fecha</th>
+                            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Descripción</th>
+                            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Género</th>
+                            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Talla</th>
+                            <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Asignado</th>
+                            <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Entregado</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            let rowIndex = 0;
+            let hayDatos = false;
+            
+            // Iterar sobre las entregas agrupadas
+            if (data.entregas && Array.isArray(data.entregas) && data.entregas.length > 0) {
+                data.entregas.forEach(semanaGroup => {
+                    if (!semanaGroup || !Array.isArray(semanaGroup) || semanaGroup.length === 0) return;
+                    
+                    semanaGroup.forEach(entrega => {
+                        hayDatos = true;
+                        const fecha = entrega.fecha_formateada || 'N/A';
+                        const descripcion = entrega.descripcion || 'Sin descripción';
+                        const genero = entrega.genero || 'N/A';
+                        const talla = entrega.talla_nombre || entrega.talla || 'N/A';
+                        const totalAsignado = entrega.total_asignado || 0;
+                        const totalEntregado = entrega.total_entregado || 0;
+                        
+                        const bgColor = rowIndex % 2 === 0 ? '#ffffff' : '#f8fafc';
+                        rowIndex++;
+                        
+                        html += `
+                            <tr style="border-bottom: 1px solid #e2e8f0; background: ${bgColor};">
+                                <td style="padding: 12px; font-size: 13px; color: #334155;">${fecha}</td>
+                                <td style="padding: 12px; font-size: 13px; color: #334155;">${descripcion}</td>
+                                <td style="padding: 12px; font-size: 13px; color: #334155;">${genero}</td>
+                                <td style="padding: 12px; font-size: 13px; color: #334155;">${talla}</td>
+                                <td style="padding: 12px; text-align: center; font-size: 14px; font-weight: 600; color: #2563eb;">${totalAsignado}</td>
+                                <td style="padding: 12px; text-align: center; font-size: 14px; font-weight: 600; color: #10b981;">${totalEntregado}</td>
+                            </tr>`;
+                    });
+                });
+            }
+
+            if (!hayDatos) {
+                contentDiv.innerHTML = '<div style="padding: 30px; text-align: center; color: #64748b;"><div style="font-size: 2rem; margin-bottom: 10px;">📭</div><p>No hay datos de asignación disponibles</p></div>';
+                return;
+            }
+
+            html += `
+                    </tbody>
+                </table>`;
+
+            // Mostrar total si existe
+            if (data.total) {
+                html += `<div style="margin-top: 15px; text-align: right; font-size: 14px; font-weight: 600; color: #475569;">
+                    Total entregado: <span style="color: #2563eb;">${data.total} unidades</span>
+                </div>`;
+            }
+
+            html += '</div>';
+            contentDiv.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error al cargar detalles del recibo:', error);
+            contentDiv.innerHTML = '<div style="padding: 30px; text-align: center; color: #ef4444;"><div style="font-size: 2rem; margin-bottom: 10px;">❌</div><p>Error al cargar los detalles del recibo</p></div>';
+        });
+}
+
