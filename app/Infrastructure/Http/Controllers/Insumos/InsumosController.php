@@ -729,14 +729,47 @@ class InsumosController extends Controller
                 $targetPrendaBodegaId = $prendaBodegaId > 0 ? $prendaBodegaId : (int) $prendaId;
                 $numeroRecibo = (int) request('numero_recibo', 0);
 
-                $anchoQuery = PedidoAnchoGeneral::query()
-                    ->where('prenda_bodega_id', $targetPrendaBodegaId);
-                $metrajeQuery = PedidoMetrajeColor::query()
-                    ->where('prenda_bodega_id', $targetPrendaBodegaId);
-                if ($numeroRecibo > 0) {
-                    $anchoQuery->where('numero_recibo', $numeroRecibo);
-                    $metrajeQuery->where('numero_recibo', $numeroRecibo);
+                // Si no hay numero_recibo o tipo_recibo, devolver vacío
+                if ($numeroRecibo <= 0 || empty($tipoRecibo)) {
+                    return response()->json([
+                        'success' => true,
+                        'ancho' => null,
+                        'ancho_general' => null,
+                        'metraje' => null,
+                        'contenido_mano' => null,
+                        'data' => [],
+                        'tipo_modo' => null,
+                    ]);
                 }
+
+                // Obtener el ID del recibo desde consecutivos_recibos_pedidos
+                $reciboId = \DB::table('consecutivos_recibos_pedidos')
+                    ->where('prenda_bodega_id', $targetPrendaBodegaId)
+                    ->where('consecutivo_actual', $numeroRecibo)
+                    ->where('tipo_recibo', $tipoRecibo)
+                    ->value('id');
+
+                // Si no existe el recibo, devolver vacío
+                if (!$reciboId) {
+                    return response()->json([
+                        'success' => true,
+                        'ancho' => null,
+                        'ancho_general' => null,
+                        'metraje' => null,
+                        'contenido_mano' => null,
+                        'data' => [],
+                        'tipo_modo' => null,
+                    ]);
+                }
+
+                // Filtrar usando consecutivo_recibo_id (nueva columna)
+                $anchoQuery = PedidoAnchoGeneral::query()
+                    ->where('prenda_bodega_id', $targetPrendaBodegaId)
+                    ->where('consecutivo_recibo_id', $reciboId);
+                    
+                $metrajeQuery = PedidoMetrajeColor::query()
+                    ->where('prenda_bodega_id', $targetPrendaBodegaId)
+                    ->where('consecutivo_recibo_id', $reciboId);
 
                 $anchoGeneral = $anchoQuery->latest()->first();
                 $metrajesPorColor = $metrajeQuery->get();
@@ -786,6 +819,7 @@ class InsumosController extends Controller
             $tipoRecibo = strtoupper(trim((string) $request->input('tipo_recibo', $request->query('tipo_recibo', ''))));
             $prendaBodegaId = (int) $request->input('prenda_bodega_id', $request->query('prenda_bodega_id', 0));
             $numeroRecibo = (int) $request->input('numero_recibo', 0);
+            
             \Log::info('[InsumosController] guardarAnchoMetrajePrenda payload inicial', [
                 'numero_pedido' => (string) $numeroPedido,
                 'prenda_pedido_id' => $validated['prenda_pedido_id'] ?? null,
@@ -796,12 +830,34 @@ class InsumosController extends Controller
                 'color' => $validated['color'] ?? null,
             ]);
 
+            // Obtener el consecutivo_recibo_id desde consecutivos_recibos_pedidos
+            $consecutivoReciboId = null;
+            if ($prendaBodegaId > 0 && $numeroRecibo > 0 && !empty($tipoRecibo)) {
+                $consecutivoReciboId = \DB::table('consecutivos_recibos_pedidos')
+                    ->where('prenda_bodega_id', $prendaBodegaId)
+                    ->where('consecutivo_actual', $numeroRecibo)
+                    ->where('tipo_recibo', $tipoRecibo)
+                    ->value('id');
+                    
+                if (!$consecutivoReciboId) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No se encontró el recibo especificado',
+                    ], 404);
+                }
+            }
+
             if ($numeroRecibo <= 0 && $prendaBodegaId > 0) {
-                $numeroRecibo = (int) ConsecutivoReciboPedido::query()
+                $recibo = ConsecutivoReciboPedido::query()
                     ->where('prenda_bodega_id', $prendaBodegaId)
                     ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
                     ->orderByDesc('id')
-                    ->value('consecutivo_actual');
+                    ->first();
+                    
+                if ($recibo) {
+                    $numeroRecibo = $recibo->consecutivo_actual;
+                    $consecutivoReciboId = $recibo->id;
+                }
             }
 
             $validated['tipo_recibo'] = $tipoRecibo;
@@ -811,12 +867,17 @@ class InsumosController extends Controller
             if ($numeroRecibo > 0) {
                 $validated['numero_recibo'] = $numeroRecibo;
             }
+            if ($consecutivoReciboId) {
+                $validated['consecutivo_recibo_id'] = $consecutivoReciboId;
+            }
+            
             \Log::info('[InsumosController] guardarAnchoMetrajePrenda payload final', [
                 'numero_pedido' => (string) $numeroPedido,
                 'prenda_pedido_id' => $validated['prenda_pedido_id'] ?? null,
                 'prenda_bodega_id' => $validated['prenda_bodega_id'] ?? null,
                 'tipo_recibo' => $validated['tipo_recibo'] ?? null,
                 'numero_recibo_final' => $validated['numero_recibo'] ?? null,
+                'consecutivo_recibo_id' => $validated['consecutivo_recibo_id'] ?? null,
                 'tipo_modo' => $validated['tipo_modo'] ?? null,
                 'color' => $validated['color'] ?? null,
             ]);
@@ -864,14 +925,24 @@ class InsumosController extends Controller
                     ], 422);
                 }
 
+                // Obtener el consecutivo_recibo_id
+                $consecutivoReciboId = null;
+                if ($numeroRecibo > 0 && !empty($tipoRecibo)) {
+                    $consecutivoReciboId = \DB::table('consecutivos_recibos_pedidos')
+                        ->where('prenda_bodega_id', $targetPrendaBodegaId)
+                        ->where('consecutivo_actual', $numeroRecibo)
+                        ->where('tipo_recibo', $tipoRecibo)
+                        ->value('id');
+                }
+
                 $anchoQuery = PedidoAnchoGeneral::query()
                     ->where('prenda_bodega_id', $targetPrendaBodegaId);
                 $metrajeQuery = PedidoMetrajeColor::query()
                     ->where('prenda_bodega_id', $targetPrendaBodegaId);
 
-                if ($numeroRecibo > 0) {
-                    $anchoQuery->where('numero_recibo', $numeroRecibo);
-                    $metrajeQuery->where('numero_recibo', $numeroRecibo);
+                if ($consecutivoReciboId) {
+                    $anchoQuery->where('consecutivo_recibo_id', $consecutivoReciboId);
+                    $metrajeQuery->where('consecutivo_recibo_id', $consecutivoReciboId);
                 }
 
                 $anchoQuery->delete();
