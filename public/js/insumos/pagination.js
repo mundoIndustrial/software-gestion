@@ -14,14 +14,24 @@ function initInsumosPagination() {
 }
 
 function handlePaginationClick(e) {
+    // Buscar el botón más cercano, incluso si se hizo clic en el icono
     const btn = e.target.closest('.pagination-btn');
     
-    if (!btn || btn.disabled) return;
+    // Verificar si el botón está deshabilitado (atributo o propiedad)
+    if (!btn || btn.disabled || btn.hasAttribute('disabled')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+    }
     
     e.preventDefault();
+    e.stopPropagation();
     
     const page = btn.dataset.page;
-    if (!page) return;
+    if (!page || page === '0' || parseInt(page) < 1) {
+        console.warn('[Pagination] Página inválida:', page);
+        return;
+    }
     
     // Construir URL con parámetros, preservando filtros y búsqueda
     const url = new URL(window.location.href);

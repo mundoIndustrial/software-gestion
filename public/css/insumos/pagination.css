@@ -96,17 +96,21 @@ body.dark-theme .pagination-btn.active {
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.6);
 }
 
-.pagination-btn:disabled {
+.pagination-btn:disabled,
+.pagination-btn[disabled] {
     opacity: 0.5;
     cursor: not-allowed;
     background: #f8f9fa;
     color: #adb5bd;
+    pointer-events: none; /* Prevenir cualquier interacción */
 }
 
-body.dark-theme .pagination-btn:disabled {
+body.dark-theme .pagination-btn:disabled,
+body.dark-theme .pagination-btn[disabled] {
     background: #1e293b;
     color: #64748b;
     opacity: 0.5;
+    pointer-events: none; /* Prevenir cualquier interacción */
 }
 
 .pagination-btn i {
