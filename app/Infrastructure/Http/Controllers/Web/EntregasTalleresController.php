@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\ConsecutivoReciboPedido;
 use App\Models\EntregaReciboCostura;
+use App\Models\NovedadEntrega;
 use App\Models\PrendaPedido;
 use App\Models\PedidoProduccion;
 use App\Models\SeguimientoPedidosPorPrenda;
@@ -128,5 +129,20 @@ class EntregasTalleresController extends Controller
     {
         $result = $useCase->execute($id);
         return response()->json($result);
+    }
+
+    public function novedadesCount(Request $request, $id)
+    {
+        try {
+            $esParcial = $request->query('es_parcial') == '1';
+            
+            $count = NovedadEntrega::where($esParcial ? 'recibo_parcial_id' : 'consecutivo_recibo_id', $id)
+                ->count();
+
+            return response()->json(['count' => $count]);
+        } catch (\Exception $e) {
+            \Log::error('Error en novedadesCount: ' . $e->getMessage());
+            return response()->json(['count' => 0, 'error' => $e->getMessage()], 500);
+        }
     }
 }

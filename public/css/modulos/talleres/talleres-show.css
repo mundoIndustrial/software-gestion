@@ -184,6 +184,48 @@ body {
     min-width: 180px;
 }
 
+.col-novedades {
+    min-width: 100px;
+    text-align: center;
+}
+
+.novedades-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f9ff;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.novedades-badge:hover {
+    background: #e0f2fe;
+    border-color: #7dd3fc;
+    transform: scale(1.05);
+}
+
+.novedades-badge.has-novedades {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #fca5a5;
+}
+
+.novedades-badge.has-novedades:hover {
+    background: #fecaca;
+    border-color: #f87171;
+}
+
+.novedades-count {
+    font-weight: 800;
+}
+
 /* Progress Bar Styles */
 .progress-container {
     display: flex;

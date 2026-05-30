@@ -304,42 +304,40 @@ class RegistrarEntregaTallerUseCase
         }
 
         try {
+            $prendaId = null;
+            $prendaBodegaIdGuardar = null;
+            $consecutivoReciboId = null;
+            $reciboParcialId = null;
+
             if ($esBodega) {
+                // Si es bodega, guardar el prenda_bodega_id
+                $prendaBodegaIdGuardar = $prendaBodegaId > 0 ? $prendaBodegaId : null;
+                
                 if ($esParcial) {
-                    $recibo = ReciboPorPartes::findOrFail($reciboId);
-                    $prendaId = (int) ($recibo->prenda_pedido_id ?? 0);
-                    $consecutivoReciboId = null;
                     $reciboParcialId = $reciboId;
                 } else {
-                    $recibo = ConsecutivoReciboPedido::findOrFail($reciboId);
-                    $prendaId = (int) ($recibo->prenda_bodega_id ?? 0);
                     $consecutivoReciboId = $reciboId;
-                    $reciboParcialId = null;
                 }
             } elseif ($esParcial) {
                 $recibo = ReciboPorPartes::findOrFail($reciboId);
                 $prendaId = $recibo->prenda_pedido_id;
-                $consecutivoReciboId = null;
                 $reciboParcialId = $reciboId;
             } else {
                 $recibo = ConsecutivoReciboPedido::findOrFail($reciboId);
                 $prendaId = $recibo->prenda_id;
                 $consecutivoReciboId = $reciboId;
-                $reciboParcialId = null;
             }
 
             $encargadoActual = auth()->user()->name ?? 'Sistema';
 
-            EntregaReciboCostura::create([
+            // Guardar en la tabla de novedades en lugar de entregas
+            \App\Models\NovedadEntrega::create([
                 'prenda_pedido_id' => $prendaId,
+                'prenda_bodega_id' => $prendaBodegaIdGuardar,
                 'consecutivo_recibo_id' => $consecutivoReciboId,
                 'recibo_parcial_id' => $reciboParcialId,
                 'encargado' => $encargadoActual,
                 'area' => 'Costura',
-                'cantidad_entregada' => 0,
-                'talla' => 'NOVEDAD',
-                'genero' => 'N/A',
-                'color_nombre' => null,
                 'usuario_id' => auth()->id(),
                 'observaciones' => $observaciones,
             ]);

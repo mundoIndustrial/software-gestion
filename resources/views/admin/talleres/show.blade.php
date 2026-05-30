@@ -54,6 +54,7 @@
                             <th>CLIENTE</th>
                             <th>DESCRIPCIÓN PRENDA</th>
                             <th class="col-progreso">PROGRESO</th>
+                            <th class="col-novedades">NOVEDADES</th>
                             <th>ACCIONES</th>
                         </tr>
                     </thead>
@@ -77,6 +78,11 @@
                                         </div>
                                     </div>
                                 </td>
+                                <td class="col-novedades">
+                                    <span class="novedades-badge" data-recibo-id="{{ $recibo->id }}" data-es-parcial="{{ $recibo->es_parcial }}">
+                                        <span class="novedades-count">0</span>
+                                    </span>
+                                </td>
                                 <td>
                                     <a href="{{ route('talleres.entregas', ['id' => $taller->id, 'recibo_id' => $recibo->id, 'es_parcial' => $recibo->es_parcial]) }}" class="btn-action">
                                         VER ENTREGAS <span style="font-size: 10px;">&#10095;</span>
@@ -85,7 +91,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">
+                                <td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">
                                     No hay recibos asignados a este taller por el momento.
                                 </td>
                             </tr>
@@ -101,7 +107,29 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Scripts if needed
+        // Cargar el conteo de novedades para cada recibo
+        const novedadesBadges = document.querySelectorAll('.novedades-badge');
+        
+        novedadesBadges.forEach(badge => {
+            const reciboId = badge.dataset.reciboId;
+            const esParcial = badge.dataset.esParcial === '1';
+            
+            // Hacer una petición para obtener el conteo de novedades
+            fetch(`/entregas-talleres/novedades-count/${reciboId}?es_parcial=${esParcial}`)
+                .then(response => response.json())
+                .then(data => {
+                    const countElement = badge.querySelector('.novedades-count');
+                    countElement.textContent = data.count || 0;
+                    
+                    if (data.count > 0) {
+                        badge.classList.add('has-novedades');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar novedades:', error);
+                    badge.querySelector('.novedades-count').textContent = '0';
+                });
+        });
     });
 </script>
 @endpush

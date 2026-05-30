@@ -686,7 +686,7 @@ function showRecibos(tallerId, tallerName) {
                 return;
             }
 
-            let html = '<div class="table-container"><table class="table-recibos"><thead><tr><th>Nº RECIBO</th><th>CLIENTE</th><th>DESCRIPCIÓN PRENDA</th><th>PROGRESO</th><th>ACCIONES</th></tr></thead><tbody>';
+            let html = '<div class="table-container"><table class="table-recibos"><thead><tr><th>Nº RECIBO</th><th>CLIENTE</th><th>DESCRIPCIÓN PRENDA</th><th>PROGRESO</th><th>NOVEDADES</th><th>ACCIONES</th></tr></thead><tbody>';
 
             data.recibos.forEach(recibo => {
                 html += `
@@ -708,6 +708,11 @@ function showRecibos(tallerId, tallerName) {
                                 </div>
                             </div>
                         </td>
+                        <td class="col-novedades">
+                            <span class="novedades-badge" data-recibo-id="${recibo.id}" data-es-parcial="${recibo.es_parcial}" style="display: inline-flex; align-items: center; justify-content: center; background: #f0f9ff; color: #1e40af; border: 1px solid #bfdbfe; border-radius: 12px; padding: 4px 10px; font-size: 0.75rem; font-weight: bold; cursor: pointer; transition: all 0.2s ease; white-space: nowrap; gap: 4px;">
+                                <span class="novedades-count">0</span> novedades
+                            </span>
+                        </td>
                         <td>
                             <button class="btn-action btn-ver-entregas" data-taller-id="${data.taller_id}" data-recibo-id="${recibo.id}" data-es-parcial="${recibo.es_parcial}" data-recibo-numero="${recibo.numero_recibo}" data-cliente="${recibo.cliente}" data-prenda="${recibo.nombre_prenda}">
                                 Ver Entregas <span style="font-size: 10px;">&#10095;</span>
@@ -719,6 +724,35 @@ function showRecibos(tallerId, tallerName) {
 
             html += '</tbody></table></div>';
             recibosContent.innerHTML = html;
+
+            // Cargar el conteo de novedades para cada recibo
+            const novedadesBadges = recibosContent.querySelectorAll('.novedades-badge');
+            
+            novedadesBadges.forEach((badge) => {
+                const reciboId = badge.dataset.reciboId;
+                const esParcialStr = badge.dataset.esParcial;
+                const esParcial = esParcialStr === '1';
+                const esParcialParam = esParcial ? '1' : '0';
+                
+                fetch(`/entregas-talleres/novedades-count/${reciboId}?es_parcial=${esParcialParam}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const count = data.count || 0;
+                        
+                        // Actualizar el texto del badge manteniendo los estilos
+                        badge.innerHTML = `<span class="novedades-count">${count}</span> ${count === 1 ? 'novedad' : 'novedades'}`;
+                        
+                        // Agregar evento de click para abrir modal
+                        badge.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            openNovedadesModal(reciboId, esParcial);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error al cargar novedades:', error);
+                        badge.innerHTML = '<span class="novedades-count">0</span> novedades';
+                    });
+            });
 
             document.querySelectorAll('.btn-ver-entregas').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -1548,4 +1582,339 @@ function initPaginationEvents(search) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     });
+}
+
+
+/**
+ * Abrir modal de novedades
+ */
+function openNovedadesModal(reciboId, esParcial) {
+    // Crear el modal si no existe
+    let modal = document.getElementById('novedadesModal');
+    if (!modal) {
+        modal = createNovedadesModal();
+        document.body.appendChild(modal);
+    }
+
+    // Mostrar el modal
+    modal.style.display = 'flex';
+    
+    // Cargar las novedades
+    loadNovedades(reciboId, esParcial);
+}
+
+/**
+ * Crear el HTML del modal
+ */
+function createNovedadesModal() {
+    const modal = document.createElement('div');
+    modal.id = 'novedadesModal';
+    modal.style.cssText = `
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+    `;
+
+    modal.innerHTML = `
+        <div style="
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            max-width: 700px;
+            width: 90%;
+            max-height: 85vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.3s ease-out;
+        ">
+            <!-- Header -->
+            <div style="
+                padding: 28px 32px;
+                border-bottom: 1px solid #e2e8f0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            ">
+                <div>
+                    <h2 style="
+                        margin: 0;
+                        font-size: 22px;
+                        font-weight: 800;
+                        color: #0f172a;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                    ">
+                        <span style="font-size: 24px;">📝</span>
+                        Novedades Registradas
+                    </h2>
+                    <p style="
+                        margin: 6px 0 0 0;
+                        font-size: 13px;
+                        color: #64748b;
+                        font-weight: 500;
+                    ">Historial de eventos y observaciones</p>
+                </div>
+                <button onclick="closeNovedadesModal()" style="
+                    background: white;
+                    border: 1px solid #e2e8f0;
+                    font-size: 20px;
+                    cursor: pointer;
+                    color: #94a3b8;
+                    padding: 8px;
+                    width: 40px;
+                    height: 40px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 10px;
+                    transition: all 0.2s;
+                    flex-shrink: 0;
+                " onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#cbd5e1'; this.style.color='#475569';" onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0'; this.style.color='#94a3b8';">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div id="novedadesContent" style="
+                padding: 24px 32px;
+                overflow-y: auto;
+                flex: 1;
+            ">
+                <div style="text-align: center; padding: 40px 20px;">
+                    <div style="
+                        width: 48px;
+                        height: 48px;
+                        border: 3px solid #e2e8f0;
+                        border-top-color: #3b82f6;
+                        border-radius: 50%;
+                        animation: spin 1s linear infinite;
+                        margin: 0 auto 16px;
+                    "></div>
+                    <p style="color: #94a3b8; font-weight: 500;">Cargando novedades...</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Agregar estilos de animación
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        #novedadesContent::-webkit-scrollbar {
+            width: 8px;
+        }
+        #novedadesContent::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #novedadesContent::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        #novedadesContent::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Cerrar al hacer clic en el overlay
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeNovedadesModal();
+        }
+    });
+
+    return modal;
+}
+
+/**
+ * Cerrar modal de novedades
+ */
+function closeNovedadesModal() {
+    const modal = document.getElementById('novedadesModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+/**
+ * Cargar novedades del recibo
+ */
+function loadNovedades(reciboId, esParcial) {
+    const content = document.getElementById('novedadesContent');
+    
+    fetch(`/entregas-talleres/historial/${reciboId}?es_parcial=${esParcial ? '1' : '0'}`)
+        .then(response => response.json())
+        .then(data => {
+            // Filtrar solo las novedades
+            const novedades = data.filter(item => item.es_novedad);
+            
+            if (novedades.length === 0) {
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px;">
+                        <div style="
+                            width: 80px;
+                            height: 80px;
+                            background: #f0fdf4;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            margin: 0 auto 20px;
+                            font-size: 40px;
+                        ">✓</div>
+                        <h3 style="
+                            margin: 0 0 8px 0;
+                            font-size: 16px;
+                            font-weight: 700;
+                            color: #1e293b;
+                        ">Sin novedades</h3>
+                        <p style="
+                            margin: 0;
+                            font-size: 14px;
+                            color: #64748b;
+                        ">No hay novedades registradas para este recibo.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `<div style="display: flex; flex-direction: column; gap: 14px;">`;
+            
+            novedades.forEach((novedad) => {
+                // Obtener iniciales del encargado
+                const iniciales = novedad.encargado
+                    .split(' ')
+                    .map(word => word[0])
+                    .join('')
+                    .toUpperCase()
+                    .substring(0, 2);
+
+                html += `
+                    <div style="
+                        background: white;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 12px;
+                        padding: 18px;
+                        transition: all 0.2s ease;
+                    " onmouseover="this.style.boxShadow='0 6px 18px rgba(15,23,42,0.08)'; this.style.borderColor='#cbd5e1';" onmouseout="this.style.boxShadow='none'; this.style.borderColor='#e2e8f0';">
+                        <!-- Encabezado -->
+                        <div style="
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            margin-bottom: 14px;
+                        ">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="
+                                    width: 40px;
+                                    height: 40px;
+                                    border-radius: 50%;
+                                    background: #eff6ff;
+                                    color: #2563eb;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-weight: 700;
+                                    font-size: 14px;
+                                    flex-shrink: 0;
+                                ">${iniciales}</div>
+                                <div>
+                                    <div style="
+                                        font-size: 14px;
+                                        font-weight: 600;
+                                        color: #0f172a;
+                                    ">${novedad.encargado}</div>
+                                    <div style="
+                                        font-size: 12px;
+                                        color: #64748b;
+                                    ">${novedad.fecha}</div>
+                                </div>
+                            </div>
+                            <span style="
+                                background: #fef3c7;
+                                color: #92400e;
+                                padding: 4px 10px;
+                                border-radius: 20px;
+                                font-size: 11px;
+                                font-weight: 600;
+                                text-transform: uppercase;
+                                letter-spacing: 0.3px;
+                                flex-shrink: 0;
+                            ">Novedad</span>
+                        </div>
+
+                        <!-- Contenido -->
+                        <div style="
+                            background: #f8fafc;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 10px;
+                            padding: 14px;
+                            color: #334155;
+                            font-size: 14px;
+                            line-height: 1.6;
+                            word-break: break-word;
+                        ">
+                            ${escapeHtml(novedad.observaciones || 'Sin descripción')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            content.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error al cargar novedades:', error);
+            content.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px;">
+                    <div style="
+                        width: 80px;
+                        height: 80px;
+                        background: #fee2e2;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 0 auto 20px;
+                        font-size: 40px;
+                    ">⚠</div>
+                    <h3 style="
+                        margin: 0 0 8px 0;
+                        font-size: 16px;
+                        font-weight: 700;
+                        color: #1e293b;
+                    ">Error al cargar</h3>
+                    <p style="
+                        margin: 0;
+                        font-size: 14px;
+                        color: #64748b;
+                    ">No pudimos cargar las novedades. Intenta de nuevo.</p>
+                </div>
+            `;
+        });
 }

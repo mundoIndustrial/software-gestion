@@ -3,14 +3,35 @@
 namespace App\Application\EntregasTalleres\UseCases;
 
 use App\Models\EntregaReciboCostura;
+use App\Models\NovedadEntrega;
 use Illuminate\Support\Facades\DB;
 
 class EliminarEntregaTallerUseCase
 {
     public function execute(int $entregaId)
     {
-        $entrega = EntregaReciboCostura::findOrFail($entregaId);
+        // Intentar buscar en entregas primero
+        $entrega = EntregaReciboCostura::find($entregaId);
         
+        if ($entrega) {
+            return $this->eliminarEntrega($entrega);
+        }
+
+        // Si no está en entregas, buscar en novedades
+        $novedad = NovedadEntrega::find($entregaId);
+        
+        if ($novedad) {
+            return $this->eliminarNovedad($novedad);
+        }
+
+        return [
+            'success' => false,
+            'message' => 'Entrega o novedad no encontrada.'
+        ];
+    }
+
+    private function eliminarEntrega(EntregaReciboCostura $entrega)
+    {
         $reciboId = $entrega->consecutivo_recibo_id;
         $parcialId = $entrega->recibo_parcial_id;
         $esParcial = !is_null($parcialId);
@@ -36,6 +57,16 @@ class EliminarEntregaTallerUseCase
         return [
             'success' => true,
             'message' => 'Entrega eliminada y estado de completado actualizado.'
+        ];
+    }
+
+    private function eliminarNovedad(NovedadEntrega $novedad)
+    {
+        $novedad->delete();
+
+        return [
+            'success' => true,
+            'message' => 'Novedad eliminada correctamente.'
         ];
     }
 }

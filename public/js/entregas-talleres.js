@@ -524,7 +524,7 @@ async function loadHistorial() {
             let html;
             
             if (item.es_novedad) {
-                // Mostrar novedades de forma especial
+                // Mostrar novedades de forma especial (sin botón de eliminar)
                 html = `
                     <div class="historial-item" style="border-left: 4px solid #f59e0b; background: #fffbeb;">
                         <div class="historial-info">
@@ -533,11 +533,6 @@ async function loadHistorial() {
                             <div style="font-size: 12px; color: #92400e; margin-top: 8px; padding: 8px; background: #fef3c7; border-radius: 4px; border-left: 3px solid #f59e0b;">
                                 <strong>Descripción:</strong> ${escapeHtml(item.observaciones || 'Sin descripción')}
                             </div>
-                        </div>
-                        <div class="historial-actions">
-                            <button class="delete-historial-btn" onclick="deleteEntrega(${item.id})">
-                                <span class="material-symbols-rounded">delete</span>
-                            </button>
                         </div>
                     </div>
                 `;
@@ -614,14 +609,39 @@ async function deleteEntrega(id) {
 }
 
 function openHistorial() {
-    document.getElementById('modal-overlay').style.display = 'block';
-    document.getElementById('historial-modal').classList.add('show');
+    const overlay = document.getElementById('modal-overlay');
+    const modal = document.getElementById('historial-modal');
+    
+    if (overlay) {
+        overlay.style.display = 'block';
+        overlay.style.zIndex = '9998';
+    }
+    
+    if (modal) {
+        modal.classList.add('show');
+        modal.style.zIndex = '9999';
+    }
+    
+    // Prevenir scroll del body
+    document.body.style.overflow = 'hidden';
+    
     loadHistorial();
 }
 
 function closeHistorial() {
-    document.getElementById('modal-overlay').style.display = 'none';
-    document.getElementById('historial-modal').classList.remove('show');
+    const overlay = document.getElementById('modal-overlay');
+    const modal = document.getElementById('historial-modal');
+    
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+    
+    if (modal) {
+        modal.classList.remove('show');
+    }
+    
+    // Restaurar scroll del body
+    document.body.style.overflow = 'auto';
 }
 
 function openAgregarNovedad() {
