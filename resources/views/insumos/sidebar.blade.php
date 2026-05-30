@@ -52,7 +52,8 @@
         <li class="menu-item">
           <a href="{{ route('insumos.materiales.index') }}"
              class="menu-link {{ request()->routeIs('insumos.materiales.*') && !request()->routeIs('insumos.materiales.reflectivo') ? 'active' : '' }}"
-             aria-label="Control de Insumos">
+             aria-label="Control de Insumos"
+             onclick="window.location.href = this.href; return true;">
             <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
             <span class="menu-label">Control de Insumos</span>
             @if($conteoPendientesInsumos > 0)
@@ -67,7 +68,8 @@
         <li class="menu-item">
           <a href="{{ route('insumos.materiales.reflectivo') }}"
              class="menu-link {{ request()->routeIs('insumos.materiales.reflectivo') ? 'active' : '' }}"
-             aria-label="Gestion Reflectivo">
+             aria-label="Gestion Reflectivo"
+             onclick="window.location.href = this.href; return true;">
             <span class="material-symbols-rounded" aria-hidden="true">visibility</span>
             <span class="menu-label">Gestion Reflectivo</span>
             @if($conteoReflectivoInsumos > 0)
@@ -128,3 +130,41 @@
 
   </div>
 </aside>
+
+<script>
+// Forzar navegación en enlaces del sidebar - ejecutar inmediatamente
+(function() {
+    function forceNavigation() {
+        const sidebarLinks = document.querySelectorAll('.sidebar .menu-link[href]');
+        console.log('[Sidebar] Configurando', sidebarLinks.length, 'enlaces');
+        
+        sidebarLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && href !== '#' && !href.startsWith('javascript:')) {
+                // Remover listeners previos clonando el elemento
+                const newLink = link.cloneNode(true);
+                link.parentNode.replaceChild(newLink, link);
+                
+                // Agregar nuevo listener con máxima prioridad (capture phase)
+                newLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    console.log('[Sidebar] Navegando a:', href);
+                    window.location.href = href;
+                }, true);
+            }
+        });
+        console.log('[Sidebar] Enlaces configurados para navegación forzada');
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', forceNavigation);
+    } else {
+        forceNavigation();
+    }
+    
+    // Reintentar después de que otros scripts se carguen
+    setTimeout(forceNavigation, 1000);
+})();
+</script>
