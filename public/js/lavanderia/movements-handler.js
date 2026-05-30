@@ -1,4 +1,4 @@
-/**
+﻿/**
  * MOVEMENTS HANDLER - Lavandería
  * Maneja la carga, renderizado y filtrado de movimientos
  */
@@ -466,3 +466,4 @@ class MovementsHandler {
 }
 
 export { MovementsHandler };
+

@@ -19,6 +19,14 @@ class LavanderiaController extends Controller
     }
 
     /**
+     * Mostrar el módulo de seguimiento de lavandería
+     */
+    public function seguimiento(): View
+    {
+        return view('seguimiento-lavanderia.index');
+    }
+
+    /**
      * Buscar recibos por número
      * Retorna recibos de tipo COSTURA o CORTE-PARA-BODEGA
      */
@@ -43,7 +51,49 @@ class LavanderiaController extends Controller
                 ->limit(10)
                 ->get();
 
-            $resultado = $recibos->map(function ($recibo) {
+            $reciboIds = $recibos->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+            $saldoTallasPorRecibo = [];
+
+            if (!empty($reciboIds)) {
+                $movimientosRecibo = \App\Models\LavanderiaMovimientoRecibo::with([
+                    'movimiento:id,tipo_movimiento',
+                    'movimiento.tallas:id,lavanderia_movimiento_id,prenda_id,prenda_bodega_id,talla,genero,cantidad_enviada'
+                ])
+                ->whereIn('consecutivo_recibo_pedido_id', $reciboIds)
+                ->get();
+
+                foreach ($movimientosRecibo as $movimientoRecibo) {
+                    $reciboId = (int) $movimientoRecibo->consecutivo_recibo_pedido_id;
+                    $tipoMovimiento = strtoupper((string) ($movimientoRecibo->movimiento?->tipo_movimiento ?? 'SALIDA'));
+                    $factor = $tipoMovimiento === 'ENTRADA' ? 1 : -1;
+
+                    foreach (($movimientoRecibo->movimiento?->tallas ?? []) as $tallaMovimiento) {
+                        if (!empty($tallaMovimiento->prenda_bodega_id)) {
+                            $prendaKey = 'BODEGA:' . (int) $tallaMovimiento->prenda_bodega_id;
+                        } elseif (!empty($tallaMovimiento->prenda_id)) {
+                            $prendaKey = 'COSTURA:' . (int) $tallaMovimiento->prenda_id;
+                        } else {
+                            continue;
+                        }
+
+                        $tallaKey = strtoupper(trim((string) ($tallaMovimiento->talla ?? '')));
+                        $generoKey = strtoupper(trim((string) ($tallaMovimiento->genero ?? '')));
+                        $key = $prendaKey . '|' . $tallaKey . '|' . $generoKey;
+
+                        if (!isset($saldoTallasPorRecibo[$reciboId])) {
+                            $saldoTallasPorRecibo[$reciboId] = [];
+                        }
+
+                        if (!isset($saldoTallasPorRecibo[$reciboId][$key])) {
+                            $saldoTallasPorRecibo[$reciboId][$key] = 0;
+                        }
+
+                        $saldoTallasPorRecibo[$reciboId][$key] += $factor * (int) $tallaMovimiento->cantidad_enviada;
+                    }
+                }
+            }
+
+            $resultado = $recibos->map(function ($recibo) use ($saldoTallasPorRecibo) {
                 // Obtener cliente del pedido
                 $clienteNombre = 'Sin cliente';
                 if ($recibo->pedido && $recibo->pedido->cliente) {
@@ -55,11 +105,13 @@ class LavanderiaController extends Controller
                 // Obtener prenda según el tipo de recibo
                 $prendaNombre = 'Sin prenda';
                 $tallas = [];
+                $prendaKey = '';
 
                 if ($recibo->tipo_recibo === 'CORTE-PARA-BODEGA') {
                     // Para recibos de CORTE-PARA-BODEGA, usar prendaBodega
                     if ($recibo->prendaBodega) {
                         $prendaNombre = $recibo->prendaBodega->nombre ?? 'Sin prenda';
+                        $prendaKey = 'BODEGA:' . (int) $recibo->prendaBodega->id;
                         
                         // Obtener tallas de prenda_tallas_bodega
                         if ($recibo->prendaBodega->tallas) {
@@ -78,6 +130,7 @@ class LavanderiaController extends Controller
                     // Para recibos de COSTURA, usar prenda normal
                     if ($recibo->prenda) {
                         $prendaNombre = $recibo->prenda->nombre_prenda ?? 'Sin prenda';
+                        $prendaKey = 'COSTURA:' . (int) $recibo->prenda->id;
                         
                         // Obtener tallas reales de la prenda
                         if ($recibo->prenda->tallas) {
@@ -94,6 +147,27 @@ class LavanderiaController extends Controller
                     }
                 }
 
+                $tallasDisponibles = [];
+                if ($prendaKey === '') {
+                    $tallas = [];
+                }
+                foreach ($tallas as $talla) {
+                    $cantidadOriginal = (int) ($talla['cantidad'] ?? 0);
+                    $tallaKey = strtoupper(trim((string) ($talla['talla'] ?? '')));
+                    $generoKey = strtoupper(trim((string) ($talla['genero'] ?? '')));
+                    $saldoMovimiento = (int) ($saldoTallasPorRecibo[$recibo->id][$prendaKey . '|' . $tallaKey . '|' . $generoKey] ?? 0);
+                    $cantidadDisponible = max(0, $cantidadOriginal + $saldoMovimiento);
+
+                    if ($cantidadDisponible <= 0) {
+                        continue;
+                    }
+
+                    $talla['cantidad_original'] = $cantidadOriginal;
+                    $talla['cantidad_disponible'] = $cantidadDisponible;
+                    $talla['cantidad'] = $cantidadDisponible;
+                    $tallasDisponibles[] = $talla;
+                }
+
                 return [
                     'id' => $recibo->id,
                     'numero_recibo' => $recibo->consecutivo_actual ?? $recibo->id,
@@ -104,8 +178,8 @@ class LavanderiaController extends Controller
                     'prenda_bodega_id' => $recibo->prendaBodega?->id,
                     'prenda' => $prendaNombre,
                     'descripcion' => $recibo->prenda?->descripcion ?? $recibo->prendaBodega?->descripcion ?? '',
-                    'cantidad_total' => $tallas ? array_sum(array_column($tallas, 'cantidad')) : 0,
-                    'tallas' => $tallas
+                    'cantidad_total' => $tallasDisponibles ? array_sum(array_column($tallasDisponibles, 'cantidad')) : 0,
+                    'tallas' => $tallasDisponibles
                 ];
             });
 
@@ -452,4 +526,3 @@ class LavanderiaController extends Controller
         }
     }
 }
-

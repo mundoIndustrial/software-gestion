@@ -1,4 +1,4 @@
-<header class="top-nav">
+﻿<header class="top-nav">
     <div class="nav-left">
         <button class="mobile-toggle" id="mobileToggle">
             <span class="material-symbols-rounded">menu</span>
@@ -18,6 +18,8 @@
                 <h1 class="page-title">Gestión de Usuarios</h1>
             @elseif(request()->is('gestion-lavanderia*'))
                 <h1 class="page-title">Gestión de Lavandería</h1>
+            @elseif(request()->is('seguimiento-lavanderia*'))
+                <h1 class="page-title">Seguimiento de Lavanderia</h1>
             @else
                 <h1 class="page-title">@yield('page-title', 'Dashboard')</h1>
             @endif
@@ -493,3 +495,5 @@
         @endauth
     </div>
 </header>
+
+

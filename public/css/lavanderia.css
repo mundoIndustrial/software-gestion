@@ -728,6 +728,23 @@
     overflow-y: auto;
 }
 
+.modal#modalSelectorTallasManual {
+    z-index: 1105;
+}
+
+.modal#modalSelectorTallasManual .modal-content {
+    position: relative;
+    z-index: 1106;
+}
+
+.modal#modalSalida {
+    padding-top: 18px;
+}
+
+.modal#modalSalida .modal-content {
+    margin-top: 0;
+}
+
 .modal.active {
     display: flex;
 }
@@ -771,6 +788,10 @@
     .modal#modalFirmaSalida .modal-content {
         border-radius: 0;
         max-height: 100vh;
+    }
+
+    .modal#modalSalida {
+        padding-top: 24px;
     }
 }
 

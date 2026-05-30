@@ -44,3 +44,9 @@ Route::middleware(['auth', 'lavanderia-access'])->prefix('gestion-lavanderia')->
         ], 200);
     })->name('diagnostico');
 });
+
+Route::middleware(['auth', 'supervisor-access'])->prefix('seguimiento-lavanderia')->name('seguimiento-lavanderia.')->group(function () {
+    
+    Route::get('/', [LavanderiaController::class, 'seguimiento'])
+        ->name('index');
+});

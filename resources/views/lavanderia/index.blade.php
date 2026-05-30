@@ -1,4 +1,4 @@
-@extends('layouts.lavanderia')
+﻿@extends('layouts.lavanderia')
 
 @section('content')
 <!-- LOADING SCREEN -->
@@ -128,7 +128,7 @@
             </div>
 
             <!-- Formulario: Agregar Prenda Manual (Oculto) -->
-            <div id="formAgregarPrendaManual" style="display: none; margin-top: 24px; padding: 16px; background: #f0f9ff; border: 1px solid #bfdbfe; border-radius: 8px;">
+                        <div id="formAgregarPrendaManual" style="display: none; margin-top: 24px; padding: 16px; background: #f0f9ff; border: 1px solid #bfdbfe; border-radius: 8px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                     <label class="form-label" style="margin: 0;">Agregar Prenda Manual</label>
                     <button type="button" class="btn-close-form" id="btnCerrarFormPrenda" style="background: none; border: none; color: #64748b; cursor: pointer; font-size: 20px; padding: 0;">
@@ -136,16 +136,6 @@
                     </button>
                 </div>
                 
-                <div class="form-group">
-                    <label class="form-label">Género</label>
-                    <select id="selectGeneroPrendaManual" class="form-select">
-                        <option value="">Selecciona un género</option>
-                        <option value="DAMA">Dama</option>
-                        <option value="CABALLERO">Caballero</option>
-                        <option value="UNISEX">Unisex</option>
-                    </select>
-                </div>
-
                 <div class="form-group">
                     <label class="form-label">Descripción de la Prenda</label>
                     <textarea 
@@ -155,6 +145,8 @@
                         style="resize: vertical; min-height: 60px; font-family: inherit;"
                     ></textarea>
                 </div>
+
+                <div id="prendaManualResumenContainer" style="margin-top: 12px;"></div>
 
                 <button type="button" class="btn btn-primary" id="btnAgregarTallasManual" style="width: 100%; margin-top: 12px;">
                     <span class="material-symbols-rounded">check_circle</span>
@@ -207,6 +199,26 @@
 </div>
 
 @endsection
+
+<!-- MODAL: SELECTOR DE TALLAS PARA PRENDA MANUAL -->
+<div class="modal" id="modalSelectorTallasManual">
+    <div class="modal-content modal-salida-content">
+        <div class="modal-header">
+            <div>
+                <h3 class="modal-title">Selector de Tallas Manual</h3>
+                <p style="margin: 4px 0 0 0; font-size: 12px; color: #94a3b8; font-weight: 500;">
+                    Género → letras/números → tallas → cantidades
+                </p>
+            </div>
+            <button type="button" class="modal-close" id="btnCerrarModalSelectorTallasManual">
+                <span class="material-symbols-rounded">close</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="manualTallasWizardBody" style="display: flex; flex-direction: column; gap: 16px;"></div>
+        </div>
+    </div>
+</div>
 
 <!-- MODAL: FIRMAR MOVIMIENTO -->
 <div class="modal" id="modalFirmaSalida">
@@ -286,3 +298,7 @@
     <script src="{{ asset('js/lavanderia/diagnostics.js') }}"></script>
     <script type="module" src="{{ asset('js/lavanderia/index.js') }}"></script>
 @endpush
+
+
+
+

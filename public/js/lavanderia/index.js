@@ -1,4 +1,4 @@
-/**
+﻿/**
  * LAVANDERÍA MODULE - Index
  * Orquesta todos los módulos de lavandería
  */
@@ -98,7 +98,11 @@ class LavanderiaManager {
             btnAgregarPrendaManual.addEventListener('click', () => {
                 const form = document.getElementById('formAgregarPrendaManual');
                 if (form) {
-                    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+                    const shouldShow = form.style.display === 'none';
+                    form.style.display = shouldShow ? 'block' : 'none';
+                    if (shouldShow) {
+                        this.registrationHandler.renderManualPrendaResumen();
+                    }
                 }
             });
         }
@@ -112,17 +116,23 @@ class LavanderiaManager {
                     form.style.display = 'none';
                 }
                 const inputDescripcion = document.getElementById('inputDescripcionPrenda');
-                if (inputDescripcion) inputDescripcion.value = '';
-                const selectGeneroPrendaManual = document.getElementById('selectGeneroPrendaManual');
-                if (selectGeneroPrendaManual) selectGeneroPrendaManual.value = '';
+                if (inputDescripcion && !this.registrationHandler.hasManualPrendaResumen()) {
+                    inputDescripcion.value = '';
+                }
+                this.registrationHandler.renderManualPrendaResumen();
             });
         }
-
-        // Botón agregar tallas manual
         const btnAgregarTallasManual = document.getElementById('btnAgregarTallasManual');
         if (btnAgregarTallasManual) {
             btnAgregarTallasManual.addEventListener('click', () => {
                 this.registrationHandler.agregarPrendaManual();
+            });
+        }
+
+        const btnCerrarModalSelectorTallasManual = document.getElementById('btnCerrarModalSelectorTallasManual');
+        if (btnCerrarModalSelectorTallasManual) {
+            btnCerrarModalSelectorTallasManual.addEventListener('click', () => {
+                this.registrationHandler.closeManualPrendaWizard({ clearDraft: true, restoreForm: true });
             });
         }
 
@@ -201,7 +211,15 @@ class LavanderiaManager {
         // Modales - Cerrar
         document.querySelectorAll('.modal-close').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                e.target.closest('.modal').classList.remove('active');
+                const modal = e.target.closest('.modal');
+                if (!modal) return;
+
+                if (modal.id === 'modalSelectorTallasManual') {
+                    this.registrationHandler.closeManualPrendaWizard({ clearDraft: true, restoreForm: true });
+                    return;
+                }
+
+                modal.classList.remove('active');
             });
         });
 
@@ -209,6 +227,10 @@ class LavanderiaManager {
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
+                    if (modal.id === 'modalSelectorTallasManual') {
+                        this.registrationHandler.closeManualPrendaWizard({ clearDraft: true, restoreForm: true });
+                        return;
+                    }
                     modal.classList.remove('active');
                 }
             });
@@ -264,3 +286,6 @@ if (document.readyState === 'loading') {
 }
 
 export { LavanderiaManager };
+
+
+
