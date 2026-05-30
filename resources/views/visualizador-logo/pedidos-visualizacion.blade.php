@@ -403,9 +403,13 @@ function closePedidoModal() {
 }
 
 function openPedidoRecibos(pedidoId) {
-    // Abrir la vista de recibos del pedido
-    // Redirigir a la página de recibos del pedido en supervisor-pedidos
-    window.location.href = `/supervisor-pedidos?pedido_id=${pedidoId}`;
+    // Abrir el modal de recibos del pedido
+    if (typeof window.abrirSelectorRecibos === 'function') {
+        window.abrirSelectorRecibos(pedidoId);
+    } else {
+        console.error('abrirSelectorRecibos no está disponible');
+        alert('El modal de recibos no está disponible. Por favor recarga la página.');
+    }
 }
 
 // Manejar dropdown menus
@@ -449,6 +453,12 @@ document.addEventListener('click', function(e) {
 </div>
 
 @push('scripts')
+    <!-- Modal de Selector de Recibos -->
+    @include('components.modals.recibos-process-selector')
+    
+    <!-- Módulo de Recibos - Carga la función openOrderDetailModalWithProcess -->
+    <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
+    
     <!-- Scripts para Vista de Factura desde Lista - Lazy Loading -->
     <script defer src="{{ asset('js/modulos/invoice/InvoiceLazyLoader.js') }}?v={{ filemtime(public_path('js/modulos/invoice/InvoiceLazyLoader.js')) }}"></script>
     <script defer src="{{ asset('js/modulos/invoice/InvoiceRenderer.js') }}?v={{ filemtime(public_path('js/modulos/invoice/InvoiceRenderer.js')) }}"></script>

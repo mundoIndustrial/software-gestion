@@ -957,7 +957,7 @@
             return;
         }
 
-        const ocultarBotonEntregar = window.location.pathname.includes('/registros');
+        const ocultarBotonEntregar = window.location.pathname.includes('/registros') || window.location.pathname.includes('/visualizador-logo/');
         if (ocultarBotonEntregar) {
             panel.style.display = 'none';
             return;
@@ -1080,7 +1080,7 @@
             const recibos = [];
 
             // CONDICIÓN ESPECIAL PARA VISUALIZADOR-LOGO: No mostrar recibo base
-            const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/pedidos-logo');
+            const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/');
             
             // CONDICIÓN ESPECIAL: No mostrar recibo de COSTURA-BODEGA en supervisor-pedidos y registros
             const esSupervisorPedidos = window.location.pathname.includes('/supervisor-pedidos');
@@ -1144,13 +1144,21 @@
                 const tipoProceso = String(proc.tipo_proceso || proc.nombre_proceso || '');
                 
                 // CONDICIÓN ESPECIAL PARA VISUALIZADOR-LOGO: Solo mostrar procesos específicos
-                const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/pedidos-logo');
+                const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/');
                 if (esVistaVisualizadorLogo) {
                     // Solo mostrar procesos con tipo_proceso_id: 2 (Bordado), 3 (Estampado), 4 (DTF), 5 (Sublimado)
                     const procesosPermitidos = [2, 3, 4, 5];
                     if (!proc.tipo_proceso_id || !procesosPermitidos.includes(proc.tipo_proceso_id)) {
                         return; // Skip este proceso
                     }
+                }
+                
+                // CONDICIÓN ESPECIAL: No mostrar recibo de COSTURA en prendas de bodega en supervisor-pedidos y registros
+                const esSupervisorPedidos = window.location.pathname.includes('/supervisor-pedidos');
+                const esRegistros = window.location.pathname.includes('/registros');
+                const esCostura = String(tipoProceso || '').toUpperCase() === 'COSTURA';
+                if ((esSupervisorPedidos || esRegistros) && prenda.de_bodega == 1 && esCostura) {
+                    return; // Skip costura en prendas de bodega
                 }
                 
                 const estadoProceso = String(proc.estado || '').toUpperCase();
@@ -1184,6 +1192,14 @@
                 const tipoParcial = String(parcial.tipo_recibo || '').toUpperCase() === 'COSTURA-BODEGA'
                     ? 'COSTURA'
                     : String(parcial.tipo_recibo || '');
+                
+                // CONDICIÓN ESPECIAL: No mostrar recibo parcial de COSTURA en prendas de bodega en supervisor-pedidos y registros
+                const esSupervisorPedidos = window.location.pathname.includes('/supervisor-pedidos');
+                const esRegistros = window.location.pathname.includes('/registros');
+                const esCostura = String(tipoParcial || '').toUpperCase() === 'COSTURA';
+                if ((esSupervisorPedidos || esRegistros) && prenda.de_bodega == 1 && esCostura) {
+                    return; // Skip costura en prendas de bodega
+                }
                 
                 const tipoParcialKey = String(tipoParcial || '').toUpperCase();
                 contadorAnexosPorTipo[tipoParcialKey] = (contadorAnexosPorTipo[tipoParcialKey] || 0) + 1;
@@ -1251,19 +1267,20 @@
             const textoBoton = estaEntregada ? 'Deshacer' : (entregaParcial ? 'Parcial' : 'Entregar');
             const colorBoton = estaEntregada ? '#f59e0b' : (entregaParcial ? '#2563eb' : '#10b981');
             const iconoBoton = estaEntregada ? 'fa-rotate-left' : (entregaParcial ? 'fa-layer-group' : 'fa-check-circle');
-            const ocultarBotonEntregar = window.location.pathname.includes('/registros');
+            const ocultarBotonEntregar = window.location.pathname.includes('/registros') || window.location.pathname.includes('/visualizador-logo/');
             const rolesUsuarioPrenda = Array.isArray(window.selectorRecibosState?.usuarioRoles)
                 ? window.selectorRecibosState.usuarioRoles.map((r) => String(r || '').toLowerCase())
                 : [];
             const usuarioEsSupervisorPrenda = !!window.selectorRecibosState?.esSupervisorPedidos || !!window.selectorRecibosState?.esSupervisor;
-            const puedeGestionarDevolucion = usuarioEsSupervisorPrenda
+            const esVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/');
+            const puedeGestionarDevolucion = !esVisualizadorLogo && (usuarioEsSupervisorPrenda
                 || rolesUsuarioPrenda.includes('supervisor_pedidos')
                 || rolesUsuarioPrenda.includes('supervisor')
                 || rolesUsuarioPrenda.includes('supervisor-admin')
                 || rolesUsuarioPrenda.includes('supervisor_produccion')
                 || rolesUsuarioPrenda.includes('lider_produccion')
                 || rolesUsuarioPrenda.includes('admin')
-                || window.location.pathname.includes('/supervisor-pedidos');
+                || window.location.pathname.includes('/supervisor-pedidos'));
             const pedidoEstadoPrenda = String(window.selectorRecibosState?.pedidoEstado || '').toUpperCase();
             const pedidoAprobadoParaDevolucion = pedidoEstadoPrenda !== 'PENDIENTE_SUPERVISOR';
             
@@ -1337,7 +1354,7 @@
                             <i class="fas ${iconoBoton}"></i>
                         </button>`;
 
-            const botonVerEntregasHtml = `
+            const botonVerEntregasHtml = (ocultarBotonEntregar) ? '' : `
                         <button class="btn-ver-entregas-prenda" onclick="event.stopPropagation(); abrirHistorialEntregasPrenda(${prenda.id || prendaIdx})" title="Ver entregas parciales enviadas a despacho">
                             <i class="fas fa-history"></i>
                         </button>`;
@@ -1454,14 +1471,15 @@
                         ? window.selectorRecibosState.usuarioRoles.map((r) => String(r || '').toLowerCase())
                         : [];
                     const usuarioEsSupervisor = !!window.selectorRecibosState?.esSupervisorPedidos || !!window.selectorRecibosState?.esSupervisor;
-                    const puedeGestionarDevolucion = usuarioEsSupervisor
+                    const esVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/');
+                    const puedeGestionarDevolucion = !esVisualizadorLogo && (usuarioEsSupervisor
                         || rolesUsuario.includes('supervisor_pedidos')
                         || rolesUsuario.includes('supervisor')
                         || rolesUsuario.includes('supervisor-admin')
                         || rolesUsuario.includes('supervisor_produccion')
                         || rolesUsuario.includes('lider_produccion')
                         || rolesUsuario.includes('admin')
-                        || window.location.pathname.includes('/supervisor-pedidos');
+                        || window.location.pathname.includes('/supervisor-pedidos'));
                     
                     // Variables básicas del recibo
                     const tipoStringLower = String(tipoString || '').toLowerCase();
@@ -1534,12 +1552,14 @@
                                 ${''}
                             </div>
                             <div class="proceso-acciones">
+                                ${!esVisualizadorLogo ? `
                                 <button class="btn-observacion-proceso"
                                         onclick="event.stopPropagation(); abrirModalObservacionReciboProceso(${prenda.id}, '${tipoString}', ${pedidoId})"
                                         title="Agregar observación">
                                     <i class="fas fa-comment-alt"></i>
                                     Observ.
                                 </button>
+                                ` : ''}
                                 ${puedeCrearPorTalla ? `
                                     <button class="btn-recibo-parcial" 
                                             onclick="event.stopPropagation(); abrirModalReciboParcial(${prenda.id}, '${tipoString}', ${pedidoId})"
