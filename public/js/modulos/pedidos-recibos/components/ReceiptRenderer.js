@@ -528,7 +528,8 @@ export class ReceiptRenderer {
         
         // Cargar metrajes por color desde la API
         if (prendaData.prenda_pedido_id && datosPedido) {
-            this._cargarYAgregarMetrajesPorColor(prendaData, datosPedido);
+            const numeroRecibo = recibo?.numero_recibo || recibo?.numeroRecibo || null;
+            this._cargarYAgregarMetrajesPorColor(prendaData, datosPedido, numeroRecibo);
         }
     }
 
@@ -633,7 +634,7 @@ export class ReceiptRenderer {
      * - color: Muestra solo Ancho en barra inferior, metraje en descripción por color
      * - pieza: Muestra Ancho en barra inferior + lista metraje por color abajo, NO en descripción
      */
-    static _cargarYAgregarMetrajesPorColor(prendaData, datosPedido) {
+    static _cargarYAgregarMetrajesPorColor(prendaData, datosPedido, numeroRecibo = null) {
         // Obtener ID de pedido desde prendaData (más confiable) o datosPedido
         let pedidoId = prendaData?.pedido_produccion_id || datosPedido?.pedido_id || datosPedido?.id;
         
@@ -641,15 +642,27 @@ export class ReceiptRenderer {
             console.log('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Sin ID de pedido o ID de prenda:', {
                 pedidoId,
                 pedidoProduccionId: prendaData?.pedido_produccion_id,
-                prendaId: prendaData.prenda_pedido_id
+                prendaId: prendaData.prenda_pedido_id,
+                numeroRecibo
             });
+            return;
+        }
+        
+        // Si no hay numeroRecibo, no mostrar nada (por seguridad)
+        if (!numeroRecibo) {
+            console.log('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Sin numero_recibo, ocultando contenedor');
+            const contenedorInicial = document.getElementById('order-ancho-metraje');
+            if (contenedorInicial) {
+                contenedorInicial.style.display = 'none';
+            }
             return;
         }
 
         console.log('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Iniciando carga de metrajes:', {
             pedidoId,
             prendaId: prendaData.prenda_pedido_id,
-            prendaNombre: prendaData.nombre_prenda
+            prendaNombre: prendaData.nombre_prenda,
+            numeroRecibo
         });
 
         // Limpiar y ocultar contenedor de ancho/metraje inicialmente
@@ -662,8 +675,9 @@ export class ReceiptRenderer {
 
         // Fetch async para obtener metrajes
         // Intentar primero endpoint público, si falla intentar ruta de insumos
-        const publicEndpoint = `/pedidos-public/${pedidoId}/ancho-metraje-prenda/${prendaData.prenda_pedido_id}`;
-        const insumosEndpoint = `/insumos/materiales/${pedidoId}/obtener-ancho-metraje-prenda/${prendaData.prenda_pedido_id}`;
+        // Incluir numeroRecibo en la URL para filtrar específicamente por recibo
+        const publicEndpoint = `/pedidos-public/${pedidoId}/ancho-metraje-prenda/${prendaData.prenda_pedido_id}?numero_recibo=${numeroRecibo}`;
+        const insumosEndpoint = `/insumos/materiales/${pedidoId}/obtener-ancho-metraje-prenda/${prendaData.prenda_pedido_id}?numero_recibo=${numeroRecibo}`;
         
         fetch(publicEndpoint)
             .then(response => {

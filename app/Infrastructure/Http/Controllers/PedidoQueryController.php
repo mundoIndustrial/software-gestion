@@ -113,9 +113,10 @@ class PedidoQueryController extends Controller
     /**
      * GET /pedidos-public/{pedidoId}/ancho-metraje-prenda/{prendaId}
      */
-    public function obtenerAnchoMetrajePrendaPublico(int $pedidoId, int $prendaId): JsonResponse
+    public function obtenerAnchoMetrajePrendaPublico(int $pedidoId, int $prendaId, \Illuminate\Http\Request $request): JsonResponse
     {
-        $response = $this->obtenerAnchoMetrajePrendaUseCase->ejecutar($pedidoId, $prendaId);
+        $numeroRecibo = $request->query('numero_recibo') ? (int) $request->query('numero_recibo') : null;
+        $response = $this->obtenerAnchoMetrajePrendaUseCase->ejecutar($pedidoId, $prendaId, $numeroRecibo);
         return response()->json($response->toArray(), 200);
     }
 
