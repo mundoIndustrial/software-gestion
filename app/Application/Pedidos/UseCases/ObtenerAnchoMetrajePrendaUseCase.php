@@ -36,27 +36,37 @@ class ObtenerAnchoMetrajePrendaUseCase implements ObtenerAnchoMetrajePrendaUseCa
             // Validar que el pedido exista
             PedidoProduccion::findOrFail($pedidoId);
 
-            // Obtener ancho general
-            $query = PedidoAnchoGeneral::where('pedido_produccion_id', $pedidoId)
-                ->where('prenda_pedido_id', $prendaId);
-            
-            // Si hay numero_recibo, filtrar por él (importante para mostrar datos del recibo correcto)
-            if (!is_null($numeroRecibo)) {
-                $query->where('numero_recibo', $numeroRecibo);
-            }
-            
-            $anchoGeneral = $query->latest('created_at')->first();
+            // Si no hay numero_recibo especificado, devolver respuesta vacía
+            // (para evitar mostrar datos de otros recibos)
+            if ($numeroRecibo === null || $numeroRecibo <= 0) {
+                Log::info('[ObtenerAnchoMetrajePrendaUseCase] Sin numero_recibo, devolviendo vacío', [
+                    'pedido_id' => $pedidoId,
+                    'prenda_id' => $prendaId,
+                    'numero_recibo' => $numeroRecibo
+                ]);
 
-            // Obtener metrajes por color
-            $queryMetrajes = PedidoMetrajeColor::where('pedido_produccion_id', $pedidoId)
-                ->where('prenda_pedido_id', $prendaId);
-            
-            // Si hay numero_recibo, filtrar por él
-            if (!is_null($numeroRecibo)) {
-                $queryMetrajes->where('numero_recibo', $numeroRecibo);
+                return new ObtenerAnchoMetrajePrendaResponse(
+                    ancho: null,
+                    metraje: null,
+                    contenidoMano: null,
+                    tipoModo: null,
+                    data: []
+                );
             }
-            
-            $metrajesPorColor = $queryMetrajes->latest('created_at')->get();
+
+            // Obtener ancho general filtrando por numero_recibo
+            $anchoGeneral = PedidoAnchoGeneral::where('pedido_produccion_id', $pedidoId)
+                ->where('prenda_pedido_id', $prendaId)
+                ->where('numero_recibo', $numeroRecibo)
+                ->latest('created_at')
+                ->first();
+
+            // Obtener metrajes por color filtrando por numero_recibo
+            $metrajesPorColor = PedidoMetrajeColor::where('pedido_produccion_id', $pedidoId)
+                ->where('prenda_pedido_id', $prendaId)
+                ->where('numero_recibo', $numeroRecibo)
+                ->latest('created_at')
+                ->get();
 
             // Determinar tipo de modo
             $tipoModo = $this->determinarTipoModo($anchoGeneral, $metrajesPorColor);

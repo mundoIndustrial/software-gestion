@@ -528,7 +528,9 @@ export class ReceiptRenderer {
         
         // Cargar metrajes por color desde la API
         if (prendaData.prenda_pedido_id && datosPedido) {
-            const numeroRecibo = recibo?.numero_recibo || recibo?.numeroRecibo || null;
+            // El numero_recibo es el consecutivo_actual del recibo
+            // Si no viene, no mostrar datos (por seguridad)
+            const numeroRecibo = recibo?.consecutivo_actual || null;
             this._cargarYAgregarMetrajesPorColor(prendaData, datosPedido, numeroRecibo);
         }
     }
@@ -638,6 +640,16 @@ export class ReceiptRenderer {
         // Obtener ID de pedido desde prendaData (más confiable) o datosPedido
         let pedidoId = prendaData?.pedido_produccion_id || datosPedido?.pedido_id || datosPedido?.id;
         
+        // Si no hay numeroRecibo, no mostrar nada
+        if (!numeroRecibo || numeroRecibo <= 0) {
+            console.log('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Sin numero_recibo (consecutivo_actual), ocultando contenedor');
+            const contenedorInicial = document.getElementById('order-ancho-metraje');
+            if (contenedorInicial) {
+                contenedorInicial.style.display = 'none';
+            }
+            return;
+        }
+        
         if (!pedidoId || !prendaData.prenda_pedido_id) {
             console.log('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Sin ID de pedido o ID de prenda:', {
                 pedidoId,
@@ -645,16 +657,6 @@ export class ReceiptRenderer {
                 prendaId: prendaData.prenda_pedido_id,
                 numeroRecibo
             });
-            return;
-        }
-        
-        // Si no hay numeroRecibo, no mostrar nada (por seguridad)
-        if (!numeroRecibo) {
-            console.log('[ReceiptRenderer._cargarYAgregarMetrajesPorColor] Sin numero_recibo, ocultando contenedor');
-            const contenedorInicial = document.getElementById('order-ancho-metraje');
-            if (contenedorInicial) {
-                contenedorInicial.style.display = 'none';
-            }
             return;
         }
 
@@ -674,8 +676,7 @@ export class ReceiptRenderer {
         }
 
         // Fetch async para obtener metrajes
-        // Intentar primero endpoint público, si falla intentar ruta de insumos
-        // Incluir numeroRecibo en la URL para filtrar específicamente por recibo
+        // Siempre filtrar por numero_recibo (consecutivo_actual) 
         const publicEndpoint = `/pedidos-public/${pedidoId}/ancho-metraje-prenda/${prendaData.prenda_pedido_id}?numero_recibo=${numeroRecibo}`;
         const insumosEndpoint = `/insumos/materiales/${pedidoId}/obtener-ancho-metraje-prenda/${prendaData.prenda_pedido_id}?numero_recibo=${numeroRecibo}`;
         
