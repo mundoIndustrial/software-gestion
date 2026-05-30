@@ -366,34 +366,49 @@ function promptDelivery(talla, disponible, genero, color, safeId) {
 
     Swal.fire({
         title: `Entrega Talla ${talla}`,
-        text: `¿Cuántas unidades vas a entregar? (Máximo ${disponible})`,
-        input: 'number',
-        inputValue: disponible,
+        html: `
+            <div style="text-align: left;">
+                <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #333;">
+                    ¿Cuántas unidades vas a entregar? (Máximo ${disponible})
+                </label>
+                <input type="number" id="swal-input-cantidad" class="swal2-input" value="${disponible}" style="margin-bottom: 15px;">
+                
+                <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #333;">
+                    Observaciones (opcional)
+                </label>
+                <textarea id="swal-input-observaciones" class="swal2-textarea" placeholder="Ej: Entrega incompleta, falta color rojo..." style="margin-bottom: 10px; min-height: 80px;"></textarea>
+            </div>
+        `,
         showCancelButton: true,
         confirmButtonText: 'Registrar',
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#2450ef',
         didOpen: () => {
-            const input = Swal.getInput();
-            if (input) {
-                input.focus();
-                input.select();
+            const inputCantidad = document.getElementById('swal-input-cantidad');
+            if (inputCantidad) {
+                inputCantidad.focus();
+                inputCantidad.select();
             }
         },
-        preConfirm: (value) => {
-            if (!value || value < 1 || value > disponible) {
+        preConfirm: () => {
+            const cantidad = document.getElementById('swal-input-cantidad').value;
+            const observaciones = document.getElementById('swal-input-observaciones').value;
+            
+            if (!cantidad || cantidad < 1 || cantidad > disponible) {
                 Swal.showValidationMessage(`Ingresa una cantidad válida entre 1 y ${disponible}`);
+                return false;
             }
-            return value;
+            
+            return { cantidad: parseInt(cantidad), observaciones: observaciones };
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            registrarEntrega(talla, parseInt(result.value), genero, color, safeId);
+            registrarEntrega(talla, result.value.cantidad, genero, color, safeId, result.value.observaciones);
         }
     });
 }
 
-async function registrarEntrega(talla, cantidad, genero, color, safeId) {
+async function registrarEntrega(talla, cantidad, genero, color, safeId, observaciones = '') {
     const container = document.getElementById('recibo-data');
     const reciboId = container.dataset.id;
     const esParcial = container.dataset.parcial;
@@ -416,7 +431,8 @@ async function registrarEntrega(talla, cantidad, genero, color, safeId) {
                 talla: talla,
                 cantidad: cantidad,
                 genero: genero,
-                color: color
+                color: color,
+                observaciones: observaciones
             })
         });
 
@@ -505,20 +521,47 @@ async function loadHistorial() {
 
         container.innerHTML = '';
         items.forEach(item => {
-            const html = `
-                <div class="historial-item">
-                    <div class="historial-info">
-                        <div class="historial-title">${item.cantidad_total} unidades</div>
-                        <div class="historial-date">${item.fecha} • <b>${item.encargado}</b></div>
-                        <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">${item.detalle}</div>
+            let html;
+            
+            if (item.es_novedad) {
+                // Mostrar novedades de forma especial
+                html = `
+                    <div class="historial-item" style="border-left: 4px solid #f59e0b; background: #fffbeb;">
+                        <div class="historial-info">
+                            <div class="historial-title" style="color: #f59e0b; font-weight: 700;">📝 NOVEDAD REGISTRADA</div>
+                            <div class="historial-date">${item.fecha} • <b>${item.encargado}</b></div>
+                            <div style="font-size: 12px; color: #92400e; margin-top: 8px; padding: 8px; background: #fef3c7; border-radius: 4px; border-left: 3px solid #f59e0b;">
+                                <strong>Descripción:</strong> ${escapeHtml(item.observaciones || 'Sin descripción')}
+                            </div>
+                        </div>
+                        <div class="historial-actions">
+                            <button class="delete-historial-btn" onclick="deleteEntrega(${item.id})">
+                                <span class="material-symbols-rounded">delete</span>
+                            </button>
+                        </div>
                     </div>
-                    <div class="historial-actions">
-                        <button class="delete-historial-btn" onclick="deleteEntrega(${item.id})">
-                            <span class="material-symbols-rounded">delete</span>
-                        </button>
+                `;
+            } else {
+                // Mostrar entregas normales
+                const observacionesHtml = item.observaciones ? `<div style="font-size: 12px; color: #f59e0b; margin-top: 6px; padding: 8px; background: #fef3c7; border-radius: 4px; border-left: 3px solid #f59e0b;"><strong>📝 Novedad:</strong> ${escapeHtml(item.observaciones)}</div>` : '';
+                
+                html = `
+                    <div class="historial-item">
+                        <div class="historial-info">
+                            <div class="historial-title">${item.cantidad_total} unidades</div>
+                            <div class="historial-date">${item.fecha} • <b>${item.encargado}</b></div>
+                            <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">${item.detalle}</div>
+                            ${observacionesHtml}
+                        </div>
+                        <div class="historial-actions">
+                            <button class="delete-historial-btn" onclick="deleteEntrega(${item.id})">
+                                <span class="material-symbols-rounded">delete</span>
+                            </button>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
+            
             container.innerHTML += html;
         });
     } catch (error) {
@@ -579,4 +622,253 @@ function openHistorial() {
 function closeHistorial() {
     document.getElementById('modal-overlay').style.display = 'none';
     document.getElementById('historial-modal').classList.remove('show');
+}
+
+function openAgregarNovedad() {
+    Swal.fire({
+        title: 'Agregar Novedad',
+        html: `
+            <div style="text-align: left;">
+                <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #333;">
+                    Descripción de la novedad
+                </label>
+                <textarea id="swal-novedad-text" class="swal2-textarea" placeholder="Ej: Entrega incompleta, falta color rojo, prenda dañada..." style="min-height: 100px;"></textarea>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Guardar Novedad',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#ef4444',
+        didOpen: () => {
+            const textarea = document.getElementById('swal-novedad-text');
+            if (textarea) {
+                textarea.focus();
+            }
+        },
+        preConfirm: () => {
+            const novedad = document.getElementById('swal-novedad-text').value.trim();
+            
+            if (!novedad) {
+                Swal.showValidationMessage('Por favor ingresa una descripción de la novedad');
+                return false;
+            }
+            
+            if (novedad.length > 500) {
+                Swal.showValidationMessage('La novedad no puede exceder 500 caracteres');
+                return false;
+            }
+            
+            return novedad;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            guardarNovedadSinEntrega(result.value);
+        }
+    });
+}
+
+async function guardarNovedadSinEntrega(observaciones) {
+    const container = document.getElementById('recibo-data');
+    const reciboId = container.dataset.id;
+    const esParcial = container.dataset.parcial;
+    const esBodega = container.dataset.esBodega || '0';
+    const prendaBodegaId = container.dataset.prendaBodegaId || '0';
+    const routeRegistrar = container.dataset.routeRegistrar;
+
+    try {
+        const response = await fetch(routeRegistrar, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                recibo_id: reciboId,
+                es_parcial: esParcial,
+                es_bodega: esBodega,
+                prenda_bodega_id: prendaBodegaId,
+                talla: 'N/A',
+                cantidad: 0,
+                genero: 'N/A',
+                color: 'N/A',
+                observaciones: observaciones,
+                es_novedad_solo: true
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            Swal.fire({
+                title: '¡Novedad Registrada!',
+                text: 'La novedad se guardó correctamente.',
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            });
+            
+            // Recargar el historial
+            setTimeout(() => {
+                loadHistorial();
+            }, 500);
+        } else {
+            Swal.fire('Error', data.message || 'No se pudo registrar la novedad', 'error');
+        }
+    } catch (error) {
+        Swal.fire('Error', 'Ocurrió un error en la comunicación con el servidor', 'error');
+    }
+}
+
+function openObservacionModal(reciboId, esParcial, esBodega, prendaBodegaId, event) {
+    event.stopPropagation();
+    
+    // Llenar los campos ocultos del modal
+    document.getElementById('novedadReciboId').value = reciboId;
+    document.getElementById('novedadEsParcial').value = esParcial;
+    document.getElementById('novedadEsBodega').value = esBodega;
+    document.getElementById('novedadPrendaBodegaId').value = prendaBodegaId;
+    
+    // Limpiar el textarea
+    document.getElementById('novedadDescripcionText').value = '';
+    
+    // Mostrar el modal
+    document.getElementById('modalNovedad').style.display = 'flex';
+    
+    // Cargar el historial de novedades
+    setTimeout(() => {
+        cargarHistorialNovedades(reciboId, esParcial, esBodega, prendaBodegaId);
+    }, 100);
+    
+    // Enfocar el textarea
+    setTimeout(() => {
+        document.getElementById('novedadDescripcionText').focus();
+    }, 200);
+}
+
+function cerrarModalNovedad() {
+    document.getElementById('modalNovedad').style.display = 'none';
+    document.getElementById('novedadDescripcionText').value = '';
+}
+
+function cargarHistorialNovedades(reciboId, esParcial, esBodega, prendaBodegaId) {
+    const container = document.getElementById('novedadesHistorial');
+    container.innerHTML = '<div style="text-align: center; color: #9ca3af; padding: 1rem; font-size: 0.9rem;">Cargando...</div>';
+    
+    // Construir la URL con los parámetros correctos
+    const url = new URL(window.location.origin + '/entregas-talleres/historial/' + reciboId);
+    url.searchParams.set('es_parcial', esParcial);
+    url.searchParams.set('es_bodega', esBodega);
+    url.searchParams.set('prenda_bodega_id', prendaBodegaId);
+    
+    fetch(url.toString())
+        .then(response => response.json())
+        .then(items => {
+            // Filtrar solo novedades (es_novedad = true)
+            const novedades = items.filter(item => item.es_novedad === true);
+            
+            if (novedades.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #9ca3af; padding: 1rem; font-size: 0.9rem;">No hay novedades registradas</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            novedades.forEach(item => {
+                const html = `
+                    <div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 0.75rem; margin-bottom: 0.75rem; background: #f3f4f6;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                <span style="background: #fecaca; color: #991b1b; font-weight: 700; font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 0.5rem;">NOVEDAD</span>
+                                <span style="color: #6b7280; font-size: 0.85rem;">${escapeHtml(item.encargado)}</span>
+                            </div>
+                            <div style="color: #9ca3af; font-size: 0.8rem; white-space: nowrap;">${item.fecha}</div>
+                        </div>
+                        <div style="margin-top: 0.75rem; color: #374151; font-size: 0.95rem; line-height: 1.4;">${escapeHtml(item.observaciones || 'Sin descripción')}</div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        })
+        .catch(error => {
+            console.error('Error al cargar historial:', error);
+            container.innerHTML = '<div style="text-align: center; color: #ef4444; padding: 1rem; font-size: 0.9rem;">Error al cargar historial</div>';
+        });
+}
+
+function guardarNovedad() {
+    const reciboId = document.getElementById('novedadReciboId').value;
+    const esParcial = document.getElementById('novedadEsParcial').value;
+    const esBodega = document.getElementById('novedadEsBodega').value;
+    const prendaBodegaId = document.getElementById('novedadPrendaBodegaId').value;
+    const observaciones = document.getElementById('novedadDescripcionText').value.trim();
+    
+    if (!observaciones) {
+        alert('Por favor ingresa una descripción de la novedad');
+        return;
+    }
+    
+    if (observaciones.length > 500) {
+        alert('La novedad no puede exceder 500 caracteres');
+        return;
+    }
+    
+    guardarNovedadDesdeResultados(reciboId, esParcial, esBodega, prendaBodegaId, observaciones);
+}
+
+async function guardarNovedadDesdeResultados(reciboId, esParcial, esBodega, prendaBodegaId, observaciones) {
+    // Deshabilitar el botón para evitar múltiples clics
+    const btnGuardar = document.getElementById('btnGuardarNovedad');
+    btnGuardar.disabled = true;
+    btnGuardar.style.opacity = '0.5';
+    btnGuardar.style.cursor = 'not-allowed';
+    
+    try {
+        const response = await fetch('/entregas-talleres/registrar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                recibo_id: reciboId,
+                es_parcial: esParcial,
+                es_bodega: esBodega,
+                prenda_bodega_id: prendaBodegaId,
+                talla: 'N/A',
+                cantidad: 0,
+                genero: 'N/A',
+                color: 'N/A',
+                observaciones: observaciones,
+                es_novedad_solo: true
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Limpiar textarea
+            document.getElementById('novedadDescripcionText').value = '';
+            
+            // Recargar el historial
+            cargarHistorialNovedades(reciboId, esParcial, esBodega, prendaBodegaId);
+            
+            // Mostrar mensaje de éxito
+            Swal.fire({
+                title: '¡Novedad Registrada!',
+                text: 'La novedad se guardó correctamente.',
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        } else {
+            Swal.fire('Error', data.message || 'No se pudo registrar la novedad', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'Ocurrió un error en la comunicación con el servidor', 'error');
+    } finally {
+        // Reabilitar el botón
+        btnGuardar.disabled = false;
+        btnGuardar.style.opacity = '1';
+        btnGuardar.style.cursor = 'pointer';
+    }
 }

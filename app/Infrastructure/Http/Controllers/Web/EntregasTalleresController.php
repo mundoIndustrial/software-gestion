@@ -68,10 +68,11 @@ class EntregasTalleresController extends Controller
         $request->validate([
             'recibo_id' => 'required',
             'talla' => 'required|string',
-            'cantidad' => 'required|integer|min:1',
+            'cantidad' => 'required|integer|min:0',
             'genero' => 'required|string',
             'color' => 'required|string',
-            'es_parcial' => 'required'
+            'es_parcial' => 'required',
+            'observaciones' => 'nullable|string|max:500'
         ]);
 
         $result = $useCase->execute($request->all());

@@ -25,6 +25,7 @@ class EntregaReciboCostura extends Model
         'color_nombre',
         'usuario_id',
         'precio',
+        'observaciones',
     ];
 
     protected $casts = [

@@ -33,6 +33,7 @@ class BuscarRecibosTallerUseCase
             ->map(function ($r) {
                 $r->numero_recibo = $r->numero_recibo + 0;
                 $r->completado = $this->esReciboCompletado($r);
+                $r->tiene_observaciones = $this->tieneObservaciones($r);
                 return $r;
             });
 
@@ -52,6 +53,22 @@ class BuscarRecibosTallerUseCase
             $query->where('id_parcial', (int) $recibo->id);
         } else {
             $query->where('id_recibo', (int) $recibo->id);
+        }
+
+        return $query->exists();
+    }
+
+    private function tieneObservaciones(object $recibo): bool
+    {
+        $query = DB::table('entrega_recibo_costura')
+            ->where('talla', 'NOVEDAD')
+            ->whereNotNull('observaciones')
+            ->whereRaw("TRIM(observaciones) <> ''");
+
+        if ((int) ($recibo->es_parcial ?? 0) === 1) {
+            $query->where('recibo_parcial_id', (int) $recibo->id);
+        } else {
+            $query->where('consecutivo_recibo_id', (int) $recibo->id);
         }
 
         return $query->exists();

@@ -14,12 +14,28 @@ class ObtenerHistorialEntregasTallerUseCase
 
         return $entregas->map(function($e) {
             $msgColor = $e->color_nombre ? " - {$e->color_nombre}" : "";
+            
+            // Si es una novedad (talla = NOVEDAD), mostrar diferente
+            if ($e->talla === 'NOVEDAD') {
+                return [
+                    'id' => $e->id,
+                    'cantidad_total' => '📝 NOVEDAD',
+                    'fecha' => $e->created_at->format('d/m/Y H:i'),
+                    'encargado' => $e->encargado,
+                    'detalle' => 'Novedad registrada',
+                    'observaciones' => $e->observaciones,
+                    'es_novedad' => true
+                ];
+            }
+            
             return [
                 'id' => $e->id,
                 'cantidad_total' => $e->cantidad_entregada,
                 'fecha' => $e->created_at->format('d/m/Y H:i'),
                 'encargado' => $e->encargado,
-                'detalle' => "{$e->talla} ({$e->genero}){$msgColor}"
+                'detalle' => "{$e->talla} ({$e->genero}){$msgColor}",
+                'observaciones' => $e->observaciones,
+                'es_novedad' => false
             ];
         });
     }

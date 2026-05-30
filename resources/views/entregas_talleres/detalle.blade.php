@@ -18,6 +18,20 @@
 
 @section('content')
 <div class="entregas-container">
+    <!-- Modal Historial -->
+    <div class="modal-overlay" id="modal-overlay" onclick="closeHistorial()"></div>
+    <div class="historial-modal" id="historial-modal">
+        <div class="modal-header">
+            <div class="close-btn" onclick="closeHistorial()">
+                <span class="material-symbols-rounded">close</span>
+            </div>
+            <h2 style="font-weight: 800; font-size: 22px;">Historial de Entregas</h2>
+        </div>
+        <div id="historial-items-container">
+            <!-- Items loaded via JS -->
+        </div>
+    </div>
+
     <div class="results-content" style="padding-top: 20px;" 
          id="recibo-data" 
          data-id="{{ $recibo->id }}" 
@@ -46,7 +60,9 @@
                         <span class="material-symbols-rounded" style="font-size: 16px;">person</span>
                         {{ $encargado ?? 'Sin asignar' }}
                     </div>
-                    <a href="javascript:void(0)" onclick="openHistorial()" style="color: var(--accent-blue); font-weight: 700; font-size: 13px; text-decoration: underline;">Historial</a>
+                    <div style="display: flex; gap: 12px;">
+                        <a href="javascript:void(0)" onclick="openHistorial()" style="color: var(--accent-blue); font-weight: 700; font-size: 13px; text-decoration: underline;">Historial</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -111,20 +127,6 @@
                 </div>
             @endforeach
         </div>
-    </div>
-</div>
-
-<!-- Modal Historial -->
-<div class="modal-overlay" id="modal-overlay" onclick="closeHistorial()"></div>
-<div class="historial-modal" id="historial-modal">
-    <div class="modal-header">
-        <div class="close-btn" onclick="closeHistorial()">
-            <span class="material-symbols-rounded">close</span>
-        </div>
-        <h2 style="font-weight: 800; font-size: 22px;">Historial de Entregas</h2>
-    </div>
-    <div id="historial-items-container">
-        <!-- Items loaded via JS -->
     </div>
 </div>
 @endsection

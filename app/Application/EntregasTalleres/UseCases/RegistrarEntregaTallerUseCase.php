@@ -20,8 +20,15 @@ class RegistrarEntregaTallerUseCase
         $genero = $data['genero'] ?? 'UNISEX';
         $color = $data['color'] ?? 'SIN COLOR';
         $cantidad = (int) $data['cantidad'];
+        $observaciones = trim((string) ($data['observaciones'] ?? ''));
+        $esNovedadSolo = ($data['es_novedad_solo'] ?? false) === true;
 
         $colorParaGuardar = ($color === 'SIN COLOR') ? null : $color;
+
+        // Si es solo una novedad sin entrega, guardar directamente
+        if ($esNovedadSolo && $cantidad === 0) {
+            return $this->guardarNovedadSolo($reciboId, $esParcial, $esBodega, $prendaBodegaId, $observaciones);
+        }
 
         if ($esBodega) {
             if ($esParcial) {
@@ -198,6 +205,7 @@ class RegistrarEntregaTallerUseCase
             'genero' => $genero,
             'color_nombre' => $colorParaGuardar,
             'usuario_id' => auth()->id(),
+            'observaciones' => $observaciones ?: null,
         ]);
 
         $todoCompletado = $this->verificarCompletado($recibo, $esParcial, $esBodega, $reciboId);
@@ -287,5 +295,62 @@ class RegistrarEntregaTallerUseCase
         }
 
         return true;
+    }
+
+    private function guardarNovedadSolo(int $reciboId, bool $esParcial, bool $esBodega, int $prendaBodegaId, string $observaciones)
+    {
+        if (!$observaciones) {
+            return ['success' => false, 'message' => 'La novedad no puede estar vacía'];
+        }
+
+        try {
+            if ($esBodega) {
+                if ($esParcial) {
+                    $recibo = ReciboPorPartes::findOrFail($reciboId);
+                    $prendaId = (int) ($recibo->prenda_pedido_id ?? 0);
+                    $consecutivoReciboId = null;
+                    $reciboParcialId = $reciboId;
+                } else {
+                    $recibo = ConsecutivoReciboPedido::findOrFail($reciboId);
+                    $prendaId = (int) ($recibo->prenda_bodega_id ?? 0);
+                    $consecutivoReciboId = $reciboId;
+                    $reciboParcialId = null;
+                }
+            } elseif ($esParcial) {
+                $recibo = ReciboPorPartes::findOrFail($reciboId);
+                $prendaId = $recibo->prenda_pedido_id;
+                $consecutivoReciboId = null;
+                $reciboParcialId = $reciboId;
+            } else {
+                $recibo = ConsecutivoReciboPedido::findOrFail($reciboId);
+                $prendaId = $recibo->prenda_id;
+                $consecutivoReciboId = $reciboId;
+                $reciboParcialId = null;
+            }
+
+            $encargadoActual = auth()->user()->name ?? 'Sistema';
+
+            EntregaReciboCostura::create([
+                'prenda_pedido_id' => $prendaId,
+                'consecutivo_recibo_id' => $consecutivoReciboId,
+                'recibo_parcial_id' => $reciboParcialId,
+                'encargado' => $encargadoActual,
+                'area' => 'Costura',
+                'cantidad_entregada' => 0,
+                'talla' => 'NOVEDAD',
+                'genero' => 'N/A',
+                'color_nombre' => null,
+                'usuario_id' => auth()->id(),
+                'observaciones' => $observaciones,
+            ]);
+
+            return [
+                'success' => true,
+                'completado' => false,
+                'es_novedad' => true
+            ];
+        } catch (\Exception $e) {
+            return ['success' => false, 'message' => 'Error al guardar la novedad: ' . $e->getMessage()];
+        }
     }
 }
