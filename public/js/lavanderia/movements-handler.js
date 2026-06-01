@@ -436,38 +436,21 @@ class MovementsHandler {
             // Buscar por ID del movimiento
             const idMatch = m.id.toString().includes(searchTerm);
 
-            // Buscar en recibos (número, cliente, prenda)
-            const recibosText = Array.isArray(m.recibos)
-                ? m.recibos.map(recibo => [
-                    recibo.numero_recibo,
-                    recibo.cliente,
-                    recibo.prenda,
-                    recibo.tipo_recibo_mostrar
-                ].filter(Boolean).join(' ')).join(' ')
+            // Buscar por nombre de prenda en recibos
+            const prendasRecibosText = Array.isArray(m.recibos)
+                ? m.recibos.map(recibo => recibo.prenda).filter(Boolean).join(' ')
                 : '';
 
-            const recibosMatch = recibosText.toLowerCase().includes(searchTerm);
+            const prendasRecibosMatch = prendasRecibosText.toLowerCase().includes(searchTerm);
 
-            // Buscar en prendas manuales
+            // Buscar por descripción de prendas manuales agregadas
             const prendasManualesText = Array.isArray(m.prendasManuales)
-                ? m.prendasManuales.map(prenda => [
-                    prenda.descripcion,
-                    prenda.genero,
-                    prenda.id ? `#${prenda.id}` : ''
-                ].filter(Boolean).join(' ')).join(' ')
+                ? m.prendasManuales.map(prenda => prenda.descripcion).filter(Boolean).join(' ')
                 : '';
 
-            const prendasMatch = prendasManualesText.toLowerCase().includes(searchTerm);
+            const prendasManualesMatch = prendasManualesText.toLowerCase().includes(searchTerm);
 
-            // Buscar en otros campos
-            const otherMatch = [
-                m.tipoMovimiento,
-                m.estadoFirma,
-                m.novedad,
-                m.fechaMovimiento
-            ].filter(Boolean).join(' ').toLowerCase().includes(searchTerm);
-
-            return idMatch || recibosMatch || prendasMatch || otherMatch;
+            return idMatch || prendasRecibosMatch || prendasManualesMatch;
         });
 
         this.renderMovements(filteredMovements);

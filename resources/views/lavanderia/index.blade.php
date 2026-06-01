@@ -28,7 +28,7 @@
                         type="text" 
                         id="searchMovimientosInput" 
                         class="gooey-search-input" 
-                        placeholder="Buscar por número de movimiento, recibo o prenda..."
+                        placeholder="Buscar por número de movimiento o prenda..."
                         autocomplete="off"
                     >
                     <button 
