@@ -120,6 +120,7 @@
       @csrf
       <button type="submit"
               class="logout-btn"
+              data-force-logout="1"
               aria-label="Cerrar sesión">
         <i class="fas fa-sign-out-alt"></i>
         <span class="menu-label">Cerrar Sesión</span>
@@ -140,6 +141,20 @@
         
         // Interceptar clicks SOLO en el sidebar, con alta prioridad
         sidebar.addEventListener('click', function(e) {
+            const logoutBtn = e.target.closest('[data-force-logout="1"]');
+            if (logoutBtn && sidebar.contains(logoutBtn)) {
+                const form = logoutBtn.closest('form');
+                if (form) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof form.requestSubmit === 'function') {
+                        form.requestSubmit();
+                    } else {
+                        form.submit();
+                    }
+                }
+                return;
+            }
             // Buscar si el click fue en un enlace del menú
             const menuLink = e.target.closest('.menu-link[href]');
             
@@ -157,6 +172,20 @@
                 }
             }
         }, true); // Usar capture phase para ejecutar antes que otros listeners
+
+        sidebar.addEventListener('touchend', function(e) {
+            const logoutBtn = e.target.closest('[data-force-logout="1"]');
+            if (!logoutBtn || !sidebar.contains(logoutBtn)) return;
+            const form = logoutBtn.closest('form');
+            if (!form) return;
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
+        }, { capture: true, passive: false });
         
         console.log('[Sidebar] Sistema de navegación configurado');
     }

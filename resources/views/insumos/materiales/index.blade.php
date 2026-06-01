@@ -53,6 +53,21 @@
         <p class="loading-subtitle">Estamos cargando los recibos y configurando la vista.</p>
     </div>
 </div>
+<script>
+    (function () {
+        const forceHideLoadingOverlay = function () {
+            const overlay = document.getElementById('loadingOverlay');
+            if (!overlay) return;
+            overlay.classList.remove('active');
+            overlay.style.display = 'none';
+            overlay.style.pointerEvents = 'none';
+        };
+
+        // Failsafe: evita que la UI quede bloqueada si algún script falla antes de ocultar el overlay.
+        window.setTimeout(forceHideLoadingOverlay, 4000);
+        window.addEventListener('load', forceHideLoadingOverlay, { once: true });
+    })();
+</script>
 
 <div style="min-height: 100vh; background: #f9fafb; margin: 0; padding: 1.5rem; box-sizing: border-box;">
     {{-- Header Principal Blanco --}}

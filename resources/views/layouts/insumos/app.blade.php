@@ -199,10 +199,11 @@
         </div>
 
         <div class="sidebar-footer">
-            <form method="POST" action="{{ route('logout') }}" style="width: 100%;">
+            <form id="sidebarLogoutForm" method="POST" action="{{ route('logout') }}" style="width: 100%;">
                 @csrf
                 <button type="submit" 
                         class="logout-btn"
+                        data-force-logout="1"
                         title="Cerrar Sesión"
                         style="border: none; background: none; cursor: pointer; width: 100%; text-align: left; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.5rem;">
                     <i class="fas fa-sign-out-alt"></i>
@@ -293,6 +294,26 @@
     <!-- Toggle user menu -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const forceLogoutSubmit = function (e) {
+                const button = e.target.closest('[data-force-logout="1"]');
+                if (!button) return;
+
+                const form = button.closest('form');
+                if (!form) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (typeof form.requestSubmit === 'function') {
+                    form.requestSubmit();
+                } else {
+                    form.submit();
+                }
+            };
+
+            document.addEventListener('click', forceLogoutSubmit, true);
+            document.addEventListener('touchend', forceLogoutSubmit, { capture: true, passive: false });
+
             document.getElementById('userBtn')?.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const menu = document.getElementById('userMenu');
