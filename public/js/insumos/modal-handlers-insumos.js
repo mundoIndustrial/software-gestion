@@ -465,17 +465,21 @@ function abrirDetalleReciboCorteBodega(prendaBodegaId) {
             const bloquesGenero = Object.entries(tallasPorGenero).map(([genero, items]) => {
                 const porColor = items.reduce((acc, item) => {
                     const talla = String(item.talla || '').trim().toUpperCase();
-                    const color = String(item.color || 'SIN COLOR').trim().toUpperCase();
+                    const color = String(item.color || '').trim().toUpperCase();
                     const cantidad = Number(item.cantidad || 0);
                     if (!talla || cantidad <= 0) return acc;
-                    if (!acc[color]) acc[color] = [];
-                    acc[color].push(`${escapeHtml(talla)}:${cantidad}`);
+                    const colorKey = color || '__SIN_COLOR__';
+                    if (!acc[colorKey]) acc[colorKey] = [];
+                    acc[colorKey].push(`${escapeHtml(talla)}:${cantidad}`);
                     return acc;
                 }, {});
 
-                const lineasColor = Object.entries(porColor).map(([color, tallasColor]) =>
-                    `<span style="color: red;"><strong>${escapeHtml(color)}: ${tallasColor.join(', ')}</strong></span><br>`
-                ).join('');
+                const lineasColor = Object.entries(porColor).map(([color, tallasColor]) => {
+                    if (color === '__SIN_COLOR__') {
+                        return `<span style="color: red;"><strong>${tallasColor.join(', ')}</strong></span><br>`;
+                    }
+                    return `<span style="color: red;"><strong>${escapeHtml(color)}: ${tallasColor.join(', ')}</strong></span><br>`;
+                }).join('');
 
                 if (!lineasColor) return '';
                 return `<div><span style="color: #1f2937;"><strong>${escapeHtml(genero)}</strong></span><br>${lineasColor}</div>`;
