@@ -111,6 +111,7 @@ const SearchDebounce = {
             align-items: center;
             justify-content: center;
             z-index: 10;
+            pointer-events: auto;
             transition: color 0.2s;
         `;
 
@@ -130,6 +131,7 @@ const SearchDebounce = {
         });
 
         wrapper.style.position = 'relative';
+        wrapper.style.isolation = 'isolate';
         wrapper.appendChild(this.clearBtn);
     },
 

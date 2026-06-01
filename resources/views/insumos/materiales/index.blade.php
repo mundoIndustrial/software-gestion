@@ -96,7 +96,7 @@
             </div>
 
             {{-- Buscador - Sin URL, estado local puro --}}
-            <div class="flex gap-3 items-end" style="padding: 0 0.5rem;">
+            <div class="flex gap-3 items-end" style="padding: 0 0.5rem; position: relative; z-index: 1;">
                 <div class="flex-1 relative">
                     <div class="relative">
                         <input 
@@ -111,14 +111,14 @@
             </div>
 
             @unless($esGestionReflectivo)
-            <div style="padding: 0.75rem 0.5rem 0;">
+            <div style="padding: 0.75rem 0.5rem 0; position: relative; z-index: 5;">
                 <div style="display: inline-flex; gap: 0.4rem; background: #f3f4f6; border-radius: 999px; padding: 0.25rem; border: 1px solid #e5e7eb;">
-                    <a href="{{ route('insumos.materiales.index', ['tipo_recibo' => 'COSTURA']) }}"
-                       style="padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none; {{ !$esTabBodega ? 'background:#2563eb;color:#fff;' : 'color:#374151;' }}">
+                    <a id="tabInsumosPedidos" href="{{ route('insumos.materiales.index', ['tipo_recibo' => 'COSTURA']) }}"
+                       style="position: relative; z-index: 30; pointer-events: auto; padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none; {{ !$esTabBodega ? 'background:#2563eb;color:#fff;' : 'color:#374151;' }}">
                         Pedidos
                     </a>
-                    <a href="{{ route('insumos.materiales.index', ['tipo_recibo' => 'CORTE-PARA-BODEGA']) }}"
-                       style="position: relative; display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none; {{ $esTabBodega ? 'background:#2563eb;color:#fff;' : 'color:#374151;' }}">
+                    <a id="tabInsumosBodega" href="{{ route('insumos.materiales.index', ['tipo_recibo' => 'CORTE-PARA-BODEGA']) }}"
+                       style="position: relative; z-index: 30; pointer-events: auto; display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none; {{ $esTabBodega ? 'background:#2563eb;color:#fff;' : 'color:#374151;' }}">
                         Bodega
                         @if($conteoRecibosBodegaPendientes > 0)
                             <span style="display:inline-flex;align-items:center;justify-content:center;min-width:1.2rem;height:1.2rem;padding:0 0.35rem;border-radius:999px;background:#dc2626;color:#fff;font-size:0.7rem;font-weight:700;line-height:1;">
@@ -131,6 +131,37 @@
             @endunless
         </div>
     </div>
+
+    @unless($esGestionReflectivo)
+    <script>
+        (function () {
+            function bindTabNavigation(id) {
+                const el = document.getElementById(id);
+                if (!el || el.dataset.navBound === '1') return;
+                el.dataset.navBound = '1';
+
+                const go = function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    window.location.assign(el.href);
+                };
+
+                el.addEventListener('click', go);
+                el.addEventListener('touchend', go, { passive: false });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function () {
+                    bindTabNavigation('tabInsumosPedidos');
+                    bindTabNavigation('tabInsumosBodega');
+                });
+            } else {
+                bindTabNavigation('tabInsumosPedidos');
+                bindTabNavigation('tabInsumosBodega');
+            }
+        })();
+    </script>
+    @endunless
 
     {{-- Botón Flotante Limpiar Filtros (esquina inferior derecha) --}}
     <button type="button" id="btnClearAllFiltersFloating" onclick="clearAllTableFilters();" class="floating-clear-filter-btn" style="display: none;" title="Limpiar filtros activos">
