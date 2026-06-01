@@ -318,6 +318,29 @@
     gap: 10px;
 }
 
+/* Unificar tamaño visual de acciones en tabla de talleres (button + a). */
+.table-actions .btn-view,
+.table-actions .btn-edit-icon {
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.table-actions .btn-view {
+    padding: 0 14px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.table-actions .btn-edit-icon {
+    width: 40px;
+    min-width: 40px;
+    padding: 0;
+    flex: 0 0 40px;
+}
+
 .table-recibos {
     width: 100%;
     border-collapse: collapse;
