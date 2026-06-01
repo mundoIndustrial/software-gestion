@@ -55,4 +55,19 @@ Route::middleware(['auth', 'supervisor-access'])->prefix('seguimiento-lavanderia
 
     Route::get('/api/movimientos-recibo/{reciboId}', [LavanderiaController::class, 'apiMovimientosRecibo'])
         ->name('api.movimientos-recibo');
+
+    Route::get('/api/tallas-pendientes/{reciboId}', [LavanderiaController::class, 'apiTallasPendientes'])
+        ->name('api.tallas-pendientes');
+
+    Route::get('/api/historial-movimientos', [LavanderiaController::class, 'apiHistorialMovimientos'])
+        ->name('api.historial-movimientos');
+
+    Route::get('/api/firma-movimiento/{movimientoId}', [LavanderiaController::class, 'apiFirmaMovimiento'])
+        ->name('api.firma-movimiento');
+
+    Route::get('/api/descargar-firma/{movimientoId}', [LavanderiaController::class, 'descargarFirmaMovimiento'])
+        ->name('api.descargar-firma');
+
+    Route::get('/api/tallas-disponibles/{reciboId}', [LavanderiaController::class, 'apiTallasDisponibles'])
+        ->name('api.tallas-disponibles');
 });

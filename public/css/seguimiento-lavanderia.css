@@ -31,7 +31,53 @@
 }
 
 /* ============================================
-   MODAL CONTENT
+   MODAL TABS
+   ============================================ */
+.modal-tabs {
+    display: flex;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    padding: 0 24px;
+    gap: 0;
+}
+
+.modal-tab-btn {
+    background: none;
+    border: none;
+    padding: 16px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+    white-space: nowrap;
+}
+
+.modal-tab-btn:hover {
+    color: #1e293b;
+    background: rgba(36, 80, 239, 0.05);
+}
+
+.modal-tab-btn.active {
+    color: #2450ef;
+    border-bottom-color: #2450ef;
+}
+
+.modal-tab-content {
+    display: none;
+}
+
+.modal-tab-content.active {
+    display: block;
+}
+
+/* ============================================
+   MODAL BODY
    ============================================ */
 .modal-content {
     position: fixed;
@@ -301,8 +347,86 @@
 }
 
 /* ============================================
+   TALLAS PENDIENTES TABLE
+   ============================================ */
+.tallas-pendientes-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.tallas-pendientes-table thead {
+    background: #f1f5f9;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.tallas-pendientes-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #1e293b;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
+.tallas-pendientes-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #1e293b;
+}
+
+.tallas-pendientes-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.talla-cell {
+    font-weight: 600;
+    color: #2450ef;
+}
+
+.cantidad-cell {
+    text-align: center;
+    font-weight: 500;
+}
+
+.cantidad-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.cantidad-badge.salida {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.cantidad-badge.entrada {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.cantidad-badge.cero {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+/* ============================================
    MAIN CONTAINER
    ============================================ */
 .seguimiento-lavanderia-main {
     min-height: 100vh;
+}
+
+/* ============================================
+   FIRMA MODAL STYLES
+   ============================================ */
+.btn-descargar {
+    transition: all 0.2s;
+}
+
+.btn-descargar:active {
+    transform: scale(0.98);
 }

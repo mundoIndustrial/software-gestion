@@ -10,6 +10,8 @@ class DetallesModalHandler {
         this.modal = document.getElementById('detallesModal');
         this.modalTitle = document.getElementById('detallesModalTitle');
         this.modalBody = document.getElementById('detallesModalBody');
+        this.currentReciboId = null;
+        this.currentTab = 'movimientos';
     }
 
     /**
@@ -18,30 +20,32 @@ class DetallesModalHandler {
     async abrirModal(reciboId, numeroRecibo) {
         if (!this.modal || !this.modalBody) return;
 
+        this.currentReciboId = reciboId;
+        this.currentTab = 'movimientos';
+
         // Mostrar modal con estado de carga
         this.modal.classList.add('show');
         this.modalTitle.textContent = `Detalles del Recibo ${numeroRecibo}`;
         this.modalBody.innerHTML = `
             <div style="text-align: center; padding: 32px;">
                 <div class="loading-spinner"></div>
-                <p style="margin-top: 16px; color: #64748b;">Cargando movimientos...</p>
+                <p style="margin-top: 16px; color: #64748b;">Cargando detalles...</p>
             </div>
         `;
 
         try {
-            const response = await fetch(`/seguimiento-lavanderia/api/movimientos-recibo/${reciboId}`, {
-                headers: {
-                    'Accept': 'application/json'
-                }
+            // Cargar movimientos
+            const movimientosRes = await fetch(`/seguimiento-lavanderia/api/movimientos-recibo/${reciboId}`, {
+                headers: { 'Accept': 'application/json' }
             });
 
-            const data = await response.json();
+            const movimientosData = await movimientosRes.json();
 
-            if (!data.success) {
-                throw new Error(data.message || 'Error al cargar los movimientos');
+            if (!movimientosData.success) {
+                throw new Error(movimientosData.message || 'Error al cargar los movimientos');
             }
 
-            this.renderDetalles(data.data);
+            this.renderModal(movimientosData.data);
         } catch (error) {
             console.error('[DetallesModalHandler] Error cargando detalles:', error);
             this.modalBody.innerHTML = `
@@ -54,11 +58,21 @@ class DetallesModalHandler {
     }
 
     /**
-     * Renderiza los detalles del recibo
+     * Renderiza el modal con los movimientos
      */
-    renderDetalles(movimientosAgrupados) {
+    renderModal(movimientosAgrupados) {
         if (!this.modalBody) return;
 
+        // Renderizar contenido de movimientos
+        const movimientosHtml = this.renderMovimientos(movimientosAgrupados);
+
+        this.modalBody.innerHTML = movimientosHtml;
+    }
+
+    /**
+     * Renderiza la sección de movimientos
+     */
+    renderMovimientos(movimientosAgrupados) {
         const { entradas = [], salidas = [] } = movimientosAgrupados;
 
         let html = '';
@@ -99,7 +113,7 @@ class DetallesModalHandler {
             `;
         }
 
-        this.modalBody.innerHTML = html;
+        return html;
     }
 
     /**

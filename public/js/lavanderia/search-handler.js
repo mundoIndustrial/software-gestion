@@ -31,7 +31,16 @@ class SearchHandler {
         results.innerHTML = '<div style="padding: 12px; text-align: center; color: #94a3b8;">Buscando...</div>';
         results.classList.add('active');
 
-        fetch(`${this.apiSearchUrl}?q=${encodeURIComponent(query)}`)
+        // Obtener el tipo de movimiento seleccionado
+        const tipoMovimientoSelect = document.getElementById('selectTipoMovimiento');
+        const tipoMovimiento = tipoMovimientoSelect ? tipoMovimientoSelect.value : 'SALIDA';
+
+        // Construir URL con parámetros
+        const url = new URL(this.apiSearchUrl, window.location.origin);
+        url.searchParams.set('q', query);
+        url.searchParams.set('tipo', tipoMovimiento);
+
+        fetch(url.toString())
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.data.length > 0) {

@@ -57,13 +57,19 @@ class ObtenerOrdenesSeguimientoLavanderiaUseCase
         $items = collect($paginator->items())->map(function ($item) {
             $numeroRecibo = (int) ($item->numero_recibo ?? 0);
             $tipoRecibo = (string) ($item->tipo_recibo ?? '');
+            
+            // Si es CORTE-PARA-BODEGA, mostrar "BODEGA" como cliente
+            $cliente = (string) ($item->cliente ?? 'Sin cliente');
+            if ($tipoRecibo === 'CORTE-PARA-BODEGA') {
+                $cliente = 'BODEGA';
+            }
 
             return [
                 'recibo_id' => (int) ($item->recibo_id ?? 0),
                 'numero_recibo' => $numeroRecibo,
                 'tipo_recibo' => $tipoRecibo,
                 'numero_recibo_tipo' => '#' . $numeroRecibo . '-' . $tipoRecibo,
-                'cliente' => (string) ($item->cliente ?? 'Sin cliente'),
+                'cliente' => $cliente,
                 'prenda' => (string) ($item->prenda ?? 'Sin prenda'),
                 'ultima_fecha_movimiento' => $item->ultima_fecha_movimiento ?? null,
             ];

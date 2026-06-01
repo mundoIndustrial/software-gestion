@@ -288,9 +288,9 @@ class MovementsHandler {
                   </div>`
                 : '';
 
-            // Agrupar tallas por género para este recibo
-            const tallasPorGeneroHtml = m.tallasPorGenero && m.tallasPorGenero.length > 0 
-                ? m.tallasPorGenero.map(grupo => {
+            // Usar las tallas específicas de este recibo
+            const tallasPorGeneroHtml = recibo.tallasPorGenero && recibo.tallasPorGenero.length > 0 
+                ? recibo.tallasPorGenero.map(grupo => {
                     return `
                         <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid ${colorTipo}20;">
                             <div style="font-size: 12px; font-weight: 600; color: ${colorTipo}; margin-bottom: 8px;">

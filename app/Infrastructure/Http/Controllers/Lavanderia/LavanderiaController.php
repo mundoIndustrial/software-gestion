@@ -81,8 +81,16 @@ class LavanderiaController extends Controller
                         $prenda = $recibo?->prenda?->nombre_prenda ?? 'Sin prenda';
                     }
 
-                    // Obtener todas las tallas del movimiento
+                    // Filtrar tallas que pertenecen a este recibo específico
                     $tallas = $movimiento->tallas
+                        ->filter(function ($talla) use ($reciboMovimiento, $recibo) {
+                            // Verificar si la talla pertenece a este recibo
+                            if ($reciboMovimiento->tipo_recibo === 'CORTE-PARA-BODEGA') {
+                                return $talla->prenda_bodega_id === $recibo?->prenda_bodega_id;
+                            } else {
+                                return $talla->prenda_id === $recibo?->prenda_id;
+                            }
+                        })
                         ->map(function ($talla) {
                             return [
                                 'talla' => $talla->talla,
@@ -133,12 +141,573 @@ class LavanderiaController extends Controller
     }
 
     /**
+     * Obtener tallas disponibles para un recibo según el tipo de movimiento
+     */
+    public function apiTallasDisponibles(Request $request, int $reciboId): JsonResponse
+    {
+        try {
+            $tipoMovimiento = strtoupper(trim((string) $request->query('tipo', 'SALIDA')));
+
+            // Obtener el recibo
+            $recibo = \App\Models\ConsecutivoReciboPedido::with([
+                'prenda.tallas',
+                'prendaBodega.tallas'
+            ])->find($reciboId);
+
+            if (!$recibo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado'
+                ], 404);
+            }
+
+            // Obtener todas las tallas del recibo
+            $tallas = [];
+            $prendaKey = '';
+
+            if ($recibo->tipo_recibo === 'CORTE-PARA-BODEGA') {
+                if ($recibo->prendaBodega) {
+                    $prendaKey = 'BODEGA:' . (int) $recibo->prendaBodega->id;
+                    if ($recibo->prendaBodega->tallas) {
+                        $tallas = $recibo->prendaBodega->tallas->map(function ($talla) {
+                            return [
+                                'id' => $talla->id,
+                                'talla' => $talla->talla ?? 'Cantidad',
+                                'genero' => $talla->genero,
+                                'cantidad_original' => $talla->cantidad,
+                                'tipo_talla' => 'bodega'
+                            ];
+                        })->toArray();
+                    }
+                }
+            } else {
+                if ($recibo->prenda) {
+                    $prendaKey = 'COSTURA:' . (int) $recibo->prenda->id;
+                    if ($recibo->prenda->tallas) {
+                        $tallas = $recibo->prenda->tallas->map(function ($talla) {
+                            return [
+                                'id' => $talla->id,
+                                'talla' => $talla->talla ?? 'Cantidad',
+                                'genero' => $talla->genero,
+                                'cantidad_original' => $talla->obtenerCantidadTotal(),
+                                'tipo_talla' => 'normal'
+                            ];
+                        })->toArray();
+                    }
+                }
+            }
+
+            // Obtener movimientos previos para calcular saldos
+            $movimientosRecibo = \App\Models\LavanderiaMovimientoRecibo::where('consecutivo_recibo_pedido_id', $reciboId)
+                ->with('movimiento.tallas')
+                ->get();
+
+            // Calcular saldos por talla
+            $saldosPorTalla = [];
+            foreach ($movimientosRecibo as $movRec) {
+                $tipoMov = strtoupper(trim((string) ($movRec->movimiento?->tipo_movimiento ?? 'SALIDA')));
+                $factor = $tipoMov === 'ENTRADA' ? 1 : -1;
+
+                foreach (($movRec->movimiento?->tallas ?? []) as $tallaMov) {
+                    $tallaKey = strtoupper(trim((string) ($tallaMov->talla ?? '')));
+                    $generoKey = strtoupper(trim((string) ($tallaMov->genero ?? '')));
+                    $key = $tallaKey . '|' . $generoKey;
+
+                    if (!isset($saldosPorTalla[$key])) {
+                        $saldosPorTalla[$key] = 0;
+                    }
+
+                    $saldosPorTalla[$key] += $factor * (int) ($tallaMov->cantidad_enviada ?? 0);
+                }
+            }
+
+            // Calcular tallas disponibles según el tipo de movimiento
+            $tallasDisponibles = [];
+
+            foreach ($tallas as $talla) {
+                $tallaKey = strtoupper(trim((string) ($talla['talla'] ?? '')));
+                $generoKey = strtoupper(trim((string) ($talla['genero'] ?? '')));
+                $key = $tallaKey . '|' . $generoKey;
+
+                $cantidadOriginal = (int) ($talla['cantidad_original'] ?? 0);
+                $saldo = (int) ($saldosPorTalla[$key] ?? 0);
+
+                if ($tipoMovimiento === 'ENTRADA') {
+                    // Para ENTRADA: mostrar tallas que fueron enviadas pero no recibidas
+                    // El saldo negativo significa que hay más salidas que entradas
+                    $cantidadDisponible = abs($saldo);
+                    if ($cantidadDisponible > 0) {
+                        $talla['cantidad_disponible'] = $cantidadDisponible;
+                        $talla['cantidad'] = $cantidadDisponible;
+                        $tallasDisponibles[] = $talla;
+                    }
+                } else {
+                    // Para SALIDA: mostrar tallas que aún no han sido completamente enviadas
+                    $cantidadDisponible = max(0, $cantidadOriginal + $saldo);
+                    if ($cantidadDisponible > 0) {
+                        $talla['cantidad_disponible'] = $cantidadDisponible;
+                        $talla['cantidad'] = $cantidadDisponible;
+                        $tallasDisponibles[] = $talla;
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $tallasDisponibles,
+                'tipo_movimiento' => $tipoMovimiento,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en apiTallasDisponibles:', [
+                'recibo_id' => $reciboId,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener tallas disponibles'
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener tallas pendientes de realizar salida o entrada para un recibo
+     */
+    public function apiTallasPendientes(int $reciboId): JsonResponse
+    {
+        try {
+            // Obtener el recibo
+            $recibo = \App\Models\ConsecutivoReciboPedido::with([
+                'prenda.tallas',
+                'prendaBodega.tallas'
+            ])->find($reciboId);
+
+            if (!$recibo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado'
+                ], 404);
+            }
+
+            // Obtener todas las tallas del recibo
+            $tallas = [];
+            $prendaKey = '';
+
+            if ($recibo->tipo_recibo === 'CORTE-PARA-BODEGA') {
+                if ($recibo->prendaBodega) {
+                    $prendaKey = 'BODEGA:' . (int) $recibo->prendaBodega->id;
+                    if ($recibo->prendaBodega->tallas) {
+                        $tallas = $recibo->prendaBodega->tallas->map(function ($talla) {
+                            return [
+                                'id' => $talla->id,
+                                'talla' => $talla->talla ?? 'Cantidad',
+                                'genero' => $talla->genero,
+                                'cantidad_original' => $talla->cantidad,
+                                'tipo_talla' => 'bodega'
+                            ];
+                        })->toArray();
+                    }
+                }
+            } else {
+                if ($recibo->prenda) {
+                    $prendaKey = 'COSTURA:' . (int) $recibo->prenda->id;
+                    if ($recibo->prenda->tallas) {
+                        $tallas = $recibo->prenda->tallas->map(function ($talla) {
+                            return [
+                                'id' => $talla->id,
+                                'talla' => $talla->talla ?? 'Cantidad',
+                                'genero' => $talla->genero,
+                                'cantidad_original' => $talla->obtenerCantidadTotal(),
+                                'tipo_talla' => 'normal'
+                            ];
+                        })->toArray();
+                    }
+                }
+            }
+
+            // Obtener movimientos previos para calcular saldos
+            $movimientosRecibo = \App\Models\LavanderiaMovimientoRecibo::where('consecutivo_recibo_pedido_id', $reciboId)
+                ->with('movimiento.tallas')
+                ->get();
+
+            // Calcular saldos por talla
+            $saldosPorTalla = [];
+            $salidaRealizadaPorTalla = [];
+            $entradaRealizadaPorTalla = [];
+            
+            foreach ($movimientosRecibo as $movRec) {
+                $tipoMov = strtoupper(trim((string) ($movRec->movimiento?->tipo_movimiento ?? 'SALIDA')));
+
+                foreach (($movRec->movimiento?->tallas ?? []) as $tallaMov) {
+                    $tallaKey = strtoupper(trim((string) ($tallaMov->talla ?? '')));
+                    $generoKey = strtoupper(trim((string) ($tallaMov->genero ?? '')));
+                    $key = $tallaKey . '|' . $generoKey;
+
+                    if (!isset($salidaRealizadaPorTalla[$key])) {
+                        $salidaRealizadaPorTalla[$key] = 0;
+                    }
+                    if (!isset($entradaRealizadaPorTalla[$key])) {
+                        $entradaRealizadaPorTalla[$key] = 0;
+                    }
+
+                    $cantidad = (int) ($tallaMov->cantidad_enviada ?? 0);
+                    
+                    if ($tipoMov === 'SALIDA') {
+                        $salidaRealizadaPorTalla[$key] += $cantidad;
+                    } else {
+                        $entradaRealizadaPorTalla[$key] += $cantidad;
+                    }
+                }
+            }
+
+            // Calcular tallas pendientes
+            $tallasPendientes = [];
+
+            foreach ($tallas as $talla) {
+                $tallaKey = strtoupper(trim((string) ($talla['talla'] ?? '')));
+                $generoKey = strtoupper(trim((string) ($talla['genero'] ?? '')));
+                $key = $tallaKey . '|' . $generoKey;
+
+                $cantidadOriginal = (int) ($talla['cantidad_original'] ?? 0);
+                $salidaRealizada = (int) ($salidaRealizadaPorTalla[$key] ?? 0);
+                $entradaRealizada = (int) ($entradaRealizadaPorTalla[$key] ?? 0);
+
+                // Tallas pendientes de SALIDA: cantidad original - salidas realizadas
+                $pendienteSalida = max(0, $cantidadOriginal - $salidaRealizada);
+                
+                // Tallas pendientes de ENTRADA: salidas realizadas - entradas realizadas
+                $pendienteEntrada = max(0, $salidaRealizada - $entradaRealizada);
+
+                $talla['cantidad_original'] = $cantidadOriginal;
+                $talla['salida_realizada'] = $salidaRealizada;
+                $talla['entrada_realizada'] = $entradaRealizada;
+                $talla['pendiente_salida'] = $pendienteSalida;
+                $talla['pendiente_entrada'] = $pendienteEntrada;
+
+                $tallasPendientes[] = $talla;
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $tallasPendientes,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en apiTallasPendientes:', [
+                'recibo_id' => $reciboId,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener tallas pendientes'
+            ], 500);
+        }
+    }
+
+    /**
+     * API: Obtener historial de movimientos de lavandería
+     */
+    public function apiHistorialMovimientos(Request $request): JsonResponse
+    {
+        try {
+            $page = max(1, (int) $request->query('page', 1));
+            $perPage = min(max(1, (int) $request->query('per_page', 25)), 100);
+            $search = trim((string) $request->query('search', ''));
+
+            $query = \App\Models\LavanderiaMovimiento::with([
+                'recibos.recibo.pedido.cliente',
+                'recibos.recibo.prenda',
+                'recibos.recibo.prendaBodega',
+                'tallas.prendaAgregada'
+            ]);
+
+            // Aplicar filtro de búsqueda por número de movimiento
+            if (!empty($search)) {
+                $query->where('id', 'like', '%' . $search . '%');
+            }
+
+            $movimientos = $query->orderBy('fecha_movimiento', 'desc')
+                ->paginate($perPage, ['*'], 'page', $page);
+
+            $data = $movimientos->map(function ($movimiento) {
+                // Obtener información de los recibos
+                $recibosInfo = $movimiento->recibos->map(function ($reciboMovimiento) {
+                    $recibo = $reciboMovimiento->recibo;
+                    
+                    // Obtener cliente
+                    $cliente = 'Sin cliente';
+                    if ($recibo && $recibo->pedido && $recibo->pedido->cliente) {
+                        $cliente = $recibo->pedido->cliente->nombre ?? 'Sin cliente';
+                    }
+
+                    // Obtener prenda
+                    $prenda = 'Sin prenda';
+                    if ($reciboMovimiento->tipo_recibo === 'CORTE-PARA-BODEGA') {
+                        $prenda = $recibo?->prendaBodega?->nombre ?? 'Sin prenda';
+                    } else {
+                        $prenda = $recibo?->prenda?->nombre_prenda ?? 'Sin prenda';
+                    }
+
+                    return [
+                        'id' => $reciboMovimiento->id,
+                        'numero_recibo' => $reciboMovimiento->numero_recibo,
+                        'tipo_recibo' => $reciboMovimiento->tipo_recibo === 'CORTE-PARA-BODEGA' ? 'BODEGA' : $reciboMovimiento->tipo_recibo,
+                        'cliente' => $cliente,
+                        'prenda' => $prenda,
+                    ];
+                })->toArray();
+
+                // Obtener prendas únicas del movimiento desde los recibos y prendas agregadas
+                $prendas = [];
+                $prendaIds = [];
+                
+                // Primero, obtener prendas de los recibos
+                foreach ($movimiento->recibos as $reciboMovimiento) {
+                    $recibo = $reciboMovimiento->recibo;
+                    
+                    if ($reciboMovimiento->tipo_recibo === 'CORTE-PARA-BODEGA') {
+                        // Para BODEGA
+                        if ($recibo?->prendaBodega && !in_array('bodega_' . $recibo->prendaBodega->id, $prendaIds)) {
+                            $prendaIds[] = 'bodega_' . $recibo->prendaBodega->id;
+                            $prendas[] = [
+                                'id' => $recibo->prendaBodega->id,
+                                'nombre' => $recibo->prendaBodega->nombre ?? 'Sin nombre',
+                                'descripcion' => $recibo->prendaBodega->descripcion ?? '',
+                                'tipo' => 'bodega'
+                            ];
+                        }
+                    } else {
+                        // Para COSTURA
+                        if ($recibo?->prenda && !in_array('costura_' . $recibo->prenda->id, $prendaIds)) {
+                            $prendaIds[] = 'costura_' . $recibo->prenda->id;
+                            $prendas[] = [
+                                'id' => $recibo->prenda->id,
+                                'nombre' => $recibo->prenda->nombre_prenda ?? 'Sin nombre',
+                                'descripcion' => $recibo->prenda->descripcion ?? '',
+                                'tipo' => 'costura'
+                            ];
+                        }
+                    }
+                }
+                
+                // Luego, obtener prendas agregadas (manuales)
+                foreach ($movimiento->tallas as $talla) {
+                    if ($talla->prenda_agregada_id && $talla->prendaAgregada) {
+                        $prendaAgregadaId = 'agregada_' . $talla->prenda_agregada_id;
+                        if (!in_array($prendaAgregadaId, $prendaIds)) {
+                            $prendaIds[] = $prendaAgregadaId;
+                            $prendas[] = [
+                                'id' => $talla->prenda_agregada_id,
+                                'nombre' => $talla->prendaAgregada->descripcion ?? 'Sin nombre',
+                                'descripcion' => $talla->prendaAgregada->descripcion ?? '',
+                                'tipo' => 'agregada'
+                            ];
+                        }
+                    }
+                }
+
+                // Obtener tallas agrupadas por recibo o prenda agregada
+                $tallasAgrupadas = [];
+                foreach ($movimiento->tallas as $talla) {
+                    $reciboInfo = null;
+                    
+                    // Si es una prenda agregada, usar esa información
+                    if ($talla->prenda_agregada_id) {
+                        $reciboInfo = [
+                            'id' => 'agregada_' . $talla->prenda_agregada_id,
+                            'numero_recibo' => null,
+                            'tipo_recibo' => null,
+                        ];
+                    } else {
+                        // Buscar a qué recibo pertenece esta talla
+                        foreach ($movimiento->recibos as $reciboMovimiento) {
+                            $recibo = $reciboMovimiento->recibo;
+                            
+                            // Verificar si la talla pertenece a este recibo
+                            $pertenece = false;
+                            if ($reciboMovimiento->tipo_recibo === 'CORTE-PARA-BODEGA') {
+                                $pertenece = $talla->prenda_bodega_id === $recibo?->prenda_bodega_id;
+                            } else {
+                                $pertenece = $talla->prenda_id === $recibo?->prenda_id;
+                            }
+                            
+                            if ($pertenece) {
+                                $reciboInfo = [
+                                    'id' => $reciboMovimiento->id,
+                                    'numero_recibo' => $reciboMovimiento->numero_recibo,
+                                    'tipo_recibo' => $reciboMovimiento->tipo_recibo === 'CORTE-PARA-BODEGA' ? 'BODEGA' : $reciboMovimiento->tipo_recibo,
+                                ];
+                                break;
+                            }
+                        }
+                    }
+                    
+                    $tallasAgrupadas[] = [
+                        'talla' => $talla->talla,
+                        'genero' => $talla->genero,
+                        'cantidad_enviada' => $talla->cantidad_enviada,
+                        'cantidad_recibida' => $talla->cantidad_recibida,
+                        'prenda_id' => $talla->prenda_id,
+                        'prenda_bodega_id' => $talla->prenda_bodega_id,
+                        'prenda_agregada_id' => $talla->prenda_agregada_id,
+                        'recibo_id' => $reciboInfo['id'] ?? null,
+                        'recibo_numero' => $reciboInfo['numero_recibo'] ?? null,
+                        'recibo_tipo' => $reciboInfo['tipo_recibo'] ?? null,
+                    ];
+                }
+
+                // Calcular cantidad total de tallas
+                $cantidadTotal = $movimiento->tallas->sum('cantidad_enviada');
+
+                return [
+                    'id' => $movimiento->id,
+                    'tipo_movimiento' => $movimiento->tipo_movimiento,
+                    'fecha_movimiento' => $movimiento->fecha_movimiento?->format('Y-m-d H:i') ?? '-',
+                    'estado' => $movimiento->estado,
+                    'firma_movimiento' => $movimiento->firma_movimiento,
+                    'fecha_firma' => $movimiento->fecha_firma?->format('Y-m-d H:i') ?? null,
+                    'novedad' => $movimiento->novedad,
+                    'recibos' => $recibosInfo,
+                    'prendas' => $prendas,
+                    'tallas' => $tallasAgrupadas,
+                    'cantidad_total' => $cantidadTotal,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'pagination' => [
+                    'current_page' => $movimientos->currentPage(),
+                    'last_page' => $movimientos->lastPage(),
+                    'per_page' => $movimientos->perPage(),
+                    'total' => $movimientos->total(),
+                    'from' => $movimientos->firstItem(),
+                    'to' => $movimientos->lastItem(),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en apiHistorialMovimientos:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener historial de movimientos'
+            ], 500);
+        }
+    }
+
+    /**
+     * API: Obtener URL de firma de un movimiento
+     */
+    public function apiFirmaMovimiento(int $movimientoId): JsonResponse
+    {
+        try {
+            $movimiento = \App\Models\LavanderiaMovimiento::find($movimientoId);
+
+            if (!$movimiento) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Movimiento no encontrado'
+                ], 404);
+            }
+
+            if (!$movimiento->firma_movimiento || $movimiento->firma_movimiento === 'pendiente') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este movimiento no tiene firma'
+                ], 404);
+            }
+
+            // Retornar la URL del endpoint que sirve la imagen
+            $firmaUrl = '/seguimiento-lavanderia/api/descargar-firma/' . $movimientoId;
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'url' => $firmaUrl,
+                    'filename' => basename($movimiento->firma_movimiento)
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en apiFirmaMovimiento:', [
+                'movimiento_id' => $movimientoId,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener la firma'
+            ], 500);
+        }
+    }
+
+    /**
+     * API: Descargar/Servir firma de un movimiento
+     */
+    public function descargarFirmaMovimiento(int $movimientoId)
+    {
+        try {
+            $movimiento = \App\Models\LavanderiaMovimiento::find($movimientoId);
+
+            if (!$movimiento) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Movimiento no encontrado'
+                ], 404);
+            }
+
+            if (!$movimiento->firma_movimiento || $movimiento->firma_movimiento === 'pendiente') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este movimiento no tiene firma'
+                ], 404);
+            }
+
+            // Construir la ruta del archivo
+            $firmaPath = storage_path('app/public/' . str_replace('storage/', '', $movimiento->firma_movimiento));
+
+            if (!file_exists($firmaPath)) {
+                \Log::warning('Archivo de firma no encontrado', [
+                    'movimiento_id' => $movimientoId,
+                    'ruta_esperada' => $firmaPath,
+                    'ruta_bd' => $movimiento->firma_movimiento
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Archivo de firma no encontrado'
+                ], 404);
+            }
+
+            return response()->file($firmaPath);
+        } catch (\Exception $e) {
+            \Log::error('Error en descargarFirmaMovimiento:', [
+                'movimiento_id' => $movimientoId,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al descargar la firma'
+            ], 500);
+        }
+    }
+
+    /**
      * Buscar recibos por número
      * Retorna recibos de tipo COSTURA o CORTE-PARA-BODEGA
      */
     public function searchRecibos(Request $request): JsonResponse
     {
         $query = $request->input('q', '');
+        $tipoMovimiento = strtoupper(trim((string) $request->query('tipo', 'SALIDA')));
 
         if (strlen($query) < 1) {
             return response()->json([
@@ -170,8 +739,8 @@ class LavanderiaController extends Controller
 
                 foreach ($movimientosRecibo as $movimientoRecibo) {
                     $reciboId = (int) $movimientoRecibo->consecutivo_recibo_pedido_id;
-                    $tipoMovimiento = strtoupper((string) ($movimientoRecibo->movimiento?->tipo_movimiento ?? 'SALIDA'));
-                    $factor = $tipoMovimiento === 'ENTRADA' ? 1 : -1;
+                    $tipoMovimientoRegistro = strtoupper((string) ($movimientoRecibo->movimiento?->tipo_movimiento ?? 'SALIDA'));
+                    $factor = $tipoMovimientoRegistro === 'ENTRADA' ? 1 : -1;
 
                     foreach (($movimientoRecibo->movimiento?->tallas ?? []) as $tallaMovimiento) {
                         if (!empty($tallaMovimiento->prenda_bodega_id)) {
@@ -199,7 +768,7 @@ class LavanderiaController extends Controller
                 }
             }
 
-            $resultado = $recibos->map(function ($recibo) use ($saldoTallasPorRecibo) {
+            $resultado = $recibos->map(function ($recibo) use ($saldoTallasPorRecibo, $tipoMovimiento) {
                 // Obtener cliente del pedido
                 $clienteNombre = 'Sin cliente';
                 if ($recibo->pedido && $recibo->pedido->cliente) {
@@ -262,7 +831,16 @@ class LavanderiaController extends Controller
                     $tallaKey = strtoupper(trim((string) ($talla['talla'] ?? '')));
                     $generoKey = strtoupper(trim((string) ($talla['genero'] ?? '')));
                     $saldoMovimiento = (int) ($saldoTallasPorRecibo[$recibo->id][$prendaKey . '|' . $tallaKey . '|' . $generoKey] ?? 0);
-                    $cantidadDisponible = max(0, $cantidadOriginal + $saldoMovimiento);
+                    
+                    // Calcular cantidad disponible según el tipo de movimiento
+                    if ($tipoMovimiento === 'ENTRADA') {
+                        // Para ENTRADA: mostrar tallas que fueron enviadas pero no recibidas
+                        // El saldo negativo significa que hay más salidas que entradas
+                        $cantidadDisponible = abs($saldoMovimiento);
+                    } else {
+                        // Para SALIDA: mostrar tallas que aún no han sido completamente enviadas
+                        $cantidadDisponible = max(0, $cantidadOriginal + $saldoMovimiento);
+                    }
 
                     if ($cantidadDisponible <= 0) {
                         continue;
@@ -331,8 +909,8 @@ class LavanderiaController extends Controller
             ->orderBy('fecha_movimiento', 'desc')
             ->get()
             ->map(function ($movimiento) {
-                // Obtener información de los recibos
-                $recibosInfo = $movimiento->recibos->map(function ($reciboMovimiento) {
+                // Obtener información de los recibos CON sus tallas asociadas
+                $recibosInfo = $movimiento->recibos->map(function ($reciboMovimiento) use ($movimiento) {
                     $recibo = $reciboMovimiento->recibo;
                     
                     // Obtener cliente del pedido
@@ -349,6 +927,42 @@ class LavanderiaController extends Controller
                         $prenda = $recibo?->prenda?->nombre_prenda ?? 'Sin prenda';
                     }
 
+                    // Obtener tallas específicas de este recibo
+                    $tallasPorGenero = [];
+                    foreach ($movimiento->tallas as $talla) {
+                        // Filtrar tallas que pertenecen a este recibo
+                        // Las tallas de recibos tienen prenda_id o prenda_bodega_id
+                        $pertenecAlRecibo = false;
+                        
+                        if ($reciboMovimiento->tipo_recibo === 'CORTE-PARA-BODEGA') {
+                            // Para BODEGA, comparar prenda_bodega_id
+                            $pertenecAlRecibo = $talla->prenda_bodega_id === $recibo?->prenda_bodega_id;
+                        } else {
+                            // Para COSTURA, comparar prenda_id
+                            $pertenecAlRecibo = $talla->prenda_id === $recibo?->prenda_id;
+                        }
+
+                        if (!$pertenecAlRecibo) {
+                            continue;
+                        }
+
+                        $genero = $talla->genero ?? 'Sin género';
+                        $key = $genero;
+
+                        if (!isset($tallasPorGenero[$key])) {
+                            $tallasPorGenero[$key] = [
+                                'genero' => $genero,
+                                'tallas' => []
+                            ];
+                        }
+
+                        $tallasPorGenero[$key]['tallas'][] = [
+                            'talla' => $talla->talla,
+                            'cantidad_enviada' => $talla->cantidad_enviada,
+                            'cantidad_recibida' => $talla->cantidad_recibida,
+                        ];
+                    }
+
                     return [
                         'id' => $reciboMovimiento->id,
                         'recibo_id' => $reciboMovimiento->consecutivo_recibo_pedido_id,
@@ -357,28 +971,9 @@ class LavanderiaController extends Controller
                         'tipo_recibo_mostrar' => $reciboMovimiento->tipo_recibo === 'CORTE-PARA-BODEGA' ? 'BODEGA' : $reciboMovimiento->tipo_recibo,
                         'cliente' => $cliente,
                         'prenda' => $prenda,
+                        'tallasPorGenero' => array_values($tallasPorGenero),
                     ];
                 })->toArray();
-
-                // Agrupar tallas por género
-                $tallasPorGenero = [];
-                foreach ($movimiento->tallas as $talla) {
-                    $genero = $talla->genero ?? 'Sin género';
-                    $key = $genero;
-
-                    if (!isset($tallasPorGenero[$key])) {
-                        $tallasPorGenero[$key] = [
-                            'genero' => $genero,
-                            'tallas' => []
-                        ];
-                    }
-
-                    $tallasPorGenero[$key]['tallas'][] = [
-                        'talla' => $talla->talla,
-                        'cantidad_enviada' => $talla->cantidad_enviada,
-                        'cantidad_recibida' => $talla->cantidad_recibida,
-                    ];
-                }
 
                 // Agrupar prendas manuales por prenda agregada
                 $prendasManuales = $movimiento->tallas
@@ -422,7 +1017,6 @@ class LavanderiaController extends Controller
                     'fechaMovimiento' => $movimiento->fecha_movimiento?->format('Y-m-d H:i') ?? '-',
                     'firmaMovimiento' => $movimiento->firma_movimiento,
                     'fechaFirma' => $movimiento->fecha_firma?->format('Y-m-d H:i') ?? null,
-                    'tallasPorGenero' => array_values($tallasPorGenero),
                     'prendasManuales' => $prendasManuales
                 ];
             });
@@ -600,8 +1194,9 @@ class LavanderiaController extends Controller
                     // Usar el ID real mapeado desde el ID temporal
                     $tempId = $talla['prenda_agregada_id'];
                     $tallaData['prenda_agregada_id'] = $prendaManualIdMap[$tempId] ?? $tempId;
-                } else {
-                    $tallaData['prenda_id'] = $talla['prenda_id'] ?? null;
+                } elseif (!empty($talla['prenda_id'])) {
+                    // Guardar prenda_id de PrendaPedido (sin validación de clave foránea)
+                    $tallaData['prenda_id'] = $talla['prenda_id'];
                 }
 
                 \App\Models\LavanderiaMovimientoTalla::create($tallaData);

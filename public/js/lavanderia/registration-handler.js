@@ -1238,11 +1238,37 @@ class RegistrationHandler {
                     ${resumen?.descripcion || 'Sin descripción'}
                 </div>
 
-                <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px;">
                     ${tallasHtml}
+                </div>
+
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn btn-success" id="btnGuardarPrenda" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;">
+                        <span class="material-symbols-rounded" style="font-size: 18px;">save</span>
+                        Guardar Prenda
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btnLimpiarPrenda" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; background: #e2e8f0; color: #64748b; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;">
+                        <span class="material-symbols-rounded" style="font-size: 18px;">clear</span>
+                        Limpiar
+                    </button>
                 </div>
             </div>
         `;
+
+        // Agregar event listeners a los botones
+        const btnGuardar = document.getElementById('btnGuardarPrenda');
+        if (btnGuardar) {
+            btnGuardar.addEventListener('click', () => {
+                this.guardarPrendaManual();
+            });
+        }
+
+        const btnLimpiar = document.getElementById('btnLimpiarPrenda');
+        if (btnLimpiar) {
+            btnLimpiar.addEventListener('click', () => {
+                this.limpiarPrendaManual();
+            });
+        }
     }
 
     getPrendasManualesParaRegistro() {
@@ -1388,6 +1414,58 @@ class RegistrationHandler {
     removeManualPrenda(tempId) {
         this.manualPrendaHandler.removeManualPrenda(tempId);
         this.renderManualPrendas();
+    }
+
+    /**
+     * Guarda la prenda manual actual en la lista de prendas manuales
+     */
+    guardarPrendaManual() {
+        if (!this.hasManualPrendaResumen()) {
+            alert('Por favor, agrega tallas antes de guardar la prenda');
+            return;
+        }
+
+        const resumen = this.currentManualPrendaResumen;
+        const tempId = this.manualPrendaHandler.addManualPrenda(
+            resumen.descripcion,
+            resumen.genero
+        );
+
+        // Establecer las tallas seleccionadas
+        this.manualPrendaHandler.setSelectedTallasForManualPrenda(tempId, resumen.selectedTallas);
+
+        // Limpiar el resumen actual
+        this.currentManualPrendaResumen = null;
+
+        // Actualizar la UI
+        this.renderManualPrendas();
+        this.renderManualPrendaResumen();
+
+        // Cerrar el formulario
+        const form = document.getElementById('formAgregarPrendaManual');
+        if (form) {
+            form.style.display = 'none';
+        }
+
+        // Limpiar el input de descripción
+        const inputDescripcion = document.getElementById('inputDescripcionPrenda');
+        if (inputDescripcion) {
+            inputDescripcion.value = '';
+        }
+    }
+
+    /**
+     * Limpia el borrador de prenda manual
+     */
+    limpiarPrendaManual() {
+        this.currentManualPrendaResumen = null;
+        this.renderManualPrendaResumen();
+
+        // Limpiar el input de descripción
+        const inputDescripcion = document.getElementById('inputDescripcionPrenda');
+        if (inputDescripcion) {
+            inputDescripcion.value = '';
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-﻿@extends('layouts.base')
+@extends('layouts.base')
 
 @section('title', 'Seguimiento de Lavanderia')
 @section('page-title', 'Seguimiento de Lavanderia')
@@ -52,7 +52,7 @@
             <div class="page-header">
                 <div>
                     <h1 class="section-title" style="margin: 0;">Órdenes de Lavandería</h1>
-                    <p class="section-subtitle" style="margin: 6px 0 0 0;">Seguimiento de órdenes en proceso de lavado.</p>
+                    <p class="section-subtitle" style="margin: 6px 0 0 0;"></p>
                 </div>
 
                 <div class="page-actions">
@@ -111,29 +111,81 @@
             <div class="page-header">
                 <div>
                     <h1 class="section-title" style="margin: 0;">Historial de Movimientos</h1>
-                    <p class="section-subtitle" style="margin: 6px 0 0 0;">Espacio preparado para las salidas y entradas registradas en lavandería.</p>
+                    <p class="section-subtitle" style="margin: 6px 0 0 0;"></p>
+                </div>
+
+                <div class="page-actions">
+                    <form class="gooey-search-wrapper" id="historialSearchForm">
+                        <span class="material-symbols-rounded gooey-search-icon">search</span>
+                        <input
+                            type="text"
+                            id="historialSearchInput"
+                            class="gooey-search-input"
+                            placeholder="Buscar por número de movimiento..."
+                        >
+                        <button
+                            class="gooey-search-clear"
+                            id="historialSearchClear"
+                            type="button"
+                            style="display: none;"
+                        >
+                            <span class="material-symbols-rounded">close</span>
+                        </button>
+                    </form>
                 </div>
             </div>
 
-            
+            <div id="historialLoadingState" class="text-center py-4" style="display: none;">
+                <div style="color: #64748b; font-size: 14px;">Cargando movimientos...</div>
+            </div>
 
-            
+            <div class="table-responsive">
+                <table class="table-talleres" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>#Movimiento</th>
+                            <th>Tipo</th>
+                            <th>Descripción</th>
+                            <th>Firma</th>
+                            <th>Novedades</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historialTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 24px; color: #94a3b8;">
+                                No hay movimientos para mostrar
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-            <div class="table-container" style="padding: 24px;">
-                <div class="recibos-card" style="margin: 0; box-shadow: none; border: 1px solid #e2e8f0;">
-                    <div class="card-header">
-                        <div class="icon">
-                            <span class="material-symbols-rounded" style="font-size: 18px;">history</span>
-                        </div>
-                        <h2>Movimientos</h2>
-                    </div>
-                    <div style="padding: 20px; color: #64748b;">
-                        Aquí aparecerá el historial de movimientos de lavandería cuando lo conectemos.
-                    </div>
+            <div id="historialEmptyState" style="display: none; text-align: center; padding: 24px; color: #94a3b8;">
+                No se encontraron movimientos
+            </div>
+
+            <div id="historialPagination" class="mt-4" style="display: flex; justify-content: center; gap: 8px;"></div>
+        </div>
+    </main>
+
+    <!-- Modal de Firma -->
+    <div id="firmaModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 id="firmaModalTitle">Firma del Movimiento</h2>
+                <button class="modal-close-btn" onclick="window.cerrarFirmaModal()">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            <div class="modal-body" id="firmaModalBody">
+                <div style="text-align: center; padding: 32px;">
+                    <div class="loading-spinner"></div>
+                    <p style="margin-top: 16px; color: #64748b;">Cargando firma...</p>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
 
     <!-- Modal de Detalles -->
     <div id="detallesModal" class="modal-overlay">
@@ -144,10 +196,32 @@
                     <span class="material-symbols-rounded">close</span>
                 </button>
             </div>
+            
             <div class="modal-body" id="detallesModalBody">
                 <div style="text-align: center; padding: 32px;">
                     <div class="loading-spinner"></div>
                     <p style="margin-top: 16px; color: #64748b;">Cargando detalles...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Novedades -->
+    <div id="novedadesModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <div>
+                    <h2 id="novedadesModalTitle">Novedades del Movimiento</h2>
+                    <p id="novedadesModalFecha" style="margin: 4px 0 0 0; font-size: 12px; color: #94a3b8; font-weight: 500;"></p>
+                </div>
+                <button class="modal-close-btn" onclick="window.cerrarNovedadesModal()">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            <div class="modal-body" id="novedadesModalBody">
+                <div style="text-align: center; padding: 32px;">
+                    <div class="loading-spinner"></div>
+                    <p style="margin-top: 16px; color: #64748b;">Cargando novedades...</p>
                 </div>
             </div>
         </div>
