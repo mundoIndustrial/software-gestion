@@ -141,12 +141,12 @@
     }
     .recibo-actions {
         margin-top: 0.8rem;
-        display: flex;
-        gap: 0.5rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.45rem;
     }
     .recibo-actions button,
     .recibo-actions a {
-        flex: 1;
         border: 1px solid #d2dceb;
         border-radius: 10px;
         background: #ffffff;
@@ -158,11 +158,54 @@
         text-align: center;
         text-decoration: none;
     }
+    .recibo-actions .full-row {
+        grid-column: 1 / -1;
+    }
     .recibo-actions button:last-child,
     .recibo-actions a:last-child {
         background: #fff7ed;
         border-color: #fed7aa;
         color: #9a3412;
+    }
+    .btn-confirmar-entrada {
+        background: #ecfdf5 !important;
+        border-color: #86efac !important;
+        color: #166534 !important;
+    }
+    .badge-inline {
+        display: inline-block;
+        margin-top: 6px;
+        margin-right: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #334155;
+    }
+    .modal-backdrop-entrada {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 3000;
+    }
+    .modal-entrada {
+        width: min(92vw, 560px);
+        background: #fff;
+        border-radius: 12px;
+        padding: 16px;
+    }
+    .modal-entrada textarea {
+        width: 100%;
+        min-height: 96px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 13px;
+        resize: vertical;
     }
     @media (min-width: 768px) {
         .prestamos-form-card,
@@ -215,14 +258,37 @@
                             <p class="recibo-meta"><strong>Tipo:</strong> Préstamo de Insumos</p>
                             <p class="recibo-meta"><strong>Responsable:</strong> {{ $recibo->nombre_costurero }}</p>
                             <p class="recibo-meta"><strong>Fecha:</strong> {{ \Carbon\Carbon::parse($recibo->fecha)->format('d/m/Y') }}</p>
+                            @if($recibo->anulado)
+                                <span class="badge-inline" style="background:#fef2f2;color:#991b1b;">ANULADO</span>
+                            @endif
+                            @if($recibo->confirmado_entrada)
+                                <span class="badge-inline" style="background:#ecfdf5;color:#166534;">ENTRADA CONFIRMADA</span>
+                                @if($recibo->confirmado_entrada_en)
+                                    <span class="badge-inline" style="background:#f8fafc;color:#334155;">{{ \Carbon\Carbon::parse($recibo->confirmado_entrada_en)->format('d/m/Y H:i') }}</span>
+                                @endif
+                            @endif
                             <div class="recibo-actions">
-                                <a href="{{ route('operario.recibos-prestamo.insumos.show', $recibo->id) }}">Ver</a>
+                                <a href="{{ route('operario.recibos-prestamo.insumos.show', $recibo->id) }}" class="full-row">Ver</a>
                                 <a href="{{ route('operario.recibos-prestamo.insumos.show', ['id' => $recibo->id, 'firmante' => 'costurero']) }}">
                                     {{ !empty($recibo->firma_costurero) ? 'Actualizar firma costurero' : 'Pendiente firma costurero' }}
                                 </a>
                                 <a href="{{ route('operario.recibos-prestamo.insumos.show', ['id' => $recibo->id, 'firmante' => 'mensajero']) }}">
                                     {{ !empty($recibo->firma_mensajero) ? 'Actualizar firma mensajero' : 'Pendiente firma mensajero' }}
                                 </a>
+                                @if(!$recibo->confirmado_entrada)
+                                    <button type="button" class="btn-confirmar-entrada full-row"
+                                        data-action="confirmar-entrada"
+                                        data-url="{{ route('operario.recibos-prestamo.insumos.confirmar-entrada', $recibo->id) }}">
+                                        ✓ Confirmar entrada
+                                    </button>
+                                @endif
+                                @if(!$recibo->anulado)
+                                    <button type="button" class="full-row"
+                                        data-action="anular"
+                                        data-url="{{ route('operario.recibos-prestamo.insumos.anular', $recibo->id) }}">
+                                        Anular
+                                    </button>
+                                @endif
                             </div>
                         </article>
                     @empty
@@ -242,14 +308,37 @@
                             <p class="recibo-meta"><strong>Tipo:</strong> Préstamo de Contramuestra Costura</p>
                             <p class="recibo-meta"><strong>Responsable:</strong> {{ $recibo->nombre_costurero }}</p>
                             <p class="recibo-meta"><strong>Fecha:</strong> {{ \Carbon\Carbon::parse($recibo->fecha)->format('d/m/Y') }}</p>
+                            @if($recibo->anulado)
+                                <span class="badge-inline" style="background:#fef2f2;color:#991b1b;">ANULADO</span>
+                            @endif
+                            @if($recibo->confirmado_entrada)
+                                <span class="badge-inline" style="background:#ecfdf5;color:#166534;">ENTRADA CONFIRMADA</span>
+                                @if($recibo->confirmado_entrada_en)
+                                    <span class="badge-inline" style="background:#f8fafc;color:#334155;">{{ \Carbon\Carbon::parse($recibo->confirmado_entrada_en)->format('d/m/Y H:i') }}</span>
+                                @endif
+                            @endif
                             <div class="recibo-actions">
-                                <a href="{{ route('operario.recibos-prestamo.contramuestra.show', $recibo->id) }}">Ver</a>
+                                <a href="{{ route('operario.recibos-prestamo.contramuestra.show', $recibo->id) }}" class="full-row">Ver</a>
                                 <a href="{{ route('operario.recibos-prestamo.contramuestra.show', ['id' => $recibo->id, 'firmante' => 'costurero']) }}">
                                     {{ !empty($recibo->firma_costurero) ? 'Actualizar firma costurero' : 'Pendiente firma costurero' }}
                                 </a>
                                 <a href="{{ route('operario.recibos-prestamo.contramuestra.show', ['id' => $recibo->id, 'firmante' => 'mensajero']) }}">
                                     {{ !empty($recibo->firma_mensajero) ? 'Actualizar firma mensajero' : 'Pendiente firma mensajero' }}
                                 </a>
+                                @if(!$recibo->confirmado_entrada)
+                                    <button type="button" class="btn-confirmar-entrada full-row"
+                                        data-action="confirmar-entrada"
+                                        data-url="{{ route('operario.recibos-prestamo.contramuestra.confirmar-entrada', $recibo->id) }}">
+                                        ✓ Confirmar entrada
+                                    </button>
+                                @endif
+                                @if(!$recibo->anulado)
+                                    <button type="button" class="full-row"
+                                        data-action="anular"
+                                        data-url="{{ route('operario.recibos-prestamo.contramuestra.anular', $recibo->id) }}">
+                                        Anular
+                                    </button>
+                                @endif
                             </div>
                         </article>
                     @empty
@@ -259,4 +348,83 @@
             </div>
         </section>
     </div>
+
+    <div id="modal-confirmar-entrada" class="modal-backdrop-entrada">
+        <div class="modal-entrada">
+            <h3 style="margin:0 0 8px;">Confirmar Entrada</h3>
+            <p style="margin:0 0 10px;font-size:13px;color:#475569;">¿Estás seguro de que este recibo corresponde con lo entregado?</p>
+            <label style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                <input type="checkbox" id="entrada-no-corresponde">
+                <span style="font-size:13px;">No corresponde (registrar novedad)</span>
+            </label>
+            <textarea id="entrada-novedad" placeholder="Escribe la novedad si no corresponde..."></textarea>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
+                <button type="button" id="btn-cancelar-entrada">Cancelar</button>
+                <button type="button" id="btn-guardar-entrada">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (() => {
+        const csrf = "{{ csrf_token() }}";
+        const modal = document.getElementById('modal-confirmar-entrada');
+        const noCorresponde = document.getElementById('entrada-no-corresponde');
+        const novedad = document.getElementById('entrada-novedad');
+        const btnCancelar = document.getElementById('btn-cancelar-entrada');
+        const btnGuardar = document.getElementById('btn-guardar-entrada');
+        let urlConfirmar = '';
+
+        function closeModal() {
+            modal.style.display = 'none';
+            noCorresponde.checked = false;
+            novedad.value = '';
+            urlConfirmar = '';
+        }
+
+        document.querySelectorAll('[data-action="anular"]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('¿Seguro que deseas anular este recibo?')) return;
+                const response = await fetch(btn.dataset.url, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    alert(data.message || 'No se pudo anular.');
+                    return;
+                }
+                location.reload();
+            });
+        });
+
+        document.querySelectorAll('[data-action="confirmar-entrada"]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                urlConfirmar = btn.dataset.url;
+                modal.style.display = 'flex';
+            });
+        });
+
+        btnCancelar?.addEventListener('click', closeModal);
+        btnGuardar?.addEventListener('click', async () => {
+            const payload = {
+                corresponde: !noCorresponde.checked,
+                novedades: novedad.value.trim() || null
+            };
+
+            const response = await fetch(urlConfirmar, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                alert(data.message || 'No se pudo confirmar la entrada.');
+                return;
+            }
+            closeModal();
+            location.reload();
+        });
+    })();
+    </script>
 @endsection

@@ -16,14 +16,14 @@ class OperarioRecibosPrestamoController extends Controller
     public function index()
     {
         $recibosInsumos = DB::table('recibos_prestamo_insumos')
-            ->select('id', 'numero_orden', 'fecha', 'nombre_costurero', 'firma_mensajero', 'firma_costurero', 'anulado', 'created_at')
+            ->select('id', 'numero_orden', 'fecha', 'nombre_costurero', 'firma_mensajero', 'firma_costurero', 'anulado', 'anulado_en', 'confirmado_entrada', 'confirmado_entrada_en', 'novedades', 'created_at')
             ->orderBy('numero_orden')
             ->orderBy('id')
             ->limit(30)
             ->get();
 
         $recibosContramuestra = DB::table('recibos_prestamo_contramuestra')
-            ->select('id', 'numero_orden', 'fecha', 'nombre_costurero', 'descripcion', 'firma_mensajero', 'firma_costurero', 'anulado', 'created_at')
+            ->select('id', 'numero_orden', 'fecha', 'nombre_costurero', 'descripcion', 'firma_mensajero', 'firma_costurero', 'anulado', 'anulado_en', 'confirmado_entrada', 'confirmado_entrada_en', 'novedades', 'created_at')
             ->orderBy('numero_orden')
             ->orderBy('id')
             ->limit(30)
@@ -294,5 +294,93 @@ class OperarioRecibosPrestamoController extends Controller
             'message' => 'Firma guardada correctamente.',
             'firma' => asset('storage/' . $relativePath),
         ]);
+    }
+
+    public function anularInsumos(int $id): JsonResponse
+    {
+        $updated = DB::table('recibos_prestamo_insumos')
+            ->where('id', $id)
+            ->update([
+                'anulado' => true,
+                'anulado_en' => now(),
+                'updated_at' => now(),
+            ]);
+
+        if ($updated === 0) {
+            return response()->json(['success' => false, 'message' => 'Recibo no encontrado.'], 404);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Recibo anulado correctamente.']);
+    }
+
+    public function anularContramuestra(int $id): JsonResponse
+    {
+        $updated = DB::table('recibos_prestamo_contramuestra')
+            ->where('id', $id)
+            ->update([
+                'anulado' => true,
+                'anulado_en' => now(),
+                'updated_at' => now(),
+            ]);
+
+        if ($updated === 0) {
+            return response()->json(['success' => false, 'message' => 'Recibo no encontrado.'], 404);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Recibo anulado correctamente.']);
+    }
+
+    public function confirmarEntradaInsumos(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'corresponde' => ['required', 'boolean'],
+            'novedades' => ['nullable', 'string'],
+        ]);
+
+        if ($validated['corresponde'] === false && trim((string) ($validated['novedades'] ?? '')) === '') {
+            return response()->json(['success' => false, 'message' => 'Debes registrar una novedad cuando no corresponde.'], 422);
+        }
+
+        $updated = DB::table('recibos_prestamo_insumos')
+            ->where('id', $id)
+            ->update([
+                'confirmado_entrada' => true,
+                'confirmado_entrada_en' => now(),
+                'novedades' => trim((string) ($validated['novedades'] ?? '')) ?: null,
+                'updated_at' => now(),
+            ]);
+
+        if ($updated === 0) {
+            return response()->json(['success' => false, 'message' => 'Recibo no encontrado.'], 404);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Entrada confirmada correctamente.']);
+    }
+
+    public function confirmarEntradaContramuestra(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'corresponde' => ['required', 'boolean'],
+            'novedades' => ['nullable', 'string'],
+        ]);
+
+        if ($validated['corresponde'] === false && trim((string) ($validated['novedades'] ?? '')) === '') {
+            return response()->json(['success' => false, 'message' => 'Debes registrar una novedad cuando no corresponde.'], 422);
+        }
+
+        $updated = DB::table('recibos_prestamo_contramuestra')
+            ->where('id', $id)
+            ->update([
+                'confirmado_entrada' => true,
+                'confirmado_entrada_en' => now(),
+                'novedades' => trim((string) ($validated['novedades'] ?? '')) ?: null,
+                'updated_at' => now(),
+            ]);
+
+        if ($updated === 0) {
+            return response()->json(['success' => false, 'message' => 'Recibo no encontrado.'], 404);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Entrada confirmada correctamente.']);
     }
 }
