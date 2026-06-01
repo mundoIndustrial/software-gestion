@@ -463,17 +463,22 @@ function abrirDetalleReciboCorteBodega(prendaBodegaId) {
             }, {});
 
             const bloquesGenero = Object.entries(tallasPorGenero).map(([genero, items]) => {
-                const partes = items.map((item) => {
-                    const talla = String(item.talla || '').trim();
-                    const color = String(item.color || '').trim();
+                const porColor = items.reduce((acc, item) => {
+                    const talla = String(item.talla || '').trim().toUpperCase();
+                    const color = String(item.color || 'SIN COLOR').trim().toUpperCase();
                     const cantidad = Number(item.cantidad || 0);
-                    if (!talla) return `${cantidad}`;
-                    if (!color) return `${escapeHtml(talla)}:${cantidad}`;
-                    return `${escapeHtml(color)} ${escapeHtml(talla)}:${cantidad}`;
-                }).filter(Boolean);
+                    if (!talla || cantidad <= 0) return acc;
+                    if (!acc[color]) acc[color] = [];
+                    acc[color].push(`${escapeHtml(talla)}:${cantidad}`);
+                    return acc;
+                }, {});
 
-                if (partes.length === 0) return '';
-                return `<div><span style="color: red;"><strong>${escapeHtml(genero)} - ${partes.join(', ')}</strong></span><br></div>`;
+                const lineasColor = Object.entries(porColor).map(([color, tallasColor]) =>
+                    `<span style="color: red;"><strong>${escapeHtml(color)}: ${tallasColor.join(', ')}</strong></span><br>`
+                ).join('');
+
+                if (!lineasColor) return '';
+                return `<div><span style="color: #1f2937;"><strong>${escapeHtml(genero)}</strong></span><br>${lineasColor}</div>`;
             }).join('');
 
             const descripcionHtml = `
