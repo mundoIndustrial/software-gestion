@@ -13,23 +13,58 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class OperarioRecibosPrestamoController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $recibosInsumos = DB::table('recibos_prestamo_insumos')
+        $tab = $request->query('tab', 'insumos');
+        $tab = in_array($tab, ['insumos', 'contramuestra'], true) ? $tab : 'insumos';
+        $searchInsumos = trim((string) $request->query('search_insumos', ''));
+        $searchContramuestra = trim((string) $request->query('search_contramuestra', ''));
+        $perPage = 10;
+
+        $queryInsumos = DB::table('recibos_prestamo_insumos')
             ->select('id', 'numero_orden', 'fecha', 'nombre_costurero', 'firma_mensajero', 'firma_costurero', 'anulado', 'anulado_en', 'confirmado_entrada', 'confirmado_entrada_en', 'novedades', 'created_at')
             ->orderBy('numero_orden')
-            ->orderBy('id')
-            ->limit(30)
-            ->get();
+            ->orderBy('id');
 
-        $recibosContramuestra = DB::table('recibos_prestamo_contramuestra')
+        if ($searchInsumos !== '') {
+            $queryInsumos->where(function ($q) use ($searchInsumos) {
+                $q->where('numero_orden', 'like', '%' . $searchInsumos . '%')
+                    ->orWhere('nombre_costurero', 'like', '%' . $searchInsumos . '%');
+            });
+        }
+
+        $queryContramuestra = DB::table('recibos_prestamo_contramuestra')
             ->select('id', 'numero_orden', 'fecha', 'nombre_costurero', 'descripcion', 'firma_mensajero', 'firma_costurero', 'anulado', 'anulado_en', 'confirmado_entrada', 'confirmado_entrada_en', 'novedades', 'created_at')
             ->orderBy('numero_orden')
-            ->orderBy('id')
-            ->limit(30)
-            ->get();
+            ->orderBy('id');
+
+        if ($searchContramuestra !== '') {
+            $queryContramuestra->where(function ($q) use ($searchContramuestra) {
+                $q->where('numero_orden', 'like', '%' . $searchContramuestra . '%')
+                    ->orWhere('nombre_costurero', 'like', '%' . $searchContramuestra . '%');
+            });
+        }
+
+        $recibosInsumos = $queryInsumos
+            ->paginate($perPage, ['*'], 'page_insumos')
+            ->appends([
+                'tab' => $tab,
+                'search_insumos' => $searchInsumos,
+                'search_contramuestra' => $searchContramuestra,
+            ]);
+
+        $recibosContramuestra = $queryContramuestra
+            ->paginate($perPage, ['*'], 'page_contramuestra')
+            ->appends([
+                'tab' => $tab,
+                'search_insumos' => $searchInsumos,
+                'search_contramuestra' => $searchContramuestra,
+            ]);
 
         return view('operario.recibos-prestamo', [
+            'tabActiva' => $tab,
+            'searchInsumos' => $searchInsumos,
+            'searchContramuestra' => $searchContramuestra,
             'recibosInsumos' => $recibosInsumos,
             'recibosContramuestra' => $recibosContramuestra,
         ]);
