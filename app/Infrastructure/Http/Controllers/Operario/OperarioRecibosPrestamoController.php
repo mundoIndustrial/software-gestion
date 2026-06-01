@@ -44,8 +44,22 @@ class OperarioRecibosPrestamoController extends Controller
     public function showInsumos(int $id)
     {
         $recibo = DB::table('recibos_prestamo_insumos')
-            ->select('id', 'numero_orden', 'fecha', 'nombre_costurero', 'firma_mensajero', 'firma_mensajero_fecha', 'firma_costurero', 'firma_costurero_fecha', 'anulado', 'anulado_en', 'created_at')
-            ->where('id', $id)
+            ->leftJoin('users', 'users.id', '=', 'recibos_prestamo_insumos.creado_por')
+            ->select(
+                'recibos_prestamo_insumos.id',
+                'recibos_prestamo_insumos.numero_orden',
+                'recibos_prestamo_insumos.fecha',
+                'recibos_prestamo_insumos.nombre_costurero',
+                'recibos_prestamo_insumos.firma_mensajero',
+                'recibos_prestamo_insumos.firma_mensajero_fecha',
+                'recibos_prestamo_insumos.firma_costurero',
+                'recibos_prestamo_insumos.firma_costurero_fecha',
+                'recibos_prestamo_insumos.anulado',
+                'recibos_prestamo_insumos.anulado_en',
+                'recibos_prestamo_insumos.created_at',
+                'users.name as encargado_nombre'
+            )
+            ->where('recibos_prestamo_insumos.id', $id)
             ->first();
 
         if (!$recibo) {
@@ -136,8 +150,23 @@ class OperarioRecibosPrestamoController extends Controller
     public function showContramuestra(int $id)
     {
         $recibo = DB::table('recibos_prestamo_contramuestra')
-            ->select('id', 'numero_orden', 'fecha', 'nombre_costurero', 'descripcion', 'firma_mensajero', 'firma_mensajero_fecha', 'firma_costurero', 'firma_costurero_fecha', 'anulado', 'anulado_en', 'created_at')
-            ->where('id', $id)
+            ->leftJoin('users', 'users.id', '=', 'recibos_prestamo_contramuestra.creado_por')
+            ->select(
+                'recibos_prestamo_contramuestra.id',
+                'recibos_prestamo_contramuestra.numero_orden',
+                'recibos_prestamo_contramuestra.fecha',
+                'recibos_prestamo_contramuestra.nombre_costurero',
+                'recibos_prestamo_contramuestra.descripcion',
+                'recibos_prestamo_contramuestra.firma_mensajero',
+                'recibos_prestamo_contramuestra.firma_mensajero_fecha',
+                'recibos_prestamo_contramuestra.firma_costurero',
+                'recibos_prestamo_contramuestra.firma_costurero_fecha',
+                'recibos_prestamo_contramuestra.anulado',
+                'recibos_prestamo_contramuestra.anulado_en',
+                'recibos_prestamo_contramuestra.created_at',
+                'users.name as encargado_nombre'
+            )
+            ->where('recibos_prestamo_contramuestra.id', $id)
             ->first();
 
         if (!$recibo) {

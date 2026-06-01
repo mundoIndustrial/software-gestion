@@ -176,6 +176,9 @@
                         <div id="order-descripcion" class="order-descripcion" style="margin-bottom: 0;">
                             <div id="mobile-descripcion">
                                 <div class="prenda-item" style="margin-bottom: 16px; line-height: 1.4; font-size: 0.75rem; color: #333;">
+                                    <div style="margin-top: 4px; font-size: 12px; color: #374151;">
+                                        <strong>ENCARGADO:</strong> {{ $recibo->encargado_nombre ?? 'No registrado' }}
+                                    </div>
                                     <strong style="font-size: 13.4px;">COSTURERO - <span style="font-weight: 700;">{{ $recibo->nombre_costurero }}</span></strong>
 
                                     <div style="margin-top: 8px;">

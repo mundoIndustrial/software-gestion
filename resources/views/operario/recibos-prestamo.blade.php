@@ -256,7 +256,7 @@
                                 <p class="recibo-num">N° {{ $recibo->numero_orden }}</p>
                             </div>
                             <p class="recibo-meta"><strong>Tipo:</strong> Préstamo de Insumos</p>
-                            <p class="recibo-meta"><strong>Responsable:</strong> {{ $recibo->nombre_costurero }}</p>
+                            <p class="recibo-meta"><strong>Costurero:</strong> {{ $recibo->nombre_costurero }}</p>
                             <p class="recibo-meta"><strong>Fecha:</strong> {{ \Carbon\Carbon::parse($recibo->fecha)->format('d/m/Y') }}</p>
                             @if($recibo->anulado)
                                 <span class="badge-inline" style="background:#fef2f2;color:#991b1b;">ANULADO</span>
@@ -306,7 +306,7 @@
                                 <p class="recibo-num">N° {{ $recibo->numero_orden }}</p>
                             </div>
                             <p class="recibo-meta"><strong>Tipo:</strong> Préstamo de Contramuestra Costura</p>
-                            <p class="recibo-meta"><strong>Responsable:</strong> {{ $recibo->nombre_costurero }}</p>
+                            <p class="recibo-meta"><strong>Costurero:</strong> {{ $recibo->nombre_costurero }}</p>
                             <p class="recibo-meta"><strong>Fecha:</strong> {{ \Carbon\Carbon::parse($recibo->fecha)->format('d/m/Y') }}</p>
                             @if($recibo->anulado)
                                 <span class="badge-inline" style="background:#fef2f2;color:#991b1b;">ANULADO</span>
