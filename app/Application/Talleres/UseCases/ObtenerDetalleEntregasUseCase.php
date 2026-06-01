@@ -87,6 +87,7 @@ class ObtenerDetalleEntregasUseCase
             }
         }
 
+
         foreach ($entregasRaw as $entrega) {
             $items = $this->extraerItemsDeEntrega($entrega);
             $fecha = Carbon::parse($entrega->created_at);

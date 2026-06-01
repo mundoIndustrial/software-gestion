@@ -13,6 +13,7 @@ class PedidoAnchoGeneral extends Model
         'prenda_pedido_id',
         'prenda_bodega_id',
         'numero_recibo',
+        'consecutivo_recibo_id',
         'ancho',
         'metraje',
         'tipo_modo',

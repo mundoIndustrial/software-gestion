@@ -32,6 +32,7 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
 
     const pedidoNum = parseInt(pedido, 10) || 0;
     const pedidoSegment = pedidoNum > 0 ? String(pedidoNum) : String(numeroPedido || '').trim();
+    const prendaIdResolved = prendaId || prendaBodegaId;
     const esReciboBodega = String(tipoRecibo || '').toUpperCase() === 'CORTE-PARA-BODEGA';
     const queryBase = new URLSearchParams();
     if (prendaBodegaId) queryBase.set('prenda_bodega_id', String(prendaBodegaId));
@@ -53,7 +54,7 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
             return Promise.resolve(numeroReciboForzado);
         }
 
-        return fetch(`/insumos/materiales/${encodeURIComponent(pedidoSegment)}/obtener-recibo-prenda/${prendaId}${qsBase}`)
+        return fetch(`/insumos/materiales/${encodeURIComponent(pedidoSegment)}/obtener-recibo-prenda/${prendaIdResolved}${qsBase}`)
         .then(r => r.json())
         .then(data => {
             const recibido = data?.success && data?.recibo ? Number(data.recibo) : 0;
@@ -70,7 +71,7 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
     
     // Guardar pedido y prenda en el modal para usarlos despues
     modal.dataset.pedido = pedidoSegment;
-    modal.dataset.prendaId = prendaId;
+    modal.dataset.prendaId = prendaIdResolved || '';
     modal.dataset.prendaBodegaId = prendaBodegaId || '';
     modal.dataset.tipoRecibo = tipoRecibo || 'COSTURA';
     modal.dataset.numeroRecibo = tieneNumeroReciboForzado ? String(numeroReciboForzado) : '';
@@ -93,9 +94,9 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
     document.getElementById('anchoMetrajeLoading').classList.remove('hidden');
     actualizarIndicadorModo('normal', null, false);
 
-    console.log('[abrirModalAnchoMetraje] Abriendo modal para pedido:', pedidoSegment, 'prenda:', prendaId);
+    console.log('[abrirModalAnchoMetraje] Abriendo modal para pedido:', pedidoSegment, 'prenda:', prendaIdResolved);
 
-    if (prendaId) {
+    if (prendaIdResolved) {
         // Cargar colores y datos para rellenar los inputs segun el modo seleccionado
         obtenerNumeroRecibo().then((numeroRecibo) => {
             const queryLectura = new URLSearchParams(queryBase);
@@ -105,8 +106,8 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
             const qsLectura = queryLectura.toString() ? `?${queryLectura.toString()}` : '';
 
             return Promise.all([
-                fetch(`/insumos/materiales/${encodeURIComponent(pedidoSegment)}/obtener-colores-prenda/${prendaId}${qsLectura}`).then(r => r.json()),
-                fetch(`/insumos/materiales/${encodeURIComponent(pedidoSegment)}/obtener-ancho-metraje-prenda/${prendaId}${qsLectura}`).then(r => r.json())
+                fetch(`/insumos/materiales/${encodeURIComponent(pedidoSegment)}/obtener-colores-prenda/${prendaIdResolved}${qsLectura}`).then(r => r.json()),
+                fetch(`/insumos/materiales/${encodeURIComponent(pedidoSegment)}/obtener-ancho-metraje-prenda/${prendaIdResolved}${qsLectura}`).then(r => r.json())
             ]);
         })
         .then(([coloresData, datosData]) => {
@@ -863,6 +864,7 @@ function guardarAnchoMetraje() {
 function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
     const prendaBodegaId = modal.dataset.prendaBodegaId ? parseInt(modal.dataset.prendaBodegaId, 10) : null;
     const tipoRecibo = modal.dataset.tipoRecibo || 'COSTURA';
+    const prendaPedidoIdPayload = prendaBodegaId ? null : prendaId;
     const numeroReciboTexto = (document.getElementById('anchoMetrajeRecibo')?.textContent || '').replace('#', '').trim();
     const numeroRecibo = numeroReciboTexto && !Number.isNaN(Number(numeroReciboTexto)) ? Number(numeroReciboTexto) : null;
     const extraPayload = {
@@ -910,7 +912,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
             },
             body: JSON.stringify({
-                prenda_pedido_id: prendaId,
+                prenda_pedido_id: prendaPedidoIdPayload,
                 color: null,
                 tipo_modo: 'normal',
                 ancho: ancho,
@@ -959,7 +961,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
                         },
                         body: JSON.stringify({
-                            prenda_pedido_id: prendaId,
+                            prenda_pedido_id: prendaPedidoIdPayload,
                             color: null,
                             tipo_modo: 'color',
                             ancho: anchoGeneral,
@@ -984,7 +986,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
                             },
                             body: JSON.stringify({
-                                prenda_pedido_id: prendaId,
+                                prenda_pedido_id: prendaPedidoIdPayload,
                                 color: colorNombre,
                                 tipo_modo: 'color',
                                 ancho: null,
@@ -1033,7 +1035,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
                         },
                         body: JSON.stringify({
-                            prenda_pedido_id: prendaId,
+                            prenda_pedido_id: prendaPedidoIdPayload,
                             color: null,
                             tipo_modo: 'pieza',
                             ancho: anchoGeneral,
@@ -1058,7 +1060,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
                             },
                             body: JSON.stringify({
-                                prenda_pedido_id: prendaId,
+                                prenda_pedido_id: prendaPedidoIdPayload,
                                 color: colorNombre,
                                 tipo_modo: 'pieza',
                                 ancho: null,
@@ -1107,7 +1109,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
             },
             body: JSON.stringify({
-                prenda_pedido_id: prendaId,
+                prenda_pedido_id: prendaPedidoIdPayload,
                 color: null,
                 tipo_modo: 'mano',
                 ancho: null,

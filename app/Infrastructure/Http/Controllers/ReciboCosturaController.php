@@ -1449,37 +1449,39 @@ class ReciboCosturaController extends Controller
                 // Actualizar el proceso de costura existente
                 $resultado = DB::transaction(function () use ($pedido, $prendaId, $prendaBodegaId, $esBodega, $taller, $consecutivoOriginal) {
                     $prendaColumn = $esBodega ? 'prenda_bodega_id' : 'prenda_pedido_id';
-                    // Buscar el proceso de costura existente
-                    $procesoCostura = ProcesoPrenda::query()
+                    $prendaValor = $esBodega ? $prendaBodegaId : $prendaId;
+
+                    // Buscar todos los procesos de costura del recibo (base y parciales).
+                    // Esto permite asignar taller aun cuando el recibo viene de flujo por modulos.
+                    $procesosCostura = ProcesoPrenda::query()
                         ->where('numero_pedido', $pedido->numero_pedido)
-                        ->where($prendaColumn, $prendaId)
+                        ->where($prendaColumn, $prendaValor)
                         ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
                         ->where('numero_recibo', $consecutivoOriginal)
-                        ->where(function ($query) {
-                            $query->whereNull('numero_recibo_parcial')
-                                ->orWhere('numero_recibo_parcial', 0);
-                        })
                         ->whereNull('deleted_at')
                         ->orderByDesc('created_at')
-                        ->first();
+                        ->get();
 
-                    if (!$procesoCostura) {
-                        throw new \Exception('No se encontro el proceso de costura para actualizar');
+                    if ($procesosCostura->isEmpty()) {
+                        throw new \DomainException('No se encontraron procesos de costura para este recibo y prenda');
                     }
 
-                    // Actualizar el encargado y estado
-                    $procesoCostura->update([
-                        'encargado' => $taller->name,
-                        'usuario_id' => $taller->id,
-                        'fecha_de_asignacion_encargado' => now(),
-                        'estado_proceso' => 'En Progreso',
-                    ]);
+                    foreach ($procesosCostura as $procesoCostura) {
+                        // Actualizar el encargado y estado
+                        $procesoCostura->update([
+                            'encargado' => $taller->name,
+                            'usuario_id' => $taller->id,
+                            'fecha_de_asignacion_encargado' => now(),
+                            'estado_proceso' => 'En Progreso',
+                        ]);
+                    }
 
                     return [
                         'success' => true,
                         'message' => 'Recibo asignado a taller correctamente',
                         'data' => [
-                            'proceso_id' => $procesoCostura->id,
+                            'procesos_actualizados' => $procesosCostura->count(),
+                            'proceso_ids' => $procesosCostura->pluck('id')->values()->all(),
                             'taller' => $taller->name,
                         ]
                     ];
@@ -1524,6 +1526,11 @@ class ReciboCosturaController extends Controller
                 'success' => false,
                 'message' => 'Error de validacion',
                 'errors' => $e->errors(),
+            ], 422);
+        } catch (\DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
             ], 422);
         } catch (\Exception $e) {
             Log::error('Error al pasar recibo a Taller', [

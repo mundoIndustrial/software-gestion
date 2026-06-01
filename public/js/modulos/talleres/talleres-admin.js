@@ -715,7 +715,7 @@ function showRecibos(tallerId, tallerName) {
                         </td>
                         <td>
                             <div style="display: flex; gap: 8px; align-items: center;">
-                                <button class="btn-action btn-expandir-detalles" data-recibo-id="${recibo.id}" data-es-parcial="${recibo.es_parcial}" title="Ver detalles aquí">
+                                <button class="btn-action btn-expandir-detalles" data-recibo-id="${recibo.id}" data-es-parcial="${recibo.es_parcial}" data-recibo-numero="${recibo.numero_recibo}" data-tipo-recibo="${recibo.tipo_recibo || ''}" title="Ver detalles aquí">
                                     <span class="material-symbols-rounded" style="font-size: 16px;">expand_more</span>
                                 </button>
                                 <button class="btn-action btn-ver-entregas" data-taller-id="${data.taller_id}" data-recibo-id="${recibo.id}" data-es-parcial="${recibo.es_parcial}" data-recibo-numero="${recibo.numero_recibo}" data-cliente="${recibo.cliente}" data-prenda="${recibo.nombre_prenda}">
@@ -769,6 +769,8 @@ function showRecibos(tallerId, tallerName) {
                 
                 const reciboId = btn.getAttribute('data-recibo-id');
                 const esParcial = btn.getAttribute('data-es-parcial');
+                const reciboNumero = btn.getAttribute('data-recibo-numero');
+                const tipoRecibo = btn.getAttribute('data-tipo-recibo');
                 const reciboRow = btn.closest('tr');
                 
                 // Crear o encontrar la fila del acordeón
@@ -802,7 +804,7 @@ function showRecibos(tallerId, tallerName) {
                     // Cargar entregas
                     const contentDiv = accordionRow.querySelector('.recibo-accordion-content');
                     if (contentDiv.textContent.includes('Cargando')) {
-                        cargarEntregasAcordeon(reciboId, esParcial, contentDiv);
+                        cargarEntregasAcordeon(reciboId, esParcial, reciboNumero, tipoRecibo, contentDiv);
                     }
                 } else {
                     accordionRow.style.display = 'none';
@@ -1979,108 +1981,91 @@ function loadNovedades(reciboId, esParcial) {
 /**
  * Cargar entregas en el acordeón
  */
-function cargarEntregasAcordeon(reciboId, esParcial, contentDiv) {
-    const esParcialParam = esParcial === '1' ? '1' : '0';
+function cargarEntregasAcordeon(reciboId, esParcial, reciboNumero, tipoRecibo, contentDiv) {
     const mainContainer = document.querySelector('.main-container');
-    const tallerId = currentState.selectedTaller?.id;
-    
-    if (!tallerId) {
-        contentDiv.innerHTML = '<div style="padding: 30px; text-align: center; color: #ef4444;"><div style="font-size: 2rem; margin-bottom: 10px;">❌</div><p>Error: No se encontró el ID del taller</p></div>';
+    const apiReciboCompletoBase = mainContainer?.dataset?.routeApiReciboCompleto;
+
+    if (!apiReciboCompletoBase || !reciboNumero || !tipoRecibo) {
+        contentDiv.innerHTML = '<div style="padding: 30px; text-align: center; color: #64748b;"><p>No hay datos de asignacion disponibles</p></div>';
         return;
     }
-    
-    // Usar el mismo endpoint que usa el botón "Ver Entregas"
-    const apiRoute = mainContainer.dataset.routeApiEntregas
-        .replace(':taller_id', tallerId)
-        .replace(':recibo_id', reciboId)
-        .replace(':es_parcial', esParcialParam);
-    
-    fetch(apiRoute)
-        .then(response => response.json())
+
+    const params = new URLSearchParams({
+        numero_recibo: String(reciboNumero),
+        tipo_recibo: String(tipoRecibo),
+    });
+
+    fetch(`${apiReciboCompletoBase}?${params.toString()}`)
+        .then(async response => {
+            let body = {};
+            try {
+                body = await response.json();
+            } catch (error) {
+                body = {};
+            }
+
+            if (!response.ok || body.success === false) {
+                throw new Error(body.message || `HTTP ${response.status}`);
+            }
+
+            return body;
+        })
         .then(data => {
-            console.log('Datos completos del recibo:', data);
-            console.log('Estructura de data:', Object.keys(data));
-            console.log('data.entregas:', data.entregas);
-            console.log('data.total:', data.total);
-            
-            // Verificar si hay datos
-            if (!data) {
-                contentDiv.innerHTML = '<div style="padding: 30px; text-align: center; color: #64748b;"><div style="font-size: 2rem; margin-bottom: 10px;">📭</div><p>No se recibieron datos del servidor</p></div>';
+            const tallas = Array.isArray(data.tallas) ? data.tallas : [];
+
+            if (tallas.length === 0) {
+                contentDiv.innerHTML = '<div style="padding: 30px; text-align: center; color: #64748b;"><p>No hay datos de asignacion disponibles</p></div>';
                 return;
             }
 
-            let html = '<div style="padding: 20px;">';
+            const fecha = (data.dia && data.mes && data.ano)
+                ? `${String(data.dia).padStart(2, '0')}/${String(data.mes).padStart(2, '0')}/${String(data.ano)}`
+                : 'N/A';
 
-            // Tabla de prendas asignadas
+            const descripcion = data.descripcion || 'Sin descripcion';
+
+            let html = '<div style="padding: 20px;">';
             html += `
                 <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                     <thead>
                         <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
-                            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Fecha</th>
-                            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Descripción</th>
-                            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Género</th>
+                            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Fecha proceso</th>
+                            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Descripcion</th>
                             <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Talla</th>
-                            <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Asignado</th>
-                            <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Entregado</th>
+                            <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Cantidad</th>
                         </tr>
                     </thead>
                     <tbody>`;
 
-            let rowIndex = 0;
-            let hayDatos = false;
-            
-            // Iterar sobre las entregas agrupadas
-            if (data.entregas && Array.isArray(data.entregas) && data.entregas.length > 0) {
-                data.entregas.forEach(semanaGroup => {
-                    if (!semanaGroup || !Array.isArray(semanaGroup) || semanaGroup.length === 0) return;
-                    
-                    semanaGroup.forEach(entrega => {
-                        hayDatos = true;
-                        const fecha = entrega.fecha_formateada || 'N/A';
-                        const descripcion = entrega.descripcion || 'Sin descripción';
-                        const genero = entrega.genero || 'N/A';
-                        const talla = entrega.talla_nombre || entrega.talla || 'N/A';
-                        const totalAsignado = entrega.total_asignado || 0;
-                        const totalEntregado = entrega.total_entregado || 0;
-                        
-                        const bgColor = rowIndex % 2 === 0 ? '#ffffff' : '#f8fafc';
-                        rowIndex++;
-                        
-                        html += `
-                            <tr style="border-bottom: 1px solid #e2e8f0; background: ${bgColor};">
-                                <td style="padding: 12px; font-size: 13px; color: #334155;">${fecha}</td>
-                                <td style="padding: 12px; font-size: 13px; color: #334155;">${descripcion}</td>
-                                <td style="padding: 12px; font-size: 13px; color: #334155;">${genero}</td>
-                                <td style="padding: 12px; font-size: 13px; color: #334155;">${talla}</td>
-                                <td style="padding: 12px; text-align: center; font-size: 14px; font-weight: 600; color: #2563eb;">${totalAsignado}</td>
-                                <td style="padding: 12px; text-align: center; font-size: 14px; font-weight: 600; color: #10b981;">${totalEntregado}</td>
-                            </tr>`;
-                    });
-                });
-            }
+            tallas.forEach((row, index) => {
+                const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+                const talla = row.talla || 'N/A';
+                const cantidad = Number(row.cantidad || 0);
 
-            if (!hayDatos) {
-                contentDiv.innerHTML = '<div style="padding: 30px; text-align: center; color: #64748b;"><div style="font-size: 2rem; margin-bottom: 10px;">📭</div><p>No hay datos de asignación disponibles</p></div>';
-                return;
-            }
+                html += `<tr style="border-bottom: 1px solid #e2e8f0; background: ${bgColor};">`;
+                if (index === 0) {
+                    html += `<td rowspan="${tallas.length}" style="padding: 12px; font-size: 13px; color: #334155; vertical-align: top; font-weight: 600;">${escapeHtml(fecha)}</td>`;
+                    html += `<td rowspan="${tallas.length}" style="padding: 12px; font-size: 13px; color: #334155; vertical-align: top;">${escapeHtml(descripcion)}</td>`;
+                }
+                html += `<td style="padding: 12px; font-size: 13px; color: #334155;">${escapeHtml(talla)}</td>`;
+                html += `<td style="padding: 12px; text-align: center; font-size: 14px; font-weight: 600; color: #2563eb;">${cantidad}</td>`;
+                html += '</tr>';
+            });
 
             html += `
                     </tbody>
-                </table>`;
-
-            // Mostrar total si existe
-            if (data.total) {
-                html += `<div style="margin-top: 15px; text-align: right; font-size: 14px; font-weight: 600; color: #475569;">
-                    Total entregado: <span style="color: #2563eb;">${data.total} unidades</span>
-                </div>`;
-            }
-
+                </table>
+                <div style="margin-top: 15px; text-align: right; font-size: 14px; font-weight: 600; color: #475569;">
+                    Total asignado: <span style="color: #2563eb;">${Number(data.total || 0)} unidades</span>
+                </div>
+            `;
             html += '</div>';
+
             contentDiv.innerHTML = html;
         })
         .catch(error => {
-            console.error('Error al cargar detalles del recibo:', error);
-            contentDiv.innerHTML = '<div style="padding: 30px; text-align: center; color: #ef4444;"><div style="font-size: 2rem; margin-bottom: 10px;">❌</div><p>Error al cargar los detalles del recibo</p></div>';
+            console.error('Error al cargar asignaciones del recibo:', error);
+            contentDiv.innerHTML = '<div style="padding: 30px; text-align: center; color: #64748b;"><p>No hay datos de asignacion disponibles</p></div>';
         });
 }
 
