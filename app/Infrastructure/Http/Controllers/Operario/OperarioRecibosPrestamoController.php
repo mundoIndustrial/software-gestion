@@ -73,7 +73,29 @@ class OperarioRecibosPrestamoController extends Controller
     public function createInsumos()
     {
         $numeroOrden = ((int) DB::table('recibos_prestamo_insumos')->max('numero_orden')) + 1;
-        return view('operario.recibos-prestamo-insumos-crear', ['numeroOrden' => $numeroOrden]);
+        $rolTallerId = (int) DB::table('roles')->whereRaw('LOWER(name) = ?', ['taller'])->value('id');
+
+        $talleres = DB::table('users')
+            ->select('name')
+            ->where(function ($query) use ($rolTallerId) {
+                if ($rolTallerId > 0) {
+                    $query->whereJsonContains('roles_ids', $rolTallerId)
+                        ->orWhere('role_id', $rolTallerId);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            })
+            ->whereNotNull('name')
+            ->orderBy('name')
+            ->pluck('name')
+            ->filter(fn ($name) => trim((string) $name) !== '')
+            ->unique()
+            ->values();
+
+        return view('operario.recibos-prestamo-insumos-crear', [
+            'numeroOrden' => $numeroOrden,
+            'talleres' => $talleres,
+        ]);
     }
 
     public function showInsumos(int $id)

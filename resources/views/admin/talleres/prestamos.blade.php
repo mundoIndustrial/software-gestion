@@ -231,6 +231,12 @@ document.querySelectorAll('.btn-ver-prestamo').forEach((btn) => {
         }
 
         const r = data.recibo;
+        const formatCantidad = (value) => {
+            if (value === null || value === undefined || value === '') return '';
+            const num = Number(value);
+            if (Number.isNaN(num)) return value;
+            return Number.isInteger(num) ? String(num) : num.toString();
+        };
         const receiptTitleEl = document.getElementById('receipt-title');
         const pedidoNumberEl = document.getElementById('order-pedido');
         const dayBox = modal.querySelector('.day-box');
@@ -268,7 +274,7 @@ document.querySelectorAll('.btn-ver-prestamo').forEach((btn) => {
             descripcionHtml += `<div style="margin-top:8px;">`;
             descripcionHtml += `<div style="display:flex;gap:1rem;margin-bottom:6px;font-weight:700;font-size:11px;color:#374151;"><div style="flex:1;">DESCRIPCIÓN</div><div style="width:80px;text-align:right;">CANTIDAD</div></div>`;
             (data.items || []).forEach(it => {
-                descripcionHtml += `<div style="display:flex;gap:1rem;margin-bottom:4px;font-size:11px;border:1px solid #d1d5db;padding:6px 8px;border-radius:4px;"><div style="flex:1;">${it.descripcion || ''}</div><div style="width:80px;text-align:right;">${it.cantidad ?? ''}</div></div>`;
+                descripcionHtml += `<div style="display:flex;gap:1rem;margin-bottom:4px;font-size:11px;border:1px solid #d1d5db;padding:6px 8px;border-radius:4px;"><div style="flex:1;">${it.descripcion || ''}</div><div style="width:80px;text-align:right;">${formatCantidad(it.cantidad)}</div></div>`;
             });
             if (!data.items || data.items.length === 0) {
                 descripcionHtml += `<span style="display:block;color:#64748b;">Sin items registrados.</span>`;

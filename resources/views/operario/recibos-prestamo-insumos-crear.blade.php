@@ -292,7 +292,12 @@
                     </div>
                     <div class="meta-field">
                         <label class="meta-label" for="nombre_costurero">Nombre del Costurero(a)</label>
-                        <input id="nombre_costurero" name="nombre_costurero" class="meta-input" type="text" placeholder="Nombre completo" required>
+                        <input id="nombre_costurero" name="nombre_costurero" class="meta-input" type="text" placeholder="Nombre completo" list="lista_talleres_insumos" required>
+                        <datalist id="lista_talleres_insumos">
+                            @foreach(($talleres ?? []) as $tallerNombre)
+                                <option value="{{ $tallerNombre }}"></option>
+                            @endforeach
+                        </datalist>
                     </div>
                 </section>
 
@@ -384,6 +389,7 @@
         rowsBody.addEventListener('input', function (event) {
             const target = event.target;
             if (target && target.matches('.insumo-textarea')) {
+                target.value = target.value.toUpperCase();
                 autoGrow(target);
             }
         });
