@@ -8,6 +8,7 @@ use App\Models\PedidoMetrajeColor;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedidoColorTela;
 use App\Models\PrendaPedidoTalla;
+use Illuminate\Support\Facades\Schema;
 
 class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRepository
 {
@@ -67,6 +68,8 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
     public function guardarAnchoMetrajePrenda(string $numeroPedido, int $prendaId, array $datos): array
     {
         try {
+            $anchoTieneConsecutivoReciboId = Schema::hasColumn('pedido_ancho_general', 'consecutivo_recibo_id');
+            $metrajeTieneConsecutivoReciboId = Schema::hasColumn('pedido_metraje_color', 'consecutivo_recibo_id');
             $tipoModoNuevo = $datos['tipo_modo'] ?? 'normal';
             $prendaBodegaId = isset($datos['prenda_bodega_id']) ? (int) $datos['prenda_bodega_id'] : null;
             $numeroRecibo = isset($datos['numero_recibo']) ? (int) $datos['numero_recibo'] : null;
@@ -163,10 +166,10 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
                 } else {
                     $match['prenda_pedido_id'] = $prendaId;
                 }
-                if ($esBodega && ($numeroRecibo ?? 0) > 0) {
+                if (($numeroRecibo ?? 0) > 0) {
                     $match['numero_recibo'] = $numeroRecibo;
                 }
-                if ($esBodega && ($consecutivoReciboId ?? 0) > 0) {
+                if ($anchoTieneConsecutivoReciboId && $esBodega && ($consecutivoReciboId ?? 0) > 0) {
                     $match['consecutivo_recibo_id'] = $consecutivoReciboId;
                 }
                 \Log::info('[PrendaMaterialMetricsRepository] upsert ancho_general', [
@@ -180,13 +183,17 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
                         'prenda_pedido_id' => ($esBodega && ($prendaBodegaId ?? 0) > 0) ? null : ($prendaId ?: null),
                         'prenda_bodega_id' => ($esBodega && ($prendaBodegaId ?? 0) > 0) ? $prendaBodegaId : null,
                         'numero_recibo' => $numeroRecibo,
-                        'consecutivo_recibo_id' => ($esBodega && ($consecutivoReciboId ?? 0) > 0) ? $consecutivoReciboId : null,
                         'ancho' => $datos['ancho'] ?? null,
                         'metraje' => $datos['metraje'] ?? null,
                         'contenido_mano' => $datos['contenido_mano'] ?? null,
                         'tipo_modo' => $tipoModoNuevo,
                     ]
                 );
+                if ($anchoTieneConsecutivoReciboId) {
+                    PedidoAnchoGeneral::where($match)->update([
+                        'consecutivo_recibo_id' => ($esBodega && ($consecutivoReciboId ?? 0) > 0) ? $consecutivoReciboId : null,
+                    ]);
+                }
             }
 
             if (!empty($datos['color']) && ($datos['metraje'] ?? null) !== null) {
@@ -199,10 +206,10 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
                 } else {
                     $match['prenda_pedido_id'] = $prendaId;
                 }
-                if ($esBodega && ($numeroRecibo ?? 0) > 0) {
+                if (($numeroRecibo ?? 0) > 0) {
                     $match['numero_recibo'] = $numeroRecibo;
                 }
-                if ($esBodega && ($consecutivoReciboId ?? 0) > 0) {
+                if ($metrajeTieneConsecutivoReciboId && $esBodega && ($consecutivoReciboId ?? 0) > 0) {
                     $match['consecutivo_recibo_id'] = $consecutivoReciboId;
                 }
                 \Log::info('[PrendaMaterialMetricsRepository] upsert metraje_color', [
@@ -216,11 +223,15 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
                         'prenda_pedido_id' => ($esBodega && ($prendaBodegaId ?? 0) > 0) ? null : ($prendaId ?: null),
                         'prenda_bodega_id' => ($esBodega && ($prendaBodegaId ?? 0) > 0) ? $prendaBodegaId : null,
                         'numero_recibo' => $numeroRecibo,
-                        'consecutivo_recibo_id' => ($esBodega && ($consecutivoReciboId ?? 0) > 0) ? $consecutivoReciboId : null,
                         'metraje' => $datos['metraje'],
                         'tipo_modo' => $tipoModoNuevo,
                     ]
                 );
+                if ($metrajeTieneConsecutivoReciboId) {
+                    PedidoMetrajeColor::where($match)->update([
+                        'consecutivo_recibo_id' => ($esBodega && ($consecutivoReciboId ?? 0) > 0) ? $consecutivoReciboId : null,
+                    ]);
+                }
             }
 
             $debugAncho = PedidoAnchoGeneral::query();
@@ -243,8 +254,10 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
                 $debugAncho->where('numero_recibo', $numeroRecibo);
                 $debugMetraje->where('numero_recibo', $numeroRecibo);
             }
-            if ($esBodega && ($consecutivoReciboId ?? 0) > 0) {
+            if ($anchoTieneConsecutivoReciboId && $esBodega && ($consecutivoReciboId ?? 0) > 0) {
                 $debugAncho->where('consecutivo_recibo_id', $consecutivoReciboId);
+            }
+            if ($metrajeTieneConsecutivoReciboId && $esBodega && ($consecutivoReciboId ?? 0) > 0) {
                 $debugMetraje->where('consecutivo_recibo_id', $consecutivoReciboId);
             }
             $debugAncho = $debugAncho->orderByDesc('id')->first();

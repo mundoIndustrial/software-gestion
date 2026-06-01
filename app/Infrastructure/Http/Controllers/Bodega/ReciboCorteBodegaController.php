@@ -249,9 +249,15 @@ class ReciboCorteBodegaController extends Controller
                     $keyEspecificaArea = ((int) $numeroRecibo) . '|' . ((int) $prenda->id) . '|' . $areaKey;
                     $keyGeneralArea = ((int) $numeroRecibo) . '|*|' . $areaKey;
 
-                    $encargado = $encargadosPorAreaMap[$keyEspecificaArea]
-                        ?? $encargadosPorAreaMap[$keyGeneralArea]
-                        ?? ($encargadosMap[$numeroRecibo] ?? null);
+                    if ($areaKey !== '') {
+                        // Si el recibo tiene área definida, solo usar encargado de esa misma área.
+                        // Evita mezclar, por ejemplo, área "Insumos" con encargado de "Control".
+                        $encargado = $encargadosPorAreaMap[$keyEspecificaArea]
+                            ?? $encargadosPorAreaMap[$keyGeneralArea]
+                            ?? null;
+                    } else {
+                        $encargado = $encargadosMap[$numeroRecibo] ?? null;
+                    }
                 }
 
                 return [

@@ -125,6 +125,61 @@ class ProcesosPedidoController
                 ->orderBy('fecha_inicio')
                 ->get($selectColumns);
 
+            // Fallback de encargado:
+            // Si algún proceso viene sin encargado, intentar completar con el último
+            // encargado asignado para el mismo número de recibo y mismo nombre de proceso.
+            if ($procesos->count() > 0) {
+                $normalizarTexto = static function (?string $valor): string {
+                    $texto = strtolower(trim((string) $valor));
+                    $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $texto);
+                    if ($ascii !== false) {
+                        $texto = $ascii;
+                    }
+                    $texto = preg_replace('/[^a-z0-9]+/', '', $texto);
+                    return (string) $texto;
+                };
+
+                $encargadosCandidatosQuery = DB::table('procesos_prenda')
+                    ->where('numero_recibo', $numeroReciboInt)
+                    ->whereNotNull('encargado')
+                    ->whereRaw("TRIM(encargado) <> ''")
+                    ->orderByRaw("COALESCE(fecha_de_asignacion_encargado, updated_at, created_at, fecha_inicio) DESC")
+                    ->orderByDesc('id');
+
+                if ($prendaBodegaId > 0 && $hasPrendaBodegaColumn) {
+                    $encargadosCandidatosQuery->where(function ($q) use ($prendaBodegaId) {
+                        $q->where('prenda_bodega_id', $prendaBodegaId)
+                            ->orWhereNull('prenda_bodega_id');
+                    });
+                }
+
+                $encargadosCandidatos = $encargadosCandidatosQuery->get([
+                    'proceso',
+                    'encargado',
+                ]);
+
+                $encargadoPorProceso = [];
+                foreach ($encargadosCandidatos as $candidato) {
+                    $procesoKey = $normalizarTexto((string) ($candidato->proceso ?? ''));
+                    if ($procesoKey === '' || isset($encargadoPorProceso[$procesoKey])) {
+                        continue;
+                    }
+                    $encargadoPorProceso[$procesoKey] = $candidato->encargado;
+                }
+
+                $procesos = $procesos->map(function ($proceso) use ($encargadoPorProceso, $normalizarTexto) {
+                    $encargadoActual = trim((string) ($proceso->encargado ?? ''));
+                    if ($encargadoActual !== '') {
+                        return $proceso;
+                    }
+
+                    $procesoKey = $normalizarTexto((string) ($proceso->proceso ?? ''));
+                    $proceso->encargado = $encargadoPorProceso[$procesoKey] ?? null;
+
+                    return $proceso;
+                });
+            }
+
             // Fallback de contexto unificado:
             // Si procesos_prenda no trae numero_pedido/prenda_pedido_id, intentar resolver
             // desde consecutivos_recibos_pedidos por numero_recibo (+ prenda_bodega_id si existe).
