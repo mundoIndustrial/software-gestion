@@ -156,6 +156,7 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
             
             // Mostrar selector de modo y ejecutar cambio
             modoSelector.classList.remove('hidden');
+            asegurarModoSelectorInteractivo();
             
             // Disparar evento de cambio para mostrar la vista correcta
             const modoActual = document.querySelector('input[name="modoAnchoMetraje"]:checked').value;
@@ -169,6 +170,7 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
             showToast('Error al cargar los datos', 'error');
             document.getElementById('anchoMetrajeLoading').classList.add('hidden');
             document.getElementById('modoSelector').classList.remove('hidden');
+            asegurarModoSelectorInteractivo();
         });
     }
 }
@@ -229,6 +231,26 @@ function actualizarEstilosModoCards() {
             card.classList.remove('border-indigo-400', 'bg-indigo-50', 'shadow-sm');
             card.classList.add('border-slate-200', 'bg-white');
         }
+    });
+}
+
+function asegurarModoSelectorInteractivo() {
+    const modoSelector = document.getElementById('modoSelector');
+    if (!modoSelector) return;
+
+    modoSelector.style.pointerEvents = 'auto';
+    modoSelector.classList.remove('pointer-events-none', 'opacity-50');
+
+    const radios = modoSelector.querySelectorAll('input[type="radio"][name="modoAnchoMetraje"]');
+    radios.forEach((radio) => {
+        radio.disabled = false;
+        radio.removeAttribute('disabled');
+    });
+
+    const cards = modoSelector.querySelectorAll('label[data-modo-card]');
+    cards.forEach((card) => {
+        card.style.pointerEvents = 'auto';
+        card.setAttribute('aria-disabled', 'false');
     });
 }
 
@@ -1211,6 +1233,33 @@ function exportModalAnchoMetraje() {
         cambiarModoAnchoMetraje({ target });
     });
 
+    document.addEventListener('click', function (event) {
+        const target = event.target;
+        if (!(target instanceof Element)) {
+            return;
+        }
+
+        const card = target.closest('#modoSelector label[data-modo-card]');
+        if (!card) {
+            return;
+        }
+
+        const radio = card.querySelector('input[type="radio"][name="modoAnchoMetraje"]');
+        if (!radio) {
+            return;
+        }
+
+        asegurarModoSelectorInteractivo();
+
+        if (!radio.checked) {
+            radio.checked = true;
+            radio.dispatchEvent(new Event('change', { bubbles: true }));
+        } else {
+            actualizarEstilosModoCards();
+            cambiarModoAnchoMetraje({ target: radio });
+        }
+    }, true);
+
     window.insumosHandlers = window.insumosHandlers || {};
     window.insumosHandlers.modalAnchoMetraje = {
         abrirModalAnchoMetraje,
@@ -1224,6 +1273,7 @@ function exportModalAnchoMetraje() {
         confirmarEliminarAnchoMetraje,
         guardarAnchoMetraje,
         actualizarReciboConAnchoMetraje,
+        asegurarModoSelectorInteractivo,
     };
 }
 
