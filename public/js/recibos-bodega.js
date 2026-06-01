@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
     let adminBadgeContext = null;
+    const initialPrendasMarkup = prendasContainer.innerHTML;
 
     if (!modal || !prendasContainer || !form || !tipoTallaModal || !tipoTallaModalText) return;
 
@@ -705,10 +706,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let previousActiveElement = null;
 
+    function resetReciboBodegaFormState() {
+        form.reset();
+        prendasContainer.innerHTML = initialPrendasMarkup;
+        prendasContainer.querySelectorAll('.prenda-card').forEach(bindPrendaActions);
+        limpiarImagenesPrendas();
+    }
+
     const closeModal = () => {
         modal.classList.remove('is-open');
         document.body.style.overflow = '';
-        limpiarImagenesPrendas();
+        resetReciboBodegaFormState();
         if (previousActiveElement) {
             previousActiveElement.focus();
             previousActiveElement = null;
@@ -717,7 +725,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const openModal = () => {
         previousActiveElement = document.activeElement;
-        limpiarImagenesPrendas();
+        resetReciboBodegaFormState();
         modal.classList.add('is-open');
         document.body.style.overflow = 'hidden';
         const firstInput = form.querySelector('input, textarea, button[type="submit"]');
@@ -875,7 +883,6 @@ document.addEventListener('DOMContentLoaded', function () {
             console.log('[FETCH] Response data:', data);
             if (data.success) {
                 closeModal();
-                form.reset();
                 if (!data.duplicate) {
                     showReciboSuccessModal();
                     loadRecibosCorteForBodega();
@@ -1455,6 +1462,8 @@ function closeReciboBodegaDropdowns() {
     document.querySelectorAll('.btn-ver-dropdown-bodega.dropdown-opening').forEach((b) => b.classList.remove('dropdown-opening'));
 }
 
+let suppressReciboBodegaDropdownToggleUntil = 0;
+
 function openReciboBodegaDropdown(button) {
     if (!button) return;
 
@@ -1493,36 +1502,45 @@ function openReciboBodegaDropdown(button) {
     `;
 
     dropdown.addEventListener('click', async function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+
         const actionBtn = event.target.closest('.dropdown-item-btn');
         if (!actionBtn) return;
         const action = actionBtn.getAttribute('data-action');
+        suppressReciboBodegaDropdownToggleUntil = Date.now() + 300;
 
         if (action === 'ver-detalles') {
+            closeReciboBodegaDropdowns();
             if (reciboId > 0) {
                 openReciboCorteBodegaModal(reciboId);
             }
-            closeReciboBodegaDropdowns();
             return;
         }
 
         if (action === 'ver-distribucion') {
+            closeReciboBodegaDropdowns();
             if (numeroRecibo > 0) {
                 await openReciboBodegaDistribucion(numeroRecibo, prendaBodegaId);
             }
-            closeReciboBodegaDropdowns();
             return;
         }
 
         if (action === 'seguimiento') {
-            await openReciboBodegaSeguimientoInterno(numeroRecibo, prendaBodegaId);
             closeReciboBodegaDropdowns();
+            await openReciboBodegaSeguimientoInterno(numeroRecibo, prendaBodegaId);
         }
     });
 
+    // Posicionar SIEMPRE respecto al viewport actual del botón
+    // (evita desfases al hacer scroll dentro de contenedores).
     document.body.appendChild(dropdown);
     const rect = button.getBoundingClientRect();
-    dropdown.style.top = `${window.scrollY + rect.bottom + 8}px`;
-    dropdown.style.left = `${window.scrollX + rect.left - 8}px`;
+    dropdown.style.position = 'fixed';
+    dropdown.style.top = `${rect.bottom + 8}px`;
+    dropdown.style.left = `${Math.max(8, rect.left - 8)}px`;
+    dropdown.style.transform = 'none';
+    dropdown.style.zIndex = '10020';
 }
 
 async function openReciboBodegaSeguimientoInterno(numeroRecibo, prendaBodegaId) {
@@ -1953,6 +1971,11 @@ document.addEventListener('click', function (event) {
     const inMenu = event.target.closest('.dropdown-menu-recibos');
 
     if (btnVer) {
+        if (Date.now() < suppressReciboBodegaDropdownToggleUntil) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        }
         event.preventDefault();
         event.stopPropagation();
         openReciboBodegaDropdown(btnVer);
@@ -1964,3 +1987,18 @@ document.addEventListener('click', function (event) {
     }
 });
 
+// Si el usuario hace scroll (rueda o desplazamiento), cerrar el submenú para evitar descuadre visual.
+document.addEventListener('wheel', function () {
+    closeReciboBodegaDropdowns();
+}, { passive: true });
+
+window.addEventListener('scroll', function () {
+    closeReciboBodegaDropdowns();
+}, { passive: true });
+
+// Cerrar el submenú al seleccionar cualquier opción para evitar que quede abierto/descuadrado.
+document.addEventListener('click', function (event) {
+    const menuAction = event.target.closest('.dropdown-menu-recibos button, .dropdown-menu-recibos a');
+    if (!menuAction) return;
+    closeReciboBodegaDropdowns();
+});
