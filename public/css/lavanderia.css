@@ -26,6 +26,7 @@
     background: var(--bg-color);
     min-height: 100vh;
     padding: 20px;
+    padding-bottom: 60px;
     font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
@@ -873,6 +874,7 @@
 @media (max-width: 768px) {
     .lavanderia-container {
         padding: 12px;
+        padding-bottom: 80px;
     }
 
     .salida-section,
@@ -1046,6 +1048,7 @@
 @media (max-width: 480px) {
     .lavanderia-container {
         padding: 8px;
+        padding-bottom: 100px;
     }
 
     .salida-section,
@@ -1561,4 +1564,189 @@
 
 .modal-ver-firma-content {
     max-width: 600px;
+}
+
+
+/* ============================================
+   GOOEY SEARCH INPUT
+   ============================================ */
+.gooey-search-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+}
+
+.gooey-search-input {
+    width: 100%;
+    padding: 12px 16px 12px 40px;
+    border: 2px solid #e2e8f0;
+    border-radius: 50px;
+    font-size: 14px;
+    color: #334155;
+    background: white;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    outline: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.gooey-search-input:focus {
+    border-color: #2450ef;
+    box-shadow: 0 0 0 3px rgba(36, 80, 239, 0.1), 0 4px 12px rgba(36, 80, 239, 0.15);
+    transform: scale(1.02);
+    animation: gooeyPulse 1.5s infinite;
+}
+
+.gooey-search-input::placeholder {
+    color: #94a3b8;
+}
+
+.gooey-search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 18px;
+    pointer-events: none;
+    transition: color 0.3s ease;
+}
+
+.gooey-search-input:focus ~ .gooey-search-icon {
+    color: #2450ef;
+}
+
+.gooey-search-clear {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px;
+    display: none;
+    transition: all 0.2s ease;
+}
+
+.gooey-search-input:not(:placeholder-shown) ~ .gooey-search-clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gooey-search-clear:hover {
+    color: #2450ef;
+    transform: translateY(-50%) scale(1.2);
+}
+
+@keyframes gooeyPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(36, 80, 239, 0.4), 0 0 0 3px rgba(36, 80, 239, 0.1), 0 4px 12px rgba(36, 80, 239, 0.15);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(36, 80, 239, 0), 0 0 0 3px rgba(36, 80, 239, 0.1), 0 4px 12px rgba(36, 80, 239, 0.15);
+    }
+}
+
+/* ============================================
+   PAGINACIÓN
+   ============================================ */
+#paginationContainer {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 24px;
+    margin-bottom: 40px;
+    padding: 16px;
+    flex-wrap: wrap;
+}
+
+#paginationContainer.visible {
+    display: flex !important;
+}
+
+.btn-pagination {
+    padding: 8px 12px;
+    background: #e2e8f0;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #1e293b;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-pagination:hover {
+    background: #cbd5e1;
+    transform: translateY(-2px);
+}
+
+.btn-pagination:active {
+    transform: translateY(0);
+}
+
+.btn-pagination:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-number {
+    padding: 6px 10px;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #1e293b;
+    transition: all 0.2s ease;
+}
+
+.page-number:hover {
+    background: #e2e8f0;
+}
+
+.page-number.active {
+    background: #2450ef;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    #paginationContainer {
+        margin-bottom: 60px;
+        padding: 12px;
+    }
+
+    .btn-pagination {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+    .page-number {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    #paginationContainer {
+        margin-bottom: 80px;
+        padding: 12px 8px;
+        gap: 6px;
+    }
+
+    .btn-pagination {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    .page-number {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
 }

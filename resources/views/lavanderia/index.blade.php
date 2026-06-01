@@ -22,15 +22,24 @@
         <!-- SECCIÓN: BUSCADOR DE MOVIMIENTOS -->
         <div class="movimiento-section">
             <div style="display: flex; flex-direction: column; gap: 12px;">
-                <div class="search-wrapper" style="width: 100%;">
+                <form class="gooey-search-wrapper" id="searchMovimientosForm">
+                    <span class="material-symbols-rounded gooey-search-icon">search</span>
                     <input 
                         type="text" 
                         id="searchMovimientosInput" 
-                        class="form-input search-input-large" 
-                        placeholder="Busca por número de recibo..."
+                        class="gooey-search-input" 
+                        placeholder="Buscar por número de movimiento, recibo o prenda..."
                         autocomplete="off"
                     >
-                </div>
+                    <button 
+                        class="gooey-search-clear" 
+                        id="searchMovimientosClear" 
+                        type="button"
+                        style="display: none;"
+                    >
+                        <span class="material-symbols-rounded">close</span>
+                    </button>
+                </form>
                 <button type="button" class="btn btn-primary" id="btnAbrirModalSalida" style="width: 100%;">
                     <span class="material-symbols-rounded">add_circle</span>
                     Nuevo Movimiento
@@ -67,14 +76,14 @@
             </div>
 
             <!-- PAGINACIÓN -->
-            <div id="paginationContainer" style="display: none; margin-top: 24px; display: flex; justify-content: center; align-items: center; gap: 8px;">
-                <button id="btnPrevPage" class="btn-pagination" style="padding: 8px 12px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: #1e293b;">
+            <div id="paginationContainer">
+                <button id="btnPrevPage" class="btn-pagination">
                     <span class="material-symbols-rounded" style="font-size: 18px;">chevron_left</span>
                 </button>
                 <div id="pageNumbers" style="display: flex; gap: 4px; align-items: center;">
                     <!-- Los números de página se renderizarán aquí -->
                 </div>
-                <button id="btnNextPage" class="btn-pagination" style="padding: 8px 12px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: #1e293b;">
+                <button id="btnNextPage" class="btn-pagination">
                     <span class="material-symbols-rounded" style="font-size: 18px;">chevron_right</span>
                 </button>
             </div>

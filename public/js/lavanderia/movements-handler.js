@@ -105,18 +105,18 @@ class MovementsHandler {
         const pageNumbers = document.getElementById('pageNumbers');
 
         if (totalPages <= 1) {
-            paginationContainer.style.display = 'none';
+            paginationContainer.classList.remove('visible');
             return;
         }
 
-        paginationContainer.style.display = 'flex';
+        paginationContainer.classList.add('visible');
         pageNumbers.innerHTML = '';
 
         let startPage = Math.max(1, this.currentPage - 2);
         let endPage = Math.min(totalPages, this.currentPage + 2);
 
         if (startPage > 1) {
-            pageNumbers.innerHTML += `<button class="page-number" data-page="1" style="padding: 6px 10px; background: #f1f5f9; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; color: #1e293b;">1</button>`;
+            pageNumbers.innerHTML += `<button class="page-number" data-page="1">1</button>`;
             if (startPage > 2) {
                 pageNumbers.innerHTML += `<span style="color: #94a3b8; padding: 0 4px;">...</span>`;
             }
@@ -124,20 +124,25 @@ class MovementsHandler {
 
         for (let i = startPage; i <= endPage; i++) {
             const isActive = i === this.currentPage;
-            pageNumbers.innerHTML += `<button class="page-number ${isActive ? 'active' : ''}" data-page="${i}" style="padding: 6px 10px; background: ${isActive ? '#2450ef' : '#f1f5f9'}; color: ${isActive ? '#fff' : '#1e293b'}; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">${i}</button>`;
+            pageNumbers.innerHTML += `<button class="page-number ${isActive ? 'active' : ''}" data-page="${i}">${i}</button>`;
         }
 
         if (endPage < totalPages) {
             if (endPage < totalPages - 1) {
                 pageNumbers.innerHTML += `<span style="color: #94a3b8; padding: 0 4px;">...</span>`;
             }
-            pageNumbers.innerHTML += `<button class="page-number" data-page="${totalPages}" style="padding: 6px 10px; background: #f1f5f9; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; color: #1e293b;">${totalPages}</button>`;
+            pageNumbers.innerHTML += `<button class="page-number" data-page="${totalPages}">${totalPages}</button>`;
         }
 
         document.querySelectorAll('.page-number').forEach(btn => {
             btn.addEventListener('click', () => {
                 this.currentPage = parseInt(btn.dataset.page);
                 this.renderPaginatedMovements();
+                // Scroll al inicio de los movimientos
+                const container = document.getElementById('movementsContainer');
+                if (container) {
+                    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
             });
         });
     }
@@ -366,15 +371,27 @@ class MovementsHandler {
         return `
             <div class="movement-card">
                 <div class="card-header-top">
-                    <div class="card-section">
-                        <div class="card-label">Recibos (${m.recibos.length})</div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-weight: 700; font-size: 14px; color: #1e293b;">
+                            #${m.id}
+                        </span>
                     </div>
-                    <div class="card-fecha">
-                        ${m.fechaMovimiento}
+                    <div style="display: flex; align-items: center; gap: 12px; margin-left: auto;">
+                        <span class="badge ${tipoMovimientoBadgeClass}">
+                            <span class="material-symbols-rounded badge-icon">${tipoMovimientoIcon}</span>
+                            <span>${tipoMovimiento}</span>
+                        </span>
+                        <div class="card-fecha">
+                            ${m.fechaMovimiento}
+                        </div>
                     </div>
                 </div>
 
                 <div class="card-divider"></div>
+
+                <div class="card-section">
+                    <div class="card-label">Recibos (${m.recibos.length})</div>
+                </div>
 
                 <div class="card-section">
                     <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -386,24 +403,14 @@ class MovementsHandler {
 
                 <div class="card-divider"></div>
 
-                <div class="card-section-row">
-                    <div class="card-section">
-                        <div class="card-label">Tipo de Movimiento</div>
-                        <span class="badge ${tipoMovimientoBadgeClass}">
-                            <span class="material-symbols-rounded badge-icon">${tipoMovimientoIcon}</span>
-                            <span>${tipoMovimiento}</span>
+                <div class="card-section">
+                    <div class="card-label">Estado</div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="badge ${firmaBadgeClass}">
+                            <span class="material-symbols-rounded badge-icon">${firmaIcon}</span>
+                            <span>${m.estadoFirma}</span>
                         </span>
-                    </div>
-
-                    <div class="card-section">
-                        <div class="card-label">Estado</div>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span class="badge ${firmaBadgeClass}">
-                                <span class="material-symbols-rounded badge-icon">${firmaIcon}</span>
-                                <span>${m.estadoFirma}</span>
-                            </span>
-                            ${m.firmaMovimiento && m.firmaMovimiento !== 'pendiente' ? `<button class="btn-ver-firma" data-firma-url="${m.firmaMovimiento}" data-movement-id="${m.id}" style="padding: 4px 8px; font-size: 11px;">Ver Firma</button>` : ''}
-                        </div>
+                        ${m.firmaMovimiento && m.firmaMovimiento !== 'pendiente' ? `<button class="btn-ver-firma" data-firma-url="${m.firmaMovimiento}" data-movement-id="${m.id}" style="padding: 4px 8px; font-size: 11px;">Ver Firma</button>` : ''}
                     </div>
                 </div>
 
@@ -426,6 +433,10 @@ class MovementsHandler {
 
         const searchTerm = query.toLowerCase();
         const filteredMovements = this.getFilteredMovements().filter(m => {
+            // Buscar por ID del movimiento
+            const idMatch = m.id.toString().includes(searchTerm);
+
+            // Buscar en recibos (número, cliente, prenda)
             const recibosText = Array.isArray(m.recibos)
                 ? m.recibos.map(recibo => [
                     recibo.numero_recibo,
@@ -435,6 +446,9 @@ class MovementsHandler {
                 ].filter(Boolean).join(' ')).join(' ')
                 : '';
 
+            const recibosMatch = recibosText.toLowerCase().includes(searchTerm);
+
+            // Buscar en prendas manuales
             const prendasManualesText = Array.isArray(m.prendasManuales)
                 ? m.prendasManuales.map(prenda => [
                     prenda.descripcion,
@@ -443,24 +457,24 @@ class MovementsHandler {
                 ].filter(Boolean).join(' ')).join(' ')
                 : '';
 
-            const textoCompleto = [
-                m.id,
+            const prendasMatch = prendasManualesText.toLowerCase().includes(searchTerm);
+
+            // Buscar en otros campos
+            const otherMatch = [
                 m.tipoMovimiento,
                 m.estadoFirma,
                 m.novedad,
-                m.fechaMovimiento,
-                recibosText,
-                prendasManualesText
-            ].filter(Boolean).join(' ').toLowerCase();
+                m.fechaMovimiento
+            ].filter(Boolean).join(' ').toLowerCase().includes(searchTerm);
 
-            return textoCompleto.includes(searchTerm);
+            return idMatch || recibosMatch || prendasMatch || otherMatch;
         });
 
         this.renderMovements(filteredMovements);
         
         const paginationContainer = document.getElementById('paginationContainer');
         if (paginationContainer) {
-            paginationContainer.style.display = filteredMovements.length > 15 ? 'flex' : 'none';
+            paginationContainer.classList.toggle('visible', filteredMovements.length > 15);
         }
     }
 }

@@ -53,13 +53,32 @@ class LavanderiaManager {
     setupEventListeners() {
         // Búsqueda de movimientos
         const searchMovimientosInput = document.getElementById('searchMovimientosInput');
+        const searchMovimientosClear = document.getElementById('searchMovimientosClear');
+        
         if (searchMovimientosInput) {
             searchMovimientosInput.addEventListener('input', debounce((e) => {
                 const query = e.target.value.trim();
+                
+                // Mostrar/ocultar botón de limpiar
+                if (searchMovimientosClear) {
+                    searchMovimientosClear.style.display = query.length > 0 ? 'flex' : 'none';
+                }
+                
                 this.movementsHandler.searchMovements(query);
             }, 300));
         } else {
             console.warn('[LavanderiaManager] searchMovimientosInput no encontrado');
+        }
+
+        // Botón limpiar búsqueda
+        if (searchMovimientosClear) {
+            searchMovimientosClear.addEventListener('click', (e) => {
+                e.preventDefault();
+                searchMovimientosInput.value = '';
+                searchMovimientosClear.style.display = 'none';
+                this.movementsHandler.searchMovements('');
+                searchMovimientosInput.focus();
+            });
         }
 
         // Botón abrir modal
