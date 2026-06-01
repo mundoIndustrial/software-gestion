@@ -191,11 +191,17 @@
                                 <tr>
                                     <td style="flex: 1; border: 1px solid #d1d5db; padding: 12px 8px; text-align: center; width: 50%;">
                                         <div style="font-weight: 700; font-size: 10px; color: #374151; margin-bottom: 30px;">FIRMA MENSAJERO</div>
-                                        <div style="height: 1px;"></div>
+                                        <div id="firma-mensajero-wrapper" style="min-height: 40px; display: flex; align-items: center; justify-content: center;">
+                                            <div id="firma-mensajero-placeholder" style="{{ !empty($recibo->firma_mensajero) ? 'display:none;height:1px;' : 'height:1px;' }}"></div>
+                                            <img id="firma-mensajero-img" src="{{ !empty($recibo->firma_mensajero) ? asset($recibo->firma_mensajero) : '' }}" alt="Firma mensajero" style="{{ !empty($recibo->firma_mensajero) ? 'display:block;' : 'display:none;' }} max-width: 100%; max-height: 70px; object-fit: contain;">
+                                        </div>
                                     </td>
                                     <td style="flex: 1; border: 1px solid #d1d5db; padding: 12px 8px; text-align: center; width: 50%;">
                                         <div style="font-weight: 700; font-size: 10px; color: #374151; margin-bottom: 30px;">FIRMA COSTURERO</div>
-                                        <div style="height: 1px;"></div>
+                                        <div id="firma-costurero-wrapper" style="min-height: 40px; display: flex; align-items: center; justify-content: center;">
+                                            <div id="firma-costurero-placeholder" style="{{ !empty($recibo->firma_costurero) ? 'display:none;height:1px;' : 'height:1px;' }}"></div>
+                                            <img id="firma-costurero-img" src="{{ !empty($recibo->firma_costurero) ? asset($recibo->firma_costurero) : '' }}" alt="Firma costurero" style="{{ !empty($recibo->firma_costurero) ? 'display:block;' : 'display:none;' }} max-width: 100%; max-height: 70px; object-fit: contain;">
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -210,5 +216,112 @@
     </div>
 </div>
 
-@endsection
+<div id="firma-modal-backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:2000;">
+    <div style="width:min(92vw,520px);background:#fff;border-radius:10px;padding:16px;">
+        <h3 id="firma-modal-title" style="margin:0 0 8px;font-size:16px;">Firma</h3>
+        <p style="margin:0 0 10px;font-size:12px;color:#4b5563;">Dibuja la firma y guarda para que aparezca en el recibo.</p>
+        <canvas id="firma-canvas" style="width:100%;height:220px;border:1px dashed #9ca3af;border-radius:8px;touch-action:none;background:#fff;"></canvas>
+        <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+            <button type="button" id="btn-limpiar-firma" style="border:1px solid #111827;background:#fff;color:#111827;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">Limpiar</button>
+            <button type="button" id="btn-cancelar-firma" style="border:1px solid #111827;background:#fff;color:#111827;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">Cancelar</button>
+            <button type="button" id="btn-guardar-firma" style="border:1px solid #111827;background:#111827;color:#fff;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">Guardar firma</button>
+        </div>
+    </div>
+</div>
 
+<script>
+(() => {
+    const modalTitle = document.getElementById('firma-modal-title');
+    const backdrop = document.getElementById('firma-modal-backdrop');
+    const canvas = document.getElementById('firma-canvas');
+    const clearBtn = document.getElementById('btn-limpiar-firma');
+    const cancelBtn = document.getElementById('btn-cancelar-firma');
+    const saveBtn = document.getElementById('btn-guardar-firma');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+    let hasStroke = false;
+    let firmanteActual = 'costurero';
+
+    function resizeCanvas() {
+        const ratio = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = Math.floor(rect.width * ratio);
+        canvas.height = Math.floor(rect.height * ratio);
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#111827';
+    }
+    function getPoint(event) {
+        const rect = canvas.getBoundingClientRect();
+        const point = event.touches ? event.touches[0] : event;
+        return { x: point.clientX - rect.left, y: point.clientY - rect.top };
+    }
+    function start(event) { event.preventDefault(); drawing = true; hasStroke = true; const p = getPoint(event); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
+    function move(event) { if (!drawing) return; event.preventDefault(); const p = getPoint(event); ctx.lineTo(p.x, p.y); ctx.stroke(); }
+    function end(event) { event.preventDefault(); drawing = false; }
+    function openModal(firmante) {
+        firmanteActual = firmante;
+        modalTitle.textContent = firmante === 'mensajero' ? 'Firma del mensajero' : 'Firma del costurero';
+        backdrop.style.display = 'flex';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        hasStroke = false;
+        resizeCanvas();
+    }
+    function closeModal() { backdrop.style.display = 'none'; }
+
+    cancelBtn?.addEventListener('click', closeModal);
+    clearBtn?.addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); hasStroke = false; });
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', move);
+    canvas.addEventListener('mouseup', end);
+    canvas.addEventListener('mouseleave', end);
+    canvas.addEventListener('touchstart', start, { passive: false });
+    canvas.addEventListener('touchmove', move, { passive: false });
+    canvas.addEventListener('touchend', end, { passive: false });
+
+    saveBtn?.addEventListener('click', async () => {
+        if (!hasStroke) { alert('Debes dibujar una firma primero.'); return; }
+        const now = new Date();
+        const stamp = now.toLocaleString('es-CO', { hour12: false });
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = canvas.width;
+        exportCanvas.height = canvas.height;
+        const exportCtx = exportCanvas.getContext('2d');
+        exportCtx.fillStyle = '#ffffff';
+        exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+        exportCtx.drawImage(canvas, 0, 0);
+        exportCtx.fillStyle = '#111827';
+        exportCtx.font = '14px Arial';
+        exportCtx.fillText(`Fecha: ${stamp}`, 12, exportCanvas.height - 14);
+        const firmaBase64 = exportCanvas.toDataURL('image/webp', 0.95);
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Guardando...';
+        try {
+            const response = await fetch(`{{ route('operario.recibos-prestamo.contramuestra.firma', ['id' => $recibo->id, 'firmante' => '__FIRMANTE__']) }}`.replace('__FIRMANTE__', firmanteActual), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': "{{ csrf_token() }}", 'Accept': 'application/json' },
+                body: JSON.stringify({ firma: firmaBase64 })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || 'No fue posible guardar la firma.');
+            const img = document.getElementById(`firma-${firmanteActual}-img`);
+            const placeholder = document.getElementById(`firma-${firmanteActual}-placeholder`);
+            img.src = data.firma;
+            img.style.display = 'block';
+            if (placeholder) placeholder.style.display = 'none';
+            closeModal();
+        } catch (error) {
+            alert(error.message || 'Error al guardar la firma.');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Guardar firma';
+        }
+    });
+
+    const firmanteQuery = new URLSearchParams(window.location.search).get('firmante');
+    if (firmanteQuery === 'costurero' || firmanteQuery === 'mensajero') openModal(firmanteQuery);
+})();
+</script>
+
+@endsection

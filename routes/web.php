@@ -18,7 +18,7 @@ Route::get('/', function () {
 // Logica centralizada en StorageService para mejor organizacion
 
 Route::get('/storage/{tipo}/{path}', [App\Infrastructure\Http\Controllers\Storage\StorageController::class, 'serve'])
-    ->where(['tipo' => 'cotizaciones|prendas|pedidos', 'path' => '.*'])
+    ->where(['tipo' => 'cotizaciones|prendas|pedidos|firmas', 'path' => '.*'])
     ->name('storage.files');
 
 // Rutas con nombre específico para compatibilidad

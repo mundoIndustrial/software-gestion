@@ -19,9 +19,11 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
     Route::get('/recibos-prestamo/insumos/crear', [OperarioRecibosPrestamoController::class, 'createInsumos'])->name('recibos-prestamo.insumos.crear');
     Route::post('/recibos-prestamo/insumos', [OperarioRecibosPrestamoController::class, 'storeInsumos'])->name('recibos-prestamo.insumos.store');
     Route::get('/recibos-prestamo/insumos/{id}', [OperarioRecibosPrestamoController::class, 'showInsumos'])->name('recibos-prestamo.insumos.show');
+    Route::post('/recibos-prestamo/insumos/{id}/firma/{firmante}', [OperarioRecibosPrestamoController::class, 'guardarFirmaInsumos'])->name('recibos-prestamo.insumos.firma');
     Route::get('/recibos-prestamo/contramuestra/crear', [OperarioRecibosPrestamoController::class, 'createContramuestra'])->name('recibos-prestamo.contramuestra.crear');
     Route::post('/recibos-prestamo/contramuestra', [OperarioRecibosPrestamoController::class, 'storeContramuestra'])->name('recibos-prestamo.contramuestra.store');
     Route::get('/recibos-prestamo/contramuestra/{id}', [OperarioRecibosPrestamoController::class, 'showContramuestra'])->name('recibos-prestamo.contramuestra.show');
+    Route::post('/recibos-prestamo/contramuestra/{id}/firma/{firmante}', [OperarioRecibosPrestamoController::class, 'guardarFirmaContramuestra'])->name('recibos-prestamo.contramuestra.firma');
     Route::get('/mis-pedidos', [OperarioController::class, 'misPedidos'])->name('mis-pedidos');
     Route::get('/pedido/{numeroPedido}', [OperarioController::class, 'verPedido'])->name('ver-pedido');
     Route::get('/api/pedidos', [OperarioController::class, 'obtenerPedidosJson'])->name('api.pedidos');

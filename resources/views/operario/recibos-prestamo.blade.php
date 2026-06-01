@@ -217,6 +217,12 @@
                             <p class="recibo-meta"><strong>Fecha:</strong> {{ \Carbon\Carbon::parse($recibo->fecha)->format('d/m/Y') }}</p>
                             <div class="recibo-actions">
                                 <a href="{{ route('operario.recibos-prestamo.insumos.show', $recibo->id) }}">Ver</a>
+                                <a href="{{ route('operario.recibos-prestamo.insumos.show', ['id' => $recibo->id, 'firmante' => 'costurero']) }}">
+                                    {{ !empty($recibo->firma_costurero) ? 'Actualizar firma costurero' : 'Pendiente firma costurero' }}
+                                </a>
+                                <a href="{{ route('operario.recibos-prestamo.insumos.show', ['id' => $recibo->id, 'firmante' => 'mensajero']) }}">
+                                    {{ !empty($recibo->firma_mensajero) ? 'Actualizar firma mensajero' : 'Pendiente firma mensajero' }}
+                                </a>
                             </div>
                         </article>
                     @empty
@@ -238,6 +244,12 @@
                             <p class="recibo-meta"><strong>Fecha:</strong> {{ \Carbon\Carbon::parse($recibo->fecha)->format('d/m/Y') }}</p>
                             <div class="recibo-actions">
                                 <a href="{{ route('operario.recibos-prestamo.contramuestra.show', $recibo->id) }}">Ver</a>
+                                <a href="{{ route('operario.recibos-prestamo.contramuestra.show', ['id' => $recibo->id, 'firmante' => 'costurero']) }}">
+                                    {{ !empty($recibo->firma_costurero) ? 'Actualizar firma costurero' : 'Pendiente firma costurero' }}
+                                </a>
+                                <a href="{{ route('operario.recibos-prestamo.contramuestra.show', ['id' => $recibo->id, 'firmante' => 'mensajero']) }}">
+                                    {{ !empty($recibo->firma_mensajero) ? 'Actualizar firma mensajero' : 'Pendiente firma mensajero' }}
+                                </a>
                             </div>
                         </article>
                     @empty

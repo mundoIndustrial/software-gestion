@@ -3,10 +3,12 @@
 namespace App\Infrastructure\Http\Controllers\Operario;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class OperarioRecibosPrestamoController extends Controller
@@ -14,14 +16,14 @@ class OperarioRecibosPrestamoController extends Controller
     public function index()
     {
         $recibosInsumos = DB::table('recibos_prestamo_insumos')
-            ->select('id', 'numero_orden', 'fecha', 'nombre_costurero', 'anulado', 'created_at')
+            ->select('id', 'numero_orden', 'fecha', 'nombre_costurero', 'firma_mensajero', 'firma_costurero', 'anulado', 'created_at')
             ->orderBy('numero_orden')
             ->orderBy('id')
             ->limit(30)
             ->get();
 
         $recibosContramuestra = DB::table('recibos_prestamo_contramuestra')
-            ->select('id', 'numero_orden', 'fecha', 'nombre_costurero', 'descripcion', 'anulado', 'created_at')
+            ->select('id', 'numero_orden', 'fecha', 'nombre_costurero', 'descripcion', 'firma_mensajero', 'firma_costurero', 'anulado', 'created_at')
             ->orderBy('numero_orden')
             ->orderBy('id')
             ->limit(30)
@@ -42,7 +44,7 @@ class OperarioRecibosPrestamoController extends Controller
     public function showInsumos(int $id)
     {
         $recibo = DB::table('recibos_prestamo_insumos')
-            ->select('id', 'numero_orden', 'fecha', 'nombre_costurero', 'anulado', 'anulado_en', 'created_at')
+            ->select('id', 'numero_orden', 'fecha', 'nombre_costurero', 'firma_mensajero', 'firma_mensajero_fecha', 'firma_costurero', 'firma_costurero_fecha', 'anulado', 'anulado_en', 'created_at')
             ->where('id', $id)
             ->first();
 
@@ -134,7 +136,7 @@ class OperarioRecibosPrestamoController extends Controller
     public function showContramuestra(int $id)
     {
         $recibo = DB::table('recibos_prestamo_contramuestra')
-            ->select('id', 'numero_orden', 'fecha', 'nombre_costurero', 'descripcion', 'anulado', 'anulado_en', 'created_at')
+            ->select('id', 'numero_orden', 'fecha', 'nombre_costurero', 'descripcion', 'firma_mensajero', 'firma_mensajero_fecha', 'firma_costurero', 'firma_costurero_fecha', 'anulado', 'anulado_en', 'created_at')
             ->where('id', $id)
             ->first();
 
@@ -172,5 +174,125 @@ class OperarioRecibosPrestamoController extends Controller
         return redirect()
             ->route('operario.recibos-prestamo.index', ['tab' => 'contramuestra'])
             ->with('success', 'Recibo de préstamo de contramuestra creado correctamente.');
+    }
+    public function guardarFirmaInsumos(Request $request, int $id, string $firmante): JsonResponse
+    {
+        if (!in_array($firmante, ['costurero', 'mensajero'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Firmante invalido.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'firma' => ['required', 'string'],
+        ]);
+
+        $firma = (string) $validated['firma'];
+
+        if (!preg_match('/^data:image\/webp;base64,[A-Za-z0-9+\/=]+$/', $firma)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La firma debe estar en formato WEBP.',
+            ], 422);
+        }
+
+        $base64 = substr($firma, strpos($firma, ',') + 1);
+        $binary = base64_decode($base64, true);
+        if ($binary === false) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo decodificar la firma.',
+            ], 422);
+        }
+
+        $directory = "firmas/recibos-prestamo/insumos/{$id}";
+        $filename = "{$firmante}_" . now()->format('Ymd_His') . '.webp';
+        $relativePath = "{$directory}/{$filename}";
+        Storage::disk('public')->put($relativePath, $binary);
+
+        $columnFirma = "firma_{$firmante}";
+        $columnFecha = "firma_{$firmante}_fecha";
+
+        $updated = DB::table('recibos_prestamo_insumos')
+            ->where('id', $id)
+            ->update([
+                $columnFirma => 'storage/' . $relativePath,
+                $columnFecha => now(),
+                'updated_at' => now(),
+            ]);
+
+        if ($updated === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Recibo no encontrado o sin cambios.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Firma guardada correctamente.',
+            'firma' => asset('storage/' . $relativePath),
+        ]);
+    }
+
+    public function guardarFirmaContramuestra(Request $request, int $id, string $firmante): JsonResponse
+    {
+        if (!in_array($firmante, ['costurero', 'mensajero'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Firmante invalido.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'firma' => ['required', 'string'],
+        ]);
+
+        $firma = (string) $validated['firma'];
+        if (!preg_match('/^data:image\/webp;base64,[A-Za-z0-9+\/=]+$/', $firma)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La firma debe estar en formato WEBP.',
+            ], 422);
+        }
+
+        $base64 = substr($firma, strpos($firma, ',') + 1);
+        $binary = base64_decode($base64, true);
+        if ($binary === false) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo decodificar la firma.',
+            ], 422);
+        }
+
+        $directory = "firmas/recibos-prestamo/contramuestra/{$id}";
+        $filename = "{$firmante}_" . now()->format('Ymd_His') . '.webp';
+        $relativePath = "{$directory}/{$filename}";
+        Storage::disk('public')->put($relativePath, $binary);
+
+        $columnFirma = "firma_{$firmante}";
+        $columnFecha = "firma_{$firmante}_fecha";
+
+        $updated = DB::table('recibos_prestamo_contramuestra')
+            ->where('id', $id)
+            ->update([
+                $columnFirma => 'storage/' . $relativePath,
+                $columnFecha => now(),
+                'updated_at' => now(),
+            ]);
+
+        if ($updated === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Recibo no encontrado o sin cambios.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Firma guardada correctamente.',
+            'firma' => asset('storage/' . $relativePath),
+        ]);
     }
 }
