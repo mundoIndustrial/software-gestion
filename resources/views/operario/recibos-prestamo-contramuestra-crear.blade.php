@@ -57,7 +57,12 @@
                     </div>
                     <div class="meta-field">
                         <label class="meta-label" for="nombre_costurero_contra">Nombre del Costurero(a)</label>
-                        <input id="nombre_costurero_contra" name="nombre_costurero" class="meta-input" type="text" placeholder="Nombre completo" required>
+                        <input id="nombre_costurero_contra" name="nombre_costurero" class="meta-input" type="text" placeholder="Nombre completo" list="lista_talleres_contra" required>
+                        <datalist id="lista_talleres_contra">
+                            @foreach(($talleres ?? []) as $tallerNombre)
+                                <option value="{{ $tallerNombre }}"></option>
+                            @endforeach
+                        </datalist>
                     </div>
                     <div class="meta-field meta-field-full">
                         <label class="meta-label" for="descripcion_contramuestra">Descripción</label>

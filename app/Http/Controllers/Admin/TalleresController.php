@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Role;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -36,6 +37,54 @@ class TalleresController extends Controller
             'recibos' => $data['recibos'],
             'totalCarga' => $data['total'],
             'completados' => $data['completados']
+        ]);
+    }
+
+    public function showPrestamos(Request $request, $id)
+    {
+        $taller = User::findOrFail((int) $id);
+        $tab = $request->query('tab', 'insumos');
+        $tab = in_array($tab, ['insumos', 'contramuestra'], true) ? $tab : 'insumos';
+        $perPage = 15;
+
+        if ($tab === 'insumos') {
+            $registros = DB::table('recibos_prestamo_insumos')
+                ->select(
+                    'id',
+                    'numero_orden',
+                    'nombre_costurero',
+                    'fecha as fecha_salida',
+                    'confirmado_entrada_en as fecha_entrada',
+                    'confirmado_entrada',
+                    'anulado',
+                    'novedades'
+                )
+                ->where('nombre_costurero', $taller->name)
+                ->orderByDesc('id')
+                ->paginate($perPage)
+                ->appends(['tab' => $tab]);
+        } else {
+            $registros = DB::table('recibos_prestamo_contramuestra')
+                ->select(
+                    'id',
+                    'numero_orden',
+                    'nombre_costurero',
+                    'fecha as fecha_salida',
+                    'confirmado_entrada_en as fecha_entrada',
+                    'confirmado_entrada',
+                    'anulado',
+                    'novedades'
+                )
+                ->where('nombre_costurero', $taller->name)
+                ->orderByDesc('id')
+                ->paginate($perPage)
+                ->appends(['tab' => $tab]);
+        }
+
+        return view('admin.talleres.prestamos', [
+            'taller' => $taller,
+            'tab' => $tab,
+            'registros' => $registros,
         ]);
     }
 
@@ -245,6 +294,76 @@ class TalleresController extends Controller
                 'message' => 'Error al obtener recibo completo'
             ], 500);
         }
+    }
+
+    public function apiDetallePrestamo(string $tipo, int $id)
+    {
+        if (!in_array($tipo, ['insumos', 'contramuestra'], true)) {
+            return response()->json(['success' => false, 'message' => 'Tipo inválido'], 422);
+        }
+
+        if ($tipo === 'insumos') {
+            $recibo = DB::table('recibos_prestamo_insumos')
+                ->leftJoin('users as u', 'u.id', '=', 'recibos_prestamo_insumos.creado_por')
+                ->select(
+                    'recibos_prestamo_insumos.id',
+                    'recibos_prestamo_insumos.numero_orden',
+                    'recibos_prestamo_insumos.fecha',
+                    'recibos_prestamo_insumos.nombre_costurero',
+                    'recibos_prestamo_insumos.novedades',
+                    'recibos_prestamo_insumos.confirmado_entrada_en',
+                    'recibos_prestamo_insumos.firma_mensajero',
+                    'recibos_prestamo_insumos.firma_costurero',
+                    DB::raw('COALESCE(u.name, "-") as encargado')
+                )
+                ->where('recibos_prestamo_insumos.id', $id)
+                ->first();
+
+            if (!$recibo) {
+                return response()->json(['success' => false, 'message' => 'Recibo no encontrado'], 404);
+            }
+
+            $items = DB::table('recibos_prestamo_insumos_items')
+                ->select('cantidad', 'descripcion', 'orden_fila')
+                ->where('recibo_prestamo_insumo_id', $id)
+                ->orderBy('orden_fila')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'tipo' => 'insumos',
+                'recibo' => $recibo,
+                'items' => $items,
+            ]);
+        }
+
+        $recibo = DB::table('recibos_prestamo_contramuestra')
+            ->leftJoin('users as u', 'u.id', '=', 'recibos_prestamo_contramuestra.creado_por')
+            ->select(
+                'recibos_prestamo_contramuestra.id',
+                'recibos_prestamo_contramuestra.numero_orden',
+                'recibos_prestamo_contramuestra.fecha',
+                'recibos_prestamo_contramuestra.nombre_costurero',
+                'recibos_prestamo_contramuestra.descripcion',
+                'recibos_prestamo_contramuestra.novedades',
+                'recibos_prestamo_contramuestra.confirmado_entrada_en',
+                'recibos_prestamo_contramuestra.firma_mensajero',
+                'recibos_prestamo_contramuestra.firma_costurero',
+                DB::raw('COALESCE(u.name, "-") as encargado')
+            )
+            ->where('recibos_prestamo_contramuestra.id', $id)
+            ->first();
+
+        if (!$recibo) {
+            return response()->json(['success' => false, 'message' => 'Recibo no encontrado'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'tipo' => 'contramuestra',
+            'recibo' => $recibo,
+            'items' => [],
+        ]);
     }
 
     public function toggleStatus($id, \App\Application\Talleres\UseCases\ToggleEstadoTallerUseCase $useCase)

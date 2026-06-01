@@ -64,6 +64,7 @@ Route::middleware(['auth', 'role:admin,supervisor_gerencia'])->prefix('admin/con
 Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion'])->prefix('talleres')->name('talleres.')->group(function () {
     Route::get('/', [App\Http\Controllers\Admin\TalleresController::class, 'index'])->name('index');
     Route::get('/{id}/recibos', [App\Http\Controllers\Admin\TalleresController::class, 'showRecibos'])->name('show');
+    Route::get('/{id}/prestamos', [App\Http\Controllers\Admin\TalleresController::class, 'showPrestamos'])->name('prestamos');
     Route::get('/{id}/recibos/{recibo_id}/{es_parcial}/entregas', [App\Http\Controllers\Admin\TalleresController::class, 'showEntregas'])->name('entregas');
     
     // API endpoints para SPA
@@ -72,6 +73,7 @@ Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion'])
     Route::get('/api/{taller_id}/recibos/{recibo_id}/{es_parcial}/entregas', [App\Http\Controllers\Admin\TalleresController::class, 'apiEntregas'])->name('api.entregas');
     Route::get('/api/ordenes/todas', [App\Http\Controllers\Admin\TalleresController::class, 'apiOrdenes'])->name('api.ordenes');
     Route::get('/api/recibos/completo', [App\Http\Controllers\Admin\TalleresController::class, 'apiReciboCompleto'])->name('api.recibo-completo');
+    Route::get('/api/prestamos/{tipo}/{id}/detalle', [App\Http\Controllers\Admin\TalleresController::class, 'apiDetallePrestamo'])->name('api.prestamos.detalle');
     
     // Ruta para activar/desactivar taller
     Route::patch('/{id}/toggle-status', [App\Http\Controllers\Admin\TalleresController::class, 'toggleStatus'])->name('toggle-status');

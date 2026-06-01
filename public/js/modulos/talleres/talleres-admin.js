@@ -576,6 +576,9 @@ function renderTalleresRows(talleres) {
                     <button class="btn-view btn-view-recibos" data-taller-id="${taller.id}" data-taller-name="${escapeHtml(taller.name || '')}">
                         Ver Recibos <span style="font-size: 10px; margin-left: 5px;">&#10095;</span>
                     </button>
+                    <a class="btn-view" href="/talleres/${taller.id}/prestamos" style="text-decoration:none;">
+                        Ver Préstamos <span style="font-size: 10px; margin-left: 5px;">&#10095;</span>
+                    </a>
                 </div>
             </td>
         </tr>
