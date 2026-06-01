@@ -68,8 +68,10 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
     public function guardarAnchoMetrajePrenda(string $numeroPedido, int $prendaId, array $datos): array
     {
         try {
-            $anchoTieneConsecutivoReciboId = Schema::hasColumn('pedido_ancho_general', 'consecutivo_recibo_id');
-            $metrajeTieneConsecutivoReciboId = Schema::hasColumn('pedido_metraje_color', 'consecutivo_recibo_id');
+            // Temporalmente desactivado: este flujo debe resolver por numero_recibo.
+            $usarConsecutivoReciboId = false;
+            $anchoTieneConsecutivoReciboId = $usarConsecutivoReciboId && Schema::hasColumn('pedido_ancho_general', 'consecutivo_recibo_id');
+            $metrajeTieneConsecutivoReciboId = $usarConsecutivoReciboId && Schema::hasColumn('pedido_metraje_color', 'consecutivo_recibo_id');
             $tipoModoNuevo = $datos['tipo_modo'] ?? 'normal';
             $prendaBodegaId = isset($datos['prenda_bodega_id']) ? (int) $datos['prenda_bodega_id'] : null;
             $numeroRecibo = isset($datos['numero_recibo']) ? (int) $datos['numero_recibo'] : null;
@@ -189,11 +191,6 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
                         'tipo_modo' => $tipoModoNuevo,
                     ]
                 );
-                if ($anchoTieneConsecutivoReciboId) {
-                    PedidoAnchoGeneral::where($match)->update([
-                        'consecutivo_recibo_id' => ($esBodega && ($consecutivoReciboId ?? 0) > 0) ? $consecutivoReciboId : null,
-                    ]);
-                }
             }
 
             if (!empty($datos['color']) && ($datos['metraje'] ?? null) !== null) {
@@ -227,11 +224,6 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
                         'tipo_modo' => $tipoModoNuevo,
                     ]
                 );
-                if ($metrajeTieneConsecutivoReciboId) {
-                    PedidoMetrajeColor::where($match)->update([
-                        'consecutivo_recibo_id' => ($esBodega && ($consecutivoReciboId ?? 0) > 0) ? $consecutivoReciboId : null,
-                    ]);
-                }
             }
 
             $debugAncho = PedidoAnchoGeneral::query();
