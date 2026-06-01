@@ -274,12 +274,12 @@ export class PedidosRecibosModule {
                 });
             }
 
-            console.group('[PedidosRecibosModule.abrirRecibo] ðŸ“¥ DATOS RECIBIDOS DEL ENDPOINT');
+            console.group('[PedidosRecibosModule.abrirRecibo] DATOS RECIBIDOS DEL ENDPOINT');
             console.log('Endpoint:', endpoint);
             console.log('Cliente:', datos.cliente);
             console.log('Asesor:', datos.asesor);
             console.log('Forma de pago:', datos.forma_de_pago);
-            console.log('Nºmero pedido:', datos.numero_pedido);
+            console.log('Numero pedido:', datos.numero_pedido);
             console.log('Total prendas:', datos.prendas ? datos.prendas.length : 'UNDEFINED');
             console.log('IDs de prendas disponibles:', datos.prendas ? datos.prendas.map(p => p.id) : 'NONE');
             console.log('Buscando prenda_id:', prendaId);
@@ -375,20 +375,18 @@ export class PedidosRecibosModule {
                 }
             }
 
-            if (reciboIndice === -1) {
-                throw new Error(`Recibo "${tipoRecibo}" no encontrado`);
-            }
-
             // Detectar si es un parcial (independientemente de la vista)
             // Buscar en prendaData.recibos.parciales si hay un parcial para este tipo_recibo
             let esParcialDetectado = false;
             let pedidoParcialIdDetectado = 0;
 
-            if (!esParcialExplicitamenteFalso && prendaData.recibos && Array.isArray(prendaData.recibos.parciales)) {
+            if (prendaData.recibos && Array.isArray(prendaData.recibos.parciales)) {
                 const targetConsecutivoNormalizado = String(targetConsecutivo || '').trim();
+                const permitirDeteccionPorConsecutivo = targetConsecutivoNormalizado !== '';
+                const permitirDeteccionPorTipo = !esParcialExplicitamenteFalso;
                 // 1) Prioridad maxima: si tenemos consecutivo objetivo, buscar el parcial exacto.
                 // Esto garantiza cargar tallas/cantidades desde pedidos_parciales_tallas.
-                if (targetConsecutivoNormalizado !== '') {
+                if (permitirDeteccionPorConsecutivo) {
                     const parcialPorConsecutivo = prendaData.recibos.parciales.find((p) =>
                         String(p?.consecutivo_actual ?? p?.numero_recibo ?? '').trim() === targetConsecutivoNormalizado
                     );
@@ -404,7 +402,7 @@ export class PedidosRecibosModule {
                 }
 
                 // 2) Fallback: detectar por tipo (comportamiento previo)
-                if (!esParcialDetectado) {
+                if (!esParcialDetectado && permitirDeteccionPorTipo) {
                     const parcialMatch = prendaData.recibos.parciales.find(p =>
                         String(p.tipo_recibo || '').toUpperCase() === String(tipoRecibo || '').toUpperCase()
                     );
@@ -451,6 +449,10 @@ export class PedidosRecibosModule {
                     pedidoParcialIdDetectado,
                     nombreAnexo
                 );
+            }
+
+            if (reciboIndice === -1) {
+                throw new Error(`Recibo "${tipoRecibo}" no encontrado`);
             }
 
             // Si el endpoint de pedido trae solo el recibo activo por tipo, forzar la metadata
@@ -1624,7 +1626,7 @@ if (typeof window.printReceiptModal !== 'function') {
             })();
             const observacionesPorTalla = buildObservacionesPorTalla();
 
-            console.log('[printReceiptModal] ðŸ VALORES FINALES PARA HTML:', {
+            console.log('[printReceiptModal] VALORES FINALES PARA HTML:', {
                 tallasResumen,
                 observacionesPorTalla,
                 'tallasResumen tipo': typeof tallasResumen,

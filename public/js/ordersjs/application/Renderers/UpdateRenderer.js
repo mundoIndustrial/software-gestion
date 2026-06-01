@@ -213,7 +213,7 @@ export class UpdateRenderer {
   /**
    * Actualizar header del recibo en el modal
    * 
-   * @param {string} numeroRecibo - Nºmero del recibo
+   * @param {string} numeroRecibo - Numero del recibo
    * @param {string} area - Area actual
    */
   updateReciboHeader(numeroRecibo, area) {
@@ -654,4 +654,3 @@ export class UpdateRenderer {
     // Stateless - no requiere limpieza
   }
 }
-

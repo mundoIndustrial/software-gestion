@@ -333,6 +333,8 @@
                                                 data-prenda-id="{{ $proceso['prenda_id'] ?? '' }}"
                                                 data-numero-recibo="{{ $proceso['numero_recibo'] }}"
                                                 data-tipo-recibo="{{ $proceso['tipo_recibo'] ?? '' }}"
+                                                data-es-parcial="{{ !empty($proceso['es_parcial']) ? 'true' : 'false' }}"
+                                                data-pedido-parcial-id="{{ $proceso['pedido_parcial_id'] ?? '' }}"
                                                 onclick="event.stopPropagation(); openReciboControlCalidadModalFromRow(this)"
                                                 style="display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;background:#1d4ed8;color:#fff;border-radius:8px;font-size:0.8rem;font-weight:600;text-decoration:none;"
                                             >
@@ -691,9 +693,10 @@ window.openReciboControlCalidadModalFromRow = async function(button) {
     const prendaId = Number(button?.getAttribute('data-prenda-id') || 0);
     const tipoRecibo = String(button?.getAttribute('data-tipo-recibo') || '').trim().toUpperCase();
     const numeroRecibo = String(button?.getAttribute('data-numero-recibo') || '').trim();
-    const tipoProceso = tipoRecibo === 'REFLECTIVO' ? 'reflectivo' : 'costura';
+    const esParcial = String(button?.getAttribute('data-es-parcial') || '').toLowerCase() === 'true';
+    const pedidoParcialId = Number(button?.getAttribute('data-pedido-parcial-id') || 0);
 
-    if (!pedidoId || !prendaId) {
+    if (!pedidoId || !prendaId || !tipoRecibo) {
         console.error('[openReciboControlCalidadModalFromRow] Datos incompletos para abrir modal', { pedidoId, prendaId, tipoRecibo });
         if (typeof mostrarAlerta === 'function') {
             mostrarAlerta('Error', 'No se pudo abrir el recibo en modal para este registro.', 'error');
@@ -703,10 +706,19 @@ window.openReciboControlCalidadModalFromRow = async function(button) {
 
     const moduleReady = await esperarModuloRecibos();
     if (moduleReady) {
-        window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, tipoProceso, null, {
-            targetConsecutivo: numeroRecibo || null,
-            esParcial: false
-        });
+        const options = {
+            targetConsecutivo: numeroRecibo || null
+        };
+        // IMPORTANTE: no enviar esParcial=false porque eso bloquea la autodetección por consecutivo
+        // en PedidosRecibosModule (caso REFLECTIVO anexo).
+        if (esParcial) {
+            options.esParcial = true;
+        }
+        if (pedidoParcialId > 0) {
+            options.pedidoParcialId = pedidoParcialId;
+        }
+
+        window.pedidosRecibosModule.abrirRecibo(pedidoId, prendaId, tipoRecibo, null, options);
         return;
     }
 

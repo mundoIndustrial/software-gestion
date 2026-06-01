@@ -397,7 +397,7 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                     <div class="th-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><span>Acciones</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Aprob. Cartera</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center;"><span>Días Restantes</span></div>
-                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Nºmero</span></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Numero</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Cliente</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Asesora</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Estado</span></div>

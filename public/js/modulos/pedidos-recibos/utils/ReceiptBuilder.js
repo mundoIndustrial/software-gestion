@@ -4,6 +4,29 @@
  */
 
 export class ReceiptBuilder {
+    static normalizarTipo(valor) {
+        return String(valor || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[_\s]+/g, '-')
+            .trim();
+    }
+
+    static obtenerDatosReciboPorTipo(recibosMap, tipoProceso) {
+        if (!recibosMap || typeof recibosMap !== 'object') return null;
+
+        const claveExacta = String(tipoProceso || '').toUpperCase();
+        if (recibosMap[claveExacta]) return recibosMap[claveExacta];
+
+        const tipoNormalizado = ReceiptBuilder.normalizarTipo(tipoProceso);
+        for (const [key, value] of Object.entries(recibosMap)) {
+            if (ReceiptBuilder.normalizarTipo(key) === tipoNormalizado) {
+                return value;
+            }
+        }
+        return null;
+    }
     /**
      * Construye la lista completa de recibos para una prenda
      * Orden: RECIBO BASE SIEMPRE PRIMERO, luego procesos adicionales
@@ -181,8 +204,8 @@ export class ReceiptBuilder {
                 procRecibo.consecutivo_actual = null;
                 
                 // Agregar datos del recibo (activo y created_at) si existen
-                if (prenda.recibos && prenda.recibos[tipoProceso.toUpperCase()]) {
-                    const datosRecibo = prenda.recibos[tipoProceso.toUpperCase()];
+                const datosRecibo = ReceiptBuilder.obtenerDatosReciboPorTipo(prenda.recibos, tipoProceso);
+                if (datosRecibo) {
                     procRecibo.activo = datosRecibo.activo;
                     procRecibo.created_at = datosRecibo.created_at;
                     procRecibo.tipo_recibo = datosRecibo.tipo_recibo;
@@ -225,9 +248,10 @@ export class ReceiptBuilder {
      * @returns {number} Índice del recibo o -1 si no existe
      */
     static encontrarReceibo(recibos, tipoRecibo) {
+        const tipoObjetivo = ReceiptBuilder.normalizarTipo(tipoRecibo);
         return recibos.findIndex(r => 
-            String(r.tipo).toLowerCase() === String(tipoRecibo).toLowerCase() || 
-            String(r.tipo_proceso || r.nombre_proceso || '').toLowerCase() === String(tipoRecibo).toLowerCase()
+            ReceiptBuilder.normalizarTipo(r.tipo) === tipoObjetivo ||
+            ReceiptBuilder.normalizarTipo(r.tipo_proceso || r.nombre_proceso || '') === tipoObjetivo
         );
     }
 }
