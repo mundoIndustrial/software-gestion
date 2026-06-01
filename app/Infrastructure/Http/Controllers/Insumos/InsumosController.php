@@ -765,11 +765,11 @@ class InsumosController extends Controller
                 // Filtrar usando consecutivo_recibo_id (nueva columna)
                 $anchoQuery = PedidoAnchoGeneral::query()
                     ->where('prenda_bodega_id', $targetPrendaBodegaId)
-                    ->where('consecutivo_recibo_id', $reciboId);
+                    ->where('numero_recibo', $numeroRecibo);
                     
                 $metrajeQuery = PedidoMetrajeColor::query()
                     ->where('prenda_bodega_id', $targetPrendaBodegaId)
-                    ->where('consecutivo_recibo_id', $reciboId);
+                    ->where('numero_recibo', $numeroRecibo);
 
                 $anchoGeneral = $anchoQuery->latest()->first();
                 $metrajesPorColor = $metrajeQuery->get();
@@ -941,8 +941,8 @@ class InsumosController extends Controller
                     ->where('prenda_bodega_id', $targetPrendaBodegaId);
 
                 if ($consecutivoReciboId) {
-                    $anchoQuery->where('consecutivo_recibo_id', $consecutivoReciboId);
-                    $metrajeQuery->where('consecutivo_recibo_id', $consecutivoReciboId);
+                    $anchoQuery->where('numero_recibo', $numeroRecibo);
+                    $metrajeQuery->where('numero_recibo', $numeroRecibo);
                 }
 
                 $anchoQuery->delete();

@@ -802,17 +802,39 @@ function renderPrendasPage() {
                 }
             }
             
-            // 4. Tallas
+            // 4. Tallas (agrupar por GENERO + COLOR cuando aplique)
             if (prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0) {
-                const tallasFormateadas = [];
+                const grupos = {};
+                let totalTallas = 0;
+
                 prenda.tallas.forEach((tallaObj) => {
-                    if (tallaObj.cantidad > 0) {
-                        tallasFormateadas.push(`${tallaObj.genero}-${tallaObj.talla}: ${tallaObj.cantidad}`);
-                    }
+                    const cantidad = parseInt(tallaObj?.cantidad || 0, 10);
+                    if (!Number.isFinite(cantidad) || cantidad <= 0) return;
+
+                    const genero = String(tallaObj?.genero || 'SIN GENERO').toUpperCase().trim();
+                    const talla = String(tallaObj?.talla || '').toUpperCase().trim();
+                    const colorRaw = tallaObj?.color_nombre || tallaObj?.color || tallaObj?.nombre_color || '';
+                    const color = String(colorRaw || '').toUpperCase().trim() || 'SIN COLOR';
+                    if (!talla) return;
+
+                    if (!grupos[genero]) grupos[genero] = {};
+                    if (!grupos[genero][color]) grupos[genero][color] = [];
+                    grupos[genero][color].push(`${talla}:${cantidad}`);
+                    totalTallas += cantidad;
                 });
-                
-                if (tallasFormateadas.length > 0) {
-                    html += `<strong>Tallas:</strong> <span style="color: #d32f2f; font-weight: bold;">${tallasFormateadas.join(', ')}</span>`;
+
+                if (Object.keys(grupos).length > 0) {
+                    html += `<strong>TALLAS</strong><br>`;
+                    Object.entries(grupos).forEach(([genero, colores]) => {
+                        html += `<div><span style="color: #1f2937;"><strong>${genero}</strong></span><br>`;
+                        Object.entries(colores).forEach(([color, tallas]) => {
+                            html += `<span style="color: red;"><strong>${color}: ${tallas.join(', ')}</strong></span><br>`;
+                        });
+                        html += `</div>`;
+                    });
+                    html += `<div style="border-top: 1.5px solid #1f2937; margin-top: 8px; padding-top: 4px;">`;
+                    html += `<span style="color: #1f2937; font-weight: 700; font-size: 13.4px;">TOTAL: <strong>${totalTallas}</strong></span>`;
+                    html += `</div>`;
                 }
             }
             
