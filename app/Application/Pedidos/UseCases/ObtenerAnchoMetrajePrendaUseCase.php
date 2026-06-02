@@ -54,19 +54,33 @@ class ObtenerAnchoMetrajePrendaUseCase implements ObtenerAnchoMetrajePrendaUseCa
                 );
             }
 
-            // Obtener ancho general filtrando por numero_recibo
-            $anchoGeneral = PedidoAnchoGeneral::where('pedido_produccion_id', $pedidoId)
-                ->where('prenda_pedido_id', $prendaId)
+            $baseAnchoQuery = PedidoAnchoGeneral::where('pedido_produccion_id', $pedidoId)
+                ->where('prenda_pedido_id', $prendaId);
+            $baseMetrajeQuery = PedidoMetrajeColor::where('pedido_produccion_id', $pedidoId)
+                ->where('prenda_pedido_id', $prendaId);
+
+            // Primero intentamos encontrar el registro del recibo exacto.
+            // Si no existe, caemos al registro legado por prenda para no mostrar la vista vacía.
+            $anchoGeneral = (clone $baseAnchoQuery)
                 ->where('numero_recibo', $numeroRecibo)
                 ->latest('created_at')
                 ->first();
-
-            // Obtener metrajes por color filtrando por numero_recibo
-            $metrajesPorColor = PedidoMetrajeColor::where('pedido_produccion_id', $pedidoId)
-                ->where('prenda_pedido_id', $prendaId)
+            $metrajesPorColor = (clone $baseMetrajeQuery)
                 ->where('numero_recibo', $numeroRecibo)
                 ->latest('created_at')
                 ->get();
+
+            if (!$anchoGeneral) {
+                $anchoGeneral = (clone $baseAnchoQuery)
+                    ->latest('created_at')
+                    ->first();
+            }
+
+            if ($metrajesPorColor->isEmpty()) {
+                $metrajesPorColor = (clone $baseMetrajeQuery)
+                    ->latest('created_at')
+                    ->get();
+            }
 
             // Determinar tipo de modo
             $tipoModo = $this->determinarTipoModo($anchoGeneral, $metrajesPorColor);
@@ -148,6 +162,5 @@ class ObtenerAnchoMetrajePrendaUseCase implements ObtenerAnchoMetrajePrendaUseCa
         return $this->{$method}(...$arguments);
     }
 }
-
 
 

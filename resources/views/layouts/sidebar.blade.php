@@ -443,8 +443,8 @@
       </li>
       @if(auth()->check() && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('lider_produccion') || auth()->user()->hasRole('supervisor_produccion')))
       <li class="menu-item">
-        <a href="{{ route('gestion-lavanderia.index') }}"
-           class="menu-link {{ request()->routeIs('gestion-lavanderia.*') ? 'active' : '' }}"
+        <a href="{{ route('seguimiento-lavanderia.index') }}"
+           class="menu-link {{ request()->routeIs('seguimiento-lavanderia.*') ? 'active' : '' }}"
            aria-label="Lavandería">
           <span class="material-symbols-rounded" aria-hidden="true">local_laundry_service</span>
           <span class="menu-label">Lavandería</span>

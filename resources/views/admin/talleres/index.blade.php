@@ -44,8 +44,8 @@
                 <span class="material-symbols-rounded">assignment</span>
                 <span class="nav-label">Órdenes</span>
             </button>
-            <a href="{{ route('gestion-lavanderia.index') }}"
-               class="sidebar-item {{ request()->routeIs('gestion-lavanderia.*') ? 'active' : '' }}"
+            <a href="{{ route('seguimiento-lavanderia.index') }}"
+               class="sidebar-item {{ request()->routeIs('seguimiento-lavanderia.*') ? 'active' : '' }}"
                aria-label="Ir a Lavandería">
                 <span class="material-symbols-rounded">local_laundry_service</span>
                 <span class="nav-label">Lavandería</span>

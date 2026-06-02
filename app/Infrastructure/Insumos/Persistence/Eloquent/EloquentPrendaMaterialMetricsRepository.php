@@ -17,18 +17,36 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
         try {
             $pedido = $this->resolverPedidoPorNumeroOId($numeroPedido);
 
-            $anchoQuery = PedidoAnchoGeneral::where('pedido_produccion_id', $pedido->id)
+            $anchoBaseQuery = PedidoAnchoGeneral::where('pedido_produccion_id', $pedido->id)
                 ->where('prenda_pedido_id', $prendaId);
-            $metrajeQuery = PedidoMetrajeColor::where('pedido_produccion_id', $pedido->id)
+            $metrajeBaseQuery = PedidoMetrajeColor::where('pedido_produccion_id', $pedido->id)
                 ->where('prenda_pedido_id', $prendaId);
+
+            $anchoGeneral = null;
+            $metrajesPorColor = collect();
 
             if (($numeroRecibo ?? 0) > 0) {
-                $anchoQuery->where('numero_recibo', $numeroRecibo);
-                $metrajeQuery->where('numero_recibo', $numeroRecibo);
+                $anchoGeneral = (clone $anchoBaseQuery)
+                    ->where('numero_recibo', $numeroRecibo)
+                    ->latest('created_at')
+                    ->first();
+                $metrajesPorColor = (clone $metrajeBaseQuery)
+                    ->where('numero_recibo', $numeroRecibo)
+                    ->latest('created_at')
+                    ->get();
             }
 
-            $anchoGeneral = $anchoQuery->latest()->first();
-            $metrajesPorColor = $metrajeQuery->get();
+            if (!$anchoGeneral) {
+                $anchoGeneral = (clone $anchoBaseQuery)
+                    ->latest('created_at')
+                    ->first();
+            }
+
+            if ($metrajesPorColor->isEmpty()) {
+                $metrajesPorColor = (clone $metrajeBaseQuery)
+                    ->latest('created_at')
+                    ->get();
+            }
 
             $tipoModoGuardado = null;
             if ($anchoGeneral && $anchoGeneral->tipo_modo) {
@@ -68,7 +86,6 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
     public function guardarAnchoMetrajePrenda(string $numeroPedido, int $prendaId, array $datos): array
     {
         try {
-            // Temporalmente desactivado: este flujo debe resolver por numero_recibo.
             $usarConsecutivoReciboId = false;
             $anchoTieneConsecutivoReciboId = $usarConsecutivoReciboId && Schema::hasColumn('pedido_ancho_general', 'consecutivo_recibo_id');
             $metrajeTieneConsecutivoReciboId = $usarConsecutivoReciboId && Schema::hasColumn('pedido_metraje_color', 'consecutivo_recibo_id');
@@ -167,9 +184,6 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
                     $match['prenda_bodega_id'] = $prendaBodegaId;
                 } else {
                     $match['prenda_pedido_id'] = $prendaId;
-                }
-                if (($numeroRecibo ?? 0) > 0) {
-                    $match['numero_recibo'] = $numeroRecibo;
                 }
                 if ($anchoTieneConsecutivoReciboId && $esBodega && ($consecutivoReciboId ?? 0) > 0) {
                     $match['consecutivo_recibo_id'] = $consecutivoReciboId;
