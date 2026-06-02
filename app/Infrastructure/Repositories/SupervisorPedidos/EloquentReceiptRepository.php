@@ -387,33 +387,7 @@ class EloquentReceiptRepository implements ReceiptRepository
                 DB::raw('CASE WHEN ppar.id IS NULL THEN 0 ELSE 1 END as es_parcial'),
                 'ppar.id as pedido_parcial_id',
             ])
-            ->where(function ($q) {
-                $q->where('crp.tipo_recibo', 'COSTURA')
-                    // Compatibilidad: anexos legacy guardados como COSTURA-BODEGA.
-                    ->orWhere(function ($q2) {
-                        $q2->where('crp.tipo_recibo', 'COSTURA-BODEGA')
-                            ->where(function ($q3) {
-                                $q3->where('crp.notas', 'LIKE', '%parcial_id:%')
-                                    // Soporte actual: prendas de bodega deben verse en pendientes de costura.
-                                    ->orWhereExists(function ($sub) {
-                                        $sub->select(DB::raw(1))
-                                            ->from('prendas_pedido as pr')
-                                            ->whereColumn('pr.id', 'crp.prenda_id')
-                                            ->where('pr.de_bodega', 1);
-                                    })
-                                    ->orWhereExists(function ($sub) {
-                                        $sub->select(DB::raw(1))
-                                            ->from('pedidos_parciales as pp')
-                                            ->whereColumn('pp.pedido_produccion_id', 'crp.pedido_produccion_id')
-                                            ->whereColumn('pp.consecutivo_actual', 'crp.consecutivo_actual')
-                                            ->whereRaw('COALESCE(pp.prenda_pedido_id, 0) = COALESCE(crp.prenda_id, 0)')
-                                            ->whereIn('pp.tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
-                                            ->where('pp.activo', 1)
-                                            ->whereNull('pp.deleted_at');
-                                    });
-                            });
-                    });
-            })
+            ->where('crp.tipo_recibo', 'COSTURA')
             ->where('crp.activo', 1)
             ->orderBy('crp.created_at', 'desc');
 
@@ -769,33 +743,7 @@ class EloquentReceiptRepository implements ReceiptRepository
         return DB::table('consecutivos_recibos_pedidos as crp')
             ->join('pedidos_produccion as p', 'crp.pedido_produccion_id', '=', 'p.id')
             ->leftJoin('users as u', 'p.asesor_id', '=', 'u.id')
-            ->where(function ($q) {
-                $q->where('crp.tipo_recibo', 'COSTURA')
-                    // Compatibilidad: anexos legacy guardados como COSTURA-BODEGA.
-                    ->orWhere(function ($q2) {
-                        $q2->where('crp.tipo_recibo', 'COSTURA-BODEGA')
-                            ->where(function ($q3) {
-                                $q3->where('crp.notas', 'LIKE', '%parcial_id:%')
-                                    // Soporte actual: prendas de bodega deben verse en pendientes de costura.
-                                    ->orWhereExists(function ($sub) {
-                                        $sub->select(DB::raw(1))
-                                            ->from('prendas_pedido as pr')
-                                            ->whereColumn('pr.id', 'crp.prenda_id')
-                                            ->where('pr.de_bodega', 1);
-                                    })
-                                    ->orWhereExists(function ($sub) {
-                                        $sub->select(DB::raw(1))
-                                            ->from('pedidos_parciales as pp')
-                                            ->whereColumn('pp.pedido_produccion_id', 'crp.pedido_produccion_id')
-                                            ->whereColumn('pp.consecutivo_actual', 'crp.consecutivo_actual')
-                                            ->whereRaw('COALESCE(pp.prenda_pedido_id, 0) = COALESCE(crp.prenda_id, 0)')
-                                            ->whereIn('pp.tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
-                                            ->where('pp.activo', 1)
-                                            ->whereNull('pp.deleted_at');
-                                    });
-                            });
-                    });
-            })
+            ->where('crp.tipo_recibo', 'COSTURA')
             ->where('crp.activo', 1)
             ->whereRaw("UPPER(COALESCE(crp.estado, '')) NOT LIKE '%ANULAD%'")
             ->whereRaw("UPPER(COALESCE(crp.area, '')) NOT LIKE '%ANULAD%'");
