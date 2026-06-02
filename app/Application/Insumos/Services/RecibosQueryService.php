@@ -40,14 +40,33 @@ class RecibosQueryService
             $filterColumns = (array) $request->get('filter_columns', []);
             $filterValuesArray = (array) $request->get('filter_values', []);
             $filterValues = (array) $request->get('filter_values', []);
+            $singleColumn = $request->get('filter_column');
+            $singleValue = $request->get('filter_value');
 
             if (empty($filterColumns) && empty($filterValuesArray)) {
-                $singleColumn = $request->get('filter_column');
-                $singleValue = $request->get('filter_value');
                 if ($singleColumn !== null && $singleValue !== null && $singleValue !== '') {
                     $filterColumns = [(string) $singleColumn];
                     $filterValuesArray = [(string) $singleValue];
                     $filterValues = [(string) $singleValue];
+                }
+            }
+
+            $esVistaOrdenesAnuladas = false;
+            if (strtoupper(trim((string) $singleColumn)) === 'AREA'
+                && in_array(strtoupper(trim((string) $singleValue)), ['ANULADO', 'ANULADA'], true)
+            ) {
+                $esVistaOrdenesAnuladas = true;
+            }
+
+            if (!$esVistaOrdenesAnuladas && !empty($filterColumns) && !empty($filterValuesArray)) {
+                foreach ($filterColumns as $index => $column) {
+                    $value = $filterValuesArray[$index] ?? null;
+                    if (strtoupper(trim((string) $column)) === 'AREA'
+                        && in_array(strtoupper(trim((string) $value)), ['ANULADO', 'ANULADA'], true)
+                    ) {
+                        $esVistaOrdenesAnuladas = true;
+                        break;
+                    }
                 }
             }
 
@@ -61,9 +80,9 @@ class RecibosQueryService
 
             $hasFilters = !empty($filterColumns) || !empty($filterValuesArray) || !empty($search);
             if ($hasFilters) {
-                $query = $this->repository->buildBaseQueryForFiltering($tipoRecibo);
+                $query = $this->repository->buildBaseQueryForFiltering($tipoRecibo, $esVistaOrdenesAnuladas);
             } else {
-                $query = $this->repository->buildBaseQuery($tipoRecibo);
+                $query = $this->repository->buildBaseQuery($tipoRecibo, $esVistaOrdenesAnuladas);
             }
 
             $query = $this->repository->applyFilters(

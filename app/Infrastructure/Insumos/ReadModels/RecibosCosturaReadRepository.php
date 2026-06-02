@@ -7,6 +7,18 @@ use Illuminate\Support\Facades\DB;
 
 class RecibosCosturaReadRepository
 {
+    private function applyAnuladosFilter($query, bool $incluirAnulados)
+    {
+        if ($incluirAnulados) {
+            return $query;
+        }
+
+        return $query->whereNotIn(
+            DB::raw('UPPER(TRIM(COALESCE(consecutivos_recibos_pedidos.area, \'\')))'),
+            ['ANULADO', 'ANULADA']
+        );
+    }
+
     private function applyTipoReciboFilter($query, string $tipoRecibo)
     {
         $tipoReciboNormalizado = strtoupper(trim($tipoRecibo));
@@ -22,12 +34,12 @@ class RecibosCosturaReadRepository
         return $query->whereRaw('UPPER(TRIM(consecutivos_recibos_pedidos.tipo_recibo)) = ?', [$tipoReciboNormalizado]);
     }
 
-    public function buildBaseQuery(string $tipoRecibo = 'COSTURA')
+    public function buildBaseQuery(string $tipoRecibo = 'COSTURA', bool $incluirAnulados = false)
     {
         $tipoReciboNormalizado = strtoupper(trim($tipoRecibo));
 
         if ($tipoReciboNormalizado === 'CORTE-PARA-BODEGA') {
-            return DB::table('consecutivos_recibos_pedidos')
+            $query = DB::table('consecutivos_recibos_pedidos')
                 ->leftJoin('prenda_bodega', 'consecutivos_recibos_pedidos.prenda_bodega_id', '=', 'prenda_bodega.id')
                 ->select(
                     'consecutivos_recibos_pedidos.*',
@@ -48,6 +60,8 @@ class RecibosCosturaReadRepository
                 )
                 ->whereRaw('UPPER(TRIM(consecutivos_recibos_pedidos.tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
                 ->whereNotNull('consecutivos_recibos_pedidos.consecutivo_actual');
+
+            return $this->applyAnuladosFilter($query, $incluirAnulados);
         }
 
         $query = DB::table('consecutivos_recibos_pedidos')
@@ -94,15 +108,15 @@ class RecibosCosturaReadRepository
             });
         }
 
-        return $query;
+        return $this->applyAnuladosFilter($query, $incluirAnulados);
     }
 
-    public function buildBaseQueryForFiltering(string $tipoRecibo = 'COSTURA')
+    public function buildBaseQueryForFiltering(string $tipoRecibo = 'COSTURA', bool $incluirAnulados = false)
     {
         $tipoReciboNormalizado = strtoupper(trim($tipoRecibo));
 
         if ($tipoReciboNormalizado === 'CORTE-PARA-BODEGA') {
-            return DB::table('consecutivos_recibos_pedidos')
+            $query = DB::table('consecutivos_recibos_pedidos')
                 ->leftJoin('prenda_bodega', 'consecutivos_recibos_pedidos.prenda_bodega_id', '=', 'prenda_bodega.id')
                 ->select(
                     'consecutivos_recibos_pedidos.*',
@@ -123,6 +137,8 @@ class RecibosCosturaReadRepository
                 )
                 ->whereRaw('UPPER(TRIM(consecutivos_recibos_pedidos.tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
                 ->whereNotNull('consecutivos_recibos_pedidos.consecutivo_actual');
+
+            return $this->applyAnuladosFilter($query, $incluirAnulados);
         }
 
         $query = DB::table('consecutivos_recibos_pedidos')
@@ -130,7 +146,8 @@ class RecibosCosturaReadRepository
 
         $query = $this->applyTipoReciboFilter($query, $tipoRecibo);
 
-        return $query
+        return $this->applyAnuladosFilter(
+            $query
             ->select(
                 'consecutivos_recibos_pedidos.*',
                 'consecutivos_recibos_pedidos.marcar_plooter',
@@ -148,7 +165,9 @@ class RecibosCosturaReadRepository
                 'pedidos_produccion.fecha_estimada_de_entrega',
                 DB::raw('(SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM prenda_recibo_completado WHERE id_recibo = consecutivos_recibos_pedidos.id) as esta_completado')
             )
-            ->whereNotNull('consecutivos_recibos_pedidos.consecutivo_actual');
+            ->whereNotNull('consecutivos_recibos_pedidos.consecutivo_actual'),
+            $incluirAnulados
+        );
     }
 
     public function applyFilters($query, array $filterColumns = [], array $filterValuesArray = [], array $filterValues = [], string $search = '', string $tipoRecibo = 'COSTURA')
