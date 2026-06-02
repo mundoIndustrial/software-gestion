@@ -11,6 +11,9 @@
     $conteoRecibosBodegaPendientes = (int) ($conteoRecibosBodegaPendientes ?? 0);
     $mostrarColumnaPedido = !$esTabBodega;
     $mostrarColumnaEstado = !$esGestionReflectivo;
+    $esVistaOrdenesAnuladas = strtoupper(trim((string) request('filter_column', ''))) === 'AREA'
+        && in_array(strtoupper(trim((string) request('filter_value', ''))), ['ANULADO', 'ANULADA'], true);
+    $mostrarTabBodega = !$esVistaOrdenesAnuladas;
     $totalColumnas = 7 + ($mostrarColumnaPedido ? 1 : 0) + ($mostrarColumnaEstado ? 1 : 0);
     $assetVersion = static fn (string $path): int => is_file(public_path($path))
         ? filemtime(public_path($path))
@@ -125,29 +128,31 @@
                 </div>
             </div>
 
-            @unless($esGestionReflectivo)
-            <div style="padding: 0.75rem 0.5rem 0; position: relative; z-index: 5;">
-                <div style="display: inline-flex; gap: 0.4rem; background: #f3f4f6; border-radius: 999px; padding: 0.25rem; border: 1px solid #e5e7eb;">
-                    <a id="tabInsumosPedidos" href="{{ route('insumos.materiales.index', ['tipo_recibo' => 'COSTURA']) }}"
-                       style="position: relative; z-index: 30; pointer-events: auto; padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none; {{ !$esTabBodega ? 'background:#2563eb;color:#fff;' : 'color:#374151;' }}">
-                        Pedidos
+    @unless($esGestionReflectivo || $esVistaOrdenesAnuladas)
+    <div style="padding: 0.75rem 0.5rem 0; position: relative; z-index: 5;">
+        <div style="display: inline-flex; gap: 0.4rem; background: #f3f4f6; border-radius: 999px; padding: 0.25rem; border: 1px solid #e5e7eb;">
+            <a id="tabInsumosPedidos" href="{{ route('insumos.materiales.index', ['tipo_recibo' => 'COSTURA']) }}"
+               style="position: relative; z-index: 30; pointer-events: auto; padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none; {{ !$esTabBodega ? 'background:#2563eb;color:#fff;' : 'color:#374151;' }}">
+                Pedidos
                     </a>
-                    <a id="tabInsumosBodega" href="{{ route('insumos.materiales.index', ['tipo_recibo' => 'CORTE-PARA-BODEGA']) }}"
-                       style="position: relative; z-index: 30; pointer-events: auto; display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none; {{ $esTabBodega ? 'background:#2563eb;color:#fff;' : 'color:#374151;' }}">
-                        Bodega
-                        @if($conteoRecibosBodegaPendientes > 0)
-                            <span style="display:inline-flex;align-items:center;justify-content:center;min-width:1.2rem;height:1.2rem;padding:0 0.35rem;border-radius:999px;background:#dc2626;color:#fff;font-size:0.7rem;font-weight:700;line-height:1;">
-                                {{ $conteoRecibosBodegaPendientes }}
-                            </span>
-                        @endif
-                    </a>
-                </div>
-            </div>
-            @endunless
+                    @if($mostrarTabBodega)
+                        <a id="tabInsumosBodega" href="{{ route('insumos.materiales.index', ['tipo_recibo' => 'CORTE-PARA-BODEGA']) }}"
+                           style="position: relative; z-index: 30; pointer-events: auto; display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none; {{ $esTabBodega ? 'background:#2563eb;color:#fff;' : 'color:#374151;' }}">
+                            Bodega
+                            @if($conteoRecibosBodegaPendientes > 0)
+                                <span style="display:inline-flex;align-items:center;justify-content:center;min-width:1.2rem;height:1.2rem;padding:0 0.35rem;border-radius:999px;background:#dc2626;color:#fff;font-size:0.7rem;font-weight:700;line-height:1;">
+                                    {{ $conteoRecibosBodegaPendientes }}
+                                </span>
+                            @endif
+                        </a>
+                    @endif
+        </div>
+    </div>
+    @endunless
         </div>
     </div>
 
-    @unless($esGestionReflectivo)
+    @unless($esGestionReflectivo || $esVistaOrdenesAnuladas)
     <script>
         (function () {
             function bindTabNavigation(id) {
@@ -168,11 +173,15 @@
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', function () {
                     bindTabNavigation('tabInsumosPedidos');
+                    @if($mostrarTabBodega)
                     bindTabNavigation('tabInsumosBodega');
+                    @endif
                 });
             } else {
                 bindTabNavigation('tabInsumosPedidos');
+                @if($mostrarTabBodega)
                 bindTabNavigation('tabInsumosBodega');
+                @endif
             }
         })();
     </script>

@@ -74,6 +74,10 @@
             ->where('tipo_recibo', 'REFLECTIVO')
             ->whereRaw("UPPER(TRIM(COALESCE(area, ''))) = 'INSUMOS'")
             ->count();
+
+        $esVistaOrdenesAnuladas = strtoupper(trim((string) request('filter_column', ''))) === 'AREA'
+            && in_array(strtoupper(trim((string) request('filter_value', ''))), ['ANULADO', 'ANULADA'], true);
+
     @endphp
 
     <!-- Sidebar -->
@@ -139,7 +143,7 @@
                     <ul class="menu-list">
                         <li class="menu-item">
                             <a href="{{ route('insumos.materiales.index') }}" 
-                               class="menu-link {{ request()->routeIs('insumos.materiales.*') && !request()->routeIs('insumos.materiales.reflectivo') ? 'active' : '' }}">
+                               class="menu-link {{ request()->routeIs('insumos.materiales.*') && !request()->routeIs('insumos.materiales.reflectivo') && !$esVistaOrdenesAnuladas ? 'active' : '' }}">
                                 <span class="material-symbols-rounded">inventory_2</span>
                                 <span class="menu-label">Control de Insumos</span>
                                 @if($conteoPendientesInsumos > 0)
@@ -159,6 +163,13 @@
                                         {{ $conteoReflectivoInsumos }}
                                     </span>
                                 @endif
+                            </a>
+                        </li>
+                        <li class="menu-item">
+                            <a href="{{ route('insumos.materiales.index', ['filter_column' => 'area', 'filter_value' => 'ANULADO']) }}" 
+                               class="menu-link {{ request()->routeIs('insumos.materiales.index') && request('filter_column') === 'area' && request('filter_value') === 'ANULADO' ? 'active' : '' }}">
+                                <span class="material-symbols-rounded">cancel</span>
+                                <span class="menu-label">Órdenes Anuladas</span>
                             </a>
                         </li>
                         <li class="menu-item">

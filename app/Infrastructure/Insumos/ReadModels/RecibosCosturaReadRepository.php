@@ -85,7 +85,7 @@ class RecibosCosturaReadRepository
             // Mostrar también recibos anulados cuyo flujo ya movió el área a ANULADO.
             $query->whereIn(
                 DB::raw('UPPER(TRIM(consecutivos_recibos_pedidos.area))'),
-                ['INSUMOS', 'ANULADO']
+                ['INSUMOS', 'ANULADO', 'ANULADA']
             );
         } else {
             // Para REFLECTIVO: solo mostrar recibos del área "Insumos"
@@ -267,7 +267,25 @@ class RecibosCosturaReadRepository
             } else {
                 // Para valores exactos: usar whereIn
                 \Log::info('[applyFilters] Aplicando filtro whereIn', ['dbColumn' => $dbColumn, 'values' => $values]);
-                $query->whereIn($dbColumn, $values);
+                if ($dbColumn === 'consecutivos_recibos_pedidos.area') {
+                    $normalizedValues = array_values(array_unique(array_map(
+                        fn($value) => strtoupper(trim((string) $value)),
+                        $values
+                    )));
+
+                    if (in_array('ANULADO', $normalizedValues, true) || in_array('ANULADA', $normalizedValues, true)) {
+                        $normalizedValues = array_values(array_unique(array_merge($normalizedValues, ['ANULADO', 'ANULADA'])));
+                    }
+
+                    if (!empty($normalizedValues)) {
+                        $query->whereIn(
+                            DB::raw('UPPER(TRIM(consecutivos_recibos_pedidos.area))'),
+                            $normalizedValues
+                        );
+                    }
+                } else {
+                    $query->whereIn($dbColumn, $values);
+                }
             }
         }
         

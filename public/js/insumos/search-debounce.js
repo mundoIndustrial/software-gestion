@@ -195,16 +195,16 @@ const SearchDebounce = {
         });
 
         try {
-            // Construir URL base limpia (sin querystring previa)
-            const baseUrl = new URL(window.location.pathname, window.location.origin);
-
-            // Construir parametros para AJAX
-            const ajaxParams = new URLSearchParams();
+            // Partir de la URL actual para conservar filtros como area=ANULADO
+            const ajaxUrl = new URL(window.location.href);
+            const ajaxParams = ajaxUrl.searchParams;
             ajaxParams.set('page', '1');
             const tipoRecibo = globalThis.tipoRecibo || 'COSTURA';
             ajaxParams.set('tipo_recibo', tipoRecibo);
             if (searchValue) {
                 ajaxParams.set('search', searchValue);
+            } else {
+                ajaxParams.delete('search');
             }
 
             // Agregar filtros activos si existen
@@ -219,8 +219,6 @@ const SearchDebounce = {
                 }
             }
 
-            const ajaxUrl = new URL(baseUrl.toString());
-            ajaxUrl.search = ajaxParams.toString();
             console.log(`[Search][${traceId}] URL AJAX`, ajaxUrl);
 
             // Enviar peticion AJAX
@@ -265,8 +263,14 @@ const SearchDebounce = {
                 { search: searchValue, filters: typeof activeFilters !== 'undefined' ? activeFilters : {} },
                 '',
                 (() => {
-                    const urlWithState = new URL(baseUrl.toString());
+                    const urlWithState = new URL(window.location.href);
                     urlWithState.searchParams.set('tipo_recibo', tipoRecibo);
+                    urlWithState.searchParams.set('page', '1');
+                    if (searchValue) {
+                        urlWithState.searchParams.set('search', searchValue);
+                    } else {
+                        urlWithState.searchParams.delete('search');
+                    }
                     return urlWithState.toString();
                 })()
             );

@@ -173,6 +173,17 @@ class InsumosController extends Controller
                 'insumos.materiales.index'
             );
 
+            $estaFiltrandoAnuladas = strtoupper(trim((string) $request->get('filter_column', ''))) === 'AREA'
+                && in_array(strtoupper(trim((string) $request->get('filter_value', ''))), ['ANULADO', 'ANULADA'], true);
+
+            if (!$estaFiltrandoAnuladas) {
+                $ordenes->setCollection(
+                    $ordenes->getCollection()->reject(function ($orden) {
+                        return in_array(strtoupper(trim((string) ($orden->area ?? ''))), ['ANULADO', 'ANULADA'], true);
+                    })->values()
+                );
+            }
+
             Log::info(' Recibos obtenidos exitosamente', [
                 'trace_id' => $traceId,
                 'items_current_page' => count($ordenes),
