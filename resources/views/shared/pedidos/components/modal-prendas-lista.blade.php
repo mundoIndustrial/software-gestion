@@ -6,6 +6,7 @@
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .trim()
+            .replace(/\s+/g, '_')
             .toLowerCase();
     }
 
@@ -14,9 +15,21 @@
             || datosPedido?.estado_pedido
             || datosPedido?.estadoPedido
             || datosPedido?.status
+            || datosPedido?.pedido?.estado
             || '';
 
         return _normalizarEstadoPedidoPrendas(estado) === 'entregado';
+    }
+
+    function _esPedidoEnEjecucionPrendas(datosPedido) {
+        const estado = datosPedido?.estado
+            || datosPedido?.estado_pedido
+            || datosPedido?.estadoPedido
+            || datosPedido?.status
+            || datosPedido?.pedido?.estado
+            || '';
+
+        return _normalizarEstadoPedidoPrendas(estado) === 'en_ejecucion';
     }
 
     function _mostrarModalPrendaBloqueadaDesdeLista(mensaje) {
@@ -240,6 +253,7 @@
         Validator.requireEdicionPedido(async () => {
             const datos = window.datosEdicionPedido;
             const pedidoEntregado = _esPedidoEntregadoPrendas(datos);
+            const pedidoEnEjecucion = _esPedidoEnEjecucionPrendas(datos);
             const prendas = datos.prendas || [];
             await hidratarBloqueosAntesDeRender(prendas, datos.id);
             // Siempre mostrar lista, aunque esté vacía
@@ -320,9 +334,13 @@
             htmlListaPrendas += '</div>';
             
             // Crear HTML con header mejorado
-            const btnAgregarDisabled = pedidoEntregado ? 'disabled' : '';
-            const btnAgregarOnClick = pedidoEntregado ? '' : 'onclick="agregarNuevaPrendaAPedido();"';
-            const btnAgregarOpacity = pedidoEntregado ? 'opacity: 0.5; cursor: not-allowed;' : '';
+            const bloqueadoPorEstado = pedidoEntregado || pedidoEnEjecucion;
+            const btnAgregarDisabled = bloqueadoPorEstado ? 'disabled' : '';
+            const btnAgregarOnClick = bloqueadoPorEstado ? '' : 'onclick="agregarNuevaPrendaAPedido();"';
+            const btnAgregarOpacity = bloqueadoPorEstado ? 'opacity: 0.5; cursor: not-allowed;' : '';
+            const btnAgregarTitle = pedidoEntregado
+                ? 'No se puede agregar prendas en pedidos Entregados'
+                : (pedidoEnEjecucion ? 'No se puede agregar prendas cuando el pedido está en ejecución' : '');
             const htmlConHeader = `
                 <div style="background: white; border-radius: 6px; width: 100%; display: flex; flex-direction: column; box-shadow: 0 8px 30px rgba(0,0,0,0.3); overflow: hidden;">
                     <!-- Header Azul con mejor espaciado -->
@@ -335,7 +353,7 @@
                                 style="background: ${pedidoEntregado ? '#9ca3af' : '#16a34a'}; border: none; cursor: pointer; color: white; padding: 10px 16px; line-height: 1; transition: all 0.2s; font-weight: bold; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; white-space: nowrap; ${btnAgregarOpacity}"
                                 onmouseover="${pedidoEntregado ? '' : "this.style.opacity='0.8'; this.style.transform='scale(1.05)'"}"
                                 onmouseout="${pedidoEntregado ? '' : "this.style.opacity='1'; this.style.transform='scale(1)'"}"
-                                title="${pedidoEntregado ? 'No se puede agregar prendas en pedidos Entregados' : ''}">
+                                title="${btnAgregarTitle}">
                                 ＋ Agregar Prenda
                             </button>
                             <button onclick="abrirModalEditarPedido(window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido, window.datosEdicionPedido, 'editar');" 

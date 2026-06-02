@@ -2372,7 +2372,7 @@ window.toggleFactura = function () {
     console.log('[toggleFactura-PRM] Â¿Tiene estado activo?', tieneEstadoActivo);
 
     if (!tieneEstadoActivo) {
-        // Sin estado activo â†’ usar la implementacion original si existe
+        // Sin estado activo → usar la implementacion original si existe
         console.log('[toggleFactura-PRM] Sin estado activo, buscando _originalToggleFactura...');
         console.log('[toggleFactura-PRM] _originalToggleFactura existe?', !!_originalToggleFactura);
         if (_originalToggleFactura) {
@@ -2393,7 +2393,7 @@ window.toggleFactura = function () {
     const btnGaleria = document.getElementById('btn-galeria');
 
     if (estaEnGaleria) {
-        // Estamos en galeria â†’ cerrar galeria y mostrar recibo
+        // Estamos en galeria → cerrar galeria y mostrar recibo
         console.log('[toggleFactura-PRM] Cerrando galeria, mostrando recibo');
         GalleryManager.cerrarGaleria();
         // Mostrar btn-factura (con icono de galeria para indicar que se puede ir a galeria)
@@ -2411,7 +2411,7 @@ window.toggleFactura = function () {
             btnGaleria.style.zIndex = '-1';
         }
     } else {
-        // Estamos en recibo â†’ abrir galeria
+        // Estamos en recibo → abrir galeria
         console.log('[toggleFactura-PRM] Abriendo galeria');
         console.log('[toggleFactura-PRM] Intentando abrir con GalleryManager...');
 

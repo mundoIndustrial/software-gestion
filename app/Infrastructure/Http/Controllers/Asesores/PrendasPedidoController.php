@@ -64,12 +64,14 @@ class PrendasPedidoController
      */
     public function agregarPrenda(AgregarPrendaSimpleRequest $request, int|string $id): JsonResponse
     {
+        $pedidoId = (int) $id;
+
         try {
-            Log::info('[PrendasPedidoController] POST /api/pedidos/{id}/prendas', ['id' => $id]);
+            Log::info('[PrendasPedidoController] POST /api/pedidos/{id}/prendas', ['id' => $pedidoId]);
 
             $validated = $request->validated();
 
-            $pedido = $this->prendasPedidoApplicationFacadeService->agregarPrenda($id, $validated);
+            $pedido = $this->prendasPedidoApplicationFacadeService->agregarPrenda($pedidoId, $validated);
 
             Log::info('[PrendasPedidoController] Prenda agregada exitosamente', [
                 'pedido_id' => $pedido->id,
@@ -178,6 +180,10 @@ class PrendasPedidoController
             ]);
 
             return $this->jsonFailure($e->getMessage(), 404);
+        } catch (\DomainException $e) {
+            return $this->jsonFailure($e->getMessage(), 409, [
+                'bloqueada_creacion' => true,
+            ]);
 
         } catch (\Exception $e) {
             Log::error('[PrendasPedidoController] Error actualizando prenda', [
@@ -194,13 +200,15 @@ class PrendasPedidoController
      */
     public function agregarPrendaCompleta(AgregarPrendaCompletaRequest $request, int|string $id): JsonResponse
     {
+        $pedidoId = (int) $id;
+
         try {
-            Log::info('[PrendasPedidoController] POST /asesores/pedidos/{id}/agregar-prenda', ['id' => $id]);
+            Log::info('[PrendasPedidoController] POST /asesores/pedidos/{id}/agregar-prenda', ['id' => $pedidoId]);
             $validated = $request->validated();
 
             $prenda = $this->prendasPedidoApplicationFacadeService->agregarPrendaCompleta(
                 $request,
-                (int) $id,
+                $pedidoId,
                 $validated
             );
 
@@ -222,6 +230,15 @@ class PrendasPedidoController
 
             return $this->jsonFailure(self::VALIDACION_FALLIDA, 422, [
                 'errors' => $e->errors(),
+            ]);
+        } catch (\DomainException $e) {
+            Log::warning('[PrendasPedidoController] Regla de negocio bloquea agregar prenda completa', [
+                'pedido_id' => $pedidoId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->jsonFailure($e->getMessage(), 409, [
+                'bloqueada_creacion' => true,
             ]);
 
         } catch (\Exception $e) {

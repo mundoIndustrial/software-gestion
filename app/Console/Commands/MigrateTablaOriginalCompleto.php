@@ -31,7 +31,7 @@ class MigrateTablaOriginalCompleto extends Command
 {
     protected $signature = 'migrate:tabla-original-completo {--dry-run : Simular sin guardar} {--reset : Limpiar datos migrados primero}';
 
-    protected $description = 'MIGRACION UNIFICADA COMPLETA: tabla_original â†’ Nueva Arquitectura Normalizada';
+    protected $description = 'MIGRACION UNIFICADA COMPLETA: tabla_original → Nueva Arquitectura Normalizada';
 
     protected $stats = [
         'usuarios_creados' => 0,
@@ -132,7 +132,7 @@ class MigrateTablaOriginalCompleto extends Command
     {
         $this->info("\n");
         $this->info(str_repeat("=", 140));
-        $this->info("MIGRACION UNIFICADA COMPLETA: tabla_original + registros_por_orden â†’ Nueva Arquitectura");
+        $this->info("MIGRACION UNIFICADA COMPLETA: tabla_original + registros_por_orden → Nueva Arquitectura");
         $this->info(str_repeat("=", 140) . "\n");
 
         $dryRun = $this->option('dry-run');

@@ -36,6 +36,8 @@ final class PrendasPedidoApplicationFacadeService
 
     public function agregarPrenda(int|string $pedidoId, array $validated): mixed
     {
+        $this->validarCreacionPermitida((int) $pedidoId);
+
         $dto = AgregarPrendaAlPedidoDTO::fromRequest($pedidoId, $validated);
         $pedido = $this->agregarPrendaUseCase->ejecutar($dto);
 
@@ -68,6 +70,8 @@ final class PrendasPedidoApplicationFacadeService
 
     public function agregarPrendaCompleta(Request $request, int $pedidoId, array $validated): mixed
     {
+        $this->validarCreacionPermitida($pedidoId);
+
         $preparacion = $this->prepararCreacionPrendaService->preparar($request, $pedidoId, $validated);
         $validated = $preparacion['validated'];
 
@@ -189,6 +193,22 @@ final class PrendasPedidoApplicationFacadeService
 
         throw new \DomainException(
             $this->prendaEdicionBloqueoService->mensajeBloqueo('eliminar', $bloqueo['area'] ?? null)
+        );
+    }
+
+    private function validarCreacionPermitida(int $pedidoId): void
+    {
+        $pedido = \App\Models\PedidoProduccion::query()
+            ->select(['id', 'estado'])
+            ->findOrFail($pedidoId);
+
+        $estadoNormalizado = strtoupper(trim(str_replace(' ', '_', (string) $pedido->estado)));
+        if ($estadoNormalizado !== 'EN_EJECUCION') {
+            return;
+        }
+
+        throw new \DomainException(
+            'No se pueden agregar prendas cuando el pedido está en ejecución.'
         );
     }
 }

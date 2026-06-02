@@ -3,7 +3,7 @@
  * SUPERVISOR PEDIDOS INDEX - FUNCIONALIDAD PRINCIPAL
  * =====================================================
  *
- * Requiere: supervisor-pedidos/core/bootstrap.js â†’ window.supervisorPedidos
+ * Requiere: supervisor-pedidos/core/bootstrap.js → window.supervisorPedidos
  */
 
 if (!window.supervisorPedidos?.isReady) {
