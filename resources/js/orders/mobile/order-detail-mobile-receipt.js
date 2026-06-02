@@ -854,13 +854,24 @@
         : null;
     const pedidoIdAncho = Number(data?.id || data?.pedido_id || data?.pedido_produccion_id || prendaObjetivo?.pedido_produccion_id || 0);
     const prendaIdAncho = Number(prendaObjetivo?.id || prendaObjetivo?.prenda_pedido_id || prendaObjetivo?.prenda_id || 0);
+    const numeroReciboAncho = (() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const fromQuery = String(urlParams.get('consecutivo_recibo') || urlParams.get('numero_recibo') || '').trim();
+        if (fromQuery !== '') {
+            return fromQuery;
+        }
+
+        const fromGlobal = String(window.numeroReciboActual || window.numeroReciboCostura || '').trim();
+        return fromGlobal !== '' ? fromGlobal : '';
+    })();
 
     if (pedidoIdAncho > 0 && prendaIdAncho > 0) {
         const requestId = (window.__anchoMetrajeMobileRequestId || 0) + 1;
         window.__anchoMetrajeMobileRequestId = requestId;
 
-        const publicEndpoint = `/pedidos-public/${pedidoIdAncho}/ancho-metraje-prenda/${prendaIdAncho}`;
-        const insumosEndpoint = `/insumos/materiales/${pedidoIdAncho}/obtener-ancho-metraje-prenda/${prendaIdAncho}`;
+        const query = numeroReciboAncho !== '' ? `?numero_recibo=${encodeURIComponent(numeroReciboAncho)}` : '';
+        const publicEndpoint = `/pedidos-public/${pedidoIdAncho}/ancho-metraje-prenda/${prendaIdAncho}${query}`;
+        const insumosEndpoint = `/insumos/materiales/${pedidoIdAncho}/obtener-ancho-metraje-prenda/${prendaIdAncho}${query}`;
 
         window.OrderDetailMobileService.getAnchoMetraje(publicEndpoint, insumosEndpoint)
             .then(payload => {

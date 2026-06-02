@@ -1782,6 +1782,7 @@
                 
                 // Guardar en variable global para usar en actualizarNumeroPrendaHeader
                 numeroReciboActual = numeroReciboCostura;
+                window.numeroReciboActual = numeroReciboCostura;
                 
                 console.log('🔢 [NUMERO RECIBO COSTURA]', numeroReciboCostura, 'tipo:', typeof numeroReciboCostura);
 
