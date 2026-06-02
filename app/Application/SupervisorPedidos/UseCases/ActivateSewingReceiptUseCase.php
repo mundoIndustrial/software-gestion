@@ -55,18 +55,25 @@ class ActivateSewingReceiptUseCase
                 );
             }
 
-            $newReceiptNumber = $this->receiptRepository->generateNextConsecutiveForType('COSTURA');
+            $receiptData = $this->receiptRepository->activateSewingReceipt(
+                $orderId->value(),
+                $prendaId->value()
+            );
+            $newReceiptNumber = (string) ($receiptData['consecutivo_actual'] ?? $receiptData['consecutivo_inicial'] ?? '');
+            $receiptId = isset($receiptData['id']) ? (int) $receiptData['id'] : null;
             
             Log::info("Recibo de COSTURA activado", [
                 'order_id' => $orderId->value(),
                 'prenda_id' => $prendaId->value(),
                 'receipt_number' => $newReceiptNumber,
+                'receipt_id' => $receiptId,
             ]);
 
             return new ActivateReceiptResponse(
                 true,
                 'Recibo COSTURA activado correctamente',
-                $newReceiptNumber
+                $newReceiptNumber,
+                $receiptId
             );
 
         } catch (\Exception $e) {

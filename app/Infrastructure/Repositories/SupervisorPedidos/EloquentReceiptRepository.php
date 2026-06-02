@@ -217,6 +217,38 @@ class EloquentReceiptRepository implements ReceiptRepository
         return $result;
     }
 
+    public function activateSewingReceipt(int $orderId, int $prendaId): array
+    {
+        return DB::transaction(function () use ($orderId, $prendaId) {
+            $existingReceipt = DB::table('consecutivos_recibos_pedidos')
+                ->where('pedido_produccion_id', $orderId)
+                ->where('prenda_id', $prendaId)
+                ->where('tipo_recibo', 'COSTURA')
+                ->orderByDesc('id')
+                ->first();
+
+            if ($existingReceipt && (int) ($existingReceipt->activo ?? 0) === 1) {
+                return (array) $existingReceipt;
+            }
+
+            $newConsecutive = $this->generateNextConsecutiveForType('COSTURA');
+
+            $receiptId = DB::table('consecutivos_recibos_pedidos')->insertGetId([
+                'pedido_produccion_id' => $orderId,
+                'prenda_id' => $prendaId,
+                'tipo_recibo' => 'COSTURA',
+                'consecutivo_inicial' => $newConsecutive,
+                'consecutivo_actual' => $newConsecutive,
+                'activo' => 1,
+                'notas' => 'Generado al activar recibo COSTURA desde supervisor',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return (array) DB::table('consecutivos_recibos_pedidos')->find($receiptId);
+        });
+    }
+
     public function findPendingEmbroideryStampingReceipts(array $receiptTypes, ?string $busqueda = null): array
     {
         $query = DB::table('consecutivos_recibos_pedidos as crp')

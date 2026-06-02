@@ -30,6 +30,12 @@ interface ReceiptRepository
     public function approve(int $receiptId): ?array;
 
     /**
+     * Activa un recibo de costura creando el registro cuando no existe.
+     * @return array<string, mixed>
+     */
+    public function activateSewingReceipt(int $orderId, int $prendaId): array;
+
+    /**
      * @return array<int, object>
      */
     public function findPendingEmbroideryStampingReceipts(array $receiptTypes, ?string $busqueda = null): array;
