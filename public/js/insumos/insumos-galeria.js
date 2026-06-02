@@ -372,10 +372,14 @@ class InsumosGaleria {
                 `;
                 
                 prenda.imagenes.forEach((imagen, index) => {
-                    const rutaImg = imagen.ruta_webp || imagen.ruta_original || '';
+                    const rutaWebp = imagen.ruta_webp || '';
+                    const rutaOriginal = imagen.ruta_original || '';
+                    const rutaImg = rutaWebp || rutaOriginal || '';
+                    const rutaFallback = rutaWebp && rutaOriginal && rutaImg === rutaWebp ? rutaOriginal : '';
                     console.log(`[construirGaleria] Agregando imagen ${index}:`, rutaImg);
                     this.imagenesActuales.push({
                         src: rutaImg,
+                        fallbackSrc: rutaFallback,
                         titulo: `${nombrePrenda} - Imagen ${index + 1}`,
                         tipo: 'prenda',
                         prendaNombre: nombrePrenda,
@@ -392,13 +396,13 @@ class InsumosGaleria {
                             background: white;
                             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
                         " data-insumos-action="galeria-mostrar-imagen" data-image-index="${this.imagenesActuales.length - 1}">
-                            <img src="${rutaImg}" alt="${nombrePrenda}" style="
+                            <img src="${rutaImg}" data-fallback-src="${rutaFallback}" alt="${nombrePrenda}" style="
                                 width: 100%; 
                                 height: 220px; 
                                 object-fit: cover;
                                 display: block;
                                 transition: all 0.3s ease;
-                            ">
+                            " onerror="if(this.dataset.fallbackApplied==='1'){this.style.display='none';return;}const fallback=this.dataset.fallbackSrc||'';if(fallback&&this.src!==fallback){this.dataset.fallbackApplied='1';this.src=fallback;return;}this.style.display='none';this.parentElement.style.background='#fee2e2';this.parentElement.innerHTML='<div style=&quot;display:flex;align-items:center;justify-content:center;height:100%;color:#dc2626;font-size:0.8rem;text-align:center;padding:4px;&quot;>Error al cargar imagen</div>';">
                             <div style="padding: 0.75rem; background: #f9fafb;">
                                 <div style="font-size: 0.875rem; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">${nombrePrenda}</div>
                                 <div style="font-size: 0.75rem; color: #6b7280;">Click para ver grande</div>
@@ -421,10 +425,14 @@ class InsumosGaleria {
                 `;
                 
                 prenda.imagenes_tela.forEach((imagen, index) => {
-                    const rutaImg = imagen.ruta_webp || imagen.ruta_original || '';
+                    const rutaWebp = imagen.ruta_webp || '';
+                    const rutaOriginal = imagen.ruta_original || '';
+                    const rutaImg = rutaWebp || rutaOriginal || '';
+                    const rutaFallback = rutaWebp && rutaOriginal && rutaImg === rutaWebp ? rutaOriginal : '';
                     console.log(`[construirGaleria] Agregando imagen de tela ${index}:`, rutaImg);
                     this.imagenesActuales.push({
                         src: rutaImg,
+                        fallbackSrc: rutaFallback,
                         titulo: `${nombrePrenda} - Tela ${index + 1}`,
                         tipo: 'tela',
                         prendaNombre: nombrePrenda,
@@ -441,13 +449,13 @@ class InsumosGaleria {
                             background: white;
                             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
                         " data-insumos-action="galeria-mostrar-imagen" data-image-index="${this.imagenesActuales.length - 1}">
-                            <img src="${rutaImg}" alt="${nombrePrenda} - Tela" style="
+                            <img src="${rutaImg}" data-fallback-src="${rutaFallback}" alt="${nombrePrenda} - Tela" style="
                                 width: 100%; 
                                 height: 220px; 
                                 object-fit: cover;
                                 display: block;
                                 transition: all 0.3s ease;
-                            ">
+                            " onerror="if(this.dataset.fallbackApplied==='1'){this.style.display='none';return;}const fallback=this.dataset.fallbackSrc||'';if(fallback&&this.src!==fallback){this.dataset.fallbackApplied='1';this.src=fallback;return;}this.style.display='none';this.parentElement.style.background='#fee2e2';this.parentElement.innerHTML='<div style=&quot;display:flex;align-items:center;justify-content:center;height:100%;color:#dc2626;font-size:0.8rem;text-align:center;padding:4px;&quot;>Error al cargar imagen</div>';">
                             <div style="padding: 0.75rem; background: #f9fafb;">
                                 <div style="font-size: 0.875rem; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">Tela ${index + 1}</div>
                                 <div style="font-size: 0.75rem; color: #6b7280;">Click para ver grande</div>
@@ -474,10 +482,14 @@ class InsumosGaleria {
                         `;
                         
                         proceso.imagenes.forEach((imagen, index) => {
-                            const rutaImgProc = imagen.ruta_webp || imagen.ruta_original || '';
+                            const rutaWebp = imagen.ruta_webp || '';
+                            const rutaOriginal = imagen.ruta_original || '';
+                            const rutaImgProc = rutaWebp || rutaOriginal || '';
+                            const rutaFallback = rutaWebp && rutaOriginal && rutaImgProc === rutaWebp ? rutaOriginal : '';
                             console.log(`[construirGaleria] Agregando imagen ${index} de proceso:`, rutaImgProc);
                             this.imagenesActuales.push({
                                 src: rutaImgProc,
+                                fallbackSrc: rutaFallback,
                                 titulo: `${nombrePrenda} - ${proceso.tipo_proceso} - Imagen ${index + 1}`,
                                 tipo: 'proceso',
                                 prendaNombre: nombrePrenda,
@@ -495,13 +507,13 @@ class InsumosGaleria {
                                     background: white;
                                     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
                                 " data-insumos-action="galeria-mostrar-imagen" data-image-index="${this.imagenesActuales.length - 1}">
-                                    <img src="${rutaImgProc}" alt="${nombrePrenda} - ${proceso.tipo_proceso}" style="
+                                    <img src="${rutaImgProc}" data-fallback-src="${rutaFallback}" alt="${nombrePrenda} - ${proceso.tipo_proceso}" style="
                                         width: 100%; 
                                         height: 220px; 
                                         object-fit: cover;
                                         display: block;
                                         transition: all 0.3s ease;
-                                    ">
+                                    " onerror="if(this.dataset.fallbackApplied==='1'){this.style.display='none';return;}const fallback=this.dataset.fallbackSrc||'';if(fallback&&this.src!==fallback){this.dataset.fallbackApplied='1';this.src=fallback;return;}this.style.display='none';this.parentElement.style.background='#fee2e2';this.parentElement.innerHTML='<div style=&quot;display:flex;align-items:center;justify-content:center;height:100%;color:#dc2626;font-size:0.8rem;text-align:center;padding:4px;&quot;>Error al cargar imagen</div>';">
                                     <div style="padding: 0.75rem; background: #f9fafb;">
                                         <div style="font-size: 0.875rem; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">${proceso.tipo_proceso}</div>
                                         <div style="font-size: 0.75rem; color: #6b7280;">Click para ver grande</div>
@@ -659,6 +671,12 @@ class InsumosGaleria {
         };
         
         img.onerror = () => {
+            const fallback = img.dataset?.fallbackSrc || '';
+            if (fallback && img.dataset?.fallbackApplied !== '1' && img.src !== fallback) {
+                img.dataset.fallbackApplied = '1';
+                img.src = fallback;
+                return;
+            }
             console.error('[mostrarImagen] Error al cargar imagen');
         };
         
@@ -893,6 +911,8 @@ class InsumosGaleria {
                 titulo: imagenActual.titulo
             });
             
+            this.imgActual.dataset.fallbackSrc = imagenActual.fallbackSrc || '';
+            this.imgActual.dataset.fallbackApplied = '';
             this.imgActual.src = imagenActual.src;
             this.imgActual.alt = imagenActual.titulo;
             this.tituloActual.textContent = imagenActual.titulo;

@@ -1207,16 +1207,22 @@
                 console.log('   Telas encontradas:', prenda.telas_array.length);
                 prenda.telas_array.forEach((tela, telaIdx) => {
                     console.log('    Tela ' + telaIdx + ':', tela.tela_nombre || 'N/A', '- Color:', tela.color_nombre || 'N/A');
-                    if (tela.fotos_tela && Array.isArray(tela.fotos_tela)) {
-                        console.log('      Fotos de tela:', tela.fotos_tela.length);
-                        tela.fotos_tela.forEach(img => {
-                            if (img.ruta_webp || img.url) {
-                                fotosActuales.push(img.ruta_webp || img.url);
-                                console.log('       Foto tela agregada:', img.ruta_webp || img.url);
+                    const fotosTela = Array.isArray(tela.imagenes)
+                        ? tela.imagenes
+                        : (Array.isArray(tela.fotos)
+                            ? tela.fotos
+                            : (Array.isArray(tela.fotos_tela) ? tela.fotos_tela : []));
+                    if (fotosTela.length > 0) {
+                        console.log('      Fotos de tela:', fotosTela.length);
+                        fotosTela.forEach(img => {
+                            const urlFoto = img.ruta_webp || img.url || img.ruta_original || '';
+                            if (urlFoto) {
+                                fotosActuales.push(urlFoto);
+                                console.log('       Foto tela agregada:', urlFoto);
                             }
                         });
                     } else {
-                        console.log('       Sin fotos_tela en esta tela');
+                        console.log('       Sin imagenes en esta tela');
                     }
                 });
             }
@@ -1941,7 +1947,7 @@
                 // ===== CARGAR FOTOS DIRECTAMENTE DESDE LOS DATOS DEL PEDIDO =====
                 // Fuentes de fotos (SIN DUPLICAR):
                 // 1. prendas[].imagenes (FOTOS DIRECTAS DE PRENDA - NUEVAS)
-                // 2. prendas[].telas_array[].fotos_tela (FOTOS PRINCIPALES DE TELAS)
+                // 2. prendas[].telas_array[].imagenes / fotos_tela (FOTOS PRINCIPALES DE TELAS)
                 // 3. prendas[].procesos[].imagenes (FOTOS DE PROCESOS/PROCEDIMIENTOS)
                 const todasLasFotos = [];
                 
@@ -1959,11 +1965,16 @@
                         // 2. Fotos de telas_array (FUENTE PRINCIPAL PARA TELAS)
                         if (prenda.telas_array && Array.isArray(prenda.telas_array)) {
                             prenda.telas_array.forEach(function(tela) {
-                                // Usar solo fotos_tela (que es la fuente única de verdad)
-                                if (tela.fotos_tela && Array.isArray(tela.fotos_tela)) {
-                                    tela.fotos_tela.forEach(function(img) {
-                                        if (img.ruta_webp || img.url) {
-                                            todasLasFotos.push(img.ruta_webp || img.url);
+                                const fotosTela = Array.isArray(tela.imagenes)
+                                    ? tela.imagenes
+                                    : (Array.isArray(tela.fotos)
+                                        ? tela.fotos
+                                        : (Array.isArray(tela.fotos_tela) ? tela.fotos_tela : []));
+                                if (fotosTela.length > 0) {
+                                    fotosTela.forEach(function(img) {
+                                        const urlFoto = img.ruta_webp || img.url || img.ruta_original || '';
+                                        if (urlFoto) {
+                                            todasLasFotos.push(urlFoto);
                                         }
                                     });
                                 }

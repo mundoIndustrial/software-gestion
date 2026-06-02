@@ -854,7 +854,7 @@ class ObtenerDatosRecibosOperarioUseCase
             // Fallback defensivo: si por alguna incompatibilidad del transformador la prenda queda vaci­a,
             // construir una prenda mi­nima para que el recibo parcial siempre renderice descripcion/tallas.
             if (empty($responseData['prendas']) && $parcial->prenda_pedido_id) {
-                $prendaEloquent = PrendaPedido::with(['coloresTelas.color', 'coloresTelas.tela', 'variantes.tipoManga', 'variantes.tipoBroche'])
+                $prendaEloquent = PrendaPedido::with(['coloresTelas.color', 'coloresTelas.tela', 'coloresTelas.fotos', 'variantes.tipoManga', 'variantes.tipoBroche'])
                     ->find((int) $parcial->prenda_pedido_id);
 
                 $generoPrenda = strtoupper(trim((string) (
@@ -869,10 +869,33 @@ class ObtenerDatosRecibosOperarioUseCase
                 $coloresTelas = [];
                 if ($prendaEloquent && $prendaEloquent->coloresTelas) {
                     foreach ($prendaEloquent->coloresTelas as $ct) {
+                        $fotosColorTela = [];
+                        foreach (($ct->fotos ?? []) as $foto) {
+                            $rutaCompleta = (string) ($foto->ruta_webp ?? $foto->ruta_original ?? $foto->url ?? '');
+                            if ($rutaCompleta !== '' && !str_starts_with($rutaCompleta, 'http') && !str_starts_with($rutaCompleta, '/storage/') && !str_starts_with($rutaCompleta, 'storage/')) {
+                                $rutaCompleta = '/storage/' . ltrim($rutaCompleta, '/');
+                            }
+
+                            if ($rutaCompleta === '') {
+                                continue;
+                            }
+
+                            $fotosColorTela[] = [
+                                'id' => $foto->id,
+                                'url' => $rutaCompleta,
+                                'ruta_webp' => $rutaCompleta,
+                                'ruta_original' => $rutaCompleta,
+                                'orden' => (int) ($foto->orden ?? 0),
+                            ];
+                        }
+
                         $coloresTelas[] = [
+                            'id' => $ct->id,
+                            'tela_id' => $ct->tela_id,
                             'tela_nombre' => $ct->tela?->nombre,
                             'color_nombre' => $ct->color?->nombre,
                             'referencia' => $ct->referencia ?? $ct->tela?->referencia,
+                            'imagenes' => $fotosColorTela,
                         ];
                     }
                 }
@@ -1061,6 +1084,7 @@ class ObtenerDatosRecibosOperarioUseCase
                         'color' => $primerColorTela['color_nombre'] ?? null,
                         'ref' => $primerColorTela['referencia'] ?? null,
                         'colores_telas' => $coloresTelas,
+                        'telas_array' => $coloresTelas,
                         'manga' => $variante ? ($variante->tipoManga?->nombre ?? $variante->manga) : null,
                         'broche' => $variante ? ($variante->tipoBroche?->nombre ?? $variante->broche) : null,
                         'tallas' => $tallasParcial,
