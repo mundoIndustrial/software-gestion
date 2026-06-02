@@ -54,33 +54,35 @@ class ObtenerAnchoMetrajePrendaUseCase implements ObtenerAnchoMetrajePrendaUseCa
                 );
             }
 
-            $baseAnchoQuery = PedidoAnchoGeneral::where('pedido_produccion_id', $pedidoId)
-                ->where('prenda_pedido_id', $prendaId);
-            $baseMetrajeQuery = PedidoMetrajeColor::where('pedido_produccion_id', $pedidoId)
-                ->where('prenda_pedido_id', $prendaId);
+            if ($numeroRecibo === null || $numeroRecibo <= 0) {
+                Log::info('[ObtenerAnchoMetrajePrendaUseCase] Sin numero_recibo, devolviendo vacío', [
+                    'pedido_id' => $pedidoId,
+                    'prenda_id' => $prendaId,
+                    'numero_recibo' => $numeroRecibo
+                ]);
 
-            // Primero intentamos encontrar el registro del recibo exacto.
-            // Si no existe, caemos al registro legado por prenda para no mostrar la vista vacía.
+                return new ObtenerAnchoMetrajePrendaResponse(
+                    ancho: null,
+                    metraje: null,
+                    contenidoMano: null,
+                    tipoModo: null,
+                    data: []
+                );
+            }
+
+            $baseAnchoQuery = PedidoAnchoGeneral::where('pedido_produccion_id', $pedidoId)
+                ->where('prenda_pedido_id', $prendaId)
+                ->where('numero_recibo', $numeroRecibo);
+            $baseMetrajeQuery = PedidoMetrajeColor::where('pedido_produccion_id', $pedidoId)
+                ->where('prenda_pedido_id', $prendaId)
+                ->where('numero_recibo', $numeroRecibo);
+
             $anchoGeneral = (clone $baseAnchoQuery)
-                ->where('numero_recibo', $numeroRecibo)
                 ->latest('created_at')
                 ->first();
             $metrajesPorColor = (clone $baseMetrajeQuery)
-                ->where('numero_recibo', $numeroRecibo)
                 ->latest('created_at')
                 ->get();
-
-            if (!$anchoGeneral) {
-                $anchoGeneral = (clone $baseAnchoQuery)
-                    ->latest('created_at')
-                    ->first();
-            }
-
-            if ($metrajesPorColor->isEmpty()) {
-                $metrajesPorColor = (clone $baseMetrajeQuery)
-                    ->latest('created_at')
-                    ->get();
-            }
 
             // Determinar tipo de modo
             $tipoModo = $this->determinarTipoModo($anchoGeneral, $metrajesPorColor);
@@ -162,5 +164,4 @@ class ObtenerAnchoMetrajePrendaUseCase implements ObtenerAnchoMetrajePrendaUseCa
         return $this->{$method}(...$arguments);
     }
 }
-
 

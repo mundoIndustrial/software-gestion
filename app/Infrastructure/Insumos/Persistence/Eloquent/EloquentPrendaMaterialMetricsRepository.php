@@ -22,31 +22,26 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
             $metrajeBaseQuery = PedidoMetrajeColor::where('pedido_produccion_id', $pedido->id)
                 ->where('prenda_pedido_id', $prendaId);
 
-            $anchoGeneral = null;
-            $metrajesPorColor = collect();
-
-            if (($numeroRecibo ?? 0) > 0) {
-                $anchoGeneral = (clone $anchoBaseQuery)
-                    ->where('numero_recibo', $numeroRecibo)
-                    ->latest('created_at')
-                    ->first();
-                $metrajesPorColor = (clone $metrajeBaseQuery)
-                    ->where('numero_recibo', $numeroRecibo)
-                    ->latest('created_at')
-                    ->get();
+            if (($numeroRecibo ?? 0) <= 0) {
+                return [
+                    'success' => true,
+                    'ancho' => null,
+                    'ancho_general' => null,
+                    'metraje' => null,
+                    'contenido_mano' => null,
+                    'data' => [],
+                    'tipo_modo' => null,
+                ];
             }
 
-            if (!$anchoGeneral) {
-                $anchoGeneral = (clone $anchoBaseQuery)
-                    ->latest('created_at')
-                    ->first();
-            }
-
-            if ($metrajesPorColor->isEmpty()) {
-                $metrajesPorColor = (clone $metrajeBaseQuery)
-                    ->latest('created_at')
-                    ->get();
-            }
+            $anchoGeneral = (clone $anchoBaseQuery)
+                ->where('numero_recibo', $numeroRecibo)
+                ->latest('created_at')
+                ->first();
+            $metrajesPorColor = (clone $metrajeBaseQuery)
+                ->where('numero_recibo', $numeroRecibo)
+                ->latest('created_at')
+                ->get();
 
             $tipoModoGuardado = null;
             if ($anchoGeneral && $anchoGeneral->tipo_modo) {
@@ -184,6 +179,9 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
                     $match['prenda_bodega_id'] = $prendaBodegaId;
                 } else {
                     $match['prenda_pedido_id'] = $prendaId;
+                }
+                if (($numeroRecibo ?? 0) > 0) {
+                    $match['numero_recibo'] = $numeroRecibo;
                 }
                 if ($anchoTieneConsecutivoReciboId && $esBodega && ($consecutivoReciboId ?? 0) > 0) {
                     $match['consecutivo_recibo_id'] = $consecutivoReciboId;

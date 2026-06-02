@@ -30,37 +30,22 @@ class PedidoPrendaDetalleBuilder
                 $imagenesTela = $modoBodega ? [] : $this->obtenerImagenesTela($prenda);
                 $coloresTelas = $this->obtenerColoresTelasCompletos($prenda);
                 $procesos = $this->obtenerProcesosDelaPrenda($prenda, $estadoPedido, $filtrarProcesosPendientes);
+                $recibosPrenda = $this->pedidoDetalleReadService->getConsecutivosPrenda((int) $modeloEloquent->id, (int) $prenda->id);
+                $numeroReciboUnico = $this->extraerNumeroReciboUnico($recibosPrenda);
 
                 // En modo bodega, ancho y metraje sin detalles pesados
                 $anchoMetraje = [];
-                if ($modoBodega) {
-                    $anchoMetraje = [
-                        'ancho' => $prenda->anchoMetraje?->ancho,
-                        'metraje' => $prenda->anchoMetraje?->metraje,
-                        'metrajes_por_color' => [],
-                        'tipo_modo' => $prenda->anchoMetraje?->tipo_modo,
-                        'contenido_mano' => $prenda->anchoMetraje?->contenido_mano,
-                        'observaciones' => $prenda->anchoMetraje?->observaciones ?? null,
-                    ];
-                } else {
-                    $anchoMetraje = [];
-                    if ($prenda->anchoMetraje) {
+                if ($numeroReciboUnico !== null) {
+                    $ancho = $this->pedidoDetalleReadService->getAnchoPrenda((int) $modeloEloquent->id, (int) $prenda->id, $numeroReciboUnico);
+                    if ($ancho) {
                         $anchoMetraje = [
-                            'ancho' => $prenda->anchoMetraje->ancho,
-                            'metraje' => $prenda->anchoMetraje->metraje,
-                            'metrajes_por_color' => $this->obtenerMetrajesPorColorPrenda((int) $modeloEloquent->id, (int) $prenda->id),
-                            'tipo_modo' => $prenda->anchoMetraje->tipo_modo,
-                            'contenido_mano' => $prenda->anchoMetraje->contenido_mano,
-                            'observaciones' => $prenda->anchoMetraje->observaciones ?? null,
-                        ];
-                    } else {
-                        $anchoMetraje = [
-                            'ancho' => null,
-                            'metraje' => null,
-                            'metrajes_por_color' => [],
-                            'tipo_modo' => null,
-                            'contenido_mano' => null,
-                            'observaciones' => null,
+                            'ancho' => $ancho->ancho,
+                            'metraje' => $ancho->metraje,
+                            'metrajes_por_color' => $this->obtenerMetrajesPorColorPrenda((int) $modeloEloquent->id, (int) $prenda->id, $numeroReciboUnico),
+                            'tipo_modo' => $ancho->tipo_modo,
+                            'contenido_mano' => $ancho->contenido_mano,
+                            'observaciones' => $ancho->observaciones ?? null,
+                            'numero_recibo' => $numeroReciboUnico,
                         ];
                     }
                 }
@@ -105,11 +90,11 @@ class PedidoPrendaDetalleBuilder
         }
     }
 
-    private function obtenerMetrajesPorColorPrenda(int $pedidoId, int $prendaId): array
+    private function obtenerMetrajesPorColorPrenda(int $pedidoId, int $prendaId, ?int $numeroRecibo = null): array
     {
         try {
             return $this->pedidoDetalleReadService
-                ->getMetrajesPrenda($pedidoId, $prendaId)
+                ->getMetrajesPrenda($pedidoId, $prendaId, $numeroRecibo)
                 ->map(fn($metraje) => [
                     'color' => $metraje->color ?? null,
                     'metraje' => $metraje->metraje ?? null,
@@ -125,6 +110,38 @@ class PedidoPrendaDetalleBuilder
 
             return [];
         }
+    }
+
+    private function extraerNumeroReciboUnico($recibosPrenda): ?int
+    {
+        if (!$recibosPrenda || !is_iterable($recibosPrenda)) {
+            return null;
+        }
+
+        $numeros = [];
+
+        foreach ($recibosPrenda as $clave => $recibo) {
+            if ($clave === 'parciales' && is_iterable($recibo)) {
+                foreach ($recibo as $parcial) {
+                    $numero = (int) ($parcial['consecutivo_actual'] ?? $parcial['numero_recibo'] ?? 0);
+                    if ($numero > 0) {
+                        $numeros[$numero] = true;
+                    }
+                }
+                continue;
+            }
+
+            if (is_array($recibo)) {
+                $numero = (int) ($recibo['consecutivo_actual'] ?? $recibo['numero_recibo'] ?? 0);
+                if ($numero > 0) {
+                    $numeros[$numero] = true;
+                }
+            }
+        }
+
+        $numeros = array_keys($numeros);
+
+        return count($numeros) === 1 ? (int) $numeros[0] : null;
     }
 
     private function construirEstructuraTallas($prenda): array

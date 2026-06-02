@@ -17,9 +17,9 @@ interface PedidoDetalleReadService
 
     public function getProcesoTallasConObservaciones(int $procesoDetalleId): Collection;
 
-    public function getAnchoPrenda(int $pedidoId, int $prendaId): ?object;
+    public function getAnchoPrenda(int $pedidoId, int $prendaId, ?int $numeroRecibo = null): ?object;
 
-    public function getMetrajesPrenda(int $pedidoId, int $prendaId): Collection;
+    public function getMetrajesPrenda(int $pedidoId, int $prendaId, ?int $numeroRecibo = null): Collection;
 
     public function getConsecutivosPrenda(int $pedidoId, int $prendaId): Collection;
 

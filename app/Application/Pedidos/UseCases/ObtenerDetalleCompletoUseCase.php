@@ -284,12 +284,14 @@ class ObtenerDetalleCompletoUseCase
             $prendaId = $prenda['id'] ?? $prenda['prenda_pedido_id'] ?? null;
 
             if ($prendaId) {
-                // Cargar ancho/metraje
-                $this->cargarAnchometrajePrenda($pedido->id, $prendaId, $prenda);
-
                 // Cargar consecutivos/recibos
                 $prenda['recibos'] = $this->obtenerConsecutivosPrenda($pedido->id, $prendaId);
                 $prenda['consecutivos'] = $prenda['recibos'];
+
+                $numeroReciboUnico = $this->extraerNumeroReciboUnico($prenda['recibos']);
+
+                // Cargar ancho/metraje solo si hay un recibo inequívoco
+                $this->cargarAnchometrajePrenda($pedido->id, $prendaId, $prenda, $numeroReciboUnico);
 
                 // Cargar estado de entrega para reflejar correctamente el boton Entregar/Deshacer.
                 $entrega = $this->readService->findPrendaEntrega((int) $prendaId);
@@ -315,16 +317,17 @@ class ObtenerDetalleCompletoUseCase
     /**
      * Carga ancho/metraje para una prenda específica
      */
-    private function cargarAnchometrajePrenda(int $pedidoId, int $prendaId, array &$prenda): void
+    private function cargarAnchometrajePrenda(int $pedidoId, int $prendaId, array &$prenda, ?int $numeroRecibo = null): void
     {
         try {
-            $ancho = $this->readService->getAnchoPrenda($pedidoId, $prendaId);
+            $ancho = $this->readService->getAnchoPrenda($pedidoId, $prendaId, $numeroRecibo);
 
             if ($ancho) {
-                $metrajes = $this->readService->getMetrajesPrenda($pedidoId, $prendaId);
+                $metrajes = $this->readService->getMetrajesPrenda($pedidoId, $prendaId, $numeroRecibo);
 
                 $prenda['ancho_metraje'] = [
                     'ancho' => $ancho->ancho,
+                    'numero_recibo' => $numeroRecibo,
                     'metrajes_por_color' => $metrajes->map(fn($m) => [
                         'color' => $m->color,
                         'metraje' => $m->metraje
@@ -348,6 +351,41 @@ class ObtenerDetalleCompletoUseCase
             ]);
             $prenda['ancho_metraje'] = null;
         }
+    }
+
+    /**
+     * Extrae un numero de recibo unico si la prenda tiene un solo recibo inequívoco.
+     */
+    private function extraerNumeroReciboUnico($recibos): ?int
+    {
+        if (!$recibos || !is_iterable($recibos)) {
+            return null;
+        }
+
+        $numeros = [];
+
+        foreach ($recibos as $clave => $recibo) {
+            if ($clave === 'parciales' && is_iterable($recibo)) {
+                foreach ($recibo as $parcial) {
+                    $numero = (int) data_get($parcial, 'consecutivo_actual', data_get($parcial, 'numero_recibo', 0));
+                    if ($numero > 0) {
+                        $numeros[$numero] = true;
+                    }
+                }
+                continue;
+            }
+
+            if (is_array($recibo)) {
+                $numero = (int) data_get($recibo, 'consecutivo_actual', data_get($recibo, 'numero_recibo', 0));
+                if ($numero > 0) {
+                    $numeros[$numero] = true;
+                }
+            }
+        }
+
+        $numeros = array_keys($numeros);
+
+        return count($numeros) === 1 ? (int) $numeros[0] : null;
     }
 
     /**

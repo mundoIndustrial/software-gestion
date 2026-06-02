@@ -75,20 +75,30 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
             ->get(['genero', 'talla', 'observaciones']);
     }
 
-    public function getAnchoPrenda(int $pedidoId, int $prendaId): ?object
+    public function getAnchoPrenda(int $pedidoId, int $prendaId, ?int $numeroRecibo = null): ?object
     {
+        if (($numeroRecibo ?? 0) <= 0) {
+            return null;
+        }
+
         return DB::table('pedido_ancho_general')
             ->where('pedido_produccion_id', $pedidoId)
             ->where('prenda_pedido_id', $prendaId)
+            ->where('numero_recibo', $numeroRecibo)
             ->latest('created_at')
             ->first();
     }
 
-    public function getMetrajesPrenda(int $pedidoId, int $prendaId): Collection
+    public function getMetrajesPrenda(int $pedidoId, int $prendaId, ?int $numeroRecibo = null): Collection
     {
+        if (($numeroRecibo ?? 0) <= 0) {
+            return collect();
+        }
+
         return DB::table('pedido_metraje_color')
             ->where('pedido_produccion_id', $pedidoId)
             ->where('prenda_pedido_id', $prendaId)
+            ->where('numero_recibo', $numeroRecibo)
             ->latest('created_at')
             ->get();
     }

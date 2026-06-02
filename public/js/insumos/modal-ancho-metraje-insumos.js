@@ -126,8 +126,12 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
             modal.tipoModoGuardado = tipoModoGuardado;
             
             // Verificar si hay datos reales guardados (ancho o metrajes)
-            const tieneDatosGuardados = (datosData.ancho !== null && datosData.ancho !== undefined) 
-                || (datosData.data && datosData.data.length > 0);
+            const tieneDatosGuardados = (
+                (datosData.ancho !== null && datosData.ancho !== undefined && String(datosData.ancho).trim() !== '') ||
+                (datosData.metraje !== null && datosData.metraje !== undefined && String(datosData.metraje).trim() !== '') ||
+                (datosData.data && datosData.data.length > 0) ||
+                (datosData.contenido_mano !== null && datosData.contenido_mano !== undefined && String(datosData.contenido_mano).trim() !== '')
+            );
             modal.tieneDatosGuardados = tieneDatosGuardados;
             actualizarIndicadorModo('normal', tipoModoGuardado, tieneDatosGuardados);
 
