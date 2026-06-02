@@ -1082,17 +1082,10 @@
             // CONDICIÓN ESPECIAL PARA VISUALIZADOR-LOGO: No mostrar recibo base
             const esVistaVisualizadorLogo = window.location.pathname.includes('/visualizador-logo/');
             
-            // CONDICIÓN ESPECIAL: No mostrar recibo de COSTURA-BODEGA en supervisor-pedidos y registros
-            const esSupervisorPedidos = window.location.pathname.includes('/supervisor-pedidos');
-            const esRegistros = window.location.pathname.includes('/registros');
-            const excluirCosturaBodega = (esSupervisorPedidos || esRegistros) && prenda.de_bodega == 1;
-            
-            if (!esVistaVisualizadorLogo && !excluirCosturaBodega) {
+            if (!esVistaVisualizadorLogo) {
                 //  RECIBO BASE - SOLO EN OTRAS VISTAS
                 const reciboCosturaActual = prenda?.recibos?.COSTURA || prenda?.consecutivos?.COSTURA || null;
-                const reciboCosturaBodegaActual = prenda?.recibos?.['COSTURA-BODEGA'] || prenda?.consecutivos?.['COSTURA-BODEGA'] || null;
-                const esPrendaBodega = prenda.de_bodega == 1;
-                const reciboBaseActual = esPrendaBodega ? reciboCosturaBodegaActual : reciboCosturaActual;
+                const reciboBaseActual = reciboCosturaActual;
                 
                 // Determinar el estado correcto usando el campo 'activo' de la BD
                 let estadoRecibo = 'PENDIENTE';
@@ -1123,18 +1116,20 @@
                     }
                 }
                 
-                const reciboBase = {
-                    tipo: prenda.de_bodega == 1 ? "costura-bodega" : "costura",
-                    nombre: prenda.de_bodega == 1 ? "Bodega" : "Costura",
-                    estado: estadoRecibo,
-                    es_base: true,
-                    numero_recibo: numeroRecibo,
-                    activo: activoValue, // Agregar campo activo para referencia
-                    consecutivo_recibo_id: reciboBaseActual?.id || null,
-                };
-                console.log('[DEBUG] reciboBase agregado:', reciboBase);
-                // Agregar recibo base (permite tanto costura como costura-bodega)
-                recibos.push(reciboBase);
+                const esPrendaBodega = prenda.de_bodega == 1;
+                if (!esPrendaBodega) {
+                    const reciboBase = {
+                        tipo: "costura",
+                        nombre: "Costura",
+                        estado: estadoRecibo,
+                        es_base: true,
+                        numero_recibo: numeroRecibo,
+                        activo: activoValue, // Agregar campo activo para referencia
+                        consecutivo_recibo_id: reciboBaseActual?.id || null,
+                    };
+                    console.log('[DEBUG] reciboBase agregado:', reciboBase);
+                    recibos.push(reciboBase);
+                }
             }
 
             //  PROCESOS ADICIONALES
@@ -1193,13 +1188,7 @@
                     ? 'COSTURA'
                     : String(parcial.tipo_recibo || '');
                 
-                // CONDICIÓN ESPECIAL: No mostrar recibo parcial de COSTURA en prendas de bodega en supervisor-pedidos y registros
-                const esSupervisorPedidos = window.location.pathname.includes('/supervisor-pedidos');
-                const esRegistros = window.location.pathname.includes('/registros');
                 const esCostura = String(tipoParcial || '').toUpperCase() === 'COSTURA';
-                if ((esSupervisorPedidos || esRegistros) && prenda.de_bodega == 1 && esCostura) {
-                    return; // Skip costura en prendas de bodega
-                }
                 
                 const tipoParcialKey = String(tipoParcial || '').toUpperCase();
                 contadorAnexosPorTipo[tipoParcialKey] = (contadorAnexosPorTipo[tipoParcialKey] || 0) + 1;
@@ -1223,7 +1212,7 @@
                 });
             });
 
-            // Mantener visible el recibo base (costura/costura-bodega) aunque existan anexos,
+            // Mantener visible el recibo base (costura) aunque existan anexos,
             // para que no desaparezca del acordeón después de aprobar y siga disponible en UI.
             const recibosFiltered = recibos;
 
@@ -1429,7 +1418,7 @@
                     });
                     
                     if (recibo.es_base) {
-                        // Recibo base (costura/costura-bodega)
+                        // Recibo base (costura)
                         if (recibo.activo !== undefined) {
                             // Nuevo formato: usar campo 'activo' explícito
                             estaActivo = recibo.activo === 1;
@@ -1485,7 +1474,7 @@
                     const tipoStringLower = String(tipoString || '').toLowerCase();
                     
                     // Para recibos base (costura), no usar el botón general de activación
-                    const esReciboBaseCostura = recibo.es_base && (tipoStringLower === 'costura' || tipoStringLower === 'costura-bodega');
+                    const esReciboBaseCostura = recibo.es_base && tipoStringLower === 'costura';
                     const puedeModificarRecibo = puedeActivar && puedeGestionarDevolucion && !esReciboBaseCostura;
                     
                     // Verificar si este proceso base tiene anexos/parciales creados
@@ -1507,8 +1496,8 @@
                     const esSupervisorRecibos = window.selectorRecibosState?.usuarioRoles?.includes('supervisor_pedidos') ||
                                                window.selectorRecibosState?.esSupervisorPedidos === 'true';
 
-                    // No permitir recibo por talla en Costura (ni costura-bodega) ni si el proceso ya está APROBADO
-                    const puedeCrearPorTalla = esSupervisorRecibos && (tipoStringLower !== 'costura' && tipoStringLower !== 'costura-bodega') && recibo.estado !== 'APROBADO';
+                    // No permitir recibo por talla en Costura ni si el proceso ya está APROBADO
+                    const puedeCrearPorTalla = esSupervisorRecibos && tipoStringLower !== 'costura' && recibo.estado !== 'APROBADO';
 
                     const pedidoEstado = window.selectorRecibosState?.pedidoEstado;
                     const pedidoYaAprobado = pedidoEstado && String(pedidoEstado).toUpperCase() !== 'PENDIENTE_SUPERVISOR';
@@ -2099,7 +2088,7 @@
 
         // Fallback mínimo: solo COSTURA de la prenda actual, por si aún no hay items renderizados.
         if (ids.size === 0 && prenda && prenda.recibos) {
-            const costura = prenda.recibos.COSTURA || prenda.recibos['COSTURA-BODEGA'] || null;
+            const costura = prenda.de_bodega == 1 ? null : (prenda.recibos.COSTURA || null);
             if (costura && typeof costura === 'object') {
                 const rid = Number(costura.id || costura.consecutivo_recibo_id || 0);
                 if (rid > 0) {
@@ -2164,9 +2153,9 @@
                 pedidoId
             });
             
-            // Determinar si es un recibo base (costura/costura-bodega) o un proceso
+            // Determinar si es un recibo base (costura) o un proceso
             const tipoProcesoLower = String(tipoProceso || '').toLowerCase();
-            const esReciboBase = tipoProcesoLower === 'costura' || tipoProcesoLower === 'costura-bodega';
+            const esReciboBase = tipoProcesoLower === 'costura';
             
             if (esReciboBase) {
                 // Para recibos base (costura), usar el endpoint específico
@@ -2309,9 +2298,9 @@
                 pedidoId
             });
             
-            // Determinar si es un recibo base (costura/costura-bodega) o un proceso
+            // Determinar si es un recibo base (costura) o un proceso
             const tipoProcesoLower = String(tipoProceso || '').toLowerCase();
-            const esReciboBase = tipoProcesoLower === 'costura' || tipoProcesoLower === 'costura-bodega';
+            const esReciboBase = tipoProcesoLower === 'costura';
             
             if (esReciboBase) {
                 // Para recibos base (costura), usar el endpoint específico de supervisor-pedidos

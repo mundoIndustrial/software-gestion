@@ -408,7 +408,6 @@ class ObtenerDetalleCompletoUseCase
                 'DTF' => null,
                 'SUBLIMADO' => null,
                 'REFLECTIVO' => null,
-                'COSTURA-BODEGA' => null
             ];
 
             // Procesar consecutivos
@@ -446,11 +445,11 @@ class ObtenerDetalleCompletoUseCase
                 $row = (array) $parcial;
                 $tipoRecibo = strtoupper((string) ($row['tipo_recibo'] ?? ''));
 
-                // Normalizar anexos de costura: aunque se persistan como COSTURA-BODEGA,
-                // en UI y flujo de recibos deben tratarse como COSTURA.
+                // Normalizar cualquier recibo base de bodega para que la UI lo trate como COSTURA.
                 if ($tipoRecibo === 'COSTURA-BODEGA') {
                     $row['tipo_recibo_original'] = 'COSTURA-BODEGA';
                     $row['tipo_recibo'] = 'COSTURA';
+                    $tipoRecibo = 'COSTURA';
                 }
 
                 return $row;
