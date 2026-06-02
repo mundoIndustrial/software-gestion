@@ -44,13 +44,21 @@
                 <span class="material-symbols-rounded">assignment</span>
                 <span class="nav-label">Órdenes</span>
             </button>
+            <a href="{{ route('gestion-lavanderia.index') }}"
+               class="sidebar-item {{ request()->routeIs('gestion-lavanderia.*') ? 'active' : '' }}"
+               aria-label="Ir a Lavandería">
+                <span class="material-symbols-rounded">local_laundry_service</span>
+                <span class="nav-label">Lavandería</span>
+            </a>
         </nav>
+        @if(!auth()->user()->hasRole('visualizador_talleres'))
         <div class="sidebar-footer">
             <a href="{{ route('dashboard') }}" class="btn-volver">
                 <span class="material-symbols-rounded">arrow_back</span>
                 <span class="nav-label">Volver</span>
             </a>
         </div>
+        @endif
     </aside>
 
     <!-- Main Content -->

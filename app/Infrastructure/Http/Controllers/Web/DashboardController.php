@@ -33,6 +33,11 @@ class DashboardController extends Controller
             return redirect()->route('registros.recibos-bordado-estampado');
         }
 
+        if ($user->hasRole('visualizador_talleres')) {
+            \Log::info(' Redirigiendo a talleres.index');
+            return redirect()->route('talleres.index');
+        }
+
         \Log::info(' Usuario autenticado', [
             'user_id' => $user->id,
             'user_name' => $user->name,

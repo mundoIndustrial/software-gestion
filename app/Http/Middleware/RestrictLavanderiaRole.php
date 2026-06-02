@@ -10,7 +10,7 @@ class RestrictLavanderiaRole
 {
     /**
      * Handle an incoming request.
-     * Redirige a usuarios con rol 'gestor-lavanderia' que intenten acceder a rutas no permitidas
+     * Redirige a usuarios con rol 'lavanderia'/'gestor-lavanderia' que intenten acceder a rutas no permitidas
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -20,9 +20,9 @@ class RestrictLavanderiaRole
             return $next($request);
         }
 
-        // Si el usuario tiene el rol 'gestor-lavanderia', solo permitir rutas de lavandería
-        if ($user->hasRole('gestor-lavanderia')) {
-            \Log::info('[RestrictLavanderiaRole] Usuario con rol gestor-lavanderia detectado', [
+        // Si el usuario tiene el rol 'lavanderia', solo permitir rutas de lavandería
+        if ($user->hasRole(['lavanderia', 'gestor-lavanderia'])) {
+            \Log::info('[RestrictLavanderiaRole] Usuario con rol lavanderia/gestor-lavanderia detectado', [
                 'user_id' => $user->id,
                 'requested_path' => $request->path(),
                 'is_gestion_lavanderia' => $request->is('gestion-lavanderia*'),

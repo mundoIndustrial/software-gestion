@@ -56,6 +56,11 @@ class AuthenticatedSessionController extends Controller
             return redirect(route('registros.recibos-bordado-estampado', absolute: false));
         }
 
+        if ($user && $user->hasRole('visualizador_talleres')) {
+            \Log::info('→ Redirigiendo a talleres.index');
+            return redirect(route('talleres.index', absolute: false));
+        }
+
         if ($user && ($user->hasRole('diseñador-logos') || $user->hasRole('bordador'))) {
             \Log::info('→ Redirigiendo a visualizador-logo.pedidos-logo');
             return redirect(route('visualizador-logo.pedidos-logo', absolute: false));
@@ -71,7 +76,7 @@ class AuthenticatedSessionController extends Controller
             \Log::info('→ Redirigiendo a epp.gestion');
             return redirect(route('epp.gestion', absolute: false));
         }
-        
+
         // Gestor Lavandería - Solo acceso a gestión de lavandería
         \Log::info('=== VERIFICANDO ROL GESTOR-LAVANDERIA ===', [
             'user_id' => $user->id,

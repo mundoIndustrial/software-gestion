@@ -410,6 +410,22 @@
       </ul>
     </div>
 
+    @elseif(auth()->user()->hasRole('visualizador_talleres'))
+    <!-- VISUALIZADOR TALLERES: menú especializado solo lectura para Talleres -->
+    <div class="menu-section">
+      <span class="menu-section-title">Gestión de Talleres</span>
+      <ul class="menu-list" role="navigation">
+      <li class="menu-item">
+        <a href="{{ route('talleres.index') }}"
+           class="menu-link {{ request()->routeIs('talleres.*') ? 'active' : '' }}"
+           aria-label="Ver talleres">
+          <span class="material-symbols-rounded" aria-hidden="true">workshop</span>
+          <span class="menu-label">Talleres</span>
+        </a>
+      </li>
+      </ul>
+    </div>
+
     @else
     <!-- OTROS ROLES: Menú completo -->
     
@@ -427,8 +443,8 @@
       </li>
       @if(auth()->check() && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('lider_produccion') || auth()->user()->hasRole('supervisor_produccion')))
       <li class="menu-item">
-        <a href="{{ route('seguimiento-lavanderia.index') }}"
-           class="menu-link {{ request()->routeIs('seguimiento-lavanderia.*') ? 'active' : '' }}"
+        <a href="{{ route('gestion-lavanderia.index') }}"
+           class="menu-link {{ request()->routeIs('gestion-lavanderia.*') ? 'active' : '' }}"
            aria-label="Lavandería">
           <span class="material-symbols-rounded" aria-hidden="true">local_laundry_service</span>
           <span class="menu-label">Lavandería</span>

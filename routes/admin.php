@@ -61,7 +61,7 @@ Route::middleware(['auth', 'role:admin,supervisor_gerencia'])->prefix('admin/con
 // ========================================
 // RUTAS PARA TALLERES (Admin)
 // ========================================
-Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion'])->prefix('talleres')->name('talleres.')->group(function () {
+Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion,visualizador_talleres'])->prefix('talleres')->name('talleres.')->group(function () {
     Route::get('/', [App\Http\Controllers\Admin\TalleresController::class, 'index'])->name('index');
     Route::get('/{id}/recibos', [App\Http\Controllers\Admin\TalleresController::class, 'showRecibos'])->name('show');
     Route::get('/{id}/prestamos', [App\Http\Controllers\Admin\TalleresController::class, 'showPrestamos'])->name('prestamos');
@@ -74,16 +74,12 @@ Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion'])
     Route::get('/api/ordenes/todas', [App\Http\Controllers\Admin\TalleresController::class, 'apiOrdenes'])->name('api.ordenes');
     Route::get('/api/recibos/completo', [App\Http\Controllers\Admin\TalleresController::class, 'apiReciboCompleto'])->name('api.recibo-completo');
     Route::get('/api/prestamos/{tipo}/{id}/detalle', [App\Http\Controllers\Admin\TalleresController::class, 'apiDetallePrestamo'])->name('api.prestamos.detalle');
-    
-    // Ruta para activar/desactivar taller
+});
+
+Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion'])->prefix('talleres')->name('talleres.')->group(function () {
+    // Rutas de escritura (sin acceso para visualizador_talleres)
     Route::patch('/{id}/toggle-status', [App\Http\Controllers\Admin\TalleresController::class, 'toggleStatus'])->name('toggle-status');
-    
-    // Ruta para actualizar precio de entrega
     Route::patch('/entrega/{id}/precio', [App\Http\Controllers\Admin\TalleresController::class, 'actualizarPrecio'])->name('actualizar-precio');
-
-    // Ruta para crear taller
     Route::post('/', [App\Http\Controllers\Admin\TalleresController::class, 'store'])->name('store');
-
-    // Ruta para actualizar taller (nombre)
     Route::patch('/{id}', [App\Http\Controllers\Admin\TalleresController::class, 'update'])->name('update');
 });

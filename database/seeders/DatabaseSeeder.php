@@ -36,6 +36,7 @@ class DatabaseSeeder extends Seeder
             BordadoRoleSeeder::class, // Seeder para rol de Bordado
             AddVisualizadorOrdenesProduccionRoleSeeder::class, // Seeder para rol visualizador de ordenes de produccion
             AddVisualizadorPedidosRoleSeeder::class, // Seeder para rol visualizador de pedidos
+            AddVisualizadorTalleresRoleSeeder::class, // Seeder para rol visualizador de talleres
         ]);
     }
 }
