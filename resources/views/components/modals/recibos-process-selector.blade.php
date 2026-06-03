@@ -1228,6 +1228,14 @@
             const prendaDevueltaDesdeDatos = (() => {
                 const estadoEsDevuelto = (valor) => String(valor || '').toUpperCase() === 'DEVUELTO_ASESOR';
                 const recibosObj = prenda?.recibos || {};
+                const esPrendaBodega = Number(prenda?.de_bodega || 0) === 1;
+
+                if (esPrendaBodega) {
+                    const reciboBodega = recibosObj['COSTURA-BODEGA'];
+                    if (reciboBodega && typeof reciboBodega === 'object' && estadoEsDevuelto(reciboBodega.estado)) {
+                        return true;
+                    }
+                }
 
                 // Recibos base u otros objetos dentro de prenda.recibos
                 for (const value of Object.values(recibosObj)) {
@@ -2062,6 +2070,40 @@
         }
     }
 
+    function resolverReciboPrincipalPrenda(prendaId, prenda = null) {
+        const prendaActual = prenda || obtenerPrendaSelector(prendaId);
+        if (!prendaActual || !prendaActual.recibos || typeof prendaActual.recibos !== 'object') {
+            return null;
+        }
+
+        if (Number(prendaActual.de_bodega || 0) === 1) {
+            const reciboBodega = prendaActual.recibos['COSTURA-BODEGA'] || null;
+            const reciboBodegaId = Number(
+                reciboBodega?.consecutivo_recibo_id ||
+                reciboBodega?.id ||
+                reciboBodega?.recibo_id ||
+                0
+            );
+
+            return reciboBodegaId > 0 ? reciboBodegaId : null;
+        }
+
+        const reciboCostura = prendaActual.recibos.COSTURA || null;
+        const reciboCosturaId = Number(
+            reciboCostura?.consecutivo_recibo_id ||
+            reciboCostura?.id ||
+            reciboCostura?.recibo_id ||
+            0
+        );
+
+        if (reciboCosturaId > 0) {
+            return reciboCosturaId;
+        }
+
+        const reciboIdsFallback = obtenerReciboIdsDePrenda(prendaId, prendaActual);
+        return reciboIdsFallback.length > 0 ? Number(reciboIdsFallback[0] || 0) || null : null;
+    }
+
     window.devolverPrendaAAsesora = async function(prendaId) {
         try {
             const prenda = obtenerPrendaSelector(prendaId);
@@ -2069,16 +2111,14 @@
                 throw new Error('No se encontró la prenda en el selector.');
             }
 
-            let reciboIds = [];
-            if (prenda.de_bodega == 1) {
+            let reciboId = resolverReciboPrincipalPrenda(prendaId, prenda);
+            if ((!reciboId || reciboId <= 0) && prenda.de_bodega == 1) {
                 const reciboBaseId = await resolverReciboBaseBodega(prenda);
-                reciboIds = reciboBaseId > 0 ? [reciboBaseId] : [];
-            } else {
-                reciboIds = obtenerReciboIdsDePrenda(prendaId, prenda);
+                reciboId = reciboBaseId > 0 ? reciboBaseId : null;
             }
 
-            if (reciboIds.length === 0) {
-                throw new Error('La prenda no tiene recibos asociados para devolver.');
+            if (!reciboId || reciboId <= 0) {
+                throw new Error('La prenda no tiene un recibo base asociado para devolver.');
             }
 
             if (typeof Swal !== 'undefined') {
@@ -2113,7 +2153,7 @@
             } else {
                 const result = await Swal.fire({
                     title: 'Devolver prenda completa',
-                    html: `<p style="margin:0 0 8px 0; color:#4b5563;">${prenda.nombre || `Prenda #${prendaId}`}</p><p style="margin:0; color:#6b7280; font-size:13px;">Se devolverán ${reciboIds.length} recibo(s)/proceso(s) asociados.</p>`,
+                    html: `<p style="margin:0 0 8px 0; color:#4b5563;">${prenda.nombre || `Prenda #${prendaId}`}</p><p style="margin:0; color:#6b7280; font-size:13px;">Se devolverá solo el recibo base de la prenda para revisión puntual.</p>`,
                     input: 'textarea',
                     inputLabel: 'Motivo de la revisión',
                     inputPlaceholder: 'Ej: Ajustar diseño, cantidades o especificaciones de la prenda...',
@@ -2141,39 +2181,16 @@
                 motivo = String(result.value || '').trim();
             }
 
-            let ok = 0;
-            const errores = [];
-            for (const reciboId of reciboIds) {
-                try {
-                    await ejecutarDevolucionAAsesora(reciboId, motivo, { silentSuccess: true });
-                    ok += 1;
-                } catch (error) {
-                    errores.push(`Recibo #${reciboId}: ${error?.message || 'Error desconocido'}`);
-                }
-            }
+            await ejecutarDevolucionAAsesora(reciboId, motivo, { silentSuccess: true });
+            marcarPrendaComoDevueltaEnSelector(prendaId, reciboId);
 
             if (typeof Swal !== 'undefined') {
-                if (errores.length > 0) {
-                    await Swal.fire({
-                        icon: 'warning',
-                        title: 'Devolución parcial',
-                        html: `<div style="text-align:left;"><p style="margin-bottom:8px;">Se devolvieron ${ok} de ${reciboIds.length} recibos.</p><p style="margin:0; font-size:12px; color:#6b7280;">${errores.slice(0, 4).join('<br>')}</p></div>`,
-                        confirmButtonColor: '#f59e0b',
-                    });
-                } else {
-                    await Swal.fire({
-                        icon: 'success',
-                        title: 'Prenda devuelta',
-                        text: 'La prenda completa fue devuelta a asesora para revisión.',
-                        confirmButtonColor: '#16a34a',
-                    });
-                }
-            } else if (errores.length > 0) {
-                alert(`Se devolvieron ${ok} de ${reciboIds.length} recibos.\n\n${errores.slice(0, 4).join('\n')}`);
-            }
-
-            if (prenda.de_bodega == 1) {
-                marcarPrendaComoDevueltaEnSelector(prendaId, reciboIds[0] || null);
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Prenda devuelta',
+                    text: 'La prenda fue enviada a revisión usando solo su recibo base.',
+                    confirmButtonColor: '#16a34a',
+                });
             }
 
             const pedidoId = Number(window.selectorRecibosState?.pedidoId || 0);

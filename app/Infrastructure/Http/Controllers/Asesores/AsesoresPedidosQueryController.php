@@ -125,7 +125,7 @@ final class AsesoresPedidosQueryController extends Controller
             // Contar recibos de costura devueltos
             $recibosDevueltos = \App\Models\ConsecutivoReciboPedido::query()
                 ->where('activo', 1)
-                ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['COSTURA'])
+                ->whereRaw('UPPER(TRIM(tipo_recibo)) IN (?, ?)', ['COSTURA', 'COSTURA-BODEGA'])
                 ->whereRaw("UPPER(REPLACE(TRIM(COALESCE(estado, '')), ' ', '_')) IN (?, ?)", [
                     'DEVUELTO_ASESOR',
                     'DEVUELTO_A_ASESOR',

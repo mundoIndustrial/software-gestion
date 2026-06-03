@@ -403,6 +403,7 @@ class ObtenerDetalleCompletoUseCase
 
             $recibos = [
                 'COSTURA' => null,
+                'COSTURA-BODEGA' => null,
                 'ESTAMPADO' => null,
                 'BORDADO' => null,
                 'DTF' => null,

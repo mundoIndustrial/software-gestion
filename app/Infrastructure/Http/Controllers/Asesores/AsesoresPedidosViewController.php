@@ -303,6 +303,7 @@ final class AsesoresPedidosViewController extends Controller
                     'pedido.prendas:id,pedido_produccion_id,nombre_prenda',
                     'prenda:id,pedido_produccion_id,nombre_prenda',
                     'prenda.fotos:id,prenda_pedido_id,ruta_original,ruta_webp',
+                    'prendaBodega:id,nombre,descripcion',
                 ])
                 ->where('activo', 1)
                 ->whereRaw(
@@ -354,9 +355,16 @@ final class AsesoresPedidosViewController extends Controller
                 $prendaFallback = $recibo->pedido?->prendas
                     ?->sortBy('id')
                     ->first();
+                $prendaBodega = $recibo->prendaBodega;
 
                 $prendaId = (int) ($recibo->prenda_id ?: ($prendaRelacion->id ?? 0) ?: ($prendaFallback->id ?? 0));
-                $nombrePrenda = (string) ($prendaRelacion->nombre_prenda ?? $prendaFallback->nombre_prenda ?? 'PRENDA');
+                $nombrePrenda = (string) (
+                    $prendaRelacion->nombre_prenda
+                    ?? $prendaFallback->nombre_prenda
+                    ?? $prendaBodega->nombre
+                    ?? $prendaBodega->descripcion
+                    ?? 'PRENDA'
+                );
 
                 return [
                     'id' => $recibo->id,

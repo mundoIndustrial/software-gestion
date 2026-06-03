@@ -339,7 +339,7 @@ class AppServiceProvider extends ServiceProvider
             if ($user && $user->hasRole('asesor')) {
                 $badgeCount = ConsecutivoReciboPedido::query()
                     ->where('activo', 1)
-                    ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['COSTURA'])
+                    ->whereRaw('UPPER(TRIM(tipo_recibo)) IN (?, ?)', ['COSTURA', 'COSTURA-BODEGA'])
                     ->whereRaw("UPPER(REPLACE(TRIM(COALESCE(estado, '')), ' ', '_')) IN (?, ?)", [
                         'DEVUELTO_ASESOR',
                         'DEVUELTO_A_ASESOR',
