@@ -815,6 +815,7 @@ export class PedidosRecibosModule {
             // Asegurar consecutivo del anexo como fuente de verdad para el renderer
             if (consecutivoAnexo) {
                 recibo.numero_recibo = consecutivoAnexo;
+                recibo.consecutivo_actual = consecutivoAnexo;
             }
 
             // Inyectar fecha_activacion del parcial (si existe)

@@ -187,22 +187,41 @@ class SupervisorReceiptsController extends Controller
         ]);
 
         $resultado = DB::transaction(function () use ($id, $validated) {
-            $recibo = \App\Models\ConsecutivosRecibosPedidos::query()
+            $recibo = DB::table('consecutivos_recibos_pedidos')
+                ->where('id', $id)
                 ->lockForUpdate()
-                ->findOrFail($id);
+                ->first();
 
-            $recibo->update([
-                'estado' => 'DEVUELTO_ASESOR',
-                'notas' => $validated['motivo'],
-            ]);
+            if (!$recibo) {
+                throw new \RuntimeException("No se encontró el recibo {$id} para actualizar.");
+            }
+
+            $updatedRows = DB::table('consecutivos_recibos_pedidos')
+                ->where('id', $id)
+                ->update([
+                    'estado' => 'DEVUELTO_ASESOR',
+                    'notas' => $validated['motivo'],
+                    'updated_at' => now(),
+                ]);
+
+            if ($updatedRows <= 0) {
+                throw new \RuntimeException("No se pudo actualizar el estado del recibo {$id}.");
+            }
+
+            $reciboActualizado = DB::table('consecutivos_recibos_pedidos')->where('id', $id)->first();
+            if (!$reciboActualizado || strtoupper(trim((string) ($reciboActualizado->estado ?? ''))) !== 'DEVUELTO_ASESOR') {
+                throw new \RuntimeException("La base de datos no reflejó el estado DEVUELTO_ASESOR para el recibo {$id}.");
+            }
+
+            $pedidoProduccionId = (int) ($reciboActualizado->pedido_produccion_id ?? 0);
 
             \Log::info('[SupervisorPedidos][pasarReciboARevision] Recibo pasado a revisión', [
-                'recibo_id' => (int) $recibo->id,
-                'pedido_produccion_id' => (int) $recibo->pedido_produccion_id,
-                'nuevo_estado_recibo' => $recibo->estado,
+                'recibo_id' => (int) $reciboActualizado->id,
+                'pedido_produccion_id' => $pedidoProduccionId,
+                'nuevo_estado_recibo' => $reciboActualizado->estado,
             ]);
 
-            return $recibo->fresh();
+            return $reciboActualizado;
         });
 
         return response()->json([

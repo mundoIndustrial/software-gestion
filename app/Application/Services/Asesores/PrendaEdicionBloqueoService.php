@@ -52,6 +52,15 @@ final class PrendaEdicionBloqueoService
         'DEVUELTO_ASESORA',
         'DEVUELTO_ASESOR',
     ];
+    private const TIPOS_CONSECUTIVO_RELEVANTES = [
+        'COSTURA',
+        'COSTURA-BODEGA',
+        'BORDADO',
+        'ESTAMPADO',
+        'DTF',
+        'SUBLIMADO',
+        'REFLECTIVO',
+    ];
     private const ESTADO_PEDIDO_PENDIENTE_INSUMOS = 'PENDIENTE_INSUMOS';
 
     public function evaluar(int $pedidoId, int $prendaId): array
@@ -509,7 +518,7 @@ final class PrendaEdicionBloqueoService
         $consecutivos = DB::table('consecutivos_recibos_pedidos')
             ->where('pedido_produccion_id', $pedidoId)
             ->where('prenda_id', $prendaId)
-            ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
+            ->whereIn(DB::raw('UPPER(TRIM(tipo_recibo))'), self::TIPOS_CONSECUTIVO_RELEVANTES)
             ->whereNotNull('consecutivo_actual')
             ->get(['estado']);
 
@@ -531,7 +540,7 @@ final class PrendaEdicionBloqueoService
     {
         $consecutivos = DB::table('consecutivos_recibos_pedidos')
             ->where('pedido_produccion_id', $pedidoId)
-            ->whereIn('tipo_recibo', ['COSTURA', 'COSTURA-BODEGA'])
+            ->whereIn(DB::raw('UPPER(TRIM(tipo_recibo))'), self::TIPOS_CONSECUTIVO_RELEVANTES)
             ->whereNotNull('consecutivo_actual')
             ->get(['estado']);
 

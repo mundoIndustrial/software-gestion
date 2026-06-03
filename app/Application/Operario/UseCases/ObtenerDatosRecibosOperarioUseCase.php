@@ -49,16 +49,16 @@ class ObtenerDatosRecibosOperarioUseCase
         }
 
         // Fallback bodega: si llega parcial_id sin recibo_id, resolver recibo base.
-        if (!$reciboBodega && $reciboId <= 0 && $parcialId && in_array($tipoReciboUpper, ['CORTE-PARA-BODEGA', 'BODEGA'], true)) {
+        if (!$reciboBodega && $reciboId <= 0 && $parcialId && in_array($tipoReciboUpper, ['COSTURA-BODEGA', 'CORTE-PARA-BODEGA', 'BODEGA'], true)) {
             $parcialBodega = DB::table('recibo_por_partes')
                 ->where('id', (int) $parcialId)
                 ->first(['pedido_produccion_id', 'prenda_pedido_id', 'consecutivo_original', 'tipo_recibo']);
 
             if ($parcialBodega) {
                 $tipoParcialUpper = strtoupper(trim((string) ($parcialBodega->tipo_recibo ?? '')));
-                if (in_array($tipoParcialUpper, ['CORTE-PARA-BODEGA', 'BODEGA'], true)) {
+                if (in_array($tipoParcialUpper, ['COSTURA-BODEGA', 'CORTE-PARA-BODEGA', 'BODEGA'], true)) {
                     $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega.fotos'])
-                        ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
+                        ->whereRaw('UPPER(TRIM(tipo_recibo)) IN (?, ?)', ['COSTURA-BODEGA', 'CORTE-PARA-BODEGA'])
                         ->where('consecutivo_actual', (int) ($parcialBodega->consecutivo_original ?? 0))
                         ->where('prenda_bodega_id', (int) ($parcialBodega->prenda_pedido_id ?? 0))
                         ->where('activo', 1)
@@ -72,9 +72,9 @@ class ObtenerDatosRecibosOperarioUseCase
             }
         }
 
-        $isBodegaByTipo = in_array($tipoReciboUpper, ['CORTE-PARA-BODEGA', 'BODEGA'], true);
+        $isBodegaByTipo = in_array($tipoReciboUpper, ['COSTURA-BODEGA', 'CORTE-PARA-BODEGA', 'BODEGA'], true);
         $isBodegaOnly = (bool) (
-            ($reciboBodega && strtoupper(trim((string) $reciboBodega->tipo_recibo)) === 'CORTE-PARA-BODEGA')
+            ($reciboBodega && in_array(strtoupper(trim((string) $reciboBodega->tipo_recibo)), ['COSTURA-BODEGA', 'CORTE-PARA-BODEGA'], true))
             || ($numeroPedido === 0 && $reciboId > 0)
             || ($isBodegaByTipo && $reciboId > 0)
         );
@@ -96,7 +96,7 @@ class ObtenerDatosRecibosOperarioUseCase
             ];
         }
 
-        if ($isBodegaOnly && $reciboBodega && strtoupper(trim((string) $reciboBodega->tipo_recibo)) === 'CORTE-PARA-BODEGA') {
+        if ($isBodegaOnly && $reciboBodega && in_array(strtoupper(trim((string) $reciboBodega->tipo_recibo)), ['COSTURA-BODEGA', 'CORTE-PARA-BODEGA'], true)) {
             $pedido = (object) [
                 'id' => null,
                 'numero_pedido' => 'BODEGA',
@@ -333,7 +333,7 @@ class ObtenerDatosRecibosOperarioUseCase
 
             $esParcialBodega = $isBodegaOnly
                 && $reciboBodega
-                && strtoupper(trim((string) ($reciboBodega->tipo_recibo ?? ''))) === 'CORTE-PARA-BODEGA';
+                && in_array(strtoupper(trim((string) ($reciboBodega->tipo_recibo ?? ''))), ['COSTURA-BODEGA', 'CORTE-PARA-BODEGA'], true);
 
             if ($esParcialBodega) {
                 $prendaBodegaId = (int) ($reciboBodega->prenda_bodega_id ?? 0);
@@ -477,6 +477,7 @@ class ObtenerDatosRecibosOperarioUseCase
                                 ]
                             ],
                             'recibos' => [
+                                'COSTURA-BODEGA' => array_merge($reciboParcialData, ['tipo_recibo' => 'COSTURA-BODEGA']),
                                 'CORTE-PARA-BODEGA' => array_merge($reciboParcialData, ['tipo_recibo' => 'CORTE-PARA-BODEGA']),
                                 'PARCIAL' => $reciboParcialData,
                             ],
@@ -1227,20 +1228,37 @@ class ObtenerDatosRecibosOperarioUseCase
                         'tallas' => $tallasBodega,
                         'talla_colores' => $tallaColoresBodega,
                         'imagenes' => $imagenes,
-                        'recibos' => [
-                            $reciboBodega->tipo_recibo => [
-                                'id' => $reciboBodega->id,
-                                'consecutivo_actual' => $reciboBodega->consecutivo_actual,
-                                'tipo_recibo' => $reciboBodega->tipo_recibo,
-                                'cantidad' => $reciboBodega->cantidad ?? 0,
-                                'estado' => $reciboBodega->estado ?? 'PENDIENTE'
-                            ]
-                        ],
+                        'recibos' => (function () use ($reciboBodega) {
+                            $recibos = [
+                                'COSTURA-BODEGA' => [
+                                    'id' => $reciboBodega->id,
+                                    'consecutivo_actual' => $reciboBodega->consecutivo_actual,
+                                    'consecutivo_recibo_id' => $reciboBodega->id,
+                                    'tipo_recibo' => 'COSTURA-BODEGA',
+                                    'cantidad' => $reciboBodega->cantidad ?? 0,
+                                    'estado' => $reciboBodega->estado ?? 'PENDIENTE',
+                                ],
+                            ];
+
+                            if (strtoupper(trim((string) ($reciboBodega->tipo_recibo ?? ''))) !== 'COSTURA-BODEGA') {
+                                $recibos[$reciboBodega->tipo_recibo] = [
+                                    'id' => $reciboBodega->id,
+                                    'consecutivo_actual' => $reciboBodega->consecutivo_actual,
+                                    'consecutivo_recibo_id' => $reciboBodega->id,
+                                    'tipo_recibo' => $reciboBodega->tipo_recibo,
+                                    'cantidad' => $reciboBodega->cantidad ?? 0,
+                                    'estado' => $reciboBodega->estado ?? 'PENDIENTE',
+                                ];
+                            }
+
+                            return $recibos;
+                        })(),
                         'procesos' => [
                             [
                                 'proceso' => $reciboBodega->tipo_recibo,
                                 'tipo_proceso' => $reciboBodega->tipo_recibo,
                                 'nombre_proceso' => $reciboBodega->tipo_recibo,
+                                'consecutivo_recibo_id' => $reciboBodega->id,
                                 'estado' => $reciboBodega->estado ?? 'PENDIENTE',
                                 'cantidad' => $reciboBodega->cantidad ?? 0,
                                 'tallas' => [
@@ -1253,6 +1271,7 @@ class ObtenerDatosRecibosOperarioUseCase
                                     $reciboBodega->tipo_recibo => [
                                         'id' => $reciboBodega->id,
                                         'consecutivo_actual' => $reciboBodega->consecutivo_actual,
+                                        'consecutivo_recibo_id' => $reciboBodega->id,
                                         'tipo_recibo' => $reciboBodega->tipo_recibo,
                                         'cantidad' => $reciboBodega->cantidad ?? 0,
                                         'estado' => $reciboBodega->estado ?? 'PENDIENTE'

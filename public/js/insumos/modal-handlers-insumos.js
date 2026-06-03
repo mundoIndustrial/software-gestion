@@ -159,7 +159,15 @@ function cerrarModalInsumos() {
     }
 }
 
-function abrirDetalleRecibo(pedidoId, prendaId, tipoRecibo, esParcial = false, pedidoParcialId = null) {
+function abrirDetalleRecibo(
+    pedidoId,
+    prendaId,
+    tipoRecibo,
+    esParcial = false,
+    pedidoParcialId = null,
+    numeroRecibo = null,
+    reciboId = null
+) {
     const tipoReciboNormalizado = String(tipoRecibo || '').trim().toUpperCase();
     const parsedPedidoId = parseInt(pedidoId, 10) || null;
     const parsedPrendaId = (prendaId === 'null' || prendaId === '' || !prendaId)
@@ -205,7 +213,11 @@ function abrirDetalleRecibo(pedidoId, prendaId, tipoRecibo, esParcial = false, p
                 );
             }
 
-            return handler(parsedPedidoId, parsedPrendaId, tipoRecibo, null, { esParcial: false });
+            return handler(parsedPedidoId, parsedPrendaId, tipoRecibo, null, {
+                esParcial: false,
+                targetConsecutivo: numeroRecibo ? String(numeroRecibo).trim() : null,
+                targetReciboId: reciboId ? String(reciboId).trim() : null,
+            });
         })
         .then(() => {
             ensureDynamicCloseButton();

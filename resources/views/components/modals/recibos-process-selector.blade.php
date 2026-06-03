@@ -1159,11 +1159,11 @@
                 const estadoProceso = String(proc.estado || '').toUpperCase();
                 console.log('[DEBUG PROCESO ADICIONAL] proc:', proc, 'estadoProceso:', estadoProceso);
 
-                recibos.push({
-                    tipo: tipoProceso,
-                    nombre: proc.nombre_proceso || tipoProceso,  // Usar nombre_proceso para anexos (ej: "BORDADO ANEXO 1")
-                    estado: estadoProceso,
-                    es_base: false,
+                    recibos.push({
+                        tipo: tipoProceso,
+                        nombre: proc.nombre_proceso || tipoProceso,  // Usar nombre_proceso para anexos (ej: "BORDADO ANEXO 1")
+                        estado: estadoProceso,
+                        es_base: false,
                     // Copiar propiedades de anexos si existen
                     es_parcial: proc.es_parcial || false,
                     pedido_parcial_id: proc.pedido_parcial_id || null,
@@ -1528,13 +1528,13 @@
                     html += `
                         <div class="proceso-item ${reciboClass}"
                              data-prenda-id="${prenda.id}"
-                             data-tipo-string="${tipoString}"
-                             data-es-parcial="${esParcial}"
-                             data-pedido-parcial-id="${parcialId || ''}"
-                             data-numero-recibo="${recibo.numero_recibo || ''}"
-                             data-recibo-id="${recibo.consecutivo_recibo_id || ''}"
-                             data-nombre-proceso="${(recibo.nombre || '').replace(/"/g, '&quot;')}"
-                             onclick="seleccionarProcesoConDataAttributes(this)">
+                        data-tipo-string="${tipoString}"
+                        data-es-parcial="${esParcial}"
+                        data-pedido-parcial-id="${parcialId || ''}"
+                        data-numero-recibo="${recibo.numero_recibo || ''}"
+                        data-recibo-id="${recibo.consecutivo_recibo_id || recibo.id || recibo.recibo_id || ''}"
+                        data-nombre-proceso="${(recibo.nombre || '').replace(/"/g, '&quot;')}"
+                        onclick="seleccionarProcesoConDataAttributes(this)">
                             <div class="proceso-info">
                                 <p class="proceso-name">${recibo.nombre}</p>
                                 ${recibo.estado ? `<span class="proceso-estado ${estadoClass}">${estadoContent}</span>` : ''}
@@ -1944,6 +1944,124 @@
         }
     };
 
+    async function resolverReciboBaseBodega(prenda) {
+        const recibosObj = prenda?.recibos || {};
+        const candidatos = [];
+        const tiposBase = new Set(['COSTURA-BODEGA']);
+
+        for (const [clave, recibo] of Object.entries(recibosObj)) {
+            if (!recibo || Array.isArray(recibo) || typeof recibo !== 'object') {
+                continue;
+            }
+
+            const tipoNormalizado = String(recibo.tipo_recibo || recibo.tipo || clave || '').trim().toUpperCase();
+            if (!tiposBase.has(tipoNormalizado)) {
+                continue;
+            }
+
+            const reciboId = Number(recibo.consecutivo_recibo_id || recibo.id || recibo.recibo_id || 0);
+            if (reciboId > 0) {
+                candidatos.push(reciboId);
+            }
+        }
+
+        const procesos = Array.isArray(prenda?.procesos) ? prenda.procesos : [];
+        for (const proceso of procesos) {
+            if (!proceso || typeof proceso !== 'object') {
+                continue;
+            }
+
+            const tipoNormalizado = String(proceso.tipo_proceso || proceso.tipo_recibo || proceso.nombre_proceso || '').trim().toUpperCase();
+            if (!tiposBase.has(tipoNormalizado)) {
+                continue;
+            }
+
+            const reciboId = Number(proceso.consecutivo_recibo_id || proceso.id || proceso.recibo_id || 0);
+            if (reciboId > 0) {
+                candidatos.push(reciboId);
+            }
+        }
+
+        const unico = Array.from(new Set(candidatos));
+        if (unico.length > 0) {
+            return unico[0];
+        }
+
+        const pedidoProduccionId = Number(window.selectorRecibosState?.pedidoId || 0);
+        const prendaId = Number(prenda?.id || prenda?.prenda_id || 0);
+        if (pedidoProduccionId <= 0 || prendaId <= 0) {
+            throw new Error('No se pudo resolver la prenda de bodega para crear el costura-bodega.');
+        }
+
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const response = await fetch('/api/recibo-corte-bodega/resolver-base', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrf,
+            },
+            body: JSON.stringify({
+                pedido_produccion_id: pedidoProduccionId,
+                prenda_id: prendaId,
+                tipo_recibo: 'COSTURA-BODEGA',
+            }),
+        });
+
+        let result = {};
+        try {
+            result = await response.json();
+        } catch (e) {}
+
+        if (!response.ok || !result?.success) {
+            throw new Error(result?.message || `No se pudo crear/resolver el costura-bodega (HTTP ${response.status}).`);
+        }
+
+        const reciboId = Number(result?.data?.recibo_id || 0);
+        if (reciboId <= 0) {
+            throw new Error('No se pudo obtener el recibo costura-bodega.');
+        }
+
+        return reciboId;
+    }
+
+    function marcarPrendaComoDevueltaEnSelector(prendaId, reciboId = null) {
+        const prenda = obtenerPrendaSelector(prendaId);
+        if (!prenda) {
+            return;
+        }
+
+        if (!prenda.recibos || typeof prenda.recibos !== 'object') {
+            prenda.recibos = {};
+        }
+
+        const clavesBase = ['COSTURA-BODEGA', 'COSTURA'];
+        let actualizo = false;
+
+        for (const clave of clavesBase) {
+            if (prenda.recibos[clave] && typeof prenda.recibos[clave] === 'object') {
+                prenda.recibos[clave] = {
+                    ...prenda.recibos[clave],
+                    id: reciboId || prenda.recibos[clave].id || null,
+                    consecutivo_recibo_id: reciboId || prenda.recibos[clave].consecutivo_recibo_id || null,
+                    estado: 'DEVUELTO_ASESOR',
+                    activo: prenda.recibos[clave].activo ?? 0,
+                };
+                actualizo = true;
+            }
+        }
+
+        if (!actualizo) {
+            prenda.recibos['COSTURA-BODEGA'] = {
+                id: reciboId || null,
+                consecutivo_recibo_id: reciboId || null,
+                estado: 'DEVUELTO_ASESOR',
+                activo: 0,
+                tipo_recibo: 'COSTURA-BODEGA',
+            };
+        }
+    }
+
     window.devolverPrendaAAsesora = async function(prendaId) {
         try {
             const prenda = obtenerPrendaSelector(prendaId);
@@ -1951,7 +2069,14 @@
                 throw new Error('No se encontró la prenda en el selector.');
             }
 
-            const reciboIds = obtenerReciboIdsDePrenda(prendaId, prenda);
+            let reciboIds = [];
+            if (prenda.de_bodega == 1) {
+                const reciboBaseId = await resolverReciboBaseBodega(prenda);
+                reciboIds = reciboBaseId > 0 ? [reciboBaseId] : [];
+            } else {
+                reciboIds = obtenerReciboIdsDePrenda(prendaId, prenda);
+            }
+
             if (reciboIds.length === 0) {
                 throw new Error('La prenda no tiene recibos asociados para devolver.');
             }
@@ -2047,6 +2172,10 @@
                 alert(`Se devolvieron ${ok} de ${reciboIds.length} recibos.\n\n${errores.slice(0, 4).join('\n')}`);
             }
 
+            if (prenda.de_bodega == 1) {
+                marcarPrendaComoDevueltaEnSelector(prendaId, reciboIds[0] || null);
+            }
+
             const pedidoId = Number(window.selectorRecibosState?.pedidoId || 0);
             if (pedidoId > 0) {
                 await cargarDatosRecibos(pedidoId);
@@ -2086,15 +2215,22 @@
             });
         }
 
-        // Fallback mínimo: solo COSTURA de la prenda actual, por si aún no hay items renderizados.
+        // Fallback mínimo: usar el recibo visible de la prenda actual si aún no hay items renderizados.
         if (ids.size === 0 && prenda && prenda.recibos) {
-            const costura = prenda.de_bodega == 1 ? null : (prenda.recibos.COSTURA || null);
-            if (costura && typeof costura === 'object') {
-                const rid = Number(costura.id || costura.consecutivo_recibo_id || 0);
+            const recibosObj = prenda.recibos;
+            const candidatos = prenda.de_bodega == 1
+                ? Object.values(recibosObj)
+                : [recibosObj.COSTURA || null];
+
+            candidatos.forEach((recibo) => {
+                if (!recibo || typeof recibo !== 'object') {
+                    return;
+                }
+                const rid = Number(recibo.consecutivo_recibo_id || recibo.id || recibo.recibo_id || 0);
                 if (rid > 0) {
                     ids.add(rid);
                 }
-            }
+            });
         }
 
         return Array.from(ids);

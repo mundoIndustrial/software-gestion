@@ -262,10 +262,12 @@
                                         onclick="editarPrendaDesdeRevision({{ $item['pedido_produccion_id'] }}, {{ $item['prenda_id'] }}, @js($item['nombre_prenda']))">
                                     Editar
                                 </button>
-                                <button type="button" class="btn-revisar-approve"
-                                        onclick="aprobarReciboParaInsumos({{ $item['id'] }})">
-                                    Aprobar
-                                </button>
+                                @if(in_array(strtoupper($item['tipo_recibo_normalizado'] ?? $item['tipo_recibo'] ?? ''), ['COSTURA', 'COSTURA-BODEGA'], true))
+                                    <button type="button" class="btn-revisar-approve"
+                                            onclick="aprobarReciboParaInsumos({{ $item['id'] }})">
+                                        Aprobar
+                                    </button>
+                                @endif
                             </div>
                         </td>
                         <td>#{{ $item['numero_pedido'] }}</td>
@@ -353,8 +355,8 @@
         const registro = window.revisionPrendasMap[String(reciboId)];
         if (!registro) return;
 
-        // Abrir el recibo COSTURA en el modal estándar (igual que Insumos)
-        _abrirDetalleRecibo(registro.pedido_produccion_id, registro.prenda_id, 'COSTURA');
+        // Abrir el recibo real devuelto, no asumir COSTURA
+        _abrirDetalleRecibo(registro.pedido_produccion_id, registro.prenda_id, registro.tipo_recibo || 'COSTURA');
     }
 
     function cerrarModalVerRecibo(event) {

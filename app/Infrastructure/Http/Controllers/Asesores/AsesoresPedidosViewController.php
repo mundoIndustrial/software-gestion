@@ -292,7 +292,6 @@ final class AsesoresPedidosViewController extends Controller
                     'prenda.fotos:id,prenda_pedido_id,ruta_original,ruta_webp',
                 ])
                 ->where('activo', 1)
-                ->whereRaw("UPPER(TRIM(COALESCE(tipo_recibo, ''))) IN (?, ?)", ['COSTURA', 'COSTURA-BODEGA'])
                 ->whereRaw(
                     "UPPER(REPLACE(TRIM(COALESCE(estado, '')), ' ', '_')) IN (?, ?)",
                     ['DEVUELTO_ASESOR', 'DEVUELTO_A_ASESOR']
@@ -353,6 +352,7 @@ final class AsesoresPedidosViewController extends Controller
                     'numero_pedido' => (string) ($recibo->pedido?->numero_pedido ?? ''),
                     'nombre_prenda' => $nombrePrenda,
                     'tipo_recibo' => (string) $recibo->tipo_recibo,
+                    'tipo_recibo_normalizado' => strtoupper(trim((string) $recibo->tipo_recibo)),
                     'consecutivo_actual' => (int) ($recibo->consecutivo_actual ?? 0),
                     'estado' => $this->formatEstadoRecibo($recibo->estado),
                     'area' => (string) ($recibo->area ?? ''),

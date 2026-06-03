@@ -472,6 +472,157 @@ class ReciboCorteBodegaController extends Controller
         }
     }
 
+    public function resolverBase(Request $request)
+    {
+        $validated = validator($request->all(), [
+            'pedido_produccion_id' => 'required|integer|min:1',
+            'prenda_id' => 'required|integer|min:1',
+            'tipo_recibo' => 'nullable|string|max:50',
+        ])->validate();
+
+        try {
+            $resultado = DB::transaction(function () use ($validated) {
+                $pedidoProduccionId = (int) $validated['pedido_produccion_id'];
+                $prendaId = (int) $validated['prenda_id'];
+                $tipoRecibo = strtoupper(trim((string) ($validated['tipo_recibo'] ?? 'COSTURA-BODEGA')));
+                $tipoRecibo = $tipoRecibo !== '' ? $tipoRecibo : 'COSTURA-BODEGA';
+                if ($tipoRecibo === 'CORTE-PARA-BODEGA') {
+                    $tipoRecibo = 'COSTURA-BODEGA';
+                }
+
+                $reciboExistente = DB::table('consecutivos_recibos_pedidos')
+                    ->where('pedido_produccion_id', $pedidoProduccionId)
+                    ->where('prenda_id', $prendaId)
+                    ->whereIn(DB::raw('UPPER(TRIM(tipo_recibo))'), ['COSTURA-BODEGA', 'CORTE-PARA-BODEGA'])
+                    ->orderByDesc('id')
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($reciboExistente) {
+                    $camposActualizar = [];
+                    if (empty($reciboExistente->pedido_produccion_id)) {
+                        $camposActualizar['pedido_produccion_id'] = $pedidoProduccionId;
+                    }
+                    if (empty($reciboExistente->prenda_id)) {
+                        $camposActualizar['prenda_id'] = $prendaId;
+                    }
+                    if (strtoupper(trim((string) ($reciboExistente->tipo_recibo ?? ''))) !== 'COSTURA-BODEGA') {
+                        $camposActualizar['tipo_recibo'] = 'COSTURA-BODEGA';
+                    }
+                    if (strtoupper(trim((string) ($reciboExistente->area ?? ''))) !== 'INSUMOS') {
+                        $camposActualizar['area'] = 'Insumos';
+                    }
+                    if (!empty($camposActualizar)) {
+                        $camposActualizar['updated_at'] = now();
+                        DB::table('consecutivos_recibos_pedidos')
+                            ->where('id', $reciboExistente->id)
+                            ->update($camposActualizar);
+                        $reciboExistente = DB::table('consecutivos_recibos_pedidos')->find($reciboExistente->id);
+                    }
+
+                    return [
+                        'recibo_id' => (int) $reciboExistente->id,
+                        'numero_recibo' => isset($reciboExistente->consecutivo_actual) ? (int) $reciboExistente->consecutivo_actual : null,
+                        'pedido_produccion_id' => $pedidoProduccionId,
+                        'prenda_id' => $prendaId,
+                        'tipo_recibo' => 'COSTURA-BODEGA',
+                        'estado' => (string) ($reciboExistente->estado ?? ''),
+                    ];
+                }
+
+                $registroMaestro = DB::table('consecutivos_recibos')
+                    ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$registroMaestro) {
+                    DB::table('consecutivos_recibos')->insert([
+                        'tipo_recibo' => 'CORTE-PARA-BODEGA',
+                        'consecutivo_actual' => 0,
+                        'consecutivo_inicial' => 1,
+                        'año' => (int) date('Y'),
+                        'activo' => 1,
+                        'notas' => 'Consecutivo para RECIBO DE CORTE PARA BODEGA',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    $registroMaestro = DB::table('consecutivos_recibos')
+                        ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['CORTE-PARA-BODEGA'])
+                        ->lockForUpdate()
+                        ->first();
+                }
+
+                $consecutivoActual = (int) ($registroMaestro->consecutivo_actual ?? 0);
+                $consecutivoInicial = (int) ($registroMaestro->consecutivo_inicial ?? 1);
+                $siguienteConsecutivo = max($consecutivoActual + 1, $consecutivoInicial);
+                $ahora = now();
+
+                DB::table('consecutivos_recibos_pedidos')->insert([
+                    'pedido_produccion_id' => $pedidoProduccionId,
+                    'prenda_id' => $prendaId,
+                    'prenda_bodega_id' => null,
+                    'tipo_recibo' => 'COSTURA-BODEGA',
+                    'consecutivo_actual' => $siguienteConsecutivo,
+                    'consecutivo_inicial' => $siguienteConsecutivo,
+                    'activo' => 1,
+                    'marcar_plooter' => 0,
+                    'estado' => 'PENDIENTE_INSUMOS',
+                    'area' => 'Insumos',
+                    'notas' => null,
+                    'created_at' => $ahora,
+                    'updated_at' => $ahora,
+                    'ultima_actividad' => $ahora,
+                ]);
+
+                DB::table('consecutivos_recibos')
+                    ->where('id', $registroMaestro->id)
+                    ->update([
+                        'consecutivo_actual' => $siguienteConsecutivo,
+                        'updated_at' => $ahora,
+                    ]);
+
+                $reciboCreado = DB::table('consecutivos_recibos_pedidos')
+                    ->where('prenda_id', $prendaId)
+                    ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', ['COSTURA-BODEGA'])
+                    ->orderByDesc('id')
+                    ->first();
+
+                return [
+                    'recibo_id' => (int) $reciboCreado->id,
+                    'numero_recibo' => isset($reciboCreado->consecutivo_actual) ? (int) $reciboCreado->consecutivo_actual : null,
+                    'prenda_bodega_id' => null,
+                    'pedido_produccion_id' => $pedidoProduccionId,
+                    'prenda_id' => $prendaId,
+                    'tipo_recibo' => 'COSTURA-BODEGA',
+                    'estado' => 'PENDIENTE_INSUMOS',
+                ];
+            });
+
+            if (isset($resultado['error']) && $resultado['error']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $resultado['message'] ?? 'No se pudo resolver el recibo base de bodega.',
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Recibo base de bodega resuelto correctamente',
+                'data' => $resultado,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('[ReciboCorteBodegaController@resolverBase] Error al resolver recibo base de bodega', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al resolver el recibo base de bodega: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function show($id)
     {
         $prenda = PrendaBodega::with(['tallas', 'fotos'])->find($id);

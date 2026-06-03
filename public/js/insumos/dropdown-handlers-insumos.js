@@ -103,6 +103,7 @@ function crearDropdownVerRecibo(event, button) {
             data-prenda-id="${prendaTarget ?? 'null'}"
             data-prenda-bodega-id="${prendaBodegaId ?? ''}"
             data-recibo-id="${reciboId}"
+            data-numero-recibo="${numeroRecibo}"
             data-tipo-recibo="${tipoRecibo}"
             data-es-parcial="${esParcial ? '1' : '0'}"
             data-pedido-parcial-id="${pedidoParcialId}"

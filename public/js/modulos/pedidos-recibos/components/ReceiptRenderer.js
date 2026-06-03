@@ -528,9 +528,13 @@ export class ReceiptRenderer {
         
         // Cargar metrajes por color desde la API
         if (prendaData.prenda_pedido_id && datosPedido) {
-            // El numero_recibo es el consecutivo_actual del recibo
+            // Para recibos parciales el consecutivo puede venir en distintas llaves
             // Si no viene, no mostrar datos (por seguridad)
-            const numeroRecibo = recibo?.consecutivo_actual || null;
+            const numeroRecibo =
+                recibo?.consecutivo_actual ||
+                recibo?.numero_recibo ||
+                recibo?.numeroRecibo ||
+                null;
             this._cargarYAgregarMetrajesPorColor(prendaData, datosPedido, numeroRecibo);
         }
     }
