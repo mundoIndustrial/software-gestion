@@ -54,6 +54,7 @@ function initNestedMenuToggle() {
 function initMenuGroupToggle(toggleId, submenuId, storageKey, expandedByDefault = false) {
     const groupToggle = document.getElementById(toggleId);
     const submenu = document.getElementById(submenuId);
+    const debugPrefix = '[TalleresSidebar]';
     
     if (!groupToggle || !submenu) return;
 
@@ -72,6 +73,12 @@ function initMenuGroupToggle(toggleId, submenuId, storageKey, expandedByDefault 
     
     // Toggle on click
     groupToggle.addEventListener('click', function(e) {
+        console.log(debugPrefix, 'group toggle click', {
+            toggleId,
+            submenuId,
+            defaultPrevented: e.defaultPrevented,
+            currentUrl: window.location.href
+        });
         e.preventDefault();
         e.stopPropagation();
         
@@ -92,6 +99,15 @@ function initMenuGroupToggle(toggleId, submenuId, storageKey, expandedByDefault 
     const subitems = submenu.querySelectorAll('.sidebar-subitem');
     subitems.forEach(item => {
         item.addEventListener('click', function(e) {
+            console.log(debugPrefix, 'submenu item click', {
+                id: this.id || null,
+                tag: this.tagName,
+                href: this.getAttribute('href'),
+                dataView: this.dataset.view || null,
+                dataStatus: this.dataset.status || null,
+                defaultPrevented: e.defaultPrevented,
+                currentUrl: window.location.href
+            });
             e.stopPropagation();
         });
     });
@@ -1081,10 +1097,36 @@ function initPrecioInputs() {
  */
 function initSidebarNavigation() {
     const sidebarItems = document.querySelectorAll('.sidebar-item');
+    const debugPrefix = '[TalleresSidebar]';
+    const mainContainer = document.querySelector('.main-container');
+    const hasSpaRoutes = Boolean(mainContainer && mainContainer.dataset.routeApiSearch);
 
     sidebarItems.forEach(item => {
-        item.addEventListener('click', function() {
+        item.addEventListener('click', function(event) {
             const viewName = this.getAttribute('data-view');
+            const href = this.getAttribute('href');
+
+            console.log(debugPrefix, 'sidebar navigation click', {
+                id: this.id || null,
+                tag: this.tagName,
+                viewName,
+                href,
+                hasSpaRoutes,
+                currentUrl: window.location.href
+            });
+
+            if (!viewName) {
+                return;
+            }
+
+            if (!hasSpaRoutes && href) {
+                console.log(debugPrefix, 'non-spa page, allowing native navigation', {
+                    href
+                });
+                return;
+            }
+
+            event.preventDefault();
             
             // Remover clase active de todos los items
             sidebarItems.forEach(i => i.classList.remove('active'));
@@ -2123,4 +2165,3 @@ function cargarEntregasAcordeon(reciboId, esParcial, reciboNumero, tipoRecibo, c
             contentDiv.innerHTML = '<div style="padding: 30px; text-align: center; color: #64748b;"><p>No hay datos de asignacion disponibles</p></div>';
         });
 }
-

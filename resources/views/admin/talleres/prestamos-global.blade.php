@@ -51,25 +51,25 @@
             @if(auth()->user()->hasRole('visualizador_talleres'))
                 <!-- Menú anidado para visualizador_talleres -->
                 <div class="sidebar-group">
-                    <button class="sidebar-item sidebar-group-toggle" id="navTalleresGroup">
+                    <button type="button" class="sidebar-item sidebar-group-toggle" id="navTalleresGroup">
                         <span class="material-symbols-rounded">factory</span>
                         <span class="nav-label">Talleres</span>
                         <span class="material-symbols-rounded expand-icon">expand_more</span>
                     </button>
                     <div class="sidebar-submenu" id="talleresSubmenu">
-                        <button class="sidebar-item sidebar-subitem" data-view="viewTalleres" data-status="activos" id="navTalleres">
+                        <a href="{{ route('talleres.index', ['status' => 'activos']) }}" class="sidebar-item sidebar-subitem" data-view="viewTalleres" data-status="activos" id="navTalleres">
                             <span class="nav-label">Activos</span>
-                        </button>
-                        <button class="sidebar-item sidebar-subitem" data-view="viewTalleres" data-status="inactivos" id="navTalleresInactivos">
+                        </a>
+                        <a href="{{ route('talleres.index', ['status' => 'inactivos']) }}" class="sidebar-item sidebar-subitem" data-view="viewTalleres" data-status="inactivos" id="navTalleresInactivos">
                             <span class="nav-label">Inactivos</span>
-                        </button>
-                        <button class="sidebar-item sidebar-subitem" data-view="viewOrdenes" id="navOrdenes">
+                        </a>
+                        <a href="{{ route('talleres.index', ['view' => 'ordenes']) }}" class="sidebar-item sidebar-subitem" data-view="viewOrdenes" id="navOrdenes">
                             <span class="nav-label">Órdenes</span>
-                        </button>
+                        </a>
                     </div>
                 </div>
                 <div class="sidebar-group">
-                    <button class="sidebar-item sidebar-group-toggle" id="navPrestamosGroup">
+                    <button type="button" class="sidebar-item sidebar-group-toggle" id="navPrestamosGroup">
                         <span class="material-symbols-rounded">payment</span>
                         <span class="nav-label">Préstamos</span>
                         <span class="material-symbols-rounded expand-icon">expand_more</span>
@@ -179,10 +179,33 @@
             const clearBtn = document.getElementById('clearSearchBtn');
             const tipo = '{{ $tipo }}';
             const apiUrl = '{{ route("talleres.api.prestamos-global") }}';
+            const debugPrefix = '[PrestamosGlobal]';
+
+            console.log(debugPrefix, 'init', {
+                tipo,
+                currentUrl: window.location.href
+            });
+
+            document.querySelectorAll('.sidebar-item').forEach((item) => {
+                item.addEventListener('click', function(event) {
+                    console.log(debugPrefix, 'sidebar click', {
+                        id: this.id || null,
+                        tag: this.tagName,
+                        href: this.getAttribute('href'),
+                        dataView: this.dataset.view || null,
+                        dataStatus: this.dataset.status || null,
+                        defaultPrevented: event.defaultPrevented,
+                        targetClasses: event.target?.className || null
+                    });
+                });
+            });
 
             // Búsqueda con debounce
             let searchTimeout;
             searchInput.addEventListener('input', function() {
+                console.log(debugPrefix, 'search input', {
+                    value: this.value
+                });
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(() => {
                     performSearch(this.value);
@@ -191,12 +214,17 @@
 
             // Botón limpiar
             clearBtn.addEventListener('click', function() {
+                console.log(debugPrefix, 'clear search');
                 searchInput.value = '';
                 performSearch('');
             });
 
             // Función para realizar búsqueda
             function performSearch(query) {
+                console.log(debugPrefix, 'performSearch:start', {
+                    query,
+                    apiUrl
+                });
                 const params = new URLSearchParams({
                     tipo: tipo,
                     search: query
@@ -205,6 +233,11 @@
                 fetch(`${apiUrl}?${params}`)
                     .then(response => response.json())
                     .then(data => {
+                        console.log(debugPrefix, 'performSearch:success', {
+                            query,
+                            success: data.success,
+                            total: data.total ?? null
+                        });
                         if (data.success) {
                             document.getElementById('prestamosTableBody').innerHTML = data.html;
                             document.getElementById('totalRegistros').textContent = data.total + ' registros';
@@ -216,15 +249,23 @@
                             attachPaginationListeners(apiUrl, tipo, query);
                         }
                     })
-                    .catch(error => console.error('Error:', error));
+                    .catch(error => console.error(debugPrefix, 'performSearch:error', error));
             }
 
             // Función para attachar listeners a la paginación
             function attachPaginationListeners(apiUrl, tipo, query) {
                 const paginationLinks = document.querySelectorAll('#paginationContainer a');
+                console.log(debugPrefix, 'attachPaginationListeners', {
+                    count: paginationLinks.length,
+                    query
+                });
                 paginationLinks.forEach(link => {
                     link.addEventListener('click', function(e) {
                         e.preventDefault();
+                        console.log(debugPrefix, 'pagination click', {
+                            href: this.href,
+                            query
+                        });
                         const page = new URL(this.href).searchParams.get('page');
                         const params = new URLSearchParams({
                             tipo: tipo,
@@ -235,6 +276,10 @@
                         fetch(`${apiUrl}?${params}`)
                             .then(response => response.json())
                             .then(data => {
+                                console.log(debugPrefix, 'pagination success', {
+                                    page: page || 1,
+                                    success: data.success
+                                });
                                 if (data.success) {
                                     document.getElementById('prestamosTableBody').innerHTML = data.html;
                                     document.getElementById('paginationContainer').innerHTML = data.pagination_html;
@@ -246,5 +291,7 @@
                     });
                 });
             }
+
+            attachPaginationListeners(apiUrl, tipo, searchInput.value || '');
         });
     </script>
