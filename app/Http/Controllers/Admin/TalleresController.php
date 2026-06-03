@@ -91,10 +91,11 @@ class TalleresController extends Controller
     public function showPrestamosGlobal(Request $request)
     {
         $tab = $request->query('tab', $request->query('tipo', 'insumos'));
-        $tab = in_array($tab, ['insumos', 'contramuestra', 'contramuestras'], true) ? $tab : 'insumos';
-        $tab = $tab === 'contramuestras' ? 'contramuestra' : $tab;
+        $tab = $this->normalizarTabPrestamoGlobal($tab);
         $search = $request->query('search', '');
         $perPage = 15;
+        $userId = auth()->id();
+        $revisadosIds = $this->obtenerPrestamosGlobalRevisadosIds($userId, $tab);
 
         if ($tab === 'insumos') {
             $query = DB::table('recibos_prestamo_insumos')
@@ -145,6 +146,7 @@ class TalleresController extends Controller
         return view('admin.talleres.prestamos-global', [
             'tab' => $tab,
             'registros' => $registros,
+            'revisadosIds' => $revisadosIds,
         ]);
     }
 
@@ -152,11 +154,12 @@ class TalleresController extends Controller
     {
         try {
             $tab = $request->query('tab', $request->query('tipo', 'insumos'));
-            $tab = in_array($tab, ['insumos', 'contramuestra', 'contramuestras'], true) ? $tab : 'insumos';
-            $tab = $tab === 'contramuestras' ? 'contramuestra' : $tab;
+            $tab = $this->normalizarTabPrestamoGlobal($tab);
             $search = $request->query('search', '');
             $page = $request->query('page', 1);
             $perPage = 15;
+            $userId = auth()->id();
+            $revisadosIds = $this->obtenerPrestamosGlobalRevisadosIds($userId, $tab);
 
             if ($tab === 'insumos') {
                 $query = DB::table('recibos_prestamo_insumos')
@@ -209,30 +212,7 @@ class TalleresController extends Controller
                 $html = '<tr><td colspan="7" style="padding:16px;text-align:center;color:#64748b;">Sin registros de préstamos confirmados.</td></tr>';
             } else {
                 foreach ($registros as $r) {
-                    $estadoClass = '';
-                    $estadoTexto = '';
-                    if ($r->anulado) {
-                        $estadoClass = 'background:#fee2e2;color:#dc2626;';
-                        $estadoTexto = 'ANULADO';
-                    } elseif ($r->confirmado_entrada) {
-                        $estadoClass = 'background:#dcfce7;color:#16a34a;';
-                        $estadoTexto = 'CONFIRMADO';
-                    } else {
-                        $estadoClass = 'background:#fef3c7;color:#ea8c55;';
-                    $estadoTexto = 'PENDIENTE';
-                    }
-                    
-                    $html .= '<tr>
-                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">
-                            <button type="button" class="btn-ver-prestamo" data-tipo="' . $tab . '" data-id="' . $r->id . '" style="background:#3b82f6;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Ver</button>
-                        </td>
-                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">#' . $r->numero_orden . '</td>
-                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . $r->nombre_costurero . '</td>
-                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . \Carbon\Carbon::parse($r->fecha_salida)->format('d/m/Y h:i A') . '</td>
-                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . ($r->fecha_entrada ? \Carbon\Carbon::parse($r->fecha_entrada)->format('d/m/Y h:i A') : '-') . '</td>
-                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;"><span style="' . $estadoClass . 'padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">' . $estadoTexto . '</span></td>
-                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . ($r->novedades ?: '-') . '</td>
-                    </tr>';
+                    $html .= $this->renderPrestamoGlobalRow($r, $tab, $revisadosIds);
                 }
             }
 
@@ -251,6 +231,124 @@ class TalleresController extends Controller
                 'error' => 'Error al buscar préstamos'
             ], 500);
         }
+    }
+
+    public function marcarPrestamoGlobalVisto(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'tab' => ['required', 'string'],
+                'id' => ['required', 'integer'],
+                'checked' => ['required', 'boolean'],
+            ]);
+
+            $tab = $this->normalizarTabPrestamoGlobal($validated['tab']);
+            $userId = auth()->id();
+            $reciboId = (int) $validated['id'];
+            $checked = (bool) $validated['checked'];
+
+            $query = DB::table('prestamos_global_vistos')
+                ->where('user_id', $userId)
+                ->where('tab', $tab)
+                ->where('recibo_id', $reciboId);
+
+            if ($checked) {
+                $exists = $query->exists();
+
+                if (!$exists) {
+                    DB::table('prestamos_global_vistos')->insert([
+                        'user_id' => $userId,
+                        'tab' => $tab,
+                        'recibo_id' => $reciboId,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    $query->update(['updated_at' => now()]);
+                }
+            } else {
+                $query->delete();
+            }
+
+            return response()->json([
+                'success' => true,
+                'checked' => $checked,
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error en marcarPrestamoGlobalVisto: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo actualizar el estado de revisión',
+            ], 500);
+        }
+    }
+
+    private function normalizarTabPrestamoGlobal(string $tab): string
+    {
+        $tab = in_array($tab, ['insumos', 'contramuestra', 'contramuestras'], true) ? $tab : 'insumos';
+
+        return $tab === 'contramuestras' ? 'contramuestra' : $tab;
+    }
+
+    private function obtenerPrestamosGlobalRevisadosIds(?int $userId, string $tab): array
+    {
+        if (!$userId) {
+            return [];
+        }
+
+        return DB::table('prestamos_global_vistos')
+            ->where('user_id', $userId)
+            ->where('tab', $tab)
+            ->pluck('recibo_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    private function renderPrestamoGlobalRow(object $r, string $tab, array $revisadosIds): string
+    {
+        $estadoClass = '';
+        $estadoTexto = '';
+        if ($r->anulado) {
+            $estadoClass = 'background:#fee2e2;color:#dc2626;';
+            $estadoTexto = 'ANULADO';
+        } elseif ($r->confirmado_entrada) {
+            $estadoClass = 'background:#dcfce7;color:#16a34a;';
+            $estadoTexto = 'CONFIRMADO';
+        } else {
+            $estadoClass = 'background:#fef3c7;color:#ea8c55;';
+            $estadoTexto = 'PENDIENTE';
+        }
+
+        $isRevisado = in_array((int) $r->id, $revisadosIds, true);
+        $fechaSalida = \Carbon\Carbon::parse($r->fecha_salida)->format('d/m/Y h:i A');
+        $fechaEntrada = $r->fecha_entrada ? \Carbon\Carbon::parse($r->fecha_entrada)->format('d/m/Y h:i A') : '-';
+        $checked = $isRevisado ? 'checked' : '';
+        $revisadoLabelStyle = $isRevisado
+            ? 'background:#dcfce7;color:#166534;border-color:#86efac;'
+            : 'background:#fff;color:#64748b;border-color:#cbd5e1;';
+
+        return '<tr data-prestamo-id="' . $r->id . '">
+            <td style="padding:10px;border-bottom:1px solid #f1f5f9;">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:nowrap;white-space:nowrap;">
+                    <label title="Marcar como revisado" style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid ' . ($isRevisado ? '#86efac' : '#cbd5e1') . ';border-radius:8px;cursor:pointer;user-select:none;' . $revisadoLabelStyle . '">
+                        <input type="checkbox" class="prestamo-visto-toggle" data-tab="' . $tab . '" data-id="' . $r->id . '" ' . $checked . ' style="margin:0;cursor:pointer;">
+                        <span class="material-symbols-rounded" style="font-size:18px;line-height:1;">done</span>
+                    </label>
+                    <button type="button" class="btn-ver-prestamo" data-tipo="' . $tab . '" data-id="' . $r->id . '" style="background:#3b82f6;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Ver</button>
+                </div>
+            </td>
+            <td style="padding:10px;border-bottom:1px solid #f1f5f9;">#' . e($r->numero_orden) . '</td>
+            <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . e($r->nombre_costurero) . '</td>
+            <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . e($fechaSalida) . '</td>
+            <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . e($fechaEntrada) . '</td>
+            <td style="padding:10px;border-bottom:1px solid #f1f5f9;"><span style="' . $estadoClass . 'padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">' . e($estadoTexto) . '</span></td>
+            <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . e($r->novedades ?: '-') . '</td>
+        </tr>';
     }
 
     public function showEntregas($taller_id, $recibo_id, $es_parcial, \App\Application\Talleres\UseCases\ObtenerDetalleEntregasUseCase $useCase)

@@ -88,12 +88,6 @@
                     <span class="material-symbols-rounded">assignment</span>
                     <span class="nav-label">Órdenes</span>
                 </button>
-                <a href="{{ route('seguimiento-lavanderia.index') }}"
-                   class="sidebar-item {{ request()->routeIs('seguimiento-lavanderia.*') ? 'active' : '' }}"
-                   aria-label="Ir a Lavandería">
-                    <span class="material-symbols-rounded">local_laundry_service</span>
-                    <span class="nav-label">Lavandería</span>
-                </a>
             @endif
         </nav>
         @if(!auth()->user()->hasRole('visualizador_talleres'))
@@ -255,7 +249,7 @@
             </div>
         </div>
 
-        <!-- Vista 4: ordenes (Todos los Recibos) -->
+        <!-- Vista 4: ordenes (Todos los Recibos)-->
         <div id="viewOrdenes" class="view-container" style="display: none;">
             <div class="recibos-card">
                 <div class="card-header">

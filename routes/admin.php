@@ -65,6 +65,7 @@ Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion,vi
     Route::get('/', [App\Http\Controllers\Admin\TalleresController::class, 'index'])->name('index');
     Route::get('prestamos/global', [App\Http\Controllers\Admin\TalleresController::class, 'showPrestamosGlobal'])->name('prestamos-global');
     Route::get('api/prestamos/global', [App\Http\Controllers\Admin\TalleresController::class, 'apiPrestamosGlobal'])->name('api.prestamos-global');
+    Route::post('api/prestamos/global/marcar-visto', [App\Http\Controllers\Admin\TalleresController::class, 'marcarPrestamoGlobalVisto'])->name('api.prestamos-global.marcar-visto');
     Route::get('{id}/recibos', [App\Http\Controllers\Admin\TalleresController::class, 'showRecibos'])->name('show');
     Route::get('{id}/prestamos', [App\Http\Controllers\Admin\TalleresController::class, 'showPrestamos'])->name('prestamos');
     Route::get('{id}/recibos/{recibo_id}/{es_parcial}/entregas', [App\Http\Controllers\Admin\TalleresController::class, 'showEntregas'])->name('entregas');

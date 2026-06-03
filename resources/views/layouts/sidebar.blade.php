@@ -423,6 +423,14 @@
           <span class="menu-label">Talleres</span>
         </a>
       </li>
+      <li class="menu-item">
+        <a href="{{ route('seguimiento-lavanderia.index') }}"
+           class="menu-link {{ request()->routeIs('seguimiento-lavanderia.*') ? 'active' : '' }}"
+           aria-label="Lavandería">
+          <span class="material-symbols-rounded" aria-hidden="true">local_laundry_service</span>
+          <span class="menu-label">Lavandería</span>
+        </a>
+      </li>
       </ul>
     </div>
 

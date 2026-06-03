@@ -112,7 +112,14 @@
                 @forelse($registros as $r)
                     <tr>
                         <td style="padding:10px;border-bottom:1px solid #f1f5f9;">
-                            <button type="button" class="btn-ver-prestamo" data-tipo="{{ $tab }}" data-id="{{ $r->id }}" style="background:#3b82f6;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Ver</button>
+                            @php($isRevisado = in_array((int) $r->id, $revisadosIds ?? [], true))
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:nowrap;white-space:nowrap;">
+                                <label title="Marcar como revisado" style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid {{ $isRevisado ? '#86efac' : '#cbd5e1' }};border-radius:8px;cursor:pointer;user-select:none;background:{{ $isRevisado ? '#dcfce7' : '#fff' }};color:{{ $isRevisado ? '#166534' : '#64748b' }};">
+                                    <input type="checkbox" class="prestamo-visto-toggle" data-tab="{{ $tab }}" data-id="{{ $r->id }}" {{ $isRevisado ? 'checked' : '' }} style="margin:0;cursor:pointer;">
+                                    <span class="material-symbols-rounded" style="font-size:18px;line-height:1;">done</span>
+                                </label>
+                                <button type="button" class="btn-ver-prestamo" data-tipo="{{ $tab }}" data-id="{{ $r->id }}" style="background:#3b82f6;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Ver</button>
+                            </div>
                         </td>
                         <td style="padding:10px;border-bottom:1px solid #f1f5f9;">#{{ $r->numero_orden }}</td>
                         <td style="padding:10px;border-bottom:1px solid #f1f5f9;">{{ $r->nombre_costurero }}</td>
@@ -180,6 +187,7 @@
             const clearBtn = document.getElementById('clearSearchBtn');
             const tab = '{{ $tab }}';
             const apiUrl = '{{ route("talleres.api.prestamos-global") }}';
+            const markVistoUrl = '{{ route("talleres.api.prestamos-global.marcar-visto") }}';
             const debugPrefix = '[PrestamosGlobal]';
 
             console.log(debugPrefix, 'init', {
@@ -246,7 +254,7 @@
                             clearBtn.style.display = query ? 'block' : 'none';
                             
                             // Re-attach button listeners and pagination
-                            attachPrestamoBtnListeners();
+                            attachPrestamoRowListeners();
                             attachPaginationListeners(apiUrl, tab, query);
                         }
                     })
@@ -285,7 +293,7 @@
                                     document.getElementById('prestamosTableBody').innerHTML = data.html;
                                     document.getElementById('paginationContainer').innerHTML = data.pagination_html;
                                     window.scrollTo(0, 0);
-                                    attachPrestamoBtnListeners();
+                                    attachPrestamoRowListeners();
                                     attachPaginationListeners(apiUrl, tab, query);
                                 }
                             });
@@ -293,6 +301,66 @@
                 });
             }
 
+            function attachPrestamoRowListeners() {
+                attachPrestamoBtnListeners();
+                attachPrestamoVistoListeners();
+            }
+
+            function attachPrestamoVistoListeners() {
+                document.querySelectorAll('.prestamo-visto-toggle').forEach((checkbox) => {
+                    if (checkbox.dataset.bound === '1') {
+                        return;
+                    }
+
+                    checkbox.dataset.bound = '1';
+                    checkbox.addEventListener('change', async function() {
+                        const checked = this.checked;
+                        const id = this.dataset.id;
+                        const tabValue = this.dataset.tab;
+                        const label = this.closest('label');
+
+                        try {
+                            const response = await fetch(markVistoUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('.main-container')?.dataset.csrfToken || ''
+                                },
+                                body: JSON.stringify({
+                                    tab: tabValue,
+                                    id: id,
+                                    checked: checked
+                                })
+                            });
+
+                            const data = await response.json();
+                            if (!response.ok || !data.success) {
+                                throw new Error(data.message || 'No se pudo guardar el estado.');
+                            }
+
+                            if (label) {
+                                label.style.background = checked ? '#dcfce7' : '#fff';
+                                label.style.color = checked ? '#166534' : '#64748b';
+                                label.style.borderColor = checked ? '#86efac' : '#cbd5e1';
+                            }
+                        } catch (error) {
+                            console.error(debugPrefix, 'markVisto:error', error);
+                            this.checked = !checked;
+                            if (label) {
+                                label.style.background = this.checked ? '#dcfce7' : '#fff';
+                                label.style.color = this.checked ? '#166534' : '#64748b';
+                                label.style.borderColor = this.checked ? '#86efac' : '#cbd5e1';
+                            }
+                            if (window.Swal && typeof Swal.fire === 'function') {
+                                Swal.fire('Error', 'No se pudo guardar el chulito', 'error');
+                            }
+                        }
+                    });
+                });
+            }
+
+            attachPrestamoRowListeners();
             attachPaginationListeners(apiUrl, tab, searchInput.value || '');
         });
     </script>
