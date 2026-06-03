@@ -2,13 +2,83 @@
 
 @section('title', 'Logos Confirmados')
 
-@section('page-title', 'Logos Confirmados')
+@section('page-title', 'Logos Confirmados y Devueltos')
 
 @section('content')
 <div style="padding: 1rem 1rem 2rem 1rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); min-height: calc(100vh - 60px); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
     <div style="display: flex; justify-content: center;">
         <div style="width: 100%; max-width: 1200px;">
-            <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0;">
+            <!-- TABS STYLE BUTTONS -->
+            <div style="display: flex; gap: 12px; align-items: center; justify-content: flex-start; margin-bottom: 14px; flex-wrap: wrap;">
+                <button id="btn-tab-confirmados" type="button" data-tab="confirmados" onclick="setTabLogos('confirmados')" style="
+                    position: relative;
+                    padding: 10px 14px;
+                    border-radius: 10px;
+                    border: 2px solid #0ea5e9;
+                    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+                    color: white;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.18);
+                ">
+                    <i class="fas fa-check-circle" style="margin-right: 6px;"></i>
+                    LOGOS CONFIRMADOS
+                    <span id="badge-confirmados" class="conteo-pendiente-badge" style="
+                        position: absolute;
+                        top: -8px;
+                        right: -8px;
+                        background: #ef4444;
+                        color: white;
+                        border-radius: 50%;
+                        width: 24px;
+                        height: 24px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 0.75rem;
+                        font-weight: 700;
+                        border: 2px solid white;
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                        display: none;
+                    ">0</span>
+                </button>
+                <button id="btn-tab-devueltos" type="button" data-tab="devueltos" onclick="setTabLogos('devueltos')" style="
+                    position: relative;
+                    padding: 10px 14px;
+                    border-radius: 10px;
+                    border: 2px solid #e2e8f0;
+                    background: white;
+                    color: #334155;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+                ">
+                    <i class="fas fa-undo" style="margin-right: 6px;"></i>
+                    DEVUELTOS A DISEÑO
+                    <span id="badge-devueltos" class="conteo-pendiente-badge" style="
+                        position: absolute;
+                        top: -8px;
+                        right: -8px;
+                        background: #ef4444;
+                        color: white;
+                        border-radius: 50%;
+                        width: 24px;
+                        height: 24px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 0.75rem;
+                        font-weight: 700;
+                        border: 2px solid white;
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                        display: none;
+                    ">0</span>
+                </button>
+            </div>
+
+            <div style="background: white; border-radius: 0 0 12px 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0; border-top: none;">
                 <div style="
                     background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
                     color: white;
@@ -32,7 +102,7 @@
                         <div style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 1rem;">
                             <i class="fas fa-spinner fa-spin"></i>
                         </div>
-                        <p style="margin: 0; font-size: 1rem; font-weight: 500;">Cargando logos confirmados...</p>
+                        <p style="margin: 0; font-size: 1rem; font-weight: 500;">Cargando logos...</p>
                     </div>
                 </div>
             </div>
@@ -46,11 +116,58 @@
 document.addEventListener('DOMContentLoaded', function() {
     let paginaActual = 1;
     let searchTimeout;
+    let tabActivo = 'confirmados';
 
     const searchInput = document.getElementById('search-input');
     const clearSearchBtn = document.getElementById('clear-search');
+    const btnTabConfirmados = document.getElementById('btn-tab-confirmados');
+    const btnTabDevueltos = document.getElementById('btn-tab-devueltos');
 
     cargarDisenos();
+
+    // Función global para cambiar tabs
+    window.setTabLogos = function(nuevoTab) {
+        const tabsValidos = ['confirmados', 'devueltos'];
+        if (!tabsValidos.includes(nuevoTab)) return;
+        
+        tabActivo = nuevoTab;
+        paginaActual = 1;
+        actualizarTabUI();
+        cargarDisenos(searchInput ? searchInput.value.trim() : '');
+    };
+
+    function actualizarTabUI() {
+        if (btnTabConfirmados) {
+            if (tabActivo === 'confirmados') {
+                btnTabConfirmados.style.background = 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)';
+                btnTabConfirmados.style.borderColor = '#0ea5e9';
+                btnTabConfirmados.style.color = 'white';
+                btnTabConfirmados.style.boxShadow = '0 2px 8px rgba(14, 165, 233, 0.18)';
+            } else {
+                btnTabConfirmados.style.background = 'white';
+                btnTabConfirmados.style.borderColor = '#e2e8f0';
+                btnTabConfirmados.style.color = '#334155';
+                btnTabConfirmados.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.06)';
+            }
+        }
+
+        if (btnTabDevueltos) {
+            if (tabActivo === 'devueltos') {
+                btnTabDevueltos.style.background = 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)';
+                btnTabDevueltos.style.borderColor = '#0ea5e9';
+                btnTabDevueltos.style.color = 'white';
+                btnTabDevueltos.style.boxShadow = '0 2px 8px rgba(14, 165, 233, 0.18)';
+            } else {
+                btnTabDevueltos.style.background = 'white';
+                btnTabDevueltos.style.borderColor = '#e2e8f0';
+                btnTabDevueltos.style.color = '#334155';
+                btnTabDevueltos.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.06)';
+            }
+        }
+    }
+
+    // Inicializar UI
+    actualizarTabUI();
 
     if (searchInput) {
         searchInput.placeholder = 'Buscar por cliente, recibo, prenda o observación...';
@@ -86,6 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const params = new URLSearchParams({
             page: paginaActual,
             per_page: 20,
+            tab: tabActivo,
         });
 
         if (searchTerm) {
@@ -99,9 +217,32 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error('Respuesta inválida');
                 }
 
-                // Actualizar badge en sidebar si es necesario
-                if (typeof window.__actualizarBadgeLogos === 'function') {
-                    window.__actualizarBadgeLogos(json.conteo_no_revisados || 0);
+                // Actualizar badges en sidebar si es necesario
+                if (typeof window.__actualizarBadgeLogos === 'function' && json.conteo_no_revisados) {
+                    window.__actualizarBadgeLogos(json.conteo_no_revisados.total || 0);
+                }
+
+                // Actualizar badges locales
+                const badgeConfirmados = document.getElementById('badge-confirmados');
+                const badgeDevueltos = document.getElementById('badge-devueltos');
+                
+                if (badgeConfirmados && json.conteo_no_revisados) {
+                    const cantidad = json.conteo_no_revisados.confirmados || 0;
+                    badgeConfirmados.textContent = String(cantidad);
+                    if (cantidad > 0) {
+                        badgeConfirmados.style.display = 'flex';
+                    } else {
+                        badgeConfirmados.style.display = 'none';
+                    }
+                }
+                if (badgeDevueltos && json.conteo_no_revisados) {
+                    const cantidad = json.conteo_no_revisados.devueltos || 0;
+                    badgeDevueltos.textContent = String(cantidad);
+                    if (cantidad > 0) {
+                        badgeDevueltos.style.display = 'flex';
+                    } else {
+                        badgeDevueltos.style.display = 'none';
+                    }
                 }
 
                 renderizarDisenos(json.items, searchTerm);
@@ -141,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div style="padding: 3rem 2rem; text-align: center; color: #64748b; background: #f8fafc;">
                     <i class="fas fa-inbox" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
                     <p style="margin: 0; font-size: 1rem; font-weight: 500;">
-                        ${searchTerm ? 'No se encontraron logos confirmados para tu búsqueda' : 'No hay logos confirmados'}
+                        ${searchTerm ? 'No se encontraron logos para tu búsqueda' : (tabActivo === 'confirmados' ? 'No hay logos confirmados' : 'No hay logos devueltos a diseño')}
                     </p>
                 </div>
             `;

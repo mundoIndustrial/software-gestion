@@ -78,21 +78,24 @@
 </aside>
 
 <script>
-    window.__actualizarBadgeLogos = function(count) {
+    window.__actualizarBadgeLogos = function(countData) {
         const badge = document.getElementById('badge-logos-no-revisados');
-        if (badge) {
-            if (count > 0) {
-                badge.textContent = count;
-                badge.style.display = 'inline-block';
-            } else {
-                badge.style.display = 'none';
-            }
+        if (!badge) return;
+        
+        // countData puede ser un número (retrocompatibilidad) o un objeto {confirmados, devueltos, total}
+        const total = typeof countData === 'object' ? (countData.total || 0) : (countData || 0);
+        
+        if (total > 0) {
+            badge.textContent = total;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
         }
     };
     
     // Cargar el conteo inicial
     document.addEventListener('DOMContentLoaded', function() {
-        fetch('{{ route('visualizador-logo.logos-confirmados.data') }}?per_page=1')
+        fetch('{{ route('visualizador-logo.logos-confirmados.data') }}?per_page=1&tab=confirmados')
             .then(r => r.json())
             .then(json => {
                 if (json && json.success === true) {

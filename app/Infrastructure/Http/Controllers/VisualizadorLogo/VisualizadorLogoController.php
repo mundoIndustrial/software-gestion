@@ -136,9 +136,19 @@ final class VisualizadorLogoController extends Controller
     
     public static function getConteoLogosNoRevisados()
     {
-        return \App\Models\DisenoLogoPedido::where('estado', 'logo_confirmado')
+        $confirmados = \App\Models\DisenoLogoPedido::where('estado', 'logo_confirmado')
             ->where('revisada', 0)
             ->count();
+        
+        $devueltos = \App\Models\DisenoLogoPedido::where('estado', 'devuelto_a_diseño')
+            ->where('revisada', 0)
+            ->count();
+        
+        return [
+            'confirmados' => $confirmados,
+            'devueltos' => $devueltos,
+            'total' => $confirmados + $devueltos,
+        ];
     }
 
     public function pedidosVisualizacion()
@@ -228,14 +238,22 @@ final class VisualizadorLogoController extends Controller
             $perPage = 100;
         }
 
-        // First, get all confirmed designs with their relationships
-        $disenos = \App\Models\DisenoLogoPedido::with([
+        // Get the active tab from request
+        $tab = $request->get('tab', 'confirmados');
+
+        // First, get all designs with their relationships based on tab
+        $query = \App\Models\DisenoLogoPedido::with([
             'proceso.prenda.pedidoProduccion',
             'proceso.prenda'
-        ])
-        ->where('estado', 'logo_confirmado')
-        ->orderByDesc('created_at')
-        ->get();
+        ]);
+
+        if ($tab === 'devueltos') {
+            $query->where('estado', 'devuelto_a_diseño');
+        } else {
+            $query->where('estado', 'logo_confirmado');
+        }
+
+        $disenos = $query->orderByDesc('created_at')->get();
 
         // Let's map them and try to find numero_recibo
         $items = $disenos->map(function ($diseno) {
@@ -356,6 +374,7 @@ final class VisualizadorLogoController extends Controller
             'success' => true,
             'items' => $perPageItems,
             'conteo_no_revisados' => self::getConteoLogosNoRevisados(),
+            'tab' => $tab,
         ]);
     }
 
