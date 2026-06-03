@@ -67,30 +67,47 @@ export class GalleryManager {
             console.log('  prendaData.de_bodega:', prendaData?.de_bodega);
 
             
-            // Combinar imágenes de tela + imágenes del recibo/prenda
+            // Separar imágenes de diseños logo de otras imágenes
             let fotosParaMostrar = [];
+            let diseñosLogo = [];
             
-            // LÓGICA SIMPLIFICADA: Usar solo las imágenes del recibo (que ya incluyen prenda + tela + proceso)
-            
-            // El recibo ya contiene todas las imágenes necesarias (prenda + tela + proceso)
+            // Usar las imágenes normales del recibo
             if (imagenesActuales && Array.isArray(imagenesActuales) && imagenesActuales.length > 0) {
-                const imagenesLimpias = imagenesActuales
-                    .map(img => {
-                        let url = '';
-                        if (typeof img === 'string') {
-                            url = img;
-                        } else if (typeof img === 'object' && img !== null) {
-                            url = img.url || img.ruta_webp || img.ruta || img.ruta_original || '';
+                imagenesActuales.forEach(img => {
+                    let url = '';
+                    if (typeof img === 'string') {
+                        url = img;
+                    } else if (typeof img === 'object' && img !== null) {
+                        url = img.url || img.ruta_webp || img.ruta || img.ruta_original || '';
+                    }
+                    
+                    if (url && typeof url === 'string') {
+                        if (url.includes('/storage/storage/')) {
+                            url = url.replace('/storage/storage/', '/storage/');
                         }
-                        if (url && typeof url === 'string' && url.includes('/storage/storage/')) {
-                            return url.replace('/storage/storage/', '/storage/');
-                        }
-                        return url;
-                    })
-                    .filter(url => url);
+                        fotosParaMostrar.push(url);
+                    }
+                });
                 
-                console.log('  ✓ Imágenes del recibo (todas):', imagenesLimpias.length);
-                fotosParaMostrar = [...imagenesLimpias];
+                console.log('  ✓ Imágenes del recibo:', fotosParaMostrar.length);
+            }
+            
+            // Obtener diseños logo desde el campo separado de prendaData
+            if (prendaData && prendaData.imagenes_disenos_logo && Array.isArray(prendaData.imagenes_disenos_logo)) {
+                prendaData.imagenes_disenos_logo.forEach(diseño => {
+                    if (diseño && diseño.url) {
+                        let url = diseño.url;
+                        if (url.includes('/storage/storage/')) {
+                            url = url.replace('/storage/storage/', '/storage/');
+                        }
+                        diseñosLogo.push({
+                            url: url,
+                            observacion: diseño.observacion || null
+                        });
+                    }
+                });
+                
+                console.log('  ✓ Diseños logo:', diseñosLogo.length);
             }
             
             console.log(' Total imágenes a mostrar:', fotosParaMostrar.length);
@@ -183,7 +200,8 @@ export class GalleryManager {
                     procesoPrendaDetalleId,
                     prendaPedidoId,
                     prendaData,
-                    datosCompletos: state.datosCompletos
+                    datosCompletos: state.datosCompletos,
+                    diseñosLogo
                 });
             }
 
@@ -224,18 +242,89 @@ export class GalleryManager {
                 <div style="padding: 24px; flex: 1; overflow-y: auto; background: #ffffff;">
         `;
         
+        // Detectar si estamos en /asesores/pendientes-logo
+        const esModuloAsesores = window.location.pathname.includes('/asesores/pendientes-logo');
+        
+        // Mostrar sección de Diseños Logo PRIMERO si estamos en módulo de asesores
+        const diseñosLogo = uploadCtx?.diseñosLogo || [];
+        if (esModuloAsesores && diseñosLogo.length > 0) {
+            html += `
+                <div style="margin-bottom: 18px; padding: 14px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f8fafc;">
+                    <div style="font-weight: 800; color: #111827; font-size: 0.9rem; margin-bottom: 12px;">🎨 DISEÑOS LOGO</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px;">
+        `;
+            
+            diseñosLogo.forEach((diseño, idx) => {
+                const fotosJSON = JSON.stringify([diseño.url]);
+                html += `
+                    <div style="position: relative; border-radius: 10px; overflow: hidden; border: 2px solid #e5e7eb; background: #f3f4f6; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" onclick="GalleryManager.abrirModalImagenProcesoGrande(0, '${fotosJSON.replace(/'/g, "&#39;")}')">
+                        <img src="${diseño.url}" alt="Diseño ${idx + 1}" style="width: 100%; height: 140px; object-fit: cover; display: block;">
+                        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0); transition: background 0.2s;" class="diseño-overlay"></div>
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: 700; opacity: 0; transition: opacity 0.2s; text-align: center; pointer-events: none;" class="diseño-icon">🔍</div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                    ${diseñosLogo.some(d => d.observacion) ? `
+                    <div style="margin-top: 12px; padding: 10px; background: white; border-radius: 8px; border-left: 3px solid #0ea5e9;">
+                        <div style="font-weight: 700; color: #111827; font-size: 0.85rem;">Observaciones:</div>
+                        <div style="font-size: 0.82rem; color: #475569; margin-top: 4px;">
+                            ${diseñosLogo.filter(d => d.observacion).map(d => d.observacion).join(' | ')}
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
         // Intentar renderizar estilo insumos (por prendas categorizadas)
         const datosCompletos = uploadCtx?.datosCompletos;
         if (datosCompletos && datosCompletos.prendas && datosCompletos.prendas.length > 0) {
             html += this._construirGaleriaEstiloInsumos(datosCompletos, uploadCtx);
         } else if (fotos.length > 0) {
             html += this._construirGridImagenes(fotos);
-        } else {
+        } else if (!esModuloAsesores || diseñosLogo.length === 0) {
+            // Solo mostrar mensaje si NO estamos en asesores O no hay diseños logo
             html += `
                 <div style="padding: 3rem; text-align: center;">
                     <div style="font-size: 3rem; margin-bottom: 1rem; color: #9ca3af;">📷</div>
                     <p style="color: #6b7280; font-size: 1rem; margin-bottom: 1rem;">No hay fotos disponibles para este recibo</p>
                     <p style="color: #9ca3af; font-size: 0.875rem;">Las imágenes se mostrarán aquí cuando estén disponibles</p>
+                </div>
+            `;
+        }
+
+        // Mostrar sección de Diseños Logo DESPUÉS si NO estamos en módulo de asesores
+        if (!esModuloAsesores && diseñosLogo.length > 0) {
+            html += `
+                <div style="margin-top: 18px; padding: 14px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f8fafc;">
+                    <div style="font-weight: 800; color: #111827; font-size: 0.9rem; margin-bottom: 12px;">🎨 DISEÑOS LOGO</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px;">
+        `;
+            
+            diseñosLogo.forEach((diseño, idx) => {
+                const fotosJSON = JSON.stringify([diseño.url]);
+                html += `
+                    <div style="position: relative; border-radius: 10px; overflow: hidden; border: 2px solid #e5e7eb; background: #f3f4f6; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" onclick="GalleryManager.abrirModalImagenProcesoGrande(0, '${fotosJSON.replace(/'/g, "&#39;")}')">
+                        <img src="${diseño.url}" alt="Diseño ${idx + 1}" style="width: 100%; height: 140px; object-fit: cover; display: block;">
+                        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0); transition: background 0.2s;" class="diseño-overlay"></div>
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: 700; opacity: 0; transition: opacity 0.2s; text-align: center; pointer-events: none;" class="diseño-icon">🔍</div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                    ${diseñosLogo.some(d => d.observacion) ? `
+                    <div style="margin-top: 12px; padding: 10px; background: white; border-radius: 8px; border-left: 3px solid #0ea5e9;">
+                        <div style="font-weight: 700; color: #111827; font-size: 0.85rem;">Observaciones:</div>
+                        <div style="font-size: 0.82rem; color: #475569; margin-top: 4px;">
+                            ${diseñosLogo.filter(d => d.observacion).map(d => d.observacion).join(' | ')}
+                        </div>
+                    </div>
+                    ` : ''}
                 </div>
             `;
         }
@@ -259,6 +348,25 @@ export class GalleryManager {
         
         html += '</div></div>';
         galeria.innerHTML = html;
+
+        // Manejar hover en diseños adjuntados
+        const diseñosAdjuntados = galeria.querySelectorAll('[class*="diseño-overlay"]');
+        diseñosAdjuntados.forEach(overlay => {
+            const container = overlay.parentElement;
+            const icon = container.querySelector('[class*="diseño-icon"]');
+            
+            if (container && icon) {
+                container.addEventListener('mouseenter', () => {
+                    overlay.style.background = 'rgba(0, 0, 0, 0.3)';
+                    icon.style.opacity = '1';
+                });
+                
+                container.addEventListener('mouseleave', () => {
+                    overlay.style.background = 'rgba(0, 0, 0, 0)';
+                    icon.style.opacity = '0';
+                });
+            }
+        });
 
         if (puedeVerDisenoLogo) {
             const btnOpenModal = galeria.querySelector('#logo-design-open-modal');
@@ -620,7 +728,7 @@ export class GalleryManager {
                             </div>
                             <div style="display:flex; gap: 10px; justify-content: flex-end;">
                                 <button id="logo-design-modal-cancel" type="button" style="padding: 10px 14px; border-radius: 10px; border: 1px solid #e5e7eb; background: #ffffff; color:#111827; font-weight: 900; cursor:pointer;">Cancelar</button>
-                                <button id="logo-design-modal-save" type="button" style="padding: 10px 14px; border-radius: 10px; border: none; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; font-weight: 900; cursor: pointer;">Guardar cambios</button>
+                                <button id="logo-design-modal-save" type="button" style="padding: 10px 14px; border-radius: 10px; border: none; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; font-weight: 900; cursor: pointer;">Enviar a confirmar</button>
                             </div>
                         </div>
                     `;

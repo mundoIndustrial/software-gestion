@@ -29,12 +29,14 @@ final class DisenoLogoPedidoRepository implements DisenoLogoPedidoRepositoryInte
             'proceso_prenda_detalle_id' => $procesoPrendaDetalleId,
             'url' => $url,
             'observacio_diseño' => $observacion,
+            'estado' => 'pendiente_por_confirmar',
         ]);
 
         return [
             'id' => $row->id,
             'url' => $row->url,
             'observacio_diseño' => $row->{'observacio_diseño'} ?? null,
+            'estado' => $row->estado,
         ];
     }
 

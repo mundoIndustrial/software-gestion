@@ -175,6 +175,16 @@
                         <span class="badge-alert" id="pendientesAsesorCount" style="display: none; background: #dc2626; color: white; border-radius: 50%; width: 22px; height: 22px; align-items: center; justify-content: center; font-weight: 700; font-size: 0.7rem; min-width: 22px; flex-shrink: 0;">0</span>
                     </a>
                 </li>
+                <li class="menu-item">
+                    <a href="{{ route('asesores.pendientes-logo') }}"
+                       class="menu-link {{ request()->routeIs('asesores.pendientes-logo') ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;"
+                       aria-label="Ver diseños pendientes de confirmar">
+                        <span class="material-symbols-rounded">image</span>
+                        <span class="menu-label">Pendientes Logo</span>
+                        <span class="badge-alert" id="pendientesLogoCount" style="display: none; background: #dc2626; color: white; border-radius: 50%; width: 22px; height: 22px; align-items: center; justify-content: center; font-weight: 700; font-size: 0.7rem; min-width: 22px; flex-shrink: 0;">0</span>
+                    </a>
+                </li>
             </ul>
         </div>
 
@@ -286,6 +296,24 @@
             });
     }
 
+    // Cargar conteo de diseños pendientes de confirmar
+    function cargarConteoPendientesLogo() {
+        fetch('/api/asesores/conteo-pendientes-logo')
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.getElementById('pendientesLogoCount');
+                if (badge && data.success && data.conteo > 0) {
+                    badge.textContent = data.conteo;
+                    badge.style.display = 'flex';
+                } else if (badge) {
+                    badge.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar conteo de pendientes logo:', error);
+            });
+    }
+
     // Cargar conteo total de producción (suma de pedidos devueltos + recibos devueltos)
     function cargarConteoPedidosProduccion() {
         fetch('/api/asesores/conteo-pedidos-produccion')
@@ -309,5 +337,6 @@
         cargarConteoPendientes();
         cargarConteoPedidosDevueltos();
         cargarConteoPedidosProduccion();
+        cargarConteoPendientesLogo();
     });
 </script>

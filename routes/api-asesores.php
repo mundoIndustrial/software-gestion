@@ -45,6 +45,21 @@ function registerAsesoresDashboardYPendientesRoutes(): void
         ->name('pedidos.devueltos.count');
     Route::get('/conteo-pedidos-produccion', [AsesoresPedidosQueryController::class, 'contarPedidosProduccion'])
         ->name('pedidos.produccion.count');
+    Route::get('/conteo-pendientes-logo', [AsesoresPedidosQueryController::class, 'contarPendientesLogo'])
+        ->name('pendientes-logo.count');
+    Route::get('/diseños-pendientes-logo', [AsesoresPedidosQueryController::class, 'obtenerDiseñosPendientesLogo'])
+        ->name('diseños-pendientes-logo');
+    Route::get('/obtener-diseños-proceso/{procesoId}', [AsesoresPedidosQueryController::class, 'obtenerDiseñosProceso'])
+        ->name('obtener-diseños-proceso')
+        ->whereNumber('procesoId');
+    Route::get('/obtener-recibo-datos/{pedidoId}/{prendaId}', [AsesoresPedidosQueryController::class, 'obtenerDatosReciboDesdeAsesor'])
+        ->name('obtener-recibo-datos')
+        ->whereNumber('pedidoId')
+        ->whereNumber('prendaId');
+    Route::get('/recibos-procesos/observacion', [AsesoresPedidosQueryController::class, 'obtenerObservacionReciboProceso'])
+        ->name('recibos-procesos.observacion');
+    Route::post('/confirmar-diseño-logo', [AsesoresPedidosQueryController::class, 'confirmarDiseñoLogo'])
+        ->name('confirmar-diseño-logo');
     Route::get('/pendientes/{id}/notas', [AsesoresPedidosQueryController::class, 'obtenerNotasPedido'])
         ->whereNumber('id')
         ->name('pendientes.notas');

@@ -308,4 +308,264 @@ final class AsesoresPedidosQueryController extends Controller
             return $this->failure('Error al buscar pedidos', 500);
         }
     }
+
+    public function contarPendientesLogo(): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return $this->failure('No autenticado', 401, ['conteo' => 0]);
+            }
+
+            // Contar diseños pendientes de confirmar del asesor
+            $conteo = \App\Models\DisenoLogoPedido::query()
+                ->where('estado', 'pendiente_por_confirmar')
+                ->whereHas('proceso.prenda.pedidoProduccion', function ($query) use ($user) {
+                    $query->where('asesor_id', $user->id);
+                })
+                ->count();
+
+            return $this->json([
+                'success' => true,
+                'conteo' => $conteo,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error al contar pendientes logo', ['error' => $e->getMessage()]);
+            return $this->failure('Error al contar pendientes logo', 500, [
+                'conteo' => 0,
+            ]);
+        }
+    }
+
+    public function obtenerDiseñosPendientesLogo(): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return $this->failure('No autenticado', 401);
+            }
+
+            $diseños = \App\Models\DisenoLogoPedido::query()
+                ->where('estado', 'pendiente_por_confirmar')
+                ->whereHas('proceso.prenda.pedidoProduccion', function ($query) use ($user) {
+                    $query->where('asesor_id', $user->id);
+                })
+                ->with(['proceso.prenda.pedidoProduccion.cliente', 'proceso.tipoProceso'])
+                ->orderBy('created_at', 'DESC')
+                ->get()
+                ->map(function ($diseño) {
+                    $proceso = $diseño->proceso;
+                    $prenda = $proceso?->prenda;
+                    $pedido = $prenda?->pedidoProduccion;
+                    $cliente = $pedido?->cliente;
+                    $tipoProceso = $proceso?->tipoProceso;
+
+                    return [
+                        'id' => $diseño->id,
+                        'proceso_id' => $diseño->proceso_prenda_detalle_id,
+                        'prenda_id' => $prenda?->id,
+                        'pedido_id' => $pedido?->id,
+                        'tipo_proceso' => $tipoProceso?->slug ?? 'logo',
+                        'numero_recibo' => $proceso?->numero_recibo ?? '-',
+                        'cliente' => $cliente?->nombre ?? $pedido?->cliente ?? 'Sin cliente',
+                        'prenda' => $prenda?->nombre_prenda ?? 'Sin prenda',
+                        'fecha' => $diseño->created_at?->format('d/m/Y H:i') ?? '-',
+                        'estado' => $diseño->estado,
+                    ];
+                })
+                // Deduplicar por pedido_id + prenda_id (un recibo debe aparecer una sola vez)
+                ->unique(function ($item) {
+                    return $item['pedido_id'] . '-' . $item['prenda_id'];
+                })
+                ->values(); // Reiniciar índices
+
+            return $this->json([
+                'success' => true,
+                'diseños' => $diseños,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error al obtener diseños pendientes logo', ['error' => $e->getMessage()]);
+            return $this->failure('Error al obtener diseños pendientes', 500);
+        }
+    }
+
+    public function obtenerDiseñosProceso(int $procesoId): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return $this->failure('No autenticado', 401);
+            }
+
+            $proceso = \App\Models\PedidosProcesosPrendaDetalle::find($procesoId);
+            if (!$proceso) {
+                return $this->failure('Proceso no encontrado', 404);
+            }
+
+            $prenda = $proceso->prenda;
+            $pedido = $prenda?->pedidoProduccion;
+
+            // Verificar que el pedido pertenece al asesor
+            if (!$pedido || $pedido->asesor_id !== $user->id) {
+                return $this->failure('No tienes permiso para ver este proceso', 403);
+            }
+
+            $diseños = \App\Models\DisenoLogoPedido::query()
+                ->where('proceso_prenda_detalle_id', $procesoId)
+                ->orderBy('created_at', 'ASC')
+                ->get()
+                ->map(function ($diseño) {
+                    return [
+                        'id' => $diseño->id,
+                        'url' => $diseño->url,
+                        'observacio_diseño' => $diseño->observacio_diseño,
+                        'estado' => $diseño->estado,
+                    ];
+                });
+
+            return $this->json([
+                'success' => true,
+                'diseños' => $diseños,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error al obtener diseños del proceso', ['error' => $e->getMessage()]);
+            return $this->failure('Error al obtener diseños', 500);
+        }
+    }
+
+    public function obtenerDatosReciboDesdeAsesor(int $pedidoId, int $prendaId): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return $this->failure('No autenticado', 401);
+            }
+
+            // Verificar que el pedido pertenece al asesor
+            $pedido = \App\Models\PedidoProduccion::find($pedidoId);
+            if (!$pedido || $pedido->asesor_id !== $user->id) {
+                return $this->failure('No tienes permiso para ver este pedido', 403);
+            }
+
+            // Retornar autorización exitosa
+            return $this->json([
+                'success' => true,
+                'message' => 'Autorizado',
+                'pedidoId' => $pedidoId,
+                'prendaId' => $prendaId,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error al validar acceso al recibo', ['error' => $e->getMessage()]);
+            return $this->failure('Error al validar acceso', 500);
+        }
+    }
+
+    public function confirmarDiseñoLogo(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'diseño_id' => 'required|integer|min:1',
+                'proceso_id' => 'required|integer|min:1',
+            ]);
+
+            $user = Auth::user();
+            if (!$user) {
+                return $this->failure('No autenticado', 401);
+            }
+
+            $diseño = \App\Models\DisenoLogoPedido::find($request->diseño_id);
+            if (!$diseño) {
+                return $this->failure('Diseño no encontrado', 404);
+            }
+
+            // Verificar que el diseño pertenece a un pedido del asesor
+            $proceso = $diseño->proceso;
+            $pedido = $proceso?->prenda?->pedidoProduccion;
+            if (!$pedido || $pedido->asesor_id !== $user->id) {
+                return $this->failure('No tienes permiso para confirmar este diseño', 403);
+            }
+
+            // Obtener todos los diseños del mismo recibo (pedido + prenda) en estado pendiente_por_confirmar
+            $prendaId = $proceso->prenda_pedido_id;
+            $todosLosDiseños = \App\Models\DisenoLogoPedido::query()
+                ->whereHas('proceso.prenda', function ($query) use ($prendaId) {
+                    $query->where('id', $prendaId);
+                })
+                ->where('estado', 'pendiente_por_confirmar')
+                ->get();
+
+            // Confirmar todos los diseños del recibo
+            foreach ($todosLosDiseños as $d) {
+                $d->update(['estado' => 'logo_confirmado']);
+            }
+
+            $cantidadConfirmada = $todosLosDiseños->count();
+
+            return $this->json([
+                'success' => true,
+                'message' => "Se confirmaron $cantidadConfirmada diseño(s) correctamente",
+                'cantidad' => $cantidadConfirmada,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error al confirmar diseño logo', ['error' => $e->getMessage()]);
+            return $this->failure('Error al confirmar diseño', 500);
+        }
+    }
+
+    public function obtenerObservacionReciboProceso(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'pedido_id' => 'required|integer|exists:pedidos_produccion,id',
+                'prenda_id' => 'nullable|integer',
+                'tipo_proceso' => 'required|string|max:100',
+            ]);
+
+            $user = Auth::user();
+            if (!$user) {
+                return $this->failure('No autenticado', 401);
+            }
+
+            $pedidoId = (int) $validated['pedido_id'];
+            $prendaId = (int) ($validated['prenda_id'] ?? 0);
+            $tipoProceso = $validated['tipo_proceso'];
+
+            // Verificar que el pedido pertenece al asesor
+            $pedido = \App\Models\PedidoProduccion::find($pedidoId);
+            if (!$pedido || $pedido->asesor_id !== $user->id) {
+                return $this->failure('No tienes permiso para acceder a este pedido', 403);
+            }
+
+            // Obtener observación de la tabla genérica
+            $row = \Illuminate\Support\Facades\DB::table('observaciones_recibos_procesos')
+                ->where('pedido_produccion_id', $pedidoId)
+                ->where('tipo_proceso', strtoupper($tipoProceso))
+                ->orderByDesc('updated_at')
+                ->first();
+
+            // Si no hay observación para el tipo_proceso exacto, buscar en prenda_pedido_id si viene especificado
+            if (!$row && $prendaId > 0) {
+                $row = \Illuminate\Support\Facades\DB::table('observaciones_recibos_procesos')
+                    ->where('pedido_produccion_id', $pedidoId)
+                    ->where('prenda_pedido_id', $prendaId)
+                    ->where('tipo_proceso', strtoupper($tipoProceso))
+                    ->orderByDesc('updated_at')
+                    ->first();
+            }
+
+            return $this->json([
+                'success' => true,
+                'data' => [
+                    'pedido_id' => $pedidoId,
+                    'prenda_id' => (int) ($row->prenda_pedido_id ?? $prendaId),
+                    'tipo_proceso' => strtoupper($tipoProceso),
+                    'observacion' => $row?->observacion,
+                    'updated_at' => $row?->updated_at,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error al obtener observación de recibo/proceso', ['error' => $e->getMessage()]);
+            return $this->failure('Error al obtener observación', 500);
+        }
+    }
 }

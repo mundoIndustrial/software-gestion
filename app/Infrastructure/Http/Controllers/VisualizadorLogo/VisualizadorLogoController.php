@@ -110,9 +110,35 @@ final class VisualizadorLogoController extends Controller
         return view('visualizador-logo.pedidos-logo');
     }
 
-    public function disenosLogo()
+    public function logosConfirmados()
     {
-        return view('visualizador-logo.disenos-logo');
+        return view('visualizador-logo.logos-confirmados');
+    }
+    
+    public function marcarComoRevisado(int $disenoId)
+    {
+        try {
+            $diseno = \App\Models\DisenoLogoPedido::findOrFail($disenoId);
+            $diseno->update(['revisada' => 1]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Diseño marcado como revisado correctamente'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('[VisualizadorLogo] Error al marcar como revisado: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al marcar como revisado'
+            ], 500);
+        }
+    }
+    
+    public static function getConteoLogosNoRevisados()
+    {
+        return \App\Models\DisenoLogoPedido::where('estado', 'logo_confirmado')
+            ->where('revisada', 0)
+            ->count();
     }
 
     public function pedidosVisualizacion()
@@ -192,7 +218,7 @@ final class VisualizadorLogoController extends Controller
         }
     }
 
-    public function disenosLogoData(Request $request)
+    public function logosConfirmadosData(Request $request)
     {
         $perPage = (int) $request->get('per_page', 20);
         if ($perPage < 1) {
@@ -202,36 +228,134 @@ final class VisualizadorLogoController extends Controller
             $perPage = 100;
         }
 
-        $query = DB::table('disenos_logo_pedido as dlp')
-            ->join('pedidos_procesos_prenda_detalles as ppd', 'ppd.id', '=', 'dlp.proceso_prenda_detalle_id')
-            ->join('prendas_pedido as pr', 'pr.id', '=', 'ppd.prenda_pedido_id')
-            ->join('pedidos_produccion as ped', 'ped.id', '=', 'pr.pedido_produccion_id')
-            ->select([
-                'dlp.id',
-                'dlp.url',
-                'dlp.observacio_diseño',
-                'dlp.created_at',
-                'ppd.id as proceso_prenda_detalle_id',
-                'pr.id as prenda_pedido_id',
-                'ped.id as pedido_id',
-                'ped.cliente as cliente',
-            ])
-            ->orderByDesc('dlp.created_at');
+        // First, get all confirmed designs with their relationships
+        $disenos = \App\Models\DisenoLogoPedido::with([
+            'proceso.prenda.pedidoProduccion',
+            'proceso.prenda'
+        ])
+        ->where('estado', 'logo_confirmado')
+        ->orderByDesc('created_at')
+        ->get();
 
+        // Let's map them and try to find numero_recibo
+        $items = $disenos->map(function ($diseno) {
+            $proceso = $diseno->proceso;
+            $prendaPedido = $proceso?->prenda;
+            $pedido = $prendaPedido?->pedidoProduccion;
+
+            // Now let's try to find the consecutivo_recibo_pedido
+            $numeroRecibo = '-';
+
+            if ($proceso && $prendaPedido && $pedido) {
+                // Map tipo_proceso_id to tipo_recibo
+                $tipoRecibo = match($proceso->tipo_proceso_id) {
+                    1 => 'REFLECTIVO',
+                    2 => 'BORDADO',
+                    3 => 'ESTAMPADO',
+                    4 => 'DTF',
+                    5 => 'SUBLIMADO',
+                    default => null
+                };
+                
+                // First, try using the mapped tipo_recibo
+                $crp = null;
+                if ($tipoRecibo) {
+                    $crpQuery = \DB::table('consecutivos_recibos_pedidos')
+                        ->where('pedido_produccion_id', $prendaPedido->pedido_produccion_id)
+                        ->where('prenda_id', $prendaPedido->id)
+                        ->where('activo', 1)
+                        ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [$tipoRecibo]);
+                    
+                    $crp = $crpQuery->first();
+                }
+
+                // If no luck, try any active CRP for this pedido AND prenda_pedido.id
+                if (!$crp) {
+                    $crpQuery = \DB::table('consecutivos_recibos_pedidos')
+                        ->where('pedido_produccion_id', $prendaPedido->pedido_produccion_id)
+                        ->where('prenda_id', $prendaPedido->id)
+                        ->where('activo', 1);
+                    
+                    $crp = $crpQuery->first();
+                }
+
+                // If we found a CRP, use its consecutivo_actual
+                if ($crp && $crp->consecutivo_actual) {
+                    $numeroRecibo = $crp->consecutivo_actual;
+                }
+                // Fallback to ppd's numero_recibo
+                else if ($proceso->numero_recibo) {
+                    $numeroRecibo = $proceso->numero_recibo;
+                }
+            }
+
+            return [
+                'id' => $diseno->id,
+                'url' => $diseno->url,
+                'observacio_diseño' => $diseno->observacio_diseño,
+                'created_at' => $diseno->created_at,
+                'proceso_prenda_detalle_id' => $diseno->proceso_prenda_detalle_id,
+                'prenda_pedido_id' => $prendaPedido?->id,
+                'pedido_id' => $pedido?->id,
+                'cliente' => $pedido?->cliente ?? '-',
+                'nombre_prenda' => $prendaPedido?->nombre_prenda ?? '-',
+                'numero_recibo' => $numeroRecibo,
+                'revisada' => (bool)$diseno->revisada,
+            ];
+        });
+
+        // Now apply search filter
         if ($request->filled('search')) {
             $search = trim((string) $request->get('search'));
-            $query->where(function ($q) use ($search) {
-                $q->where('ped.cliente', 'like', "%{$search}%")
-                    ->orWhere('dlp.observacio_diseño', 'like', "%{$search}%")
-                    ->orWhere('dlp.url', 'like', "%{$search}%");
+            $items = $items->filter(function ($item) use ($search) {
+                return str_contains(strtolower($item['cliente']), strtolower($search))
+                    || str_contains(strtolower($item['observacio_diseño'] ?? ''), strtolower($search))
+                    || str_contains(strtolower($item['numero_recibo']), strtolower($search))
+                    || str_contains(strtolower($item['nombre_prenda']), strtolower($search));
             });
         }
 
-        $items = $query->paginate($perPage);
+        // Group by pedido_id + prenda_id
+        $grouped = $items->groupBy(function ($item) {
+            return $item['pedido_id'] . '-' . $item['prenda_pedido_id'];
+        })->values()->map(function ($group) {
+            $first = $group->first();
+            // Check if all logos in group are revisados
+            $todosRevisados = $group->every(fn($item) => $item['revisada']);
+            return [
+                'group_key' => $first['pedido_id'] . '-' . $first['prenda_pedido_id'],
+                'pedido_id' => $first['pedido_id'],
+                'prenda_pedido_id' => $first['prenda_pedido_id'],
+                'cliente' => $first['cliente'],
+                'nombre_prenda' => $first['nombre_prenda'],
+                'numero_recibo' => $first['numero_recibo'],
+                'created_at' => $first['created_at'],
+                'observacio_diseño' => $first['observacio_diseño'],
+                'todos_revisados' => $todosRevisados,
+                'logos' => $group->map(function ($item) {
+                    return [
+                        'id' => $item['id'],
+                        'url' => $item['url'],
+                        'revisada' => $item['revisada'],
+                    ];
+                })->values()->toArray(),
+            ];
+        });
+
+        // Paginate manually since group
+        $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage();
+        $perPageItems = new \Illuminate\Pagination\LengthAwarePaginator(
+            $grouped->forPage($currentPage, $perPage),
+            $grouped->count(),
+            $perPage,
+            $currentPage,
+            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+        );
 
         return response()->json([
             'success' => true,
-            'items' => $items,
+            'items' => $perPageItems,
+            'conteo_no_revisados' => self::getConteoLogosNoRevisados(),
         ]);
     }
 

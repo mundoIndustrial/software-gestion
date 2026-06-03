@@ -13,6 +13,8 @@ class DisenoLogoPedido extends Model
         'proceso_prenda_detalle_id',
         'url',
         'observacio_diseño',
+        'estado',
+        'revisada',
     ];
 
     public function proceso(): BelongsTo

@@ -108,6 +108,19 @@ final class AsesoresPedidosViewController extends Controller
         }
     }
 
+    public function pendientesLogo(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            return view('asesores.pedidos.pendientes-logo', [
+                'userName' => $user->name ?? 'Usuario',
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error al mostrar pendientes logo', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Error al cargar diseños pendientes');
+        }
+    }
+
     public function create(Request $request)
     {
         try {

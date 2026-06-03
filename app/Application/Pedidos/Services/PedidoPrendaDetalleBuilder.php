@@ -66,6 +66,7 @@ class PedidoPrendaDetalleBuilder
                     'talla_colores' => $this->obtenerTallaColoresDelaPrenda($prenda),
                     'variantes' => $variantes,
                     'imagenes' => $imagenes,
+                    'imagenes_disenos_logo' => $this->obtenerImagenesDiseñosLogo($prenda),
                     'imagenes_tela' => $imagenesTela,
                     'colores_telas' => $coloresTelas,
                     'telas_array' => $coloresTelas,
@@ -938,5 +939,48 @@ class PedidoPrendaDetalleBuilder
         }
 
         return $rutaNormalizada;
+    }
+
+    /**
+     * Obtiene las imágenes de diseños logo asociadas a los procesos de la prenda
+     */
+    private function obtenerImagenesDiseñosLogo($prenda): array
+    {
+        try {
+            $imagenes = [];
+
+            // Obtener todos los procesos de la prenda usando la relación correcta
+            if (!isset($prenda->procesos) || (is_countable($prenda->procesos) && count($prenda->procesos) === 0)) {
+                return [];
+            }
+
+            // Para cada proceso, obtener diseños logo asociados desde la relación cargada
+            foreach ($prenda->procesos as $procesoPrendaDetalle) {
+                // Usar la relación disenosLogo que ahora está eagerly loaded
+                if (isset($procesoPrendaDetalle->disenosLogo) && count($procesoPrendaDetalle->disenosLogo) > 0) {
+                    foreach ($procesoPrendaDetalle->disenosLogo as $diseño) {
+                        if ($diseño->url) {
+                            $imagenes[] = [
+                                'id' => $diseño->id,
+                                'url' => $this->normalizarRutaImagen($diseño->url),
+                                'ruta_webp' => $this->normalizarRutaImagen($diseño->url),
+                                'ruta_original' => $this->normalizarRutaImagen($diseño->url),
+                                'tipo' => 'diseño-logo',
+                                'orden' => 0,
+                                'observacion' => $diseño->observacio_diseño ?? null,
+                            ];
+                        }
+                    }
+                }
+            }
+
+            return $imagenes;
+        } catch (\Exception $e) {
+            Log::warning('[obtenerImagenesDiseñosLogo] Error obteniendo diseños logo', [
+                'prenda_id' => $prenda->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            return [];
+        }
     }
 }

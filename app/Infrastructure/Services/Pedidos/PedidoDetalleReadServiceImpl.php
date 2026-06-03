@@ -46,6 +46,7 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
                         $q3->with([
                             'tipoProceso',
                             'tallas',
+                            'disenosLogo',
                         ])->orderBy('created_at', 'desc');
                     },
                 ]);

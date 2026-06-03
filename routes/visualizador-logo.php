@@ -32,8 +32,9 @@ Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_prod
         ->middleware('role:bordador,admin')
         ->name('pedidos-logo.marcar-completado');
 
-    Route::get('/disenos-logo', [VisualizadorLogoController::class, 'disenosLogo'])->name('disenos-logo');
-    Route::get('/disenos-logo/data', [VisualizadorLogoController::class, 'disenosLogoData'])->name('disenos-logo.data');
+    Route::get('/logos-confirmados', [VisualizadorLogoController::class, 'logosConfirmados'])->name('logos-confirmados');
+    Route::get('/logos-confirmados/data', [VisualizadorLogoController::class, 'logosConfirmadosData'])->name('logos-confirmados.data');
+    Route::post('/logos-confirmados/{disenoId}/marcar-revisado', [VisualizadorLogoController::class, 'marcarComoRevisado'])->name('logos-confirmados.marcar-revisado');
 
     // Visualización de Pedidos (solo lectura)
     Route::get('/pedidos-visualizacion', [VisualizadorLogoController::class, 'pedidosVisualizacion'])->name('pedidos-visualizacion');

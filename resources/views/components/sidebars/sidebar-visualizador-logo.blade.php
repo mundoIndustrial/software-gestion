@@ -48,10 +48,11 @@
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="{{ route('visualizador-logo.disenos-logo') }}"
-                       class="menu-link {{ request()->routeIs('visualizador-logo.disenos-logo') ? 'active' : '' }}">
+                    <a href="{{ route('visualizador-logo.logos-confirmados') }}"
+                       class="menu-link {{ request()->routeIs('visualizador-logo.logos-confirmados') ? 'active' : '' }}">
                         <span class="material-symbols-rounded">image</span>
-                        <span class="menu-label">Diseños de logo</span>
+                        <span class="menu-label">Logos Confirmados</span>
+                        <span id="badge-logos-no-revisados" class="badge" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 800; margin-left: auto; display: none;">0</span>
                     </a>
                 </li>
             </ul>
@@ -75,3 +76,28 @@
         <!-- Puedes agregar información adicional del footer aquí si lo necesitas -->
     </div>
 </aside>
+
+<script>
+    window.__actualizarBadgeLogos = function(count) {
+        const badge = document.getElementById('badge-logos-no-revisados');
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    };
+    
+    // Cargar el conteo inicial
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('{{ route('visualizador-logo.logos-confirmados.data') }}?per_page=1')
+            .then(r => r.json())
+            .then(json => {
+                if (json && json.success === true) {
+                    window.__actualizarBadgeLogos(json.conteo_no_revisados || 0);
+                }
+            });
+    });
+</script>

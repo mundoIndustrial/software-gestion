@@ -169,4 +169,12 @@ class ReciboController extends Controller
             ], $e->getCode() ?: 500);
         }
     }
+
+    /**
+     * Mostrar modal de recibo en ventana modal (para asesores)
+     */
+    public function modalRecibo()
+    {
+        return view('asesores.pedidos.recibo-modal');
+    }
 }

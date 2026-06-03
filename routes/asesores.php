@@ -46,6 +46,7 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     Route::get('/pedidos/borradores', [AsesoresPedidosViewController::class, 'borradores'])->name('pedidos.borradores');
     Route::get('/pendientes', [AsesoresPedidosViewController::class, 'pendientes'])->name('pendientes');
     Route::get('/pendientes/{id}', [AsesoresPedidosViewController::class, 'pendientesDetalle'])->name('pendientes.detalle');
+    Route::get('/pendientes-logo', [AsesoresPedidosViewController::class, 'pendientesLogo'])->name('pendientes-logo');
     Route::get('/cotizaciones/create', [AsesoresPedidosViewController::class, 'create'])->name('pedidos.create');
     Route::get('/pedidos/{id}', [AsesoresPedidosViewController::class, 'show'])->where('id', '[0-9]+')->name('pedidos.show');
     Route::get('/pedidos/{id}/edit', [AsesoresPedidosViewController::class, 'edit'])->where('id', '[0-9]+')->name('pedidos.edit');
@@ -65,6 +66,7 @@ Route::prefix('asesores')->name('asesores.')->group(function () {
     Route::get('/recibos/{id}', [ReciboController::class, 'show'])->name('recibos.show');
     Route::get('/recibos/{id}/datos', [ReciboController::class, 'datos'])->name('recibos.datos');
     Route::get('/recibos/{id}/pdf', [ReciboController::class, 'generarPDF'])->name('recibos.pdf');
+    Route::get('/recibo-modal', [ReciboController::class, 'modalRecibo'])->name('recibo-modal');
     
 
     // ========================================

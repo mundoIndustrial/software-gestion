@@ -96,6 +96,11 @@ class PedidosProcesosPrendaDetalle extends Model
         return $this->hasMany(PedidosProcesosPrendaTalla::class, 'proceso_prenda_detalle_id');
     }
 
+    public function disenosLogo(): HasMany
+    {
+        return $this->hasMany(DisenoLogoPedido::class, 'proceso_prenda_detalle_id');
+    }
+
     // ============================================================
     // SCOPES
     // ============================================================

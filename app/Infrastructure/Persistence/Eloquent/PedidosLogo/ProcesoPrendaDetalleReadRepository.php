@@ -304,12 +304,24 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
 
         $query->where(function ($subQuery) use ($campos, $like, $soloDigitos, $soloDigitosNormalizado, $searchTerm) {
             foreach (array_unique($campos) as $index => $campo) {
-                $subQuery->orWhereRaw("LOWER(COALESCE(CONCAT('', {$campo}), '')) LIKE ?", [strtolower($like)]);
-                if ($soloDigitos !== '' && $soloDigitos !== $searchTerm) {
-                    $subQuery->orWhereRaw("LOWER(COALESCE(CONCAT('', {$campo}), '')) LIKE ?", [strtolower('%' . $soloDigitos . '%')]);
-                }
-                if ($soloDigitosNormalizado !== '' && $soloDigitosNormalizado !== $soloDigitos) {
-                    $subQuery->orWhereRaw("LOWER(COALESCE(CONCAT('', {$campo}), '')) LIKE ?", [strtolower('%' . $soloDigitosNormalizado . '%')]);
+                // Para número de recibo, hacer búsqueda exacta
+                if (strpos($campo, 'numero_recibo') !== false || strpos($campo, 'consecutivo_actual') !== false) {
+                    $subQuery->orWhereRaw("LOWER(COALESCE(CONCAT('', {$campo}), '')) = ?", [strtolower($searchTerm)]);
+                    if ($soloDigitos !== '' && $soloDigitos !== $searchTerm) {
+                        $subQuery->orWhereRaw("LOWER(COALESCE(CONCAT('', {$campo}), '')) = ?", [strtolower($soloDigitos)]);
+                    }
+                    if ($soloDigitosNormalizado !== '' && $soloDigitosNormalizado !== $soloDigitos) {
+                        $subQuery->orWhereRaw("LOWER(COALESCE(CONCAT('', {$campo}), '')) = ?", [strtolower($soloDigitosNormalizado)]);
+                    }
+                } else {
+                    // Para otros campos, mantener búsqueda parcial
+                    $subQuery->orWhereRaw("LOWER(COALESCE(CONCAT('', {$campo}), '')) LIKE ?", [strtolower($like)]);
+                    if ($soloDigitos !== '' && $soloDigitos !== $searchTerm) {
+                        $subQuery->orWhereRaw("LOWER(COALESCE(CONCAT('', {$campo}), '')) LIKE ?", [strtolower('%' . $soloDigitos . '%')]);
+                    }
+                    if ($soloDigitosNormalizado !== '' && $soloDigitosNormalizado !== $soloDigitos) {
+                        $subQuery->orWhereRaw("LOWER(COALESCE(CONCAT('', {$campo}), '')) LIKE ?", [strtolower('%' . $soloDigitosNormalizado . '%')]);
+                    }
                 }
             }
         });
