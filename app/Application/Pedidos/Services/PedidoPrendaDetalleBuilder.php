@@ -968,6 +968,7 @@ class PedidoPrendaDetalleBuilder
                                 'tipo' => 'diseño-logo',
                                 'orden' => 0,
                                 'observacion' => $diseño->observacio_diseño ?? null,
+                                'estado' => $diseño->estado,
                             ];
                         }
                     }

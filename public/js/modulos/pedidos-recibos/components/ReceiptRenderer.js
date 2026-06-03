@@ -626,6 +626,13 @@ export class ReceiptRenderer {
             ];
         }
 
+        if (path.includes('/asesores/')) {
+            return [
+                '/api/asesores/recibos-procesos/observacion',
+                '/api/supervisor-pedidos/recibos-procesos/observacion'
+            ];
+        }
+
         return ['/api/supervisor-pedidos/recibos-procesos/observacion'];
     }
 

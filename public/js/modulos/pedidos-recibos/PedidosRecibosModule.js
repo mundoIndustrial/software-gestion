@@ -1444,7 +1444,9 @@ if (typeof window.printReceiptModal !== 'function') {
                 const tipoProcesoObs = String(tipoProceso || '').trim().toUpperCase();
 
                 if (pedidoIdObs > 0 && prendaIdObs > 0 && tipoProcesoObs) {
-                    const urlObs = `/api/supervisor-pedidos/recibos-procesos/observacion?pedido_id=${encodeURIComponent(pedidoIdObs)}&prenda_id=${encodeURIComponent(prendaIdObs)}&tipo_proceso=${encodeURIComponent(tipoProcesoObs)}`;
+                    const path = String(window?.location?.pathname || '').toLowerCase();
+                    const basePath = path.includes('/asesores/') ? '/api/asesores' : '/api/supervisor-pedidos';
+                    const urlObs = `${basePath}/recibos-procesos/observacion?pedido_id=${encodeURIComponent(pedidoIdObs)}&prenda_id=${encodeURIComponent(prendaIdObs)}&tipo_proceso=${encodeURIComponent(tipoProcesoObs)}`;
                     const resObs = await fetch(urlObs, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                     if (resObs.ok) {
                         const payloadObs = await resObs.json();

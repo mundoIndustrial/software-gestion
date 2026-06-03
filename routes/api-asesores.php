@@ -60,6 +60,8 @@ function registerAsesoresDashboardYPendientesRoutes(): void
         ->name('recibos-procesos.observacion');
     Route::post('/confirmar-diseño-logo', [AsesoresPedidosQueryController::class, 'confirmarDiseñoLogo'])
         ->name('confirmar-diseño-logo');
+    Route::post('/devolver-diseño-logo', [AsesoresPedidosQueryController::class, 'devolverDiseñoLogo'])
+        ->name('devolver-diseño-logo');
     Route::get('/pendientes/{id}/notas', [AsesoresPedidosQueryController::class, 'obtenerNotasPedido'])
         ->whereNumber('id')
         ->name('pendientes.notas');

@@ -101,8 +101,10 @@ export class GalleryManager {
                             url = url.replace('/storage/storage/', '/storage/');
                         }
                         diseñosLogo.push({
+                            id: diseño.id,
                             url: url,
-                            observacion: diseño.observacion || null
+                            observacion: diseño.observacion || null,
+                            estado: diseño.estado || null
                         });
                     }
                 });
@@ -244,37 +246,65 @@ export class GalleryManager {
         
         // Detectar si estamos en /asesores/pendientes-logo
         const esModuloAsesores = window.location.pathname.includes('/asesores/pendientes-logo');
-        
-        // Mostrar sección de Diseños Logo PRIMERO si estamos en módulo de asesores
         const diseñosLogo = uploadCtx?.diseñosLogo || [];
         if (esModuloAsesores && diseñosLogo.length > 0) {
             html += `
                 <div style="margin-bottom: 18px; padding: 14px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f8fafc;">
-                    <div style="font-weight: 800; color: #111827; font-size: 0.9rem; margin-bottom: 12px;">🎨 DISEÑOS LOGO</div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px;">
+                    <div style="font-weight: 800; color: #1e293b; font-size: 0.95rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+                        <i class="fas fa-palette" style="color: #2563eb;"></i> DISEÑOS DE LOGO
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
         `;
             
             diseñosLogo.forEach((diseño, idx) => {
                 const fotosJSON = JSON.stringify([diseño.url]);
+                let estadoBadge = '';
+                if (diseño.estado === 'pendiente_por_confirmar') {
+                    estadoBadge = `<span style="display: inline-block; padding: 2px 6px; font-size: 0.65rem; font-weight: 700; border-radius: 999px; background-color: #fef3c7; color: #d97706; text-transform: uppercase;">Pendiente</span>`;
+                } else if (diseño.estado === 'logo_confirmado') {
+                    estadoBadge = `<span style="display: inline-block; padding: 2px 6px; font-size: 0.65rem; font-weight: 700; border-radius: 999px; background-color: #dcfce7; color: #15803d; text-transform: uppercase;">Confirmado</span>`;
+                } else if (diseño.estado === 'devuelto_a_diseño') {
+                    estadoBadge = `<span style="display: inline-block; padding: 2px 6px; font-size: 0.65rem; font-weight: 700; border-radius: 999px; background-color: #ffe4e6; color: #b91c1c; text-transform: uppercase;">Devuelto</span>`;
+                } else {
+                    estadoBadge = `<span style="display: inline-block; padding: 2px 6px; font-size: 0.65rem; font-weight: 700; border-radius: 999px; background-color: #e2e8f0; color: #475569; text-transform: uppercase;">${diseño.estado || 'Sin Estado'}</span>`;
+                }
+
+                const mostrarBotonObservacion = (diseño.estado === 'pendiente_por_confirmar');
+
                 html += `
-                    <div style="position: relative; border-radius: 10px; overflow: hidden; border: 2px solid #e5e7eb; background: #f3f4f6; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" onclick="GalleryManager.abrirModalImagenProcesoGrande(0, '${fotosJSON.replace(/'/g, "&#39;")}')">
-                        <img src="${diseño.url}" alt="Diseño ${idx + 1}" style="width: 100%; height: 140px; object-fit: cover; display: block;">
-                        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0); transition: background 0.2s;" class="diseño-overlay"></div>
-                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: 700; opacity: 0; transition: opacity 0.2s; text-align: center; pointer-events: none;" class="diseño-icon">🔍</div>
+                    <div class="diseño-card-modern" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); transition: all 0.3s ease;">
+                        <div style="position: relative; height: 110px; background: #f1f5f9; cursor: pointer; overflow: hidden;" onclick="GalleryManager.abrirModalImagenProcesoGrande(0, '${fotosJSON.replace(/'/g, "&#39;")}')">
+                            <img src="${diseño.url}" alt="Diseño ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s ease;" class="diseño-card-img">
+                            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0); transition: background 0.3s ease; display: flex; align-items: center; justify-content: center;" class="diseño-overlay">
+                                <span style="color: white; font-weight: 700; opacity: 0; transition: opacity 0.3s ease; font-size: 1.2rem;" class="diseño-icon">🔍</span>
+                            </div>
+                        </div>
+                        <div style="padding: 10px; display: flex; flex-direction: column; gap: 8px; flex-grow: 1; justify-content: space-between;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: 700; font-size: 0.8rem; color: #1e293b;">Diseño #${idx + 1}</span>
+                                ${estadoBadge}
+                            </div>
+                            
+                            ${diseño.observacion ? `
+                                <div style="font-size: 0.75rem; color: #475569; background: #fff5f5; border-radius: 6px; padding: 6px 8px; border-left: 3px solid #ef4444; word-break: break-word; line-height: 1.3;">
+                                    <strong>Novedad:</strong> ${diseño.observacion}
+                                </div>
+                            ` : ''}
+
+                            ${mostrarBotonObservacion ? `
+                                <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                                    <button onclick="event.stopPropagation(); GalleryManager.enviarObservacionDiseno(${diseño.id})" title="Devolver con Observación" style="width: 32px; height: 32px; border-radius: 50%; border: none; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                </div>
+                            ` : ''}
+                        </div>
                     </div>
                 `;
             });
             
             html += `
                     </div>
-                    ${diseñosLogo.some(d => d.observacion) ? `
-                    <div style="margin-top: 12px; padding: 10px; background: white; border-radius: 8px; border-left: 3px solid #0ea5e9;">
-                        <div style="font-weight: 700; color: #111827; font-size: 0.85rem;">Observaciones:</div>
-                        <div style="font-size: 0.82rem; color: #475569; margin-top: 4px;">
-                            ${diseñosLogo.filter(d => d.observacion).map(d => d.observacion).join(' | ')}
-                        </div>
-                    </div>
-                    ` : ''}
                 </div>
             `;
         }
@@ -300,31 +330,50 @@ export class GalleryManager {
         if (!esModuloAsesores && diseñosLogo.length > 0) {
             html += `
                 <div style="margin-top: 18px; padding: 14px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f8fafc;">
-                    <div style="font-weight: 800; color: #111827; font-size: 0.9rem; margin-bottom: 12px;">🎨 DISEÑOS LOGO</div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px;">
+                    <div style="font-weight: 800; color: #1e293b; font-size: 0.95rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+                        <i class="fas fa-palette" style="color: #2563eb;"></i> DISEÑOS DE LOGO
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
         `;
             
             diseñosLogo.forEach((diseño, idx) => {
                 const fotosJSON = JSON.stringify([diseño.url]);
+                let estadoBadge = '';
+                if (diseño.estado === 'pendiente_por_confirmar') {
+                    estadoBadge = `<span style="display: inline-block; padding: 2px 6px; font-size: 0.65rem; font-weight: 700; border-radius: 999px; background-color: #fef3c7; color: #d97706; text-transform: uppercase;">Pendiente</span>`;
+                } else if (diseño.estado === 'logo_confirmado') {
+                    estadoBadge = `<span style="display: inline-block; padding: 2px 6px; font-size: 0.65rem; font-weight: 700; border-radius: 999px; background-color: #dcfce7; color: #15803d; text-transform: uppercase;">Confirmado</span>`;
+                } else if (diseño.estado === 'devuelto_a_diseño') {
+                    estadoBadge = `<span style="display: inline-block; padding: 2px 6px; font-size: 0.65rem; font-weight: 700; border-radius: 999px; background-color: #ffe4e6; color: #b91c1c; text-transform: uppercase;">Devuelto</span>`;
+                } else {
+                    estadoBadge = `<span style="display: inline-block; padding: 2px 6px; font-size: 0.65rem; font-weight: 700; border-radius: 999px; background-color: #e2e8f0; color: #475569; text-transform: uppercase;">${diseño.estado || 'Sin Estado'}</span>`;
+                }
+
                 html += `
-                    <div style="position: relative; border-radius: 10px; overflow: hidden; border: 2px solid #e5e7eb; background: #f3f4f6; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" onclick="GalleryManager.abrirModalImagenProcesoGrande(0, '${fotosJSON.replace(/'/g, "&#39;")}')">
-                        <img src="${diseño.url}" alt="Diseño ${idx + 1}" style="width: 100%; height: 140px; object-fit: cover; display: block;">
-                        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0); transition: background 0.2s;" class="diseño-overlay"></div>
-                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: 700; opacity: 0; transition: opacity 0.2s; text-align: center; pointer-events: none;" class="diseño-icon">🔍</div>
+                    <div class="diseño-card-modern" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); transition: all 0.3s ease;">
+                        <div style="position: relative; height: 110px; background: #f1f5f9; cursor: pointer; overflow: hidden;" onclick="GalleryManager.abrirModalImagenProcesoGrande(0, '${fotosJSON.replace(/'/g, "&#39;")}')">
+                            <img src="${diseño.url}" alt="Diseño ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s ease;" class="diseño-card-img">
+                            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0); transition: background 0.3s ease; display: flex; align-items: center; justify-content: center;" class="diseño-overlay">
+                                <span style="color: white; font-weight: 700; opacity: 0; transition: opacity 0.3s ease; font-size: 1.2rem;" class="diseño-icon">🔍</span>
+                            </div>
+                        </div>
+                        <div style="padding: 10px; display: flex; flex-direction: column; gap: 8px; flex-grow: 1; justify-content: space-between;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: 700; font-size: 0.8rem; color: #1e293b;">Diseño #${idx + 1}</span>
+                                ${estadoBadge}
+                            </div>
+                            ${diseño.observacion ? `
+                                <div style="font-size: 0.75rem; color: #475569; background: #f8fafc; border-radius: 6px; padding: 6px 8px; border-left: 3px solid #0ea5e9; word-break: break-word; line-height: 1.3;">
+                                    <strong>Obs:</strong> ${diseño.observacion}
+                                </div>
+                            ` : ''}
+                        </div>
                     </div>
                 `;
             });
             
             html += `
                     </div>
-                    ${diseñosLogo.some(d => d.observacion) ? `
-                    <div style="margin-top: 12px; padding: 10px; background: white; border-radius: 8px; border-left: 3px solid #0ea5e9;">
-                        <div style="font-weight: 700; color: #111827; font-size: 0.85rem;">Observaciones:</div>
-                        <div style="font-size: 0.82rem; color: #475569; margin-top: 4px;">
-                            ${diseñosLogo.filter(d => d.observacion).map(d => d.observacion).join(' | ')}
-                        </div>
-                    </div>
-                    ` : ''}
                 </div>
             `;
         }
@@ -1112,7 +1161,7 @@ export class GalleryManager {
                     object-fit: cover;
                     display: block;
                     transition: all 0.3s ease;
-                " onerror='this.style.display="none"; this.parentElement.style.background="#fee2e2"; this.parentElement.innerHTML="<div style=&quot;display: flex; align-items: center; justify-content: center; height: 100%; color: #dc2626; font-size: 0.8rem; text-align: center; padding: 4px;&quot;>Error al cargar imagen</div>";'>
+                " onerror=\"this.style.display='none'; this.parentElement.style.background='#fee2e2'; this.parentElement.style.display='flex'; this.parentElement.style.alignItems='center'; this.parentElement.style.justifyContent='center'; this.parentElement.style.color='#dc2626'; this.parentElement.style.fontSize='0.8rem'; this.parentElement.style.textAlign='center'; this.parentElement.style.padding='4px'; this.parentElement.textContent='Error al cargar imagen';\">
                 <div style="padding: 0.75rem; background: #f9fafb;">
                     <div style="font-size: 0.875rem; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">${titulo}</div>
                     <div style="font-size: 0.75rem; color: #6b7280;">${subtitulo}</div>
@@ -1143,7 +1192,7 @@ export class GalleryManager {
                     data-indice="${idx}"
                     data-fotos='${fotosJSON}'>
                     <img src="${img}" alt="Imagen ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;"
-                         onerror='this.style.display="none"; this.parentElement.style.background="#fee2e2"; this.parentElement.innerHTML="<div style=&quot;display: flex; align-items: center; justify-content: center; height: 100%; color: #dc2626; font-size: 0.8rem; text-align: center; padding: 4px;&quot;>Error al cargar imagen</div>";'>
+                         onerror="this.style.display='none'; this.parentElement.style.background='#fee2e2'; this.parentElement.style.display='flex'; this.parentElement.style.alignItems='center'; this.parentElement.style.justifyContent='center'; this.parentElement.style.color='#dc2626'; this.parentElement.style.fontSize='0.8rem'; this.parentElement.style.textAlign='center'; this.parentElement.style.padding='4px'; this.parentElement.textContent='Error al cargar imagen';">
                 </div>
             `;
         });
@@ -1462,4 +1511,165 @@ export class GalleryManager {
         modalWrapper.style.maxHeight = GalleryManager._prevWrapperStyles.maxHeight || '';
         GalleryManager._prevWrapperStyles = null;
     }
+
+    static async enviarObservacionDiseno(disenoId) {
+        if (!window.Swal) {
+            console.error('SweetAlert not loaded');
+            alert('Error: SweetAlert no está cargado.');
+            return;
+        }
+
+        // Asegurar que SweetAlert se muestre encima de la galería modal (z-index: 9998)
+        if (!document.getElementById('swal-z-index-override')) {
+            const style = document.createElement('style');
+            style.id = 'swal-z-index-override';
+            style.innerHTML = `
+                .swal2-container {
+                    z-index: 99999999 !important;
+                }
+                .modern-swal-popup {
+                    border-radius: 16px !important;
+                    padding: 24px !important;
+                    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+                }
+                .modern-swal-title {
+                    font-size: 1.4rem !important;
+                    font-weight: 800 !important;
+                    color: #1e293b !important;
+                    margin-bottom: 12px !important;
+                }
+                .modern-swal-html {
+                    font-size: 0.95rem !important;
+                    color: #475569 !important;
+                    margin-bottom: 16px !important;
+                }
+                .modern-swal-input {
+                    border: 1px solid #cbd5e1 !important;
+                    border-radius: 10px !important;
+                    padding: 12px !important;
+                    font-size: 0.95rem !important;
+                    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06) !important;
+                    transition: border-color 0.2s, box-shadow 0.2s !important;
+                }
+                .modern-swal-input:focus {
+                    border-color: #ef4444 !important;
+                    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15), inset 0 2px 4px 0 rgba(0, 0, 0, 0.06) !important;
+                }
+                .modern-swal-confirm {
+                    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+                    color: white !important;
+                    font-weight: 700 !important;
+                    border-radius: 10px !important;
+                    padding: 12px 24px !important;
+                    font-size: 0.95rem !important;
+                    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2) !important;
+                    transition: all 0.2s !important;
+                }
+                .modern-swal-confirm:hover {
+                    transform: translateY(-1px) !important;
+                    box-shadow: 0 6px 12px -1px rgba(239, 68, 68, 0.3) !important;
+                }
+                .modern-swal-cancel {
+                    background: #f1f5f9 !important;
+                    color: #475569 !important;
+                    font-weight: 700 !important;
+                    border-radius: 10px !important;
+                    padding: 12px 24px !important;
+                    font-size: 0.95rem !important;
+                    transition: all 0.2s !important;
+                }
+                .modern-swal-cancel:hover {
+                    background: #e2e8f0 !important;
+                    color: #1e293b !important;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        const { value: observacion } = await window.Swal.fire({
+            title: 'Devolver a Diseño',
+            html: '<div style="text-align: left; font-weight: 600; color: #475569; margin-bottom: 8px;">Por favor detalla la novedad o corrección requerida:</div>',
+            input: 'textarea',
+            inputPlaceholder: 'Escribe tu observación aquí (máx. 200 caracteres)...',
+            inputAttributes: {
+                maxlength: 200
+            },
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-undo" style="margin-right: 6px;"></i> Devolver',
+            cancelButtonText: 'Cancelar',
+            customClass: {
+                popup: 'modern-swal-popup',
+                title: 'modern-swal-title',
+                htmlContainer: 'modern-swal-html',
+                input: 'modern-swal-input',
+                confirmButton: 'modern-swal-confirm',
+                cancelButton: 'modern-swal-cancel'
+            },
+            buttonsStyling: false,
+            inputValidator: (value) => {
+                if (!value || !value.trim()) {
+                    return '¡Debes ingresar una observación!';
+                }
+            }
+        });
+
+        if (observacion) {
+            try {
+                window.Swal.showLoading();
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                const response = await fetch('/api/asesores/devolver-diseño-logo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        diseño_id: disenoId,
+                        observacion: observacion.trim()
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    await window.Swal.fire({
+                        icon: 'success',
+                        title: 'Devuelto',
+                        text: 'El diseño ha sido devuelto correctamente.',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        customClass: {
+                            popup: 'modern-swal-popup',
+                            title: 'modern-swal-title'
+                        }
+                    });
+                    location.reload();
+                } else {
+                    window.Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: result.message || 'No se pudo devolver el diseño.',
+                        customClass: {
+                            popup: 'modern-swal-popup',
+                            title: 'modern-swal-title'
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error(error);
+                window.Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Ocurrió un error al procesar la solicitud.',
+                    customClass: {
+                        popup: 'modern-swal-popup',
+                        title: 'modern-swal-title'
+                    }
+                });
+            }
+        }
+    }
 }
+
+window.GalleryManager = GalleryManager;

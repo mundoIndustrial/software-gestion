@@ -512,6 +512,53 @@ final class AsesoresPedidosQueryController extends Controller
         }
     }
 
+    public function devolverDiseñoLogo(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'diseño_id' => 'required|integer|min:1',
+                'observacion' => 'required|string|max:200',
+            ]);
+
+            $user = Auth::user();
+            if (!$user) {
+                return $this->failure('No autenticado', 401);
+            }
+
+            $diseño = \App\Models\DisenoLogoPedido::find($request->diseño_id);
+            if (!$diseño) {
+                return $this->failure('Diseño no encontrado', 404);
+            }
+
+            // Verificar que el diseño pertenece a un pedido del asesor
+            $proceso = $diseño->proceso;
+            $pedido = $proceso?->prenda?->pedidoProduccion;
+            if (!$pedido || $pedido->asesor_id !== $user->id) {
+                return $this->failure('No tienes permiso para modificar este diseño', 403);
+            }
+
+            // Actualizar la observación y el estado del diseño
+            $diseño->update([
+                'observacio_diseño' => $request->observacion,
+                'estado' => 'devuelto_a_diseño',
+            ]);
+
+            return $this->json([
+                'success' => true,
+                'message' => 'El diseño ha sido devuelto a diseño con la observación correctamente.',
+                'diseño' => [
+                    'id' => $diseño->id,
+                    'estado' => $diseño->estado,
+                    'observacio_diseño' => $diseño->observacio_diseño,
+                ]
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error al devolver diseño logo', ['error' => $e->getMessage()]);
+            return $this->failure('Error al devolver el diseño', 500);
+        }
+    }
+
+
     public function obtenerObservacionReciboProceso(Request $request): JsonResponse
     {
         try {
