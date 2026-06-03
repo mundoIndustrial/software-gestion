@@ -77,3 +77,17 @@
         </form>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const textarea = document.getElementById('descripcion_contramuestra');
+        if (textarea) {
+            textarea.addEventListener('input', function () {
+                this.style.height = 'auto';
+                this.style.height = `${Math.min(this.scrollHeight, 220)}px`;
+            });
+        }
+    });
+</script>
+@endpush

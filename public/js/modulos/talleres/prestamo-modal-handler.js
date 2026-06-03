@@ -79,6 +79,7 @@ if (typeof window.printReceiptModal !== 'function') {
 
 function closeModalOverlay() {
     document.getElementById('modal-overlay').style.display = 'none';
+    document.getElementById('modal-overlay').style.pointerEvents = 'none';
     document.getElementById('order-detail-modal-wrapper').style.display = 'none';
     const btnCerrar = document.getElementById('btn-cerrar-modal-dinamico');
     if (btnCerrar) {
@@ -94,6 +95,7 @@ function attachPrestamoBtnListeners() {
             const overlay = document.getElementById('modal-overlay');
             const modal = document.getElementById('order-detail-modal-wrapper');
             overlay.style.display = 'block';
+            overlay.style.pointerEvents = 'auto';
             modal.style.display = 'block';
             
             let btnCerrar = document.getElementById('btn-cerrar-modal-dinamico');

@@ -269,6 +269,12 @@
         $numeroOrden = isset($numeroOrden) ? (int) $numeroOrden : 1;
     @endphp
 
+    <!-- Modal de validación -->
+    <div id="validationModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; padding: 24px; max-width: 400px; box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);"><div style="display: none;"></div>
+        </div>
+    </div>
+
     <div class="recibo-page">
         <div class="page-top-actions">
             <a class="btn-soft" href="{{ route('operario.recibos-prestamo.index') }}">Volver</a>
@@ -316,8 +322,8 @@
                             </thead>
                             <tbody id="insumosRows">
                                 <tr>
-                                    <td><input class="insumo-input qty-input" type="number" min="0" step="1" name="items[0][cantidad]" placeholder="0"></td>
-                                    <td><textarea class="insumo-input insumo-textarea" name="items[0][descripcion]" placeholder="Escribe manualmente el insumo"></textarea></td>
+                                    <td><input class="insumo-input qty-input" type="number" min="1" step="1" name="items[0][cantidad]" placeholder="0" required></td>
+                                    <td><textarea class="insumo-input insumo-textarea" name="items[0][descripcion]" placeholder="Escribe manualmente el insumo" required></textarea></td>
                                     <td style="text-align:center;"><button type="button" class="btn-row-remove" data-remove-row>Quitar</button></td>
                                 </tr>
                             </tbody>
@@ -341,6 +347,8 @@
     document.addEventListener('DOMContentLoaded', function () {
         const rowsBody = document.getElementById('insumosRows');
         const addRowBtn = document.getElementById('addRowBtn');
+        const form = document.querySelector('.recibo-card');
+
         const autoGrow = function (textarea) {
             if (!textarea) return;
             textarea.style.height = 'auto';
@@ -361,18 +369,49 @@
             const rows = rowsBody.querySelectorAll('tr');
             if (rows.length === 1) {
                 rows[0].querySelectorAll('input').forEach((input) => { input.value = ''; });
+                rows[0].querySelectorAll('textarea').forEach((textarea) => { textarea.value = ''; });
                 return;
             }
             button.closest('tr').remove();
             refreshIndexes();
         };
 
+        // Validar antes de enviar
+        form.addEventListener('submit', function (e) {
+            const rows = rowsBody.querySelectorAll('tr');
+            let isValid = true;
+
+            rows.forEach((row) => {
+                const cantidadInput = row.querySelector('input[name*="[cantidad]"]');
+                const descripcionInput = row.querySelector('textarea[name*="[descripcion]"]');
+                
+                const cantidad = parseInt(cantidadInput.value) || 0;
+                const descripcion = descripcionInput.value.trim();
+
+                // Validar que cantidad sea mayor a 0
+                if (cantidad <= 0) {
+                    cantidadInput.focus();
+                    isValid = false;
+                }
+
+                // Validar que descripción no esté vacía
+                if (!descripcion) {
+                    descripcionInput.focus();
+                    isValid = false;
+                }
+            });
+
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+
         addRowBtn.addEventListener('click', function () {
             const index = rowsBody.querySelectorAll('tr').length;
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td><input class="insumo-input qty-input" type="number" min="0" step="1" name="items[${index}][cantidad]" placeholder="0"></td>
-                <td><textarea class="insumo-input insumo-textarea" name="items[${index}][descripcion]" placeholder="Escribe manualmente el insumo"></textarea></td>
+                <td><input class="insumo-input qty-input" type="number" min="1" step="1" name="items[${index}][cantidad]" placeholder="0" required></td>
+                <td><textarea class="insumo-input insumo-textarea" name="items[${index}][descripcion]" placeholder="Escribe manualmente el insumo" required></textarea></td>
                 <td style="text-align:center;"><button type="button" class="btn-row-remove" data-remove-row>Quitar</button></td>
             `;
             rowsBody.appendChild(row);

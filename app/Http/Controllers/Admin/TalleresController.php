@@ -53,7 +53,7 @@ class TalleresController extends Controller
                     'id',
                     'numero_orden',
                     'nombre_costurero',
-                    'fecha as fecha_salida',
+                    'created_at as fecha_salida',
                     'confirmado_entrada_en as fecha_entrada',
                     'confirmado_entrada',
                     'anulado',
@@ -69,7 +69,7 @@ class TalleresController extends Controller
                     'id',
                     'numero_orden',
                     'nombre_costurero',
-                    'fecha as fecha_salida',
+                    'created_at as fecha_salida',
                     'confirmado_entrada_en as fecha_entrada',
                     'confirmado_entrada',
                     'anulado',
@@ -101,7 +101,7 @@ class TalleresController extends Controller
                     'id',
                     'numero_orden',
                     'nombre_costurero',
-                    'fecha as fecha_salida',
+                    'created_at as fecha_salida',
                     'confirmado_entrada_en as fecha_entrada',
                     'confirmado_entrada',
                     'anulado',
@@ -123,7 +123,7 @@ class TalleresController extends Controller
                     'id',
                     'numero_orden',
                     'nombre_costurero',
-                    'fecha as fecha_salida',
+                    'created_at as fecha_salida',
                     'confirmado_entrada_en as fecha_entrada',
                     'confirmado_entrada',
                     'anulado',
@@ -138,7 +138,7 @@ class TalleresController extends Controller
                 });
             }
             
-            $registros = $query->orderByDesc('fecha')->paginate($perPage)->appends(['tipo' => $tipo, 'search' => $search]);
+            $registros = $query->orderByDesc('created_at')->paginate($perPage)->appends(['tipo' => $tipo, 'search' => $search]);
         }
 
         return view('admin.talleres.prestamos-global', [
@@ -162,7 +162,7 @@ class TalleresController extends Controller
                         'id',
                         'numero_orden',
                         'nombre_costurero',
-                        'fecha as fecha_salida',
+                        'created_at as fecha_salida',
                         'confirmado_entrada_en as fecha_entrada',
                         'confirmado_entrada',
                         'anulado',
@@ -177,14 +177,14 @@ class TalleresController extends Controller
                     });
                 }
                 
-                $registros = $query->orderByDesc('fecha')->paginate($perPage, ['*'], 'page', $page);
+                $registros = $query->orderByDesc('created_at')->paginate($perPage, ['*'], 'page', $page);
             } else {
                 $query = DB::table('recibos_prestamo_contramuestra')
                     ->select(
                         'id',
                         'numero_orden',
                         'nombre_costurero',
-                        'fecha as fecha_salida',
+                        'created_at as fecha_salida',
                         'confirmado_entrada_en as fecha_entrada',
                         'confirmado_entrada',
                         'anulado',
@@ -199,7 +199,7 @@ class TalleresController extends Controller
                     });
                 }
                 
-                $registros = $query->orderByDesc('fecha')->paginate($perPage, ['*'], 'page', $page);
+                $registros = $query->orderByDesc('created_at')->paginate($perPage, ['*'], 'page', $page);
             }
 
             $html = '';
@@ -226,8 +226,8 @@ class TalleresController extends Controller
                         </td>
                         <td style="padding:10px;border-bottom:1px solid #f1f5f9;">#' . $r->numero_orden . '</td>
                         <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . $r->nombre_costurero . '</td>
-                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . \Carbon\Carbon::parse($r->fecha_salida)->format('d/m/Y H:i') . '</td>
-                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . ($r->fecha_entrada ? \Carbon\Carbon::parse($r->fecha_entrada)->format('d/m/Y H:i') : '-') . '</td>
+                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . \Carbon\Carbon::parse($r->fecha_salida)->format('d/m/Y h:i A') . '</td>
+                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . ($r->fecha_entrada ? \Carbon\Carbon::parse($r->fecha_entrada)->format('d/m/Y h:i A') : '-') . '</td>
                         <td style="padding:10px;border-bottom:1px solid #f1f5f9;"><span style="' . $estadoClass . 'padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">' . $estadoTexto . '</span></td>
                         <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . ($r->novedades ?: '-') . '</td>
                     </tr>';

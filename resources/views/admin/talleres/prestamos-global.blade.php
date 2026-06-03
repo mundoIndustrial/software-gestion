@@ -13,11 +13,13 @@
     <header style="position:sticky;top:0;z-index:220;background:#fff;border-bottom:1px solid #e2e8f0;padding:16px 32px;margin-left:250px;display:flex;justify-content:space-between;align-items:center;transition:margin-left 0.25s ease;gap:20px;">
         <h1 style="margin:0;font-size:24px;font-weight:700;color:#0f172a;white-space:nowrap;">{{ $tipo === 'insumos' ? 'Préstamos de Insumos' : 'Préstamos de Contramuestras' }}</h1>
         
-        <div style="display:flex;gap:8px;flex:1;max-width:400px;">
-            <input type="text" id="searchInput" placeholder="Buscar por recibo, taller..." 
-                   value="{{ request('search', '') }}"
-                   style="flex:1;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;">
-            <button type="button" id="clearSearchBtn" style="padding:8px 12px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;color:#64748b;cursor:pointer;display:{{ request('search') ? 'block' : 'none' }};">Limpiar</button>
+        <div class="gooey-search-wrapper" style="flex:1;max-width:400px;">
+            <input type="text" id="searchInput" class="gooey-search-input" placeholder="Buscar por recibo, taller..." 
+                   value="{{ request('search', '') }}">
+            <span class="material-symbols-rounded gooey-search-icon">search</span>
+            <button type="button" id="clearSearchBtn" class="gooey-search-clear">
+                <span class="material-symbols-rounded">close</span>
+            </button>
         </div>
         
         <div style="white-space:nowrap;">
@@ -114,8 +116,8 @@
                         </td>
                         <td style="padding:10px;border-bottom:1px solid #f1f5f9;">#{{ $r->numero_orden }}</td>
                         <td style="padding:10px;border-bottom:1px solid #f1f5f9;">{{ $r->nombre_costurero }}</td>
-                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">{{ \Carbon\Carbon::parse($r->fecha_salida)->format('d/m/Y H:i') }}</td>
-                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">{{ $r->fecha_entrada ? \Carbon\Carbon::parse($r->fecha_entrada)->format('d/m/Y H:i') : '-' }}</td>
+                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">{{ \Carbon\Carbon::parse($r->fecha_salida)->format('d/m/Y h:i A') }}</td>
+                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">{{ $r->fecha_entrada ? \Carbon\Carbon::parse($r->fecha_entrada)->format('d/m/Y h:i A') : '-' }}</td>
                         <td style="padding:10px;border-bottom:1px solid #f1f5f9;">
                             @if($r->anulado)
                                 <span style="background:#fee2e2;color:#dc2626;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">ANULADO</span>
@@ -143,7 +145,7 @@
 
     <!-- Modal para ver detalles del préstamo -->
     <div id="modal-overlay"
-         style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none; pointer-events: auto;"
+         style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none; pointer-events: none;"
          onclick="closeModalOverlay()"></div>
     <div id="order-detail-modal-wrapper"
          style="width: 90%; max-width: 672px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
@@ -190,7 +192,6 @@
             // Botón limpiar
             clearBtn.addEventListener('click', function() {
                 searchInput.value = '';
-                clearBtn.style.display = 'none';
                 performSearch('');
             });
 
