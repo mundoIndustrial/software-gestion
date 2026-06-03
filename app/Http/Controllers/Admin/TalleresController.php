@@ -88,6 +88,169 @@ class TalleresController extends Controller
         ]);
     }
 
+    public function showPrestamosGlobal(Request $request)
+    {
+        $tipo = $request->query('tipo', 'insumos');
+        $tipo = in_array($tipo, ['insumos', 'contramuestras'], true) ? $tipo : 'insumos';
+        $search = $request->query('search', '');
+        $perPage = 15;
+
+        if ($tipo === 'insumos') {
+            $query = DB::table('recibos_prestamo_insumos')
+                ->select(
+                    'id',
+                    'numero_orden',
+                    'nombre_costurero',
+                    'fecha as fecha_salida',
+                    'confirmado_entrada_en as fecha_entrada',
+                    'confirmado_entrada',
+                    'anulado',
+                    'novedades'
+                )
+                ->where('confirmado_entrada', 1);
+            
+            if (!empty($search)) {
+                $query->where(function($q) use ($search) {
+                    $q->where('numero_orden', 'LIKE', "%{$search}%")
+                      ->orWhere('nombre_costurero', 'LIKE', "%{$search}%");
+                });
+            }
+            
+            $registros = $query->orderByDesc('fecha')->paginate($perPage)->appends(['tipo' => $tipo, 'search' => $search]);
+        } else {
+            $query = DB::table('recibos_prestamo_contramuestra')
+                ->select(
+                    'id',
+                    'numero_orden',
+                    'nombre_costurero',
+                    'fecha as fecha_salida',
+                    'confirmado_entrada_en as fecha_entrada',
+                    'confirmado_entrada',
+                    'anulado',
+                    'novedades'
+                )
+                ->where('confirmado_entrada', 1);
+            
+            if (!empty($search)) {
+                $query->where(function($q) use ($search) {
+                    $q->where('numero_orden', 'LIKE', "%{$search}%")
+                      ->orWhere('nombre_costurero', 'LIKE', "%{$search}%");
+                });
+            }
+            
+            $registros = $query->orderByDesc('fecha')->paginate($perPage)->appends(['tipo' => $tipo, 'search' => $search]);
+        }
+
+        return view('admin.talleres.prestamos-global', [
+            'tipo' => $tipo,
+            'registros' => $registros,
+        ]);
+    }
+
+    public function apiPrestamosGlobal(Request $request)
+    {
+        try {
+            $tipo = $request->query('tipo', 'insumos');
+            $tipo = in_array($tipo, ['insumos', 'contramuestras'], true) ? $tipo : 'insumos';
+            $search = $request->query('search', '');
+            $page = $request->query('page', 1);
+            $perPage = 15;
+
+            if ($tipo === 'insumos') {
+                $query = DB::table('recibos_prestamo_insumos')
+                    ->select(
+                        'id',
+                        'numero_orden',
+                        'nombre_costurero',
+                        'fecha as fecha_salida',
+                        'confirmado_entrada_en as fecha_entrada',
+                        'confirmado_entrada',
+                        'anulado',
+                        'novedades'
+                    )
+                    ->where('confirmado_entrada', 1);
+                
+                if (!empty($search)) {
+                    $query->where(function($q) use ($search) {
+                        $q->where('numero_orden', 'LIKE', "%{$search}%")
+                          ->orWhere('nombre_costurero', 'LIKE', "%{$search}%");
+                    });
+                }
+                
+                $registros = $query->orderByDesc('fecha')->paginate($perPage, ['*'], 'page', $page);
+            } else {
+                $query = DB::table('recibos_prestamo_contramuestra')
+                    ->select(
+                        'id',
+                        'numero_orden',
+                        'nombre_costurero',
+                        'fecha as fecha_salida',
+                        'confirmado_entrada_en as fecha_entrada',
+                        'confirmado_entrada',
+                        'anulado',
+                        'novedades'
+                    )
+                    ->where('confirmado_entrada', 1);
+                
+                if (!empty($search)) {
+                    $query->where(function($q) use ($search) {
+                        $q->where('numero_orden', 'LIKE', "%{$search}%")
+                          ->orWhere('nombre_costurero', 'LIKE', "%{$search}%");
+                    });
+                }
+                
+                $registros = $query->orderByDesc('fecha')->paginate($perPage, ['*'], 'page', $page);
+            }
+
+            $html = '';
+            if ($registros->isEmpty()) {
+                $html = '<tr><td colspan="7" style="padding:16px;text-align:center;color:#64748b;">Sin registros de préstamos confirmados.</td></tr>';
+            } else {
+                foreach ($registros as $r) {
+                    $estadoClass = '';
+                    $estadoTexto = '';
+                    if ($r->anulado) {
+                        $estadoClass = 'background:#fee2e2;color:#dc2626;';
+                        $estadoTexto = 'ANULADO';
+                    } elseif ($r->confirmado_entrada) {
+                        $estadoClass = 'background:#dcfce7;color:#16a34a;';
+                        $estadoTexto = 'CONFIRMADO';
+                    } else {
+                        $estadoClass = 'background:#fef3c7;color:#ea8c55;';
+                        $estadoTexto = 'PENDIENTE';
+                    }
+                    
+                    $html .= '<tr>
+                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">
+                            <button type="button" class="btn-ver-prestamo" data-tipo="' . $tipo . '" data-id="' . $r->id . '" style="background:#3b82f6;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Ver</button>
+                        </td>
+                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">#' . $r->numero_orden . '</td>
+                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . $r->nombre_costurero . '</td>
+                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . \Carbon\Carbon::parse($r->fecha_salida)->format('d/m/Y H:i') . '</td>
+                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . ($r->fecha_entrada ? \Carbon\Carbon::parse($r->fecha_entrada)->format('d/m/Y H:i') : '-') . '</td>
+                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;"><span style="' . $estadoClass . 'padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">' . $estadoTexto . '</span></td>
+                        <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . ($r->novedades ?: '-') . '</td>
+                    </tr>';
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'html' => $html,
+                'total' => $registros->total(),
+                'current_page' => $registros->currentPage(),
+                'last_page' => $registros->lastPage(),
+                'pagination_html' => (string) $registros->render('vendor.pagination.simple-clean')
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en apiPrestamosGlobal: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al buscar préstamos'
+            ], 500);
+        }
+    }
+
     public function showEntregas($taller_id, $recibo_id, $es_parcial, \App\Application\Talleres\UseCases\ObtenerDetalleEntregasUseCase $useCase)
     {
         $isParcial = $es_parcial == '1';

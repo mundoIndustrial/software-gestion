@@ -63,14 +63,16 @@ Route::middleware(['auth', 'role:admin,supervisor_gerencia'])->prefix('admin/con
 // ========================================
 Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion,visualizador_talleres'])->prefix('talleres')->name('talleres.')->group(function () {
     Route::get('/', [App\Http\Controllers\Admin\TalleresController::class, 'index'])->name('index');
-    Route::get('/{id}/recibos', [App\Http\Controllers\Admin\TalleresController::class, 'showRecibos'])->name('show');
-    Route::get('/{id}/prestamos', [App\Http\Controllers\Admin\TalleresController::class, 'showPrestamos'])->name('prestamos');
-    Route::get('/{id}/recibos/{recibo_id}/{es_parcial}/entregas', [App\Http\Controllers\Admin\TalleresController::class, 'showEntregas'])->name('entregas');
+    Route::get('prestamos/global', [App\Http\Controllers\Admin\TalleresController::class, 'showPrestamosGlobal'])->name('prestamos-global');
+    Route::get('api/prestamos/global', [App\Http\Controllers\Admin\TalleresController::class, 'apiPrestamosGlobal'])->name('api.prestamos-global');
+    Route::get('{id}/recibos', [App\Http\Controllers\Admin\TalleresController::class, 'showRecibos'])->name('show');
+    Route::get('{id}/prestamos', [App\Http\Controllers\Admin\TalleresController::class, 'showPrestamos'])->name('prestamos');
+    Route::get('{id}/recibos/{recibo_id}/{es_parcial}/entregas', [App\Http\Controllers\Admin\TalleresController::class, 'showEntregas'])->name('entregas');
     
     // API endpoints para SPA
-    Route::get('/api/search', [App\Http\Controllers\Admin\TalleresController::class, 'apiSearch'])->name('api.search');
-    Route::get('/api/{id}/recibos', [App\Http\Controllers\Admin\TalleresController::class, 'apiRecibos'])->name('api.recibos');
-    Route::get('/api/{taller_id}/recibos/{recibo_id}/{es_parcial}/entregas', [App\Http\Controllers\Admin\TalleresController::class, 'apiEntregas'])->name('api.entregas');
+    Route::get('api/search', [App\Http\Controllers\Admin\TalleresController::class, 'apiSearch'])->name('api.search');
+    Route::get('api/{id}/recibos', [App\Http\Controllers\Admin\TalleresController::class, 'apiRecibos'])->name('api.recibos');
+    Route::get('api/{taller_id}/recibos/{recibo_id}/{es_parcial}/entregas', [App\Http\Controllers\Admin\TalleresController::class, 'apiEntregas'])->name('api.entregas');
     Route::get('/api/ordenes/todas', [App\Http\Controllers\Admin\TalleresController::class, 'apiOrdenes'])->name('api.ordenes');
     Route::get('/api/recibos/completo', [App\Http\Controllers\Admin\TalleresController::class, 'apiReciboCompleto'])->name('api.recibo-completo');
     Route::get('/api/prestamos/{tipo}/{id}/detalle', [App\Http\Controllers\Admin\TalleresController::class, 'apiDetallePrestamo'])->name('api.prestamos.detalle');

@@ -30,26 +30,71 @@
         @php
             $currentView = request('view');
             $isOrdenesView = $currentView === 'ordenes';
+            $isVisualizador = auth()->user()->hasRole('visualizador_talleres');
         @endphp
         <nav class="sidebar-nav">
-            <button class="sidebar-item {{ !$isOrdenesView && $status !== 'inactivos' ? 'active' : '' }}" data-view="viewTalleres" data-status="activos" id="navTalleres">
-                <span class="material-symbols-rounded">factory</span>
-                <span class="nav-label">Talleres Activos</span>
-            </button>
-            <button class="sidebar-item {{ !$isOrdenesView && $status === 'inactivos' ? 'active' : '' }}" data-view="viewTalleres" data-status="inactivos" id="navTalleresInactivos">
-                <span class="material-symbols-rounded">cancel</span>
-                <span class="nav-label">Talleres Inactivos</span>
-            </button>
-            <button class="sidebar-item {{ $isOrdenesView ? 'active' : '' }}" data-view="viewOrdenes" id="navOrdenes">
-                <span class="material-symbols-rounded">assignment</span>
-                <span class="nav-label">Órdenes</span>
-            </button>
-            <a href="{{ route('seguimiento-lavanderia.index') }}"
-               class="sidebar-item {{ request()->routeIs('seguimiento-lavanderia.*') ? 'active' : '' }}"
-               aria-label="Ir a Lavandería">
-                <span class="material-symbols-rounded">local_laundry_service</span>
-                <span class="nav-label">Lavandería</span>
-            </a>
+            @if($isVisualizador)
+                <!-- Menú anidado para visualizador_talleres -->
+                <div class="sidebar-group">
+                    <button class="sidebar-item sidebar-group-toggle" id="navTalleresGroup">
+                        <span class="material-symbols-rounded">factory</span>
+                        <span class="nav-label">Talleres</span>
+                        <span class="material-symbols-rounded expand-icon">expand_more</span>
+                    </button>
+                    <div class="sidebar-submenu" id="talleresSubmenu">
+                        <button class="sidebar-item sidebar-subitem {{ !$isOrdenesView && $status !== 'inactivos' ? 'active' : '' }}" data-view="viewTalleres" data-status="activos" id="navTalleres">
+                            <span class="nav-label">Activos</span>
+                        </button>
+                        <button class="sidebar-item sidebar-subitem {{ !$isOrdenesView && $status === 'inactivos' ? 'active' : '' }}" data-view="viewTalleres" data-status="inactivos" id="navTalleresInactivos">
+                            <span class="nav-label">Inactivos</span>
+                        </button>
+                        <button class="sidebar-item sidebar-subitem {{ $isOrdenesView ? 'active' : '' }}" data-view="viewOrdenes" id="navOrdenes">
+                            <span class="nav-label">Órdenes</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="sidebar-group">
+                    <button class="sidebar-item sidebar-group-toggle" id="navPrestamosGroup">
+                        <span class="material-symbols-rounded">payment</span>
+                        <span class="nav-label">Préstamos</span>
+                        <span class="material-symbols-rounded expand-icon">expand_more</span>
+                    </button>
+                    <div class="sidebar-submenu collapsed" id="prestamosSubmenu">
+                        <a href="{{ route('talleres.prestamos-global', ['tipo' => 'insumos']) }}" class="sidebar-item sidebar-subitem" id="navPrestamosInsumos">
+                            <span class="nav-label">Insumos</span>
+                        </a>
+                        <a href="{{ route('talleres.prestamos-global', ['tipo' => 'contramuestras']) }}" class="sidebar-item sidebar-subitem" id="navPrestamosContramuestras">
+                            <span class="nav-label">Contramuestras</span>
+                        </a>
+                    </div>
+                </div>
+                <a href="{{ route('seguimiento-lavanderia.index') }}"
+                   class="sidebar-item {{ request()->routeIs('seguimiento-lavanderia.*') ? 'active' : '' }}"
+                   aria-label="Ir a Lavandería">
+                    <span class="material-symbols-rounded">local_laundry_service</span>
+                    <span class="nav-label">Lavandería</span>
+                </a>
+            @else
+                <!-- Menú plano para otros roles -->
+                <button class="sidebar-item {{ !$isOrdenesView && $status !== 'inactivos' ? 'active' : '' }}" data-view="viewTalleres" data-status="activos" id="navTalleres">
+                    <span class="material-symbols-rounded">factory</span>
+                    <span class="nav-label">Talleres Activos</span>
+                </button>
+                <button class="sidebar-item {{ !$isOrdenesView && $status === 'inactivos' ? 'active' : '' }}" data-view="viewTalleres" data-status="inactivos" id="navTalleresInactivos">
+                    <span class="material-symbols-rounded">cancel</span>
+                    <span class="nav-label">Talleres Inactivos</span>
+                </button>
+                <button class="sidebar-item {{ $isOrdenesView ? 'active' : '' }}" data-view="viewOrdenes" id="navOrdenes">
+                    <span class="material-symbols-rounded">assignment</span>
+                    <span class="nav-label">Órdenes</span>
+                </button>
+                <a href="{{ route('seguimiento-lavanderia.index') }}"
+                   class="sidebar-item {{ request()->routeIs('seguimiento-lavanderia.*') ? 'active' : '' }}"
+                   aria-label="Ir a Lavandería">
+                    <span class="material-symbols-rounded">local_laundry_service</span>
+                    <span class="nav-label">Lavandería</span>
+                </a>
+            @endif
         </nav>
         @if(!auth()->user()->hasRole('visualizador_talleres'))
         <div class="sidebar-footer">

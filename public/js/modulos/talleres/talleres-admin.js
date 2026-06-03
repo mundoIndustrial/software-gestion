@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initSidebarNavigation();
     initInitialStatus();
     initSidebarToggle();
+    initNestedMenuToggle();
     restoreLastViewFromSession();
 });
 
@@ -42,6 +43,57 @@ function initSidebarToggle() {
     toggleBtn.addEventListener('click', function () {
         const collapsed = document.body.classList.toggle('talleres-sidebar-collapsed');
         localStorage.setItem(storageKey, collapsed ? '1' : '0');
+    });
+}
+
+function initNestedMenuToggle() {
+    initMenuGroupToggle('navTalleresGroup', 'talleresSubmenu', 'talleres.menu.expanded', false);
+    initMenuGroupToggle('navPrestamosGroup', 'prestamosSubmenu', 'prestamos.menu.expanded', true);
+}
+
+function initMenuGroupToggle(toggleId, submenuId, storageKey, expandedByDefault = false) {
+    const groupToggle = document.getElementById(toggleId);
+    const submenu = document.getElementById(submenuId);
+    
+    if (!groupToggle || !submenu) return;
+
+    const isExpanded = localStorage.getItem(storageKey) !== null 
+        ? localStorage.getItem(storageKey) === '1' 
+        : expandedByDefault; // Use default if not in localStorage
+    
+    // Set initial state
+    if (isExpanded) {
+        groupToggle.classList.add('expanded');
+        submenu.classList.remove('collapsed');
+    } else {
+        groupToggle.classList.remove('expanded');
+        submenu.classList.add('collapsed');
+    }
+    
+    // Toggle on click
+    groupToggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const isCurrentlyExpanded = groupToggle.classList.contains('expanded');
+        
+        if (isCurrentlyExpanded) {
+            groupToggle.classList.remove('expanded');
+            submenu.classList.add('collapsed');
+            localStorage.setItem(storageKey, '0');
+        } else {
+            groupToggle.classList.add('expanded');
+            submenu.classList.remove('collapsed');
+            localStorage.setItem(storageKey, '1');
+        }
+    });
+    
+    // Handle subitem clicks
+    const subitems = submenu.querySelectorAll('.sidebar-subitem');
+    subitems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
     });
 }
 

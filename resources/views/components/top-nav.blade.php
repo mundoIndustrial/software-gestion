@@ -146,10 +146,12 @@
                     <span class="material-symbols-rounded">close</span>
                 </button>
             </form>
+            @if(!auth()->user()->hasRole('visualizador_talleres'))
             <button class="btn-primary-gradient btn-new-taller" id="btnNewTaller" type="button">
                 <span class="material-symbols-rounded">add</span>
                 NUEVO TALLER
             </button>
+            @endif
         </div>
         @endif
         <!-- Botón Nuevo Usuario -->
