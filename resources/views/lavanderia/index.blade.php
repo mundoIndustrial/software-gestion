@@ -213,12 +213,7 @@
 <div class="modal" id="modalSelectorTallasManual">
     <div class="modal-content modal-salida-content">
         <div class="modal-header">
-            <div>
-                <h3 class="modal-title">Selector de Tallas Manual</h3>
-                <p style="margin: 4px 0 0 0; font-size: 12px; color: #94a3b8; font-weight: 500;">
-                    Género → letras/números → tallas → cantidades
-                </p>
-            </div>
+            
             <button type="button" class="modal-close" id="btnCerrarModalSelectorTallasManual">
                 <span class="material-symbols-rounded">close</span>
             </button>
@@ -307,7 +302,6 @@
     <script src="{{ asset('js/lavanderia/diagnostics.js') }}"></script>
     <script type="module" src="{{ asset('js/lavanderia/index.js') }}"></script>
 @endpush
-
 
 
 

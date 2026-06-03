@@ -776,6 +776,13 @@
     .modal-content {
         border-radius: 32px;
         max-height: 85vh;
+        max-width: 100% !important;
+        width: 100%;
+    }
+
+    .modal-salida-content {
+        max-width: 100% !important;
+        width: 100%;
     }
 
     /* Excluir el modal de firma del comportamiento normal en mobile */
@@ -930,8 +937,15 @@
     }
 
     .modal-content {
-        max-width: 100%;
+        max-width: 100% !important;
+        width: 100%;
+        border-radius: 32px;
         border-radius: 16px 16px 0 0;
+    }
+
+    .modal-salida-content {
+        max-width: 100% !important;
+        width: 100%;
     }
 
     #signatureCanvas {

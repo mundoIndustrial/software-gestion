@@ -714,7 +714,7 @@ class RegistrationHandler {
             modoTallas: prenda.modoTallas || 'LETRAS',
             selectedSizeNames: (prenda.selectedTallas || []).map(t => String(t.talla || '').trim().toUpperCase()).filter(Boolean),
             selectedTallas: Array.isArray(prenda.selectedTallas) ? prenda.selectedTallas.map(t => ({ ...t })) : []
-        }, 3, true);
+        }, 1, true);
     }
 
     /**
@@ -735,241 +735,12 @@ class RegistrationHandler {
             ? estado.selectedTallas.map(t => ({ ...t }))
             : [];
 
-        if (this.currentManualPrendaWizardStep === 1) {
-            const modoNumerosDisponible = genero === 'DAMA' || genero === 'CABALLERO';
-            container.innerHTML = `
-                <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
-                    <div style="font-weight: 700; color: #1e293b; margin-bottom: 8px;">
-                        ${estado.descripcion}
-                    </div>
-                    <div style="font-size: 13px; color: #64748b; margin-bottom: 6px;">
-                        Paso 1 de 3 · Selecciona el género y el tipo de tallas
-                    </div>
-                    <div style="font-size: 12px; color: #2450ef; font-weight: 600;">
-                        Género actual: ${this.getLabelGenero(genero)}
-                    </div>
-                </div>
-
-                <div class="form-group" style="margin-bottom: 16px;">
-                    <label class="form-label">Género</label>
-                    <select id="manualTallasGeneroSelect" class="form-select">
-                        <option value="">Selecciona un género</option>
-                        <option value="DAMA" ${genero === 'DAMA' ? 'selected' : ''}>Dama</option>
-                        <option value="CABALLERO" ${genero === 'CABALLERO' ? 'selected' : ''}>Caballero</option>
-                        <option value="UNISEX" ${genero === 'UNISEX' ? 'selected' : ''}>Unisex</option>
-                    </select>
-                </div>
-
-                <div class="form-group" style="margin-bottom: 16px;">
-                    <label class="form-label">Tipo de tallas</label>
-                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
-                        <button type="button" class="manual-talla-modo-btn ${modoTallas === 'LETRAS' ? 'active' : ''}" data-modo="LETRAS" style="
-                            flex: 1;
-                            min-width: 140px;
-                            padding: 12px 14px;
-                            border-radius: 10px;
-                            border: 1px solid ${modoTallas === 'LETRAS' ? '#2450ef' : '#cbd5e1'};
-                            background: ${modoTallas === 'LETRAS' ? '#eff6ff' : 'white'};
-                            color: #1e293b;
-                            font-weight: 700;
-                            cursor: pointer;
-                        ">
-                            Letras
-                        </button>
-                        <button type="button" class="manual-talla-modo-btn ${modoTallas === 'NUMEROS' ? 'active' : ''}" data-modo="NUMEROS" ${modoNumerosDisponible ? '' : 'disabled'} style="
-                            flex: 1;
-                            min-width: 140px;
-                            padding: 12px 14px;
-                            border-radius: 10px;
-                            border: 1px solid ${modoTallas === 'NUMEROS' ? '#2450ef' : '#cbd5e1'};
-                            background: ${modoTallas === 'NUMEROS' ? '#eff6ff' : 'white'};
-                            color: ${modoNumerosDisponible ? '#1e293b' : '#94a3b8'};
-                            font-weight: 700;
-                            cursor: ${modoNumerosDisponible ? 'pointer' : 'not-allowed'};
-                            opacity: ${modoNumerosDisponible ? '1' : '0.6'};
-                        ">
-                            Números
-                    </button>
-                </div>
-                <div style="margin-top: 10px; font-size: 12px; color: #64748b;">
-                    ${genero === 'DAMA'
-                        ? 'Números disponibles: 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26.'
-                        : genero === 'CABALLERO'
-                            ? 'Números disponibles: 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50.'
-                            : 'Selecciona un género para habilitar las tallas numéricas.'
-                    }
-                </div>
-                <p id="manualTallasModoHelper" style="margin: 8px 0 0 0; font-size: 12px; color: #64748b;">
-                    Letras: XS, S, M, L, XL, XXL, XXXL, XXXXL.
-                    ${modoNumerosDisponible ? 'Números según el género seleccionado.' : 'Selecciona un género para ver opciones numéricas.'}
-                </p>
-            </div>
-
-                <div style="display: flex; gap: 8px; margin-top: 16px;">
-                    <button type="button" class="btn btn-secondary" id="btnCancelarManualTallasWizard" style="flex: 1;">
-                        Cancelar
-                    </button>
-                    <button type="button" class="btn btn-primary" id="btnManualTallasPaso1Continuar" style="flex: 1;">
-                        Continuar
-                    </button>
-                </div>
-            `;
-
-            const generoSelect = document.getElementById('manualTallasGeneroSelect');
-            const modoButtons = document.querySelectorAll('.manual-talla-modo-btn');
-
-            if (generoSelect) {
-                generoSelect.addEventListener('change', (e) => {
-                    this.currentManualPrendaDraft.genero = this.normalizeGenero(e.target.value || '');
-                    if (this.currentManualPrendaDraft.genero !== 'DAMA' && this.currentManualPrendaDraft.genero !== 'CABALLERO' && this.currentManualPrendaDraft.modoTallas === 'NUMEROS') {
-                        this.currentManualPrendaDraft.modoTallas = 'LETRAS';
-                    }
-                    this.renderTallasForManualPrenda(this.currentManualPrendaDraft);
-                });
-            }
-
-            modoButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    if (btn.disabled) return;
-                    this.currentManualPrendaDraft.modoTallas = this.normalizeModoTallas(btn.dataset.modo);
-                    this.renderTallasForManualPrenda(this.currentManualPrendaDraft);
-                });
-            });
-
-            document.getElementById('btnCancelarManualTallasWizard')?.addEventListener('click', () => {
-                this.closeManualPrendaWizard({ clearDraft: true, restoreForm: true });
-            });
-
-            document.getElementById('btnManualTallasPaso1Continuar')?.addEventListener('click', () => {
-                this.currentManualPrendaDraft.genero = this.normalizeGenero(document.getElementById('manualTallasGeneroSelect')?.value || this.currentManualPrendaDraft.genero || '');
-                const modoSeleccionado = document.querySelector('.manual-talla-modo-btn.active')?.dataset?.modo || this.currentManualPrendaDraft.modoTallas;
-
-                if (!this.currentManualPrendaDraft.genero) {
-                    window.dispatchEvent(new CustomEvent('showToast', {
-                        detail: { title: 'Género Requerido', message: 'Selecciona un género para continuar', type: 'error' }
-                    }));
-                    return;
-                }
-
-                this.currentManualPrendaDraft.modoTallas = this.normalizeModoTallas(modoSeleccionado);
-                if (this.currentManualPrendaDraft.modoTallas === 'NUMEROS' && this.currentManualPrendaDraft.genero !== 'DAMA' && this.currentManualPrendaDraft.genero !== 'CABALLERO') {
-                    window.dispatchEvent(new CustomEvent('showToast', {
-                        detail: { title: 'Tipo no disponible', message: 'Unisex solo permite tallas de letras', type: 'warning' }
-                    }));
-                    this.currentManualPrendaDraft.modoTallas = 'LETRAS';
-                    return;
-                }
-
-                this.currentManualPrendaWizardStep = 2;
-                this.renderTallasForManualPrenda(this.currentManualPrendaDraft);
-            });
-
-            return;
-        }
-
-        if (this.currentManualPrendaWizardStep === 2) {
-            container.innerHTML = `
-                <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
-                    <div style="font-weight: 700; color: #1e293b; margin-bottom: 8px;">
-                        ${estado.descripcion}
-                    </div>
-                    <div style="font-size: 13px; color: #64748b; margin-bottom: 6px;">
-                        Paso 2 de 3 · Selecciona las tallas disponibles
-                    </div>
-                    <div style="font-size: 12px; color: #2450ef; font-weight: 600;">
-                        ${this.getLabelGenero(genero)} · ${this.getLabelModoTallas(modoTallas)}
-                    </div>
-                </div>
-
-                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                    ${tallasDisponibles.length > 0
-                        ? tallasDisponibles.map(talla => `
-                            <button type="button" class="manual-talla-chip ${selectedSizeNames.includes(talla) ? 'active' : ''}" data-talla="${talla}" style="
-                                min-width: 72px;
-                                padding: 10px 14px;
-                                border-radius: 999px;
-                                border: 1px solid ${selectedSizeNames.includes(talla) ? '#2450ef' : '#cbd5e1'};
-                                background: ${selectedSizeNames.includes(talla) ? '#2450ef' : 'white'};
-                                color: ${selectedSizeNames.includes(talla) ? 'white' : '#1e293b'};
-                                font-weight: 700;
-                                cursor: pointer;
-                                transition: all 0.2s ease;
-                            ">
-                                ${talla}
-                            </button>
-                        `).join('')
-                        : '<p style="color:#94a3b8; margin:0;">No hay tallas disponibles para este género.</p>'
-                    }
-                </div>
-
-                <div style="margin-top: 14px; font-size: 12px; color: #64748b;">
-                    Seleccionadas: <strong>${selectedSizeNames.length}</strong>
-                </div>
-
-                <div style="display: flex; gap: 8px; margin-top: 16px;">
-                    <button type="button" class="btn btn-secondary" id="btnManualTallasPaso2Volver" style="flex: 1;">
-                        Volver
-                    </button>
-                    <button type="button" class="btn btn-primary" id="btnManualTallasPaso2Continuar" style="flex: 1;">
-                        Continuar
-                    </button>
-                </div>
-            `;
-
-            document.getElementById('btnManualTallasPaso2Volver')?.addEventListener('click', () => {
-                this.currentManualPrendaWizardStep = 1;
-                this.renderTallasForManualPrenda(this.currentManualPrendaDraft);
-            });
-
-            document.querySelectorAll('.manual-talla-chip').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const talla = String(btn.dataset.talla || '').trim().toUpperCase();
-                    if (!talla) return;
-
-                    const actual = this.currentManualPrendaDraft.selectedSizeNames || [];
-                    const index = actual.indexOf(talla);
-                    if (index >= 0) {
-                        actual.splice(index, 1);
-                    } else {
-                        actual.push(talla);
-                    }
-                    this.currentManualPrendaDraft.selectedSizeNames = actual;
-                    this.renderTallasForManualPrenda(this.currentManualPrendaDraft);
-                });
-            });
-
-            document.getElementById('btnManualTallasPaso2Continuar')?.addEventListener('click', () => {
-                const seleccionadas = Array.isArray(this.currentManualPrendaDraft.selectedSizeNames)
-                    ? this.currentManualPrendaDraft.selectedSizeNames.filter(Boolean)
-                    : [];
-
-                if (seleccionadas.length === 0) {
-                    window.dispatchEvent(new CustomEvent('showToast', {
-                        detail: { title: 'Tallas Requeridas', message: 'Selecciona al menos una talla para continuar', type: 'error' }
-                    }));
-                    return;
-                }
-
-                const mapaCantidades = new Map(
-                    (Array.isArray(this.currentManualPrendaDraft.selectedTallas) ? this.currentManualPrendaDraft.selectedTallas : [])
-                        .map(item => [String(item.talla || '').trim().toUpperCase(), item])
-                );
-
-                this.currentManualPrendaDraft.selectedTallas = seleccionadas.map(talla => ({
-                    talla,
-                    cantidad_enviada: mapaCantidades.get(talla)?.cantidad_enviada || 0,
-                    genero: this.currentManualPrendaDraft.genero || 'UNISEX'
-                }));
-
-                this.currentManualPrendaWizardStep = 3;
-                this.renderTallasForManualPrenda(this.currentManualPrendaDraft);
-            });
-
-            return;
-        }
-
-        const gruposOrdenados = tallasDisponibles
-            .filter(talla => selectedSizeNames.includes(talla));
+        // Mostrar interfaz unificada: género + tallas + cantidades
+        const generoOptions = [
+            { value: 'DAMA', label: 'Dama' },
+            { value: 'CABALLERO', label: 'Caballero' },
+            { value: 'UNISEX', label: 'Unisex' }
+        ];
 
         const etiquetasSeleccionadas = selectedTallas.length > 0
             ? selectedTallas.map(item => {
@@ -978,16 +749,14 @@ class RegistrationHandler {
                 return `
                     <div style="
                         display: flex;
-                        gap: 12px;
+                        gap: 8px;
                         align-items: center;
-                        justify-content: space-between;
-                        border: 1px solid #fcd34d;
-                        border-radius: 12px;
-                        padding: 12px;
-                        background: #fffaf0;
-                        margin-bottom: 10px;
+                        border: 1px solid #cbd5e1;
+                        border-radius: 6px;
+                        padding: 8px;
+                        background: white;
                     " class="manual-talla-row" data-talla="${talla}">
-                        <div style="min-width: 70px; font-weight: 800; color: #92400e; font-size: 14px;">
+                        <div style="font-weight: 700; color: #1e293b; font-size: 14px; min-width: 32px; text-align: center;">
                             ${talla}
                         </div>
                         <input
@@ -996,54 +765,182 @@ class RegistrationHandler {
                             class="form-input manual-talla-cantidad-input"
                             data-talla="${talla}"
                             value="${cantidad > 0 ? cantidad : ''}"
-                            placeholder="Cantidad"
-                            style="max-width: 120px; text-align: center;"
+                            placeholder="0"
+                            style="flex: 1; text-align: center; font-size: 13px; padding: 6px 8px; height: 32px; border: 1px solid #e2e8f0; border-radius: 4px; background: white;"
                         >
                         <button type="button" class="btn-remove-manual-size" data-talla="${talla}" style="
                             background: none;
                             border: none;
-                            color: #ef4444;
+                            color: #94a3b8;
                             cursor: pointer;
                             padding: 0;
-                            font-size: 20px;
-                        ">
+                            font-size: 18px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            width: 20px;
+                            height: 20px;
+                            transition: all 0.2s ease;
+                        " onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'">
                             <span class="material-symbols-rounded">close</span>
                         </button>
                     </div>
                 `;
             }).join('')
-            : '<p style="color:#94a3b8; margin:0;">Aún no tienes tallas agregadas.</p>';
+            : '<p style="color:#94a3b8; margin:0; text-align: center;">Selecciona tallas del listado abajo</p>';
 
         container.innerHTML = `
             <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
                 <div style="font-weight: 700; color: #1e293b; margin-bottom: 8px;">
                     ${estado.descripcion}
                 </div>
-                <div style="font-size: 13px; color: #64748b; margin-bottom: 6px;">
-                    Paso 3 de 3 · Ingresa la cantidad de cada talla
-                </div>
-                <div style="font-size: 12px; color: #2450ef; font-weight: 600;">
-                    ${this.getLabelGenero(genero)} · ${this.getLabelModoTallas(modoTallas)}
+                <div style="font-size: 13px; color: #64748b; margin-bottom: 12px;">
+                    Selecciona género, tallas y cantidades
                 </div>
             </div>
 
-            <div style="margin-bottom: 16px;">
-                ${etiquetasSeleccionadas}
+            <!-- Género -->
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label">Género</label>
+                <select id="manualTallasGeneroSelect" class="form-select">
+                    <option value="">Selecciona un género</option>
+                    ${generoOptions.map(opt => `<option value="${opt.value}" ${genero === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
+                </select>
             </div>
 
+            <!-- Tipo de Tallas (Letras/Números) - Solo visible si hay género -->
+            <div id="tipoTallasSection" style="display: ${genero ? 'block' : 'none'}; margin-bottom: 16px;">
+                <label class="form-label">Tipo de Tallas</label>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="manual-talla-modo-btn ${modoTallas === 'LETRAS' ? 'active' : ''}" data-modo="LETRAS" style="
+                        flex: 1;
+                        min-width: 100px;
+                        padding: 10px 14px;
+                        border-radius: 8px;
+                        border: 1px solid ${modoTallas === 'LETRAS' ? '#2450ef' : '#cbd5e1'};
+                        background: ${modoTallas === 'LETRAS' ? '#2450ef' : 'white'};
+                        color: ${modoTallas === 'LETRAS' ? 'white' : '#1e293b'};
+                        font-weight: 600;
+                        cursor: pointer;
+                        font-size: 13px;
+                    ">
+                        Letras
+                    </button>
+                    <button type="button" class="manual-talla-modo-btn ${modoTallas === 'NUMEROS' ? 'active' : ''}" data-modo="NUMEROS" style="
+                        flex: 1;
+                        min-width: 100px;
+                        padding: 10px 14px;
+                        border-radius: 8px;
+                        border: 1px solid ${(genero === 'DAMA' || genero === 'CABALLERO') ? (modoTallas === 'NUMEROS' ? '#2450ef' : '#cbd5e1') : '#e5e7eb'};
+                        background: ${modoTallas === 'NUMEROS' ? '#2450ef' : '#f8fafc'};
+                        color: ${modoTallas === 'NUMEROS' ? 'white' : '#64748b'};
+                        font-weight: 600;
+                        cursor: ${(genero === 'DAMA' || genero === 'CABALLERO') ? 'pointer' : 'not-allowed'};
+                        font-size: 13px;
+                        opacity: ${(genero === 'DAMA' || genero === 'CABALLERO') ? '1' : '0.5'};
+                    " ${(genero === 'DAMA' || genero === 'CABALLERO') ? '' : 'disabled'}>
+                        Números
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tallas disponibles para seleccionar - Solo visible si hay género y tipo de talla -->
+            <div id="tallasDisponiblesSection" style="display: ${genero && modoTallas ? 'block' : 'none'}; margin-bottom: 16px;">
+                <label class="form-label">Tallas Disponibles</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    ${tallasDisponibles.length > 0
+                        ? tallasDisponibles.map(talla => `
+                            <button type="button" class="manual-talla-chip ${selectedSizeNames.includes(talla) ? 'active' : ''}" data-talla="${talla}" style="
+                                min-width: 50px;
+                                padding: 8px 12px;
+                                border-radius: 6px;
+                                border: 1px solid ${selectedSizeNames.includes(talla) ? '#2450ef' : '#cbd5e1'};
+                                background: ${selectedSizeNames.includes(talla) ? '#2450ef' : 'white'};
+                                color: ${selectedSizeNames.includes(talla) ? 'white' : '#1e293b'};
+                                font-weight: 600;
+                                cursor: pointer;
+                                font-size: 12px;
+                                transition: all 0.2s ease;
+                            ">
+                                ${talla}
+                            </button>
+                        `).join('')
+                        : '<p style="color:#94a3b8; margin:0;">Selecciona un tipo de talla primero</p>'
+                    }
+                </div>
+            </div>
+
+            <!-- Cantidades de tallas seleccionadas - Solo visible si hay tallas seleccionadas -->
+            <div id="cantidadesSection" style="display: ${selectedSizeNames.length > 0 ? 'block' : 'none'}; margin-bottom: 16px;">
+                <label class="form-label">Cantidades</label>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px;">
+                    ${etiquetasSeleccionadas}
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
-                <button type="button" class="btn btn-secondary" id="btnManualTallasPaso3Volver" style="flex: 1; min-width: 160px;">
-                    Volver
+                <button type="button" class="btn btn-secondary" id="btnCancelarManualTallasWizard" style="flex: 1; min-width: 160px;">
+                    Cancelar
                 </button>
-                <button type="button" class="btn btn-secondary" id="btnManualTallasAgregarMas" style="flex: 1; min-width: 160px;">
-                    Agregar más tallas
-                </button>
-                <button type="button" class="btn btn-primary" id="btnGuardarEdicionTallasManual" style="flex: 1; min-width: 160px;">
+                <button type="button" class="btn btn-primary" id="btnGuardarEdicionTallasManual" style="flex: 1; min-width: 160px; display: ${selectedSizeNames.length > 0 ? 'flex' : 'none'};">
                     Guardar Tallas
                 </button>
             </div>
         `;
 
+        // Event listeners para género
+        const generoSelect = document.getElementById('manualTallasGeneroSelect');
+        if (generoSelect) {
+            generoSelect.addEventListener('change', (e) => {
+                this.currentManualPrendaDraft.genero = this.normalizeGenero(e.target.value || '');
+                this.currentManualPrendaDraft.modoTallas = 'LETRAS';
+                this.currentManualPrendaDraft.selectedSizeNames = [];
+                this.currentManualPrendaDraft.selectedTallas = [];
+                this.renderTallasForManualPrenda(this.currentManualPrendaDraft);
+            });
+        }
+
+        // Event listeners para tipo de talla (Letras/Números)
+        document.querySelectorAll('.manual-talla-modo-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.disabled) return;
+                const nuevoModo = this.normalizeModoTallas(btn.dataset.modo);
+                this.currentManualPrendaDraft.modoTallas = nuevoModo;
+                this.currentManualPrendaDraft.selectedSizeNames = [];
+                this.currentManualPrendaDraft.selectedTallas = [];
+                this.renderTallasForManualPrenda(this.currentManualPrendaDraft);
+            });
+        });
+
+        // Event listeners para tallas disponibles
+        document.querySelectorAll('.manual-talla-chip').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const talla = String(btn.dataset.talla || '').trim().toUpperCase();
+                if (!talla) return;
+
+                const actual = this.currentManualPrendaDraft.selectedSizeNames || [];
+                const index = actual.indexOf(talla);
+                if (index >= 0) {
+                    actual.splice(index, 1);
+                    // Remover de selectedTallas también
+                    this.currentManualPrendaDraft.selectedTallas = (this.currentManualPrendaDraft.selectedTallas || [])
+                        .filter(item => String(item.talla || '').trim().toUpperCase() !== talla);
+                } else {
+                    actual.push(talla);
+                    // Agregar a selectedTallas con cantidad 0
+                    this.currentManualPrendaDraft.selectedTallas.push({
+                        talla,
+                        cantidad_enviada: 0,
+                        genero: this.currentManualPrendaDraft.genero || 'UNISEX'
+                    });
+                }
+                this.currentManualPrendaDraft.selectedSizeNames = actual;
+                this.renderTallasForManualPrenda(this.currentManualPrendaDraft);
+            });
+        });
+
+        // Event listeners para remover tallas
         document.querySelectorAll('.btn-remove-manual-size').forEach(btn => {
             btn.addEventListener('click', () => {
                 const talla = String(btn.dataset.talla || '').trim().toUpperCase();
@@ -1053,24 +950,20 @@ class RegistrationHandler {
                 prendaActual.selectedSizeNames = (prendaActual.selectedSizeNames || []).filter(item => item !== talla);
                 prendaActual.selectedTallas = (prendaActual.selectedTallas || []).filter(item => String(item.talla || '').trim().toUpperCase() !== talla);
 
-                if (prendaActual.selectedSizeNames.length === 0) {
-                    this.currentManualPrendaWizardStep = 2;
-                }
-
                 this.renderTallasForManualPrenda(prendaActual);
             });
         });
 
-        document.getElementById('btnManualTallasPaso3Volver')?.addEventListener('click', () => {
-            this.syncManualQuantitiesFromWizard();
-            this.currentManualPrendaWizardStep = 2;
-            this.renderTallasForManualPrenda(this.currentManualPrendaDraft);
+        // Event listeners para inputs de cantidad
+        document.querySelectorAll('.manual-talla-cantidad-input').forEach(input => {
+            input.addEventListener('change', () => {
+                this.syncManualQuantitiesFromWizard();
+            });
         });
 
-        document.getElementById('btnManualTallasAgregarMas')?.addEventListener('click', () => {
-            this.syncManualQuantitiesFromWizard();
-            this.currentManualPrendaWizardStep = 2;
-            this.renderTallasForManualPrenda(this.currentManualPrendaDraft);
+        // Event listeners para botones
+        document.getElementById('btnCancelarManualTallasWizard')?.addEventListener('click', () => {
+            this.closeManualPrendaWizard({ clearDraft: true, restoreForm: true });
         });
 
         document.getElementById('btnGuardarEdicionTallasManual')?.addEventListener('click', () => {
@@ -1470,10 +1363,6 @@ class RegistrationHandler {
 }
 
 export { RegistrationHandler };
-
-
-
-
 
 
 
