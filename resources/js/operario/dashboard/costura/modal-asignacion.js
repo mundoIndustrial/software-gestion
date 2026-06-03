@@ -1106,12 +1106,20 @@ window.confirmarAsignacionTalla = function(tallaIdUnico) {
         alert('No se encontro la informacion de la talla');
         return;
     }
-    
+
+    if (!Array.isArray(window.modulosSeleccionadosDistribucion)) {
+        window.modulosSeleccionadosDistribucion = [];
+    }
+    if (!window.modulosSeleccionadosDistribucion.includes(moduloId)) {
+        window.modulosSeleccionadosDistribucion.push(moduloId);
+    }
+
+    // Guardar primero la asignacion en memoria para que el calculo de disponibilidad
+    // no se coma la propia asignacion al recrear la parte virtual en edicion.
+    window.actualizarAsignacion(tallaIdUnico, moduloId, cantidad, true);
+
     // Crear una nueva parte virtual si es necesario
     crearNuevaParteVirtual(moduloId, tallaIdUnico, tallaInfo, cantidad);
-    
-    // Actualizar asignacion marcando como nueva (es_nueva = true)
-    window.actualizarAsignacion(tallaIdUnico, moduloId, cantidad, true);
     
     // Cerrar modal
     window.cerrarModalAsignacion();
