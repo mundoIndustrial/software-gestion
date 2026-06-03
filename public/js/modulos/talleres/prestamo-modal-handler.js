@@ -3,6 +3,80 @@
  * Reutilizable en múltiples vistas (prestamos.blade.php, prestamos-global.blade.php)
  */
 
+if (typeof window.printReceiptModal !== 'function') {
+    window.printReceiptModal = function () {
+        const wrapper = document.getElementById('order-detail-modal-wrapper');
+        const card = wrapper ? wrapper.querySelector('.order-detail-card') : null;
+        if (!card) {
+            window.print();
+            return;
+        }
+
+        const printWindow = window.open('', '_blank', 'width=900,height=1200');
+        if (!printWindow) {
+            window.print();
+            return;
+        }
+
+        const cardHtml = card.outerHTML;
+        printWindow.document.write(`
+            <!doctype html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>Imprimir recibo</title>
+                <link rel="stylesheet" href="/css/order-detail-modal.css">
+                <link rel="stylesheet" href="/css/print-order-detail-modal.css">
+                <style>
+                    body { margin: 0; padding: 18px; background: #fff; }
+                    .order-detail-card {
+                        margin: 0 auto !important;
+                        box-shadow: none !important;
+                        transform: none !important;
+                        zoom: 1 !important;
+                        height: auto !important;
+                        min-height: 0 !important;
+                        position: relative !important;
+                        padding-bottom: 120px !important;
+                    }
+                    #order-descripcion {
+                        position: relative !important;
+                        top: auto !important;
+                        left: auto !important;
+                        right: auto !important;
+                        bottom: auto !important;
+                        overflow: visible !important;
+                        margin-top: 132px !important;
+                        margin-bottom: 130px !important;
+                        padding-right: 0 !important;
+                    }
+                    #prestamo-firmas-table {
+                        position: absolute !important;
+                        bottom: 0 !important;
+                        left: 0 !important;
+                        right: 0 !important;
+                        margin-top: 0 !important;
+                    }
+                    #order-pedido {
+                        transform: translateY(20px) !important;
+                    }
+                    #floating-buttons-container { display: none !important; }
+                </style>
+            </head>
+            <body>
+                ${cardHtml}
+                <script>
+                    window.addEventListener('load', function () {
+                        setTimeout(function () { window.print(); }, 80);
+                    });
+                <\/script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    };
+}
+
 function closeModalOverlay() {
     document.getElementById('modal-overlay').style.display = 'none';
     document.getElementById('order-detail-modal-wrapper').style.display = 'none';

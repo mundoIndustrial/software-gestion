@@ -92,6 +92,17 @@
     #order-detail-modal-wrapper #btn-galeria {
         display: none !important;
     }
+    #order-detail-modal-wrapper #btn-factura {
+        display: none !important;
+    }
+    #floating-buttons-container {
+        position: fixed !important;
+        right: 30px !important;
+        top: 50% !important;
+        left: auto !important;
+        transform: translateY(-50%) !important;
+        z-index: 10000 !important;
+    }
 </style>
 
 <script src="{{ asset('js/ordersjs/order-detail-modal-manager.js') }}"></script>
