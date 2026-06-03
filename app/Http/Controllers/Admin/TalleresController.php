@@ -90,12 +90,13 @@ class TalleresController extends Controller
 
     public function showPrestamosGlobal(Request $request)
     {
-        $tipo = $request->query('tipo', 'insumos');
-        $tipo = in_array($tipo, ['insumos', 'contramuestras'], true) ? $tipo : 'insumos';
+        $tab = $request->query('tab', $request->query('tipo', 'insumos'));
+        $tab = in_array($tab, ['insumos', 'contramuestra', 'contramuestras'], true) ? $tab : 'insumos';
+        $tab = $tab === 'contramuestras' ? 'contramuestra' : $tab;
         $search = $request->query('search', '');
         $perPage = 15;
 
-        if ($tipo === 'insumos') {
+        if ($tab === 'insumos') {
             $query = DB::table('recibos_prestamo_insumos')
                 ->select(
                     'id',
@@ -116,7 +117,7 @@ class TalleresController extends Controller
                 });
             }
             
-            $registros = $query->orderByDesc('fecha')->paginate($perPage)->appends(['tipo' => $tipo, 'search' => $search]);
+            $registros = $query->orderByDesc('created_at')->paginate($perPage)->appends(['tab' => $tab, 'search' => $search]);
         } else {
             $query = DB::table('recibos_prestamo_contramuestra')
                 ->select(
@@ -138,11 +139,11 @@ class TalleresController extends Controller
                 });
             }
             
-            $registros = $query->orderByDesc('created_at')->paginate($perPage)->appends(['tipo' => $tipo, 'search' => $search]);
+            $registros = $query->orderByDesc('created_at')->paginate($perPage)->appends(['tab' => $tab, 'search' => $search]);
         }
 
         return view('admin.talleres.prestamos-global', [
-            'tipo' => $tipo,
+            'tab' => $tab,
             'registros' => $registros,
         ]);
     }
@@ -150,13 +151,14 @@ class TalleresController extends Controller
     public function apiPrestamosGlobal(Request $request)
     {
         try {
-            $tipo = $request->query('tipo', 'insumos');
-            $tipo = in_array($tipo, ['insumos', 'contramuestras'], true) ? $tipo : 'insumos';
+            $tab = $request->query('tab', $request->query('tipo', 'insumos'));
+            $tab = in_array($tab, ['insumos', 'contramuestra', 'contramuestras'], true) ? $tab : 'insumos';
+            $tab = $tab === 'contramuestras' ? 'contramuestra' : $tab;
             $search = $request->query('search', '');
             $page = $request->query('page', 1);
             $perPage = 15;
 
-            if ($tipo === 'insumos') {
+            if ($tab === 'insumos') {
                 $query = DB::table('recibos_prestamo_insumos')
                     ->select(
                         'id',
@@ -217,12 +219,12 @@ class TalleresController extends Controller
                         $estadoTexto = 'CONFIRMADO';
                     } else {
                         $estadoClass = 'background:#fef3c7;color:#ea8c55;';
-                        $estadoTexto = 'PENDIENTE';
+                    $estadoTexto = 'PENDIENTE';
                     }
                     
                     $html .= '<tr>
                         <td style="padding:10px;border-bottom:1px solid #f1f5f9;">
-                            <button type="button" class="btn-ver-prestamo" data-tipo="' . $tipo . '" data-id="' . $r->id . '" style="background:#3b82f6;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Ver</button>
+                            <button type="button" class="btn-ver-prestamo" data-tipo="' . $tab . '" data-id="' . $r->id . '" style="background:#3b82f6;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Ver</button>
                         </td>
                         <td style="padding:10px;border-bottom:1px solid #f1f5f9;">#' . $r->numero_orden . '</td>
                         <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . $r->nombre_costurero . '</td>

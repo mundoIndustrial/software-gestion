@@ -11,7 +11,7 @@
 @section('body')
     <!-- Custom Header for Prestamos -->
     <header style="position:sticky;top:0;z-index:220;background:#fff;border-bottom:1px solid #e2e8f0;padding:16px 32px;margin-left:250px;display:flex;justify-content:space-between;align-items:center;transition:margin-left 0.25s ease;gap:20px;">
-        <h1 style="margin:0;font-size:24px;font-weight:700;color:#0f172a;white-space:nowrap;">{{ $tipo === 'insumos' ? 'Préstamos de Insumos' : 'Préstamos de Contramuestras' }}</h1>
+        <h1 style="margin:0;font-size:24px;font-weight:700;color:#0f172a;white-space:nowrap;">{{ $tab === 'insumos' ? 'Préstamos de Insumos' : 'Préstamos de Contramuestras' }}</h1>
         
         <div class="gooey-search-wrapper" style="flex:1;max-width:400px;">
             <input type="text" id="searchInput" class="gooey-search-input" placeholder="Buscar por recibo, taller..." 
@@ -75,10 +75,10 @@
                         <span class="material-symbols-rounded expand-icon">expand_more</span>
                     </button>
                     <div class="sidebar-submenu collapsed" id="prestamosSubmenu">
-                        <a href="{{ route('talleres.prestamos-global', ['tipo' => 'insumos']) }}" class="sidebar-item sidebar-subitem {{ $tipo === 'insumos' ? 'active' : '' }}" id="navPrestamosInsumos">
+                        <a href="{{ route('talleres.prestamos-global', ['tab' => 'insumos']) }}" class="sidebar-item sidebar-subitem {{ $tab === 'insumos' ? 'active' : '' }}" id="navPrestamosInsumos">
                             <span class="nav-label">Insumos</span>
                         </a>
-                        <a href="{{ route('talleres.prestamos-global', ['tipo' => 'contramuestras']) }}" class="sidebar-item sidebar-subitem {{ $tipo === 'contramuestras' ? 'active' : '' }}" id="navPrestamosContramuestras">
+                        <a href="{{ route('talleres.prestamos-global', ['tab' => 'contramuestra']) }}" class="sidebar-item sidebar-subitem {{ $tab === 'contramuestra' ? 'active' : '' }}" id="navPrestamosContramuestras">
                             <span class="nav-label">Contramuestras</span>
                         </a>
                     </div>
@@ -112,7 +112,7 @@
                 @forelse($registros as $r)
                     <tr>
                         <td style="padding:10px;border-bottom:1px solid #f1f5f9;">
-                            <button type="button" class="btn-ver-prestamo" data-tipo="{{ $tipo }}" data-id="{{ $r->id }}" style="background:#3b82f6;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Ver</button>
+                            <button type="button" class="btn-ver-prestamo" data-tipo="{{ $tab }}" data-id="{{ $r->id }}" style="background:#3b82f6;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Ver</button>
                         </td>
                         <td style="padding:10px;border-bottom:1px solid #f1f5f9;">#{{ $r->numero_orden }}</td>
                         <td style="padding:10px;border-bottom:1px solid #f1f5f9;">{{ $r->nombre_costurero }}</td>
@@ -173,16 +173,17 @@
 
     <script src="{{ asset('js/ordersjs/order-detail-modal-manager.js') }}"></script>
     <script src="{{ asset('js/modulos/talleres/prestamo-modal-handler.js') }}"></script>
+    <script src="{{ asset('js/modulos/talleres/talleres-admin.js') }}?v={{ time() }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('searchInput');
             const clearBtn = document.getElementById('clearSearchBtn');
-            const tipo = '{{ $tipo }}';
+            const tab = '{{ $tab }}';
             const apiUrl = '{{ route("talleres.api.prestamos-global") }}';
             const debugPrefix = '[PrestamosGlobal]';
 
             console.log(debugPrefix, 'init', {
-                tipo,
+                tab,
                 currentUrl: window.location.href
             });
 
@@ -226,7 +227,7 @@
                     apiUrl
                 });
                 const params = new URLSearchParams({
-                    tipo: tipo,
+                    tab: tab,
                     search: query
                 });
 
@@ -246,14 +247,14 @@
                             
                             // Re-attach button listeners and pagination
                             attachPrestamoBtnListeners();
-                            attachPaginationListeners(apiUrl, tipo, query);
+                            attachPaginationListeners(apiUrl, tab, query);
                         }
                     })
                     .catch(error => console.error(debugPrefix, 'performSearch:error', error));
             }
 
             // Función para attachar listeners a la paginación
-            function attachPaginationListeners(apiUrl, tipo, query) {
+            function attachPaginationListeners(apiUrl, tab, query) {
                 const paginationLinks = document.querySelectorAll('#paginationContainer a');
                 console.log(debugPrefix, 'attachPaginationListeners', {
                     count: paginationLinks.length,
@@ -268,7 +269,7 @@
                         });
                         const page = new URL(this.href).searchParams.get('page');
                         const params = new URLSearchParams({
-                            tipo: tipo,
+                            tab: tab,
                             search: query,
                             page: page || 1
                         });
@@ -285,13 +286,13 @@
                                     document.getElementById('paginationContainer').innerHTML = data.pagination_html;
                                     window.scrollTo(0, 0);
                                     attachPrestamoBtnListeners();
-                                    attachPaginationListeners(apiUrl, tipo, query);
+                                    attachPaginationListeners(apiUrl, tab, query);
                                 }
                             });
                     });
                 });
             }
 
-            attachPaginationListeners(apiUrl, tipo, searchInput.value || '');
+            attachPaginationListeners(apiUrl, tab, searchInput.value || '');
         });
     </script>

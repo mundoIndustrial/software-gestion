@@ -60,10 +60,10 @@
                         <span class="material-symbols-rounded expand-icon">expand_more</span>
                     </button>
                     <div class="sidebar-submenu collapsed" id="prestamosSubmenu">
-                        <a href="{{ route('talleres.prestamos-global', ['tipo' => 'insumos']) }}" class="sidebar-item sidebar-subitem" id="navPrestamosInsumos">
+                        <a href="{{ route('talleres.prestamos-global', ['tab' => 'insumos']) }}" class="sidebar-item sidebar-subitem" id="navPrestamosInsumos">
                             <span class="nav-label">Insumos</span>
                         </a>
-                        <a href="{{ route('talleres.prestamos-global', ['tipo' => 'contramuestras']) }}" class="sidebar-item sidebar-subitem" id="navPrestamosContramuestras">
+                        <a href="{{ route('talleres.prestamos-global', ['tab' => 'contramuestra']) }}" class="sidebar-item sidebar-subitem" id="navPrestamosContramuestras">
                             <span class="nav-label">Contramuestras</span>
                         </a>
                     </div>
