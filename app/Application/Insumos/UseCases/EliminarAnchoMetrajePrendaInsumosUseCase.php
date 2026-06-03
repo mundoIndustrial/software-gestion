@@ -11,9 +11,8 @@ class EliminarAnchoMetrajePrendaInsumosUseCase
     ) {
     }
 
-    public function execute(string $numeroPedido, int $prendaId): array
+    public function execute(string $numeroPedido, int $prendaId, ?int $numeroRecibo = null, ?int $consecutivoReciboId = null): array
     {
-        return $this->repository->eliminarAnchoMetrajePrenda($numeroPedido, $prendaId);
+        return $this->repository->eliminarAnchoMetrajePrenda($numeroPedido, $prendaId, $numeroRecibo, $consecutivoReciboId);
     }
 }
-

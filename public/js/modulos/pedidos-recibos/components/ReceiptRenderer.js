@@ -26,7 +26,7 @@ export class ReceiptRenderer {
         this._llenarDescripcion(prendaData, recibo, tipoProceso, datosPedido);
 
         // Actualizar ancho y metraje para esta prenda
-        this._actualizarAnchoMetraje(prendaData, tipoProceso);
+        this._actualizarAnchoMetraje(prendaData, tipoProceso, datosPedido, recibo);
 
         // Guardar datos en estado
         modalManager.setState({
@@ -46,7 +46,7 @@ export class ReceiptRenderer {
      * - color: Muestra solo Ancho en barra inferior (metraje va en descripción por color)
      * - pieza: Muestra Ancho + metraje por color en barra inferior (NO en descripción)
      */
-    static _actualizarAnchoMetraje(prendaData, tipoProceso = '') {
+    static _actualizarAnchoMetraje(prendaData, tipoProceso = '', datosPedido = null, recibo = null) {
         const contenedor = document.getElementById('order-ancho-metraje');
         const metrajesContainer = document.getElementById('metrajes-por-color-container');
 
@@ -535,7 +535,11 @@ export class ReceiptRenderer {
                 recibo?.numero_recibo ||
                 recibo?.numeroRecibo ||
                 null;
-            this._cargarYAgregarMetrajesPorColor(prendaData, datosPedido, numeroRecibo);
+            const consecutivoReciboId =
+                recibo?.id ||
+                recibo?.consecutivo_recibo_id ||
+                null;
+            this._cargarYAgregarMetrajesPorColor(prendaData, datosPedido, numeroRecibo, consecutivoReciboId);
         }
     }
 
@@ -640,7 +644,7 @@ export class ReceiptRenderer {
      * - color: Muestra solo Ancho en barra inferior, metraje en descripción por color
      * - pieza: Muestra Ancho en barra inferior + lista metraje por color abajo, NO en descripción
      */
-    static _cargarYAgregarMetrajesPorColor(prendaData, datosPedido, numeroRecibo = null) {
+    static _cargarYAgregarMetrajesPorColor(prendaData, datosPedido, numeroRecibo = null, consecutivoReciboId = null) {
         // Obtener ID de pedido desde prendaData (más confiable) o datosPedido
         let pedidoId = prendaData?.pedido_produccion_id || datosPedido?.pedido_id || datosPedido?.id;
         
@@ -681,8 +685,13 @@ export class ReceiptRenderer {
 
         // Fetch async para obtener metrajes
         // Siempre filtrar por numero_recibo (consecutivo_actual) 
-        const publicEndpoint = `/pedidos-public/${pedidoId}/ancho-metraje-prenda/${prendaData.prenda_pedido_id}?numero_recibo=${numeroRecibo}`;
-        const insumosEndpoint = `/insumos/materiales/${pedidoId}/obtener-ancho-metraje-prenda/${prendaData.prenda_pedido_id}?numero_recibo=${numeroRecibo}`;
+        const queryParams = new URLSearchParams();
+        queryParams.set('numero_recibo', String(numeroRecibo));
+        if (consecutivoReciboId) {
+            queryParams.set('consecutivo_recibo_id', String(consecutivoReciboId));
+        }
+        const publicEndpoint = `/pedidos-public/${pedidoId}/ancho-metraje-prenda/${prendaData.prenda_pedido_id}?${queryParams.toString()}`;
+        const insumosEndpoint = `/insumos/materiales/${pedidoId}/obtener-ancho-metraje-prenda/${prendaData.prenda_pedido_id}?${queryParams.toString()}`;
         
         fetch(publicEndpoint)
             .then(response => {

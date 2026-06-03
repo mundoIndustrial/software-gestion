@@ -242,6 +242,7 @@ function crearDropdownAcciones(event, button) {
             data-pedido-produccion-id="${pedidoProduccionId}"
             data-prenda-id="${prendaId}"
             data-prenda-bodega-id="${prendaBodegaId}"
+            data-recibo-id="${reciboId}"
             data-numero-pedido="${numeroPedido}"
             data-consecutivo="${consecutivo}"
             data-tipo-recibo="${tipoRecibo}"

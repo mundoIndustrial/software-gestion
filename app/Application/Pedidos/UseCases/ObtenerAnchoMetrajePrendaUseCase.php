@@ -30,7 +30,7 @@ class ObtenerAnchoMetrajePrendaUseCase implements ObtenerAnchoMetrajePrendaUseCa
      * @return ObtenerAnchoMetrajePrendaResponse
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException Si el pedido no existe
      */
-    public function ejecutar(int $pedidoId, int $prendaId, ?int $numeroRecibo = null): ObtenerAnchoMetrajePrendaResponse
+    public function ejecutar(int $pedidoId, int $prendaId, ?int $numeroRecibo = null, ?int $consecutivoReciboId = null): ObtenerAnchoMetrajePrendaResponse
     {
         try {
             // Validar que el pedido exista
@@ -38,27 +38,12 @@ class ObtenerAnchoMetrajePrendaUseCase implements ObtenerAnchoMetrajePrendaUseCa
 
             // Si no hay numero_recibo especificado, devolver respuesta vacía
             // (para evitar mostrar datos de otros recibos)
-            if ($numeroRecibo === null || $numeroRecibo <= 0) {
-                Log::info('[ObtenerAnchoMetrajePrendaUseCase] Sin numero_recibo, devolviendo vacío', [
+            if (($numeroRecibo === null || $numeroRecibo <= 0) && ($consecutivoReciboId === null || $consecutivoReciboId <= 0)) {
+                Log::info('[ObtenerAnchoMetrajePrendaUseCase] Sin identificador de recibo, devolviendo vacío', [
                     'pedido_id' => $pedidoId,
                     'prenda_id' => $prendaId,
-                    'numero_recibo' => $numeroRecibo
-                ]);
-
-                return new ObtenerAnchoMetrajePrendaResponse(
-                    ancho: null,
-                    metraje: null,
-                    contenidoMano: null,
-                    tipoModo: null,
-                    data: []
-                );
-            }
-
-            if ($numeroRecibo === null || $numeroRecibo <= 0) {
-                Log::info('[ObtenerAnchoMetrajePrendaUseCase] Sin numero_recibo, devolviendo vacío', [
-                    'pedido_id' => $pedidoId,
-                    'prenda_id' => $prendaId,
-                    'numero_recibo' => $numeroRecibo
+                    'numero_recibo' => $numeroRecibo,
+                    'consecutivo_recibo_id' => $consecutivoReciboId
                 ]);
 
                 return new ObtenerAnchoMetrajePrendaResponse(
@@ -71,18 +56,36 @@ class ObtenerAnchoMetrajePrendaUseCase implements ObtenerAnchoMetrajePrendaUseCa
             }
 
             $baseAnchoQuery = PedidoAnchoGeneral::where('pedido_produccion_id', $pedidoId)
-                ->where('prenda_pedido_id', $prendaId)
-                ->where('numero_recibo', $numeroRecibo);
+                ->where('prenda_pedido_id', $prendaId);
             $baseMetrajeQuery = PedidoMetrajeColor::where('pedido_produccion_id', $pedidoId)
-                ->where('prenda_pedido_id', $prendaId)
-                ->where('numero_recibo', $numeroRecibo);
+                ->where('prenda_pedido_id', $prendaId);
 
-            $anchoGeneral = (clone $baseAnchoQuery)
-                ->latest('created_at')
-                ->first();
-            $metrajesPorColor = (clone $baseMetrajeQuery)
-                ->latest('created_at')
-                ->get();
+            $anchoGeneral = null;
+            $metrajesPorColor = collect();
+            $anchoTieneConsecutivoReciboId = \Illuminate\Support\Facades\Schema::hasColumn('pedido_ancho_general', 'consecutivo_recibo_id');
+            $metrajeTieneConsecutivoReciboId = \Illuminate\Support\Facades\Schema::hasColumn('pedido_metraje_color', 'consecutivo_recibo_id');
+
+            if (($consecutivoReciboId ?? 0) > 0 && $anchoTieneConsecutivoReciboId && $metrajeTieneConsecutivoReciboId) {
+                $anchoGeneral = (clone $baseAnchoQuery)
+                    ->where('consecutivo_recibo_id', $consecutivoReciboId)
+                    ->latest('created_at')
+                    ->first();
+                $metrajesPorColor = (clone $baseMetrajeQuery)
+                    ->where('consecutivo_recibo_id', $consecutivoReciboId)
+                    ->latest('created_at')
+                    ->get();
+            }
+
+            if (!$anchoGeneral && $metrajesPorColor->isEmpty() && ($numeroRecibo ?? 0) > 0) {
+                $anchoGeneral = (clone $baseAnchoQuery)
+                    ->where('numero_recibo', $numeroRecibo)
+                    ->latest('created_at')
+                    ->first();
+                $metrajesPorColor = (clone $baseMetrajeQuery)
+                    ->where('numero_recibo', $numeroRecibo)
+                    ->latest('created_at')
+                    ->get();
+            }
 
             // Determinar tipo de modo
             $tipoModo = $this->determinarTipoModo($anchoGeneral, $metrajesPorColor);
@@ -94,6 +97,7 @@ class ObtenerAnchoMetrajePrendaUseCase implements ObtenerAnchoMetrajePrendaUseCa
                 'pedido_id' => $pedidoId,
                 'prenda_id' => $prendaId,
                 'numero_recibo' => $numeroRecibo,
+                'consecutivo_recibo_id' => $consecutivoReciboId,
                 'tiene_ancho_general' => !is_null($anchoGeneral),
                 'metrajes_count' => count($data)
             ]);
@@ -164,4 +168,3 @@ class ObtenerAnchoMetrajePrendaUseCase implements ObtenerAnchoMetrajePrendaUseCa
         return $this->{$method}(...$arguments);
     }
 }
-

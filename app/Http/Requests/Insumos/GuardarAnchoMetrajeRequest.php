@@ -17,6 +17,7 @@ class GuardarAnchoMetrajeRequest extends FormRequest
             'prenda_pedido_id' => 'nullable|integer|exists:prendas_pedido,id',
             'prenda_bodega_id' => 'nullable|integer|exists:prenda_bodega,id',
             'numero_recibo' => 'nullable|integer|min:1',
+            'consecutivo_recibo_id' => 'nullable|integer|exists:consecutivos_recibos_pedidos,id',
             'tipo_recibo' => 'nullable|string|max:50',
             'color' => 'nullable|string|max:100',
             'tela' => 'nullable|string|max:100',

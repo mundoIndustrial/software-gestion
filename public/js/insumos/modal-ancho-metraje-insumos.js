@@ -21,7 +21,7 @@
  * Detecta si es prenda combinada (multiples colores) o normal
  * El usuario puede elegir guardar normal o por color
  */
-function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroPedido = null, tipoRecibo = 'COSTURA', numeroReciboInicial = null) {
+function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroPedido = null, tipoRecibo = 'COSTURA', numeroReciboInicial = null, reciboIdInicial = null) {
     const modal = document.getElementById('modalAnchoMetraje');
     if (!modal) {
         console.error('[abrirModalAnchoMetraje] Modal no encontrado: modalAnchoMetraje');
@@ -46,7 +46,9 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
     }
     
     const numeroReciboForzado = Number(numeroReciboInicial);
+    const reciboIdForzado = Number(reciboIdInicial);
     const tieneNumeroReciboForzado = Number.isFinite(numeroReciboForzado) && numeroReciboForzado > 0;
+    const tieneReciboIdForzado = Number.isFinite(reciboIdForzado) && reciboIdForzado > 0;
 
     const obtenerNumeroRecibo = () => {
         if (tieneNumeroReciboForzado) {
@@ -59,7 +61,9 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
         .then(data => {
             const recibido = data?.success && data?.recibo ? Number(data.recibo) : 0;
             const numeroRecibo = Number.isFinite(recibido) && recibido > 0 ? recibido : null;
+            const reciboId = data?.success && data?.recibo_id ? Number(data.recibo_id) : null;
             document.getElementById('anchoMetrajeRecibo').textContent = numeroRecibo ? String(numeroRecibo) : '-';
+            modal.dataset.reciboId = reciboId ? String(reciboId) : '';
             return numeroRecibo;
         })
         .catch(error => {
@@ -75,6 +79,7 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
     modal.dataset.prendaBodegaId = prendaBodegaId || '';
     modal.dataset.tipoRecibo = tipoRecibo || 'COSTURA';
     modal.dataset.numeroRecibo = tieneNumeroReciboForzado ? String(numeroReciboForzado) : '';
+    modal.dataset.reciboId = tieneReciboIdForzado ? String(reciboIdForzado) : '';
 
     // Limpiar inputs
     document.getElementById('anchoInput').value = '';
@@ -102,6 +107,10 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
             const queryLectura = new URLSearchParams(queryBase);
             if (numeroRecibo) {
                 queryLectura.set('numero_recibo', String(numeroRecibo));
+            }
+            const reciboIdActual = modal.dataset.reciboId ? Number(modal.dataset.reciboId) : null;
+            if (reciboIdActual) {
+                queryLectura.set('consecutivo_recibo_id', String(reciboIdActual));
             }
             const qsLectura = queryLectura.toString() ? `?${queryLectura.toString()}` : '';
 
@@ -820,6 +829,7 @@ function confirmarEliminarAnchoMetraje() {
     const tipoRecibo = modal.dataset.tipoRecibo || 'COSTURA';
     const numeroReciboTexto = (document.getElementById('anchoMetrajeRecibo')?.textContent || '').replace('#', '').trim();
     const numeroRecibo = numeroReciboTexto && !Number.isNaN(Number(numeroReciboTexto)) ? Number(numeroReciboTexto) : null;
+    const consecutivoReciboId = modal.dataset.reciboId && !Number.isNaN(Number(modal.dataset.reciboId)) ? Number(modal.dataset.reciboId) : null;
     
     if (!prendaId) {
         showToast('Error: No se encontro la informacion de la prenda', 'error');
@@ -837,6 +847,7 @@ function confirmarEliminarAnchoMetraje() {
             prenda_id: prendaId,
             prenda_bodega_id: prendaBodegaId,
             numero_recibo: numeroRecibo,
+            consecutivo_recibo_id: consecutivoReciboId,
             tipo_recibo: tipoRecibo
         })
     })
@@ -849,7 +860,7 @@ function confirmarEliminarAnchoMetraje() {
             // Recargar el modal (vacio)
             setTimeout(() => {
                 cerrarModalAnchoMetraje();
-                abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId, pedido, tipoRecibo, modal.dataset.numeroRecibo || null);
+                abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId, pedido, tipoRecibo, modal.dataset.numeroRecibo || null, modal.dataset.reciboId || null);
             }, 800);
         } else {
             showToast('Error al eliminar los datos: ' + (data.message || ''), 'error');
@@ -893,9 +904,11 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
     const prendaPedidoIdPayload = prendaBodegaId ? null : prendaId;
     const numeroReciboTexto = (document.getElementById('anchoMetrajeRecibo')?.textContent || '').replace('#', '').trim();
     const numeroRecibo = numeroReciboTexto && !Number.isNaN(Number(numeroReciboTexto)) ? Number(numeroReciboTexto) : null;
+    const consecutivoReciboId = modal.dataset.reciboId && !Number.isNaN(Number(modal.dataset.reciboId)) ? Number(modal.dataset.reciboId) : null;
     const extraPayload = {
         prenda_bodega_id: prendaBodegaId,
         numero_recibo: numeroRecibo,
+        consecutivo_recibo_id: consecutivoReciboId,
         tipo_recibo: tipoRecibo,
     };
     
