@@ -161,6 +161,11 @@
                                         <span class="material-symbols-rounded">comment</span>
                                         AGREGAR NOVEDAD
                                     </button>
+                                    <button class="btn-ver-tallas"
+                                            onclick="verTallasControlCalidadDashboard(this, {{ $recibo['id'] ?? 0 }}, @js((string) $prenda['nombre_prenda']), @js((string) $recibo['tipo_recibo'])); event.stopPropagation();">
+                                        <span class="material-symbols-rounded">inventory_2</span>
+                                        VER TALLAS
+                                    </button>
                                     @if($recibo)
                                         @if(!($prenda['tiene_parciales'] ?? false))
                                         <button class="btn-completar-recibo"
@@ -214,6 +219,32 @@
             @endif
         </div>
     </div>
+</div>
+
+<!-- Modal Parciales Completados -->
+<!-- Modal Tallas Entregadas -->
+<div id="modalTallasEntregadas" class="modal-overlay-tallas" style="display: none;">
+    <div class="modal-content-tallas">
+        <div class="modal-header-tallas">
+            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #111827; display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-rounded" style="color: #2563eb; font-size: 1.4rem;">inventory_2</span>
+                <span id="modalTallasTitulo">Tallas entregadas a C.C</span>
+            </h3>
+            <div id="modalTallasInfo" style="margin-top: 8px; color: #475569; font-size: 0.95rem; line-height: 1.5;">
+                <strong>Prenda:</strong> <span id="modalTallasPrenda"></span><br>
+                <strong>Tipo:</strong> <span id="modalTallasTipo"></span>
+            </div>
+        </div>
+        <div id="modalTallasLista" class="modal-body-tallas">
+            <!-- Se llena con JavaScript -->
+        </div>
+        <div class="modal-footer-tallas">
+            <button type="button" onclick="cerrarModalTallasEntregadas()" class="btn-cerrar-modal-tallas">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
 </div>
 
 <style>
@@ -1105,6 +1136,7 @@
 
     .control-calidad-dashboard .orden-buttons .btn-ver-recibos,
     .control-calidad-dashboard .orden-buttons .btn-agregar-novedad,
+    .control-calidad-dashboard .orden-buttons .btn-ver-parciales,
     .control-calidad-dashboard .orden-buttons .btn-completar-recibo,
     .control-calidad-dashboard .orden-buttons .btn-deshacer-recibo {
         width: auto;
@@ -1237,6 +1269,29 @@
         .control-calidad-dashboard .orden-buttons .btn-agregar-novedad {
             order: 3;
             width: auto;
+        }
+
+        .control-calidad-dashboard .orden-buttons .btn-ver-tallas {
+            order: 3.5;
+            width: auto;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0.35rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .control-calidad-dashboard .orden-buttons .btn-ver-tallas:hover {
+            background: #1d4ed8;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+            transform: translateY(-1px);
         }
 
         .control-calidad-dashboard .orden-buttons .btn-completar-recibo {
@@ -2441,8 +2496,260 @@
             transform: translateY(-1px);
             box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
         }
+
+        /* Modal Tallas Entregadas */
+        .modal-overlay-tallas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.28);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .modal-content-tallas {
+            width: min(560px, 100%);
+            max-height: min(80vh, 720px);
+            background: white;
+            border-radius: 16px;
+            box-shadow: rgba(0, 0, 0, 0.28) 0px 24px 60px;
+            overflow: hidden;
+            font-family: inherit;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header-tallas {
+            padding: 22px 24px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-header-tallas h3 {
+            margin: 0;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #111827;
+        }
+
+        .modal-body-tallas {
+            padding: 20px 24px;
+            overflow: auto;
+            display: grid;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .talla-item-modal {
+            display: grid;
+            grid-template-columns: minmax(120px, 1fr) 110px;
+            gap: 12px;
+            align-items: center;
+            padding: 12px 14px;
+            border: 1px solid #dbeafe;
+            border-radius: 12px;
+            background: #f8fbff;
+        }
+
+        .talla-item-modal-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .talla-nombre-modal {
+            font-weight: 800;
+            color: #0f172a;
+            font-size: 14px;
+        }
+
+        .talla-genero-modal {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .talla-fecha-modal {
+            font-size: 12px;
+            color: #475569;
+        }
+
+        .talla-cantidad-modal {
+            text-align: right;
+        }
+
+        .talla-cantidad-label {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .talla-cantidad-valor {
+            font-size: 18px;
+            font-weight: 800;
+            color: #1d4ed8;
+        }
+
+        .modal-footer-tallas {
+            padding: 16px 24px 24px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-cerrar-modal-tallas {
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-cerrar-modal-tallas:hover {
+            background: #dbeafe;
+            border-color: #93c5fd;
+        }
     `;
     document.head.appendChild(style);
+</script>
+
+<script>
+    /**
+     * Ver tallas entregadas a C.C desde el dashboard
+     */
+    window.verTallasControlCalidadDashboard = async function(btn, reciboId, prendaNombre, tipoRecibo) {
+        if (!reciboId) {
+            console.error('ID de recibo no encontrado');
+            return;
+        }
+
+        try {
+            // Obtener tallas desde el endpoint
+            const response = await fetch(`/control-calidad/api/recibos/${reciboId}/tallas-control-calidad`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            if (!response.ok) {
+                console.error('Error al obtener tallas:', response.statusText);
+                return;
+            }
+
+            const data = await response.json();
+            const tallas = data.tallas || [];
+
+            // Mostrar modal con las tallas
+            abrirModalTallasEntregadas(tallas, prendaNombre, tipoRecibo);
+
+        } catch (error) {
+            console.error('Error al obtener tallas de control calidad:', error);
+        }
+    };
+
+    /**
+     * Abre el modal de tallas entregadas
+     */
+    window.abrirModalTallasEntregadas = function(tallas, prendaNombre, tipoRecibo) {
+        try {
+            const tallasArray = Array.isArray(tallas) ? tallas : [];
+            const modal = document.getElementById('modalTallasEntregadas');
+            
+            if (!modal) return;
+
+            // Llenar la información
+            document.getElementById('modalTallasPrenda').textContent = prendaNombre || 'N/A';
+            document.getElementById('modalTallasTipo').textContent = tipoRecibo || 'N/A';
+
+            // Generar lista de tallas
+            if (tallasArray.length === 0) {
+                document.getElementById('modalTallasLista').innerHTML = `
+                    <div style="padding: 14px 16px; border: 1px dashed #cbd5e1; border-radius: 12px; color: #64748b; text-align: center;">
+                        No hay tallas registradas en Control de Calidad.
+                    </div>
+                `;
+            } else {
+                const listaHTML = tallasArray.map((talla) => {
+                    const tallaNombre = String(talla?.talla || 'SIN TALLA').toUpperCase();
+                    const genero = String(talla?.genero || '').toUpperCase();
+                    const color = String(talla?.color_nombre || '').toUpperCase();
+                    const cantidad = Number.parseInt(talla?.cantidad || 0, 10) || 0;
+                    const historial = Array.isArray(talla?.historial_envios) ? talla.historial_envios : [];
+
+                    const historialHtml = historial.length > 0
+                        ? `
+                            <div style="margin-top: 10px; display: grid; gap: 6px;">
+                                ${historial.map((envio) => {
+                                    const fecha = new Date(envio?.fecha_envio).toLocaleString('es-ES');
+                                    const cant = Number.parseInt(envio?.cantidad || 0, 10) || 0;
+                                    return `
+                                        <div style="font-size: 12px; color: #475569; display: flex; justify-content: space-between; gap: 8px;">
+                                            <span>${fecha}</span>
+                                            <strong style="color: #1d4ed8;">+${cant}</strong>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        `
+                        : '';
+
+                    return `
+                        <div class="talla-item-modal">
+                            <div class="talla-item-modal-info">
+                                <div class="talla-nombre-modal">${tallaNombre}</div>
+                                <div class="talla-genero-modal">
+                                    ${genero ? `Género: ${genero}` : 'Género no definido'}
+                                    ${color ? ` · Color: ${color}` : ''}
+                                </div>
+                                ${historialHtml}
+                            </div>
+                            <div class="talla-cantidad-modal">
+                                <div class="talla-cantidad-label">Cantidad enviada</div>
+                                <div class="talla-cantidad-valor">${cantidad}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                document.getElementById('modalTallasLista').innerHTML = listaHTML;
+            }
+
+            // Mostrar modal
+            modal.style.display = 'flex';
+
+            // Cerrar al hacer click fuera
+            modal.onclick = function(e) {
+                if (e.target === modal) {
+                    cerrarModalTallasEntregadas();
+                }
+            };
+
+        } catch (error) {
+            console.error('Error al abrir modal de tallas:', error);
+        }
+    };
+
+    /**
+     * Cierra el modal de tallas
+     */
+    window.cerrarModalTallasEntregadas = function() {
+        const modal = document.getElementById('modalTallasEntregadas');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    };
+
+    // Cerrar modal con tecla Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            cerrarModalTallasEntregadas();
+        }
+    });
 </script>
 @endpush
 @endsection

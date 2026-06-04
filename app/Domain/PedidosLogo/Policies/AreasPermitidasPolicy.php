@@ -35,6 +35,8 @@ final class AreasPermitidasPolicy
             AreaProcesoLogo::CORTE_Y_APLIQUE,
             AreaProcesoLogo::BORD_POR_FUERA,
             AreaProcesoLogo::HACIENDO_MUESTRA,
+            // Permitir ESTAMPANDO evita rechazar cambios manuales desde la vista.
+            AreaProcesoLogo::ESTAMPANDO,
             AreaProcesoLogo::BORDANDO,
             AreaProcesoLogo::BORDADO,
             AreaProcesoLogo::ENTREGADO,
