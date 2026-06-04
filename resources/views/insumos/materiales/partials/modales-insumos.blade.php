@@ -353,8 +353,8 @@
 </div>
 
 {{-- Modal: Pasar a Revisar --}}
-<div id="modalPasarRevisar" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000000; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); max-width: 500px; width: 90%; padding: 0; overflow: hidden;">
+<div id="modalPasarRevisar" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000000; align-items: center; justify-content: center; pointer-events: auto;">
+    <div style="background: white; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); max-width: 500px; width: 90%; padding: 0; overflow: hidden; pointer-events: auto;">
         <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 1.5rem; display: flex; align-items: center; gap: 1rem;">
             <i class="fas fa-arrow-rotate-left" style="font-size: 1.5rem;"></i>
             <div>
@@ -368,17 +368,17 @@
                 Esta acción devolverá el recibo para que sea corregido.
             </p>
 
-            <form id="formPasarRevisar" data-insumos-action="pasar-revisar-submit">
+            <form id="formPasarRevisar" data-insumos-action="pasar-revisar-submit" style="pointer-events: auto;">
                 <input type="hidden" id="reciboIdPasarRevisar" value="">
                 <input type="hidden" id="pedidoIdPasarRevisar" value="">
                 <div style="margin-bottom: 1rem;">
                     <label for="motivoPasarRevisar" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Motivo de la revisión *</label>
-                    <textarea id="motivoPasarRevisar" name="motivo_pasar_revisar" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 0.95rem; resize: vertical;" placeholder="Ej: Revisar especificaciones, cambios en cantidad..." required minlength="10" maxlength="500"></textarea>
+                    <textarea id="motivoPasarRevisar" name="motivo_pasar_revisar" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 0.95rem; resize: vertical;" placeholder="Ej: Revisar especificaciones, cambios en cantidad..."></textarea>
                     <small style="display: block; margin-top: 0.5rem; color: #6b7280; text-align: right;"><span id="contadorPasarRevisar">0</span>/500 caracteres</small>
                 </div>
                 <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button type="button" data-insumos-action="pasar-revisar-close" style="padding: 0.75rem 1.5rem; border: 1px solid #d1d5db; background: white; color: #374151; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s;">Cancelar</button>
-                    <button type="submit" id="btnConfirmarPasarRevisar" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s;"><i class="fas fa-arrow-rotate-left"></i> Pasar a Revisión</button>
+                    <button type="button" data-insumos-action="pasar-revisar-close" style="padding: 0.75rem 1.5rem; border: 1px solid #d1d5db; background: white; color: #374151; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s; pointer-events: auto;">Cancelar</button>
+                    <button type="button" id="btnConfirmarPasarRevisar" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s; pointer-events: auto;"><i class="fas fa-arrow-rotate-left"></i> Pasar a Revisión</button>
                 </div>
             </form>
         </div>

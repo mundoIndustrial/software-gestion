@@ -49,9 +49,6 @@ function initPasarARevisarInsumos() {
     };
 
     /**
-     * Abre el modal para pasar a revisar
-     */
-    /**
      * Actualizar contador de caracteres en tiempo real
      */
     document.addEventListener('input', function(e) {
@@ -77,22 +74,51 @@ function initPasarARevisarInsumos() {
             e.preventDefault();
             cerrarModalPasarRevisar();
         }
+
+        // Manejar click en botón confirmar directamente
+        if (e.target.id === 'btnConfirmarPasarRevisar' || e.target.closest('#btnConfirmarPasarRevisar')) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleConfirmarPasarRevisar();
+        }
     });
 
     /**
-     * Manejar envío del formulario
+     * Manejar envío del formulario por evento submit
      */
     document.addEventListener('submit', function(e) {
         const form = e.target;
         if (form.getAttribute('data-insumos-action') === 'pasar-revisar-submit') {
             e.preventDefault();
-            if (typeof confirmarPasarRevisar === 'function') {
-                confirmarPasarRevisar(e);
-            } else if (window.insumosHandlers?.statusActions?.confirmarPasarRevisar) {
-                window.insumosHandlers.statusActions.confirmarPasarRevisar(e);
-            }
+            handleConfirmarPasarRevisar();
         }
     });
+
+    /**
+     * Manejador centralizado para confirmar pasar a revisar
+     */
+    function handleConfirmarPasarRevisar() {
+        const motivo = document.getElementById('motivoPasarRevisar').value;
+        
+        // Validar motivo
+        if (!motivo || motivo.trim().length < 10) {
+            alert('Por favor ingresa un motivo de al menos 10 caracteres');
+            return;
+        }
+
+        // Llamar función de confirmación
+        if (typeof confirmarPasarRevisar === 'function') {
+            const event = new Event('submit', { cancelable: true });
+            event.preventDefault = () => {};
+            confirmarPasarRevisar(event);
+        } else if (window.insumosHandlers?.statusActions?.confirmarPasarRevisar) {
+            const event = new Event('submit', { cancelable: true });
+            event.preventDefault = () => {};
+            window.insumosHandlers.statusActions.confirmarPasarRevisar(event);
+        } else {
+            alert('Error: Handler no disponible');
+        }
+    }
 
 }
 
