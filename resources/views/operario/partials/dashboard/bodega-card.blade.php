@@ -1,10 +1,21 @@
+@php
+    $estadoControlCalidadBodega = strtolower((string) ($bodega['estado_control_calidad'] ?? 'pendiente'));
+    $ccEsCompleto = $estadoControlCalidadBodega === 'completo';
+    $ccEsParcial = $estadoControlCalidadBodega === 'parcial';
+    $ccIcono = $ccEsCompleto ? 'undo' : ($ccEsParcial ? 'edit' : 'check_circle');
+    $ccTexto = $ccEsCompleto ? 'DESHACER' : ($ccEsParcial ? 'EDITAR C.C' : 'PASAR A C.C');
+    $ccArea = ($ccEsCompleto || $ccEsParcial) ? 'Control Calidad' : 'Costura';
+@endphp
 <div class="orden-card-simple card-bodega"
      data-numero="{{ $bodega['consecutivo'] }}"
      data-prenda="{{ strtolower((string) $prenda['nombre_prenda']) }}"
      data-prenda-id="{{ $prenda['prenda_id'] }}"
+     data-prenda-bodega-id="{{ $bodega['prenda_bodega_id'] ?? ($prenda['prenda_bodega_id'] ?? '') }}"
      data-cliente="{{ strtolower((string) $prenda['cliente']) }}"
      data-tipo-recibo="corte-para-bodega"
      data-numero-recibo="{{ $bodega['consecutivo'] }}"
+     data-recibo-id="{{ $bodega['recibo_id'] ?? '' }}"
+     data-tallas='@json($bodega["tallas"] ?? [])'
      data-sin-encargado-costura="{{ $bodega['encargado_costura'] === '' ? '1' : '0' }}"
      data-sin-encargado-reflectivo="0"
      data-search-text="{{ $bodega['search_text'] }}">
@@ -48,7 +59,7 @@
 
             <div class="mobile-ver-recibo-section">
                 <button type="button" class="btn-ver-recibos mobile-under-state"
-                        onclick="abrirDetallesRecibos('{{ $bodega['consecutivo'] }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $bodega['texto_prenda']) }}', 'CORTE-PARA-BODEGA', null, '{{ $bodega['consecutivo'] }}', {{ $bodega['recibo_id'] ?? 'null' }}); return false;">
+                        onclick="abrirDetallesRecibos(@js($bodega['consecutivo']), {{ $prenda['prenda_id'] ?? 'null' }}, @js($bodega['texto_prenda']), 'CORTE-PARA-BODEGA', null, @js($bodega['consecutivo']), {{ $bodega['recibo_id'] ?? 'null' }}); return false;">
                     <span class="material-symbols-rounded">visibility</span>
                     VER RECIBO
                 </button>
@@ -78,18 +89,21 @@
                     <button class="btn-pasar-cc"
                             data-visible-filtro="bodega"
                             id="btn-cc-bodega-{{ $prenda['prenda_id'] }}-{{ $bodega['consecutivo'] }}"
+                            data-recibo-id="{{ $bodega['recibo_id'] ?? '' }}"
                             data-pedido-id="{{ $bodega['pedido_id_accion'] }}"
                             data-prenda-id="{{ $prenda['prenda_id'] }}"
                             data-prenda-bodega-id="{{ $prenda['prenda_id'] }}"
                             data-nombre="{{ $bodega['texto_prenda'] }}"
                             data-tipo-recibo="CORTE-PARA-BODEGA"
                             data-recibo="{{ $bodega['consecutivo'] }}"
-                            data-area="Costura"
+                            data-area="{{ $ccArea }}"
                             data-proceso-id="{{ $bodega['proceso_id_costura'] ?? '' }}"
+                            data-estado-control-calidad="{{ $bodega['estado_control_calidad'] ?? '' }}"
+                            data-tallas-control-calidad='@json($bodega["tallas_control_calidad"] ?? [])'
                             type="button"
                             onclick="pasarAControlCalidad(this); return false;">
-                        <span class="material-symbols-rounded">check_circle</span>
-                        PASAR A C.C
+                        <span class="material-symbols-rounded">{{ $ccIcono }}</span>
+                        {{ $ccTexto }}
                     </button>
                 @endif
 
@@ -114,19 +128,26 @@
                 @endif
 
                 <button type="button" class="btn-agregar-novedad"
-                        onclick="abrirModalNovedad('{{ $bodega['consecutivo'] }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $bodega['texto_prenda']) }}', {{ $bodega['consecutivo'] }}); return false;">
+                        data-numero-pedido="{{ $bodega['numero_pedido_accion'] ?? $bodega['consecutivo'] }}"
+                        data-prenda-id="{{ $prenda['prenda_id'] ?? '' }}"
+                        data-prenda-bodega-id="{{ $bodega['prenda_bodega_id'] ?? ($prenda['prenda_bodega_id'] ?? '') }}"
+                        data-pedido-id="{{ $bodega['pedido_id_accion'] ?? '' }}"
+                        data-recibo-id="{{ $bodega['recibo_id'] ?? '' }}"
+                        data-nombre-prenda="{{ $bodega['texto_prenda'] }}"
+                        data-numero-recibo="{{ $bodega['consecutivo'] }}"
+                        onclick="abrirModalNovedadDesdeElemento(this); return false;">
                     <span class="material-symbols-rounded">comment</span>
                     AGREGAR NOVEDAD
                 </button>
 
                 <button type="button" class="btn-ver-recibos"
-                        onclick="abrirDetallesRecibos('{{ $bodega['consecutivo'] }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $bodega['texto_prenda']) }}', 'CORTE-PARA-BODEGA', null, '{{ $bodega['consecutivo'] }}', {{ $bodega['recibo_id'] ?? 'null' }}); return false;">
+                        onclick="abrirDetallesRecibos(@js($bodega['consecutivo']), {{ $prenda['prenda_id'] ?? 'null' }}, @js($bodega['texto_prenda']), 'CORTE-PARA-BODEGA', null, @js($bodega['consecutivo']), {{ $bodega['recibo_id'] ?? 'null' }}); return false;">
                     <span class="material-symbols-rounded">visibility</span>
                     VER RECIBO
                 </button>
             </div>
 
-            <button class="mobile-actions-toggle" onclick="toggleMobileActions({{ $prenda['prenda_id'] }})">
+            <button class="mobile-actions-toggle" onclick="toggleMobileActions({{ $prenda['prenda_id'] ?? 'null' }})">
                 <span class="material-symbols-rounded">more_horiz</span>
             </button>
         </div>
@@ -135,7 +156,7 @@
             <div class="orden-right-center">
                 <a href="#"
                    class="action-arrow"
-                   onclick="abrirDetallesRecibos('{{ $bodega['consecutivo'] }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $bodega['texto_prenda']) }}', 'CORTE-PARA-BODEGA', null, '{{ $bodega['consecutivo'] }}', {{ $bodega['recibo_id'] ?? 'null' }}); return false;">
+                   onclick="abrirDetallesRecibos(@js($bodega['consecutivo']), {{ $prenda['prenda_id'] ?? 'null' }}, @js($bodega['texto_prenda']), 'CORTE-PARA-BODEGA', null, @js($bodega['consecutivo']), {{ $bodega['recibo_id'] ?? 'null' }}); return false;">
                     <span class="material-symbols-rounded">arrow_forward</span>
                 </a>
             </div>
@@ -163,17 +184,20 @@
 
                 <button type="button" class="btn-pasar-cc"
                         id="btn-cc-bodega-mobile-{{ $prenda['prenda_id'] }}-{{ $bodega['consecutivo'] }}"
+                        data-recibo-id="{{ $bodega['recibo_id'] ?? '' }}"
                         data-pedido-id="{{ $bodega['pedido_id_accion'] }}"
                         data-prenda-id="{{ $prenda['prenda_id'] }}"
                         data-prenda-bodega-id="{{ $prenda['prenda_id'] }}"
                         data-nombre="{{ $bodega['texto_prenda'] }}"
                         data-tipo-recibo="CORTE-PARA-BODEGA"
                         data-recibo="{{ $bodega['consecutivo'] }}"
-                        data-area="Costura"
+                        data-area="{{ $ccArea }}"
                         data-proceso-id="{{ $bodega['proceso_id_costura'] ?? '' }}"
+                        data-estado-control-calidad="{{ $bodega['estado_control_calidad'] ?? '' }}"
+                        data-tallas-control-calidad='@json($bodega["tallas_control_calidad"] ?? [])'
                         onclick="pasarAControlCalidad(this); return false;">
-                    <span class="material-symbols-rounded">check_circle</span>
-                    PASAR A C.C
+                    <span class="material-symbols-rounded">{{ $ccIcono }}</span>
+                    {{ $ccTexto }}
                 </button>
             @endif
 
@@ -198,18 +222,25 @@
             @endif
 
             <button type="button" class="btn-ver-recibos"
-                    onclick="abrirDetallesRecibos('{{ $bodega['consecutivo'] }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $bodega['texto_prenda']) }}', 'CORTE-PARA-BODEGA', null, '{{ $bodega['consecutivo'] }}', {{ $bodega['recibo_id'] ?? 'null' }}); return false;">
+                    onclick="abrirDetallesRecibos(@js($bodega['consecutivo']), {{ $prenda['prenda_id'] ?? 'null' }}, @js($bodega['texto_prenda']), 'CORTE-PARA-BODEGA', null, @js($bodega['consecutivo']), {{ $bodega['recibo_id'] ?? 'null' }}); return false;">
                 <span class="material-symbols-rounded">visibility</span>
                 VER RECIBO
             </button>
 
             <button type="button" class="btn-agregar-novedad"
-                    onclick="abrirModalNovedad('{{ $bodega['consecutivo'] }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $bodega['texto_prenda']) }}', {{ $bodega['consecutivo'] }}); return false;">
+                    data-numero-pedido="{{ $bodega['numero_pedido_accion'] ?? $bodega['consecutivo'] }}"
+                    data-prenda-id="{{ $prenda['prenda_id'] ?? '' }}"
+                    data-prenda-bodega-id="{{ $bodega['prenda_bodega_id'] ?? ($prenda['prenda_bodega_id'] ?? '') }}"
+                    data-pedido-id="{{ $bodega['pedido_id_accion'] ?? '' }}"
+                    data-recibo-id="{{ $bodega['recibo_id'] ?? '' }}"
+                    data-nombre-prenda="{{ $bodega['texto_prenda'] }}"
+                    data-numero-recibo="{{ $bodega['consecutivo'] }}"
+                    onclick="abrirModalNovedadDesdeElemento(this); return false;">
                 <span class="material-symbols-rounded">comment</span>
                 AGREGAR NOVEDAD
             </button>
 
-            <button class="mobile-actions-toggle" onclick="toggleMobileActions({{ $prenda['prenda_id'] }})">
+            <button class="mobile-actions-toggle" onclick="toggleMobileActions({{ $prenda['prenda_id'] ?? 'null' }})">
                 <span class="material-symbols-rounded">more_horiz</span>
             </button>
         </div>

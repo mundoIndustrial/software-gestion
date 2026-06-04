@@ -71,7 +71,7 @@ class OperarioRecibosRepository
 
         return DB::table('prenda_recibo_completado')
             ->whereIn('id_recibo', $reciboIds)
-            ->select(['id_recibo', 'area', 'fecha_completado'])
+            ->select(['id_recibo', 'area', 'fecha_completado', 'tallas_control_calidad'])
             ->get();
     }
 

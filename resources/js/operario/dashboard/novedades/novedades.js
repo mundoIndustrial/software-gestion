@@ -42,10 +42,66 @@ export function abrirModalNovedad(numeroPedido, prendaId, nombrePrenda, numeroRe
     modal.style.display = 'flex';
 }
 
+export function abrirModalNovedadDesdeElemento(elemento) {
+    const boton = elemento instanceof Element ? elemento : null;
+    const tarjeta = boton?.closest?.('.orden-card-simple');
+    const modal = document.getElementById('modalNovedad');
+
+    const numeroPedido = (
+        boton?.dataset?.numeroPedido ||
+        boton?.dataset?.numeroRecibo ||
+        tarjeta?.dataset?.numero ||
+        tarjeta?.dataset?.numeroRecibo ||
+        ''
+    ).trim();
+    const prendaIdRaw =
+        boton?.dataset?.prendaId ||
+        boton?.dataset?.pedidoId ||
+        tarjeta?.dataset?.prendaId ||
+        tarjeta?.dataset?.pedidoId ||
+        '';
+    const prendaBodegaIdRaw =
+        boton?.dataset?.prendaBodegaId ||
+        tarjeta?.dataset?.prendaBodegaId ||
+        '';
+    const nombrePrenda = boton?.dataset?.nombrePrenda || tarjeta?.dataset?.prenda || '';
+    const numeroRecibo = boton?.dataset?.numeroRecibo || tarjeta?.dataset?.numeroRecibo || '';
+    const reciboId = boton?.dataset?.reciboId || tarjeta?.dataset?.reciboId || '';
+
+    const prendaId = prendaIdRaw === '' ? null : Number(prendaIdRaw);
+    const prendaBodegaId = prendaBodegaIdRaw === '' ? null : Number(prendaBodegaIdRaw);
+
+    if (modal) {
+        modal.dataset.novedadScope = prendaBodegaId ? 'bodega' : 'pedido';
+        modal.dataset.prendaBodegaId = prendaBodegaId ? String(prendaBodegaId) : '';
+        modal.dataset.reciboId = reciboId ? String(reciboId) : '';
+    }
+
+    if ((!numeroPedido || !prendaId) && !prendaBodegaId) {
+        console.warn('No se pudo resolver la novedad desde el elemento', {
+            numeroPedido,
+            prendaId,
+            prendaBodegaId,
+            nombrePrenda,
+            numeroRecibo,
+        });
+        return;
+    }
+
+    if (prendaBodegaId) {
+        return abrirModalNovedad(numeroPedido || numeroRecibo, prendaBodegaId, nombrePrenda, numeroRecibo);
+    }
+
+    return abrirModalNovedad(numeroPedido, prendaId, nombrePrenda, numeroRecibo);
+}
+
 export function cerrarModalNovedad() {
     const modal = document.getElementById('modalNovedad');
     if (modal) {
         modal.style.display = 'none';
+        modal.dataset.novedadScope = '';
+        modal.dataset.prendaBodegaId = '';
+        modal.dataset.reciboId = '';
         const textarea = document.getElementById('novedadDescripcionText');
         if (textarea) textarea.value = '';
     }
@@ -53,14 +109,21 @@ export function cerrarModalNovedad() {
 
 export function cargarNovedadesDelUsuario(numeroPedido, prendaId) {
     console.log(' Cargando novedades', { numeroPedido, prendaId });
+    const modal = document.getElementById('modalNovedad');
+    const scope = modal?.dataset?.novedadScope || 'pedido';
+    const prendaBodegaId = modal?.dataset?.prendaBodegaId || '';
+    const reciboId = modal?.dataset?.reciboId || '';
+    const endpoint = scope === 'bodega'
+        ? `/operario/api/novedades/bodega/${encodeURIComponent(reciboId)}/${encodeURIComponent(prendaBodegaId)}`
+        : `/operario/api/novedades/${numeroPedido}/${prendaId}`;
 
-    httpJson(`/operario/api/novedades/${numeroPedido}/${prendaId}`, {
+    httpJson(endpoint, {
         headers: {},
     })
         .then((response) => response.json())
         .then((data) => {
             console.log(' Novedades cargadas:', data);
-            mostrarNovedades(data.novedades || []);
+            mostrarNovedades(data.novedades || [], scope);
         })
         .catch((error) => {
             console.error(' Error cargando novedades:', error);
@@ -71,7 +134,7 @@ export function cargarNovedadesDelUsuario(numeroPedido, prendaId) {
         });
 }
 
-function mostrarNovedades(novedades) {
+function mostrarNovedades(novedades, scope = 'pedido') {
     const historial = document.getElementById('novedadesHistorial');
     if (!historial) {
         console.error('Historial no encontrado');
@@ -92,7 +155,10 @@ function mostrarNovedades(novedades) {
         const tipo = tipoRaw.toUpperCase();
         const usuarioNombre = (novedad.usuario_nombre || '').toString();
         const usuarioRol = (novedad.usuario_rol || '').toString();
-        const descripcion = (novedad.descripcion || novedad.novedad_texto || '').toString();
+        const descripcion = (scope === 'bodega'
+            ? (novedad.observaciones || novedad.descripcion || '')
+            : (novedad.descripcion || novedad.novedad_texto || '')
+        ).toString();
         const descripcionEscaped = descripcion.replace(/'/g, "\\'");
 
         const editado = parseInt(novedad.editado || 0);
@@ -146,6 +212,10 @@ export function guardarNovedad() {
     const numeroPedido = document.getElementById('novedadNumeroPedido')?.value;
     const prendaId = document.getElementById('novedadPrendaId')?.value;
     const numeroRecibo = document.getElementById('novedadNumeroRecibo')?.value;
+    const modal = document.getElementById('modalNovedad');
+    const scope = modal?.dataset?.novedadScope || 'pedido';
+    const prendaBodegaId = modal?.dataset?.prendaBodegaId || '';
+    const reciboId = modal?.dataset?.reciboId || '';
 
     const btnGuardar = document.getElementById('btnGuardarNovedad');
     const textoOriginal = btnGuardar ? btnGuardar.innerHTML : '';
@@ -154,6 +224,41 @@ export function guardarNovedad() {
         btnGuardar.disabled = true;
         btnGuardar.innerHTML =
             '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">refresh</span> Guardando...';
+    }
+
+    if (scope === 'bodega') {
+        httpJsonBody(
+            '/operario/api/novedades/bodega/crear',
+            'POST',
+            {
+                recibo_id: reciboId,
+                prenda_bodega_id: prendaBodegaId,
+                observaciones: descripcion,
+            },
+            {}
+        )
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success) {
+                    textareaDescripcion.value = '';
+                    cargarNovedadesDelUsuario(numeroPedido, prendaId);
+                    mostrarExito('Éxito', 'Novedad registrada correctamente');
+                } else {
+                    mostrarError('Error', data.message || 'Error registrando novedad');
+                }
+            })
+            .catch((error) => {
+                console.error('Error guardando novedad de bodega:', error);
+                mostrarError('Error', 'Error guardando novedad');
+            })
+            .finally(() => {
+                if (btnGuardar) {
+                    btnGuardar.disabled = false;
+                    btnGuardar.innerHTML = textoOriginal;
+                }
+            });
+
+        return;
     }
 
     httpJsonBody(
@@ -347,4 +452,3 @@ export function confirmarEliminar() {
             }
         });
 }
-

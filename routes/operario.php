@@ -37,6 +37,8 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
     Route::get('/api/pedido/{numeroPedido}', [OperarioController::class, 'obtenerDatosRecibosOperario'])->name('api.pedido');
     Route::get('/api/prenda-bodega/{prendaBodegaId}', [OperarioController::class, 'obtenerDatosPrendaBodega'])->name('api.prenda-bodega');
     Route::post('/api/novedades/crear', [OperarioNovedadesController::class, 'crearNovedad'])->name('api.novedades.crear');
+    Route::get('/api/novedades/bodega/{reciboId}/{prendaBodegaId}', [OperarioNovedadesController::class, 'obtenerNovedadesBodega'])->name('api.novedades.bodega');
+    Route::post('/api/novedades/bodega/crear', [OperarioNovedadesController::class, 'crearNovedadBodega'])->name('api.novedades.bodega.crear');
     Route::delete('/api/novedades/{id}', [OperarioNovedadesController::class, 'eliminarNovedad'])->name('api.novedades.eliminar');
     Route::put('/api/novedades/{id}', [OperarioNovedadesController::class, 'actualizarNovedad'])->name('api.novedades.actualizar');
     Route::get('/api/novedades/{numeroPedido}/{prendaId}', [OperarioNovedadesController::class, 'obtenerNovedadesPrenda'])->name('api.novedades.prenda');
@@ -53,6 +55,7 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
     Route::get('/api/recibos-procesos/observacion', [OperarioRecibosController::class, 'obtenerObservacionReciboProceso'])->name('api.recibos-procesos.observacion.obtener');
     Route::get('/api/recibos/control-calidad/{tipoRecibo}', [OperarioDashboardController::class, 'obtenerRecibosControlCalidad'])->name('api.recibos.control-calidad');
     Route::get('/api/recibos/{idRecibo}/distribucion-control-calidad', [OperarioDashboardController::class, 'obtenerDistribucionControlCalidad'])->name('api.recibos.distribucion-cc');
+    Route::get('/api/recibos/{idRecibo}/tallas-control-calidad', [OperarioDashboardController::class, 'obtenerTallasControlCalidad'])->name('api.recibos.tallas-cc');
     Route::get('/debug', [OperarioController::class, 'debug'])->name('debug');
     Route::get('/debug/prendas-recibos', [OperarioController::class, 'debugPrendasRecibos'])->name('debug.prendas-recibos');
 });

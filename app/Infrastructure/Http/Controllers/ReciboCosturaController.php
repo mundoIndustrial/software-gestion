@@ -55,6 +55,70 @@ class ReciboCosturaController extends Controller
         DB::table('recibos_por_partes_tallas')->insert($payload);
     }
 
+    private function normalizarTallasControlCalidad(mixed $tallasInput): array
+    {
+        if (is_string($tallasInput)) {
+            $decoded = json_decode($tallasInput, true);
+            $tallasInput = is_array($decoded) ? $decoded : [];
+        }
+
+        if (!is_array($tallasInput)) {
+            return [];
+        }
+
+        return collect($tallasInput)
+            ->map(function ($talla) {
+                $nombreTalla = trim((string) ($talla['talla'] ?? $talla['nombre'] ?? ''));
+                $cantidad = (int) ($talla['cantidad'] ?? 0);
+
+                return [
+                    'talla' => $nombreTalla,
+                    'cantidad' => $cantidad,
+                    'genero' => isset($talla['genero']) ? (string) $talla['genero'] : null,
+                    'color_nombre' => isset($talla['color_nombre']) ? (string) $talla['color_nombre'] : null,
+                ];
+            })
+            ->filter(fn (array $talla) => $talla['talla'] !== '' && $talla['cantidad'] > 0)
+            ->values()
+            ->all();
+    }
+
+    private function guardarTallasControlCalidadDetalle(int $completadoId, array $tallas): void
+    {
+        if ($completadoId <= 0) {
+            return;
+        }
+
+        DB::table('prenda_recibo_completado_tallas')
+            ->where('prenda_recibo_completado_id', $completadoId)
+            ->delete();
+
+        if (empty($tallas)) {
+            return;
+        }
+
+        $ahora = now();
+        $registros = collect($tallas)
+            ->map(function (array $talla) use ($completadoId, $ahora) {
+                return [
+                    'prenda_recibo_completado_id' => $completadoId,
+                    'talla' => (string) ($talla['talla'] ?? ''),
+                    'cantidad' => (int) ($talla['cantidad'] ?? 0),
+                    'genero' => isset($talla['genero']) ? (string) $talla['genero'] : null,
+                    'color_nombre' => isset($talla['color_nombre']) ? (string) $talla['color_nombre'] : null,
+                    'created_at' => $ahora,
+                    'updated_at' => $ahora,
+                ];
+            })
+            ->filter(fn (array $registro) => $registro['talla'] !== '' && $registro['cantidad'] > 0)
+            ->values()
+            ->all();
+
+        if (!empty($registros)) {
+            DB::table('prenda_recibo_completado_tallas')->insert($registros);
+        }
+    }
+
     public function distribuirPorModulos(Request $request, $pedidoId, $numeroRecibo)
     {
         try {
@@ -600,9 +664,15 @@ class ReciboCosturaController extends Controller
 
             $tipoRecibo = strtoupper(trim((string) $request->input('tipo_recibo')));
             $esBodega = $tipoRecibo === 'CORTE-PARA-BODEGA';
+            $tallasControlCalidad = $this->normalizarTallasControlCalidad($request->input('tallas_control_calidad'));
 
             $rules = [
-                'tipo_recibo' => 'required|string'
+                'tipo_recibo' => 'required|string',
+                'tallas_control_calidad' => 'required|array|min:1',
+                'tallas_control_calidad.*.talla' => 'required|string|max:50',
+                'tallas_control_calidad.*.cantidad' => 'required|integer|min:1',
+                'tallas_control_calidad.*.genero' => 'nullable|string|max:50',
+                'tallas_control_calidad.*.color_nombre' => 'nullable|string|max:191',
             ];
 
             if ($esBodega) {
@@ -611,6 +681,9 @@ class ReciboCosturaController extends Controller
                 $rules['prenda_id'] = 'required|integer|exists:prendas_pedido,id';
             }
 
+            $request->merge([
+                'tallas_control_calidad' => $tallasControlCalidad,
+            ]);
             $request->validate($rules);
 
             $prendaId = (int) $request->input('prenda_id', 0);
@@ -622,6 +695,7 @@ class ReciboCosturaController extends Controller
                 prendaId: $prendaId,
                 prendaBodegaId: $prendaBodegaId,
                 tipoRecibo: (string) $request->tipo_recibo,
+                tallasControlCalidad: $tallasControlCalidad,
             ));
 
             $payload = [
@@ -718,10 +792,16 @@ class ReciboCosturaController extends Controller
      */
     private function cambiarAreaControlCalidadParcial(Request $request, int $pedidoId)
     {
+        $tallasControlCalidad = $this->normalizarTallasControlCalidad($request->input('tallas_control_calidad'));
         $request->validate([
             'prenda_id' => 'required|integer|exists:prendas_pedido,id',
             'tipo_recibo' => 'required|string',
             'parcial_id' => 'required|integer|exists:recibo_por_partes,id',
+            'tallas_control_calidad' => 'required|array|min:1',
+            'tallas_control_calidad.*.talla' => 'required|string|max:50',
+            'tallas_control_calidad.*.cantidad' => 'required|integer|min:1',
+            'tallas_control_calidad.*.genero' => 'nullable|string|max:50',
+            'tallas_control_calidad.*.color_nombre' => 'nullable|string|max:191',
         ]);
 
         $pedido = PedidoProduccion::findOrFail($pedidoId);
@@ -763,8 +843,19 @@ class ReciboCosturaController extends Controller
                         'numero_recibo' => (int) ($parcial->consecutivo_parcial ?? 0),
                         'nombre_operario' => (string) (auth()->user()->name ?? 'control'),
                         'fecha_completado' => now(),
+                        'tallas_control_calidad' => !empty($tallasControlCalidad)
+                            ? json_encode(array_values($tallasControlCalidad), JSON_UNESCAPED_UNICODE)
+                            : null,
                     ]
                 );
+
+                $completado = DB::table('prenda_recibo_completado')
+                    ->where('id_recibo', (int) $parcial->id)
+                    ->where('area', 'Control Calidad')
+                    ->first('id');
+                if ($completado) {
+                    $this->guardarTallasControlCalidadDetalle((int) $completado->id, $tallasControlCalidad);
+                }
 
                 $estadoParcialesCc = $this->sincronizarProcesoControlCalidadOriginal($pedido, $parcial);
                 DB::commit();
@@ -810,8 +901,19 @@ class ReciboCosturaController extends Controller
                     'numero_recibo' => (int) ($parcial->consecutivo_parcial ?? 0),
                     'nombre_operario' => (string) (auth()->user()->name ?? 'control'),
                     'fecha_completado' => now(),
+                    'tallas_control_calidad' => !empty($tallasControlCalidad)
+                        ? json_encode(array_values($tallasControlCalidad), JSON_UNESCAPED_UNICODE)
+                        : null,
                 ]
             );
+
+            $completado = DB::table('prenda_recibo_completado')
+                ->where('id_recibo', (int) $parcial->id)
+                ->where('area', 'Control Calidad')
+                ->first('id');
+            if ($completado) {
+                $this->guardarTallasControlCalidadDetalle((int) $completado->id, $tallasControlCalidad);
+            }
 
             DB::commit();
 

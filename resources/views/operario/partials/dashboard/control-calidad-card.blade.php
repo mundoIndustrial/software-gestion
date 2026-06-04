@@ -59,7 +59,7 @@
 
             <div class="mobile-ver-recibo-section">
                 <button type="button" class="btn-ver-recibos mobile-under-state"
-                        onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', '{{ $tipoReciboControl }}', {{ $parcialId ? (int) $parcialId : 'null' }}, '{{ addslashes((string) $numeroReciboBusqueda) }}', {{ $reciboPrincipal['id'] ?? 'null' }}); return false;">
+                        onclick="abrirDetallesRecibos(@js($prenda['numero_pedido']), {{ $prenda['prenda_id'] ?? 'null' }}, @js($prenda['nombre_prenda']), @js($tipoReciboControl), {{ $parcialId ? (int) $parcialId : 'null' }}, @js($numeroReciboBusqueda), {{ $reciboPrincipal['id'] ?? 'null' }}); return false;">
                     <span class="material-symbols-rounded">visibility</span>
                     VER RECIBO
                 </button>
@@ -67,13 +67,18 @@
 
             <div class="orden-buttons">
                 <button type="button" class="btn-ver-recibos"
-                        onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', '{{ $tipoReciboControl }}', {{ $parcialId ? (int) $parcialId : 'null' }}, '{{ addslashes((string) $numeroReciboBusqueda) }}', {{ $reciboPrincipal['id'] ?? 'null' }}); return false;">
+                        onclick="abrirDetallesRecibos(@js($prenda['numero_pedido']), {{ $prenda['prenda_id'] ?? 'null' }}, @js($prenda['nombre_prenda']), @js($tipoReciboControl), {{ $parcialId ? (int) $parcialId : 'null' }}, @js($numeroReciboBusqueda), {{ $reciboPrincipal['id'] ?? 'null' }}); return false;">
                     <span class="material-symbols-rounded">visibility</span>
                     VER RECIBO
                 </button>
 
                 <button type="button" class="btn-agregar-novedad"
-                        onclick="abrirModalNovedad('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', {{ $consecutivoActual }}); return false;">
+                        data-numero-pedido="{{ $prenda['numero_pedido'] }}"
+                        data-prenda-id="{{ $prenda['prenda_id'] ?? '' }}"
+                        data-pedido-id="{{ $prenda['prenda_id'] ?? '' }}"
+                        data-nombre-prenda="{{ $prenda['nombre_prenda'] }}"
+                        data-numero-recibo="{{ $consecutivoActual }}"
+                        onclick="abrirModalNovedadDesdeElemento(this); return false;">
                     <span class="material-symbols-rounded">comment</span>
                     AGREGAR NOVEDAD
                 </button>
@@ -96,7 +101,7 @@
             <div class="orden-right-center">
                 <a href="#"
                    class="action-arrow"
-                   onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] }}, '{{ addslashes((string) $prenda['nombre_prenda']) }}', '{{ $tipoReciboControl }}', {{ $parcialId ? (int) $parcialId : 'null' }}, '{{ addslashes((string) $numeroReciboBusqueda) }}', {{ $reciboPrincipal['id'] ?? 'null' }}); return false;">
+                   onclick="abrirDetallesRecibos(@js($prenda['numero_pedido']), {{ $prenda['prenda_id'] ?? 'null' }}, @js($prenda['nombre_prenda']), @js($tipoReciboControl), {{ $parcialId ? (int) $parcialId : 'null' }}, @js($numeroReciboBusqueda), {{ $reciboPrincipal['id'] ?? 'null' }}); return false;">
                     <span class="material-symbols-rounded">arrow_forward</span>
                 </a>
             </div>

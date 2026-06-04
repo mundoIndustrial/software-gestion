@@ -10,6 +10,8 @@ use App\Domain\Operario\Repositories\ProcesoPrendaRepository;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaBodega;
 use App\Models\PrendaPedido;
+use App\Models\PrendaPedidoTalla;
+use App\Models\PrendaTallasBodega;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -20,6 +22,101 @@ class CambiarAreaControlCalidadUseCase
         private readonly ProcesoPrendaRepository $procesos,
         private readonly ControlCalidadWorkflow $workflowService,
     ) {}
+
+    private function construirClaveTalla(?string $talla, ?string $genero, ?string $colorNombre): string
+    {
+        return implode('|', [
+            strtoupper(trim((string) $talla)),
+            strtoupper(trim((string) $genero)),
+            strtoupper(trim((string) $colorNombre)),
+        ]);
+    }
+
+    private function normalizarTallasPorClave(array $tallas): array
+    {
+        $normalizadas = [];
+
+        foreach ($tallas as $talla) {
+            $clave = $this->construirClaveTalla(
+                (string) ($talla['talla'] ?? ''),
+                (string) ($talla['genero'] ?? ''),
+                (string) ($talla['color_nombre'] ?? '')
+            );
+
+            if ($clave === '||') {
+                continue;
+            }
+
+            $normalizadas[$clave] = ($normalizadas[$clave] ?? 0) + (int) ($talla['cantidad'] ?? 0);
+        }
+
+        return $normalizadas;
+    }
+
+    private function obtenerTallasOriginalesPrendaPedido(int $prendaId): array
+    {
+        return PrendaPedidoTalla::query()
+            ->with('coloresAsignados')
+            ->where('prenda_pedido_id', $prendaId)
+            ->get()
+            ->flatMap(function (PrendaPedidoTalla $talla) {
+                if ($talla->coloresAsignados->isNotEmpty()) {
+                    return $talla->coloresAsignados->map(function ($color) use ($talla) {
+                        return [
+                            'talla' => (string) ($talla->talla ?? ''),
+                            'genero' => (string) ($talla->genero ?? ''),
+                            'color_nombre' => (string) ($color->color_nombre ?? ''),
+                            'cantidad' => (int) ($color->cantidad ?? 0),
+                        ];
+                    });
+                }
+
+                return [[
+                    'talla' => (string) ($talla->talla ?? ''),
+                    'genero' => (string) ($talla->genero ?? ''),
+                    'color_nombre' => '',
+                    'cantidad' => (int) $talla->obtenerCantidadTotal(),
+                ]];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function obtenerTallasOriginalesPrendaBodega(int $prendaBodegaId): array
+    {
+        return PrendaTallasBodega::query()
+            ->where('prenda_bodega_id', $prendaBodegaId)
+            ->get()
+            ->map(function (PrendaTallasBodega $talla) {
+                return [
+                    'talla' => (string) ($talla->talla ?? ''),
+                    'genero' => (string) ($talla->genero ?? ''),
+                    'color_nombre' => (string) ($talla->color ?? ''),
+                    'cantidad' => (int) ($talla->cantidad ?? 0),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function reciboQuedaCompletoEnControlCalidad(array $tallasOriginales, array $tallasControlCalidad): bool
+    {
+        $originalesPorClave = $this->normalizarTallasPorClave($tallasOriginales);
+        $enviadasPorClave = $this->normalizarTallasPorClave($tallasControlCalidad);
+
+        if (empty($originalesPorClave) || empty($enviadasPorClave)) {
+            return false;
+        }
+
+        foreach ($originalesPorClave as $clave => $cantidadOriginal) {
+            $cantidadEnviada = (int) ($enviadasPorClave[$clave] ?? 0);
+            if ($cantidadEnviada < (int) $cantidadOriginal) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     public function execute(CambiarAreaControlCalidadCommandDTO $cmd): ReciboCommandResultDTO
     {
@@ -79,7 +176,7 @@ class CambiarAreaControlCalidadUseCase
                 throw new \InvalidArgumentException('Recibo no encontrado');
             }
 
-            [$nuevoProceso, $areaPosterior] = $this->workflowService->runInTransaction(function () use ($pedido, $cmd, $recibo) {
+            [$nuevoProceso, $areaPosterior, $areaNueva, $estadoControlCalidad] = $this->workflowService->runInTransaction(function () use ($pedido, $cmd, $recibo) {
                 $areaPosterior = $recibo->area;
 
                 $nuevoProceso = $this->procesos->findLatestByProcesoAndNumeroRecibo(
@@ -108,8 +205,20 @@ class CambiarAreaControlCalidadUseCase
                 }
 
                 $prenda = PrendaPedido::find($cmd->prendaId);
+                $completadoExistente = DB::table('prenda_recibo_completado')
+                    ->where('id_recibo', (int) $recibo->id)
+                    ->where('area', 'Control Calidad')
+                    ->first();
+                $tallasAcumuladas = $this->acumularTallasControlCalidad(
+                    $completadoExistente?->tallas_control_calidad,
+                    $cmd->tallasControlCalidad
+                );
+                $tallasOriginales = $this->obtenerTallasOriginalesPrendaPedido((int) $cmd->prendaId);
+                $reciboCompletoEnCc = $this->reciboQuedaCompletoEnControlCalidad($tallasOriginales, $tallasAcumuladas);
+                $areaNueva = $reciboCompletoEnCc ? 'Control Calidad' : 'Costura';
+                $estadoControlCalidad = $reciboCompletoEnCc ? 'completo' : 'parcial';
 
-                $recibo->area = 'Control Calidad';
+                $recibo->area = $areaNueva;
                 $this->recibos->save($recibo);
 
             // Fuente de verdad de completado por área:
@@ -124,8 +233,20 @@ class CambiarAreaControlCalidadUseCase
                         'nombre_operario' => (string) (auth()->user()->name ?? 'control'),
                         'fecha_completado' => now(),
                         'id_parcial' => null,
+                        'tallas_control_calidad' => !empty($tallasAcumuladas)
+                            ? json_encode(array_values($tallasAcumuladas), JSON_UNESCAPED_UNICODE)
+                            : null,
                     ]
                 );
+
+                $completado = DB::table('prenda_recibo_completado')
+                    ->where('id_recibo', (int) $recibo->id)
+                    ->where('area', 'Control Calidad')
+                    ->first('id');
+
+                if ($completado) {
+                    $this->guardarTallasControlCalidadDetalle((int) $completado->id, $tallasAcumuladas);
+                }
 
             try {
                 broadcast(new \App\Events\ReciboPasadoControlCalidad(
@@ -161,8 +282,9 @@ class CambiarAreaControlCalidadUseCase
                     'es_parcial' => false,
                     'parcial_id' => null,
                     'completado_area' => false,
-                    'area' => 'Control Calidad',
-                    'proceso_actual' => 'Control Calidad',
+                    'area' => $areaNueva,
+                    'proceso_actual' => $areaNueva,
+                    'estado_control_calidad' => $estadoControlCalidad,
                     'fecha_creacion' => now()->toISOString(),
                     'numero_pedido' => $pedido->numero_pedido,
                 ], 'added', 'pedido'));
@@ -175,7 +297,7 @@ class CambiarAreaControlCalidadUseCase
                 ]);
             }
 
-                return [$nuevoProceso, $areaPosterior];
+                return [$nuevoProceso, $areaPosterior, $areaNueva, $estadoControlCalidad];
             });
 
             Log::info('Recibo enviado a Control Calidad', [
@@ -191,6 +313,8 @@ class CambiarAreaControlCalidadUseCase
                 'proceso_id' => $nuevoProceso->id,
                 'proceso_nombre' => 'Control de Calidad',
                 'area_anterior' => $areaPosterior,
+                'area_nueva' => $areaNueva,
+                'estado_control_calidad' => $estadoControlCalidad,
             ]);
 
         } catch (\InvalidArgumentException $e) {
@@ -236,7 +360,7 @@ class CambiarAreaControlCalidadUseCase
             return new ReciboCommandResultDTO(false, 'Recibo no encontrado', 404);
         }
 
-        [$nuevoProceso, $areaPosterior] = $this->workflowService->runInTransaction(function () use ($cmd, $recibo) {
+        [$nuevoProceso, $areaPosterior, $areaNueva, $estadoControlCalidad] = $this->workflowService->runInTransaction(function () use ($cmd, $recibo) {
             $areaPosterior = $recibo->area;
 
             $nuevoProceso = $this->procesos->findLatestByProcesoAndNumeroRecibo(
@@ -266,7 +390,20 @@ class CambiarAreaControlCalidadUseCase
                 ]);
             }
 
-            $recibo->area = 'Control Calidad';
+            $completadoExistente = DB::table('prenda_recibo_completado')
+                ->where('id_recibo', (int) $recibo->id)
+                ->where('area', 'Control Calidad')
+                ->first();
+            $tallasAcumuladas = $this->acumularTallasControlCalidad(
+                $completadoExistente?->tallas_control_calidad,
+                $cmd->tallasControlCalidad
+            );
+            $tallasOriginales = $this->obtenerTallasOriginalesPrendaBodega((int) $cmd->prendaBodegaId);
+            $reciboCompletoEnCc = $this->reciboQuedaCompletoEnControlCalidad($tallasOriginales, $tallasAcumuladas);
+            $areaNueva = $reciboCompletoEnCc ? 'Control Calidad' : 'Costura';
+            $estadoControlCalidad = $reciboCompletoEnCc ? 'completo' : 'parcial';
+
+            $recibo->area = $areaNueva;
             $this->recibos->save($recibo);
 
             DB::table('prenda_recibo_completado')->updateOrInsert(
@@ -279,10 +416,22 @@ class CambiarAreaControlCalidadUseCase
                     'nombre_operario' => (string) (auth()->user()->name ?? 'control'),
                     'fecha_completado' => now(),
                     'id_parcial' => null,
+                    'tallas_control_calidad' => !empty($tallasAcumuladas)
+                        ? json_encode(array_values($tallasAcumuladas), JSON_UNESCAPED_UNICODE)
+                        : null,
                 ]
             );
 
-            return [$nuevoProceso, $areaPosterior];
+            $completado = DB::table('prenda_recibo_completado')
+                ->where('id_recibo', (int) $recibo->id)
+                ->where('area', 'Control Calidad')
+                ->first('id');
+
+            if ($completado) {
+                $this->guardarTallasControlCalidadDetalle((int) $completado->id, $tallasAcumuladas);
+            }
+
+            return [$nuevoProceso, $areaPosterior, $areaNueva, $estadoControlCalidad];
         });
 
         $nombrePrenda = $prendaBodega?->nombre ?? 'Prenda de bodega';
@@ -305,7 +454,83 @@ class CambiarAreaControlCalidadUseCase
             'proceso_id' => $nuevoProceso->id,
             'proceso_nombre' => 'Control de Calidad',
             'area_anterior' => $areaPosterior,
+            'area_nueva' => $areaNueva,
+            'estado_control_calidad' => $estadoControlCalidad,
             'prenda_bodega_id' => (int) $cmd->prendaBodegaId,
         ]);
+    }
+
+    private function guardarTallasControlCalidadDetalle(int $reciboCompletadoId, array $tallasControlCalidad): void
+    {
+        if ($reciboCompletadoId <= 0) {
+            return;
+        }
+
+        $registros = collect($tallasControlCalidad)
+            ->map(function (array $talla) use ($reciboCompletadoId) {
+                $nombreTalla = trim((string) ($talla['talla'] ?? ''));
+                $cantidad = (int) ($talla['cantidad'] ?? 0);
+
+                return [
+                    'prenda_recibo_completado_id' => $reciboCompletadoId,
+                    'talla' => $nombreTalla,
+                    'cantidad' => $cantidad,
+                    'genero' => isset($talla['genero']) ? (string) $talla['genero'] : null,
+                    'color_nombre' => isset($talla['color_nombre']) ? (string) $talla['color_nombre'] : null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            })
+            ->filter(fn (array $registro) => $registro['talla'] !== '' && $registro['cantidad'] > 0)
+            ->values()
+            ->all();
+
+        if (!empty($registros)) {
+            DB::table('prenda_recibo_completado_tallas')->insert($registros);
+        }
+    }
+
+    private function acumularTallasControlCalidad(mixed $tallasExistentesRaw, array $tallasNuevas): array
+    {
+        $tallasExistentes = [];
+
+        if (is_string($tallasExistentesRaw) && $tallasExistentesRaw !== '') {
+            $decoded = json_decode($tallasExistentesRaw, true);
+            $tallasExistentes = is_array($decoded) ? $decoded : [];
+        } elseif (is_array($tallasExistentesRaw)) {
+            $tallasExistentes = $tallasExistentesRaw;
+        }
+
+        $acumuladas = [];
+
+        foreach (array_merge($tallasExistentes, $tallasNuevas) as $talla) {
+            if (!is_array($talla)) {
+                continue;
+            }
+
+            $nombreTalla = trim((string) ($talla['talla'] ?? ''));
+            $genero = trim((string) ($talla['genero'] ?? ''));
+            $colorNombre = trim((string) ($talla['color_nombre'] ?? ''));
+            $cantidad = (int) ($talla['cantidad'] ?? 0);
+
+            if ($nombreTalla === '' || $cantidad <= 0) {
+                continue;
+            }
+
+            $clave = $this->construirClaveTalla($nombreTalla, $genero, $colorNombre);
+
+            if (!isset($acumuladas[$clave])) {
+                $acumuladas[$clave] = [
+                    'talla' => $nombreTalla,
+                    'cantidad' => 0,
+                    'genero' => $genero,
+                    'color_nombre' => $colorNombre,
+                ];
+            }
+
+            $acumuladas[$clave]['cantidad'] += $cantidad;
+        }
+
+        return array_values($acumuladas);
     }
 }

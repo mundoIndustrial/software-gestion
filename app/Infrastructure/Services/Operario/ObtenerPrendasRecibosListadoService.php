@@ -17,6 +17,62 @@ class ObtenerPrendasRecibosListadoService
         private readonly ObtenerPrendasRecibosParcialesService $parcialesService
     ) {}
 
+    private function construirClaveEstadoControlCalidad(?string $talla, ?string $genero, ?string $colorNombre): string
+    {
+        return implode('|', [
+            strtoupper(trim((string) $talla)),
+            strtoupper(trim((string) $genero)),
+            strtoupper(trim((string) $colorNombre)),
+        ]);
+    }
+
+    private function normalizarCantidadesPorClaveControlCalidad(array $tallas): array
+    {
+        $normalizadas = [];
+
+        foreach ($tallas as $talla) {
+            if (!is_array($talla)) {
+                continue;
+            }
+
+            $clave = $this->construirClaveEstadoControlCalidad(
+                (string) ($talla['talla'] ?? ''),
+                (string) ($talla['genero'] ?? ''),
+                (string) ($talla['color_nombre'] ?? '')
+            );
+
+            if ($clave === '||') {
+                continue;
+            }
+
+            $normalizadas[$clave] = ($normalizadas[$clave] ?? 0) + (int) ($talla['cantidad'] ?? 0);
+        }
+
+        return $normalizadas;
+    }
+
+    private function resolverEstadoControlCalidadDesdeTallas(array $tallasOriginales, array $tallasEnviadas): string
+    {
+        if (empty($tallasEnviadas)) {
+            return 'pendiente';
+        }
+
+        $originales = $this->normalizarCantidadesPorClaveControlCalidad($tallasOriginales);
+        $enviadas = $this->normalizarCantidadesPorClaveControlCalidad($tallasEnviadas);
+
+        if (empty($originales)) {
+            return 'pendiente';
+        }
+
+        foreach ($originales as $clave => $cantidadOriginal) {
+            if ((int) ($enviadas[$clave] ?? 0) < (int) $cantidadOriginal) {
+                return 'parcial';
+            }
+        }
+
+        return 'completo';
+    }
+
     public function obtenerPrendasConRecibos(User $usuario, ?string $filtroRecibo = null): Collection
     {
         $tipoOperario = $this->supportService->obtenerTipoOperario($usuario);
@@ -73,6 +129,8 @@ class ObtenerPrendasRecibosListadoService
                 $auxiliares['completados_costura'],
                 $auxiliares['fechas_costura'],
                 $auxiliares['completados_control_calidad'],
+                $auxiliares['totales_control_calidad'],
+                $auxiliares['tallas_control_calidad'],
                 $auxiliares['parcial_id_por_recibo'],
                 $auxiliares['parcial_created_at'],
                 $auxiliares['recibo_por_partes_key_map']
@@ -173,10 +231,38 @@ class ObtenerPrendasRecibosListadoService
             ->orderByDesc('id')
             ->get()
             ->groupBy('prenda_bodega_id');
+        $tallasPorPrendaBodega = \Illuminate\Support\Facades\DB::table('prenda_tallas_bodega')
+            ->whereIn('prenda_bodega_id', $recibos->pluck('prenda_bodega_id')->filter()->unique()->values())
+            ->get(['id', 'prenda_bodega_id', 'genero', 'talla', 'cantidad', 'color'])
+            ->groupBy('prenda_bodega_id');
+        $totalesControlCalidadPorRecibo = \Illuminate\Support\Facades\DB::table('prenda_recibo_completado_tallas as prct')
+            ->join('prenda_recibo_completado as prc', 'prc.id', '=', 'prct.prenda_recibo_completado_id')
+            ->whereIn('prc.id_recibo', $reciboIdsBodega->all())
+            ->whereRaw('LOWER(TRIM(COALESCE(prc.area, ""))) IN (?, ?)', ['control calidad', 'control de calidad'])
+            ->groupBy('prc.id_recibo')
+            ->selectRaw('prc.id_recibo as id_recibo, SUM(prct.cantidad) as total')
+            ->pluck('total', 'id_recibo');
+        
+        $tallasControlCalidadPorRecibo = \Illuminate\Support\Facades\DB::table('prenda_recibo_completado_tallas as prct')
+            ->join('prenda_recibo_completado as prc', 'prc.id', '=', 'prct.prenda_recibo_completado_id')
+            ->whereIn('prc.id_recibo', $reciboIdsBodega->all())
+            ->whereRaw('LOWER(TRIM(COALESCE(prc.area, ""))) IN (?, ?)', ['control calidad', 'control de calidad'])
+            ->get(['prc.id_recibo', 'prct.genero', 'prct.talla', 'prct.cantidad', 'prct.color_nombre'])
+            ->groupBy('id_recibo')
+            ->map(function (Collection $tallas) {
+                return $tallas->map(function ($talla) {
+                    return [
+                        'genero' => $talla->genero ?? null,
+                        'talla' => $talla->talla ?? null,
+                        'cantidad' => (int) ($talla->cantidad ?? 0),
+                        'color_nombre' => $talla->color_nombre ?? null,
+                    ];
+                })->all();
+            });
 
         return $recibos
             ->groupBy('prenda_bodega_id')
-            ->flatMap(function (Collection $recibosDePrenda) use ($procesos, $desglosarParciales, $completadosCosturaPorReciboId, $completadosCosturaPorNumeroRecibo) {
+            ->flatMap(function (Collection $recibosDePrenda) use ($procesos, $tallasPorPrendaBodega, $totalesControlCalidadPorRecibo, $tallasControlCalidadPorRecibo, $desglosarParciales, $completadosCosturaPorReciboId, $completadosCosturaPorNumeroRecibo) {
                 $reciboPrincipal = $recibosDePrenda->first();
                 $prendaBodega = $reciboPrincipal->prendaBodega;
                 $procesosPrendaBodega = $procesos->get($reciboPrincipal->prenda_bodega_id, collect());
@@ -223,6 +309,23 @@ class ObtenerPrendasRecibosListadoService
                 $nombrePrenda = (string) ($prendaBodega->nombre ?? 'N/A');
                 $descripcion = (string) ($prendaBodega->descripcion ?? '');
                 $reciboPrincipalId = (int) ($reciboPrincipal->id ?? 0);
+                $tallasBodega = ($tallasPorPrendaBodega->get($prendaBodegaId) ?? collect())
+                    ->map(function ($talla) {
+                        return [
+                            'id' => (int) ($talla->id ?? 0),
+                            'genero' => $talla->genero ?? null,
+                            'talla' => $talla->talla ?? null,
+                            'cantidad' => (int) ($talla->cantidad ?? 0),
+                            'tipo_talla' => null,
+                            'es_sobremedida' => false,
+                            'tela' => null,
+                            'colores' => !empty($talla->color) ? [(string) $talla->color] : [],
+                        ];
+                    })
+                    ->values()
+                    ->all();
+                $tallasControlCalidadBodega = $tallasControlCalidadPorRecibo->get($reciboPrincipalId, []);
+                $estadoControlCalidad = $this->resolverEstadoControlCalidadDesdeTallas($tallasBodega, $tallasControlCalidadBodega);
                 $completadoCosturaRecibo = ($reciboPrincipalId > 0 && $completadosCosturaPorReciboId->has($reciboPrincipalId))
                     || ($numeroReciboBodega > 0 && $completadosCosturaPorNumeroRecibo->has($numeroReciboBodega));
 
@@ -322,6 +425,8 @@ class ObtenerPrendasRecibosListadoService
                     'nombre_prenda' => $nombrePrenda,
                     'descripcion' => $descripcion,
                     'de_bodega' => true,
+                    'tallas' => $tallasBodega,
+                    'estado_control_calidad' => $estadoControlCalidad,
                     'tiene_parciales' => $tieneParcialesBodega,
                     'es_parcial' => false,
                     'parcial_id' => null,
@@ -363,6 +468,8 @@ class ObtenerPrendasRecibosListadoService
         Collection $completadosCosturaMap,
         Collection $fechaCompletadoCosturaMap,
         Collection $completadosControlCalidadMap,
+        Collection $totalesControlCalidadMap,
+        Collection $tallasControlCalidadMap,
         array $parcialIdByReciboId,
         Collection $parcialCreatedAtMap,
         array $reciboPorPartesKeyMap
@@ -404,6 +511,8 @@ class ObtenerPrendasRecibosListadoService
                         $completadosCosturaMap,
                         $fechaCompletadoCosturaMap,
                         $completadosControlCalidadMap,
+                        $totalesControlCalidadMap,
+                        $tallasControlCalidadMap,
                         $parcialIdByReciboId,
                         $parcialCreatedAtMap,
                         $reciboPorPartesKeyMap
@@ -426,6 +535,8 @@ class ObtenerPrendasRecibosListadoService
                 $completadosCosturaMap,
                 $fechaCompletadoCosturaMap,
                 $completadosControlCalidadMap,
+                $totalesControlCalidadMap,
+                $tallasControlCalidadMap,
                 $parcialIdByReciboId,
                 $parcialCreatedAtMap,
                 $reciboPorPartesKeyMap
@@ -443,6 +554,8 @@ class ObtenerPrendasRecibosListadoService
         Collection $completadosCosturaMap,
         Collection $fechaCompletadoCosturaMap,
         Collection $completadosControlCalidadMap,
+        Collection $totalesControlCalidadMap,
+        Collection $tallasControlCalidadMap,
         array $parcialIdByReciboId,
         Collection $parcialCreatedAtMap,
         array $reciboPorPartesKeyMap
@@ -456,6 +569,16 @@ class ObtenerPrendasRecibosListadoService
         $completadoCorte = $completadosCorteMap->has($rid);
         $completadoCostura = $completadosCosturaMap->has($rid);
         $completadoControlCalidad = $completadosControlCalidadMap->has($rid);
+        $tallasControlCalidadRecibo = $tallasControlCalidadMap->get($rid, []);
+        $tallasOriginalesRecibo = collect($recibo->prenda?->tallas ?? [])->map(function ($talla) {
+            return [
+                'talla' => (string) ($talla->talla ?? ''),
+                'genero' => (string) ($talla->genero ?? ''),
+                'color_nombre' => '',
+                'cantidad' => (int) ($talla->cantidad ?? 0),
+            ];
+        })->values()->all();
+        $estadoControlCalidad = $this->resolverEstadoControlCalidadDesdeTallas($tallasOriginalesRecibo, $tallasControlCalidadRecibo);
 
         $tieneParciales = $this->operarioRecibosRepository->existeReciboPorPartes(
             (int) $recibo->pedido_produccion_id,
@@ -499,6 +622,8 @@ class ObtenerPrendasRecibosListadoService
             'completado_corte' => $completadoCorte,
             'completado_costura' => $completadoCostura,
             'completado_control_calidad' => $completadoControlCalidad,
+            'estado_control_calidad' => $estadoControlCalidad,
+            'tallas_control_calidad' => $tallasControlCalidadMap->get($rid, []),
             'es_parcial' => $esParcial,
             'pedido_parcial_id' => $parcialId,
             'tiene_parciales' => $tieneParciales,
@@ -633,6 +758,8 @@ class ObtenerPrendasRecibosListadoService
         Collection $completadosCosturaMap,
         Collection $fechaCompletadoCosturaMap,
         Collection $completadosControlCalidadMap,
+        Collection $totalesControlCalidadMap,
+        Collection $tallasControlCalidadMap,
         array $parcialIdByReciboId,
         Collection $parcialCreatedAtMap,
         array $reciboPorPartesKeyMap
@@ -667,6 +794,8 @@ class ObtenerPrendasRecibosListadoService
                     $completadosCosturaMap,
                     $fechaCompletadoCosturaMap,
                     $completadosControlCalidadMap,
+                    $totalesControlCalidadMap,
+                    $tallasControlCalidadMap,
                     $parcialIdByReciboId,
                     $parcialCreatedAtMap,
                     $reciboPorPartesKeyMap
@@ -704,6 +833,60 @@ class ObtenerPrendasRecibosListadoService
             ->pluck('id_recibo')
             ->map(fn ($id) => (int) $id)
             ->flip();
+        $totalesControlCalidadMap = \Illuminate\Support\Facades\DB::table('prenda_recibo_completado_tallas as prct')
+            ->join('prenda_recibo_completado as prc', 'prc.id', '=', 'prct.prenda_recibo_completado_id')
+            ->whereIn('prc.id_recibo', $reciboIds)
+            ->whereRaw('LOWER(TRIM(COALESCE(prc.area, ""))) IN (?, ?)', ['control calidad', 'control de calidad'])
+            ->groupBy('prc.id_recibo')
+            ->selectRaw('prc.id_recibo as id_recibo, SUM(prct.cantidad) as total')
+            ->pluck('total', 'id_recibo');
+        $detalleTallasControlCalidad = \Illuminate\Support\Facades\DB::table('prenda_recibo_completado_tallas as prct')
+            ->join('prenda_recibo_completado as prc', 'prc.id', '=', 'prct.prenda_recibo_completado_id')
+            ->whereIn('prc.id_recibo', $reciboIds)
+            ->whereRaw('LOWER(TRIM(COALESCE(prc.area, ""))) IN (?, ?)', ['control calidad', 'control de calidad'])
+            ->select([
+                'prc.id_recibo',
+                'prct.talla',
+                'prct.genero',
+                'prct.color_nombre',
+                'prct.cantidad',
+                'prct.created_at',
+            ])
+            ->orderBy('prct.created_at')
+            ->get();
+
+        $tallasControlCalidadMap = $detalleTallasControlCalidad
+            ->groupBy(fn ($row) => (int) $row->id_recibo)
+            ->map(function (Collection $rows) {
+                return $rows
+                    ->groupBy(function ($row) {
+                        return implode('|', [
+                            strtoupper(trim((string) ($row->talla ?? ''))),
+                            strtoupper(trim((string) ($row->genero ?? ''))),
+                            strtoupper(trim((string) ($row->color_nombre ?? ''))),
+                        ]);
+                    })
+                    ->map(function (Collection $group) {
+                        $first = $group->first();
+                        return [
+                            'talla' => (string) ($first->talla ?? ''),
+                            'genero' => (string) ($first->genero ?? ''),
+                            'color_nombre' => (string) ($first->color_nombre ?? ''),
+                            'cantidad' => (int) $group->sum(fn ($item) => (int) ($item->cantidad ?? 0)),
+                            'historial_envios' => $group
+                                ->map(function ($item) {
+                                    return [
+                                        'cantidad' => (int) ($item->cantidad ?? 0),
+                                        'fecha_envio' => $item->created_at,
+                                    ];
+                                })
+                                ->values()
+                                ->all(),
+                        ];
+                    })
+                    ->values()
+                    ->all();
+            });
 
         $parcialIdByReciboId = [];
         foreach ($recibos as $reciboParse) {
@@ -718,6 +901,8 @@ class ObtenerPrendasRecibosListadoService
             'completados_costura' => $completadosCosturaMap,
             'fechas_costura' => $fechaCompletadoCosturaMap,
             'completados_control_calidad' => $completadosControlCalidadMap,
+            'totales_control_calidad' => $totalesControlCalidadMap,
+            'tallas_control_calidad' => $tallasControlCalidadMap,
             'parcial_id_por_recibo' => $parcialIdByReciboId,
             'parcial_created_at' => $this->operarioRecibosRepository->obtenerPedidosParcialesCreatedAtMap(array_values($parcialIdByReciboId)),
             'recibo_por_partes_key_map' => $this->operarioRecibosRepository->obtenerReciboPorPartesKeys(),

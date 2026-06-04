@@ -1,6 +1,7 @@
 import { abrirDetallesRecibos } from '../navigation/detallesRecibos';
 import {
     abrirModalNovedad,
+    abrirModalNovedadDesdeElemento,
     cerrarModalNovedad,
     guardarNovedad,
     editarNovedad,
@@ -17,7 +18,7 @@ import {
     seleccionarOpcionAsignacion,
     volverAOpciones,
 } from '../costura/modal-asignacion';
-import { pasarAControlCalidad } from '../controlCalidad/controlCalidad';
+import { pasarAControlCalidad, verTallasControlCalidad } from '../controlCalidad/controlCalidad';
 import { toggleMobileActions } from '../mobile/mobileActions';
 import { completarCorte, deshacerCorte, completarCostura, deshacerCostura } from '../recibos/corteCostura';
 import { completarReciboCorteSobremedida, deshacerReciboCorteSobremedida } from '../recibos/corteSobremedida';
@@ -35,6 +36,7 @@ export function registerDashboardGlobals() {
 
     // Novedades
     window.abrirModalNovedad = abrirModalNovedad;
+    window.abrirModalNovedadDesdeElemento = abrirModalNovedadDesdeElemento;
     window.cerrarModalNovedad = cerrarModalNovedad;
     window.guardarNovedad = guardarNovedad;
     window.editarNovedad = editarNovedad;
@@ -52,6 +54,7 @@ export function registerDashboardGlobals() {
 
     // Control de Calidad
     window.pasarAControlCalidad = pasarAControlCalidad;
+    window.verTallasControlCalidad = verTallasControlCalidad;
 
     // Mobile
     window.toggleMobileActions = toggleMobileActions;
@@ -74,4 +77,3 @@ export function registerDashboardGlobals() {
 
     window.asegurarBadgeCompletado = asegurarBadgeCompletado;
 }
-

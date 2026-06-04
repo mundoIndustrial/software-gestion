@@ -164,18 +164,23 @@
                                             </div>
                                         </div>
 
-                                        <div class="orden-cliente">
-                                            <p class="cliente-label">{{ strtoupper((string) ($recibo['tipo_recibo'] ?? '')) === 'CORTE-PARA-BODEGA' ? 'SERVICIO' : 'CLIENTE' }}</p>
-                                            <p class="cliente-name">{{ $recibo['cliente'] }}</p>
-                                        </div>
+                                        @if(strtoupper((string) ($recibo['tipo_recibo'] ?? '')) !== 'CORTE-PARA-BODEGA')
+                                            <div class="orden-cliente">
+                                                <p class="cliente-label">CLIENTE</p>
+                                                <p class="cliente-name">{{ $recibo['cliente'] }}</p>
+                                            </div>
+                                        @endif
 
                                         <div class="orden-prendas">
                                             <p class="prendas-label">
-                                                <strong>{{ $recibo['nombre_prenda'] }}</strong>
                                                 @php
+                                                    $nombrePrendaRecibo = trim((string) ($recibo['nombre_prenda'] ?? ''));
                                                     $descripcionRecibo = trim(strip_tags(html_entity_decode((string) ($recibo['descripcion'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+                                                    $nombrePrendaReciboNormalizado = preg_replace('/\s+/', ' ', mb_strtolower($nombrePrendaRecibo));
+                                                    $descripcionReciboNormalizada = preg_replace('/\s+/', ' ', mb_strtolower($descripcionRecibo));
                                                 @endphp
-                                                @if($descripcionRecibo !== '')
+                                                <strong>{{ $nombrePrendaRecibo }}</strong>
+                                                @if($descripcionRecibo !== '' && $descripcionReciboNormalizada !== $nombrePrendaReciboNormalizado)
                                                     <br>{!! nl2br(e($descripcionRecibo)) !!}
                                                 @endif
                                             </p>        
@@ -217,7 +222,7 @@
 
                                     <div class="orden-right">
                                         <div class="orden-right-center">
-                                            <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $recibo['numero_pedido'] }}', {{ $recibo['prenda_id'] ?? 'null' }}, '{{ $recibo['nombre_prenda'] }}', '{{ $recibo['tipo_recibo'] }}', {{ $recibo['id_parcial'] ?: 'null' }}, '{{ $recibo['consecutivo_actual'] }}', {{ $recibo['recibo_id'] ?? 'null' }}); return false;">
+                                            <a href="#" class="action-arrow" onclick="abrirDetallesRecibos(@js($recibo['numero_pedido']), {{ $recibo['prenda_id'] ?? 'null' }}, @js($recibo['nombre_prenda']), @js($recibo['tipo_recibo']), {{ $recibo['id_parcial'] ?: 'null' }}, @js($recibo['consecutivo_actual']), {{ $recibo['recibo_id'] ?? 'null' }}); return false;">
                                                 <span class="material-symbols-rounded">arrow_forward</span>
                                             </a>
                                         </div>
@@ -330,7 +335,7 @@
 
                                                     <div class="orden-buttons">
                                                         <button type="button" class="btn-ver-recibos"
-                                                                onclick="abrirDetallesRecibos('{{ $resultado['numero_pedido'] }}', {{ $resultado['prenda_id'] }}, '{{ addslashes((string) $resultado['nombre_prenda']) }}', '{{ $resultado['tipo_recibo'] }}', {{ $resultado['id_parcial'] ?? 'null' }}, '{{ $numeroReciboExterno }}', {{ $resultado['recibo_id'] }}); return false;">
+                                                                onclick="abrirDetallesRecibos(@js($resultado['numero_pedido']), {{ $resultado['prenda_id'] ?? 'null' }}, @js($resultado['nombre_prenda']), @js($resultado['tipo_recibo']), {{ $resultado['id_parcial'] ?? 'null' }}, @js($numeroReciboExterno), {{ $resultado['recibo_id'] ?? 'null' }}); return false;">
                                                             <span class="material-symbols-rounded">visibility</span>
                                                             VER RECIBO
                                                         </button>

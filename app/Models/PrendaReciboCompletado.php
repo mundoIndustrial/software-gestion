@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PrendaReciboCompletado extends Model
 {
@@ -20,6 +21,7 @@ class PrendaReciboCompletado extends Model
         'area',
         'nombre_operario',
         'fecha_completado',
+        'tallas_control_calidad',
     ];
 
     protected $casts = [
@@ -27,5 +29,11 @@ class PrendaReciboCompletado extends Model
         'id_recibo' => 'integer',
         'id_parcial' => 'integer',
         'numero_recibo' => 'decimal:2',
+        'tallas_control_calidad' => 'array',
     ];
+
+    public function tallasControlCalidad(): HasMany
+    {
+        return $this->hasMany(PrendaReciboCompletadoTalla::class, 'prenda_recibo_completado_id');
+    }
 }

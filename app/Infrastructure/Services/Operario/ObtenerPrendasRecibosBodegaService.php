@@ -6,6 +6,7 @@ use App\Infrastructure\Repositories\Operario\OperarioRecibosRepository;
 use App\Models\ConsecutivoReciboPedido;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class ObtenerPrendasRecibosBodegaService
 {
@@ -30,6 +31,10 @@ class ObtenerPrendasRecibosBodegaService
         }
 
         $prendaBodegaIds = $recibos->pluck('prenda_bodega_id')->filter()->unique()->values()->all();
+        $tallasPorPrendaBodega = DB::table('prenda_tallas_bodega')
+            ->whereIn('prenda_bodega_id', $prendaBodegaIds)
+            ->get(['prenda_bodega_id', 'talla', 'genero', 'cantidad', 'color'])
+            ->groupBy('prenda_bodega_id');
         $procesos = $this->operarioRecibosRepository
             ->obtenerProcesosCortePorPrendaBodegaIdsYEncargado($prendaBodegaIds, $usuarioNombre)
             ->groupBy('prenda_bodega_id');
@@ -42,6 +47,22 @@ class ObtenerPrendasRecibosBodegaService
                 continue;
             }
 
+            $tallas = ($tallasPorPrendaBodega->get($prendaBodegaId) ?? collect())
+                ->map(function ($talla) {
+                    return [
+                        'id' => 0,
+                        'genero' => $talla->genero ?? null,
+                        'talla' => $talla->talla ?? null,
+                        'cantidad' => (int) ($talla->cantidad ?? 0),
+                        'tipo_talla' => null,
+                        'es_sobremedida' => false,
+                        'tela' => null,
+                        'colores' => !empty($talla->color) ? [(string) $talla->color] : [],
+                    ];
+                })
+                ->values()
+                ->all();
+
             $resultado->push([
                 'id' => $recibo->id,
                 'numero_pedido' => '',
@@ -49,6 +70,7 @@ class ObtenerPrendasRecibosBodegaService
                 'nombre_prenda' => $recibo->prendaBodega?->nombre ?? 'N/A',
                 'prenda_bodega_id' => $prendaBodegaId,
                 'tipo_recibo' => $recibo->tipo_recibo,
+                'tallas' => $tallas,
                 'total_recibos' => 1,
                 'recibos' => [
                     [

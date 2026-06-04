@@ -28,6 +28,12 @@ class OperarioDashboardVistaCosturaService
                     ?? $consecutivoActual;
                 $esParcial = (bool) ($item['es_parcial'] ?? ($reciboPrincipal['es_parcial'] ?? false));
                 $parcialId = $item['parcial_id'] ?? ($reciboPrincipal['parcial_id'] ?? null);
+                $areaRecibo = (string) ($reciboPrincipal['area'] ?? 'Control Calidad');
+                $areaReciboNormalizada = strtolower(trim($areaRecibo));
+                $tieneAvanceControlCalidad = (bool) ($reciboPrincipal['completado_area'] ?? false);
+                $estadoControlCalidad = in_array($areaReciboNormalizada, ['control calidad', 'control de calidad'], true)
+                    ? 'completo'
+                    : ($tieneAvanceControlCalidad ? 'parcial' : 'pendiente');
 
                 return [
                     'prenda_id' => (int) ($item['prenda_id'] ?? 0),
@@ -52,7 +58,7 @@ class OperarioDashboardVistaCosturaService
                         'notas' => (string) ($reciboPrincipal['notas'] ?? ''),
                         'creado_en' => $fechaCreacion,
                         'created_at' => $fechaCreacion,
-                        'area' => (string) ($reciboPrincipal['area'] ?? 'Control Calidad'),
+                        'area' => $areaRecibo,
                         'es_parcial' => $esParcial,
                         'parcial_id' => $parcialId,
                         'pedido_parcial_id' => $parcialId,
@@ -64,6 +70,7 @@ class OperarioDashboardVistaCosturaService
                         'completado_corte' => (bool) ($reciboPrincipal['completado_corte'] ?? false),
                         'completado_costura' => (bool) ($reciboPrincipal['completado_costura'] ?? false),
                         'completado_control_calidad' => (bool) ($reciboPrincipal['completado_area'] ?? false),
+                        'estado_control_calidad' => $estadoControlCalidad,
                     ]],
                     'total_recibos' => 1,
                 ];
@@ -558,6 +565,12 @@ class OperarioDashboardVistaCosturaService
             $prenda['bodega_view'] = [
                 'consecutivo' => $consecutivoBodega,
                 'recibo_id' => $reciboIdBodega,
+                'prenda_bodega_id' => (int) ($prenda['prenda_bodega_id'] ?? 0),
+                'tallas' => is_array($prenda['tallas'] ?? null) ? $prenda['tallas'] : [],
+                'estado_control_calidad' => (string) ($prenda['estado_control_calidad'] ?? 'pendiente'),
+                'tallas_control_calidad' => is_array($prenda['tallas_control_calidad'] ?? null)
+                    ? $prenda['tallas_control_calidad']
+                    : [],
                 'tiene_parciales' => $tieneParcialesBodega,
                 'encargado_costura' => $encargadoCosturaBodega,
                 'proceso_id_costura' => $procesoIdCosturaBodega,
@@ -995,6 +1008,8 @@ class OperarioDashboardVistaCosturaService
                 $consecutivoActual = $reciboItem['consecutivo_actual'] ?? $numeroPedido;
 
                 $esCC = in_array(strtolower(trim($areaActual ?? '')), ['control calidad', 'control de calidad']);
+                $estadoControlCalidad = strtolower(trim((string) ($reciboItem['estado_control_calidad'] ?? '')));
+                $ccEsParcial = $estadoControlCalidad === 'parcial';
                 $esCosturaProceso = strtolower(trim($areaActual ?? '')) === 'costura';
                 $encargadoCostura = is_string($encargadoCostura) ? trim($encargadoCostura) : $encargadoCostura;
                 $tieneEncargadoCostura = !empty($encargadoCostura);
@@ -1024,8 +1039,8 @@ class OperarioDashboardVistaCosturaService
                     $acciones['vista_costura'][] = [
                         'tipo' => 'pasar_cc',
                         'clase' => 'btn-pasar-cc',
-                        'icono' => $esCC ? 'undo' : 'check_circle',
-                        'texto' => $esCC ? 'DESHACER' : 'PASAR A C.C',
+                        'icono' => $ccEsParcial ? 'edit' : ($esCC ? 'undo' : 'check_circle'),
+                        'texto' => $ccEsParcial ? 'EDITAR C.C' : ($esCC ? 'DESHACER' : 'PASAR A C.C'),
                         'datos' => [
                             'pedido_id' => $pedidoId,
                             'prenda_id' => $prendaId,
@@ -1034,6 +1049,10 @@ class OperarioDashboardVistaCosturaService
                             'recibo' => $consecutivoActual,
                             'area' => $areaActual ?? 'COSTURA',
                             'proceso_id' => $procesoId,
+                            'estado_control_calidad' => $estadoControlCalidad,
+                            'tallas_control_calidad' => is_array($reciboItem['tallas_control_calidad'] ?? null)
+                                ? $reciboItem['tallas_control_calidad']
+                                : [],
                         ],
                         'visible_filtro' => 'costura',
                     ];

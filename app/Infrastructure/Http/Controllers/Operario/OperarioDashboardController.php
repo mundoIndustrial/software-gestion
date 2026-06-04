@@ -9,6 +9,7 @@ use App\Application\Operario\UseCases\ObtenerRecibosControlCalidadUseCase;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OperarioDashboardController extends Controller
 {
@@ -133,5 +134,57 @@ class OperarioDashboardController extends Controller
     {
         $resultado = $this->obtenerDistribucionControlCalidadUseCase->execute((int) $idRecibo);
         return response()->json($resultado['payload'], $resultado['status']);
+    }
+
+    /**
+     * GET /operario/api/recibos/{idRecibo}/tallas-control-calidad
+     */
+    public function obtenerTallasControlCalidad(Request $request, $idRecibo): JsonResponse
+    {
+        $reciboId = (int) $idRecibo;
+
+        $rows = DB::table('prenda_recibo_completado_tallas as prct')
+            ->join('prenda_recibo_completado as prc', 'prc.id', '=', 'prct.prenda_recibo_completado_id')
+            ->where('prc.id_recibo', $reciboId)
+            ->whereRaw('LOWER(TRIM(COALESCE(prc.area, ""))) IN (?, ?)', ['control calidad', 'control de calidad'])
+            ->select([
+                'prct.talla',
+                'prct.genero',
+                'prct.color_nombre',
+                'prct.cantidad',
+                'prct.created_at',
+            ])
+            ->orderBy('prct.created_at')
+            ->get();
+
+        $tallas = $rows
+            ->groupBy(fn ($row) => implode('|', [
+                strtoupper(trim((string) ($row->talla ?? ''))),
+                strtoupper(trim((string) ($row->genero ?? ''))),
+                strtoupper(trim((string) ($row->color_nombre ?? ''))),
+            ]))
+            ->map(function ($group) {
+                $first = $group->first();
+
+                return [
+                    'talla' => (string) ($first->talla ?? ''),
+                    'genero' => (string) ($first->genero ?? ''),
+                    'color_nombre' => (string) ($first->color_nombre ?? ''),
+                    'cantidad' => (int) $group->sum(fn ($item) => (int) ($item->cantidad ?? 0)),
+                    'historial_envios' => $group->map(function ($item) {
+                        return [
+                            'cantidad' => (int) ($item->cantidad ?? 0),
+                            'fecha_envio' => $item->created_at,
+                        ];
+                    })->values()->all(),
+                ];
+            })
+            ->values()
+            ->all();
+
+        return response()->json([
+            'success' => true,
+            'tallas' => $tallas,
+        ]);
     }
 }

@@ -71,6 +71,27 @@ function initPasarARevisarInsumos() {
         if (modal && e.target === modal) {
             cerrarModalPasarRevisar();
         }
+
+        // Cerrar modal con botón cerrar
+        if (e.target.getAttribute('data-insumos-action') === 'pasar-revisar-close') {
+            e.preventDefault();
+            cerrarModalPasarRevisar();
+        }
+    });
+
+    /**
+     * Manejar envío del formulario
+     */
+    document.addEventListener('submit', function(e) {
+        const form = e.target;
+        if (form.getAttribute('data-insumos-action') === 'pasar-revisar-submit') {
+            e.preventDefault();
+            if (typeof confirmarPasarRevisar === 'function') {
+                confirmarPasarRevisar(e);
+            } else if (window.insumosHandlers?.statusActions?.confirmarPasarRevisar) {
+                window.insumosHandlers.statusActions.confirmarPasarRevisar(e);
+            }
+        }
     });
 
 }

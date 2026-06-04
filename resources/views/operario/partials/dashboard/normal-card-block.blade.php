@@ -49,6 +49,7 @@
                              data-pedido-parcial-id="{{ $prenda['recibos'][0]['pedido_parcial_id'] ?? '' }}"
                              data-cliente="{{ strtolower($clienteCard) }}"
                              data-tipo-recibo="{{ $esReflectivo }}"
+                             data-tallas='@json($prenda["tallas"] ?? [])'
                              data-sin-encargado-costura="{{ $sinEncargadoCosturaCard ? '1' : '0' }}"
                              data-sin-encargado-reflectivo="{{ $sinEncargadoReflectivoCard ? '1' : '0' }}"
                              data-completado-costura="{{ $reciboCompletadoCostura ? '1' : '0' }}"
@@ -226,7 +227,7 @@
                                             <span class="badge-completado-costura is-on mobile-top-right">COMPLETADO</span>
                                         @endif
                                         <!-- Boton de mas opciones para mobile -->
-                                        <button class="mobile-actions-toggle" onclick="toggleMobileActions({{ $prenda['prenda_id'] }})">
+            <button class="mobile-actions-toggle" onclick="toggleMobileActions({{ $prenda['prenda_id'] ?? 'null' }})">
                                             <span class="material-symbols-rounded">more_horiz</span>
                                         </button>
                                     </div>
@@ -348,27 +349,48 @@
                                             $accionesVistaCostura = $normal['acciones']['vista_costura'] ?? [];
                                         @endphp
                                         @foreach($accionesVistaCostura as $accion)
-                                            <button class="{{ $accion['clase'] }}" 
-                                                    type="button"
-                                                    data-visible-filtro="{{ $accion['visible_filtro'] }}"
-                                                    data-pedido-id="{{ $accion['datos']['pedido_id'] }}"
-                                                    data-prenda-id="{{ $accion['datos']['prenda_id'] }}"
-                                                    data-nombre="{{ $accion['datos']['nombre'] }}"
-                                                    data-tipo-recibo="{{ $accion['datos']['tipo_recibo'] }}"
-                                                    data-recibo="{{ $accion['datos']['recibo'] }}"
-                                                    data-area="{{ $accion['datos']['area'] }}"
-                                                    data-proceso-id="{{ $accion['datos']['proceso_id'] }}"
-                                                    @if($accion['tipo'] === 'pasar_costura')
+                                            @php
+                                                $tallasCcAccion = is_array($accion['datos']['tallas_control_calidad'] ?? null)
+                                                    ? $accion['datos']['tallas_control_calidad']
+                                                    : [];
+                                            @endphp
+                                            @if($accion['tipo'] === 'pasar_cc')
+                                                <button class="{{ $accion['clase'] }}" 
+                                                        type="button"
+                                                        data-visible-filtro="{{ $accion['visible_filtro'] }}"
+                                                        data-recibo-id="{{ $accion['datos']['recibo_id'] ?? '' }}"
+                                                        data-pedido-id="{{ $accion['datos']['pedido_id'] }}"
+                                                        data-prenda-id="{{ $accion['datos']['prenda_id'] }}"
+                                                        data-nombre="{{ $accion['datos']['nombre'] }}"
+                                                        data-tipo-recibo="{{ $accion['datos']['tipo_recibo'] }}"
+                                                        data-recibo="{{ $accion['datos']['recibo'] }}"
+                                                        data-area="{{ $accion['datos']['area'] }}"
+                                                        data-proceso-id="{{ $accion['datos']['proceso_id'] }}"
+                                                        data-estado-control-calidad="{{ $accion['datos']['estado_control_calidad'] ?? '' }}"
+                                                        data-tallas-control-calidad='@json($tallasCcAccion)'
+                                                        onclick="pasarAControlCalidad(this); return false;">
+                                                    <span class="material-symbols-rounded">{{ $accion['icono'] }}</span>
+                                                    {{ $accion['texto'] }}
+                                                </button>
+                                            @else
+                                                <button class="{{ $accion['clase'] }}" 
+                                                        type="button"
+                                                        data-visible-filtro="{{ $accion['visible_filtro'] }}"
+                                                        data-pedido-id="{{ $accion['datos']['pedido_id'] }}"
+                                                        data-prenda-id="{{ $accion['datos']['prenda_id'] }}"
+                                                        data-nombre="{{ $accion['datos']['nombre'] }}"
+                                                        data-tipo-recibo="{{ $accion['datos']['tipo_recibo'] }}"
+                                                        data-recibo="{{ $accion['datos']['recibo'] }}"
+                                                        data-area="{{ $accion['datos']['area'] }}"
+                                                        data-proceso-id="{{ $accion['datos']['proceso_id'] }}"
                                                         data-numero-pedido="{{ $accion['datos']['numero_pedido'] }}"
                                                         data-encargado-costura="{{ $accion['datos']['encargado_costura'] }}"
                                                         data-parcial-id="{{ $accion['datos']['parcial_id'] }}"
-                                                        onclick="manejarPasarACostura(this); return false;"
-                                                    @elseif($accion['tipo'] === 'pasar_cc')
-                                                        onclick="pasarAControlCalidad(this); return false;"
-                                                    @endif>
-                                                <span class="material-symbols-rounded">{{ $accion['icono'] }}</span>
-                                                {{ $accion['texto'] }}
-                                            </button>
+                                                        onclick="manejarPasarACostura(this); return false;">
+                                                    <span class="material-symbols-rounded">{{ $accion['icono'] }}</span>
+                                                    {{ $accion['texto'] }}
+                                                </button>
+                                            @endif
                                         @endforeach
 
                                         {{-- Componentes adicionales para vista-costura (ver-distribucion, editar-encargados) --}}
@@ -399,8 +421,10 @@
                                         @endif
 
                                         @component('components.botones.agregar-novedad', [
-                                            'numeroPedido' => $prenda['numero_pedido'],
+                                            'numeroPedido' => $prenda['numero_pedido'] ?: ($reciboPrincipal['consecutivo_actual'] ?? ''),
                                             'prendaId' => $prenda['prenda_id'],
+                                            'prendaBodegaId' => $prenda['prenda_bodega_id'] ?? ($reciboPrincipal['prenda_bodega_id'] ?? ''),
+                                            'reciboId' => $prenda['id'] ?? ($reciboPrincipal['id'] ?? ($reciboPrincipal['recibo_id'] ?? null)),
                                             'nombrePrenda' => $prenda['nombre_prenda'],
                                             'consecutivo' => isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'],
                                         ])@endcomponent
@@ -416,6 +440,10 @@
                                                 $areaReciboRef = $reciboReflectivo['area'] ?? '';
                                                 $esCosturaAreaRef = strtolower(trim((string) $areaReciboRef)) === 'costura';
                                                 $esControlCalidadRef = in_array(strtolower(trim((string) $areaReciboRef)), ['control calidad', 'control de calidad'], true);
+                                                $estadoControlCalidadRef = strtolower((string) ($reciboReflectivo['estado_control_calidad'] ?? ''));
+                                                $ccRefEsParcial = $estadoControlCalidadRef === 'parcial';
+                                                $ccRefIcono = $ccRefEsParcial ? 'edit' : ($esControlCalidadRef ? 'undo' : 'check_circle');
+                                                $ccRefTexto = $ccRefEsParcial ? 'EDITAR C.C' : ($esControlCalidadRef ? 'DESHACER' : 'PASAR A C.C');
                                             @endphp
 
                                             {{-- Boton PASAR A COSTURA/DESHACER COSTURA para vista-costura --}}
@@ -482,6 +510,7 @@
                                                             <button class="btn-pasar-cc" 
                                                                     data-visible-filtro="reflectivo"
                                                                     id="btn-cc-reflectivo-{{ $prenda['prenda_id'] }}"
+                                                                    data-recibo-id="{{ $reciboReflectivo['id'] ?? ($reciboReflectivo['recibo_id'] ?? '') }}"
                                                                     data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                                     data-prenda-id="{{ $prenda['prenda_id'] }}"
                                                                     data-nombre="{{ $prenda['nombre_prenda'] }}"
@@ -489,10 +518,12 @@
                                                                     data-recibo="{{ $reciboReflectivo['consecutivo_actual'] ?? $prenda['numero_pedido'] }}"
                                                                     data-area="{{ $areaReciboRef ?? 'REFLECTIVO' }}"
                                                                     data-proceso-id="{{ $reciboReflectivo['proceso_id'] ?? '' }}"
+                                                                    data-estado-control-calidad="{{ $estadoControlCalidadRef }}"
+                                                                    data-tallas-control-calidad='@json($reciboReflectivo["tallas_control_calidad"] ?? [])'
                                                                     type="button"
                                                                     onclick="pasarAControlCalidad(this); return false;">
-                                                                <span class="material-symbols-rounded">{{ $esControlCalidadRef ? 'undo' : 'check_circle' }}</span>
-                                                                {{ $esControlCalidadRef ? 'DESHACER' : 'PASAR A C.C' }}
+                                                                <span class="material-symbols-rounded">{{ $ccRefIcono }}</span>
+                                                                {{ $ccRefTexto }}
                                                             </button>
                                                     @endif
                                                 @endif
@@ -867,7 +898,11 @@
                                                     $encargadoCostura = $reciboItem['encargado_costura'] ?? null;
                                                     $consecutivoActual = $reciboItem['consecutivo_actual'] ?? $prenda['numero_pedido'];
 
+                                                    $estadoControlCalidad = strtolower((string) ($reciboItem['estado_control_calidad'] ?? ''));
                                                     $esCC = in_array(strtolower(trim($areaActual ?? '')), ['control calidad', 'control de calidad']);
+                                                    $ccEsParcial = $estadoControlCalidad === 'parcial';
+                                                    $ccIcono = $ccEsParcial ? 'edit' : ($esCC ? 'undo' : 'check_circle');
+                                                    $ccTexto = $ccEsParcial ? 'EDITAR C.C' : ($esCC ? 'DESHACER' : 'PASAR A C.C');
                                                     $esCosturaProceso = strtolower(trim($areaActual ?? '')) === 'costura';
                                                     $encargadoCostura = is_string($encargadoCostura) ? trim($encargadoCostura) : $encargadoCostura;
                                                     $tieneEncargadoCostura = !empty($encargadoCostura);
@@ -894,6 +929,7 @@
                                                 {{-- Boton "Pasar a C.C" o "DESHACER" --}}
                                                 <button type="button" class="btn-pasar-cc"
                                                         id="btn-cc-{{ $prenda['prenda_id'] }}-{{ $consecutivoActual }}"
+                                                        data-recibo-id="{{ $reciboItem['id'] ?? ($reciboItem['recibo_id'] ?? '') }}"
                                                         data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                         data-prenda-id="{{ $prenda['prenda_id'] }}"
                                                         data-nombre="{{ $prenda['nombre_prenda'] }}"
@@ -901,9 +937,11 @@
                                                         data-recibo="{{ $consecutivoActual }}"
                                                         data-area="{{ $areaActual ?? 'COSTURA' }}"
                                                         data-proceso-id="{{ $procesoId }}"
+                                                        data-estado-control-calidad="{{ $estadoControlCalidad }}"
+                                                        data-tallas-control-calidad='@json($reciboItem["tallas_control_calidad"] ?? [])'
                                                         onclick="pasarAControlCalidad(this); return false;">
-                                                    <span class="material-symbols-rounded">{{ $esCC ? 'undo' : 'check_circle' }}</span>
-                                                    {{ $esCC ? 'DESHACER' : 'PASAR A C.C' }}
+                                                    <span class="material-symbols-rounded">{{ $ccIcono }}</span>
+                                                    {{ $ccTexto }}
                                                 </button>
                                             @endforeach
                                         @endif
@@ -982,21 +1020,25 @@
                                                 </button>
                                             @else
                                                 @component('components.botones.agregar-novedad', [
-                                                    'numeroPedido' => $prenda['numero_pedido'],
+                                                    'numeroPedido' => $prenda['numero_pedido'] ?: ($reciboPrincipal['consecutivo_actual'] ?? ''),
                                                     'prendaId' => $prenda['prenda_id'],
+                                                    'prendaBodegaId' => $prenda['prenda_bodega_id'] ?? ($reciboPrincipal['prenda_bodega_id'] ?? ''),
+                                                    'reciboId' => $prenda['id'] ?? ($reciboPrincipal['id'] ?? ($reciboPrincipal['recibo_id'] ?? null)),
                                                     'nombrePrenda' => $prenda['nombre_prenda'],
                                                     'consecutivo' => isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'],
                                                 ])@endcomponent
                                             @endif
                                         @else
                                         @component('components.botones.agregar-novedad', [
-                                            'numeroPedido' => $prenda['numero_pedido'],
+                                            'numeroPedido' => $prenda['numero_pedido'] ?: ($reciboPrincipal['consecutivo_actual'] ?? ''),
                                             'prendaId' => $prenda['prenda_id'],
+                                            'prendaBodegaId' => $prenda['prenda_bodega_id'] ?? ($reciboPrincipal['prenda_bodega_id'] ?? ''),
+                                            'reciboId' => $prenda['id'] ?? ($reciboPrincipal['id'] ?? ($reciboPrincipal['recibo_id'] ?? null)),
                                             'nombrePrenda' => $prenda['nombre_prenda'],
                                             'consecutivo' => isset($prenda['recibos'][0]['consecutivo_actual']) ? $prenda['recibos'][0]['consecutivo_actual'] : $prenda['numero_pedido'],
                                         ])@endcomponent
                                     @endif
-                                        <button class="mobile-actions-toggle" onclick="toggleMobileActions({{ $prenda['prenda_id'] ?? 'null' }})">
+            <button class="mobile-actions-toggle" onclick="toggleMobileActions({{ $prenda['prenda_id'] ?? 'null' }})">
                                             <span class="material-symbols-rounded">more_horiz</span>
                                         </button>
                                     </div>
@@ -1005,7 +1047,7 @@
                                 <!-- Contenido Derecho -->
                                 <div class="orden-right">
                                     <div class="orden-right-center">
-                                        <a href="#" class="action-arrow" onclick="abrirDetallesRecibos('{{ $prenda['numero_pedido'] }}', {{ $prenda['prenda_id'] ?? 'null' }}, '{{ $prenda['nombre_prenda'] }}', '{{ $tipoReciboPreferido }}', {{ $parcialIdPreferido ?? 'null' }}, '{{ $consecutivoPreferido }}', {{ $reciboParaBusqueda['recibo_id'] ?? ($reciboParaBusqueda['id'] ?? 'null') }}); return false;">
+                                            <a href="#" class="action-arrow" onclick="abrirDetallesRecibos(@js($prenda['numero_pedido']), {{ $prenda['prenda_id'] ?? 'null' }}, @js($prenda['nombre_prenda']), @js($tipoReciboPreferido), {{ $parcialIdPreferido ?? 'null' }}, @js($consecutivoPreferido), {{ $reciboParaBusqueda['recibo_id'] ?? ($reciboParaBusqueda['id'] ?? 'null') }}); return false;">
                                             <span class="material-symbols-rounded">arrow_forward</span>
                                         </a>
                                     </div>

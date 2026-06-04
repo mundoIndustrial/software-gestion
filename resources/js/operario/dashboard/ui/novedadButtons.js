@@ -22,7 +22,7 @@ export function crearBotonAgregarNovedad({
             data-prenda-id="${escaparAtributoHtml(prendaId)}"
             data-nombre-prenda="${escaparAtributoHtml(nombrePrenda)}"
             data-numero-recibo="${escaparAtributoHtml(numeroRecibo)}"
-            onclick="abrirModalNovedad(this.dataset.numeroPedido, Number(this.dataset.prendaId || 0), this.dataset.nombrePrenda, this.dataset.numeroRecibo)"
+            onclick="abrirModalNovedadDesdeElemento(this)"
         >
             <span class="material-symbols-rounded">comment</span>
             AGREGAR NOVEDAD

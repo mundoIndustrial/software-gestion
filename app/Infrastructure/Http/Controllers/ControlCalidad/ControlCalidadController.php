@@ -34,6 +34,21 @@ class ControlCalidadController extends Controller
         return in_array($norm, ['control de calidad', 'control calidad'], true);
     }
 
+    private function aplicarCondicionVisibleEnControlCalidad($query): void
+    {
+        $query->where(function ($subQuery) {
+            $subQuery
+                ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
+                ->orWhereExists(function ($completadoQuery) {
+                    $completadoQuery
+                        ->select(DB::raw(1))
+                        ->from('prenda_recibo_completado as prc')
+                        ->whereColumn('prc.id_recibo', 'consecutivos_recibos_pedidos.id')
+                        ->whereRaw('LOWER(TRIM(COALESCE(prc.area, ""))) IN (?, ?)', ['control calidad', 'control de calidad']);
+                });
+        });
+    }
+
     public function dashboard(Request $request)
     {
         $usuario = auth()->user();
@@ -55,8 +70,8 @@ class ControlCalidadController extends Controller
             $recibosQuery->where('tipo_recibo', 'COSTURA');
         }
 
-        // Siempre listar únicamente recibos cuyo área actual sea Control de Calidad
-        $recibosQuery->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad']);
+        // Listar recibos ya movidos a C.C o con avance registrado en C.C.
+        $this->aplicarCondicionVisibleEnControlCalidad($recibosQuery);
 
         $recibos = $recibosQuery
             ->with(['pedido', 'prenda', 'prendaBodega', 'pedido.prendas'])
@@ -662,12 +677,12 @@ class ControlCalidadController extends Controller
 
         // Caso especial: recibos de bodega que no tienen numero_pedido asociado.
         if ((int) $numeroPedido === 0 && in_array($tipoRecibo, ['BODEGA', 'CORTE-PARA-BODEGA'], true)) {
-            $reciboBodega = ConsecutivoReciboPedido::query()
+            $reciboBodegaQuery = ConsecutivoReciboPedido::query()
                 ->where('id', $reciboIdParam)
                 ->whereIn('tipo_recibo', ['BODEGA', 'CORTE-PARA-BODEGA'])
-                ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
-                ->where('activo', 1)
-                ->first();
+                ->where('activo', 1);
+            $this->aplicarCondicionVisibleEnControlCalidad($reciboBodegaQuery);
+            $reciboBodega = $reciboBodegaQuery->first();
 
             if (!$reciboBodega) {
                 return redirect()->route('control-calidad.dashboard', ['tab' => 'BODEGA'])
@@ -724,11 +739,11 @@ class ControlCalidadController extends Controller
         // Seguridad adicional: solo permitir ver pedidos que tengan al menos un recibo/parcial en Control de Calidad
         // EXCEPCIÓN: el rol lider-control-calidad puede ver cualquier recibo COSTURA/REFLECTIVO
         if (!$esLiderControlCalidad) {
-            $tieneReciboEnControlCalidad = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoDB->id)
+            $tieneReciboEnControlCalidadQuery = ConsecutivoReciboPedido::where('pedido_produccion_id', $pedidoDB->id)
                 ->whereIn('tipo_recibo', ['COSTURA', 'REFLECTIVO', 'CORTE-PARA-BODEGA', 'BODEGA'])
-                ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
-                ->where('activo', 1)
-                ->exists();
+                ->where('activo', 1);
+            $this->aplicarCondicionVisibleEnControlCalidad($tieneReciboEnControlCalidadQuery);
+            $tieneReciboEnControlCalidad = $tieneReciboEnControlCalidadQuery->exists();
 
             $tieneParcialEnControlCalidad = false;
             if ($esParcial && $parcialSeleccionado) {
@@ -762,7 +777,7 @@ class ControlCalidadController extends Controller
 
             // Si no es líder, filtrar por área
             if (!$esLiderControlCalidad) {
-                $queryRecibo->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad']);
+                $this->aplicarCondicionVisibleEnControlCalidad($queryRecibo);
             }
 
             // Filtrar por prenda_id si se proporcionó
@@ -788,7 +803,7 @@ class ControlCalidadController extends Controller
 
             // Si no es líder, filtrar por área
             if (!$esLiderControlCalidad) {
-                $queryReciboCostura->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad']);
+                $this->aplicarCondicionVisibleEnControlCalidad($queryReciboCostura);
             }
 
             $reciboCostura = $queryReciboCostura->first();
