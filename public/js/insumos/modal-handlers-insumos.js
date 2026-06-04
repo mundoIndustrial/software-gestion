@@ -450,6 +450,10 @@ function abrirDetalleReciboCorteBodega(prendaBodegaId) {
                 throw new Error('No se encontro el contenedor del modal de recibo');
             }
 
+            wrapper.dataset.anchoMetrajePrendaBodegaId = String(prendaBodegaId);
+            wrapper.dataset.anchoMetrajeNumeroRecibo = String(data.numero_recibo || '');
+            wrapper.dataset.anchoMetrajeTipoRecibo = 'CORTE-PARA-BODEGA';
+
             const escapeHtml = (value) => String(value ?? '')
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
@@ -651,6 +655,145 @@ function renderAnchoMetrajeInOrderDetail(data) {
         metrajesContainer.appendChild(span);
     });
 }
+
+var ANCHO_METRAJE_SYNC_CHANNEL = window.ANCHO_METRAJE_SYNC_CHANNEL || 'mundoindustrial:ancho-metraje-sync';
+var ANCHO_METRAJE_SYNC_STORAGE_KEY = window.ANCHO_METRAJE_SYNC_STORAGE_KEY || 'mundoindustrial:ancho-metraje-sync';
+window.ANCHO_METRAJE_SYNC_CHANNEL = ANCHO_METRAJE_SYNC_CHANNEL;
+window.ANCHO_METRAJE_SYNC_STORAGE_KEY = ANCHO_METRAJE_SYNC_STORAGE_KEY;
+
+var anchoMetrajeSyncChannel = window.__anchoMetrajeSyncChannel || null;
+var anchoMetrajeSyncRegistrado = window.__anchoMetrajeSyncRegistrado || false;
+
+function obtenerContextoAnchoMetrajeActivo() {
+    const wrapper = document.getElementById('order-detail-modal-wrapper');
+    if (!wrapper || wrapper.style.display === 'none') {
+        return null;
+    }
+
+    const prendaBodegaId = Number(wrapper.dataset.anchoMetrajePrendaBodegaId || wrapper.dataset.prendaBodegaId || 0);
+    const numeroRecibo = Number(wrapper.dataset.anchoMetrajeNumeroRecibo || 0);
+    const tipoRecibo = String(wrapper.dataset.anchoMetrajeTipoRecibo || '').trim().toUpperCase();
+
+    if (!prendaBodegaId) {
+        return null;
+    }
+
+    return {
+        prendaBodegaId,
+        numeroRecibo: Number.isFinite(numeroRecibo) ? numeroRecibo : null,
+        tipoRecibo: tipoRecibo || null,
+    };
+}
+
+function contextoAnchoMetrajeCoincide(contexto, mensaje) {
+    if (!contexto || !mensaje) {
+        return false;
+    }
+
+    const contextoPrenda = Number(contexto.prendaBodegaId || 0);
+    const mensajePrenda = Number(mensaje.prendaBodegaId || 0);
+    const contextoRecibo = contexto.numeroRecibo ? Number(contexto.numeroRecibo) : null;
+    const mensajeRecibo = mensaje.numeroRecibo ? Number(mensaje.numeroRecibo) : null;
+    const contextoTipo = String(contexto.tipoRecibo || '').trim().toUpperCase();
+    const mensajeTipo = String(mensaje.tipoRecibo || '').trim().toUpperCase();
+
+    if (!contextoPrenda || !mensajePrenda || contextoPrenda !== mensajePrenda) {
+        return false;
+    }
+
+    if (contextoTipo && mensajeTipo && contextoTipo !== mensajeTipo) {
+        return false;
+    }
+
+    if (contextoRecibo && mensajeRecibo && contextoRecibo !== mensajeRecibo) {
+        return false;
+    }
+
+    return true;
+}
+
+async function refrescarAnchoMetrajeActivoDesdeSincronizacion(mensaje = null) {
+    const contexto = obtenerContextoAnchoMetrajeActivo();
+    if (!contexto || !contexto.prendaBodegaId) {
+        return false;
+    }
+
+    if (mensaje && !contextoAnchoMetrajeCoincide(contexto, mensaje)) {
+        return false;
+    }
+
+    const queryParams = new URLSearchParams({
+        prenda_bodega_id: String(contexto.prendaBodegaId),
+        tipo_recibo: contexto.tipoRecibo || 'CORTE-PARA-BODEGA',
+    });
+
+    if (contexto.numeroRecibo) {
+        queryParams.set('numero_recibo', String(contexto.numeroRecibo));
+    }
+
+    const endpoint = `/insumos/materiales/${encodeURIComponent(String(contexto.prendaBodegaId))}/obtener-ancho-metraje-prenda/${encodeURIComponent(String(contexto.prendaBodegaId))}?${queryParams.toString()}`;
+
+    try {
+        const response = await fetch(endpoint, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data?.success) {
+            renderAnchoMetrajeInOrderDetail(data);
+        } else {
+            renderAnchoMetrajeInOrderDetail(null);
+        }
+
+        return true;
+    } catch (error) {
+        console.warn('[ancho-metraje-sync] Error refrescando el bloque activo:', error);
+        return false;
+    }
+}
+
+function registrarSincronizacionAnchoMetraje() {
+    if (anchoMetrajeSyncRegistrado) {
+        return;
+    }
+
+    anchoMetrajeSyncRegistrado = true;
+    window.__anchoMetrajeSyncRegistrado = true;
+
+    window.addEventListener('anchoMetrajeActualizado', (event) => {
+        void refrescarAnchoMetrajeActivoDesdeSincronizacion(event.detail || null);
+    });
+
+    if (typeof window.BroadcastChannel === 'function') {
+        try {
+            anchoMetrajeSyncChannel = new BroadcastChannel(ANCHO_METRAJE_SYNC_CHANNEL);
+            window.__anchoMetrajeSyncChannel = anchoMetrajeSyncChannel;
+            anchoMetrajeSyncChannel.addEventListener('message', (event) => {
+                void refrescarAnchoMetrajeActivoDesdeSincronizacion(event.data || null);
+            });
+        } catch (error) {
+            console.warn('[ancho-metraje-sync] No se pudo inicializar BroadcastChannel:', error);
+        }
+    } else {
+        window.addEventListener('storage', (event) => {
+            if (event.key !== ANCHO_METRAJE_SYNC_STORAGE_KEY || !event.newValue) {
+                return;
+            }
+
+            try {
+                const mensaje = JSON.parse(event.newValue);
+                void refrescarAnchoMetrajeActivoDesdeSincronizacion(mensaje);
+            } catch (error) {
+                console.warn('[ancho-metraje-sync] No se pudo leer el mensaje de sincronizacion:', error);
+            }
+        });
+    }
+}
+
+registrarSincronizacionAnchoMetraje();
 
 function closeModalOverlay() {
     const overlay = document.getElementById('modal-overlay');

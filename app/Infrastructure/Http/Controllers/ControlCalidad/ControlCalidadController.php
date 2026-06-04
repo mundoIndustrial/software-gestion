@@ -34,6 +34,152 @@ class ControlCalidadController extends Controller
         return in_array($norm, ['control de calidad', 'control calidad'], true);
     }
 
+    private function construirClaveControlCalidad(string $talla, string $genero, string $colorNombre): string
+    {
+        return implode('|', [
+            strtoupper(trim($talla)),
+            strtoupper(trim($genero)),
+            strtoupper(trim($colorNombre)),
+        ]);
+    }
+
+    private function normalizarTallasControlCalidad(array $tallas): array
+    {
+        $normalizadas = [];
+
+        foreach ($tallas as $talla) {
+            if (!is_array($talla)) {
+                continue;
+            }
+
+            $clave = $this->construirClaveControlCalidad(
+                (string) ($talla['talla'] ?? ''),
+                (string) ($talla['genero'] ?? ''),
+                (string) ($talla['color_nombre'] ?? '')
+            );
+
+            if ($clave === '||') {
+                continue;
+            }
+
+            $normalizadas[$clave] = ($normalizadas[$clave] ?? 0) + (int) ($talla['cantidad'] ?? 0);
+        }
+
+        return $normalizadas;
+    }
+
+    private function resolverEstadoControlCalidadDesdeTallas(array $tallasOriginales, array $tallasEnviadas): string
+    {
+        if (empty($tallasEnviadas)) {
+            return 'pendiente';
+        }
+
+        $originales = $this->normalizarTallasControlCalidad($tallasOriginales);
+        $enviadas = $this->normalizarTallasControlCalidad($tallasEnviadas);
+
+        if (empty($originales)) {
+            return 'pendiente';
+        }
+
+        foreach ($originales as $clave => $cantidadOriginal) {
+            if ((int) ($enviadas[$clave] ?? 0) < (int) $cantidadOriginal) {
+                return 'parcial';
+            }
+        }
+
+        return 'completo';
+    }
+
+    private function mapearTallasCompletadasControlCalidad(iterable $filas): array
+    {
+        return collect($filas)
+            ->map(function ($fila) {
+                return [
+                    'talla' => (string) ($fila->talla ?? ''),
+                    'genero' => (string) ($fila->genero ?? ''),
+                    'color_nombre' => (string) ($fila->color_nombre ?? ''),
+                    'cantidad' => (int) ($fila->cantidad ?? 0),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function obtenerTallasOriginalesReciboControlCalidad(mixed $prenda, bool $esBodega = false): array
+    {
+        if (!$prenda) {
+            return [];
+        }
+
+        if ($esBodega) {
+            return collect($prenda->tallas ?? [])
+                ->map(function ($talla) {
+                    return [
+                        'talla' => (string) ($talla->talla ?? ''),
+                        'genero' => (string) ($talla->genero ?? ''),
+                        'color_nombre' => (string) ($talla->color ?? ''),
+                        'cantidad' => (int) ($talla->cantidad ?? 0),
+                    ];
+                })
+                ->values()
+                ->all();
+        }
+
+        return collect($prenda->tallas ?? [])
+            ->flatMap(function ($talla) {
+                $base = [
+                    'talla' => (string) ($talla->talla ?? ''),
+                    'genero' => (string) ($talla->genero ?? ''),
+                    'cantidad' => (int) ($talla->obtenerCantidadTotal()),
+                ];
+
+                $coloresAsignados = collect($talla->coloresAsignados ?? []);
+                if ($coloresAsignados->isEmpty()) {
+                    return [[
+                        'talla' => $base['talla'],
+                        'genero' => $base['genero'],
+                        'color_nombre' => '',
+                        'cantidad' => $base['cantidad'],
+                    ]];
+                }
+
+                return $coloresAsignados->map(function ($color) use ($base) {
+                    return [
+                        'talla' => $base['talla'],
+                        'genero' => $base['genero'],
+                        'color_nombre' => (string) ($color->color_nombre ?? ''),
+                        'cantidad' => (int) ($color->cantidad ?? 0),
+                    ];
+                })->all();
+            })
+            ->values()
+            ->all();
+    }
+
+    private function obtenerTallasOriginalesParcialControlCalidad(?ReciboPorPartes $parcial): array
+    {
+        if (!$parcial) {
+            return [];
+        }
+
+        return collect($parcial->tallas ?? [])
+            ->map(function ($talla) {
+                return [
+                    'talla' => (string) ($talla->talla ?? ''),
+                    'genero' => (string) ($talla->genero ?? ''),
+                    'color_nombre' => (string) ($talla->color_nombre ?? ''),
+                    'cantidad' => (int) ($talla->cantidad ?? 0),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function debeOcultarseDelDashboardControlCalidad(array $tallasOriginales, array $tallasCompletadas): bool
+    {
+        return $this->resolverEstadoControlCalidadDesdeTallas($tallasOriginales, $tallasCompletadas) === 'completo';
+    }
+
     private function aplicarCondicionVisibleEnControlCalidad($query): void
     {
         $query->where(function ($subQuery) {
@@ -74,7 +220,7 @@ class ControlCalidadController extends Controller
         $this->aplicarCondicionVisibleEnControlCalidad($recibosQuery);
 
         $recibos = $recibosQuery
-            ->with(['pedido', 'prenda', 'prendaBodega', 'pedido.prendas'])
+            ->with(['pedido', 'prenda.tallas.coloresAsignados', 'prendaBodega.tallas', 'pedido.prendas'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -116,6 +262,7 @@ class ControlCalidadController extends Controller
                     'nombre_prenda' => $prendaBodega->nombre,
                     'descripcion' => $prendaBodega->descripcion,
                     'de_bodega' => true,
+                    'tallas' => $prendaBodega->tallas ?? collect(),
                 ];
             } else {
                 $prenda = $recibo->prenda;
@@ -124,9 +271,13 @@ class ControlCalidadController extends Controller
             if (!$prenda) {
                 $prenda = $pedido?->prendas?->first();
             }
+            if (is_object($prenda) && method_exists($prenda, 'loadMissing')) {
+                $prenda->loadMissing(['tallas.coloresAsignados']);
+            }
             $numeroPedido = $pedido?->numero_pedido;
             $procesoActual = $numeroPedido ? ($ultimoProcesoPorPedido[$numeroPedido] ?? null) : null;
             $procesoControlCalidad = null;
+            $tallasOriginales = $this->obtenerTallasOriginalesReciboControlCalidad($prenda, $esBodega);
 
             if ($numeroPedido && !empty($prenda?->id) && !empty($recibo->consecutivo_actual)) {
                 $procesoControlCalidad = ProcesoPrenda::query()
@@ -176,7 +327,7 @@ class ControlCalidadController extends Controller
                 'fecha_creacion' => $procesoControlCalidad?->created_at ?? $recibo->created_at,
                 'estado_pedido' => $pedido->estado ?? 'Pendiente',
             ];
-        });
+        })->filter()->values();
 
         $idsRecibos = $prendasConRecibos
             ->flatMap(fn($p) => collect($p['recibos'] ?? [])->pluck('id'))
@@ -184,6 +335,23 @@ class ControlCalidadController extends Controller
             ->unique()
             ->values()
             ->all();
+
+        $detalleTallasCompletadasPorRecibo = !empty($idsRecibos)
+            ? DB::table('prenda_recibo_completado_tallas as prct')
+                ->join('prenda_recibo_completado as prc', 'prc.id', '=', 'prct.prenda_recibo_completado_id')
+                ->where('prc.area', 'Control de Calidad')
+                ->whereIn('prc.id_recibo', $idsRecibos)
+                ->select([
+                    'prc.id_recibo',
+                    'prct.talla',
+                    'prct.genero',
+                    'prct.color_nombre',
+                    'prct.cantidad',
+                ])
+                ->get()
+                ->groupBy('id_recibo')
+                ->map(fn ($filas) => $this->mapearTallasCompletadasControlCalidad($filas))
+            : collect();
 
         $parcialesQuery = ReciboPorPartes::query()
             ->with(['pedido', 'prenda', 'tallas']);
@@ -222,6 +390,23 @@ class ControlCalidadController extends Controller
             ->values()
             ->all();
 
+        $detalleTallasCompletadasPorParcial = !empty($idsParciales)
+            ? DB::table('prenda_recibo_completado_tallas as prct')
+                ->join('prenda_recibo_completado as prc', 'prc.id', '=', 'prct.prenda_recibo_completado_id')
+                ->where('prc.area', 'Control de Calidad')
+                ->whereIn('prc.id_parcial', $idsParciales)
+                ->select([
+                    'prc.id_parcial',
+                    'prct.talla',
+                    'prct.genero',
+                    'prct.color_nombre',
+                    'prct.cantidad',
+                ])
+                ->get()
+                ->groupBy('id_parcial')
+                ->map(fn ($filas) => $this->mapearTallasCompletadasControlCalidad($filas))
+            : collect();
+
         $completadosPorId = !empty($idsRecibos)
             ? PrendaReciboCompletado::query()
                 ->where('area', 'Control de Calidad')
@@ -248,7 +433,14 @@ class ControlCalidadController extends Controller
             });
         }
 
-        $parcialesConRecibos = $parcialesEnControlCalidad->map(function (ReciboPorPartes $parcial) use ($completadosPorParcialId) {
+        $prendasConRecibos = $prendasConRecibos
+            ->filter(function ($prenda) use ($completadosPorId) {
+                $idRecibo = (int) ($prenda['recibos'][0]['id'] ?? 0);
+                return $idRecibo <= 0 || !$completadosPorId->has($idRecibo);
+            })
+            ->values();
+
+        $parcialesConRecibos = $parcialesEnControlCalidad->map(function (ReciboPorPartes $parcial) use ($completadosPorParcialId, $detalleTallasCompletadasPorParcial) {
             $pedido = $parcial->pedido;
             $numeroPedido = $pedido?->numero_pedido;
             
@@ -345,7 +537,10 @@ class ControlCalidadController extends Controller
                 'consecutivo_actual' => $consecutivoParcial,
                 'completado_area' => $completadosPorParcialId->has($parcial->id),
             ];
-        });
+        })->filter(function ($parcial) use ($completadosPorParcialId) {
+            $parcialId = (int) ($parcial['parcial_id'] ?? 0);
+            return $parcialId <= 0 || !$completadosPorParcialId->has($parcialId);
+        })->values();
 
         // Regla UI: si existe al menos un parcial visible en C.C. para un recibo original,
         // ocultar la tarjeta del recibo original y mostrar solo las tarjetas parciales.
@@ -491,9 +686,11 @@ class ControlCalidadController extends Controller
                         'es_parcial' => true,
                         'parcial_id' => $parcial->id,
                         'completado_area' => true,
+                        'completado_total_area' => true,
+                        'ocultar_en_dashboard' => true,
                         'area' => 'Entrega',
                         'proceso_actual' => 'Entrega',
-                    ], 'updated', 'parcial'));
+                    ], 'removed', 'parcial'));
                 } catch (\Throwable $e) {
                     \Log::warning('[ControlCalidadController] Error al broadcast ControlCalidadUpdated parcial completado', [
                         'parcial_id' => (int) $parcial->id,
@@ -504,7 +701,8 @@ class ControlCalidadController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => '',
-                    'recibo_padre_completado' => $reciboPadreCompletado
+                    'recibo_padre_completado' => $reciboPadreCompletado,
+                    'ocultar_en_dashboard' => true,
                 ]);
             }
 
@@ -569,7 +767,8 @@ class ControlCalidadController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => ''
+                'message' => '',
+                'ocultar_en_dashboard' => true,
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al completar recibo C.C: ' . $e->getMessage(), [

@@ -16,6 +16,56 @@
  * - actualizarReciboConAnchoMetraje() - Actualizar recibo con datos
  */
 
+var ANCHO_METRAJE_SYNC_CHANNEL = window.ANCHO_METRAJE_SYNC_CHANNEL || 'mundoindustrial:ancho-metraje-sync';
+var ANCHO_METRAJE_SYNC_STORAGE_KEY = window.ANCHO_METRAJE_SYNC_STORAGE_KEY || 'mundoindustrial:ancho-metraje-sync';
+window.ANCHO_METRAJE_SYNC_CHANNEL = ANCHO_METRAJE_SYNC_CHANNEL;
+window.ANCHO_METRAJE_SYNC_STORAGE_KEY = ANCHO_METRAJE_SYNC_STORAGE_KEY;
+
+function generarIdSincronizacionAnchoMetraje() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+        return window.crypto.randomUUID();
+    }
+
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function notificarSincronizacionAnchoMetraje(modal, modoSeleccionado) {
+    const mensaje = {
+        id: generarIdSincronizacionAnchoMetraje(),
+        tipo: 'ancho-metraje-actualizado',
+        timestamp: Date.now(),
+        pedido: modal?.dataset?.pedido || null,
+        pedido_id: modal?.dataset?.pedido || null,
+        prendaId: modal?.dataset?.prendaId || null,
+        prenda_id: modal?.dataset?.prendaId || null,
+        prendaBodegaId: modal?.dataset?.prendaBodegaId || null,
+        numeroRecibo: modal?.dataset?.numeroRecibo || null,
+        consecutivoReciboId: modal?.dataset?.reciboId || null,
+        tipoRecibo: modal?.dataset?.tipoRecibo || null,
+        modo: modoSeleccionado || null,
+    };
+
+    try {
+        window.localStorage.setItem(ANCHO_METRAJE_SYNC_STORAGE_KEY, JSON.stringify(mensaje));
+    } catch (error) {
+        console.warn('[notificarSincronizacionAnchoMetraje] No se pudo escribir en localStorage:', error);
+    }
+
+    if (typeof window.BroadcastChannel === 'function') {
+        if (!window.__anchoMetrajeSyncChannel) {
+            window.__anchoMetrajeSyncChannel = new BroadcastChannel(ANCHO_METRAJE_SYNC_CHANNEL);
+        }
+
+        window.__anchoMetrajeSyncChannel.postMessage(mensaje);
+    }
+
+    window.dispatchEvent(new CustomEvent('anchoMetrajeActualizado', {
+        detail: mensaje
+    }));
+
+    return mensaje;
+}
+
 /**
  * Abre el modal de Ancho y Metraje para una prenda especifica
  * Detecta si es prenda combinada (multiples colores) o normal
@@ -965,6 +1015,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
             
             if (data.success) {
                 actualizarEstadoGuardadoModal(modal, modoSeleccionado);
+                notificarSincronizacionAnchoMetraje(modal, modoSeleccionado);
                 showToast('Ancho y metraje guardados correctamente', 'success');
                 
                 if (window.receiptManager && window.receiptManager.datosFactura) {
@@ -1046,6 +1097,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
             .then(results => {
                 if (results.every(r => r.success)) {
                     actualizarEstadoGuardadoModal(modal, modoSeleccionado);
+                    notificarSincronizacionAnchoMetraje(modal, modoSeleccionado);
                     showToast('Ancho y metraje guardados correctamente', 'success');
                     setTimeout(() => {
                         cerrarModalAnchoMetraje();
@@ -1120,6 +1172,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
             .then(results => {
                 if (results.every(r => r.success)) {
                     actualizarEstadoGuardadoModal(modal, modoSeleccionado);
+                    notificarSincronizacionAnchoMetraje(modal, modoSeleccionado);
                     showToast('Ancho y metraje guardados correctamente', 'success');
                     setTimeout(() => {
                         cerrarModalAnchoMetraje();
@@ -1163,6 +1216,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
             
             if (data.success) {
                 actualizarEstadoGuardadoModal(modal, modoSeleccionado);
+                notificarSincronizacionAnchoMetraje(modal, modoSeleccionado);
                 showToast('Ancho y metraje guardados correctamente', 'success');
                 
                 setTimeout(() => {

@@ -23,6 +23,7 @@ use App\Application\Insumos\UseCases\GuardarAnchoMetrajePrendaInsumosUseCase;
 use App\Application\Insumos\UseCases\ObtenerAnchoMetrajePrendaInsumosUseCase;
 use App\Application\Insumos\UseCases\ObtenerColoresPrendaInsumosUseCase;
 use App\Application\Insumos\Services\RecibosQueryService;
+use App\Events\AnchoMetrajePrendaActualizado;
 use App\Models\PedidoProduccion;
 use App\Models\ConsecutivoReciboPedido;
 use App\Models\ProcesoPrenda;
@@ -852,6 +853,7 @@ class InsumosController extends Controller
             $prendaBodegaId = (int) $request->input('prenda_bodega_id', $request->query('prenda_bodega_id', 0));
             $numeroRecibo = (int) $request->input('numero_recibo', 0);
             $consecutivoReciboId = (int) $request->input('consecutivo_recibo_id', 0);
+            $clientSyncId = trim((string) $request->input('client_sync_id', ''));
             
             \Log::info('[InsumosController] guardarAnchoMetrajePrenda payload inicial', [
                 'numero_pedido' => (string) $numeroPedido,
@@ -927,13 +929,31 @@ class InsumosController extends Controller
                 $prendaId = $prendaBodegaId;
             }
 
-            return response()->json(
-                $this->guardarAnchoMetrajePrendaUseCase->execute(
-                    (string) $numeroPedido,
-                    $prendaId,
-                    $validated
-                )
+            $resultado = $this->guardarAnchoMetrajePrendaUseCase->execute(
+                (string) $numeroPedido,
+                $prendaId,
+                $validated
             );
+
+            if ($resultado['success'] ?? false) {
+                $pedidoProduccion = PedidoProduccion::find((int) $numeroPedido)
+                    ?: PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+
+                event(new AnchoMetrajePrendaActualizado([
+                    'accion' => 'guardado',
+                    'pedido_id' => $pedidoProduccion?->id ? (int) $pedidoProduccion->id : null,
+                    'numero_pedido' => $pedidoProduccion?->numero_pedido ?? (string) $numeroPedido,
+                    'prenda_id' => $prendaId > 0 ? $prendaId : null,
+                    'prenda_bodega_id' => $prendaBodegaId > 0 ? $prendaBodegaId : null,
+                    'numero_recibo' => $numeroRecibo > 0 ? $numeroRecibo : null,
+                    'consecutivo_recibo_id' => $consecutivoReciboId > 0 ? $consecutivoReciboId : null,
+                    'tipo_recibo' => $tipoRecibo ?: null,
+                    'tipo_modo' => $validated['tipo_modo'] ?? null,
+                    'client_sync_id' => $clientSyncId !== '' ? $clientSyncId : null,
+                ]));
+            }
+
+            return response()->json($resultado);
         } catch (\Exception $e) {
             return $this->handleExceptionWithContext(
                 $e,
@@ -993,10 +1013,26 @@ class InsumosController extends Controller
                 $anchoQuery->delete();
                 $metrajeQuery->delete();
 
-                return response()->json([
+                $resultado = [
                     'success' => true,
                     'message' => 'Ancho y metraje eliminados correctamente',
-                ]);
+                ];
+
+                $pedidoProduccion = PedidoProduccion::find((int) $numeroPedido)
+                    ?: PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+
+                event(new AnchoMetrajePrendaActualizado([
+                    'accion' => 'eliminado',
+                    'pedido_id' => $pedidoProduccion?->id ? (int) $pedidoProduccion->id : null,
+                    'numero_pedido' => $pedidoProduccion?->numero_pedido ?? (string) $numeroPedido,
+                    'prenda_id' => null,
+                    'prenda_bodega_id' => $targetPrendaBodegaId,
+                    'numero_recibo' => $numeroRecibo > 0 ? $numeroRecibo : null,
+                    'consecutivo_recibo_id' => $consecutivoReciboId > 0 ? $consecutivoReciboId : null,
+                    'tipo_recibo' => $tipoRecibo ?: null,
+                ]));
+
+                return response()->json($resultado);
             }
 
             // Validar datos
@@ -1011,14 +1047,30 @@ class InsumosController extends Controller
                     ->value('id');
             }
 
-            return response()->json(
-                $this->eliminarAnchoMetrajePrendaUseCase->execute(
-                    (string) $numeroPedido,
-                    (int) $validated['prenda_id'],
-                    $numeroRecibo > 0 ? $numeroRecibo : null,
-                    $consecutivoReciboId > 0 ? $consecutivoReciboId : null
-                )
+            $resultado = $this->eliminarAnchoMetrajePrendaUseCase->execute(
+                (string) $numeroPedido,
+                (int) $validated['prenda_id'],
+                $numeroRecibo > 0 ? $numeroRecibo : null,
+                $consecutivoReciboId > 0 ? $consecutivoReciboId : null
             );
+
+            if ($resultado['success'] ?? false) {
+                $pedidoProduccion = PedidoProduccion::find((int) $numeroPedido)
+                    ?: PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+
+                event(new AnchoMetrajePrendaActualizado([
+                    'accion' => 'eliminado',
+                    'pedido_id' => $pedidoProduccion?->id ? (int) $pedidoProduccion->id : null,
+                    'numero_pedido' => $pedidoProduccion?->numero_pedido ?? (string) $numeroPedido,
+                    'prenda_id' => (int) $validated['prenda_id'],
+                    'prenda_bodega_id' => null,
+                    'numero_recibo' => $numeroRecibo > 0 ? $numeroRecibo : null,
+                    'consecutivo_recibo_id' => $consecutivoReciboId > 0 ? $consecutivoReciboId : null,
+                    'tipo_recibo' => null,
+                ]));
+            }
+
+            return response()->json($resultado);
         } catch (\Exception $e) {
             return $this->handleExceptionWithContext(
                 $e,

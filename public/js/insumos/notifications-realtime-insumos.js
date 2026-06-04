@@ -318,6 +318,13 @@ function initNotificationsRealtimeInsumos() {
                 }
             };
 
+            const handleAnchoMetrajeUpdated = (data) => {
+                console.log('[Realtime Insumos] Ancho/metraje actualizado en servidor:', data);
+                window.dispatchEvent(new CustomEvent('anchoMetrajeActualizado', {
+                    detail: data,
+                }));
+            };
+
             const bindWithSharedWs = () => {
                 if (!window.shared?.isReady) {
                     return false;
@@ -339,6 +346,7 @@ function initNotificationsRealtimeInsumos() {
                 try { ws.subscribe('ordenes', '.orden.updated', subscribeIfMatch); } catch (error) { console.error('[Realtime Insumos] subscribe ordenes/.orden.updated:', error); }
                 try { ws.subscribe('ordenes', 'orden.updated', subscribeIfMatch); } catch (error) { console.error('[Realtime Insumos] subscribe ordenes/orden.updated:', error); }
                 try { ws.subscribe('ordenes', 'OrdenUpdated', subscribeIfMatch); } catch (error) { console.error('[Realtime Insumos] subscribe ordenes/OrdenUpdated:', error); }
+                try { ws.subscribe('insumos.materiales', '.ancho-metraje.actualizado', handleAnchoMetrajeUpdated); } catch (error) { console.error('[Realtime Insumos] subscribe insumos.materiales/.ancho-metraje.actualizado:', error); }
                 return true;
             };
 
@@ -352,6 +360,7 @@ function initNotificationsRealtimeInsumos() {
                 try { echo.channel('ordenes').listen('.orden.updated', subscribeIfMatch); } catch (error) { console.error('[Realtime Insumos] echo ordenes/.orden.updated:', error); }
                 try { echo.channel('ordenes').listen('orden.updated', subscribeIfMatch); } catch (error) { console.error('[Realtime Insumos] echo ordenes/orden.updated:', error); }
                 try { echo.channel('ordenes').listen('OrdenUpdated', subscribeIfMatch); } catch (error) { console.error('[Realtime Insumos] echo ordenes/OrdenUpdated:', error); }
+                try { echo.channel('insumos.materiales').listen('.ancho-metraje.actualizado', handleAnchoMetrajeUpdated); } catch (error) { console.error('[Realtime Insumos] echo insumos.materiales/.ancho-metraje.actualizado:', error); }
                 return true;
             };
 

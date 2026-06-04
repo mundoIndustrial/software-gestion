@@ -1790,6 +1790,16 @@
 
             if (!recibo) return null;
 
+            const ocultarEnDashboard = Boolean(
+                orden.ocultar_en_dashboard ||
+                orden.completado_total_area ||
+                recibo.ocultar_en_dashboard ||
+                recibo.completado_total_area
+            );
+            if (ocultarEnDashboard) {
+                return null;
+            }
+
             const tipoRecibo = String(recibo.tipo_recibo || orden.tipo_recibo || '').toUpperCase();
             const esReflectivo = tipoRecibo === 'REFLECTIVO';
             const esParcial = String(recibo.es_parcial || orden.es_parcial || '0') === '1' || Boolean(recibo.es_parcial || orden.es_parcial);
@@ -1899,7 +1909,17 @@
             if (!ordenesList || !orden) return;
 
             const tempCard = crearCardControlCalidadDesdeEvento(orden, true);
-            if (!tempCard) return;
+            if (!tempCard) {
+                const cardKey = orden?.es_parcial || orden?.parcial_id
+                    ? `parcial-${orden?.parcial_id || orden?.recibos?.[0]?.parcial_id || orden?.id || ''}`
+                    : `recibo-${orden?.id || orden?.recibos?.[0]?.id || ''}`;
+                const existente = cardKey ? document.querySelector(`[data-card-key="${cardKey}"]`) : null;
+                if (existente) {
+                    existente.remove();
+                    aplicarFiltros();
+                }
+                return;
+            }
 
             const existente = tempCard.dataset.cardKey ? document.querySelector(`[data-card-key="${tempCard.dataset.cardKey}"]`) : null;
 
@@ -2062,6 +2082,15 @@
 
             const data = await response.json();
             if (!data.success) {
+                return;
+            }
+
+            if (data.ocultar_en_dashboard) {
+                const card = btn.closest('.orden-card-simple');
+                if (card) {
+                    card.remove();
+                }
+                aplicarFiltros();
                 return;
             }
 

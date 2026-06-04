@@ -1011,6 +1011,158 @@ export class PedidosRecibosModule {
 // Instancia global singleton
 window.pedidosRecibosModule = new PedidosRecibosModule();
 
+const PEDIDOS_RECIBOS_ANCHO_METRAJE_CHANNEL = 'mundoindustrial:ancho-metraje-sync';
+const PEDIDOS_RECIBOS_ANCHO_METRAJE_STORAGE_KEY = 'mundoindustrial:ancho-metraje-sync';
+
+let pedidosRecibosAnchoMetrajeSyncRegistrado = false;
+let pedidosRecibosAnchoMetrajeSyncChannel = null;
+let pedidosRecibosAnchoMetrajeSyncPollHandle = null;
+let pedidosRecibosAnchoMetrajeSyncLastValue = null;
+
+function obtenerContextoReciboActivoParaSincronizacion() {
+    const estado = window.pedidosRecibosModule?.getEstado?.() || null;
+    if (!estado || !estado.pedidoId || !estado.prendaId) {
+        return null;
+    }
+
+    return {
+        pedidoId: Number(estado.pedidoId) || null,
+        prendaId: Number(estado.prendaId) || null,
+        tipoRecibo: String(estado.tipoProceso || '').trim().toUpperCase() || null,
+        numeroRecibo: Number(estado.objetivoConsecutivo || estado.numeroRecibo || 0) || null,
+    };
+}
+
+function coincideSincronizacionAnchoMetraje(contexto, mensaje) {
+    if (!contexto || !mensaje) {
+        return false;
+    }
+
+    const contextoPedido = Number(contexto.pedidoId || 0);
+    const contextoPrenda = Number(contexto.prendaId || 0);
+    const mensajePedido = Number(mensaje.pedido_id || mensaje.pedido || 0);
+    const mensajePrenda = Number(mensaje.prenda_id || mensaje.prendaId || mensaje.prendaBodegaId || 0);
+    const contextoTipo = String(contexto.tipoRecibo || '').trim().toUpperCase();
+    const mensajeTipo = String(mensaje.tipoRecibo || '').trim().toUpperCase();
+
+    if (!contextoPedido || !contextoPrenda || !mensajePedido || !mensajePrenda) {
+        return false;
+    }
+
+    if (contextoPedido !== mensajePedido || contextoPrenda !== mensajePrenda) {
+        return false;
+    }
+
+    if (contextoTipo && mensajeTipo && contextoTipo !== mensajeTipo) {
+        return false;
+    }
+
+    const contextoNumero = contexto.numeroRecibo ? Number(contexto.numeroRecibo) : null;
+    const mensajeNumero = mensaje.numeroRecibo ? Number(mensaje.numeroRecibo) : null;
+    if (contextoNumero && mensajeNumero && contextoNumero !== mensajeNumero) {
+        return false;
+    }
+
+    return true;
+}
+
+async function refrescarReciboActivoPorAnchoMetraje(mensaje = null) {
+    const contexto = obtenerContextoReciboActivoParaSincronizacion();
+    if (!contexto) {
+        return false;
+    }
+
+    if (mensaje && !coincideSincronizacionAnchoMetraje(contexto, mensaje)) {
+        return false;
+    }
+
+    try {
+        const pedidosRecibosModule = window.pedidosRecibosModule;
+        if (!pedidosRecibosModule || typeof pedidosRecibosModule.abrirRecibo !== 'function') {
+            return false;
+        }
+
+        await pedidosRecibosModule.abrirRecibo(
+            contexto.pedidoId,
+            contexto.prendaId,
+            contexto.tipoRecibo || 'COSTURA',
+            null,
+            {
+                targetConsecutivo: contexto.numeroRecibo || undefined,
+            }
+        );
+
+        return true;
+    } catch (error) {
+        console.warn('[PedidosRecibosModule] No se pudo refrescar el recibo activo por sincronizacion:', error);
+        return false;
+    }
+}
+
+function leerSincronizacionAnchoMetrajeDesdeStorage() {
+    try {
+        return window.localStorage.getItem(PEDIDOS_RECIBOS_ANCHO_METRAJE_STORAGE_KEY);
+    } catch (error) {
+        console.warn('[PedidosRecibosModule] No se pudo leer localStorage para sync:', error);
+        return null;
+    }
+}
+
+function registrarSincronizacionAnchoMetrajePedidosRecibos() {
+    if (pedidosRecibosAnchoMetrajeSyncRegistrado) {
+        return;
+    }
+
+    pedidosRecibosAnchoMetrajeSyncRegistrado = true;
+
+    window.addEventListener('anchoMetrajeActualizado', (event) => {
+        void refrescarReciboActivoPorAnchoMetraje(event.detail || null);
+    });
+
+    if (typeof window.BroadcastChannel === 'function') {
+        try {
+            pedidosRecibosAnchoMetrajeSyncChannel = new BroadcastChannel(PEDIDOS_RECIBOS_ANCHO_METRAJE_CHANNEL);
+            pedidosRecibosAnchoMetrajeSyncChannel.addEventListener('message', (event) => {
+                void refrescarReciboActivoPorAnchoMetraje(event.data || null);
+            });
+        } catch (error) {
+            console.warn('[PedidosRecibosModule] No se pudo inicializar BroadcastChannel:', error);
+        }
+    } else {
+        window.addEventListener('storage', (event) => {
+            if (event.key !== PEDIDOS_RECIBOS_ANCHO_METRAJE_STORAGE_KEY || !event.newValue) {
+                return;
+            }
+
+            try {
+                const mensaje = JSON.parse(event.newValue);
+                void refrescarReciboActivoPorAnchoMetraje(mensaje);
+            } catch (error) {
+                console.warn('[PedidosRecibosModule] No se pudo leer el mensaje de sincronizacion:', error);
+            }
+        });
+    }
+
+    pedidosRecibosAnchoMetrajeSyncLastValue = leerSincronizacionAnchoMetrajeDesdeStorage();
+    pedidosRecibosAnchoMetrajeSyncPollHandle = window.setInterval(() => {
+        const currentValue = leerSincronizacionAnchoMetrajeDesdeStorage();
+        if (!currentValue || currentValue === pedidosRecibosAnchoMetrajeSyncLastValue) {
+            return;
+        }
+
+        pedidosRecibosAnchoMetrajeSyncLastValue = currentValue;
+
+        try {
+            const mensaje = JSON.parse(currentValue);
+            void refrescarReciboActivoPorAnchoMetraje(mensaje);
+        } catch (error) {
+            console.warn('[PedidosRecibosModule] No se pudo procesar el sync almacenado:', error);
+        }
+    }, 750);
+}
+
+registrarSincronizacionAnchoMetrajePedidosRecibos();
+
 /**
  * FUNCION GLOBAL compatibilidad con codigo antiguo
  * Mantiene la API antigua mientras usa el nuevo modulo
