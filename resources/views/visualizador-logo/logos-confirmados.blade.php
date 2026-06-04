@@ -93,7 +93,7 @@
                 ">
                     <div style="color: #cbd5e1;">Recibo</div>
                     <div style="color: #cbd5e1;">Cliente</div>
-                    <div style="color: #cbd5e1;">Observaciones</div>
+                    <div style="color: #cbd5e1;">Prenda</div>
                     <div style="text-align: center; color: #cbd5e1;">Acción</div>
                 </div>
 
@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarTabUI();
 
     if (searchInput) {
-        searchInput.placeholder = 'Buscar por cliente, recibo, prenda o observación...';
+        searchInput.placeholder = 'Buscar por cliente, recibo, prenda o novedad...';
 
         searchInput.addEventListener('input', function() {
             const searchTerm = this.value.trim();
@@ -293,13 +293,13 @@ document.addEventListener('DOMContentLoaded', function() {
         body.innerHTML = data.map((group) => {
             const cliente = group.cliente || '-';
             const numeroRecibo = group.numero_recibo || '-';
-            const obs = (group.observacio_diseño && String(group.observacio_diseño).trim() !== '') ? group.observacio_diseño : 'Sin observación';
+            const prenda = group.nombre_prenda || '-';
             const logosCount = group.logos.length;
             const todosRevisados = group.todos_revisados;
 
             const clienteHtml = escapeHtml(cliente);
             const numeroReciboHtml = escapeHtml(numeroRecibo);
-            const obsHtml = escapeHtml(obs);
+            const prendaHtml = escapeHtml(prenda);
 
             return `
                 <div style="
@@ -317,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         #${numeroReciboHtml}
                     </div>
                     <div style="color: #334155; font-size: 0.95rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${clienteHtml}">${clienteHtml}</div>
-                    <div style="color: #64748b; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${obsHtml}">${obsHtml}</div>
+                    <div style="color: #64748b; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${prendaHtml}">${prendaHtml}</div>
                     <div style="display:flex; justify-content:center; gap: 10px;">
                         <button type="button" onclick='window.__verDisenoLogo(${JSON.stringify(group.logos).replace(/'/g, "\\'")})' title="Ver ${logosCount} logo(s)" style="
                             background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
@@ -434,74 +434,64 @@ document.addEventListener('DOMContentLoaded', function() {
         const existing = document.getElementById('modal-diseno-logo-overlay');
         if (existing) existing.remove();
 
-        let currentIndex = 0;
-
-        function renderCurrentImage() {
-            const imgContainer = document.getElementById('modal-diseno-logo-img-container');
-            const imgCounter = document.getElementById('modal-diseno-logo-counter');
-            const btnRevisar = document.getElementById('modal-diseno-logo-revisar');
-            if (!imgContainer || !imgCounter || !btnRevisar) return;
-
-            const currentLogo = logos[currentIndex];
-            
-            imgContainer.innerHTML = `<img src="${escapeAttr(currentLogo.url)}" alt="Imagen ${currentIndex + 1}" style="max-width: 100%; max-height: 70vh; object-fit: contain; border-radius: 10px; background: white;" />`;
-            imgCounter.textContent = `Imagen #${currentIndex + 1} de ${logos.length}`;
-            
-            if (currentLogo.revisada) {
-                btnRevisar.innerHTML = '<i class="fas fa-check-circle"></i> Revisado';
-                btnRevisar.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
-                btnRevisar.disabled = true;
-                btnRevisar.style.opacity = '0.7';
-                btnRevisar.style.cursor = 'not-allowed';
-            } else {
-                btnRevisar.innerHTML = '<i class="fas fa-check"></i> Marcar como revisado';
-                btnRevisar.style.background = 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)';
-                btnRevisar.disabled = false;
-                btnRevisar.style.opacity = '1';
-                btnRevisar.style.cursor = 'pointer';
-            }
-        }
-
         const overlay = document.createElement('div');
         overlay.id = 'modal-diseno-logo-overlay';
-        overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 999999; display:flex; align-items:center; justify-content:center; padding: 16px;';
+        overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 999999; display:flex; align-items:flex-start; justify-content:center; padding: 32px 16px; overflow-y: auto;';
 
         const modal = document.createElement('div');
-        modal.style.cssText = 'width: 950px; max-width: 100%; background: white; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); overflow: hidden;';
+        modal.style.cssText = 'width: 100%; max-width: 1200px; background: white; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); overflow: hidden;';
+
+        const imagesHtml = logos.map((logo, index) => {
+            const novedadesJson = JSON.stringify(logo.novedades || []);
+            return `
+                <div style="width: 30%; margin-bottom: 16px; background: #e2e8f0; border-radius: 10px; padding: 12px; border: 1px solid #cbd5e1;">
+                    <img src="${escapeAttr(logo.url)}" alt="Imagen ${index + 1}" class="gallery-image" data-url="${escapeAttr(logo.url)}" style="width: 100%; height: 200px; object-fit: contain; border-radius: 8px; background: white; margin-bottom: 8px; cursor: zoom-in;" />
+                    <div style="display:flex; gap: 8px; justify-content:center; flex-wrap: wrap;">
+                        <button type="button" class="ver-obs-btn" data-novedades="${escapeAttr(novedadesJson)}" style="
+                            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+                            border: none;
+                            color: white;
+                            padding: 8px 10px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-weight: 700;
+                            font-size: 0.85rem;
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 6px;
+                            box-shadow: 0 2px 8px rgba(249, 115, 22, 0.18);
+                        ">
+                            <i class="fas fa-eye"></i> Ver Novedades
+                        </button>
+                        <button type="button" class="reemplazar-btn" data-id="${logo.id}" style="
+                            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+                            border: none;
+                            color: white;
+                            padding: 8px 10px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-weight: 700;
+                            font-size: 0.85rem;
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 6px;
+                            box-shadow: 0 2px 8px rgba(14, 165, 233, 0.18);
+                        ">
+                            <i class="fas fa-upload"></i> Reemplazar
+                        </button>
+                        <input type="file" id="file-${logo.id}" accept="image/*" style="display: none;" />
+                    </div>
+                </div>
+            `;
+        }).join('');
 
         modal.innerHTML = `
-            <div style="padding: 14px 14px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; font-weight: 900; letter-spacing: 0.5px; display:flex; justify-content: space-between; align-items:center;">
-                <div id="modal-diseno-logo-counter">Imagen #1 de ${logos.length}</div>
+            <div style="padding: 14px 14px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; font-weight: 900; letter-spacing: 0.5px; display:flex; justify-content: space-between; align-items:center; position: sticky; top: 0; z-index: 10;">
+                <div id="modal-diseno-logo-counter">${logos.length} Imagen(es)</div>
                 <button id="modal-diseno-logo-close" type="button" style="border:none; background: rgba(255,255,255,0.18); color:white; font-weight:900; width:34px; height:34px; border-radius: 10px; cursor:pointer;">×</button>
             </div>
-            <div style="display:flex; align-items:center; background: #ffffff; flex-direction: column;">
-                <div style="display:flex; align-items:center; width: 100%;">
-                    <button id="modal-diseno-logo-prev" type="button" style="background: #f3f4f6; border: none; color: #1f2937; padding: 20px; cursor: pointer; font-size: 24px; border-radius: 8px; margin: 10px; ${logos.length <= 1 ? 'opacity: 0.3; cursor: not-allowed;' : ''}">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <div id="modal-diseno-logo-img-container" style="flex: 1; padding: 14px; display:flex; align-items:center; justify-content:center;">
-                        <img src="${escapeAttr(logos[0].url)}" alt="Imagen 1" style="max-width: 100%; max-height: 70vh; object-fit: contain; border-radius: 10px; background: white;" />
-                    </div>
-                    <button id="modal-diseno-logo-next" type="button" style="background: #f3f4f6; border: none; color: #1f2937; padding: 20px; cursor: pointer; font-size: 24px; border-radius: 8px; margin: 10px; ${logos.length <= 1 ? 'opacity: 0.3; cursor: not-allowed;' : ''}">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-                <div style="padding: 14px; background: white; width:100%; display:flex; justify-content:center;">
-                    <button id="modal-diseno-logo-revisar" type="button" style="
-                        border: none;
-                        color: white;
-                        padding: 10px 20px;
-                        border-radius: 10px;
-                        cursor: pointer;
-                        font-weight: 800;
-                        display: inline-flex;
-                        align-items: center;
-                        gap: 8px;
-                        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.18);
-                    ">
-                        <i class="fas fa-check"></i> Marcar como revisado
-                    </button>
-                </div>
+            <div style="padding: 20px; display:flex; flex-wrap: wrap; gap: 2%; justify-content:center; background: #d1d5db;">
+                ${imagesHtml}
             </div>
         `;
 
@@ -529,47 +519,211 @@ document.addEventListener('DOMContentLoaded', function() {
                 cerrar();
                 document.removeEventListener('keydown', onKey);
             }
-            if (e.key === 'ArrowLeft' && logos.length > 1) {
-                currentIndex = (currentIndex - 1 + logos.length) % logos.length;
-                renderCurrentImage();
-            }
-            if (e.key === 'ArrowRight' && logos.length > 1) {
-                currentIndex = (currentIndex + 1) % logos.length;
-                renderCurrentImage();
-            }
         };
         document.addEventListener('keydown', onKey);
 
-        const btnPrev = overlay.querySelector('#modal-diseno-logo-prev');
-        const btnNext = overlay.querySelector('#modal-diseno-logo-next');
-        const btnRevisar = overlay.querySelector('#modal-diseno-logo-revisar');
-
-        if (btnPrev && logos.length > 1) {
-            btnPrev.addEventListener('click', () => {
-                currentIndex = (currentIndex - 1 + logos.length) % logos.length;
-                renderCurrentImage();
+        // Add event listeners to "Ver Novedades" buttons
+        overlay.querySelectorAll('.ver-obs-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const novedadesJson = btn.getAttribute('data-novedades');
+                showNovedadesModal(novedadesJson);
             });
+        });
+
+        // Add event listeners to "Reemplazar" buttons
+        overlay.querySelectorAll('.reemplazar-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = parseInt(btn.getAttribute('data-id'));
+                document.getElementById(`file-${id}`).click();
+            });
+        });
+
+        // Add event listeners to file inputs
+        overlay.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const id = parseInt(input.id.replace('file-', ''));
+                await reemplazarImagen(id, file);
+            });
+        });
+
+        // Add double-click event to images for full view
+        overlay.querySelectorAll('.gallery-image').forEach(img => {
+            img.addEventListener('dblclick', () => {
+                showFullImage(img.getAttribute('data-url'));
+            });
+        });
+
+        function showNovedadesModal(novedadesJson) {
+            const existingObsModal = document.getElementById('modal-obs-overlay');
+            if (existingObsModal) existingObsModal.remove();
+
+            let novedades = [];
+            try {
+                novedades = JSON.parse(novedadesJson) || [];
+            } catch (e) {
+                novedades = [];
+            }
+
+            // Sort novedades by created_at descending (newest first)
+            novedades.sort((a, b) => {
+                const dateA = new Date(a.created_at || 0);
+                const dateB = new Date(b.created_at || 0);
+                return dateB - dateA;
+            });
+
+            const obsOverlay = document.createElement('div');
+            obsOverlay.id = 'modal-obs-overlay';
+            obsOverlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000000; display:flex; align-items:center; justify-content:center; padding: 16px;';
+            
+            const obsModal = document.createElement('div');
+            obsModal.style.cssText = 'width: 550px; max-width: 100%; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); overflow: hidden;';
+            
+            const novedadesHtml = novedades.length > 0 
+                ? novedades.map((novedad) => {
+                    const fecha = novedad.created_at 
+                        ? new Date(novedad.created_at).toLocaleString('es-ES', { 
+                            year: 'numeric', 
+                            month: '2-digit', 
+                            day: '2-digit', 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                        }) 
+                        : 'Fecha desconocida';
+                    const usuario = novedad.usuario?.name || 'Usuario desconocido';
+                    return `
+                        <div style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <div style="font-weight: 700; color: #1e40af; font-size: 0.9rem;">
+                                    <i class="fas fa-user-circle" style="margin-right: 6px;"></i>
+                                    ${escapeHtml(usuario)}
+                                </div>
+                                <div style="font-size: 0.8rem; color: #64748b;">
+                                    <i class="fas fa-calendar-alt" style="margin-right: 4px;"></i>
+                                    ${escapeHtml(fecha)}
+                                </div>
+                            </div>
+                            <div style="font-size: 0.95rem; color: #334155; line-height: 1.4;">
+                                ${escapeHtml(novedad.novedad)}
+                            </div>
+                        </div>
+                    `;
+                }).join('')
+                : `
+                    <div style="padding: 40px 20px; text-align: center; color: #64748b;">
+                        <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 12px; display: block;"></i>
+                        No hay novedades registradas para este diseño
+                    </div>
+                `;
+
+            obsModal.innerHTML = `
+                <div style="padding: 12px 14px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; font-weight: 900; letter-spacing: 0.5px; display:flex; justify-content: space-between; align-items:center;">
+                    <span>Historial de Novedades</span>
+                    <button id="modal-obs-close" type="button" style="border:none; background: rgba(255,255,255,0.18); color:white; font-weight:900; width:30px; height:30px; border-radius: 8px; cursor:pointer;">×</button>
+                </div>
+                <div style="max-height: 450px; overflow-y: auto;">
+                    ${novedadesHtml}
+                </div>
+            `;
+            
+            obsOverlay.appendChild(obsModal);
+            document.body.appendChild(obsOverlay);
+
+            const cerrarObs = () => obsOverlay.remove();
+            obsModal.querySelector('#modal-obs-close').addEventListener('click', cerrarObs);
+            obsOverlay.addEventListener('click', e => e.target === obsOverlay && cerrarObs());
         }
 
-        if (btnNext && logos.length > 1) {
-            btnNext.addEventListener('click', () => {
-                currentIndex = (currentIndex + 1) % logos.length;
-                renderCurrentImage();
-            });
+        function showFullImage(url) {
+            const existingFullModal = document.getElementById('modal-full-image-overlay');
+            if (existingFullModal) existingFullModal.remove();
+
+            const fullOverlay = document.createElement('div');
+            fullOverlay.id = 'modal-full-image-overlay';
+            fullOverlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000001; display:flex; align-items:center; justify-content:center; padding: 16px;';
+            
+            const fullModal = document.createElement('div');
+            fullModal.style.cssText = 'width: auto; height: auto; max-width: 95vw; max-height: 95vh;';
+            
+            fullModal.innerHTML = `
+                <img src="${escapeAttr(url)}" alt="Imagen Completa" style="max-width: 100%; max-height: 90vh; border-radius: 8px;" />
+                <button id="modal-full-close" type="button" style="position: absolute; top: 16px; right: 16px; border:none; background: rgba(255,255,255,0.2); color:white; font-weight:900; width:40px; height:40px; border-radius: 50%; cursor:pointer; font-size:1.5rem;">×</button>
+            `;
+            
+            fullOverlay.appendChild(fullModal);
+            document.body.appendChild(fullOverlay);
+
+            const cerrarFull = () => fullOverlay.remove();
+            fullOverlay.querySelector('#modal-full-close').addEventListener('click', cerrarFull);
+            fullOverlay.addEventListener('click', e => e.target === fullOverlay && cerrarFull());
         }
-        
-        if (btnRevisar) {
-            btnRevisar.addEventListener('click', () => {
-                const currentLogo = logos[currentIndex];
-                if (!currentLogo.revisada) {
-                    marcarDisenoComoRevisado(currentLogo.id);
-                    logos[currentIndex].revisada = true;
-                    renderCurrentImage();
+
+        async function reemplazarImagen(id, file) {
+            // Add custom CSS to set high z-index for SweetAlert
+            if (!document.getElementById('swal-z-index-style')) {
+                const style = document.createElement('style');
+                style.id = 'swal-z-index-style';
+                style.textContent = `
+                    .swal2-container {
+                        z-index: 10000000 !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            // Show confirmation dialog first
+            const confirmed = await Swal.fire({
+                title: '¿Reemplazar imagen del diseño?',
+                text: 'La imagen anterior será reemplazada por la nueva y el estado pasará a "pendiente por confirmar". ¿Deseas continuar?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, reemplazar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#0ea5e9',
+                cancelButtonColor: '#6b7280',
+            });
+
+            if (!confirmed.isConfirmed) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('_token', '{{ csrf_token() }}');
+
+            try {
+                const response = await fetch(`/visualizador-logo/logos-confirmados/${id}/reemplazar`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: '¡Éxito!',
+                        text: 'Imagen reemplazada exitosamente!',
+                        timer: 1500,
+                        showConfirmButton: false,
+                    });
+                    cerrar();
+                    cargarDisenos();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error al reemplazar la imagen: ' + (result.message || 'Error desconocido'),
+                    });
                 }
-            });
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al reemplazar la imagen: ' + error.message,
+                });
+            }
         }
-
-        renderCurrentImage();
     };
 
     function formatearFechaISO(value) {

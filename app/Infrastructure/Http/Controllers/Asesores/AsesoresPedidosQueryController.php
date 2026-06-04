@@ -413,13 +413,14 @@ final class AsesoresPedidosQueryController extends Controller
             $diseños = \App\Models\DisenoLogoPedido::query()
                 ->where('proceso_prenda_detalle_id', $procesoId)
                 ->orderBy('created_at', 'ASC')
+                ->with(['novedades.usuario'])
                 ->get()
                 ->map(function ($diseño) {
                     return [
                         'id' => $diseño->id,
                         'url' => $diseño->url,
-                        'observacio_diseño' => $diseño->observacio_diseño,
                         'estado' => $diseño->estado,
+                        'novedades' => $diseño->novedades,
                     ];
                 });
 
@@ -485,21 +486,19 @@ final class AsesoresPedidosQueryController extends Controller
                 return $this->failure('No tienes permiso para confirmar este diseño', 403);
             }
 
-            // Obtener todos los diseños del mismo recibo (pedido + prenda) en estado pendiente_por_confirmar
-            $prendaId = $proceso->prenda_pedido_id;
-            $todosLosDiseños = \App\Models\DisenoLogoPedido::query()
-                ->whereHas('proceso.prenda', function ($query) use ($prendaId) {
-                    $query->where('id', $prendaId);
-                })
-                ->where('estado', 'pendiente_por_confirmar')
-                ->get();
+            // Confirmar solo el diseño seleccionado
+            $diseño->update(['estado' => 'logo_confirmado']);
 
-            // Confirmar todos los diseños del recibo
-            foreach ($todosLosDiseños as $d) {
-                $d->update(['estado' => 'logo_confirmado']);
-            }
+            // Guardar novedad en el historial
+            $userName = $user?->name ?? 'Usuario Desconocido';
+            \App\Models\DisenoLogoPedidoNovedad::create([
+                'diseno_logo_pedido_id' => $request->diseño_id,
+                'novedad' => "Diseño confirmado por {$userName}.",
+                'usuario_id' => $user?->id,
+                'tipo_novedad' => 'confirmado',
+            ]);
 
-            $cantidadConfirmada = $todosLosDiseños->count();
+            $cantidadConfirmada = 1;
 
             return $this->json([
                 'success' => true,
@@ -537,10 +536,15 @@ final class AsesoresPedidosQueryController extends Controller
                 return $this->failure('No tienes permiso para modificar este diseño', 403);
             }
 
-            // Actualizar la observación y el estado del diseño
-            $diseño->update([
-                'observacio_diseño' => $request->observacion,
-                'estado' => 'devuelto_a_diseño',
+            // Actualizar estado del diseño y guardar novedad en el historial
+            $diseño->update(['estado' => 'devuelto_a_diseño']);
+            
+            $userName = $user?->name ?? 'Usuario Desconocido';
+            \App\Models\DisenoLogoPedidoNovedad::create([
+                'diseno_logo_pedido_id' => $request->diseño_id,
+                'novedad' => $request->observacion,
+                'usuario_id' => $user?->id,
+                'tipo_novedad' => 'devuelto',
             ]);
 
             return $this->json([
@@ -549,7 +553,6 @@ final class AsesoresPedidosQueryController extends Controller
                 'diseño' => [
                     'id' => $diseño->id,
                     'estado' => $diseño->estado,
-                    'observacio_diseño' => $diseño->observacio_diseño,
                 ]
             ]);
         } catch (\Throwable $e) {

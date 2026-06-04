@@ -102,9 +102,10 @@ export class GalleryManager {
                         }
                         diseñosLogo.push({
                             id: diseño.id,
+                            proceso_prenda_detalle_id: diseño.proceso_prenda_detalle_id,
                             url: url,
-                            observacion: diseño.observacion || null,
-                            estado: diseño.estado || null
+                            novedades: diseño.novedades ?? [],
+                            estado: diseño.estado ?? null
                         });
                     }
                 });
@@ -273,7 +274,7 @@ export class GalleryManager {
 
                 html += `
                     <div class="diseño-card-modern" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); transition: all 0.3s ease;">
-                        <div style="position: relative; height: 110px; background: #f1f5f9; cursor: pointer; overflow: hidden;" onclick="GalleryManager.abrirModalImagenProcesoGrande(0, '${fotosJSON.replace(/'/g, "&#39;")}')">
+                        <div class="diseño-image-container" data-fotos="${btoa(JSON.stringify([diseño.url]))}" style="position: relative; height: 160px; background: #f1f5f9; cursor: pointer; overflow: hidden;">
                             <img src="${diseño.url}" alt="Diseño ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s ease;" class="diseño-card-img">
                             <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0); transition: background 0.3s ease; display: flex; align-items: center; justify-content: center;" class="diseño-overlay">
                                 <span style="color: white; font-weight: 700; opacity: 0; transition: opacity 0.3s ease; font-size: 1.2rem;" class="diseño-icon">🔍</span>
@@ -285,14 +286,20 @@ export class GalleryManager {
                                 ${estadoBadge}
                             </div>
                             
-                            ${diseño.observacion ? `
+                            ${(diseño.novedades && diseño.novedades.length > 0) ? `
                                 <div style="font-size: 0.75rem; color: #475569; background: #fff5f5; border-radius: 6px; padding: 6px 8px; border-left: 3px solid #ef4444; word-break: break-word; line-height: 1.3;">
-                                    <strong>Novedad:</strong> ${diseño.observacion}
+                                    <strong>Novedad:</strong> ${diseño.novedades[0].novedad}
+                                    <button onclick="event.stopPropagation(); GalleryManager.verHistorialNovedades(${JSON.stringify(diseño.novedades)})" style="margin-top: 4px; padding: 2px 6px; border-radius: 6px; border: none; background: #ef4444; color: white; font-size: 0.7rem; cursor: pointer; font-weight: 700;">
+                                        Ver Historial
+                                    </button>
                                 </div>
                             ` : ''}
 
                             ${mostrarBotonObservacion ? `
-                                <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px;">
+                                    <button onclick="event.stopPropagation(); GalleryManager.confirmarDiseño(${diseño.id}, ${diseño.proceso_prenda_detalle_id})" title="Confirmar Diseño" style="width: 32px; height: 32px; border-radius: 50%; border: none; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(34, 197, 94, 0.3); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
+                                        <i class="fas fa-check"></i>
+                                    </button>
                                     <button onclick="event.stopPropagation(); GalleryManager.enviarObservacionDiseno(${diseño.id})" title="Devolver con Observación" style="width: 32px; height: 32px; border-radius: 50%; border: none; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
                                         <i class="fas fa-undo"></i>
                                     </button>
@@ -351,7 +358,7 @@ export class GalleryManager {
 
                 html += `
                     <div class="diseño-card-modern" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); transition: all 0.3s ease;">
-                        <div style="position: relative; height: 110px; background: #f1f5f9; cursor: pointer; overflow: hidden;" onclick="GalleryManager.abrirModalImagenProcesoGrande(0, '${fotosJSON.replace(/'/g, "&#39;")}')">
+                        <div class="diseño-image-container" data-fotos="${btoa(JSON.stringify([diseño.url]))}" style="position: relative; height: 160px; background: #f1f5f9; cursor: pointer; overflow: hidden;">
                             <img src="${diseño.url}" alt="Diseño ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s ease;" class="diseño-card-img">
                             <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0); transition: background 0.3s ease; display: flex; align-items: center; justify-content: center;" class="diseño-overlay">
                                 <span style="color: white; font-weight: 700; opacity: 0; transition: opacity 0.3s ease; font-size: 1.2rem;" class="diseño-icon">🔍</span>
@@ -362,9 +369,9 @@ export class GalleryManager {
                                 <span style="font-weight: 700; font-size: 0.8rem; color: #1e293b;">Diseño #${idx + 1}</span>
                                 ${estadoBadge}
                             </div>
-                            ${diseño.observacion ? `
+                            ${(diseño.novedades && diseño.novedades.length > 0) ? `
                                 <div style="font-size: 0.75rem; color: #475569; background: #f8fafc; border-radius: 6px; padding: 6px 8px; border-left: 3px solid #0ea5e9; word-break: break-word; line-height: 1.3;">
-                                    <strong>Obs:</strong> ${diseño.observacion}
+                                    <strong>Novedad:</strong> ${diseño.novedades[0].novedad}
                                 </div>
                             ` : ''}
                         </div>
@@ -415,6 +422,22 @@ export class GalleryManager {
                     icon.style.opacity = '0';
                 });
             }
+        });
+
+        // Manejar clicks en contenedores de imágenes de diseño
+        const diseñoImageContainers = galeria.querySelectorAll('.diseño-image-container');
+        diseñoImageContainers.forEach(container => {
+            container.addEventListener('click', (e) => {
+                const fotosBase64 = container.getAttribute('data-fotos');
+                if (fotosBase64) {
+                    try {
+                        const fotos = JSON.parse(atob(fotosBase64));
+                        GalleryManager.abrirModalImagenProcesoGrande(0, fotos);
+                    } catch (err) {
+                        console.error('Error al abrir imagen de diseño:', err);
+                    }
+                }
+            });
         });
 
         if (puedeVerDisenoLogo) {
@@ -487,8 +510,7 @@ export class GalleryManager {
                     const form = new FormData();
                     form.append('pedido_id', String(pedidoId));
                     form.append('proceso_prenda_detalle_id', String(procesoPrendaDetalleId));
-                    const obs = (typeof window.__logoDesignObs === 'string') ? window.__logoDesignObs.trim() : '';
-                    if (obs) form.append('observacio_diseño', obs);
+
                     files.forEach((f) => form.append('images[]', f));
 
                     const response = await fetch('/visualizador-logo/pedidos-logo/disenos', {
@@ -537,9 +559,9 @@ export class GalleryManager {
                     preview.innerHTML = '';
 
                     if (obsView) {
-                        const obs = guardados.map((it) => it?.observacio_diseño).find((t) => typeof t === 'string' && t.trim() !== '');
-                        if (typeof obs === 'string' && obs.trim() !== '') {
-                            obsView.innerHTML = `<span style="font-weight: 800;">Observaciones:</span> <span style="font-weight: 400;">${obs.trim()}</span>`;
+                        const allNovedades = guardados.flatMap((it) => it?.novedades || []);
+                        if (allNovedades.length > 0) {
+                            obsView.innerHTML = `<span style="font-weight: 800;">Novedades:</span> <span style="font-weight: 400;">${allNovedades[0].novedad}</span>`;
                             obsView.style.display = 'block';
                         } else {
                             obsView.textContent = '';
@@ -590,9 +612,9 @@ export class GalleryManager {
 
                         const obs = document.createElement('div');
                         obs.style.cssText = 'font-size: 0.82rem; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
-                        const obsTxt = (typeof item?.observacio_diseño === 'string' && item.observacio_diseño.trim() !== '')
-                            ? item.observacio_diseño.trim()
-                            : 'Sin observación';
+                        const obsTxt = (item?.novedades && item.novedades.length > 0)
+                            ? item.novedades[0].novedad
+                            : 'Sin novedades';
                         obs.textContent = obsTxt;
 
                         text.appendChild(title);
@@ -1650,6 +1672,217 @@ export class GalleryManager {
                         icon: 'error',
                         title: 'Error',
                         text: result.message || 'No se pudo devolver el diseño.',
+                        customClass: {
+                            popup: 'modern-swal-popup',
+                            title: 'modern-swal-title'
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error(error);
+                window.Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Ocurrió un error al procesar la solicitud.',
+                    customClass: {
+                        popup: 'modern-swal-popup',
+                        title: 'modern-swal-title'
+                    }
+                });
+            }
+        }
+    }
+
+    static verHistorialNovedades(novedades) {
+        const existingObsModal = document.getElementById('modal-obs-overlay');
+        if (existingObsModal) existingObsModal.remove();
+
+        let novedadesArray = Array.isArray(novedades) ? novedades : [];
+
+        // Sort novedades by created_at descending (newest first)
+        novedadesArray.sort((a, b) => {
+            const dateA = new Date(a.created_at || 0);
+            const dateB = new Date(b.created_at || 0);
+            return dateB - dateA;
+        });
+
+        const obsOverlay = document.createElement('div');
+        obsOverlay.id = 'modal-obs-overlay';
+        obsOverlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000000; display:flex; align-items:center; justify-content:center; padding: 16px;';
+        
+        const obsModal = document.createElement('div');
+        obsModal.style.cssText = 'width: 550px; max-width: 100%; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); overflow: hidden;';
+        
+        const novedadesHtml = novedadesArray.length > 0 
+            ? novedadesArray.map((novedad) => {
+                const fecha = novedad.created_at 
+                    ? new Date(novedad.created_at).toLocaleString('es-ES', { 
+                        year: 'numeric', 
+                        month: '2-digit', 
+                        day: '2-digit', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    }) 
+                    : 'Fecha desconocida';
+                const usuario = novedad.usuario?.name || 'Usuario desconocido';
+                return `
+                    <div style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <div style="font-weight: 700; color: #1e40af; font-size: 0.9rem;">
+                                <i class="fas fa-user-circle" style="margin-right: 6px;"></i>
+                                ${usuario}
+                            </div>
+                            <div style="font-size: 0.8rem; color: #64748b;">
+                                <i class="fas fa-calendar-alt" style="margin-right: 4px;"></i>
+                                ${fecha}
+                            </div>
+                        </div>
+                        <div style="font-size: 0.95rem; color: #334155; line-height: 1.4;">
+                            ${novedad.novedad}
+                        </div>
+                    </div>
+                `;
+            }).join('')
+            : `
+                <div style="padding: 40px 20px; text-align: center; color: #64748b;">
+                    <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 12px; display: block;"></i>
+                    No hay novedades registradas para este diseño
+                </div>
+            `;
+
+        obsModal.innerHTML = `
+            <div style="padding: 12px 14px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; font-weight: 900; letter-spacing: 0.5px; display:flex; justify-content: space-between; align-items:center;">
+                <span>Historial de Novedades</span>
+                <button id="modal-obs-close" type="button" style="border:none; background: rgba(255,255,255,0.18); color:white; font-weight:900; width:30px; height:30px; border-radius: 8px; cursor:pointer;">×</button>
+            </div>
+            <div style="max-height: 450px; overflow-y: auto;">
+                ${novedadesHtml}
+            </div>
+        `;
+        
+        obsOverlay.appendChild(obsModal);
+        document.body.appendChild(obsOverlay);
+
+        const cerrarObs = () => obsOverlay.remove();
+        obsModal.querySelector('#modal-obs-close').addEventListener('click', cerrarObs);
+        obsOverlay.addEventListener('click', e => e.target === obsOverlay && cerrarObs());
+    }
+
+    static async confirmarDiseño(disenoId, procesoId) {
+        if (!window.Swal) {
+            console.error('SweetAlert not loaded');
+            alert('Error: SweetAlert no está cargado.');
+            return;
+        }
+
+        // Asegurar que SweetAlert se muestre encima de la galería modal (z-index: 9998)
+        if (!document.getElementById('swal-z-index-override')) {
+            const style = document.createElement('style');
+            style.id = 'swal-z-index-override';
+            style.innerHTML = `
+                .swal2-container {
+                    z-index: 99999999 !important;
+                }
+                .modern-swal-popup {
+                    border-radius: 16px !important;
+                    padding: 24px !important;
+                    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+                }
+                .modern-swal-title {
+                    font-size: 1.4rem !important;
+                    font-weight: 800 !important;
+                    color: #1e293b !important;
+                    margin-bottom: 12px !important;
+                }
+                .modern-swal-html {
+                    font-size: 0.95rem !important;
+                    color: #475569 !important;
+                    margin-bottom: 16px !important;
+                }
+                .modern-swal-confirm {
+                    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+                    color: white !important;
+                    font-weight: 700 !important;
+                    border-radius: 10px !important;
+                    padding: 12px 24px !important;
+                    font-size: 0.95rem !important;
+                    box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.2) !important;
+                    transition: all 0.2s !important;
+                }
+                .modern-swal-confirm:hover {
+                    transform: translateY(-1px) !important;
+                    box-shadow: 0 6px 12px -1px rgba(34, 197, 94, 0.3) !important;
+                }
+                .modern-swal-cancel {
+                    background: #f1f5f9 !important;
+                    color: #475569 !important;
+                    font-weight: 700 !important;
+                    border-radius: 10px !important;
+                    padding: 12px 24px !important;
+                    font-size: 0.95rem !important;
+                    transition: all 0.2s !important;
+                }
+                .modern-swal-cancel:hover {
+                    background: #e2e8f0 !important;
+                    color: #1e293b !important;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        const { isConfirmed } = await window.Swal.fire({
+            title: 'Confirmar Diseño',
+            html: '<div style="text-align: left; font-weight: 600; color: #475569;">¿Estás seguro que deseas confirmar este diseño? Esta acción no se puede deshacer.</div>',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-check" style="margin-right: 6px;"></i> Confirmar',
+            cancelButtonText: 'Cancelar',
+            customClass: {
+                popup: 'modern-swal-popup',
+                title: 'modern-swal-title',
+                htmlContainer: 'modern-swal-html',
+                confirmButton: 'modern-swal-confirm',
+                cancelButton: 'modern-swal-cancel'
+            },
+            buttonsStyling: false
+        });
+
+        if (isConfirmed) {
+            try {
+                window.Swal.showLoading();
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                const response = await fetch('/api/asesores/confirmar-diseño-logo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        diseño_id: disenoId,
+                        proceso_id: procesoId
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    await window.Swal.fire({
+                        icon: 'success',
+                        title: 'Confirmado',
+                        text: 'El diseño ha sido confirmado correctamente.',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        customClass: {
+                            popup: 'modern-swal-popup',
+                            title: 'modern-swal-title'
+                        }
+                    });
+                    location.reload();
+                } else {
+                    window.Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: result.message || 'No se pudo confirmar el diseño.',
                         customClass: {
                             popup: 'modern-swal-popup',
                             title: 'modern-swal-title'

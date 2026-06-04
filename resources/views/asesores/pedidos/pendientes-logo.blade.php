@@ -371,18 +371,13 @@
                 return;
             }
 
-            const filasHtml = diseños.map(diseño => `
+            const filasHtml = diseños.map((diseño, index) => `
                 <tr>
                     <td>
                         <div class="acciones-cell">
-                            <button class="btn-ver" onclick="abrirRecibo(${diseño.pedido_id}, ${diseño.prenda_id}, '${diseño.tipo_proceso}')">
+                            <button class="btn-ver" data-pedido-id="${diseño.pedido_id}" data-prenda-id="${diseño.prenda_id}" data-tipo-proceso="${btoa(JSON.stringify(diseño.tipo_proceso))}">
                                 <i class="fas fa-eye"></i> Ver
                             </button>
-                            ${diseño.estado === 'pendiente_por_confirmar' ? `
-                                <button class="btn-confirmar" onclick="confirmarDiseño(${diseño.id}, ${diseño.proceso_id})">
-                                    <i class="fas fa-check"></i> Confirmar
-                                </button>
-                            ` : ''}
                         </div>
                     </td>
                     <td>${diseño.cliente || 'Sin cliente'}</td>
@@ -390,7 +385,7 @@
                     <td>${diseño.fecha || '-'}</td>
                     <td>
                         <span class="estado-badge ${diseño.estado === 'pendiente_por_confirmar' ? 'estado-pendiente' : 'estado-confirmado'}">
-                            ${diseño.estado === 'pendiente_por_confirmar' ? 'Pendiente' : 'Confirmado'}
+                            ${diseño.estado === 'pendiente_por_confirmar' ? 'Pendiente por confirmar' : 'Confirmado'}
                         </span>
                     </td>
                 </tr>
@@ -416,6 +411,17 @@
             `;
             
             container.innerHTML = html;
+
+            // Add click event listeners to "Ver" buttons
+            container.querySelectorAll('.btn-ver').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const pedidoId = parseInt(btn.getAttribute('data-pedido-id'));
+                    const prendaId = parseInt(btn.getAttribute('data-prenda-id'));
+                    const tipoProcesoBase64 = btn.getAttribute('data-tipo-proceso');
+                    const tipoProceso = JSON.parse(atob(tipoProcesoBase64));
+                    abrirRecibo(pedidoId, prendaId, tipoProceso);
+                });
+            });
         }
 
         function abrirRecibo(pedidoId, prendaId, tipoRecibo) {

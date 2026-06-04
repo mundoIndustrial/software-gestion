@@ -13,7 +13,7 @@ final class DisenoLogoPedidoRepository implements DisenoLogoPedidoRepositoryInte
         return DisenoLogoPedido::query()
             ->where('proceso_prenda_detalle_id', $procesoPrendaDetalleId)
             ->orderBy('id', 'asc')
-            ->get(['id', 'url', 'observacio_diseño']);
+            ->get(['id', 'url']);
     }
 
     public function contarPorProceso(int $procesoPrendaDetalleId): int
@@ -23,19 +23,17 @@ final class DisenoLogoPedidoRepository implements DisenoLogoPedidoRepositoryInte
             ->count();
     }
 
-    public function crear(int $procesoPrendaDetalleId, string $url, ?string $observacion = null): array
+    public function crear(int $procesoPrendaDetalleId, string $url): array
     {
         $row = DisenoLogoPedido::create([
             'proceso_prenda_detalle_id' => $procesoPrendaDetalleId,
             'url' => $url,
-            'observacio_diseño' => $observacion,
             'estado' => 'pendiente_por_confirmar',
         ]);
 
         return [
             'id' => $row->id,
             'url' => $row->url,
-            'observacio_diseño' => $row->{'observacio_diseño'} ?? null,
             'estado' => $row->estado,
         ];
     }
@@ -48,5 +46,13 @@ final class DisenoLogoPedidoRepository implements DisenoLogoPedidoRepositoryInte
     public function eliminarPorId(int $id): void
     {
         DisenoLogoPedido::query()->where('id', $id)->delete();
+    }
+
+    public function actualizar(int $id, string $url): void
+    {
+        DisenoLogoPedido::query()->where('id', $id)->update([
+            'url' => $url,
+            'estado' => 'pendiente_por_confirmar'
+        ]);
     }
 }

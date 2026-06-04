@@ -8,6 +8,7 @@ use App\Models\PedidoProduccion;
 use App\Application\SupervisorPedidos\UseCases\ListOrdersUseCase;
 use App\Application\SupervisorPedidos\DTOs\ListOrdersRequest;
 use Illuminate\Http\Request;
+use App\Application\PedidosLogo\UseCases\ReemplazarDisenoLogoPedidoUseCase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
@@ -15,10 +16,14 @@ use Illuminate\Support\Facades\View;
 final class VisualizadorLogoController extends Controller
 {
     private ListOrdersUseCase $listOrdersUseCase;
+    private ReemplazarDisenoLogoPedidoUseCase $reemplazarDisenoLogoPedidoUseCase;
 
-    public function __construct(ListOrdersUseCase $listOrdersUseCase)
-    {
+    public function __construct(
+        ListOrdersUseCase $listOrdersUseCase,
+        ReemplazarDisenoLogoPedidoUseCase $reemplazarDisenoLogoPedidoUseCase
+    ) {
         $this->listOrdersUseCase = $listOrdersUseCase;
+        $this->reemplazarDisenoLogoPedidoUseCase = $reemplazarDisenoLogoPedidoUseCase;
     }
     public function dashboard()
     {
@@ -133,6 +138,34 @@ final class VisualizadorLogoController extends Controller
             ], 500);
         }
     }
+
+    public function reemplazarImagen(Request $request, int $disenoId)
+    {
+        try {
+            $result = $this->reemplazarDisenoLogoPedidoUseCase->execute($request, $disenoId);
+
+            if (!($result['ok'] ?? false)) {
+                $status = (int) ($result['status'] ?? 500);
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message'] ?? 'Error al reemplazar la imagen.',
+                    'errors' => $result['errors'] ?? null,
+                ], $status);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Imagen reemplazada exitosamente.',
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('[VisualizadorLogo] Error al reemplazar imagen: ' . $e->getMessage());
+            Log::error('[VisualizadorLogo] Stack trace: ' . $e->getTraceAsString());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al reemplazar la imagen: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
     
     public static function getConteoLogosNoRevisados()
     {
@@ -244,7 +277,8 @@ final class VisualizadorLogoController extends Controller
         // First, get all designs with their relationships based on tab
         $query = \App\Models\DisenoLogoPedido::with([
             'proceso.prenda.pedidoProduccion',
-            'proceso.prenda'
+            'proceso.prenda',
+            'novedades.usuario'
         ]);
 
         if ($tab === 'devueltos') {
@@ -307,10 +341,14 @@ final class VisualizadorLogoController extends Controller
                 }
             }
 
+            // Get last novedad for display
+            $ultimaNovedad = $diseno->novedades->first();
+            
             return [
                 'id' => $diseno->id,
                 'url' => $diseno->url,
-                'observacio_diseño' => $diseno->observacio_diseño,
+                'novedades' => $diseno->novedades,
+                'ultima_novedad' => $ultimaNovedad?->novedad,
                 'created_at' => $diseno->created_at,
                 'proceso_prenda_detalle_id' => $diseno->proceso_prenda_detalle_id,
                 'prenda_pedido_id' => $prendaPedido?->id,
@@ -327,7 +365,7 @@ final class VisualizadorLogoController extends Controller
             $search = trim((string) $request->get('search'));
             $items = $items->filter(function ($item) use ($search) {
                 return str_contains(strtolower($item['cliente']), strtolower($search))
-                    || str_contains(strtolower($item['observacio_diseño'] ?? ''), strtolower($search))
+                    || str_contains(strtolower($item['ultima_novedad'] ?? ''), strtolower($search))
                     || str_contains(strtolower($item['numero_recibo']), strtolower($search))
                     || str_contains(strtolower($item['nombre_prenda']), strtolower($search));
             });
@@ -348,13 +386,14 @@ final class VisualizadorLogoController extends Controller
                 'nombre_prenda' => $first['nombre_prenda'],
                 'numero_recibo' => $first['numero_recibo'],
                 'created_at' => $first['created_at'],
-                'observacio_diseño' => $first['observacio_diseño'],
+                'ultima_novedad' => $first['ultima_novedad'],
                 'todos_revisados' => $todosRevisados,
                 'logos' => $group->map(function ($item) {
                     return [
                         'id' => $item['id'],
                         'url' => $item['url'],
                         'revisada' => $item['revisada'],
+                        'novedades' => $item['novedades'],
                     ];
                 })->values()->toArray(),
             ];

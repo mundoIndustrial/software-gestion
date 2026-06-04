@@ -962,12 +962,13 @@ class PedidoPrendaDetalleBuilder
                         if ($diseño->url) {
                             $imagenes[] = [
                                 'id' => $diseño->id,
+                                'proceso_prenda_detalle_id' => $procesoPrendaDetalle->id,
                                 'url' => $this->normalizarRutaImagen($diseño->url),
                                 'ruta_webp' => $this->normalizarRutaImagen($diseño->url),
                                 'ruta_original' => $this->normalizarRutaImagen($diseño->url),
                                 'tipo' => 'diseño-logo',
                                 'orden' => 0,
-                                'observacion' => $diseño->observacio_diseño ?? null,
+                                'novedades' => $diseño->novedades ?? [],
                                 'estado' => $diseño->estado,
                             ];
                         }

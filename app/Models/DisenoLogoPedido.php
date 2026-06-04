@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DisenoLogoPedido extends Model
 {
@@ -12,7 +13,6 @@ class DisenoLogoPedido extends Model
     protected $fillable = [
         'proceso_prenda_detalle_id',
         'url',
-        'observacio_diseño',
         'estado',
         'revisada',
     ];
@@ -20,5 +20,10 @@ class DisenoLogoPedido extends Model
     public function proceso(): BelongsTo
     {
         return $this->belongsTo(PedidosProcesosPrendaDetalle::class, 'proceso_prenda_detalle_id');
+    }
+
+    public function novedades(): HasMany
+    {
+        return $this->hasMany(DisenoLogoPedidoNovedad::class, 'diseno_logo_pedido_id')->latest();
     }
 }

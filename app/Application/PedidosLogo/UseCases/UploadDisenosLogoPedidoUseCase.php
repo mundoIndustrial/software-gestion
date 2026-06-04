@@ -24,7 +24,6 @@ final class UploadDisenosLogoPedidoUseCase
         $validator = Validator::make($request->all(), [
             'pedido_id' => 'required|integer|min:1',
             'proceso_prenda_detalle_id' => 'required|integer|min:1',
-            'observacio_diseño' => 'nullable|string|max:200',
             'images' => 'required|array|min:1|max:3',
             'images.*' => 'required|image|mimes:jpeg,png,jpg,webp|max:10240',
         ]);
@@ -40,11 +39,6 @@ final class UploadDisenosLogoPedidoUseCase
         } else {
             $pedidoId = (int) $request->input('pedido_id');
             $procesoId = (int) $request->input('proceso_prenda_detalle_id');
-            $observacion = $request->input('observacio_diseño');
-            $observacion = is_string($observacion) ? trim($observacion) : null;
-            if ($observacion === '') {
-                $observacion = null;
-            }
 
             $pedidoProduccionId = $this->procesoReadRepository->obtenerPedidoProduccionIdPorProceso($procesoId);
             if (!$pedidoProduccionId || $pedidoProduccionId !== $pedidoId) {
@@ -66,11 +60,11 @@ final class UploadDisenosLogoPedidoUseCase
                 } else {
                     $records = [];
 
-                    $this->transactionManager->run(function () use ($request, $pedidoId, $procesoId, $observacion, &$records): void {
+                    $this->transactionManager->run(function () use ($request, $pedidoId, $procesoId, &$records): void {
                         foreach (($request->file('images') ?? []) as $file) {
                             $paths = $this->imageUploadService->guardarImagenDirecta($file, $pedidoId, 'diseños-logo');
                             $url = Storage::url($paths['webp']);
-                            $records[] = $this->disenoRepository->crear($procesoId, $url, $observacion);
+                            $records[] = $this->disenoRepository->crear($procesoId, $url);
                         }
                     });
 

@@ -23,7 +23,7 @@
                 ">
                     <div style="color: #cbd5e1;">Cliente</div>
                     <div style="color: #cbd5e1;">Fecha creación</div>
-                    <div style="color: #cbd5e1;">Observaciones</div>
+                    <div style="color: #cbd5e1;">Novedades</div>
                     <div style="text-align: center; color: #cbd5e1;">Imagen</div>
                 </div>
 
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarDisenos();
 
     if (searchInput) {
-        searchInput.placeholder = 'Buscar por cliente u observación...';
+        searchInput.placeholder = 'Buscar por cliente o novedad...';
 
         searchInput.addEventListener('input', function() {
             const searchTerm = this.value.trim();
@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         body.innerHTML = data.map((it) => {
             const cliente = it.cliente || '-';
-            const obs = (it.observacio_diseño && String(it.observacio_diseño).trim() !== '') ? it.observacio_diseño : 'Sin observación';
+            const obs = (it.novedades && it.novedades.length > 0) ? it.novedades[0].novedad : 'Sin novedades';
             const fecha = formatearFechaISO(it.created_at);
             const url = it.url || '';
 
