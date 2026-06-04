@@ -78,7 +78,7 @@ final class PrendaEdicionBloqueoService
             if ($estadoNormalizado === 'EN_EJECUCION') {
                 $prendaBodegaSinProcesos = $this->esPrendaBodegaSinProcesos($prendaId);
                 if ($prendaBodegaSinProcesos) {
-                    return null;
+                    return $this->respuestaPermitida($estadoPedido);
                 }
             }
 
