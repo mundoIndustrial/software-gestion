@@ -169,6 +169,8 @@ final class PedidosLogoController extends Controller
      */
     public function marcarCompletado(Request $request): JsonResponse
     {
+        \Log::info('[marcarCompletado] Iniciando con request:', $request->all());
+
         $request->validate([
             'id_recibo' => 'required|integer',
             'numero_recibo' => 'required|integer',
@@ -178,23 +180,34 @@ final class PedidosLogoController extends Controller
         $user = Auth::user();
         $area = 'BORDANDO'; // Para bordador, el área es siempre BORDANDO
 
-        // Verificar si ya existe
-        $existente = PrendaReciboCompletado::where('id_recibo', $request->id_recibo)
+        $idRecibo = (int) $request->id_recibo;
+        $numeroRecibo = (int) $request->numero_recibo;
+        $consecutivoReciboId = $request->input('consecutivo_recibo_id') ? (int) $request->input('consecutivo_recibo_id') : null;
+
+        \Log::info('[marcarCompletado] Parámetros procesados:', compact('idRecibo', 'numeroRecibo', 'consecutivoReciboId', 'area'));
+
+        // Verificar si ya existe registro de completado
+        $existente = PrendaReciboCompletado::where('id_recibo', $idRecibo)
             ->where('area', $area)
             ->first();
 
+        \Log::info('[marcarCompletado] Registro de completado existente:', ['existe' => !!$existente]);
+
         if ($existente) {
+            \Log::info('[marcarCompletado] Ya estaba completado, deshaciendo...');
             // Si ya existe, eliminarlo (deshacer completado)
             $existente->delete();
             
-            // También revertir el área a BORDANDO
-            $this->guardarAreaNovedadPedidoLogoUseCase->execute([
-                'proceso_prenda_detalle_id' => $request->id_recibo,
-                'area' => 'BORDANDO',
-                'novedades' => null,
-                'pedido_parcial_id' => null,
-                'consecutivo_recibo_id' => $request->input('consecutivo_recibo_id'),
-            ]);
+            // Revertir el área a BORDANDO en prenda_areas_logo_pedido
+            DB::table('prenda_areas_logo_pedido')
+                ->where('proceso_prenda_detalle_id', $idRecibo)
+                ->whereNull('pedido_parcial_id')
+                ->update([
+                    'area' => 'BORDANDO',
+                    'updated_at' => now(),
+                ]);
+
+            \Log::info('[marcarCompletado] Área revertida a BORDANDO en BD');
             
             return response()->json([
                 'success' => true,
@@ -205,28 +218,33 @@ final class PedidosLogoController extends Controller
 
         // Crear nuevo registro de completado
         $completado = PrendaReciboCompletado::create([
-            'id_recibo' => $request->id_recibo,
-            'numero_recibo' => $request->numero_recibo,
+            'id_recibo' => $idRecibo,
+            'numero_recibo' => $numeroRecibo,
             'area' => $area,
             'nombre_operario' => $user->name ?? 'Bordador',
             'fecha_completado' => now(),
         ]);
 
-        // Actualizar el área a BORDADO
-        $areaResult = $this->guardarAreaNovedadPedidoLogoUseCase->execute([
-            'proceso_prenda_detalle_id' => $request->id_recibo,
-            'area' => 'BORDADO',
-            'novedades' => 'Completado por bordador: ' . ($user->name ?? 'Bordador'),
-            'pedido_parcial_id' => null,
-            'consecutivo_recibo_id' => $request->input('consecutivo_recibo_id'),
-        ]);
+        \Log::info('[marcarCompletado] Registro completado creado:', $completado->toArray());
+
+        // Actualizar DIRECTAMENTE el área a BORDADO en prenda_areas_logo_pedido (sin upsert)
+        $updated = DB::table('prenda_areas_logo_pedido')
+            ->where('proceso_prenda_detalle_id', $idRecibo)
+            ->whereNull('pedido_parcial_id')
+            ->update([
+                'area' => 'BORDADO',
+                'novedades' => 'Completado por bordador: ' . ($user->name ?? 'Bordador'),
+                'updated_at' => now(),
+            ]);
+
+        \Log::info('[marcarCompletado] Filas actualizadas en prenda_areas_logo_pedido:', ['updated_count' => $updated]);
 
         return response()->json([
             'success' => true,
             'message' => 'Recibo marcado como completado y área actualizada a BORDADO.',
             'completado' => true,
             'data' => $completado,
-            'area_actualizada' => $areaResult['ok'] ?? false,
+            'rows_updated' => $updated,
         ]);
     }
 }

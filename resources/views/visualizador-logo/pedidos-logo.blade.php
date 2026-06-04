@@ -1210,31 +1210,48 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Función para marcar/desmarcar recibo como completado (bordador)
     window.marcarReciboCompletado = async function(idRecibo, numeroRecibo, consecutivoReciboId, buttonElement) {
+        console.log('%c[marcarReciboCompletado] ¡INICIANDO!', 'background: #22c55e; color: white; padding: 8px; font-weight: bold; font-size: 14px;', { idRecibo, numeroRecibo, consecutivoReciboId });
+        
         const row = buttonElement.closest('[data-recibo-row="1"]');
         const estaCompletado = row && row.dataset.completado === '1';
+        
+        console.log('[marcarReciboCompletado] Row encontrada:', !!row, 'Está completado:', estaCompletado);
         
         buttonElement.disabled = true;
         buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         
         try {
-            const response = await fetch('{{ route("visualizador-logo.pedidos-logo.marcar-completado") }}', {
+            const urlMarcarCompletado = '{{ route("visualizador-logo.pedidos-logo.marcar-completado") }}';
+            console.log('[marcarReciboCompletado] URL del endpoint:', urlMarcarCompletado);
+            
+            const bodyData = {
+                id_recibo: parseInt(idRecibo),
+                numero_recibo: parseInt(numeroRecibo),
+                consecutivo_recibo_id: consecutivoReciboId ? parseInt(consecutivoReciboId) : null,
+            };
+            
+            console.log('[marcarReciboCompletado] Enviando request con body:', bodyData);
+            
+            const response = await fetch(urlMarcarCompletado, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify({
-                    id_recibo: idRecibo,
-                    numero_recibo: numeroRecibo,
-                    consecutivo_recibo_id: consecutivoReciboId,
-                }),
+                body: JSON.stringify(bodyData),
             });
+            
+            console.log('[marcarReciboCompletado] Response status:', response.status);
             
             const data = await response.json();
             
+            console.log('[marcarReciboCompletado] Response data:', data);
+            
             if (data.success) {
                 const nuevoCompletado = data.completado === true;
+                
+                console.log('[marcarReciboCompletado] Éxito. Nuevo completado:', nuevoCompletado);
                 
                 // Actualizar dataset de la fila
                 if (row) {
@@ -1254,18 +1271,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 actualizarCompletadoLocal(idRecibo, nuevoCompletado);
                 
+                console.log('[marcarReciboCompletado] Recargando datos...');
+                
                 // Recargar datos para mostrar el área actualizada (BORDADO)
                 cargarRecibos('');
                 
                 buttonElement.innerHTML = '<i class="fas fa-check"></i>';
                 buttonElement.disabled = false;
             } else {
+                console.error('[marcarReciboCompletado] Error en respuesta:', data.message);
                 alert('Error: ' + (data.message || 'No se pudo procesar'));
                 buttonElement.disabled = false;
                 buttonElement.innerHTML = '<i class="fas fa-check"></i>';
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('[marcarReciboCompletado] Error de excepción:', error);
             alert('Error de conexión. Intenta de nuevo.');
             buttonElement.disabled = false;
             buttonElement.innerHTML = '<i class="fas fa-check"></i>';
