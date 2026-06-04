@@ -691,6 +691,9 @@ class ReceiptManager {
             console.log('[ReceiptManager] Datos de ancho/metraje muy antiguos, ignorando');
             return;
         }
+
+        const anchoTexto = this.formatearValorAnchoMetraje(ancho);
+        const metrajeTexto = this.formatearValorAnchoMetraje(metraje);
         
         // Actualizar el flotante (si existe)
         let anchoMetrajeElement = document.getElementById('ancho-metraje-disponible');
@@ -698,8 +701,8 @@ class ReceiptManager {
         if (anchoMetrajeElement) {
             anchoMetrajeElement.innerHTML = `
                 <div style="font-size: 0.65rem; opacity: 0.8; margin-bottom: 2px;">PEDIDO: ${pedido}</div>
-                ANCHO DISPONIBLE: ${ancho.toFixed(2)} m<br>
-                METRAJE DISPONIBLE: ${metraje.toFixed(2)} m
+                ANCHO DISPONIBLE: ${anchoTexto} m<br>
+                METRAJE DISPONIBLE: ${metrajeTexto} m
             `;
         }
         
@@ -708,8 +711,8 @@ class ReceiptManager {
         const metrajeSpan = document.getElementById('metraje-valor');
         
         if (anchoSpan && metrajeSpan) {
-            anchoSpan.textContent = ancho.toFixed(2) + ' m';
-            metrajeSpan.textContent = metraje.toFixed(2) + ' m';
+            anchoSpan.textContent = `${anchoTexto} m`;
+            metrajeSpan.textContent = `${metrajeTexto} m`;
             
             console.log('[ReceiptManager] Valores actualizados en la línea del recibo HTML:', { ancho, metraje });
         }
@@ -740,6 +743,17 @@ class ReceiptManager {
             }
         }
     }
+
+    /**
+     * Convierte el valor de ancho/metraje a texto sin alterar la precisión que ingresó el usuario.
+     */
+    formatearValorAnchoMetraje(valor) {
+        if (valor === null || valor === undefined || valor === '') {
+            return '--';
+        }
+
+        return String(valor).trim() || '--';
+    }
 }
 
 // Exportar para uso externo
@@ -757,8 +771,8 @@ window.actualizarAnchoMetrajeUniversal = function(ancho, metraje, pedido = null)
     
     // Guardar los datos globalmente
     window.datosAnchoMetraje = {
-        ancho: parseFloat(ancho),
-        metraje: parseFloat(metraje),
+        ancho: ancho,
+        metraje: metraje,
         pedido: pedido || 'SIN PEDIDO',
         fecha: new Date().toISOString(),
         modulo: window.location.pathname // Para saber desde qué módulo se actualizó
@@ -805,4 +819,3 @@ window.limpiarAnchoMetraje = function() {
     
     console.log('[limpiarAnchoMetraje] Datos limpiados y evento disparado');
 };
-

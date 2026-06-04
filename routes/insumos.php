@@ -32,6 +32,8 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
     Route::get('/materiales/{numeroPedido}/obtener-ancho-metraje-prenda/{prendaId}', [InsumosController::class, 'obtenerAnchoMetrajePrenda'])->name('materiales.obtener-ancho-metraje-prenda');
     Route::post('/materiales/{numeroPedido}/guardar-ancho-metraje-prenda', [InsumosController::class, 'guardarAnchoMetrajePrenda'])->name('materiales.guardar-ancho-metraje-prenda');
     Route::post('/materiales/{numeroPedido}/eliminar-ancho-metraje-prenda', [InsumosController::class, 'eliminarAnchoMetrajePrenda'])->name('materiales.eliminar-ancho-metraje-prenda');
+    Route::get('/materiales/historial-ancho-metraje', [InsumosController::class, 'historialAnchoMetraje'])->name('materiales.historial-ancho-metraje-global');
+    Route::get('/materiales/{numeroPedido}/historial-ancho-metraje', [InsumosController::class, 'historialAnchoMetraje'])->name('materiales.historial-ancho-metraje');
     Route::get('/materiales/{numeroPedido}/obtener-colores-prenda/{prendaId}', [InsumosController::class, 'obtenerColoresPrenda'])->name('materiales.obtener-colores-prenda');
     Route::get('/materiales/{numeroPedido}/obtener-recibo-prenda/{prendaId}', [InsumosController::class, 'obtenerReciboPrenda'])->name('materiales.obtener-recibo-prenda');
     Route::get('/api/materiales/{pedido}', [InsumosController::class, 'obtenerMateriales'])->name('api.materiales');

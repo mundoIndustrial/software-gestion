@@ -285,6 +285,38 @@
     </div>
 </div>
 
+{{-- Modal de Historial de Ancho/Metraje y Estados --}}
+<div id="modalHistorialAnchoMetraje" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center" style="z-index: 10001;">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full mx-3 md:mx-4 max-h-[92vh] flex flex-col overflow-hidden" style="z-index: 10002;">
+        <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white px-4 py-3 md:px-5 md:py-4 flex justify-between items-center shadow-lg flex-shrink-0">
+            <div>
+                <h2 class="text-lg md:text-xl font-bold flex items-center gap-2 drop-shadow text-white">
+                    <i class="fas fa-history"></i>
+                    Historial de Ancho, Metraje y Estados
+                </h2>
+                <p class="text-slate-100 text-xs md:text-sm mt-1">
+                    <span>Pedido: <strong id="historialAnchoMetrajePedido">-</strong></span>
+                    <span class="mx-2">•</span>
+                    <span>Recibo: <strong id="historialAnchoMetrajeRecibo">-</strong></span>
+                </p>
+            </div>
+            <button type="button" data-insumos-action="historial-ancho-metraje-close" class="text-white bg-slate-700 rounded-full p-2 transition hover:bg-slate-600 flex-shrink-0 border border-slate-500">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+        <div class="overflow-y-auto flex-1 p-4 md:p-6 bg-slate-50">
+            <div id="historialAnchoMetrajeLoading" class="text-center py-10">
+                <i class="fas fa-spinner fa-spin text-2xl text-slate-600"></i>
+                <p class="text-sm text-gray-500 mt-2">Cargando historial...</p>
+            </div>
+            <div id="historialAnchoMetrajeEmpty" class="hidden text-center py-10 text-gray-500">
+                No hay movimientos registrados para este contexto.
+            </div>
+            <div id="historialAnchoMetrajeList" class="space-y-3 hidden"></div>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL DE CONFIRMACIÓN PARA ELIMINAR ANCHO/METRAJE -->
 <div id="modalConfirmacionEliminar" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center" style="z-index: 10002;">
     <div class="bg-white rounded-lg shadow-2xl w-96">

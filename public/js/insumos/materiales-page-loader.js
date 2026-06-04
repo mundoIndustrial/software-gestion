@@ -58,6 +58,7 @@
             { src: '/js/insumos/material-operations-insumos.js' },
             { src: '/js/insumos/form-handlers-insumos.js' },
             { src: '/js/insumos/modal-ancho-metraje-insumos.js' },
+            { src: '/js/insumos/historial-ancho-metraje-insumos.js' },
         ],
         pasarRevisar: [
             { src: '/js/insumos/pasar-a-revisar-insumos.js' },
@@ -650,6 +651,20 @@
                     event.stopPropagation();
                     await ensureFeatureScripts('insumosModals');
                     safeCall('guardarAnchoMetraje', [], 'guardarAnchoMetraje no esta disponible');
+                    break;
+                }
+                case 'open-historial-ancho-metraje': {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    await ensureFeatureScripts('insumosModals');
+                    safeCall('abrirModalHistorialAnchoMetraje', [], 'abrirModalHistorialAnchoMetraje no esta disponible');
+                    break;
+                }
+                case 'historial-ancho-metraje-close': {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    await ensureFeatureScripts('insumosModals');
+                    safeCall('cerrarModalHistorialAnchoMetraje', [], 'cerrarModalHistorialAnchoMetraje no esta disponible');
                     break;
                 }
                 case 'confirm-eliminar-close': {

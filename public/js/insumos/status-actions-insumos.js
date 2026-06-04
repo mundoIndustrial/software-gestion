@@ -480,6 +480,15 @@ async function confirmarCambioEstado() {
                     spanEstado.textContent = info.display;
                 }
             }
+
+            window.dispatchEvent(new CustomEvent('historialInsumosActualizado', {
+                detail: {
+                    tipo_evento: 'estado_recibo',
+                    accion: 'estado_cambiado',
+                    reciboId,
+                    estadoNuevo: data.estado_guardado || nuevoEstado,
+                }
+            }));
             
             // Mostrar toast de éxito
             showToast(`Estado cambiado a ${data.estado_guardado || nuevoEstado}`, 'success');

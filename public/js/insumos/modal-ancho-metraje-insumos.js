@@ -130,6 +130,15 @@ function abrirModalAnchoMetraje(pedido, prendaId, prendaBodegaId = null, numeroP
     modal.dataset.tipoRecibo = tipoRecibo || 'COSTURA';
     modal.dataset.numeroRecibo = tieneNumeroReciboForzado ? String(numeroReciboForzado) : '';
     modal.dataset.reciboId = tieneReciboIdForzado ? String(reciboIdForzado) : '';
+    window.insumosAnchoMetrajeContext = {
+        pedido: pedidoSegment,
+        numeroPedido: pedidoSegment,
+        prendaId: prendaIdResolved || null,
+        prendaBodegaId: prendaBodegaId || null,
+        tipoRecibo: tipoRecibo || 'COSTURA',
+        numeroRecibo: tieneNumeroReciboForzado ? numeroReciboForzado : null,
+        reciboId: tieneReciboIdForzado ? reciboIdForzado : null,
+    };
 
     // Limpiar inputs
     document.getElementById('anchoInput').value = '';
@@ -370,12 +379,15 @@ function requiereConfirmacionCambioModo(modal, modoSeleccionado) {
         return false;
     }
 
-    // Solo pedir confirmacion de reemplazo al pasar a modo Manual.
-    if (modoSeleccionado !== 'mano') {
-        return false;
+    if (modoSeleccionado === 'mano') {
+        return modoGuardado !== modoSeleccionado;
     }
 
-    return modoGuardado !== modoSeleccionado;
+    if (modoGuardado === 'color' && modoSeleccionado === 'normal') {
+        return true;
+    }
+
+    return false;
 }
 
 async function confirmarCambioModoAntesDeGuardar(modal, modoSeleccionado) {
@@ -386,8 +398,16 @@ async function confirmarCambioModoAntesDeGuardar(modal, modoSeleccionado) {
     const modoAnterior = getModoLabel(modal.tipoModoGuardado);
     const modoNuevo = getModoLabel(modoSeleccionado);
     const tituloAdvertencia = 'Cambio de modo';
-    const mensaje = `Se eliminaran los datos previos de ancho y metraje guardados en "${modoAnterior}" y se reemplazaran por "${modoNuevo}".`;
-    const mensajeHtml = `
+    const esCambioColorANormal = modal.tipoModoGuardado === 'color' && modoSeleccionado === 'normal';
+    const mensaje = esCambioColorANormal
+        ? `Se mantendra el ancho general, pero se eliminaran los metrajes por color guardados en "${modoAnterior}" y se reemplazaran por "${modoNuevo}".`
+        : `Se eliminaran los datos previos de ancho y metraje guardados en "${modoAnterior}" y se reemplazaran por "${modoNuevo}".`;
+    const mensajeHtml = esCambioColorANormal
+        ? `
+        <span style="color:#dc2626;font-weight:800;">SE REEMPLAZARAN</span>
+        <span> los metrajes por color guardados en "<strong>${modoAnterior}</strong>". El <strong>ancho</strong> se mantendra y el nuevo modo sera "<strong>${modoNuevo}</strong>".</span>
+    `
+        : `
         <span style="color:#dc2626;font-weight:800;">SE ELIMINARA</span>
         <span> el ancho y metraje previo guardado en "<strong>${modoAnterior}</strong>" y se reemplazara por "<strong>${modoNuevo}</strong>".</span>
     `;
@@ -906,6 +926,18 @@ function confirmarEliminarAnchoMetraje() {
         if (data.success) {
             showToast('Datos eliminados correctamente', 'success');
             cerrarModalConfirmacionEliminar();
+            window.dispatchEvent(new CustomEvent('historialInsumosActualizado', {
+                detail: {
+                    tipo_evento: 'ancho_metraje',
+                    accion: 'eliminado',
+                    pedido: modal.dataset.pedido || pedido,
+                    prendaId: modal.dataset.prendaId || null,
+                    prendaBodegaId: modal.dataset.prendaBodegaId || null,
+                    numeroRecibo: modal.dataset.numeroRecibo || null,
+                    reciboId: modal.dataset.reciboId || null,
+                    tipoRecibo: modal.dataset.tipoRecibo || null,
+                }
+            }));
             
             // Recargar el modal (vacio)
             setTimeout(() => {
@@ -968,17 +1000,14 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
         const metrajeVal = document.getElementById('metrajeInput').value.trim();
         const ancho = anchoVal || null;
         const metraje = metrajeVal || null;
-        
-        // Guardar datos globales para compatibilidad
-        const anchoNum = Number(anchoVal);
-        const metrajeNum = Number(metrajeVal);
-        const puedeActualizarUniversal = anchoVal !== '' && metrajeVal !== '' &&
-            Number.isFinite(anchoNum) && Number.isFinite(metrajeNum);
+
+        // Guardar datos globales para compatibilidad sin alterar lo que escribió el usuario
+        const puedeActualizarUniversal = anchoVal !== '' && metrajeVal !== '';
 
         if (puedeActualizarUniversal && typeof window.actualizarAnchoMetrajeUniversal === 'function') {
-            window.actualizarAnchoMetrajeUniversal(anchoNum, metrajeNum, pedido);
+            window.actualizarAnchoMetrajeUniversal(anchoVal, metrajeVal, pedido);
         } else {
-            console.warn('[guardarAnchoMetraje] No se actualiza vista universal: ancho/metraje no numericos o helper no disponible.');
+            console.warn('[guardarAnchoMetraje] No se actualiza vista universal: helper no disponible.');
             window.datosAnchoMetraje = {
                 ancho: anchoVal || null,
                 metraje: metrajeVal || null,
@@ -1016,6 +1045,18 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
             if (data.success) {
                 actualizarEstadoGuardadoModal(modal, modoSeleccionado);
                 notificarSincronizacionAnchoMetraje(modal, modoSeleccionado);
+                window.dispatchEvent(new CustomEvent('historialInsumosActualizado', {
+                    detail: {
+                        tipo_evento: 'ancho_metraje',
+                        accion: 'guardado',
+                        pedido: modal.dataset.pedido || pedido,
+                        prendaId: modal.dataset.prendaId || null,
+                        prendaBodegaId: modal.dataset.prendaBodegaId || null,
+                        numeroRecibo: modal.dataset.numeroRecibo || null,
+                        reciboId: modal.dataset.reciboId || null,
+                        tipoRecibo: modal.dataset.tipoRecibo || null,
+                    }
+                }));
                 showToast('Ancho y metraje guardados correctamente', 'success');
                 
                 if (window.receiptManager && window.receiptManager.datosFactura) {
@@ -1095,10 +1136,22 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
         
         Promise.all(promises)
             .then(results => {
-                if (results.every(r => r.success)) {
-                    actualizarEstadoGuardadoModal(modal, modoSeleccionado);
-                    notificarSincronizacionAnchoMetraje(modal, modoSeleccionado);
-                    showToast('Ancho y metraje guardados correctamente', 'success');
+            if (results.every(r => r.success)) {
+                actualizarEstadoGuardadoModal(modal, modoSeleccionado);
+                notificarSincronizacionAnchoMetraje(modal, modoSeleccionado);
+                window.dispatchEvent(new CustomEvent('historialInsumosActualizado', {
+                    detail: {
+                        tipo_evento: 'ancho_metraje',
+                        accion: 'guardado',
+                        pedido: modal.dataset.pedido || pedido,
+                        prendaId: modal.dataset.prendaId || null,
+                        prendaBodegaId: modal.dataset.prendaBodegaId || null,
+                        numeroRecibo: modal.dataset.numeroRecibo || null,
+                        reciboId: modal.dataset.reciboId || null,
+                        tipoRecibo: modal.dataset.tipoRecibo || null,
+                    }
+                }));
+                showToast('Ancho y metraje guardados correctamente', 'success');
                     setTimeout(() => {
                         cerrarModalAnchoMetraje();
                     }, 1000);
@@ -1170,10 +1223,22 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
         
         Promise.all(promises)
             .then(results => {
-                if (results.every(r => r.success)) {
-                    actualizarEstadoGuardadoModal(modal, modoSeleccionado);
-                    notificarSincronizacionAnchoMetraje(modal, modoSeleccionado);
-                    showToast('Ancho y metraje guardados correctamente', 'success');
+            if (results.every(r => r.success)) {
+                actualizarEstadoGuardadoModal(modal, modoSeleccionado);
+                notificarSincronizacionAnchoMetraje(modal, modoSeleccionado);
+                window.dispatchEvent(new CustomEvent('historialInsumosActualizado', {
+                    detail: {
+                        tipo_evento: 'ancho_metraje',
+                        accion: 'guardado',
+                        pedido: modal.dataset.pedido || pedido,
+                        prendaId: modal.dataset.prendaId || null,
+                        prendaBodegaId: modal.dataset.prendaBodegaId || null,
+                        numeroRecibo: modal.dataset.numeroRecibo || null,
+                        reciboId: modal.dataset.reciboId || null,
+                        tipoRecibo: modal.dataset.tipoRecibo || null,
+                    }
+                }));
+                showToast('Ancho y metraje guardados correctamente', 'success');
                     setTimeout(() => {
                         cerrarModalAnchoMetraje();
                     }, 1000);
@@ -1217,6 +1282,18 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
             if (data.success) {
                 actualizarEstadoGuardadoModal(modal, modoSeleccionado);
                 notificarSincronizacionAnchoMetraje(modal, modoSeleccionado);
+                window.dispatchEvent(new CustomEvent('historialInsumosActualizado', {
+                    detail: {
+                        tipo_evento: 'ancho_metraje',
+                        accion: 'guardado',
+                        pedido: modal.dataset.pedido || pedido,
+                        prendaId: modal.dataset.prendaId || null,
+                        prendaBodegaId: modal.dataset.prendaBodegaId || null,
+                        numeroRecibo: modal.dataset.numeroRecibo || null,
+                        reciboId: modal.dataset.reciboId || null,
+                        tipoRecibo: modal.dataset.tipoRecibo || null,
+                    }
+                }));
                 showToast('Ancho y metraje guardados correctamente', 'success');
                 
                 setTimeout(() => {

@@ -24,6 +24,7 @@ use App\Application\Insumos\UseCases\ObtenerAnchoMetrajePrendaInsumosUseCase;
 use App\Application\Insumos\UseCases\ObtenerColoresPrendaInsumosUseCase;
 use App\Application\Insumos\Services\RecibosQueryService;
 use App\Events\AnchoMetrajePrendaActualizado;
+use App\Models\HistorialAnchoMetrajeInsumo;
 use App\Models\PedidoProduccion;
 use App\Models\ConsecutivoReciboPedido;
 use App\Models\ProcesoPrenda;
@@ -98,6 +99,152 @@ class InsumosController extends Controller
         $this->guardarAnchoMetrajePrendaUseCase = $guardarAnchoMetrajePrendaUseCase;
         $this->eliminarAnchoMetrajePrendaUseCase = $eliminarAnchoMetrajePrendaUseCase;
         $this->recibosQueryService = $recibosQueryService;
+    }
+
+    private function registrarHistorialAnchoMetraje(array $data): void
+    {
+        try {
+            HistorialAnchoMetrajeInsumo::registrarCambio($data);
+        } catch (\Throwable $e) {
+            Log::warning('[InsumosController] No se pudo registrar historial de ancho/metraje', [
+                'message' => $e->getMessage(),
+                'data' => $data,
+            ]);
+        }
+    }
+
+    private function determinarAccionHistorialAnchoMetraje(array $snapshotAntes, array $snapshotDespues): string
+    {
+        $anchoAntes = $snapshotAntes['ancho'] ?? null;
+        $anchoDespues = $snapshotDespues['ancho'] ?? null;
+        $metrajeAntes = $snapshotAntes['metraje'] ?? null;
+        $metrajeDespues = $snapshotDespues['metraje'] ?? null;
+        $contenidoManoAntes = $snapshotAntes['contenido_mano'] ?? null;
+        $contenidoManoDespues = $snapshotDespues['contenido_mano'] ?? null;
+        $tipoModoAntes = $snapshotAntes['tipo_modo'] ?? null;
+        $tipoModoDespues = $snapshotDespues['tipo_modo'] ?? null;
+        $dataAntes = $snapshotAntes['data'] ?? [];
+        $dataDespues = $snapshotDespues['data'] ?? [];
+
+        $anchoCambio = (string) ($anchoAntes ?? '') !== (string) ($anchoDespues ?? '');
+        $metrajeCambio = (string) ($metrajeAntes ?? '') !== (string) ($metrajeDespues ?? '');
+        $contenidoManoCambio = (string) ($contenidoManoAntes ?? '') !== (string) ($contenidoManoDespues ?? '');
+        $dataCambio = json_encode($dataAntes) !== json_encode($dataDespues);
+        $modoCambio = (string) ($tipoModoAntes ?? '') !== (string) ($tipoModoDespues ?? '');
+
+        if (
+            empty($anchoAntes) &&
+            empty($metrajeAntes) &&
+            empty($contenidoManoAntes) &&
+            empty($dataAntes)
+        ) {
+            return 'creado';
+        }
+
+        if ($modoCambio) {
+            return 'sobrescrito';
+        }
+
+        $cambiosEspecificos = array_filter([
+            'ancho' => $anchoCambio,
+            'metraje' => $metrajeCambio,
+            'manual' => $contenidoManoCambio,
+            'data' => $dataCambio,
+        ]);
+
+        if (count($cambiosEspecificos) === 1) {
+            if ($anchoCambio) {
+                return 'ancho_modificado';
+            }
+
+            if ($metrajeCambio || $dataCambio) {
+                return 'metraje_modificado';
+            }
+
+            if ($contenidoManoCambio) {
+                return 'manual_modificado';
+            }
+        }
+
+        return 'actualizado';
+    }
+
+    private function obtenerContextoHistorialInsumos(Request $request, string $numeroPedido): array
+    {
+        $pedidoId = null;
+        if (ctype_digit($numeroPedido)) {
+            $pedido = PedidoProduccion::find((int) $numeroPedido);
+            if ($pedido) {
+                $pedidoId = (int) $pedido->id;
+            }
+        } else {
+            $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+            $pedidoId = $pedido?->id ? (int) $pedido->id : null;
+        }
+
+        return [
+            'pedido_id' => $pedidoId,
+            'prenda_pedido_id' => $request->integer('prenda_id') ?: null,
+            'prenda_bodega_id' => $request->integer('prenda_bodega_id') ?: null,
+            'consecutivo_recibo_id' => $request->integer('consecutivo_recibo_id') ?: null,
+            'numero_recibo' => $request->integer('numero_recibo') ?: null,
+            'tipo_recibo' => strtoupper(trim((string) $request->input('tipo_recibo', ''))) ?: null,
+        ];
+    }
+
+    private function obtenerSnapshotAnchoMetraje(string $numeroPedido, int $prendaId, ?int $prendaBodegaId, ?int $numeroRecibo, ?int $consecutivoReciboId, ?string $tipoRecibo): array
+    {
+        if ($prendaBodegaId > 0) {
+            $anchoQuery = PedidoAnchoGeneral::query()
+                ->where('prenda_bodega_id', $prendaBodegaId);
+            $metrajeQuery = PedidoMetrajeColor::query()
+                ->where('prenda_bodega_id', $prendaBodegaId);
+
+            if ($consecutivoReciboId && \Illuminate\Support\Facades\Schema::hasColumn('pedido_ancho_general', 'consecutivo_recibo_id')) {
+                $anchoQuery->where('consecutivo_recibo_id', $consecutivoReciboId);
+            } elseif ($numeroRecibo) {
+                $anchoQuery->where('numero_recibo', $numeroRecibo);
+            }
+
+            if ($consecutivoReciboId && \Illuminate\Support\Facades\Schema::hasColumn('pedido_metraje_color', 'consecutivo_recibo_id')) {
+                $metrajeQuery->where('consecutivo_recibo_id', $consecutivoReciboId);
+            } elseif ($numeroRecibo) {
+                $metrajeQuery->where('numero_recibo', $numeroRecibo);
+            }
+
+            $anchoGeneral = $anchoQuery->latest('id')->first();
+            $metrajes = $metrajeQuery->latest('id')->get();
+
+            return [
+                'ancho' => $anchoGeneral?->ancho,
+                'metraje' => $anchoGeneral?->metraje,
+                'tipo_modo' => $anchoGeneral?->tipo_modo ?? ($metrajes->first()->tipo_modo ?? null),
+                'contenido_mano' => $anchoGeneral?->contenido_mano,
+                'data' => $metrajes->map(fn ($registro) => [
+                    'color' => $registro->color,
+                    'metraje' => $registro->metraje,
+                ])->values()->all(),
+                'prenda_bodega_id' => $prendaBodegaId,
+                'tipo_recibo' => $tipoRecibo,
+            ];
+        }
+
+        $respuesta = $this->obtenerAnchoMetrajePrendaUseCase->execute(
+            $numeroPedido,
+            $prendaId,
+            $numeroRecibo,
+            $consecutivoReciboId
+        );
+
+        return [
+            'ancho' => $respuesta['ancho'] ?? null,
+            'metraje' => $respuesta['metraje'] ?? null,
+            'tipo_modo' => $respuesta['tipo_modo'] ?? null,
+            'contenido_mano' => $respuesta['contenido_mano'] ?? null,
+            'data' => $respuesta['data'] ?? [],
+            'prenda_bodega_id' => $prendaBodegaId,
+            'tipo_recibo' => $tipoRecibo,
+        ];
     }
 
     /**
@@ -568,7 +715,36 @@ class InsumosController extends Controller
                 'estado' => ['required', 'string', Rule::in($estadosPermitidos)],
             ]);
             
+            $reciboAnterior = ConsecutivoReciboPedido::find((int) $reciboId);
             $resultado = $this->cambiarEstadoReciboUseCase->execute((int) $reciboId, $validated['estado']);
+
+            if ($resultado['success'] ?? false) {
+                if ($reciboAnterior) {
+                    $estadoNuevo = $resultado['estado_guardado'] ?? $validated['estado'];
+
+                    $this->registrarHistorialAnchoMetraje([
+                        'pedido_id' => $reciboAnterior->pedido_produccion_id ? (int) $reciboAnterior->pedido_produccion_id : null,
+                        'prenda_pedido_id' => $reciboAnterior->prenda_id ? (int) $reciboAnterior->prenda_id : null,
+                        'prenda_bodega_id' => $reciboAnterior->prenda_bodega_id ? (int) $reciboAnterior->prenda_bodega_id : null,
+                        'consecutivo_recibo_id' => (int) $reciboAnterior->id,
+                        'numero_recibo' => (int) $reciboAnterior->consecutivo_actual,
+                        'tipo_recibo' => $reciboAnterior->tipo_recibo ?: null,
+                        'tipo_evento' => 'estado_recibo',
+                        'accion' => 'estado_cambiado',
+                        'estado_anterior' => $reciboAnterior->estado,
+                        'estado_nuevo' => $estadoNuevo,
+                        'usuario_id' => Auth::id(),
+                        'usuario_nombre' => Auth::user()?->name,
+                        'detalles' => [
+                            'rol_usuario' => $userRole,
+                            'area_anterior' => $reciboAnterior->area ?? null,
+                            'area_nueva' => $resultado['area_guardada'] ?? null,
+                            'estado_solicitado' => $validated['estado'],
+                        ],
+                    ]);
+                }
+            }
+
             return response()->json($resultado);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
@@ -581,6 +757,105 @@ class InsumosController extends Controller
                 'Error al cambiar el estado del recibo',
                 ['recibo_id' => $reciboId]
             );
+        }
+    }
+
+    public function historialAnchoMetraje(Request $request, $numeroPedido = null)
+    {
+        try {
+            $pedido = null;
+            $query = HistorialAnchoMetrajeInsumo::query()->with('usuario');
+
+            $prendaId = (int) $request->query('prenda_id', 0);
+            $prendaBodegaId = (int) $request->query('prenda_bodega_id', 0);
+            $consecutivoReciboId = (int) $request->query('consecutivo_recibo_id', 0);
+            $numeroRecibo = (int) $request->query('numero_recibo', 0);
+            $tipoRecibo = strtoupper(trim((string) $request->query('tipo_recibo', '')));
+            $limit = min(max((int) $request->query('limit', 50), 1), 200);
+
+            if (!empty($numeroPedido)) {
+                if ($prendaBodegaId <= 0) {
+                    if (ctype_digit((string) $numeroPedido)) {
+                        $pedido = PedidoProduccion::find((int) $numeroPedido);
+                        if ($pedido) {
+                            $query->where('pedido_id', $pedido->id);
+                        }
+                    } else {
+                        $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+                        if ($pedido) {
+                            $query->where('pedido_id', $pedido->id);
+                        }
+                    }
+                } else {
+                    $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+                }
+            }
+
+            if ($prendaId > 0) {
+                $query->where('prenda_pedido_id', $prendaId);
+            }
+
+            if ($prendaBodegaId > 0) {
+                $query->where('prenda_bodega_id', $prendaBodegaId);
+            }
+
+            if ($consecutivoReciboId > 0) {
+                $query->where('consecutivo_recibo_id', $consecutivoReciboId);
+            } elseif ($numeroRecibo > 0) {
+                $query->where('numero_recibo', $numeroRecibo);
+            }
+
+            if ($tipoRecibo !== '') {
+                $query->whereRaw("UPPER(COALESCE(tipo_recibo, '')) = ?", [$tipoRecibo]);
+            }
+
+            $historial = $query
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->limit($limit)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $historial->map(fn (HistorialAnchoMetrajeInsumo $item) => [
+                    'id' => $item->id,
+                    'pedido_id' => $item->pedido_id,
+                    'prenda_pedido_id' => $item->prenda_pedido_id,
+                    'prenda_bodega_id' => $item->prenda_bodega_id,
+                    'consecutivo_recibo_id' => $item->consecutivo_recibo_id,
+                    'numero_recibo' => $item->numero_recibo,
+                    'tipo_recibo' => $item->tipo_recibo,
+                    'tipo_evento' => $item->tipo_evento,
+                    'accion' => $item->accion,
+                    'modo' => $item->modo,
+                    'color' => $item->color,
+                    'estado_anterior' => $item->estado_anterior,
+                    'estado_nuevo' => $item->estado_nuevo,
+                    'ancho_anterior' => $item->ancho_anterior,
+                    'ancho_nuevo' => $item->ancho_nuevo,
+                    'metraje_anterior' => $item->metraje_anterior,
+                    'metraje_nuevo' => $item->metraje_nuevo,
+                    'usuario_nombre' => $item->usuario_nombre ?: $item->usuario?->name,
+                    'usuario_id' => $item->usuario_id,
+                    'fecha' => $item->created_at
+                        ? $item->created_at->copy()->timezone('America/New_York')->format('m/d/Y h:i:s A')
+                        : null,
+                    'detalles' => $item->detalles ?? [],
+                ]),
+                'contexto' => [
+                    'pedido_id' => $pedido?->id ?? null,
+                    'prenda_id' => $prendaId > 0 ? $prendaId : null,
+                    'prenda_bodega_id' => $prendaBodegaId > 0 ? $prendaBodegaId : null,
+                    'consecutivo_recibo_id' => $consecutivoReciboId > 0 ? $consecutivoReciboId : null,
+                    'numero_recibo' => $numeroRecibo > 0 ? $numeroRecibo : null,
+                    'tipo_recibo' => $tipoRecibo !== '' ? $tipoRecibo : null,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener historial de ancho/metraje',
+            ], 500);
         }
     }
 
@@ -929,6 +1204,15 @@ class InsumosController extends Controller
                 $prendaId = $prendaBodegaId;
             }
 
+            $snapshotAntes = $this->obtenerSnapshotAnchoMetraje(
+                (string) $numeroPedido,
+                $prendaId,
+                $prendaBodegaId > 0 ? $prendaBodegaId : null,
+                $numeroRecibo > 0 ? $numeroRecibo : null,
+                $consecutivoReciboId > 0 ? $consecutivoReciboId : null,
+                $tipoRecibo ?: null
+            );
+
             $resultado = $this->guardarAnchoMetrajePrendaUseCase->execute(
                 (string) $numeroPedido,
                 $prendaId,
@@ -938,6 +1222,64 @@ class InsumosController extends Controller
             if ($resultado['success'] ?? false) {
                 $pedidoProduccion = PedidoProduccion::find((int) $numeroPedido)
                     ?: PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+
+                $snapshotDespues = $this->obtenerSnapshotAnchoMetraje(
+                    (string) $numeroPedido,
+                    $prendaId,
+                    $prendaBodegaId > 0 ? $prendaBodegaId : null,
+                    $numeroRecibo > 0 ? $numeroRecibo : null,
+                    $consecutivoReciboId > 0 ? $consecutivoReciboId : null,
+                    $tipoRecibo ?: null
+                );
+
+                $snapshotAntesComparar = [
+                    'ancho' => $snapshotAntes['ancho'],
+                    'metraje' => $snapshotAntes['metraje'],
+                    'tipo_modo' => $snapshotAntes['tipo_modo'],
+                    'contenido_mano' => $snapshotAntes['contenido_mano'],
+                    'data' => $snapshotAntes['data'],
+                ];
+                $snapshotDespuesComparar = [
+                    'ancho' => $snapshotDespues['ancho'],
+                    'metraje' => $snapshotDespues['metraje'],
+                    'tipo_modo' => $snapshotDespues['tipo_modo'],
+                    'contenido_mano' => $snapshotDespues['contenido_mano'],
+                    'data' => $snapshotDespues['data'],
+                ];
+
+                if (json_encode($snapshotAntesComparar) !== json_encode($snapshotDespuesComparar)) {
+                    $accionHistorial = $this->determinarAccionHistorialAnchoMetraje($snapshotAntes, $snapshotDespues);
+
+                    $this->registrarHistorialAnchoMetraje([
+                        'pedido_id' => $pedidoProduccion?->id ? (int) $pedidoProduccion->id : null,
+                        'prenda_pedido_id' => $prendaBodegaId > 0 ? null : $prendaId,
+                        'prenda_bodega_id' => $prendaBodegaId > 0 ? $prendaBodegaId : null,
+                        'consecutivo_recibo_id' => $consecutivoReciboId > 0 ? $consecutivoReciboId : null,
+                        'numero_recibo' => $numeroRecibo > 0 ? $numeroRecibo : null,
+                        'tipo_recibo' => $tipoRecibo ?: null,
+                        'tipo_evento' => 'ancho_metraje',
+                        'accion' => $accionHistorial,
+                        'modo' => $snapshotDespues['tipo_modo'] ?? ($validated['tipo_modo'] ?? null),
+                        'color' => $validated['color'] ?? null,
+                        'ancho_anterior' => $snapshotAntes['ancho'],
+                        'ancho_nuevo' => $snapshotDespues['ancho'],
+                        'metraje_anterior' => $snapshotAntes['metraje'],
+                        'metraje_nuevo' => $snapshotDespues['metraje'],
+                        'usuario_id' => Auth::id(),
+                        'usuario_nombre' => Auth::user()?->name,
+                        'detalles' => [
+                            'contenido_mano_anterior' => $snapshotAntes['contenido_mano'],
+                            'contenido_mano_nuevo' => $snapshotDespues['contenido_mano'],
+                            'modo_anterior' => $snapshotAntes['tipo_modo'],
+                            'modo_nuevo' => $snapshotDespues['tipo_modo'],
+                            'data_anterior' => $snapshotAntes['data'],
+                            'data_nuevo' => $snapshotDespues['data'],
+                            'tipo_modo_solicitado' => $validated['tipo_modo'] ?? null,
+                            'tipo_recibo' => $tipoRecibo ?: null,
+                            'prenda_bodega_id' => $prendaBodegaId > 0 ? $prendaBodegaId : null,
+                        ],
+                    ]);
+                }
 
                 event(new AnchoMetrajePrendaActualizado([
                     'accion' => 'guardado',
@@ -985,6 +1327,15 @@ class InsumosController extends Controller
                     ], 422);
                 }
 
+                $snapshotAntes = $this->obtenerSnapshotAnchoMetraje(
+                    (string) $numeroPedido,
+                    $targetPrendaBodegaId,
+                    $targetPrendaBodegaId,
+                    $numeroRecibo > 0 ? $numeroRecibo : null,
+                    $consecutivoReciboId > 0 ? $consecutivoReciboId : null,
+                    $tipoRecibo ?: null
+                );
+
                 // Obtener el consecutivo_recibo_id
                 if (!$consecutivoReciboId && $numeroRecibo > 0 && !empty($tipoRecibo)) {
                     $consecutivoReciboId = \DB::table('consecutivos_recibos_pedidos')
@@ -1021,6 +1372,35 @@ class InsumosController extends Controller
                 $pedidoProduccion = PedidoProduccion::find((int) $numeroPedido)
                     ?: PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
 
+                $this->registrarHistorialAnchoMetraje([
+                    'pedido_id' => $pedidoProduccion?->id ? (int) $pedidoProduccion->id : null,
+                    'prenda_pedido_id' => null,
+                    'prenda_bodega_id' => $targetPrendaBodegaId,
+                    'consecutivo_recibo_id' => $consecutivoReciboId > 0 ? $consecutivoReciboId : null,
+                    'numero_recibo' => $numeroRecibo > 0 ? $numeroRecibo : null,
+                    'tipo_recibo' => $tipoRecibo ?: null,
+                    'tipo_evento' => 'ancho_metraje',
+                    'accion' => 'eliminado',
+                    'modo' => $snapshotAntes['tipo_modo'] ?? null,
+                    'color' => null,
+                    'ancho_anterior' => $snapshotAntes['ancho'],
+                    'ancho_nuevo' => null,
+                    'metraje_anterior' => $snapshotAntes['metraje'],
+                    'metraje_nuevo' => null,
+                    'usuario_id' => Auth::id(),
+                    'usuario_nombre' => Auth::user()?->name,
+                    'detalles' => [
+                        'contenido_mano_anterior' => $snapshotAntes['contenido_mano'],
+                        'contenido_mano_nuevo' => null,
+                        'modo_anterior' => $snapshotAntes['tipo_modo'],
+                        'modo_nuevo' => null,
+                        'data_anterior' => $snapshotAntes['data'],
+                        'data_nuevo' => [],
+                        'tipo_recibo' => $tipoRecibo ?: null,
+                        'prenda_bodega_id' => $targetPrendaBodegaId,
+                    ],
+                ]);
+
                 event(new AnchoMetrajePrendaActualizado([
                     'accion' => 'eliminado',
                     'pedido_id' => $pedidoProduccion?->id ? (int) $pedidoProduccion->id : null,
@@ -1047,6 +1427,15 @@ class InsumosController extends Controller
                     ->value('id');
             }
 
+            $snapshotAntes = $this->obtenerSnapshotAnchoMetraje(
+                (string) $numeroPedido,
+                (int) $validated['prenda_id'],
+                null,
+                $numeroRecibo > 0 ? $numeroRecibo : null,
+                $consecutivoReciboId > 0 ? $consecutivoReciboId : null,
+                null
+            );
+
             $resultado = $this->eliminarAnchoMetrajePrendaUseCase->execute(
                 (string) $numeroPedido,
                 (int) $validated['prenda_id'],
@@ -1057,6 +1446,33 @@ class InsumosController extends Controller
             if ($resultado['success'] ?? false) {
                 $pedidoProduccion = PedidoProduccion::find((int) $numeroPedido)
                     ?: PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+
+                $this->registrarHistorialAnchoMetraje([
+                    'pedido_id' => $pedidoProduccion?->id ? (int) $pedidoProduccion->id : null,
+                    'prenda_pedido_id' => (int) $validated['prenda_id'],
+                    'prenda_bodega_id' => null,
+                    'consecutivo_recibo_id' => $consecutivoReciboId > 0 ? $consecutivoReciboId : null,
+                    'numero_recibo' => $numeroRecibo > 0 ? $numeroRecibo : null,
+                    'tipo_recibo' => null,
+                    'tipo_evento' => 'ancho_metraje',
+                    'accion' => 'eliminado',
+                    'modo' => $snapshotAntes['tipo_modo'] ?? null,
+                    'color' => null,
+                    'ancho_anterior' => $snapshotAntes['ancho'],
+                    'ancho_nuevo' => null,
+                    'metraje_anterior' => $snapshotAntes['metraje'],
+                    'metraje_nuevo' => null,
+                    'usuario_id' => Auth::id(),
+                    'usuario_nombre' => Auth::user()?->name,
+                    'detalles' => [
+                        'contenido_mano_anterior' => $snapshotAntes['contenido_mano'],
+                        'contenido_mano_nuevo' => null,
+                        'modo_anterior' => $snapshotAntes['tipo_modo'],
+                        'modo_nuevo' => null,
+                        'data_anterior' => $snapshotAntes['data'],
+                        'data_nuevo' => [],
+                    ],
+                ]);
 
                 event(new AnchoMetrajePrendaActualizado([
                     'accion' => 'eliminado',
