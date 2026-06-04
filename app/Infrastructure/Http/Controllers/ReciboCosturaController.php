@@ -793,6 +793,9 @@ class ReciboCosturaController extends Controller
     private function cambiarAreaControlCalidadParcial(Request $request, int $pedidoId)
     {
         $tallasControlCalidad = $this->normalizarTallasControlCalidad($request->input('tallas_control_calidad'));
+        $request->merge([
+            'tallas_control_calidad' => $tallasControlCalidad,
+        ]);
         $request->validate([
             'prenda_id' => 'required|integer|exists:prendas_pedido,id',
             'tipo_recibo' => 'required|string',

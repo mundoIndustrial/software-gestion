@@ -543,6 +543,8 @@ function crearHTMLDistribucionCards(parciales, numeroRecibo, totalParciales, rec
                                 data-recibo="${parcial.consecutivo_original}"
                                 data-parcial-id="${parcial.id}"
                                 data-es-parcial="1"
+                                data-consecutivo-parcial="${String(parcial.consecutivo_parcial || '').replace(/"/g, '&quot;')}"
+                                data-tallas="${serializarAtributoJson(parcial.tallas || [])}"
                                 data-area="${String(areaParcial).replace(/"/g, '&quot;')}">
                             <span class="material-symbols-rounded">${estaEnControlCalidad ? 'undo' : 'check_circle'}</span>
                             ${estaEnControlCalidad ? 'DESHACER C.C' : 'PASAR A C.C'}
@@ -640,6 +642,13 @@ function generarTallasHTML(tallas) {
     });
 
     return html;
+}
+
+function serializarAtributoJson(valor) {
+    return JSON.stringify(valor ?? [])
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 /**

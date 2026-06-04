@@ -216,8 +216,8 @@ class ControlCalidadController extends Controller
             $recibosQuery->where('tipo_recibo', 'COSTURA');
         }
 
-        // Listar recibos ya movidos a C.C o con avance registrado en C.C.
-        $this->aplicarCondicionVisibleEnControlCalidad($recibosQuery);
+        // En el dashboard principal solo deben verse recibos cuya área actual sea Control Calidad.
+        $recibosQuery->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad']);
 
         $recibos = $recibosQuery
             ->with(['pedido', 'prenda.tallas.coloresAsignados', 'prendaBodega.tallas', 'pedido.prendas'])
@@ -576,21 +576,15 @@ class ControlCalidadController extends Controller
 
         $prendasConRecibos = $prendasConRecibos
             ->concat($parcialesConRecibos)
-            ->values();
+            ->sortBy(function ($item) {
+                $consecutivo = trim((string) ($item['recibos'][0]['consecutivo_actual'] ?? $item['consecutivo_actual'] ?? ''));
+                $consecutivo = str_replace(',', '.', $consecutivo);
+                $consecutivoNumerico = is_numeric($consecutivo) ? (float) $consecutivo : INF;
+                $parcialId = (int) ($item['parcial_id'] ?? $item['recibos'][0]['parcial_id'] ?? 0);
 
-        if ($activeTab === 'REFLECTIVO') {
-            $prendasConRecibos = $prendasConRecibos
-                ->sortBy(function ($item) {
-                    $consecutivo = (string) ($item['recibos'][0]['consecutivo_actual'] ?? '');
-                    $consecutivo = str_replace(',', '.', trim($consecutivo));
-                    return is_numeric($consecutivo) ? (float) $consecutivo : INF;
-                })
-                ->values();
-        } else {
-            $prendasConRecibos = $prendasConRecibos
-                ->sortBy(fn ($item) => $item['fecha_creacion'] ?? now())
-                ->values();
-        }
+                return sprintf('%020.6f|%020d', $consecutivoNumerico, $parcialId);
+            })
+            ->values();
 
         return view('control-calidad.dashboard', [
             'usuario' => $usuario,

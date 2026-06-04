@@ -170,6 +170,11 @@ function mostrarModalRegistrarTallasCC({ btn, tallas }) {
         const existente = document.getElementById('modal-confirmar-pasar-cc');
         if (existente) existente.remove();
         const tallasYaEnviadas = obtenerTallasControlCalidadGuardadas(btn);
+        const esParcial = String(btn?.dataset?.esParcial || '').toLowerCase() === '1';
+        const numeroReciboMostrar = esParcial
+            ? (btn?.dataset?.consecutivoParcial || btn?.dataset?.recibo || '-')
+            : (btn?.dataset?.recibo || '-');
+        const etiquetaRecibo = esParcial ? 'Parte' : 'Recibo';
 
         const overlay = document.createElement('div');
         overlay.id = 'modal-confirmar-pasar-cc';
@@ -243,7 +248,7 @@ function mostrarModalRegistrarTallasCC({ btn, tallas }) {
                     Registrar tallas para Control Calidad
                 </h3>
                 <div style="margin-top: 8px; color: #475569; font-size: 0.95rem; line-height: 1.5;">
-                    <strong>Recibo:</strong> ${btn.dataset.recibo || '-'} · <strong>Prenda:</strong> ${btn.dataset.nombre || '-'} ·
+                    <strong>${etiquetaRecibo}:</strong> ${numeroReciboMostrar} · <strong>Prenda:</strong> ${btn.dataset.nombre || '-'} ·
                     <strong>Tipo:</strong> ${btn.dataset.tipoRecibo || '-'}
                 </div>
             </div>
@@ -686,6 +691,10 @@ export async function pasarAControlCalidad(btn) {
     const parcialId = btn.dataset.parcialId;
     const prendaBodegaId = btn.dataset.prendaBodegaId;
     const esParcial = btn.dataset.esParcial === '1';
+    const numeroReciboMostrar = esParcial
+        ? (btn.dataset.consecutivoParcial || btn.dataset.recibo || '-')
+        : (btn.dataset.recibo || '-');
+    const etiquetaRecibo = esParcial ? 'Parte' : 'Recibo';
     const rolActual = (document.querySelector('.operario-dashboard')?.dataset?.userRole || '').toString().trim().toLowerCase();
     const esVistaCosturaReflectivo = rolActual === 'vista-costura' && String(tipoRecibo || '').toUpperCase() === 'REFLECTIVO';
 

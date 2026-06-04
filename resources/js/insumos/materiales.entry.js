@@ -5,7 +5,7 @@
 
 // Generar un hash corto basado en la fecha de build (versión compilada)
 // En producción, esto debería venir de un archivo de versión real
-const BUILD_VERSION = '1780001531'; // Versión desde última compilación
+const BUILD_VERSION = '1780604978'; // Versión desde última compilación
 
 const PRELOAD_SCRIPT_CONFIG = [
     // Fase actual: estos scripts se administran desde el entrypoint (no desde el page-loader)

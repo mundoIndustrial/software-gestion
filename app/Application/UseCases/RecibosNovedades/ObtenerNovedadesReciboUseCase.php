@@ -11,7 +11,7 @@ class ObtenerNovedadesReciboUseCase
         private readonly NovedadesReciboRepository $repository
     ) {}
 
-    public function execute(int $pedidoId, int $numeroRecibo): Collection
+    public function execute(int|string $pedidoId, int $numeroRecibo): Collection
     {
         return $this->repository->obtenerPorRecibo($pedidoId, $numeroRecibo);
     }

@@ -29,6 +29,12 @@ class RecibosNovedadesController extends Controller
     public function index(Request $request, $pedidoId, $numeroRecibo)
     {
         try {
+            Log::info('[RecibosNovedadesController] index inicio', [
+                'pedido_id' => $pedidoId,
+                'numero_recibo' => $numeroRecibo,
+                'usuario_id' => auth()->id(),
+            ]);
+
             $novedadesDb = $this->obtenerNovedadesUseCase->execute($pedidoId, $numeroRecibo);
             
             // Solo aplicar filtro si el usuario es revisor_entregas
@@ -87,6 +93,7 @@ class RecibosNovedadesController extends Controller
             Log::error('Error obteniendo novedades de recibo', [
                 'pedido_id' => $pedidoId,
                 'numero_recibo' => $numeroRecibo,
+                'usuario_id' => auth()->id(),
                 'error' => $e->getMessage()
             ]);
             

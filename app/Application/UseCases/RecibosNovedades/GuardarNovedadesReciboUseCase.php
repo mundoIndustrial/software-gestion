@@ -14,14 +14,25 @@ class GuardarNovedadesReciboUseCase
     ) {}
 
     public function execute(
-        int $pedidoId,
+        int|string $pedidoId,
         int $numeroRecibo,
         string $novedadTexto,
         string $tipoNovedad,
         int $usuarioId,
         ?array $prendasIds = null
     ): array {
-        $pedido = PedidoProduccion::findOrFail($pedidoId);
+        $pedido = PedidoProduccion::query()
+            ->when(is_numeric((string) $pedidoId), function ($query) use ($pedidoId) {
+                $query->where('id', (int) $pedidoId)
+                    ->orWhere('numero_pedido', (int) $pedidoId);
+            }, function ($query) use ($pedidoId) {
+                $query->where('numero_pedido', trim((string) $pedidoId));
+            })
+            ->first();
+
+        if (!$pedido) {
+            throw new \RuntimeException('Pedido no encontrado');
+        }
         
         // Si no se especifican prendas, buscar la prenda específica del recibo
         if (empty($prendasIds)) {

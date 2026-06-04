@@ -1456,11 +1456,25 @@
             historial.innerHTML = '<div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 0.75rem; background: #f9fafb; color: #6b7280; font-size: 0.9rem;">Cargando novedades...</div>';
         }
 
+        console.log('[Control Calidad] cargarNovedades', { numeroPedido, numeroRecibo });
+
         try {
             const res = await fetch(`/recibos-novedades/${encodeURIComponent(numeroPedido)}/${encodeURIComponent(numeroRecibo)}`);
             const data = await res.json();
-            mostrarNovedadesTarjetas(data?.success ? (data.data || []) : []);
-        } catch (_) {
+            console.log('[Control Calidad] cargarNovedades response', {
+                status: res.status,
+                ok: res.ok,
+                data
+            });
+            if (!data?.success) {
+                if (historial) {
+                    historial.innerHTML = `<div style="padding: 1rem; border: 1px solid #fee2e2; border-radius: 0.75rem; background: #fff1f2; color: #991b1b; font-size: 0.9rem;">${escaparHtml(data?.message || 'Error cargando novedades')}</div>`;
+                }
+                return;
+            }
+            mostrarNovedadesTarjetas(data.data || []);
+        } catch (error) {
+            console.error('[Control Calidad] cargarNovedades error', error);
             if (historial) {
                 historial.innerHTML = '<div style="padding: 1rem; border: 1px solid #fee2e2; border-radius: 0.75rem; background: #fff1f2; color: #991b1b; font-size: 0.9rem;">Error cargando novedades</div>';
             }
@@ -1495,6 +1509,7 @@
     window.guardarNovedad = async function() {
         const numeroPedido = document.getElementById('novedadNumeroPedido')?.value;
         const numeroRecibo = document.getElementById('novedadNumeroRecibo')?.value;
+        const prendaId = document.getElementById('novedadPrendaId')?.value;
         const texto = (document.getElementById('novedadDescripcionText')?.value || '').trim();
         if (!numeroPedido || !numeroRecibo || !texto) return;
 
@@ -1506,13 +1521,23 @@
             const res = await fetch(`/recibos-novedades/${encodeURIComponent(numeroPedido)}/${encodeURIComponent(numeroRecibo)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': tokenCsrf() },
-                body: JSON.stringify({ novedades: texto, tipo_novedad: 'observacion', prendas_ids: [] }),
+                body: JSON.stringify({
+                    novedades: texto,
+                    tipo_novedad: 'observacion',
+                    prendas_ids: prendaId ? [Number(prendaId)] : []
+                }),
             });
             const data = await res.json();
             if (data?.success) {
                 document.getElementById('novedadDescripcionText').value = '';
                 await cargarNovedades(numeroPedido, numeroRecibo);
+            } else if (data?.message) {
+                alert(data.message);
+            } else {
+                alert('No se pudo guardar la novedad');
             }
+        } catch (error) {
+            alert(error?.message || 'Error inesperado al guardar la novedad');
         } finally {
             if (btn) { btn.disabled = false; btn.textContent = txt; }
         }
@@ -2081,6 +2106,17 @@
             });
 
             const data = await response.json();
+            if (response.status === 403) {
+                const card = btn.closest('.orden-card-simple, .orden-card, .orden-card-parcial');
+                if (card) {
+                    card.remove();
+                    aplicarFiltros();
+                }
+                if (data?.message) {
+                    alert(data.message);
+                }
+                return;
+            }
             if (!data.success) {
                 return;
             }
