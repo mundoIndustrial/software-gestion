@@ -81,10 +81,16 @@
             loading: document.getElementById('historialAnchoMetrajeLoading'),
             empty: document.getElementById('historialAnchoMetrajeEmpty'),
             list: document.getElementById('historialAnchoMetrajeList'),
+            pagination: document.getElementById('historialAnchoMetrajePagination'),
+            pageInfo: document.getElementById('historialAnchoMetrajePageInfo'),
+            prevBtn: document.getElementById('historialAnchoMetrajePrev'),
+            nextBtn: document.getElementById('historialAnchoMetrajeNext'),
             pedido: document.getElementById('historialAnchoMetrajePedido'),
             recibo: document.getElementById('historialAnchoMetrajeRecibo'),
         };
     }
+
+    let paginaActualHistorial = 1;
 
     function setLoadingState(isLoading) {
         const { loading, empty, list } = getModalElements();
@@ -100,8 +106,8 @@
         }
     }
 
-    function renderizarHistorial(historial) {
-        const { loading, empty, list } = getModalElements();
+    function renderizarHistorial(historial, pagination = null) {
+        const { loading, empty, list, pagination: paginationEl, pageInfo, prevBtn, nextBtn } = getModalElements();
         if (!list || !empty || !loading) {
             return;
         }
@@ -112,6 +118,9 @@
         if (!Array.isArray(historial) || historial.length === 0) {
             empty.classList.remove('hidden');
             list.classList.add('hidden');
+            if (paginationEl) {
+                paginationEl.classList.add('hidden');
+            }
             return;
         }
 
@@ -299,6 +308,28 @@
                 </div>
             `;
         }).join('');
+
+        if (paginationEl) {
+            const currentPage = Number(pagination?.current_page || 1);
+            const lastPage = Number(pagination?.last_page || 1);
+            const total = Number(pagination?.total || historial.length);
+            const from = Number(pagination?.from || ((currentPage - 1) * historial.length + 1));
+            const to = Number(pagination?.to || ((currentPage - 1) * historial.length + historial.length));
+            const hasPages = lastPage > 1;
+
+            paginationEl.classList.toggle('hidden', !hasPages);
+            if (pageInfo) {
+                pageInfo.textContent = `Mostrando ${from}-${to} de ${total} registros`;
+            }
+            if (prevBtn) {
+                prevBtn.disabled = currentPage <= 1;
+                prevBtn.dataset.page = String(Math.max(1, currentPage - 1));
+            }
+            if (nextBtn) {
+                nextBtn.disabled = currentPage >= lastPage;
+                nextBtn.dataset.page = String(Math.min(lastPage, currentPage + 1));
+            }
+        }
     }
 
     async function cargarHistorial(modo = 'global') {
@@ -321,12 +352,12 @@
         setLoadingState(true);
 
         const params = new URLSearchParams();
+        params.set('page', String(Math.max(1, Number(paginaActualHistorial) || 1)));
         if (tieneContextoEspecifico && contexto?.prendaId) params.set('prenda_id', contexto.prendaId);
         if (tieneContextoEspecifico && contexto?.prendaBodegaId) params.set('prenda_bodega_id', contexto.prendaBodegaId);
         if (tieneContextoEspecifico && contexto?.numeroRecibo) params.set('numero_recibo', contexto.numeroRecibo);
         if (tieneContextoEspecifico && contexto?.reciboId) params.set('consecutivo_recibo_id', contexto.reciboId);
         if (tieneContextoEspecifico && contexto?.tipoRecibo) params.set('tipo_recibo', contexto.tipoRecibo);
-        params.set('limit', '100');
 
         try {
             const endpointBase = tieneContextoEspecifico
@@ -345,7 +376,8 @@
                 throw new Error(data.message || 'No se pudo cargar el historial');
             }
 
-            renderizarHistorial(Array.isArray(data.data) ? data.data : []);
+            paginaActualHistorial = Number(data?.pagination?.current_page || paginaActualHistorial || 1);
+            renderizarHistorial(Array.isArray(data.data) ? data.data : [], data.pagination || null);
         } catch (error) {
             const { loading, empty, list } = getModalElements();
             if (loading) loading.style.display = 'none';
@@ -355,6 +387,10 @@
             }
             if (list) {
                 list.classList.add('hidden');
+            }
+            const { pagination: paginationEl } = getModalElements();
+            if (paginationEl) {
+                paginationEl.classList.add('hidden');
             }
         }
     }
@@ -366,6 +402,7 @@
             return;
         }
 
+        paginaActualHistorial = 1;
         window.insumosAnchoMetrajeHistorialModo = 'global';
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
@@ -395,6 +432,26 @@
             return;
         }
         document.documentElement.dataset.historialAnchoMetrajeBound = '1';
+
+        const { prevBtn, nextBtn } = getModalElements();
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                const page = Number(prevBtn.dataset.page || 1);
+                if (page > 0) {
+                    paginaActualHistorial = page;
+                    cargarHistorial(window.insumosAnchoMetrajeHistorialModo || 'global');
+                }
+            });
+        }
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                const page = Number(nextBtn.dataset.page || 1);
+                if (page > 0) {
+                    paginaActualHistorial = page;
+                    cargarHistorial(window.insumosAnchoMetrajeHistorialModo || 'global');
+                }
+            });
+        }
 
         window.addEventListener('historialInsumosActualizado', () => {
             const { modal } = getModalElements();

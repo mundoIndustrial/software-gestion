@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class StorageService
 {
-    private const ALLOWED_TYPES = ['cotizaciones', 'prendas', 'pedidos', 'firmas'];
+    private const ALLOWED_TYPES = ['cotizaciones', 'prendas', 'pedidos', 'firmas', 'bodega'];
     private const CACHE_DURATION = 31536000; // 1 año en segundos
     
     /**

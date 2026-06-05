@@ -9,6 +9,229 @@ let bodegaGaleriaFotos = [];
 let bodegaGaleriaTitulo = 'PRENDA';
 let isBodegaReciboActive = false;
 
+function normalizarUrlBodega(url) {
+    const ruta = String(url || '').trim();
+    if (!ruta) {
+        return '';
+    }
+
+    if (ruta.startsWith('http')) {
+        return ruta;
+    }
+
+    if (ruta.startsWith('/storage/bodega/')) {
+        return ruta.replace('/storage/', '/storage-serve/');
+    }
+
+    if (ruta.startsWith('/storage/')) {
+        return ruta;
+    }
+
+    if (ruta.startsWith('bodega/')) {
+        return `/storage-serve/${ruta}`;
+    }
+
+    return ruta;
+}
+
+function abrirImagenGrandeBodega(indice) {
+    const fotos = Array.isArray(window.__galeriaImagenesBodega)
+        ? window.__galeriaImagenesBodega.filter(Boolean)
+        : [];
+    if (fotos.length === 0) {
+        return;
+    }
+
+    if (typeof window.abrirModalImagenProcesoGrande === 'function') {
+        window.abrirModalImagenProcesoGrande(indice, fotos);
+        return;
+    }
+
+    if (typeof window.abrirVisorImagenRcb === 'function') {
+        window.abrirVisorImagenRcb(indice, fotos);
+        return;
+    }
+
+    const url = fotos[indice];
+    if (!url) {
+        return;
+    }
+
+    const btnCerrarPrincipal = document.getElementById(DYNAMIC_CLOSE_BUTTON_ID);
+    const prevDisplayCerrarPrincipal = btnCerrarPrincipal ? btnCerrarPrincipal.style.display : null;
+    if (btnCerrarPrincipal) {
+        btnCerrarPrincipal.style.display = 'none';
+    }
+
+    const existente = document.getElementById('modal-imagen-proceso-grande-bodega-fallback');
+    if (existente) {
+        existente.remove();
+    }
+
+    const modal = document.createElement('div');
+    modal.id = 'modal-imagen-proceso-grande-bodega-fallback';
+    modal.style.cssText = [
+        'position:fixed',
+        'inset:0',
+        'background:rgba(0,0,0,.95)',
+        'z-index:10000',
+        'display:flex',
+        'align-items:center',
+        'justify-content:center',
+        'padding:0',
+        'overflow:hidden'
+    ].join(';');
+
+    let indiceActual = Math.max(0, Math.min(Number(indice || 0), fotos.length - 1));
+
+    const mostrarImagen = () => {
+        const imgElement = modal.querySelector('img[data-main-image]');
+        const contador = modal.querySelector('.imagen-contador');
+        const btnAnterior = modal.querySelector('[data-nav-anterior]');
+        const btnSiguiente = modal.querySelector('[data-nav-siguiente]');
+
+        if (imgElement) {
+            imgElement.src = fotos[indiceActual];
+        }
+        if (contador) {
+            contador.textContent = `${indiceActual + 1} / ${fotos.length}`;
+        }
+        if (btnAnterior) {
+            btnAnterior.disabled = indiceActual === 0;
+            btnAnterior.style.opacity = indiceActual === 0 ? '0.45' : '1';
+            btnAnterior.style.cursor = indiceActual === 0 ? 'not-allowed' : 'pointer';
+        }
+        if (btnSiguiente) {
+            btnSiguiente.disabled = indiceActual === fotos.length - 1;
+            btnSiguiente.style.opacity = indiceActual === fotos.length - 1 ? '0.45' : '1';
+            btnSiguiente.style.cursor = indiceActual === fotos.length - 1 ? 'not-allowed' : 'pointer';
+        }
+    };
+
+    const cerrar = () => {
+        document.removeEventListener('keydown', onKeyDown);
+        modal.remove();
+        if (btnCerrarPrincipal) {
+            btnCerrarPrincipal.style.display = prevDisplayCerrarPrincipal ?? 'block';
+        }
+    };
+
+    const onKeyDown = (event) => {
+        if (!document.getElementById(modal.id)) {
+            document.removeEventListener('keydown', onKeyDown);
+            return;
+        }
+
+        if (event.key === 'Escape') {
+            cerrar();
+            return;
+        }
+
+        if (event.key === 'ArrowLeft' && indiceActual > 0) {
+            indiceActual -= 1;
+            mostrarImagen();
+        }
+
+        if (event.key === 'ArrowRight' && indiceActual < fotos.length - 1) {
+            indiceActual += 1;
+            mostrarImagen();
+        }
+    };
+
+    modal.innerHTML = `
+        <div style="position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:0;">
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;width:100%;height:100%;overflow:hidden;position:relative;">
+                <img data-main-image src="${url}" alt="Imagen grande" style="width:90vw;height:85vh;object-fit:contain;display:block;">
+            </div>
+
+            <button type="button" aria-label="Cerrar" style="
+                position:absolute;
+                top:20px;
+                right:20px;
+                background:rgba(255,255,255,.95);
+                border:none;
+                border-radius:50%;
+                width:44px;
+                height:44px;
+                cursor:pointer;
+                font-size:28px;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                box-shadow:0 4px 12px rgba(0,0,0,.3);
+                transition:all .2s ease;
+                z-index:10001;
+            ">✕</button>
+
+            <div style="width:100%;display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.8);padding:16px 24px;backdrop-filter:blur(10px);box-sizing:border-box;flex-shrink:0;">
+                <button type="button" data-nav-anterior style="
+                    background:rgba(255,255,255,.2);
+                    border:2px solid rgba(255,255,255,.4);
+                    border-radius:8px;
+                    width:44px;
+                    height:44px;
+                    cursor:pointer;
+                    font-size:20px;
+                    color:white;
+                    transition:all .2s ease;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    flex-shrink:0;
+                ">◀</button>
+
+                <div style="color:white;font-size:16px;font-weight:600;letter-spacing:1px;text-align:center;flex:1;">
+                    <span class="imagen-contador">1 / 1</span>
+                </div>
+
+                <button type="button" data-nav-siguiente style="
+                    background:rgba(255,255,255,.2);
+                    border:2px solid rgba(255,255,255,.4);
+                    border-radius:8px;
+                    width:44px;
+                    height:44px;
+                    cursor:pointer;
+                    font-size:20px;
+                    color:white;
+                    transition:all .2s ease;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    flex-shrink:0;
+                ">▶</button>
+            </div>
+        </div>
+    `;
+
+    const cerrarBtn = modal.querySelector('button[aria-label="Cerrar"]');
+    const btnAnterior = modal.querySelector('[data-nav-anterior]');
+    const btnSiguiente = modal.querySelector('[data-nav-siguiente]');
+
+    cerrarBtn?.addEventListener('click', cerrar);
+    btnAnterior?.addEventListener('click', () => {
+        if (indiceActual > 0) {
+            indiceActual -= 1;
+            mostrarImagen();
+        }
+    });
+    btnSiguiente?.addEventListener('click', () => {
+        if (indiceActual < fotos.length - 1) {
+            indiceActual += 1;
+            mostrarImagen();
+        }
+    });
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            cerrar();
+        }
+    });
+    document.addEventListener('keydown', onKeyDown);
+    mostrarImagen();
+    document.body.appendChild(modal);
+}
+
+window.abrirImagenGrandeBodega = abrirImagenGrandeBodega;
+
 function ensureDynamicCloseButton() {
     let btnCerrar = document.getElementById(DYNAMIC_CLOSE_BUTTON_ID);
     if (btnCerrar) return btnCerrar;
@@ -467,7 +690,7 @@ function abrirDetalleReciboCorteBodega(prendaBodegaId) {
             const tallas = Array.isArray(data.tallas) ? data.tallas : [];
             bodegaGaleriaTitulo = String(data.prenda || data.prenda_nombre || 'PRENDA 1').trim().toUpperCase();
             bodegaGaleriaFotos = (Array.isArray(data.fotos) ? data.fotos : [])
-                .map((f) => String(f?.url || '').trim())
+                .map((f) => normalizarUrlBodega(f?.url || ''))
                 .filter(Boolean);
             console.log('[BODEGA_UI] fotos recibidas para galeria:', bodegaGaleriaFotos.length);
 
@@ -894,7 +1117,7 @@ function ensureBodegaInlineGallery(wrapper) {
         return null;
     }
 
-    window.__galeriaImagenes = fotos;
+    window.__galeriaImagenesBodega = fotos;
 
     let galeria = document.getElementById('galeria-modal-costura');
     if (!galeria) {
@@ -905,7 +1128,7 @@ function ensureBodegaInlineGallery(wrapper) {
     }
 
     const cards = fotos.map((url, i) => `
-        <div style="border:2px solid #e5e7eb;border-radius:12px;overflow:hidden;cursor:pointer;transition:all .3s ease;background:white;box-shadow:0 2px 8px rgba(0,0,0,.08);" onclick="if(typeof window.abrirModalImagenProcesoGrande==='function'){window.abrirModalImagenProcesoGrande(${i}, window.__galeriaImagenes||[]);}" onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='scale(1.03)'; this.style.boxShadow='0 8px 16px rgba(59,130,246,.3)';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,.08)';">
+        <div style="border:2px solid #e5e7eb;border-radius:12px;overflow:hidden;cursor:pointer;transition:all .3s ease;background:white;box-shadow:0 2px 8px rgba(0,0,0,.08);" onclick="window.abrirImagenGrandeBodega(${i})" onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='scale(1.03)'; this.style.boxShadow='0 8px 16px rgba(59,130,246,.3)';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,.08)';">
             <img src="${url}" alt="${bodegaGaleriaTitulo}" style="width:100%;height:220px;object-fit:cover;display:block;">
             <div style="padding:.75rem;background:#f9fafb;">
                 <div style="font-size:.875rem;font-weight:600;color:#1f2937;margin-bottom:.25rem;">${bodegaGaleriaTitulo}</div>

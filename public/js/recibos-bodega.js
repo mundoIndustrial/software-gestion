@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let adminBadgeContext = null;
     const initialPrendasMarkup = prendasContainer.innerHTML;
+    let previousTipoTallaActiveElement = null;
 
     if (!modal || !prendasContainer || !form || !tipoTallaModal || !tipoTallaModalText) return;
 
@@ -585,6 +586,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function abrirModalTipoTalla(genero) {
         return new Promise((resolve) => {
+            previousTipoTallaActiveElement = document.activeElement;
             tipoTallaState.isOpen = true;
             tipoTallaState.resolve = resolve;
             tipoTallaState.genero = genero;
@@ -623,8 +625,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function cerrarModalTipoTalla(resultado) {
         if (!tipoTallaState.isOpen) return;
+        const elementToRestore = previousTipoTallaActiveElement;
+        if (tipoTallaModal.contains(document.activeElement) && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur();
+        }
         tipoTallaModal.classList.add('is-hidden');
         tipoTallaModal.setAttribute('aria-hidden', 'true');
+        previousTipoTallaActiveElement = null;
+        if (elementToRestore && typeof elementToRestore.focus === 'function') {
+            window.setTimeout(() => {
+                elementToRestore.focus();
+            }, 0);
+        }
         tipoTallaState.isOpen = false;
         if (typeof tipoTallaState.resolve === 'function') {
             tipoTallaState.resolve(resultado || null);
@@ -741,6 +753,23 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function abrirSelectorImagenes(input) {
+        if (!input) return;
+
+        if (typeof input.showPicker === 'function') {
+            try {
+                input.showPicker();
+                return;
+            } catch (error) {
+                // Fallback al click tradicional.
+            }
+        }
+
+        window.setTimeout(() => {
+            input.click();
+        }, 0);
+    }
+
     openBtn?.addEventListener('click', openModal);
 
     modal.addEventListener('click', function (event) {
@@ -755,9 +784,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    form.addEventListener('submit', function (event) {
+    function procesarEnvioReciboBodega(event) {
         event.preventDefault();
         console.log('[FORM] Submit iniciado');
+        if (form.dataset.enviando === '1') {
+            return;
+        }
         const submitBtn = form.querySelector('button[type="submit"]');
         if (submitBtn?.disabled) {
             return;
@@ -765,6 +797,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const formData = new FormData(form);
         const prendas = [];
+        const errores = [];
 
         const prendaIndices = new Set();
         for (const [key, value] of formData.entries()) {
@@ -816,8 +849,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             console.log(`[FORM] Prenda ${index}:`, { descripcion, tallasList });
 
-            if (descripcion && tallasList.length > 0) {
-                
+            if (!String(descripcion || '').trim()) {
+                errores.push(`La descripción de la prenda ${index + 1} es obligatoria.`);
+            } else if (tallasList.length === 0) {
+                errores.push(`La prenda ${index + 1} debe tener al menos una talla con cantidad.`);
+            } else {
                 prendas.push({
                     descripcion: descripcion || null,
                     tallas: tallasList,
@@ -827,8 +863,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         console.log('[FORM] Prendas procesadas:', prendas);
 
+        if (errores.length > 0) {
+            alert(errores[0]);
+            return;
+        }
+
         if (prendas.length === 0) {
-            alert('Por favor completa al menos una prenda con talla y cantidad');
+            alert('Por favor completa al menos una prenda con talla y cantidad.');
             return;
         }
 
@@ -853,6 +894,7 @@ document.addEventListener('DOMContentLoaded', function () {
             submitBtn.disabled = true;
             submitBtn.innerHTML = 'Guardando...';
         }
+        form.dataset.enviando = '1';
 
         fetch('/api/recibo-corte-bodega', {
             method: 'POST',
@@ -885,9 +927,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 closeModal();
                 if (!data.duplicate) {
                     showReciboSuccessModal();
-                    loadRecibosCorteForBodega();
-                    if (data.prendas && data.prendas.length > 0) {
-                        setTimeout(() => openReciboCorteBodegaModal(data.prendas[0].id), 500);
+                    loadRecibosCorteForBodega(true);
+                    if (window.insumosHandlers?.notificationsRealtime?.refreshMaterialesTableOnly) {
+                        window.insumosHandlers.notificationsRealtime.refreshMaterialesTableOnly();
+                    } else {
+                        document.dispatchEvent(new CustomEvent('insumosTableUpdated', {
+                            detail: { action: 'recibo-bodega-guardado' },
+                        }));
+                    }
+                    if (data.prendas && data.prendas.length > 0 && typeof window.openReciboCorteBodegaModal === 'function') {
+                        setTimeout(() => window.openReciboCorteBodegaModal(data.prendas[0].id), 500);
                     }
                 }
             } else {
@@ -903,7 +952,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalSubmitText;
             }
+            form.dataset.enviando = '0';
         });
+    }
+
+    form.addEventListener('submit', procesarEnvioReciboBodega);
+    form.querySelector('button[type="submit"]')?.addEventListener('click', function (event) {
+        procesarEnvioReciboBodega(event);
     });
 
     function bindPrendaActions(prendaCard) {
@@ -962,15 +1017,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const label = generoToggleInput.closest('.genero-check');
 
             if (generoToggleInput.checked) {
-                const seleccion = await abrirModalTipoTalla(genero);
-                if (!seleccion || !seleccion.tipo || !Array.isArray(seleccion.detalles) || seleccion.detalles.length === 0) {
-                    generoToggleInput.checked = false;
-                    label?.classList.remove('is-active');
-                    section.classList.add('is-hidden');
-                    return;
-                }
-                setTipoTallaEnSeccion(section, seleccion.tipo);
-                aplicarTallasSeleccionadas(prendaCard, genero, seleccion.tipo, seleccion.detalles, seleccion.modo);
                 label?.classList.add('is-active');
                 section.classList.remove('is-hidden');
             } else {
@@ -980,8 +1026,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 section.dataset.modoCarga = '';
                 section.classList.remove('is-sin-color');
             }
-
-            return;
         }
     });
 
@@ -1047,9 +1091,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const dropzone = event.target.closest('.prenda-imagenes-dropzone');
         if (!dropzone) return;
+        if (dropzone.dataset.pointerTriggered === '1') {
+            dropzone.dataset.pointerTriggered = '0';
+            return;
+        }
         const prendaCard = dropzone.closest('.prenda-card');
         const input = prendaCard?.querySelector('.prenda-imagenes-input');
-        input?.click();
+        abrirSelectorImagenes(input);
     });
 
     prendasContainer.addEventListener('keydown', function (event) {
@@ -1059,7 +1107,18 @@ document.addEventListener('DOMContentLoaded', function () {
         event.preventDefault();
         const prendaCard = dropzone.closest('.prenda-card');
         const input = prendaCard?.querySelector('.prenda-imagenes-input');
-        input?.click();
+        abrirSelectorImagenes(input);
+    });
+
+    prendasContainer.addEventListener('pointerdown', function (event) {
+        const dropzone = event.target.closest('.prenda-imagenes-dropzone');
+        if (!dropzone) return;
+        const prendaCard = dropzone.closest('.prenda-card');
+        const input = prendaCard?.querySelector('.prenda-imagenes-input');
+        if (!input) return;
+
+        dropzone.dataset.pointerTriggered = '1';
+        abrirSelectorImagenes(input);
     });
 
     prendasContainer.addEventListener('dragover', function (event) {
@@ -1093,7 +1152,41 @@ document.addEventListener('DOMContentLoaded', function () {
         input.dispatchEvent(new Event('change', { bubbles: true }));
     });
 
-    prendasContainer.addEventListener('click', function (event) {
+    prendasContainer.addEventListener('click', async function (event) {
+        const generoToggleLabel = event.target.closest('.genero-check');
+        if (generoToggleLabel) {
+            const generoToggleInput = generoToggleLabel.querySelector('.genero-check-input[data-genero-toggle]');
+            if (!generoToggleInput) return;
+
+            const prendaCard = generoToggleLabel.closest('.prenda-card');
+            if (!prendaCard) return;
+
+            const genero = generoToggleInput.dataset.generoToggle;
+            const section = prendaCard.querySelector(`[data-genero-section="${genero}"]`);
+            if (!section) return;
+
+            // Si ya está marcado, dejamos que el click natural lo desmarque.
+            if (generoToggleInput.checked) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            const seleccion = await abrirModalTipoTalla(genero);
+            if (!seleccion || !seleccion.tipo || !Array.isArray(seleccion.detalles) || seleccion.detalles.length === 0) {
+                generoToggleInput.checked = false;
+                generoToggleLabel.classList.remove('is-active');
+                section.classList.add('is-hidden');
+                return;
+            }
+
+            generoToggleInput.checked = true;
+            setTipoTallaEnSeccion(section, seleccion.tipo);
+            aplicarTallasSeleccionadas(prendaCard, genero, seleccion.tipo, seleccion.detalles, seleccion.modo);
+            generoToggleLabel.classList.add('is-active');
+            section.classList.remove('is-hidden');
+            return;
+        }
+
         const generoToggleInput = event.target.closest('.genero-check-input[data-genero-toggle]');
         if (generoToggleInput) return;
 
@@ -1374,11 +1467,25 @@ function calcularDiasHabilesDesdeSiguienteHabil(fechaInicio, fechaFin = new Date
     return diasHabiles;
 }
 
-function loadRecibosCorteForBodega() {
-    fetch('/api/recibo-corte-bodega')
+function loadRecibosCorteForBodega(forceRefresh = false) {
+    const tbody = document.getElementById('recibo-corte-bodega-tbody');
+    if (!tbody) {
+        return;
+    }
+
+    const url = forceRefresh
+        ? `/api/recibo-corte-bodega?_=${Date.now()}`
+        : '/api/recibo-corte-bodega';
+
+    fetch(url, {
+        cache: 'no-store',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    })
         .then(response => response.json())
         .then(data => {
-            const tbody = document.getElementById('recibo-corte-bodega-tbody');
             tbody.innerHTML = '';
 
             if (data.success && data.data && data.data.length > 0) {
@@ -1444,7 +1551,6 @@ function loadRecibosCorteForBodega() {
         })
         .catch(error => {
             console.error('Error cargando recibos:', error);
-            const tbody = document.getElementById('recibo-corte-bodega-tbody');
             tbody.innerHTML = `
                 <tr>
                     <td colspan="8" class="text-center py-4">
@@ -1512,8 +1618,8 @@ function openReciboBodegaDropdown(button) {
 
         if (action === 'ver-detalles') {
             closeReciboBodegaDropdowns();
-            if (reciboId > 0) {
-                openReciboCorteBodegaModal(reciboId);
+            if (reciboId > 0 && typeof window.openReciboCorteBodegaModal === 'function') {
+                window.openReciboCorteBodegaModal(reciboId);
             }
             return;
         }

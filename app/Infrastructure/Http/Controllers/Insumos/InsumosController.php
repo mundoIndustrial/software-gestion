@@ -771,7 +771,8 @@ class InsumosController extends Controller
             $consecutivoReciboId = (int) $request->query('consecutivo_recibo_id', 0);
             $numeroRecibo = (int) $request->query('numero_recibo', 0);
             $tipoRecibo = strtoupper(trim((string) $request->query('tipo_recibo', '')));
-            $limit = min(max((int) $request->query('limit', 50), 1), 200);
+            $perPage = 20;
+            $page = max((int) $request->query('page', 1), 1);
 
             if (!empty($numeroPedido)) {
                 if ($prendaBodegaId <= 0) {
@@ -812,12 +813,11 @@ class InsumosController extends Controller
             $historial = $query
                 ->orderByDesc('created_at')
                 ->orderByDesc('id')
-                ->limit($limit)
-                ->get();
+                ->paginate($perPage, ['*'], 'page', $page);
 
             return response()->json([
                 'success' => true,
-                'data' => $historial->map(fn (HistorialAnchoMetrajeInsumo $item) => [
+                'data' => collect($historial->items())->map(fn (HistorialAnchoMetrajeInsumo $item) => [
                     'id' => $item->id,
                     'pedido_id' => $item->pedido_id,
                     'prenda_pedido_id' => $item->prenda_pedido_id,
@@ -842,6 +842,14 @@ class InsumosController extends Controller
                         : null,
                     'detalles' => $item->detalles ?? [],
                 ]),
+                'pagination' => [
+                    'current_page' => $historial->currentPage(),
+                    'last_page' => $historial->lastPage(),
+                    'per_page' => $historial->perPage(),
+                    'total' => $historial->total(),
+                    'from' => $historial->firstItem(),
+                    'to' => $historial->lastItem(),
+                ],
                 'contexto' => [
                     'pedido_id' => $pedido?->id ?? null,
                     'prenda_id' => $prendaId > 0 ? $prendaId : null,

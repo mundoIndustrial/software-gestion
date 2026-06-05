@@ -637,8 +637,10 @@ function renderReciboCorteBodegaData(data) {
         const rawUrl = foto?.ruta || foto?.url || foto?.ruta_webp || foto?.ruta_original || foto?.path || foto?.imagen || '';
         const urlNormalizada = String(rawUrl || '').trim();
         const url = urlNormalizada && !urlNormalizada.startsWith('http') && !urlNormalizada.startsWith('/')
-            ? `/storage/${urlNormalizada.replace(/^\/+/, '')}`
-            : urlNormalizada;
+            ? `/storage-serve/${urlNormalizada.replace(/^\/+/, '')}`
+            : (urlNormalizada.startsWith('/storage/bodega/')
+                ? urlNormalizada.replace('/storage/', '/storage-serve/')
+                : urlNormalizada);
         if (!url) return;
         urlsGaleria.push(url);
 

@@ -25,9 +25,11 @@
 @section('content')
 @php
     $currentRoleName = auth()->user()->role->name ?? 'guest';
+    $puedeGenerarReciboBodega = auth()->user()?->hasAnyRole(['insumos', 'supervisor_planta', 'patronista']) ?? false;
 @endphp
 <link rel="stylesheet" href="{{ asset('css/insumos/materiales.css') }}?v={{ $assetVersion('css/insumos/materiales.css') }}">
 <link rel="stylesheet" href="{{ asset('css/tracking-modal.css') }}?v={{ $assetVersion('css/tracking-modal.css') }}">
+<link rel="stylesheet" href="{{ asset('css/recibos-bodega.css') }}?v={{ $assetVersion('css/recibos-bodega.css') }}">
 @if($mostrarSoloVerRecibo)
 <style>
     .btn-check-row,
@@ -133,22 +135,34 @@
 
     @unless($esGestionReflectivo || $esVistaOrdenesAnuladas)
     <div style="padding: 0.75rem 0.5rem 0; position: relative; z-index: 5;">
-        <div style="display: inline-flex; gap: 0.4rem; background: #f3f4f6; border-radius: 999px; padding: 0.25rem; border: 1px solid #e5e7eb;">
-            <a id="tabInsumosPedidos" href="{{ route('insumos.materiales.index', ['tipo_recibo' => 'COSTURA']) }}"
-               style="position: relative; z-index: 30; pointer-events: auto; padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none; {{ !$esTabBodega ? 'background:#2563eb;color:#fff;' : 'color:#374151;' }}">
-                Pedidos
+        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem;">
+            <div style="display: inline-flex; gap: 0.4rem; background: #f3f4f6; border-radius: 999px; padding: 0.25rem; border: 1px solid #e5e7eb;">
+                <a id="tabInsumosPedidos" href="{{ route('insumos.materiales.index', ['tipo_recibo' => 'COSTURA']) }}"
+                   style="position: relative; z-index: 30; pointer-events: auto; padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none; {{ !$esTabBodega ? 'background:#2563eb;color:#fff;' : 'color:#374151;' }}">
+                    Pedidos
+                </a>
+                @if($mostrarTabBodega)
+                    <a id="tabInsumosBodega" href="{{ route('insumos.materiales.index', ['tipo_recibo' => 'CORTE-PARA-BODEGA']) }}"
+                       style="position: relative; z-index: 30; pointer-events: auto; display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none; {{ $esTabBodega ? 'background:#2563eb;color:#fff;' : 'color:#374151;' }}">
+                        Bodega
+                        @if($conteoRecibosBodegaPendientes > 0)
+                            <span style="display:inline-flex;align-items:center;justify-content:center;min-width:1.2rem;height:1.2rem;padding:0 0.35rem;border-radius:999px;background:#dc2626;color:#fff;font-size:0.7rem;font-weight:700;line-height:1;">
+                                {{ $conteoRecibosBodegaPendientes }}
+                            </span>
+                        @endif
                     </a>
-                    @if($mostrarTabBodega)
-                        <a id="tabInsumosBodega" href="{{ route('insumos.materiales.index', ['tipo_recibo' => 'CORTE-PARA-BODEGA']) }}"
-                           style="position: relative; z-index: 30; pointer-events: auto; display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none; {{ $esTabBodega ? 'background:#2563eb;color:#fff;' : 'color:#374151;' }}">
-                            Bodega
-                            @if($conteoRecibosBodegaPendientes > 0)
-                                <span style="display:inline-flex;align-items:center;justify-content:center;min-width:1.2rem;height:1.2rem;padding:0 0.35rem;border-radius:999px;background:#dc2626;color:#fff;font-size:0.7rem;font-weight:700;line-height:1;">
-                                    {{ $conteoRecibosBodegaPendientes }}
-                                </span>
-                            @endif
-                        </a>
-                    @endif
+                @endif
+            </div>
+
+            @if($esTabBodega && $puedeGenerarReciboBodega)
+                <button type="button"
+                        id="openReciboBodegaModalBtn"
+                        class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:shadow-md border-0"
+                        style="background:#0f766e;">
+                    <span class="material-symbols-rounded text-lg">note_add</span>
+                    GENERAR RECIBO DE BODEGA
+                </button>
+            @endif
         </div>
     </div>
     @endunless
@@ -771,6 +785,7 @@ document.addEventListener('insumosTableUpdated', () => {
 
 {{-- Incluir modales de insumos --}}
 @include('insumos.materiales.partials.modales-insumos')
+@include('registros.partials.recibo-bodega-create-modal')
 
 <!-- Configuración de rol del usuario y tipo de recibo -->
 <script>
@@ -778,5 +793,15 @@ document.addEventListener('insumosTableUpdated', () => {
     window.isInsumos = window.userRole === 'insumos';
     window.tipoRecibo = '{{ $esGestionReflectivo ? 'REFLECTIVO' : $tipoReciboActivo }}';
 </script>
+
+@push('scripts')
+<script>
+window.RECIBOS_BODEGA_CONFIG = {
+    isAdminBodega: @json((bool) (auth()->user()?->hasRole('admin'))),
+    festivosReciboBodega: @json(\App\Models\Festivo::pluck('fecha')->toArray()),
+};
+</script>
+<script src="{{ asset('js/recibos-bodega.js') }}?v={{ $assetVersion('js/recibos-bodega.js') }}"></script>
+@endpush
 
 @endsection

@@ -337,6 +337,9 @@ class ReciboCorteBodegaController extends Controller
                 ], 200);
             }
 
+            $memoriaOriginal = ini_get('memory_limit');
+            ini_set('memory_limit', '512M');
+
             $prendas = DB::transaction(function () use ($validated, $request) {
                 $registroMaestro = DB::table('consecutivos_recibos')
                     ->where('tipo_recibo', 'CORTE-PARA-BODEGA')
@@ -427,7 +430,14 @@ class ReciboCorteBodegaController extends Controller
                         if (method_exists($imagen, 'orient')) {
                             $imagen = $imagen->orient();
                         }
-                        $contenidoWebp = $imagen->toWebp(85)->toString();
+
+                        if (method_exists($imagen, 'width') && method_exists($imagen, 'height')) {
+                            if ($imagen->width() > 2000 || $imagen->height() > 2000) {
+                                $imagen->scaleDown(width: 2000, height: 2000);
+                            }
+                        }
+
+                        $contenidoWebp = $imagen->toWebp(quality: 80)->toString();
                         Storage::disk('public')->put($ruta, $contenidoWebp);
 
                         PrendaBodegaFoto::create([
@@ -455,12 +465,20 @@ class ReciboCorteBodegaController extends Controller
                 return $resultado;
             });
 
+            if (isset($memoriaOriginal) && $memoriaOriginal !== false) {
+                ini_set('memory_limit', $memoriaOriginal);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Recibo registrado correctamente',
                 'prendas' => $prendas,
             ], 201);
         } catch (\Throwable $e) {
+            if (isset($memoriaOriginal) && $memoriaOriginal !== false) {
+                ini_set('memory_limit', $memoriaOriginal);
+            }
+
             \Log::error('[ReciboCorteBodegaController@store] Error al registrar recibo', [
                 'error' => $e->getMessage(),
             ]);

@@ -313,6 +313,17 @@
                 No hay movimientos registrados para este contexto.
             </div>
             <div id="historialAnchoMetrajeList" class="space-y-3 hidden"></div>
+            <div id="historialAnchoMetrajePagination" class="hidden mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200 pt-4">
+                <div id="historialAnchoMetrajePageInfo" class="text-xs text-slate-500 font-medium"></div>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="historialAnchoMetrajePrev" class="px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Anterior
+                    </button>
+                    <button type="button" id="historialAnchoMetrajeNext" class="px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Siguiente
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>

@@ -6,6 +6,7 @@ function initNotificationsRealtimeInsumos() {
     let notificacionesInsumos = [];
     let echoInitRequested = false;
     let realtimeBound = false;
+    let refreshMaterialesTableOnlyRef = null;
     const DISMISSED_STORAGE_KEY = 'insumos_notificaciones_dismissed_ids';
 
     function getDismissedIds() {
@@ -183,8 +184,12 @@ function initNotificationsRealtimeInsumos() {
                 const url = new URL(window.location.href);
                 const params = new URLSearchParams();
                 const page = url.searchParams.get('page') || '1';
+                const tipoRecibo = url.searchParams.get('tipo_recibo') || globalThis.tipoRecibo || '';
 
                 params.set('page', page);
+                if (tipoRecibo) {
+                    params.set('tipo_recibo', tipoRecibo);
+                }
 
                 try {
                     const rawFilters = sessionStorage.getItem('insumos_filters');
@@ -257,6 +262,8 @@ function initNotificationsRealtimeInsumos() {
                     console.error('[Realtime Insumos] Error refrescando tabla:', error);
                 }
             }
+
+            refreshMaterialesTableOnlyRef = refreshMaterialesTableOnly;
 
             const refreshMateriales = debounce(() => {
                 refreshMaterialesTableOnly();
@@ -473,6 +480,12 @@ function initNotificationsRealtimeInsumos() {
         verReciboDesdeCampana,
         marcarReciboVisto,
         cargarConteoInicial,
+        refreshMaterialesTableOnly: () => {
+            if (typeof refreshMaterialesTableOnlyRef === 'function') {
+                return refreshMaterialesTableOnlyRef();
+            }
+            return Promise.resolve();
+        },
     };
 
     const style = document.createElement('style');

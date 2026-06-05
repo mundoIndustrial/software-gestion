@@ -18,8 +18,13 @@ Route::get('/', function () {
 // Logica centralizada en StorageService para mejor organizacion
 
 Route::get('/storage/{tipo}/{path}', [App\Infrastructure\Http\Controllers\Storage\StorageController::class, 'serve'])
-    ->where(['tipo' => 'cotizaciones|prendas|pedidos|firmas', 'path' => '.*'])
+    ->where(['tipo' => 'cotizaciones|prendas|pedidos|firmas|bodega', 'path' => '.*'])
     ->name('storage.files');
+
+Route::get('/storage/bodega/{path}', [App\Infrastructure\Http\Controllers\Storage\StorageController::class, 'serve'])
+    ->where('path', '.*')
+    ->defaults('tipo', 'bodega')
+    ->name('storage.bodega');
 
 // Rutas con nombre específico para compatibilidad
 Route::get('/storage/cotizaciones/{path}', [App\Infrastructure\Http\Controllers\Storage\StorageController::class, 'serveCotizaciones'])
