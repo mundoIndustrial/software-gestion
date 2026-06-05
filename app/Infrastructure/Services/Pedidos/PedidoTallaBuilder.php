@@ -47,16 +47,39 @@ class PedidoTallaBuilder
 
     private function crearSobremedidas(PrendaPedido $prenda, array $contenido): void
     {
-        foreach ($contenido as $tallaKey => $cantidad) {
-            if ((int) $cantidad <= 0) {
+        foreach ($contenido as $generoOTalla => $cantidadOGenero) {
+            $genero = strtoupper(trim((string) $generoOTalla));
+            $cantidad = 0;
+
+            if (is_array($cantidadOGenero)) {
+                foreach ($cantidadOGenero as $talla => $cantidadTalla) {
+                    $cantidadTalla = (int) $cantidadTalla;
+                    if ($cantidadTalla <= 0) {
+                        continue;
+                    }
+
+                    PrendaPedidoTalla::create([
+                        'prenda_pedido_id' => $prenda->id,
+                        'genero' => $this->normalizarGeneroSobremedida($genero),
+                        'talla' => $this->normalizarTallaSobremedida($talla),
+                        'cantidad' => $cantidadTalla,
+                        'es_sobremedida' => 1,
+                    ]);
+                }
+
+                continue;
+            }
+
+            $cantidad = (int) $cantidadOGenero;
+            if ($cantidad <= 0) {
                 continue;
             }
 
             PrendaPedidoTalla::create([
                 'prenda_pedido_id' => $prenda->id,
-                'genero' => 'UNISEX',
-                'talla' => strtoupper($tallaKey),
-                'cantidad' => (int) $cantidad,
+                'genero' => $this->normalizarGeneroSobremedida($genero),
+                'talla' => null,
+                'cantidad' => $cantidad,
                 'es_sobremedida' => 1,
             ]);
         }
@@ -65,6 +88,26 @@ class PedidoTallaBuilder
             'prenda_id' => $prenda->id,
             'generos_sobremedida' => count($contenido),
         ]);
+    }
+
+    private function normalizarGeneroSobremedida(string $genero): string
+    {
+        $genero = strtoupper(trim($genero));
+
+        return in_array($genero, ['DAMA', 'CABALLERO', 'UNISEX'], true)
+            ? $genero
+            : 'UNISEX';
+    }
+
+    private function normalizarTallaSobremedida(string $talla): ?string
+    {
+        $talla = strtoupper(trim($talla));
+
+        if ($talla === '' || $talla === 'SOBREMEDIDA') {
+            return null;
+        }
+
+        return $talla;
     }
 
     private function crearTallasNormales(
