@@ -23,6 +23,7 @@
             <select id="periodo" name="periodo">
                 <option value="mes" {{ $periodo === 'mes' ? 'selected' : '' }}>Mes</option>
                 <option value="ano" {{ $periodo === 'ano' ? 'selected' : '' }}>Ano</option>
+                <option value="dia" {{ $periodo === 'dia' ? 'selected' : '' }}>Dia</option>
                 <option value="rango" {{ $periodo === 'rango' ? 'selected' : '' }}>Rango</option>
             </select>
         </div>
@@ -36,9 +37,13 @@
                 @endfor
             </select>
         </div>
-        <div class="filtro-row filtro-ano {{ $periodo === 'rango' ? 'hidden' : '' }}">
+        <div class="filtro-row filtro-ano {{ $periodo === 'rango' || $periodo === 'dia' ? 'hidden' : '' }}">
             <label for="year">Ano</label>
             <input id="year" name="year" type="number" min="2020" max="2100" value="{{ $year }}">
+        </div>
+        <div class="filtro-row filtro-dia {{ $periodo !== 'dia' ? 'hidden' : '' }}">
+            <label for="diaInput">Dia</label>
+            <input id="diaInput" name="dia" type="date" value="{{ $dia }}">
         </div>
         <div class="filtro-row filtro-rango {{ $periodo !== 'rango' ? 'hidden' : '' }}">
             <label for="desde">Desde</label>
@@ -577,12 +582,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const periodoSelect = document.getElementById('periodo');
     const gruposMes = document.querySelectorAll('.filtro-mes');
     const gruposAno = document.querySelectorAll('.filtro-ano');
+    const gruposDia = document.querySelectorAll('.filtro-dia');
     const gruposRango = document.querySelectorAll('.filtro-rango');
 
     function toggleFiltros() {
         const value = periodoSelect.value;
         gruposMes.forEach(el => el.classList.toggle('hidden', value !== 'mes'));
-        gruposAno.forEach(el => el.classList.toggle('hidden', value === 'rango'));
+        gruposAno.forEach(el => el.classList.toggle('hidden', value === 'rango' || value === 'dia'));
+        gruposDia.forEach(el => el.classList.toggle('hidden', value !== 'dia'));
         gruposRango.forEach(el => el.classList.toggle('hidden', value !== 'rango'));
     }
 

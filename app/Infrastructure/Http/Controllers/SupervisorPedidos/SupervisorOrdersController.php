@@ -513,7 +513,7 @@ class SupervisorOrdersController extends Controller
     {
         $hoy = Carbon::now();
         $periodo = strtolower((string) $request->query('periodo', 'mes'));
-        if (!in_array($periodo, ['mes', 'ano', 'rango'], true)) {
+        if (!in_array($periodo, ['mes', 'ano', 'rango', 'dia'], true)) {
             $periodo = 'mes';
         }
 
@@ -530,6 +530,21 @@ class SupervisorOrdersController extends Controller
             $finAnterior = $inicioAnterior->copy()->endOfYear();
             $periodoActualLabel = (string) $year;
             $periodoAnteriorLabel = (string) ($year - 1);
+        } elseif ($periodo === 'dia') {
+            $diaInput = (string) $request->query('dia', $hoy->toDateString());
+
+            try {
+                $inicioActual = Carbon::parse($diaInput)->startOfDay();
+            } catch (\Throwable $e) {
+                $inicioActual = $hoy->copy()->startOfDay();
+            }
+
+            $finActual = $inicioActual->copy()->endOfDay();
+            $inicioAnterior = $inicioActual->copy()->subDay()->startOfDay();
+            $finAnterior = $inicioAnterior->copy()->endOfDay();
+
+            $periodoActualLabel = $inicioActual->format('d/m/Y');
+            $periodoAnteriorLabel = $inicioAnterior->format('d/m/Y');
         } elseif ($periodo === 'rango') {
             $desdeInput = (string) $request->query('desde', $hoy->copy()->startOfMonth()->toDateString());
             $hastaInput = (string) $request->query('hasta', $hoy->toDateString());
@@ -777,6 +792,7 @@ class SupervisorOrdersController extends Controller
             'periodo' => $periodo,
             'year' => $year,
             'month' => $month,
+            'dia' => $inicioActual->toDateString(),
             'desde' => $inicioActual->toDateString(),
             'hasta' => $finActual->toDateString(),
             'periodoActual' => $periodoActualLabel,
