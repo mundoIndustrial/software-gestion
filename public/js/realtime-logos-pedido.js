@@ -26,6 +26,33 @@
     const processedEvents = new Map();
     const PROCESSED_TTL_MS = 4000;
 
+    const NOTIFICACIONES_POR_MODULO = {
+        asesores: {
+            creado: {
+                titulo: 'Nuevo diseño de logo',
+                mensaje: (event) => `Hay un diseño pendiente por confirmar en el pedido #${event.pedido_id || '—'}.`,
+                url: '/asesores/pendientes-logo',
+            },
+            reemplazado: {
+                titulo: 'Diseño reemplazado',
+                mensaje: (event) => `Un diseño fue reemplazado y requiere tu confirmación (pedido #${event.pedido_id || '—'}).`,
+                url: '/asesores/pendientes-logo',
+            },
+        },
+        'visualizador-logo': {
+            confirmado: {
+                titulo: 'Diseño confirmado',
+                mensaje: (event) => `El asesor confirmó un diseño del pedido #${event.pedido_id || '—'}.`,
+                url: '/visualizador-logo/logos-confirmados',
+            },
+            devuelto: {
+                titulo: 'Diseño devuelto a diseño',
+                mensaje: (event) => `El asesor devolvió un diseño del pedido #${event.pedido_id || '—'}.`,
+                url: '/visualizador-logo/logos-confirmados',
+            },
+        },
+    };
+
     function cleanupProcessedEvents() {
         const now = Date.now();
         for (const [key, ts] of processedEvents.entries()) {
@@ -66,6 +93,50 @@
         }
     }
 
+    async function solicitarPermisoNotificacionSiAplica() {
+        if (!('Notification' in window)) return;
+        if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
+
+        try {
+            await Notification.requestPermission();
+        } catch (error) {
+            console.warn('[REALTIME-LOGOS] No se pudo solicitar permiso de notificaciones:', error);
+        }
+    }
+
+    function mostrarNotificacionNavegador(titulo, mensaje, url) {
+        if (!('Notification' in window)) return;
+        if (Notification.permission !== 'granted') return;
+
+        try {
+            const notification = new Notification(titulo, {
+                body: mensaje,
+                icon: '/mundo_icon.png',
+            });
+
+            notification.onclick = function () {
+                window.focus();
+                if (url && window.location.pathname !== url) {
+                    window.location.href = url;
+                }
+                this.close();
+            };
+        } catch (error) {
+            console.warn('[REALTIME-LOGOS] Error mostrando notificación de navegador:', error);
+        }
+    }
+
+    function notificarEventoNavegador(event) {
+        const module = document.body?.dataset?.module || '';
+        const accion = event?.accion || '';
+        const config = NOTIFICACIONES_POR_MODULO[module]?.[accion];
+
+        if (!config) return;
+
+        const mensaje = typeof config.mensaje === 'function' ? config.mensaje(event) : String(config.mensaje || '');
+        mostrarNotificacionNavegador(config.titulo, mensaje, config.url);
+    }
+
     function refrescarVistas(event) {
         const accion = event?.accion || '';
         const module = document.body?.dataset?.module || '';
@@ -90,6 +161,7 @@
 
         actualizarBadges(event);
         refrescarVistas(event);
+        notificarEventoNavegador(event);
 
         window.dispatchEvent(new CustomEvent('diseno-logo-actualizado', { detail: event }));
     }
@@ -118,6 +190,8 @@
             setTimeout(initializeRealtimeLogosPedido, 50);
             return;
         }
+
+        solicitarPermisoNotificacionSiAplica();
 
         globalThis.EchoManager.init()
             .then(() => subscribeToLogosChannels())
