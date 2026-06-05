@@ -121,21 +121,6 @@ final class CotizacionController extends Controller
 
             $tipoCotizacionId = $cotizacion->tipo_cotizacion_id ?? 1;
 
-            if ($tipoCotizacionId === 1) {
-                $logoCotizacion = $cotizacion->logoCotizacion()
-                    ->withCount(['tecnicasPrendas', 'fotos'])
-                    ->first();
-
-                $logoVacio = !$logoCotizacion
-                    || (((int) ($logoCotizacion->tecnicas_prendas_count ?? 0)) === 0
-                        && ((int) ($logoCotizacion->fotos_count ?? 0)) === 0
-                        && empty($logoCotizacion->observaciones_generales));
-
-                if ($logoVacio) {
-                    $tipoCotizacionId = 3;
-                }
-            }
-
             $ruta = $mapeoTipos[$tipoCotizacionId] ?? null;
             if ($ruta) {
                 $ruta = str_replace('{id}', $id, $ruta);
