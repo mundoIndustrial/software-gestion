@@ -120,10 +120,30 @@
         const editor = window.prendaEditorGlobal;
         if (editor && typeof editor.cargarPrendaEnModal === 'function') {
             window.prendaActual = prendaCompleta;
+            console.log('[PedidosAdapter] PRE editor.cargarPrendaEnModal', {
+                cantidad_talla: prendaCompleta?.cantidad_talla,
+                generosConTallas: prendaCompleta?.generosConTallas,
+                tarjetaSobremedidaAntes: !!document.querySelector('#tarjetas-generos-container [data-sobremedida="true"]'),
+                htmlAntes: document.getElementById('tarjetas-generos-container')?.innerHTML || ''
+            });
             await editor.cargarPrendaEnModal(prendaCompleta, prendaIndex);
+            console.log('[PedidosAdapter] POST editor.cargarPrendaEnModal', {
+                tarjetaSobremedidaDespuesEditor: !!document.querySelector('#tarjetas-generos-container [data-sobremedida="true"]'),
+                htmlDespuesEditor: document.getElementById('tarjetas-generos-container')?.innerHTML || ''
+            });
             if (typeof window.cargarPrendaEnFormularioModal === 'function') {
                 console.log('[PedidosAdapter]  Llamando cargarPrendaEnFormularioModal para detectar UNISEX...');
                 window.cargarPrendaEnFormularioModal(prendaCompleta);
+                console.log('[PedidosAdapter] POST cargarPrendaEnFormularioModal', {
+                    tarjetaSobremedidaDespuesModal: !!document.querySelector('#tarjetas-generos-container [data-sobremedida="true"]'),
+                    htmlDespuesModal: document.getElementById('tarjetas-generos-container')?.innerHTML || ''
+                });
+                setTimeout(() => {
+                    console.log('[PedidosAdapter] POST cargarPrendaEnFormularioModal + 150ms', {
+                        tarjetaSobremedida150: !!document.querySelector('#tarjetas-generos-container [data-sobremedida="true"]'),
+                        html150: document.getElementById('tarjetas-generos-container')?.innerHTML || ''
+                    });
+                }, 150);
             }
             return;
         }

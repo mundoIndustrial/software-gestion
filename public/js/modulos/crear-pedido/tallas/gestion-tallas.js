@@ -1384,7 +1384,15 @@ window.crearTarjetaSobremedida = function(genero, cantidad) {
         btnEliminar.style.background = 'transparent';
     };
     btnEliminar.onclick = () => {
-        delete window.tallasRelacionales.SOBREMEDIDA;
+        if (window.tallasRelacionales) {
+            if (window.tallasRelacionales.SOBREMEDIDA) {
+                delete window.tallasRelacionales.SOBREMEDIDA;
+            }
+
+            if (window.tallasRelacionales[genero] && window.tallasRelacionales[genero].SOBREMEDIDA) {
+                delete window.tallasRelacionales[genero].SOBREMEDIDA;
+            }
+        }
         tarjeta.remove();
         
         const btn = document.getElementById('btn-genero-sobremedida');

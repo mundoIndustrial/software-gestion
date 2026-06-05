@@ -1515,6 +1515,12 @@ function limpiarFormularioPrendaNueva() {
  */
 function cargarPrendaEnFormularioModal(prendaData) {
     if (!prendaData) return;
+    console.log('[cargarPrendaEnFormularioModal] INICIO', {
+        cantidad_talla: prendaData?.cantidad_talla,
+        generosConTallas: prendaData?.generosConTallas,
+        tarjetaSobremedidaInicial: !!document.querySelector('#tarjetas-generos-container [data-sobremedida="true"]'),
+        htmlInicial: document.getElementById('tarjetas-generos-container')?.innerHTML || ''
+    });
     
     // Cargar datos básicos
     const nombreField = document.getElementById('nueva-prenda-nombre');
@@ -1612,6 +1618,23 @@ function cargarPrendaEnFormularioModal(prendaData) {
                          Object.keys(prendaData.generosConTallas).some(g => g.toUpperCase() === 'GENERICO');
     const tieneGenericoEnCantidadTalla = prendaData.cantidad_talla && 
                                          prendaData.cantidad_talla.GENERICO;
+    const tieneSobremedida = prendaData.generosConTallas &&
+        typeof prendaData.generosConTallas === 'object' &&
+        prendaData.generosConTallas.SOBREMEDIDA &&
+        Object.keys(prendaData.generosConTallas.SOBREMEDIDA).length > 0;
+    const tieneSobremedidaEnCantidadTalla = prendaData.cantidad_talla &&
+        typeof prendaData.cantidad_talla === 'object' &&
+        prendaData.cantidad_talla.SOBREMEDIDA &&
+        Object.keys(prendaData.cantidad_talla.SOBREMEDIDA).length > 0;
+
+    console.log('[cargarPrendaEnFormularioModal] deteccion especial', {
+        tieneGenerico,
+        tieneGenericoEnCantidadTalla,
+        tieneSobremedida,
+        tieneSobremedidaEnCantidadTalla,
+        cantidad_talla: prendaData?.cantidad_talla,
+        generosConTallas: prendaData?.generosConTallas
+    });
     
     if (tieneGenerico || tieneGenericoEnCantidadTalla) {
         console.log('[cargarPrendaEnFormularioModal]  DETECTADA PRENDA CON UNISEX (GENERICO)');
@@ -1688,6 +1711,11 @@ function cargarPrendaEnFormularioModal(prendaData) {
             console.log('[cargarPrendaEnFormularioModal]   ✓ Sección UNISEX activada para edición');
         }
     }
+
+    console.log('[cargarPrendaEnFormularioModal] FIN', {
+        tarjetaSobremedidaFinal: !!document.querySelector('#tarjetas-generos-container [data-sobremedida="true"]'),
+        htmlFinal: document.getElementById('tarjetas-generos-container')?.innerHTML || ''
+    });
 }
 
 /**

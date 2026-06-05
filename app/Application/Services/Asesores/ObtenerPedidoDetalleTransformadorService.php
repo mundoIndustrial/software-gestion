@@ -62,20 +62,83 @@ class ObtenerPedidoDetalleTransformadorService
 
     private function agregarTallasDePrenda(array &$prendaArray, int $prendaId): void
     {
-        $prendaArray['tallas_dama'] = $this->obtenerTallasPorGenero($prendaId, 'DAMA');
-        $prendaArray['tallas_caballero'] = $this->obtenerTallasPorGenero($prendaId, 'CABALLERO');
-        $prendaArray['tallas_unisex'] = $this->obtenerTallasPorGenero($prendaId, 'UNISEX');
-        $prendaArray['tallas_sobremedida'] = $this->obtenerTallasPorGenero($prendaId, 'SOBREMEDIDA');
-        $prendaArray['tallas_generico'] = $this->obtenerTallasPorGenero($prendaId, 'GENERICO');
+        $tallas = $this->obtenerTallasPrenda($prendaId);
+
+        $prendaArray['tallas_dama'] = $this->filtrarTallasPorGenero($tallas, 'DAMA');
+        $prendaArray['tallas_caballero'] = $this->filtrarTallasPorGenero($tallas, 'CABALLERO');
+        $prendaArray['tallas_unisex'] = $this->filtrarTallasPorGenero($tallas, 'UNISEX');
+        $prendaArray['tallas_generico'] = $this->filtrarTallasPorGenero($tallas, 'GENERICO');
+        $prendaArray['tallas_sobremedida'] = $this->extraerTallasSobremedida($tallas);
+        $prendaArray['cantidad_talla'] = $this->construirCantidadTallaCanonica($tallas);
+        $prendaArray['generosConTallas'] = $prendaArray['cantidad_talla'];
     }
 
-    private function obtenerTallasPorGenero(int $prendaId, string $genero): array
+    private function obtenerTallasPrenda(int $prendaId): array
     {
         return DB::table('prenda_pedido_tallas')
             ->where('prenda_pedido_id', $prendaId)
-            ->where('genero', $genero)
-            ->get(['talla', 'cantidad'])
+            ->get(['genero', 'talla', 'cantidad', 'es_sobremedida'])
             ->toArray();
+    }
+
+    private function filtrarTallasPorGenero(array $tallas, string $genero): array
+    {
+        return array_values(array_filter(array_map(function ($talla) use ($genero) {
+            if (($talla->genero ?? null) !== $genero || !empty($talla->es_sobremedida)) {
+                return null;
+            }
+
+            return (object) [
+                'talla' => $talla->talla,
+                'cantidad' => $talla->cantidad,
+            ];
+        }, $tallas)));
+    }
+
+    private function extraerTallasSobremedida(array $tallas): array
+    {
+        return array_values(array_filter(array_map(function ($talla) {
+            if (empty($talla->es_sobremedida)) {
+                return null;
+            }
+
+            return (object) [
+                'genero' => $talla->genero,
+                'talla' => $talla->talla,
+                'cantidad' => $talla->cantidad,
+                'es_sobremedida' => (int) $talla->es_sobremedida,
+            ];
+        }, $tallas)));
+    }
+
+    private function construirCantidadTallaCanonica(array $tallas): array
+    {
+        $cantidadTalla = [];
+
+        foreach ($tallas as $talla) {
+            $genero = strtoupper(trim((string) ($talla->genero ?? '')));
+            $cantidad = (int) ($talla->cantidad ?? 0);
+
+            if ($genero === '' || $cantidad <= 0) {
+                continue;
+            }
+
+            if (!empty($talla->es_sobremedida)) {
+                $cantidadTalla['SOBREMEDIDA'] ??= [];
+                $cantidadTalla['SOBREMEDIDA'][$genero] = $cantidad;
+                continue;
+            }
+
+            $nombreTalla = trim((string) ($talla->talla ?? ''));
+            if ($nombreTalla === '') {
+                continue;
+            }
+
+            $cantidadTalla[$genero] ??= [];
+            $cantidadTalla[$genero][$nombreTalla] = $cantidad;
+        }
+
+        return $cantidadTalla;
     }
 
     private function agregarColorTallaYAsignaciones(array &$prendaArray, int $prendaId): void

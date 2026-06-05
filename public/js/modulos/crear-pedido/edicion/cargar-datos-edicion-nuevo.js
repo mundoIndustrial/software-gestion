@@ -7,6 +7,64 @@
 
 let datosEditacionCargados = false;
 
+function normalizarGenerosConTallasEdicion(generosConTallas) {
+    if (!generosConTallas || typeof generosConTallas !== 'object' || Array.isArray(generosConTallas)) {
+        return {};
+    }
+
+    const normalizado = {};
+    const sobremedida = {};
+
+    Object.entries(generosConTallas).forEach(([generoRaw, tallasRaw]) => {
+        const genero = String(generoRaw || '').toUpperCase().trim();
+
+        if (genero === 'SOBREMEDIDA' && tallasRaw && typeof tallasRaw === 'object' && !Array.isArray(tallasRaw)) {
+            Object.entries(tallasRaw).forEach(([subGeneroRaw, cantidadRaw]) => {
+                const subGenero = String(subGeneroRaw || '').toUpperCase().trim();
+                const cantidad = parseInt(cantidadRaw, 10) || 0;
+                if (subGenero && cantidad > 0) {
+                    sobremedida[subGenero] = cantidad;
+                }
+            });
+            return;
+        }
+
+        if (!tallasRaw || typeof tallasRaw !== 'object' || Array.isArray(tallasRaw)) {
+            return;
+        }
+
+        const claves = Object.keys(tallasRaw);
+        const esWrapperSobremedida = claves.length === 1 && String(claves[0]).toLowerCase() === 'tallas';
+
+        if (esWrapperSobremedida) {
+            const cantidad = parseInt(tallasRaw.tallas, 10) || 0;
+            if (cantidad > 0 && genero) {
+                sobremedida[genero] = cantidad;
+            }
+            return;
+        }
+
+        const tallasNormalizadas = {};
+        Object.entries(tallasRaw).forEach(([tallaRaw, cantidadRaw]) => {
+            const talla = String(tallaRaw || '').trim();
+            const cantidad = parseInt(cantidadRaw, 10) || 0;
+            if (talla && cantidad > 0) {
+                tallasNormalizadas[talla] = cantidad;
+            }
+        });
+
+        if (Object.keys(tallasNormalizadas).length > 0) {
+            normalizado[genero] = tallasNormalizadas;
+        }
+    });
+
+    if (Object.keys(sobremedida).length > 0) {
+        normalizado.SOBREMEDIDA = sobremedida;
+    }
+
+    return normalizado;
+}
+
 /**
  * Notificar al usuario sobre errores de carga
  * @param {string} mensaje - Mensaje a mostrar
@@ -210,6 +268,8 @@ function cargarPrendas(prendas) {
                     generosConTallas = {};
                 }
             }
+
+            generosConTallas = normalizarGenerosConTallasEdicion(generosConTallas);
 
             
             // Buscar variantes (nombre correcto desde backend MapearPedidoEdicionService)

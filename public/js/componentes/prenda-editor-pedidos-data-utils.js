@@ -282,6 +282,64 @@
         _appendEliminacionesGlobalesPrenda(formData);
     }
 
+    function _normalizarCantidadTallaCanonica(cantidadTalla) {
+        if (!cantidadTalla || typeof cantidadTalla !== 'object' || Array.isArray(cantidadTalla)) {
+            return {};
+        }
+
+        const normalizado = {};
+        const sobremedida = {};
+
+        Object.entries(cantidadTalla).forEach(([generoRaw, tallasRaw]) => {
+            const genero = String(generoRaw || '').toUpperCase().trim();
+            if (!genero) return;
+
+            if (!tallasRaw || typeof tallasRaw !== 'object' || Array.isArray(tallasRaw)) {
+                return;
+            }
+
+            const claves = Object.keys(tallasRaw);
+            const esWrapperTallas = claves.length === 1 && String(claves[0]).toLowerCase() === 'tallas';
+
+            if (genero === 'SOBREMEDIDA') {
+                Object.entries(tallasRaw).forEach(([subGeneroRaw, cantidadRaw]) => {
+                    const subGenero = String(subGeneroRaw || '').toUpperCase().trim();
+                    const cantidad = parseInt(cantidadRaw, 10) || 0;
+                    if (['DAMA', 'CABALLERO', 'UNISEX'].includes(subGenero) && cantidad > 0) {
+                        sobremedida[subGenero] = cantidad;
+                    }
+                });
+                return;
+            }
+
+            if (esWrapperTallas) {
+                const cantidad = parseInt(tallasRaw.tallas, 10) || 0;
+                if (cantidad > 0 && ['DAMA', 'CABALLERO', 'UNISEX'].includes(genero)) {
+                    sobremedida[genero] = cantidad;
+                }
+                return;
+            }
+
+            const tallasGenero = {};
+            Object.entries(tallasRaw).forEach(([tallaRaw, cantidadRaw]) => {
+                const talla = String(tallaRaw || '').trim().toUpperCase();
+                const cantidad = parseInt(cantidadRaw, 10) || 0;
+                if (!talla || talla === 'NULL' || cantidad <= 0) return;
+                tallasGenero[talla] = cantidad;
+            });
+
+            if (Object.keys(tallasGenero).length > 0) {
+                normalizado[genero] = tallasGenero;
+            }
+        });
+
+        if (Object.keys(sobremedida).length > 0) {
+            normalizado.SOBREMEDIDA = sobremedida;
+        }
+
+        return normalizado;
+    }
+
     function _normalizarTallasBD(prenda) {
         const hayTallas = (prenda.tallas_dama && prenda.tallas_dama.length > 0) ||
                           (prenda.tallas_caballero && prenda.tallas_caballero.length > 0) ||
@@ -306,14 +364,18 @@
                     });
                 }
             });
-            prenda.cantidad_talla = cantidadTalla;
-            prenda.tallasRelacionales = cantidadTalla;
-            console.log('[PedidosAdapter]  Tallas normalizadas:', cantidadTalla);
+            const cantidadTallaNormalizada = _normalizarCantidadTallaCanonica(cantidadTalla);
+            prenda.cantidad_talla = cantidadTallaNormalizada;
+            prenda.tallasRelacionales = cantidadTallaNormalizada;
+            console.log('[PedidosAdapter]  Tallas normalizadas:', cantidadTallaNormalizada);
             return;
         }
 
         if (prenda.cantidad_talla && typeof prenda.cantidad_talla === 'object' && !Array.isArray(prenda.cantidad_talla)) {
-            console.log('[PedidosAdapter]  cantidad_talla ya normalizada (UNISEX desde BD):', prenda.cantidad_talla);
+            const cantidadTallaNormalizada = _normalizarCantidadTallaCanonica(prenda.cantidad_talla);
+            prenda.cantidad_talla = cantidadTallaNormalizada;
+            prenda.tallasRelacionales = cantidadTallaNormalizada;
+            console.log('[PedidosAdapter]  cantidad_talla normalizada desde BD:', cantidadTallaNormalizada);
             return;
         }
         if (Array.isArray(prenda.cantidad_talla) && prenda.cantidad_talla.length === 0) {
@@ -326,12 +388,29 @@
     }
 
     function _normalizarGenerosConTallas(prenda) {
-        if (prenda.generosConTallas || !prenda.cantidad_talla || typeof prenda.cantidad_talla !== 'object') return;
+        const fuenteBase = (prenda.generosConTallas && typeof prenda.generosConTallas === 'object' && !Array.isArray(prenda.generosConTallas))
+            ? prenda.generosConTallas
+            : ((prenda.cantidad_talla && typeof prenda.cantidad_talla === 'object' && !Array.isArray(prenda.cantidad_talla))
+                ? prenda.cantidad_talla
+                : null);
+
+        if (!fuenteBase) return;
+
+        const generosNormalizados = _normalizarCantidadTallaCanonica(fuenteBase);
         prenda.generosConTallas = {};
-        Object.keys(prenda.cantidad_talla).forEach((genero) => {
-            prenda.generosConTallas[genero] = { tallas: Object.values(prenda.cantidad_talla[genero] || {}) };
+
+        Object.keys(generosNormalizados).forEach((genero) => {
+            const tallasGenero = generosNormalizados[genero];
+            if (tallasGenero && typeof tallasGenero === 'object' && !Array.isArray(tallasGenero)) {
+                prenda.generosConTallas[genero] = { ...tallasGenero };
+            }
         });
-        console.log('[PedidosAdapter]  generosConTallas construido para deteccion UNISEX:', Object.keys(prenda.generosConTallas));
+
+        if (!prenda.cantidad_talla || typeof prenda.cantidad_talla !== 'object' || Array.isArray(prenda.cantidad_talla)) {
+            prenda.cantidad_talla = { ...generosNormalizados };
+        }
+
+        console.log('[PedidosAdapter]  generosConTallas normalizado:', prenda.generosConTallas);
     }
 
     function _normalizarAsignacionesDesdeTallaColores(prenda) {
@@ -512,4 +591,3 @@
         normalizarDatosBD
     };
 })();
-
