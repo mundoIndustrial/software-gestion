@@ -100,6 +100,18 @@ function setupRealtimeNotifications() {
         }
     };
 
+    const mostrarNotificacionPrendaDevuelta = (numeroRecibo, nombreCliente, motivo) => {
+        const mensaje = motivo 
+            ? `Recibo #${numeroRecibo} - ${nombreCliente}\n${motivo}`
+            : `Recibo #${numeroRecibo} - ${nombreCliente}`;
+        
+        mostrarNotificacionNavegador(
+            `Prenda devuelta para revisión`,
+            mensaje,
+            '/asesores/pedidos/revisar-prenda'
+        );
+    };
+
     globalThis.waitForEcho(() => {
         try {
             const ws = globalThis.shared?.websocket;
@@ -128,6 +140,19 @@ function setupRealtimeNotifications() {
                 refreshNotifications();
                 refreshBadges();
             });
+            
+            // Suscribirse al evento de "pasar a revisión" (prenda devuelta a asesor)
+            ws.subscribe('pedidos.general', '.prenda.devuelta', (data) => {
+                console.log('[Notificaciones] Prenda devuelta recibida:', data);
+                if (data.asesor_id && Number(data.asesor_id) === currentUserId) {
+                    const numeroRecibo = data.numero_recibo || data.recibo_id || '--';
+                    const nombreCliente = data.cliente || 'Cliente sin nombre';
+                    const motivo = data.motivo || '';
+                    mostrarNotificacionPrendaDevuelta(numeroRecibo, nombreCliente, motivo);
+                    refreshBadges();
+                }
+            });
+            
             ws.subscribe('asesores.observaciones', '.observacion.despacho', refreshNotifications);
             ws.subscribe('asesores.observaciones', '.bodega.nota', refreshNotifications);
 
@@ -136,6 +161,16 @@ function setupRealtimeNotifications() {
                 ws.subscribe(`cotizaciones.asesor.${currentUserId}`, '.cotizacion.estado.cambiado', refreshNotifications);
                 ws.subscribe(`pedidos.${currentUserId}`, '.pedido.actualizado', () => {
                     refreshNotifications();
+                    refreshBadges();
+                });
+                
+                // Suscribirse específicamente al canal del asesor
+                ws.subscribe(`pedidos.${currentUserId}`, '.prenda.devuelta', (data) => {
+                    console.log('[Notificaciones] Prenda devuelta (canal específico del asesor):', data);
+                    const numeroRecibo = data.numero_recibo || data.recibo_id || '--';
+                    const nombreCliente = data.cliente || 'Cliente sin nombre';
+                    const motivo = data.motivo || '';
+                    mostrarNotificacionPrendaDevuelta(numeroRecibo, nombreCliente, motivo);
                     refreshBadges();
                 });
             }

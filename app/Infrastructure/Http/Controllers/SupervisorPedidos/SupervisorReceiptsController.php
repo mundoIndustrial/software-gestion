@@ -238,6 +238,48 @@ class SupervisorReceiptsController extends Controller
                     changedFields: ['recibo_estado' => 'DEVUELTO_ASESOR'],
                     action: 'updated'
                 ))->toOthers();
+                
+                // Emitir evento específico para notificaciones en tiempo real
+                \Event::dispatch(new class($pedido, $asesor, $validated['motivo'], $resultado) implements \Illuminate\Contracts\Broadcasting\ShouldBroadcastNow {
+                    use \Illuminate\Broadcasting\InteractsWithSockets;
+                    use \Illuminate\Broadcasting\PrivateChannel;
+                    use \Illuminate\Foundation\Events\Dispatchable;
+                    use \Illuminate\Queue\SerializesModels;
+
+                    public function __construct(
+                        public PedidoProduccion $pedido,
+                        public User $asesor,
+                        public string $motivo,
+                        public object $recibo
+                    ) {}
+
+                    public function broadcastOn()
+                    {
+                        return [
+                            new \Illuminate\Broadcasting\Channel('pedidos.general'),
+                            new \Illuminate\Broadcasting\Channel('pedidos.' . $this->asesor->id),
+                        ];
+                    }
+
+                    public function broadcastAs()
+                    {
+                        return 'prenda.devuelta';
+                    }
+
+                    public function broadcastWith()
+                    {
+                        return [
+                            'numero_recibo' => (int) ($this->recibo->consecutivo_actual ?? $this->recibo->id),
+                            'recibo_id' => (int) $this->recibo->id,
+                            'asesor_id' => $this->asesor->id,
+                            'cliente' => $this->pedido->cliente,
+                            'motivo' => $this->motivo,
+                            'pedido_id' => $this->pedido->id,
+                            'numero_pedido' => $this->pedido->numero_pedido,
+                            'timestamp' => now()->toISOString(),
+                        ];
+                    }
+                });
             }
         } catch (\Throwable $broadcastError) {
             \Log::warning('[SupervisorPedidos][pasarReciboARevision] No se pudo emitir broadcast', [
