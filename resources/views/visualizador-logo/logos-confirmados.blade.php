@@ -125,6 +125,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
     cargarDisenos();
 
+    window.__refrescarVistaLogosConfirmados = function() {
+        const term = searchInput ? searchInput.value.trim() : '';
+        cargarDisenos(term);
+    };
+
+    window.__actualizarBadgesTabsLogosConfirmados = function(conteoNoRevisados) {
+        const badgeConfirmados = document.getElementById('badge-confirmados');
+        const badgeDevueltos = document.getElementById('badge-devueltos');
+
+        if (badgeConfirmados && conteoNoRevisados) {
+            const cantidad = conteoNoRevisados.confirmados || 0;
+            badgeConfirmados.textContent = String(cantidad);
+            badgeConfirmados.style.display = cantidad > 0 ? 'flex' : 'none';
+        }
+
+        if (badgeDevueltos && conteoNoRevisados) {
+            const cantidad = conteoNoRevisados.devueltos || 0;
+            badgeDevueltos.textContent = String(cantidad);
+            badgeDevueltos.style.display = cantidad > 0 ? 'flex' : 'none';
+        }
+    };
+
     // Función global para cambiar tabs
     window.setTabLogos = function(nuevoTab) {
         const tabsValidos = ['confirmados', 'devueltos'];
@@ -222,27 +244,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.__actualizarBadgeLogos(json.conteo_no_revisados.total || 0);
                 }
 
-                // Actualizar badges locales
-                const badgeConfirmados = document.getElementById('badge-confirmados');
-                const badgeDevueltos = document.getElementById('badge-devueltos');
-                
-                if (badgeConfirmados && json.conteo_no_revisados) {
-                    const cantidad = json.conteo_no_revisados.confirmados || 0;
-                    badgeConfirmados.textContent = String(cantidad);
-                    if (cantidad > 0) {
-                        badgeConfirmados.style.display = 'flex';
-                    } else {
-                        badgeConfirmados.style.display = 'none';
-                    }
-                }
-                if (badgeDevueltos && json.conteo_no_revisados) {
-                    const cantidad = json.conteo_no_revisados.devueltos || 0;
-                    badgeDevueltos.textContent = String(cantidad);
-                    if (cantidad > 0) {
-                        badgeDevueltos.style.display = 'flex';
-                    } else {
-                        badgeDevueltos.style.display = 'none';
-                    }
+                if (json.conteo_no_revisados) {
+                    window.__actualizarBadgesTabsLogosConfirmados(json.conteo_no_revisados);
                 }
 
                 renderizarDisenos(json.items, searchTerm);

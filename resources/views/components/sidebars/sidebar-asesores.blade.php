@@ -296,17 +296,26 @@
             });
     }
 
+    window.__actualizarBadgePendientesLogo = function(conteo) {
+        const badge = document.getElementById('pendientesLogoCount');
+        if (!badge) return;
+
+        const total = Number(conteo) || 0;
+        if (total > 0) {
+            badge.textContent = String(total);
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    };
+
     // Cargar conteo de diseños pendientes de confirmar
     function cargarConteoPendientesLogo() {
         fetch('/api/asesores/conteo-pendientes-logo')
             .then(response => response.json())
             .then(data => {
-                const badge = document.getElementById('pendientesLogoCount');
-                if (badge && data.success && data.conteo > 0) {
-                    badge.textContent = data.conteo;
-                    badge.style.display = 'flex';
-                } else if (badge) {
-                    badge.style.display = 'none';
+                if (data.success) {
+                    window.__actualizarBadgePendientesLogo(data.conteo || 0);
                 }
             })
             .catch(error => {

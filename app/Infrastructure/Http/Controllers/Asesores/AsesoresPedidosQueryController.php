@@ -9,6 +9,7 @@ use App\Application\Asesores\UseCases\ResolverPedidoIdAsesorUseCase;
 use App\Application\Pedidos\DTOs\ListarProduccionPedidosDTO;
 use App\Application\Pedidos\UseCases\ListarProduccionPedidosUseCase;
 use App\Application\Pedidos\UseCases\ObtenerProximoNumeroPedidoUseCase;
+use App\Application\PedidosLogo\Services\DisenoLogoBroadcastService;
 use App\Domain\Pedidos\Repositories\PedidoProduccionReadRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,7 +25,8 @@ final class AsesoresPedidosQueryController extends Controller
         private readonly ContarPendientesAsesorUseCase $contarPendientesAsesorUseCase,
         private readonly ObtenerPendientesAsesorUseCase $obtenerPendientesAsesorUseCase,
         private readonly ObtenerProximoNumeroPedidoUseCase $obtenerProximoNumeroPedidoUseCase,
-        private readonly ListarProduccionPedidosUseCase $listarProduccionPedidosUseCase
+        private readonly ListarProduccionPedidosUseCase $listarProduccionPedidosUseCase,
+        private readonly DisenoLogoBroadcastService $disenoLogoBroadcastService,
     ) {
     }
 
@@ -486,6 +488,8 @@ final class AsesoresPedidosQueryController extends Controller
                 return $this->failure('No tienes permiso para confirmar este diseño', 403);
             }
 
+            $estadoAnterior = (string) $diseño->estado;
+
             // Confirmar solo el diseño seleccionado
             $diseño->update(['estado' => 'logo_confirmado']);
 
@@ -497,6 +501,9 @@ final class AsesoresPedidosQueryController extends Controller
                 'usuario_id' => $user?->id,
                 'tipo_novedad' => 'confirmado',
             ]);
+
+            $diseño->refresh();
+            $this->disenoLogoBroadcastService->emit('confirmado', $diseño, $estadoAnterior);
 
             $cantidadConfirmada = 1;
 
@@ -536,6 +543,8 @@ final class AsesoresPedidosQueryController extends Controller
                 return $this->failure('No tienes permiso para modificar este diseño', 403);
             }
 
+            $estadoAnterior = (string) $diseño->estado;
+
             // Actualizar estado del diseño y guardar novedad en el historial
             $diseño->update(['estado' => 'devuelto_a_diseño']);
             
@@ -546,6 +555,9 @@ final class AsesoresPedidosQueryController extends Controller
                 'usuario_id' => $user?->id,
                 'tipo_novedad' => 'devuelto',
             ]);
+
+            $diseño->refresh();
+            $this->disenoLogoBroadcastService->emit('devuelto', $diseño, $estadoAnterior);
 
             return $this->json([
                 'success' => true,

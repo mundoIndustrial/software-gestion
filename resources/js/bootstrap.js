@@ -168,6 +168,7 @@ function shouldAutoInitializeEcho() {
 
     return (
         moduleName === 'asesores' ||
+        moduleName === 'visualizador-logo' ||
         moduleName === 'supervisor-pedidos' ||
         moduleName === 'insumos-materiales' ||
         moduleName === 'cartera' ||

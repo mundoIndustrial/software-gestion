@@ -2,7 +2,9 @@
 
 namespace App\Application\PedidosLogo\UseCases;
 
+use App\Application\PedidosLogo\Services\DisenoLogoBroadcastService;
 use App\Application\Shared\Contracts\TransactionManagerInterface;
+use App\Models\DisenoLogoPedido;
 use App\Domain\PedidosLogo\Repositories\DisenoLogoPedidoRepositoryInterface;
 use App\Domain\PedidosLogo\Repositories\LogoDesignStorageInterface;
 use App\Domain\PedidosLogo\Repositories\ProcesoPrendaDetalleReadRepositoryInterface;
@@ -14,7 +16,8 @@ final class DeleteDisenoLogoPedidoUseCase
         private ProcesoPrendaDetalleReadRepositoryInterface $procesoReadRepository,
         private DisenoLogoPedidoRepositoryInterface $disenoRepository,
         private LogoDesignStorageInterface $storage,
-        private TransactionManagerInterface $transactionManager
+        private TransactionManagerInterface $transactionManager,
+        private DisenoLogoBroadcastService $broadcastService,
     ) {}
 
     public function execute(int $disenoId, array $payload): array
@@ -58,10 +61,19 @@ final class DeleteDisenoLogoPedidoUseCase
                         'message' => 'El recibo no pertenece al pedido indicado.',
                     ];
                 } else {
+                    $disenoModel = DisenoLogoPedido::query()->find($disenoId);
+                    $snapshot = $disenoModel
+                        ? $this->broadcastService->snapshotFromModel($disenoModel)
+                        : null;
+
                     $this->transactionManager->run(function () use ($diseno, $disenoId): void {
                         $this->storage->deleteByUrl((string) $diseno->url);
                         $this->disenoRepository->eliminarPorId($disenoId);
                     });
+
+                    if ($snapshot) {
+                        $this->broadcastService->emit('eliminado', $snapshot, $snapshot['estado'] ?? null);
+                    }
 
                     $response = [
                         'ok' => true,

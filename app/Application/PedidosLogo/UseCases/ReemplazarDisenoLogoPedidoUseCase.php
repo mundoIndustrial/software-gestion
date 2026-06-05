@@ -2,10 +2,12 @@
 
 namespace App\Application\PedidosLogo\UseCases;
 
+use App\Application\PedidosLogo\Services\DisenoLogoBroadcastService;
 use App\Application\Services\ImageUploadService;
 use App\Application\Shared\Contracts\TransactionManagerInterface;
 use App\Domain\PedidosLogo\Repositories\DisenoLogoPedidoRepositoryInterface;
 use App\Domain\PedidosLogo\Repositories\ProcesoPrendaDetalleReadRepositoryInterface;
+use App\Models\DisenoLogoPedido;
 use App\Models\DisenoLogoPedidoNovedad;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +20,8 @@ final class ReemplazarDisenoLogoPedidoUseCase
         private ProcesoPrendaDetalleReadRepositoryInterface $procesoReadRepository,
         private DisenoLogoPedidoRepositoryInterface $disenoRepository,
         private ImageUploadService $imageUploadService,
-        private TransactionManagerInterface $transactionManager
+        private TransactionManagerInterface $transactionManager,
+        private DisenoLogoBroadcastService $broadcastService,
     ) {}
 
     public function execute(Request $request, int $disenoId): array
@@ -52,6 +55,8 @@ final class ReemplazarDisenoLogoPedidoUseCase
                         'message' => 'No se encontró el pedido asociado.',
                     ];
                 } else {
+                    $estadoAnterior = (string) $diseno->estado;
+
                     $this->transactionManager->run(function () use ($request, $disenoId, $pedidoProduccionId, $diseno): void {
                         $file = $request->file('image');
                         $paths = $this->imageUploadService->guardarImagenDirecta($file, $pedidoProduccionId, 'diseños-logo');
@@ -71,6 +76,11 @@ final class ReemplazarDisenoLogoPedidoUseCase
                             'tipo_novedad' => 'reemplazo_imagen',
                         ]);
                     });
+
+                    $disenoActualizado = DisenoLogoPedido::query()->find($disenoId);
+                    if ($disenoActualizado) {
+                        $this->broadcastService->emit('reemplazado', $disenoActualizado, $estadoAnterior);
+                    }
 
                     $response = [
                         'ok' => true,

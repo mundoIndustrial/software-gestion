@@ -320,6 +320,10 @@
             cargarDisenosPendientes();
         });
 
+        window.__refrescarVistaPendientesLogo = function() {
+            cargarDisenosPendientes();
+        };
+
         function cargarDisenosPendientes() {
             const container = document.getElementById('disenosContainer');
             

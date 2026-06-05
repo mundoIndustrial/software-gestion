@@ -406,6 +406,12 @@ export class GalleryManager {
         html += '</div></div>';
         galeria.innerHTML = html;
 
+        window.__galleryRenderState = {
+            fotos,
+            puedeGestionarDisenoLogo,
+            uploadCtx,
+        };
+
         // Manejar hover en diseños adjuntados
         const diseñosAdjuntados = galeria.querySelectorAll('[class*="diseño-overlay"]');
         diseñosAdjuntados.forEach(overlay => {
@@ -1709,7 +1715,7 @@ export class GalleryManager {
                             title: 'modern-swal-title'
                         }
                     });
-                    location.reload();
+                    await GalleryManager.postAccionDiseñoLogo(disenoId);
                 } else {
                     window.Swal.fire({
                         icon: 'error',
@@ -1920,7 +1926,7 @@ export class GalleryManager {
                             title: 'modern-swal-title'
                         }
                     });
-                    location.reload();
+                    await GalleryManager.postAccionDiseñoLogo(disenoId, procesoId);
                 } else {
                     window.Swal.fire({
                         icon: 'error',
@@ -1944,6 +1950,61 @@ export class GalleryManager {
                     }
                 });
             }
+        }
+    }
+
+    static async postAccionDiseñoLogo(disenoId, procesoId = null) {
+        if (typeof window.__refrescarVistaPendientesLogo === 'function') {
+            window.__refrescarVistaPendientesLogo();
+        }
+
+        const proceso = procesoId || window.__galleryRenderState?.uploadCtx?.procesoPrendaDetalleId;
+        await GalleryManager.refrescarDiseñosLogoEnGaleria(proceso);
+    }
+
+    static async refrescarDiseñosLogoEnGaleria(procesoId) {
+        const galeria = document.getElementById('galeria-modal-costura');
+        const renderState = window.__galleryRenderState;
+
+        if (!galeria || !renderState || !procesoId) {
+            return;
+        }
+
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const response = await fetch(`/api/asesores/obtener-diseños-proceso/${procesoId}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+            });
+            const json = await response.json().catch(() => ({}));
+
+            if (!response.ok || !json.success) {
+                return;
+            }
+
+            const diseñosLogo = (json.diseños || []).map((diseño) => ({
+                id: diseño.id,
+                proceso_prenda_detalle_id: procesoId,
+                url: diseño.url,
+                novedades: diseño.novedades ?? [],
+                estado: diseño.estado ?? null,
+            }));
+
+            const uploadCtx = {
+                ...renderState.uploadCtx,
+                diseñosLogo,
+            };
+
+            GalleryManager._renderizarGaleria(
+                galeria,
+                renderState.fotos,
+                renderState.puedeGestionarDisenoLogo,
+                uploadCtx
+            );
+        } catch (error) {
+            console.warn('[GalleryManager] No se pudo refrescar diseños en galería:', error);
         }
     }
 }

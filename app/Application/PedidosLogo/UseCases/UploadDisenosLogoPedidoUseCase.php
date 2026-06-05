@@ -2,9 +2,11 @@
 
 namespace App\Application\PedidosLogo\UseCases;
 
+use App\Application\PedidosLogo\Services\DisenoLogoBroadcastService;
 use App\Application\Shared\Contracts\TransactionManagerInterface;
 use App\Application\Services\ImageUploadService;
 use App\Domain\PedidosLogo\Repositories\DisenoLogoPedidoRepositoryInterface;
+use App\Models\DisenoLogoPedido;
 use App\Domain\PedidosLogo\Repositories\ProcesoPrendaDetalleReadRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -16,7 +18,8 @@ final class UploadDisenosLogoPedidoUseCase
         private ProcesoPrendaDetalleReadRepositoryInterface $procesoReadRepository,
         private DisenoLogoPedidoRepositoryInterface $disenoRepository,
         private ImageUploadService $imageUploadService,
-        private TransactionManagerInterface $transactionManager
+        private TransactionManagerInterface $transactionManager,
+        private DisenoLogoBroadcastService $broadcastService,
     ) {}
 
     public function execute(Request $request): array
@@ -67,6 +70,13 @@ final class UploadDisenosLogoPedidoUseCase
                             $records[] = $this->disenoRepository->crear($procesoId, $url);
                         }
                     });
+
+                    foreach ($records as $record) {
+                        $diseno = DisenoLogoPedido::query()->find($record['id'] ?? null);
+                        if ($diseno) {
+                            $this->broadcastService->emit('creado', $diseno);
+                        }
+                    }
 
                     $response = [
                         'ok' => true,

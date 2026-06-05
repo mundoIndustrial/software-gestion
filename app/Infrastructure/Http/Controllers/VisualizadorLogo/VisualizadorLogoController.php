@@ -8,6 +8,7 @@ use App\Models\PedidoProduccion;
 use App\Application\SupervisorPedidos\UseCases\ListOrdersUseCase;
 use App\Application\SupervisorPedidos\DTOs\ListOrdersRequest;
 use Illuminate\Http\Request;
+use App\Application\PedidosLogo\Services\DisenoLogoBroadcastService;
 use App\Application\PedidosLogo\UseCases\ReemplazarDisenoLogoPedidoUseCase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,13 +18,16 @@ final class VisualizadorLogoController extends Controller
 {
     private ListOrdersUseCase $listOrdersUseCase;
     private ReemplazarDisenoLogoPedidoUseCase $reemplazarDisenoLogoPedidoUseCase;
+    private DisenoLogoBroadcastService $disenoLogoBroadcastService;
 
     public function __construct(
         ListOrdersUseCase $listOrdersUseCase,
-        ReemplazarDisenoLogoPedidoUseCase $reemplazarDisenoLogoPedidoUseCase
+        ReemplazarDisenoLogoPedidoUseCase $reemplazarDisenoLogoPedidoUseCase,
+        DisenoLogoBroadcastService $disenoLogoBroadcastService,
     ) {
         $this->listOrdersUseCase = $listOrdersUseCase;
         $this->reemplazarDisenoLogoPedidoUseCase = $reemplazarDisenoLogoPedidoUseCase;
+        $this->disenoLogoBroadcastService = $disenoLogoBroadcastService;
     }
     public function dashboard()
     {
@@ -124,7 +128,10 @@ final class VisualizadorLogoController extends Controller
     {
         try {
             $diseno = \App\Models\DisenoLogoPedido::findOrFail($disenoId);
+            $estadoAnterior = (string) $diseno->estado;
             $diseno->update(['revisada' => 1]);
+            $diseno->refresh();
+            $this->disenoLogoBroadcastService->emit('revisado', $diseno, $estadoAnterior);
             
             return response()->json([
                 'success' => true,

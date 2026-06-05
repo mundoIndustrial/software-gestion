@@ -173,4 +173,5 @@
 
 @push('scripts')
     <script src="{{ asset('js/asesores/layout.js') }}"></script>
+    <script defer src="{{ asset('js/realtime-logos-pedido.js') }}"></script>
 @endpush

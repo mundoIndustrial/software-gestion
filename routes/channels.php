@@ -18,6 +18,21 @@ Broadcast::channel('cotizaciones.contador', function ($user) {
     return true; // Permitir acceso a cualquier usuario autenticado para pruebas
 });
 
+Broadcast::channel('logos.asesor.{asesorId}', function ($user, $asesorId) {
+    return (int) $user->id === (int) $asesorId || $user->hasRole('admin');
+});
+
+Broadcast::channel('logos.visualizador', function ($user) {
+    return $user->hasAnyRole([
+        'visualizador_cotizaciones_logo',
+        'admin',
+        'lider_produccion',
+        'supervisor_produccion',
+        'diseñador-logos',
+        'bordador',
+    ]);
+});
+
 Broadcast::channel('pedidos.{asesorId}', function ($user, $asesorId) {
     return $user->id == $asesorId || 
            $user->hasRole('supervisor') || 

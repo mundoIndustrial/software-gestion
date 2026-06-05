@@ -49,6 +49,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script defer src="{{ asset('js/asesores/layout.js') }}"></script>
     <script defer src="{{ asset('js/asesores/notifications.js') }}"></script>
+    <script defer src="{{ asset('js/realtime-logos-pedido.js') }}"></script>
     
     <!-- Ocultar loading overlay cuando todos los recursos estén cargados -->
     <script>
