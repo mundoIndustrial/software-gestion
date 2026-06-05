@@ -259,6 +259,7 @@ export class GalleryManager {
             
             diseñosLogo.forEach((diseño, idx) => {
                 const fotosJSON = JSON.stringify([diseño.url]);
+                const novedadesJson = JSON.stringify(diseño.novedades || []);
                 let estadoBadge = '';
                 if (diseño.estado === 'pendiente_por_confirmar') {
                     estadoBadge = `<span style="display: inline-block; padding: 2px 6px; font-size: 0.65rem; font-weight: 700; border-radius: 999px; background-color: #fef3c7; color: #d97706; text-transform: uppercase;">Pendiente</span>`;
@@ -289,7 +290,7 @@ export class GalleryManager {
                             ${(diseño.novedades && diseño.novedades.length > 0) ? `
                                 <div style="font-size: 0.75rem; color: #475569; background: #fff5f5; border-radius: 6px; padding: 6px 8px; border-left: 3px solid #ef4444; word-break: break-word; line-height: 1.3;">
                                     <strong>Novedad:</strong> ${diseño.novedades[0].novedad}
-                                    <button onclick="event.stopPropagation(); GalleryManager.verHistorialNovedades(${JSON.stringify(diseño.novedades)})" style="margin-top: 4px; padding: 2px 6px; border-radius: 6px; border: none; background: #ef4444; color: white; font-size: 0.7rem; cursor: pointer; font-weight: 700;">
+                                    <button class="ver-historial-novedades-btn" data-novedades="${btoa(novedadesJson)}" style="margin-top: 4px; padding: 2px 6px; border-radius: 6px; border: none; background: #ef4444; color: white; font-size: 0.7rem; cursor: pointer; font-weight: 700;">
                                         Ver Historial
                                     </button>
                                 </div>
@@ -297,10 +298,10 @@ export class GalleryManager {
 
                             ${mostrarBotonObservacion ? `
                                 <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px;">
-                                    <button onclick="event.stopPropagation(); GalleryManager.confirmarDiseño(${diseño.id}, ${diseño.proceso_prenda_detalle_id})" title="Confirmar Diseño" style="width: 32px; height: 32px; border-radius: 50%; border: none; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(34, 197, 94, 0.3); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
+                                    <button class="confirmar-diseño-btn" data-diseño-id="${diseño.id}" data-proceso-id="${diseño.proceso_prenda_detalle_id}" title="Confirmar Diseño" style="width: 32px; height: 32px; border-radius: 50%; border: none; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(34, 197, 94, 0.3); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
                                         <i class="fas fa-check"></i>
                                     </button>
-                                    <button onclick="event.stopPropagation(); GalleryManager.enviarObservacionDiseno(${diseño.id})" title="Devolver con Observación" style="width: 32px; height: 32px; border-radius: 50%; border: none; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
+                                    <button class="enviar-observacion-diseño-btn" data-diseño-id="${diseño.id}" title="Devolver con Observación" style="width: 32px; height: 32px; border-radius: 50%; border: none; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
                                         <i class="fas fa-undo"></i>
                                     </button>
                                 </div>
@@ -436,6 +437,48 @@ export class GalleryManager {
                     } catch (err) {
                         console.error('Error al abrir imagen de diseño:', err);
                     }
+                }
+            });
+        });
+
+        // Manejar clicks en botones de ver historial novedades
+        const verHistorialBtns = galeria.querySelectorAll('.ver-historial-novedades-btn');
+        verHistorialBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const novedadesBase64 = btn.getAttribute('data-novedades');
+                if (novedadesBase64) {
+                    try {
+                        const novedades = JSON.parse(atob(novedadesBase64));
+                        GalleryManager.verHistorialNovedades(novedades);
+                    } catch (err) {
+                        console.error('Error al abrir historial de novedades:', err);
+                    }
+                }
+            });
+        });
+
+        // Manejar clicks en botones de confirmar diseño
+        const confirmarDiseñoBtns = galeria.querySelectorAll('.confirmar-diseño-btn');
+        confirmarDiseñoBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const diseñoId = parseInt(btn.getAttribute('data-diseño-id'));
+                const procesoId = parseInt(btn.getAttribute('data-proceso-id'));
+                if (!isNaN(diseñoId) && !isNaN(procesoId)) {
+                    GalleryManager.confirmarDiseño(diseñoId, procesoId);
+                }
+            });
+        });
+
+        // Manejar clicks en botones de devolver con observación
+        const enviarObservacionBtns = galeria.querySelectorAll('.enviar-observacion-diseño-btn');
+        enviarObservacionBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const diseñoId = parseInt(btn.getAttribute('data-diseño-id'));
+                if (!isNaN(diseñoId)) {
+                    GalleryManager.enviarObservacionDiseno(diseñoId);
                 }
             });
         });

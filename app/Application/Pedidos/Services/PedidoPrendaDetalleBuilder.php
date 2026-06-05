@@ -960,6 +960,26 @@ class PedidoPrendaDetalleBuilder
                 if (isset($procesoPrendaDetalle->disenosLogo) && count($procesoPrendaDetalle->disenosLogo) > 0) {
                     foreach ($procesoPrendaDetalle->disenosLogo as $diseño) {
                         if ($diseño->url) {
+                            // Map novedades to include user data correctly
+                            $novedadesMapeadas = [];
+                            if (isset($diseño->novedades) && count($diseño->novedades) > 0) {
+                                foreach ($diseño->novedades as $novedad) {
+                                    $novedadesMapeadas[] = [
+                                        'id' => $novedad->id,
+                                        'diseno_logo_pedido_id' => $novedad->diseno_logo_pedido_id,
+                                        'novedad' => $novedad->novedad,
+                                        'usuario_id' => $novedad->usuario_id,
+                                        'tipo_novedad' => $novedad->tipo_novedad,
+                                        'created_at' => $novedad->created_at,
+                                        'updated_at' => $novedad->updated_at,
+                                        'usuario' => isset($novedad->usuario) ? [
+                                            'id' => $novedad->usuario->id,
+                                            'name' => $novedad->usuario->name,
+                                        ] : null,
+                                    ];
+                                }
+                            }
+
                             $imagenes[] = [
                                 'id' => $diseño->id,
                                 'proceso_prenda_detalle_id' => $procesoPrendaDetalle->id,
@@ -968,7 +988,7 @@ class PedidoPrendaDetalleBuilder
                                 'ruta_original' => $this->normalizarRutaImagen($diseño->url),
                                 'tipo' => 'diseño-logo',
                                 'orden' => 0,
-                                'novedades' => $diseño->novedades ?? [],
+                                'novedades' => $novedadesMapeadas,
                                 'estado' => $diseño->estado,
                             ];
                         }

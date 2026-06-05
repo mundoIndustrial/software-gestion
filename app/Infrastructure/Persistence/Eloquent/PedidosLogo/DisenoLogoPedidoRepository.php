@@ -11,9 +11,10 @@ final class DisenoLogoPedidoRepository implements DisenoLogoPedidoRepositoryInte
     public function listarPorProceso(int $procesoPrendaDetalleId): Collection
     {
         return DisenoLogoPedido::query()
+            ->with('novedades.usuario')
             ->where('proceso_prenda_detalle_id', $procesoPrendaDetalleId)
             ->orderBy('id', 'asc')
-            ->get(['id', 'url']);
+            ->get();
     }
 
     public function contarPorProceso(int $procesoPrendaDetalleId): int

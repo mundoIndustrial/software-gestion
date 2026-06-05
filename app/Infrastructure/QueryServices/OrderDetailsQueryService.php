@@ -52,6 +52,7 @@ class OrderDetailsQueryService
                 'tallas',
                 'procesos.tipoProceso',
                 'procesos.imagenes',
+                'procesos.disenosLogo.novedades.usuario',
             ])
             ->orderBy('id', 'asc')
             ->get();
