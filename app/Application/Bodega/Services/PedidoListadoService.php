@@ -96,8 +96,15 @@ class PedidoListadoService
                     ->where('estado', 'Entregado')
                     ->whereNotNull('numero_pedido');
             })
-            ->whereNotIn('bodega_detalles_talla.estado_bodega', ['Entregado', 'Anulado'])
-            ->select([
+            ->whereNotIn('bodega_detalles_talla.estado_bodega', ['Entregado', 'Anulado']);
+
+        // Excluir EPPs eliminados (soft deleted) y obligar vínculo real con pedido_epp
+        if ($area === 'EPP') {
+            $query->join('pedido_epp as pe_epp', 'pe_epp.id', '=', 'bodega_detalles_talla.pedido_epp_id')
+                ->whereNull('pe_epp.deleted_at');
+        }
+
+        $query->select([
                 'bodega_detalles_talla.numero_pedido',
                 \DB::raw('MIN(bodega_detalles_talla.id) as id'),
                 \DB::raw('MIN(pp.id) as pedido_produccion_id'),

@@ -7,6 +7,7 @@ use App\Application\Pedidos\UseCases\ObtenerPedidoUseCase;
 use App\Models\BodegaDetallesTalla;
 use App\Models\CosturaBodegaDetalle;
 use App\Models\EppBodegaDetalle;
+use App\Models\News;
 use App\Models\PedidoProduccion;
 use App\Models\ReciboPrenda;
 use Carbon\Carbon;
@@ -154,14 +155,8 @@ class BodegaPedidoDetalleService
         $eppsPorId = $todosLosEppsBD->keyBy('id');
         $hijosPorPadre = $todosLosEppsBD->groupBy('homologado_de');
 
-        // Filtrar EPPs para excluir los que fueron reemplazados (deleted_at IS NOT NULL y tienen versiones más nuevas)
-        $eppsValidos = $todosLosEppsBD->filter(function ($epp) use ($hijosPorPadre) {
-            if ($epp->deleted_at === null) {
-                return true;
-            }
-            // Si está deleted pero tiene versiones más nuevas (fue homologado), incluirlo
-            return !$hijosPorPadre->get($epp->id, collect())->isEmpty();
-        })->pluck('id')->toArray();
+        // Mantener todos los EPPs para que los eliminados sin homologación puedan mostrarse como fila roja.
+        $eppsValidos = $todosLosEppsBD->pluck('id')->toArray();
 
         $eppsEnriquecidosPorId = collect($epps)
             ->filter(fn ($epp) => in_array($epp['pedido_epp_id'] ?? null, $eppsValidos))
@@ -177,20 +172,23 @@ class BodegaPedidoDetalleService
                 continue;
             }
 
-            // Si el EPP está eliminado (deleted_at IS NOT NULL) y no tiene versiones más nuevas
-            // (es decir, no fue homologado a otro EPP), entonces no debe aparecer en la vista
             $tieneVersionesMasNuevas = !$hijosPorPadre->get($pedidoEppIdActual, collect())->isEmpty();
-
-            if ($pedidoEppActual->deleted_at !== null && !$tieneVersionesMasNuevas) {
-                continue;
-            }
+            $estaEliminadoSinHomologacion = $pedidoEppActual->deleted_at !== null && !$tieneVersionesMasNuevas;
 
             $historialeHomologaciones = $this->obtenerHistorialEpp($pedidoEppIdOriginal);
+            $datosEliminacion = $estaEliminadoSinHomologacion
+                ? $this->obtenerDatosEliminacionEpp($pedidoEppActual->id)
+                : null;
 
             $eppEnriquecidoActual = $eppsEnriquecidosPorId->get($pedidoEppIdActual, []);
             $eppEnriquecidoActual['pedido_epp_id'] = $pedidoEppIdActual;
             $eppEnriquecidoActual['nombre'] = $eppEnriquecidoActual['nombre'] ?? ($pedidoEppActual->epp->nombre_completo ?? 'EPP sin nombre');
             $eppEnriquecidoActual['cantidad'] = $eppEnriquecidoActual['cantidad'] ?? (int) $pedidoEppActual->cantidad;
+            $eppEnriquecidoActual['deleted_at'] = $pedidoEppActual->deleted_at?->format('Y-m-d H:i');
+            $eppEnriquecidoActual['eliminado_sin_homologacion'] = $estaEliminadoSinHomologacion;
+            $eppEnriquecidoActual['eliminado_por_nombre'] = $datosEliminacion['eliminado_por_nombre'] ?? null;
+            $eppEnriquecidoActual['eliminado_motivo'] = $datosEliminacion['motivo'] ?? null;
+            $eppEnriquecidoActual['eliminado_en'] = $datosEliminacion['eliminado_en'] ?? $eppEnriquecidoActual['deleted_at'];
 
             $items[] = $this->crearItemEpp(
                 $eppEnriquecidoActual,
@@ -384,6 +382,26 @@ class BodegaPedidoDetalleService
         return $historial;
     }
 
+    private function obtenerDatosEliminacionEpp(int $pedidoEppId): ?array
+    {
+        $newsEliminacion = News::with('user')
+            ->where('event_type', 'epp_eliminado')
+            ->where('table_name', 'pedido_epp')
+            ->where('record_id', $pedidoEppId)
+            ->latest('id')
+            ->first();
+
+        if (!$newsEliminacion) {
+            return null;
+        }
+
+        return [
+            'eliminado_por_nombre' => $newsEliminacion->user?->name ?? 'Asesora',
+            'eliminado_en' => $newsEliminacion->created_at?->format('Y-m-d H:i'),
+            'motivo' => $newsEliminacion->metadata['motivo'] ?? null,
+        ];
+    }
+
     private function obtenerCadenaEppCompleta(int $pedidoEppIdOriginal): Collection
     {
         // Cargar toda la cadena de EPPs homologados
@@ -488,6 +506,11 @@ class BodegaPedidoDetalleService
             'pedido_epp_id' => $pedidoEppId,
             'tiene_historial' => $tieneHistorial,
             'historial_homologaciones' => $historialeHomologaciones,
+            'eliminado_sin_homologacion' => $eppEnriquecido['eliminado_sin_homologacion'] ?? false,
+            'eliminado_por_nombre' => $eppEnriquecido['eliminado_por_nombre'] ?? null,
+            'eliminado_motivo' => $eppEnriquecido['eliminado_motivo'] ?? null,
+            'eliminado_en' => $eppEnriquecido['eliminado_en'] ?? null,
+            'deleted_at' => $eppEnriquecido['deleted_at'] ?? null,
             'asesor' => $asesor,
             'empresa' => $empresa,
             'descripcion' => $descripcionEpp,

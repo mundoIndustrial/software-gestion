@@ -6,6 +6,7 @@ use App\Domain\Pedidos\UseCases\EliminarEppUseCaseContract;
 
 use App\Models\PedidoEpp;
 use App\Models\PedidoEppImagen;
+use App\Models\News;
 use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -59,6 +60,40 @@ final class EliminarEppUseCase implements EliminarEppUseCaseContract
             'nombre' => $nombreEpp,
         ]);
 
+        try {
+            $usuario = auth()?->user();
+            $nombreUsuario = $usuario?->name ?? 'Sistema';
+            $roles = $usuario?->getRoleNames()?->toArray() ?? [];
+            $rolUsuario = count($roles) > 0 ? implode(', ', $roles) : 'Asesor';
+            $datosAsesor = $rolUsuario !== 'Asesor'
+                ? "{$nombreUsuario} ({$rolUsuario})"
+                : $nombreUsuario;
+            $numeroPedido = $pedido->numero_pedido ?? $pedidoId;
+
+            News::create([
+                'event_type' => 'epp_eliminado',
+                'table_name' => 'pedido_epp',
+                'record_id' => $pedidoEppId,
+                'description' => "{$datosAsesor} elimino EPP en Pedido #{$numeroPedido} ({$nombreEpp}) - Motivo: {$motivo}",
+                'user_id' => $usuario?->id,
+                'pedido' => $numeroPedido,
+                'metadata' => [
+                    'tipo' => 'epp_eliminado',
+                    'pedido_id' => $pedidoId,
+                    'pedido_epp_id' => $pedidoEppId,
+                    'epp_nombre' => $nombreEpp,
+                    'cantidad' => $pedidoEpp->cantidad,
+                    'motivo' => $motivo,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::warning('[EliminarEppUseCase] Error creando News de eliminacion', [
+                'error' => $e->getMessage(),
+                'pedido_id' => $pedidoId,
+                'pedido_epp_id' => $pedidoEppId,
+            ]);
+        }
+
         return [
             'success' => true,
             'message' => 'EPP eliminado correctamente',
@@ -78,6 +113,4 @@ final class EliminarEppUseCase implements EliminarEppUseCaseContract
         return strtolower((string) $pedido->estado) === 'borrador';
     }
 }
-
-
 

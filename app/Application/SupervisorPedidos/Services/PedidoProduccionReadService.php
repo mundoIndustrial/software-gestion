@@ -1061,6 +1061,7 @@ class PedidoProduccionReadService
                 'prenda_modificada' => 'edit',
                 'epp_agregado' => 'health_and_safety',
                 'epp_modificado' => 'edit',
+                'epp_eliminado' => 'delete',
                 'order_status_changed' => 'sync_alt',
                 'pedido_rechazado_cartera' => 'gpp_bad',
                 default => 'notifications',
@@ -1072,6 +1073,7 @@ class PedidoProduccionReadService
                 'prenda_modificada' => '#f59e0b',
                 'epp_agregado' => '#8b5cf6',
                 'epp_modificado' => '#f59e0b',
+                'epp_eliminado' => '#ef4444',
                 'order_status_changed' => '#6366f1',
                 'pedido_rechazado_cartera' => '#dc2626',
                 default => '#6b7280',
@@ -1176,6 +1178,7 @@ class PedidoProduccionReadService
             'prenda_modificada',
             'epp_agregado',
             'epp_modificado',
+            'epp_eliminado',
             'order_status_changed',
             'pedido_rechazado_cartera',
         ];

@@ -157,6 +157,24 @@
                                                     }
                                                 }
                                             }
+                                            
+                                            // Agregar novedades de la tabla News
+                                            $numeroPedido = $pedidoData['numero_pedido'] ?? null;
+                                            if ($numeroPedido) {
+                                                $newsNovedades = \App\Models\News::whereIn('event_type', ['epp_homologado', 'epp_eliminado', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado'])
+                                                    ->where('pedido', $numeroPedido)
+                                                    ->orderBy('created_at', 'desc')
+                                                    ->get();
+                                                
+                                                foreach ($newsNovedades as $news) {
+                                                    $novedades[] = [
+                                                        'texto' => $news->description,
+                                                        'fecha' => $news->created_at->format('d/m/Y H:i'),
+                                                        'tipo' => $news->event_type
+                                                    ];
+                                                }
+                                            }
+                                            
                                             // Reindexar el array
                                             $novedades = array_values($novedades);
                                             $cantidadNovedades = count($novedades);
@@ -850,7 +868,7 @@
                     }
 
                     const seRefrescoFila = refrescarYSubirPedido(num, e.record_id || e.id || null);
-                    if (!seRefrescoFila && ['pedido_creado', 'order_created', 'pedido_approved', 'pedido_aprobado', 'order_status_changed', 'epp_homologado', 'epp_agregado', 'prenda_agregada', 'prenda_modificada'].includes(e.event_type)) {
+                    if (!seRefrescoFila && ['pedido_creado', 'order_created', 'pedido_approved', 'pedido_aprobado', 'order_status_changed', 'epp_homologado', 'epp_eliminado', 'epp_agregado', 'prenda_agregada', 'prenda_modificada'].includes(e.event_type)) {
                         console.log('[BODEGA-LIST] Nuevo pedido detectado, insertando dinámicamente...');
                         const params = new URLSearchParams(window.location.search);
                         if ((params.get('page') || '1') === '1' && !params.has('search')) {

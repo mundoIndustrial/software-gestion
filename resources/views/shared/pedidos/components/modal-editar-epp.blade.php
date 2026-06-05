@@ -273,6 +273,7 @@
                 const btnHomologarHoverColor = pedidoEntregado ? '#9ca3af' : '#7c3aed';
                 const btnHomologarOnClick = pedidoEntregado ? '' : `onclick="abrirModalHomologarEpp(${JSON.stringify(item).replace(/"/g, '&quot;')}, ${idx}, window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido)"`;
                 const btnHomologarOpacity = pedidoEntregado ? 'opacity: 0.5; cursor: not-allowed;' : '';
+                const btnEliminarOnClick = `onclick="abrirModalEliminarEpp(${JSON.stringify(item).replace(/"/g, '&quot;')}, ${idx}, window.datosEdicionPedido.id || window.datosEdicionPedido.numero_pedido)"`;
                 console.debug('[EPP-DEBUG] item render', {
                     idx,
                     pedidoEntregado,
@@ -289,6 +290,13 @@
                             <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.85rem;">Cantidad: <strong>${item.cantidad || 0}</strong></p>
                         </div>
                         <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
+                            <button ${btnEliminarOnClick}
+                                style="background: #ef4444; color: white; padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"
+                                onmouseover="this.style.background='#dc2626'; this.style.transform='scale(1.05)';"
+                                onmouseout="this.style.background='#ef4444'; this.style.transform='scale(1)';"
+                                title="Eliminar EPP">
+                                 Eliminar
+                            </button>
                             <button ${btnHomologarDisabled} ${btnHomologarOnClick}
                                 style="background: ${btnHomologarColor}; color: white; padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; ${btnHomologarOpacity}"
                                 onmouseover="${pedidoEntregado ? '' : `this.style.background='${btnHomologarHoverColor}'; this.style.transform='scale(1.05)';`}"

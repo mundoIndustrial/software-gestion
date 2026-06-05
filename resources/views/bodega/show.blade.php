@@ -23,6 +23,29 @@
         visibility: hidden;
         pointer-events: none;
     }
+
+    .epp-eliminado-row > td {
+        background: #fee2e2 !important;
+        border-top-color: #fca5a5 !important;
+        border-bottom-color: #fca5a5 !important;
+    }
+
+    .epp-eliminado-row .area-select,
+    .epp-eliminado-row .observaciones-input,
+    .epp-eliminado-row .fecha-pedido-input,
+    .epp-eliminado-row .fecha-input {
+        background: #fff1f2 !important;
+        border-color: #ef4444 !important;
+        color: #7f1d1d !important;
+    }
+
+    .epp-eliminado-row .area-select:disabled,
+    .epp-eliminado-row .observaciones-input:disabled,
+    .epp-eliminado-row .fecha-pedido-input:disabled,
+    .epp-eliminado-row .fecha-input:disabled {
+        opacity: 1 !important;
+        cursor: not-allowed !important;
+    }
 </style>
 @endpush
 
@@ -288,7 +311,11 @@
                                                             ($generoKey ?? '')
                                                         );
                                                     @endphp
-                                                    <tr class="hover:bg-slate-50 transition-colors"
+                                                    @php
+                                                        $esEppEliminado = (bool) ($baseItem['eliminado_sin_homologacion'] ?? false);
+                                                        $nombreEliminadoPor = $baseItem['eliminado_por_nombre'] ?? null;
+                                                    @endphp
+                                                    <tr class="transition-colors {{ $esEppEliminado ? 'epp-eliminado-row' : 'hover:bg-slate-50' }}"
                                                         data-row-hash="{{ $rowHash }}"
                                                         data-numero-pedido="{{ $baseItem['numero_pedido'] }}"
                                                         data-prenda-id="{{ $baseItem['prenda_id'] ?? '' }}"
@@ -297,7 +324,9 @@
                                                         data-talla-color-id="{{ $t['tallaColorId'] ?? '' }}"
                                                         data-asesor="{{ is_string($baseItem['asesor'] ?? null) && !empty($baseItem['asesor']) ? $baseItem['asesor'] : 'N/A' }}"
                                                         data-empresa="{{ is_string($baseItem['empresa'] ?? null) && !empty($baseItem['empresa']) ? $baseItem['empresa'] : 'N/A' }}"
-                                                        @if(($baseItem['estado_bodega'] ?? '') === 'Homologar')
+                                                        @if($esEppEliminado)
+                                                            style="background-color: #fee2e2 !important; border-left: 8px solid #dc2626;"
+                                                        @elseif(($baseItem['estado_bodega'] ?? '') === 'Homologar')
                                                             style="background-color: rgba(147, 51, 234, 0.08);"
                                                         @elseif(($baseItem['estado_bodega'] ?? '') === 'Entregado')
                                                             style="background-color: rgba(37, 99, 235, 0.05);"
@@ -308,6 +337,14 @@
                                                         <td class="px-4 py-3 text-xs text-black border-r border-slate-300" rowspan="{{ $totalRowsColor }}" style="width: 22%;">
                                                             <div class="font-bold text-black mb-2 flex items-center gap-2">
                                                                 {{ $nombre }}
+                                                                @if($esEppEliminado)
+                                                                    <span class="inline-flex items-center gap-1.5 rounded bg-red-600 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow-lg">
+                                                                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                                                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                                                        </svg>
+                                                                        EPP ELIMINADO POR ASESOR{{ $nombreEliminadoPor ? ' - ' . $nombreEliminadoPor : '' }}
+                                                                    </span>
+                                                                @endif
                                                                 @if($colorLabel)
                                                                     <span class="text-black"> - <strong>{{ $colorLabel }}</strong></span>
                                                                 @endif
@@ -316,22 +353,15 @@
                                                                 @endif
                                                             </div>
                                                             @if(($baseItem['tipo'] ?? null) === 'EPP' || ($baseItem['area'] ?? null) === 'EPP')
-                                                                @php
-                                                                    $hayEppEliminado = false;
-                                                                    if($baseItem['tiene_historial'] ?? false) {
-                                                                        $historial = $baseItem['historial_homologaciones'] ?? [];
-                                                                        foreach($historial as $h) {
-                                                                            if(isset($h['deleted_at']) && $h['deleted_at'] !== null) {
-                                                                                $hayEppEliminado = true;
-                                                                                break;
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                @endphp
-                                                                @if($hayEppEliminado)
+                                                                @if(($baseItem['tiene_historial'] ?? false) && !$esEppEliminado)
                                                                     <div class="text-blue-600 font-semibold text-xs mb-2">(homologado)</div>
                                                                 @endif
-                                                                @if($baseItem['tiene_historial'] ?? false)
+                                                                @if($esEppEliminado)
+                                                                    <div class="mb-2 inline-flex items-center rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                                                                        Este EPP fue eliminado por la asesora{{ $nombreEliminadoPor ? ' (' . $nombreEliminadoPor . ')' : '' }}
+                                                                    </div>
+                                                                @endif
+                                                                @if(($baseItem['tiene_historial'] ?? false) && !$esEppEliminado)
                                                                 <button type="button" 
                                                                         onclick="toggleHistorialEpp(this, {{ json_encode($baseItem['historial_homologaciones']) }})" 
                                                                         title="Ver historial completo de cambios"
@@ -478,7 +508,7 @@
                                                             $pendValue = (int)($baseItem['pendientes'] ?? 0);
                                                         @endphp
                                                         <div
-                                                            class="pendientes-display w-full px-1.5 py-2 border-2 border-slate-300 text-[10px] rounded cursor-pointer transition
+                                                            class="pendientes-display w-full px-1.5 py-2 border-2 border-slate-300 text-[10px] rounded {{ $esEppEliminado ? 'cursor-not-allowed opacity-60' : 'cursor-pointer' }} transition
                                                                 @if(($baseItem['estado_bodega'] ?? '') === 'Entregado')
                                                                     bg-blue-50 text-blue-700 border-blue-200
                                                                 @elseif($pendValue > 0)
@@ -487,8 +517,10 @@
                                                                     bg-slate-50 text-slate-500
                                                                 @endif"
                                                             style="font-family: 'Poppins', sans-serif;"
-                                                            ondblclick="abrirModalPendientes(this, {{ $totalQty }})"
-                                                            title="Doble clic para editar pendientes"
+                                                            @if(!$esEppEliminado)
+                                                                ondblclick="abrirModalPendientes(this, {{ $totalQty }})"
+                                                            @endif
+                                                            title="{{ $esEppEliminado ? 'No editable - EPP eliminado' : 'Doble clic para editar pendientes' }}"
                                                             data-row-hash="{{ $rowHash }}"
                                                         >
                                                             @if($pendValue > 0)
@@ -526,7 +558,9 @@
                                                                 placeholder="Notas..."
                                                                 rows="1"
                                                                 readonly
+                                                                @if($esEppEliminado) disabled @endif
                                                             >{{ $baseItem['observaciones'] ?? '' }}</textarea>
+                                                            @if(!$esEppEliminado)
                                                             <button
                                                                 type="button"
                                                                 onclick="abrirModalNotas('{{ $baseItem['numero_pedido'] }}', '{{ $baseItem['talla'] }}', '{{ addslashes($nombre) }}', 'prenda', '{{ $baseItem['talla'] }}', '{{ $t['tallaColorId'] ?? '' }}')"
@@ -535,6 +569,16 @@
                                                             >
                                                                 💬
                                                             </button>
+                                                            @else
+                                                            <button
+                                                                type="button"
+                                                                disabled
+                                                                class="px-2 py-1 bg-gray-400 text-white text-xs font-bold rounded cursor-not-allowed opacity-60 whitespace-nowrap"
+                                                                title="No editable - EPP eliminado"
+                                                            >
+                                                                💬
+                                                            </button>
+                                                            @endif
                                                         </div>
                                                     </td>
 
@@ -556,7 +600,7 @@
                                                             data-prenda-id="{{ $baseItem['prenda_id'] ?? '' }}"
                                                             data-pedido-produccion-id="{{ $baseItem['pedido_produccion_id'] ?? '' }}"
                                                             data-recibo-prenda-id="{{ $baseItem['recibo_prenda_id'] ?? '' }}"
-                                                            @if($esReadOnly ?? false) disabled @endif
+                                                            @if(($esReadOnly ?? false) || $esEppEliminado) disabled @endif
                                                         >
                                                     </td>
 
@@ -578,7 +622,7 @@
                                                             data-prenda-id="{{ $baseItem['prenda_id'] ?? '' }}"
                                                             data-pedido-produccion-id="{{ $baseItem['pedido_produccion_id'] }}"
                                                             data-recibo-prenda-id="{{ $baseItem['recibo_prenda_id'] }}"
-                                                            @if(($baseItem['estado_bodega'] ?? '') === 'Entregado' || ($esReadOnly ?? false))
+                                                            @if(($baseItem['estado_bodega'] ?? '') === 'Entregado' || ($esReadOnly ?? false) || $esEppEliminado)
                                                                 disabled
                                                             @endif
                                                         >
@@ -597,7 +641,7 @@
                                                                 data-pedido-produccion-id="{{ $baseItem['pedido_produccion_id'] ?? '' }}"
                                                                 data-recibo-prenda-id="{{ $baseItem['recibo_prenda_id'] ?? '' }}"
                                                                 data-original-area="{{ $baseItem['area'] ?? '' }}"
-                                                                @if($esReadOnly ?? false) disabled @endif
+                                                                @if(($esReadOnly ?? false) || $esEppEliminado) disabled @endif
                                                             >
                                                                 <option value="">ÁREA</option>
                                                                 <option value="Costura" {{ ($baseItem['area'] ?? null) === 'Costura' ? 'selected' : '' }}>COSTURA</option>
@@ -617,14 +661,18 @@
                                                                 data-pedido-epp-id="{{ $baseItem['pedido_epp_id'] ?? '' }}"
                                                                 data-cantidad="{{ $baseItem['cantidad_total'] }}"
                                                                 data-original-estado="{{ $baseItem['estado_bodega'] ?? '' }}"
-                                                                @if($esReadOnly ?? false) disabled @endif
+                                                                @if(($esReadOnly ?? false) || $esEppEliminado) disabled @endif
                                                             >
-                                                                <option value="">ESTADO</option>
-                                                                <option value="Pendiente" {{ ($baseItem['estado_bodega'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
-                                                                <option value="Entregado" {{ ($baseItem['estado_bodega'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
-                                                                <option value="Homologar" {{ ($baseItem['estado_bodega'] ?? null) === 'Homologar' ? 'selected' : '' }}>HOMOLOGAR</option>
-                                                                @if(auth()->user()->hasRole(['Bodeguero', 'Admin', 'SuperAdmin']))
-                                                                <option value="Anulado" {{ ($baseItem['estado_bodega'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
+                                                                @if($esEppEliminado)
+                                                                    <option value="EliminadoAsesor" selected>ELIMINADO POR ASESOR</option>
+                                                                @else
+                                                                    <option value="">ESTADO</option>
+                                                                    <option value="Pendiente" {{ ($baseItem['estado_bodega'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
+                                                                    <option value="Entregado" {{ ($baseItem['estado_bodega'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
+                                                                    <option value="Homologar" {{ ($baseItem['estado_bodega'] ?? null) === 'Homologar' ? 'selected' : '' }}>HOMOLOGAR</option>
+                                                                    @if(auth()->user()->hasRole(['Bodeguero', 'Admin', 'SuperAdmin']))
+                                                                    <option value="Anulado" {{ ($baseItem['estado_bodega'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
+                                                                    @endif
                                                                 @endif
                                                             </select>
 
@@ -638,7 +686,7 @@
                                                             </button>
                                                             @endif
 
-                                                            @if(!($esReadOnly ?? false) && !auth()->user()->hasRole('supervisor_gerencia'))
+                                                            @if(!($esReadOnly ?? false) && !auth()->user()->hasRole('supervisor_gerencia') && !$esEppEliminado)
                                                             <button
                                                                 type="button"
                                                                 onclick="guardarFilaCompleta(this, '{{ $baseItem['numero_pedido'] }}', '{{ $baseItem['talla'] }}', '{{ $t['tallaColorId'] ?? '' }}', '{{ $baseItem['prenda_id'] ?? '' }}')"
@@ -676,12 +724,18 @@
                                                     ($item['talla'] ?? '')
                                                 );
                                             @endphp
-                                            <tr class="hover:bg-slate-50 transition-colors"
+                                            @php
+                                                $esEppEliminado = (bool) ($item['eliminado_sin_homologacion'] ?? false);
+                                                $nombreEliminadoPor = $item['eliminado_por_nombre'] ?? null;
+                                            @endphp
+                                            <tr class="transition-colors {{ $esEppEliminado ? 'epp-eliminado-row' : 'hover:bg-slate-50' }}"
                                                 data-row-hash="{{ $rowHashSimple }}"
                                                 data-numero-pedido="{{ $item['numero_pedido'] }}"
                                                 data-asesor="{{ is_string($item['asesor'] ?? null) && !empty($item['asesor']) ? $item['asesor'] : 'N/A' }}"
                                                 data-empresa="{{ is_string($item['empresa'] ?? null) && !empty($item['empresa']) ? $item['empresa'] : 'N/A' }}"
-                                                @if($item['estado_bodega'] === 'Homologar')
+                                                @if($esEppEliminado)
+                                                    style="background-color: #fee2e2 !important; border-left: 8px solid #dc2626;"
+                                                @elseif($item['estado_bodega'] === 'Homologar')
                                                     style="background-color: rgba(147, 51, 234, 0.08);"
                                                 @elseif($item['estado_bodega'] === 'Entregado')
                                                     style="background-color: rgba(37, 99, 235, 0.05);"
@@ -713,23 +767,19 @@
                                                     @endphp
                                                     <div class="font-bold text-black mb-1 flex items-center gap-2">
                                                         {{ $nombre }}
+                                                        @if($esEppEliminado)
+                                                            <span class="inline-flex items-center gap-1.5 rounded bg-red-600 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow-lg">
+                                                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                                                </svg>
+                                                                EPP ELIMINADO POR ASESOR{{ $nombreEliminadoPor ? ' - ' . $nombreEliminadoPor : '' }}
+                                                            </span>
+                                                        @endif
                                                         @if(($item['tipo'] ?? null) === 'EPP' || ($item['area'] ?? null) === 'EPP')
-                                                            @php
-                                                                $hayEppEliminado = false;
-                                                                if($item['tiene_historial'] ?? false) {
-                                                                    $historial = $item['historial_homologaciones'] ?? [];
-                                                                    foreach($historial as $h) {
-                                                                        if(isset($h['deleted_at']) && $h['deleted_at'] !== null) {
-                                                                            $hayEppEliminado = true;
-                                                                            break;
-                                                                        }
-                                                                    }
-                                                                }
-                                                            @endphp
-                                                            @if($hayEppEliminado)
+                                                            @if(($item['tiene_historial'] ?? false) && !$esEppEliminado)
                                                                 <span class="text-blue-600 font-semibold text-xs">(homologado)</span>
                                                             @endif
-                                                            @if($item['tiene_historial'] ?? false)
+                                                            @if(($item['tiene_historial'] ?? false) && !$esEppEliminado)
                                                                 <button type="button" 
                                                                         class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center gap-1 relative"
                                                                         onclick="toggleHistorialEpp(this, {{ json_encode($item['historial_homologaciones']) }})">
@@ -895,7 +945,7 @@
                                                         $pendValue = (int)($item['pendientes'] ?? 0);
                                                     @endphp
                                                     <div
-                                                        class="pendientes-display w-full px-1.5 py-2 border-2 border-slate-300 text-[10px] rounded cursor-pointer transition
+                                                        class="pendientes-display w-full px-1.5 py-2 border-2 border-slate-300 text-[10px] rounded {{ $esEppEliminado ? 'cursor-not-allowed opacity-60' : 'cursor-pointer' }} transition
                                                             @if($item['estado_bodega'] === 'Entregado')
                                                                 bg-blue-50 text-blue-700 border-blue-200
                                                             @elseif($pendValue > 0)
@@ -904,8 +954,10 @@
                                                                 bg-slate-50 text-slate-500
                                                             @endif"
                                                         style="font-family: 'Poppins', sans-serif;"
-                                                        ondblclick="abrirModalPendientes(this, {{ $totalQty }})"
-                                                        title="Doble clic para editar pendientes"
+                                                        @if(!$esEppEliminado)
+                                                            ondblclick="abrirModalPendientes(this, {{ $totalQty }})"
+                                                        @endif
+                                                        title="{{ $esEppEliminado ? 'No editable - EPP eliminado' : 'Doble clic para editar pendientes' }}"
                                                         data-row-hash="{{ $rowHashSimple }}"
                                                     >
                                                         @if($pendValue > 0)
@@ -941,7 +993,9 @@
                                                             placeholder="Notas..."
                                                             rows="1"
                                                             readonly
+                                                            @if($esEppEliminado) disabled @endif
                                                         >{{ $item['observaciones'] ?? '' }}</textarea>
+                                                        @if(!$esEppEliminado)
                                                         <button
                                                             type="button"
                                                             onclick="abrirModalNotas('{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}', '{{ addslashes($nombre) }}', 'prenda', '{{ $item['talla'] }}')"
@@ -950,6 +1004,16 @@
                                                         >
                                                             💬
                                                         </button>
+                                                        @else
+                                                        <button
+                                                            type="button"
+                                                            disabled
+                                                            class="px-2 py-1 bg-gray-400 text-white text-xs font-bold rounded cursor-not-allowed opacity-60 whitespace-nowrap"
+                                                            title="No editable - EPP eliminado"
+                                                        >
+                                                            💬
+                                                        </button>
+                                                        @endif
                                                     </div>
                                                 </td>
                                                 
@@ -970,7 +1034,7 @@
                                                         data-prenda-id="{{ $item['prenda_id'] ?? '' }}"
                                                         data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
                                                         data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
-                                                        @if($esReadOnly ?? false) disabled @endif
+                                                        @if(($esReadOnly ?? false) || $esEppEliminado) disabled @endif
                                                     >
                                                 </td>
                                                 
@@ -1009,7 +1073,7 @@
                                                             data-pedido-produccion-id="{{ $item['pedido_produccion_id'] ?? '' }}"
                                                             data-recibo-prenda-id="{{ $item['recibo_prenda_id'] ?? '' }}"
                                                             data-original-area="{{ $item['area'] ?? '' }}"
-                                                            @if($esReadOnly ?? false) disabled @endif
+                                                            @if(($esReadOnly ?? false) || $esEppEliminado) disabled @endif
                                                         >
                                                             <option value="">ÁREA</option>
                                                             <option value="Costura" {{ ($item['area'] ?? null) === 'Costura' ? 'selected' : '' }}>COSTURA</option>
@@ -1028,18 +1092,22 @@
                                                             data-pedido-epp-id="{{ $item['pedido_epp_id'] ?? '' }}"
                                                             data-cantidad="{{ $item['cantidad_total'] }}"
                                                             data-original-estado="{{ $item['estado_bodega'] ?? '' }}"
-                                                            @if($esReadOnly ?? false) disabled @endif
+                                                            @if(($esReadOnly ?? false) || $esEppEliminado) disabled @endif
                                                         >
-                                                            <option value="">ESTADO</option>
-                                                            <option value="Pendiente" {{ ($item['estado_bodega'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
-                                                            <option value="Entregado" {{ ($item['estado_bodega'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
-                                                            <option value="Homologar" {{ ($item['estado_bodega'] ?? null) === 'Homologar' ? 'selected' : '' }}>HOMOLOGAR</option>
-                                                            @if(auth()->user()->hasRole(['Bodeguero', 'Admin', 'SuperAdmin']))
-                                                            <option value="Anulado" {{ ($item['estado_bodega'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
+                                                            @if($esEppEliminado)
+                                                                <option value="EliminadoAsesor" selected>ELIMINADO POR ASESOR</option>
+                                                            @else
+                                                                <option value="">ESTADO</option>
+                                                                <option value="Pendiente" {{ ($item['estado_bodega'] ?? null) === 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
+                                                                <option value="Entregado" {{ ($item['estado_bodega'] ?? null) === 'Entregado' ? 'selected' : '' }}>ENTREGADO</option>
+                                                                <option value="Homologar" {{ ($item['estado_bodega'] ?? null) === 'Homologar' ? 'selected' : '' }}>HOMOLOGAR</option>
+                                                                @if(auth()->user()->hasRole(['Bodeguero', 'Admin', 'SuperAdmin']))
+                                                                <option value="Anulado" {{ ($item['estado_bodega'] ?? null) === 'Anulado' ? 'selected' : '' }}>ANULADO</option>
+                                                                @endif
                                                             @endif
                                                         </select>
 
-                                                        @if(!($esReadOnly ?? false) && !auth()->user()->hasRole('supervisor_gerencia'))
+                                                        @if(!($esReadOnly ?? false) && !auth()->user()->hasRole('supervisor_gerencia') && !$esEppEliminado)
                                                         <button
                                                             type="button"
                                                             onclick="guardarFilaCompleta(this, '{{ $item['numero_pedido'] }}', '{{ $item['talla'] }}', '', '{{ $item['prenda_id'] ?? '' }}')"
@@ -1330,27 +1398,30 @@ function abrirModalHomologacionBodega(eppId) {
             let htmlContenido = `
                 <div class="space-y-6">
                     <!-- EPP Anterior -->
-                    <div class="border border-red-300 bg-red-50 rounded-lg p-4">
+                    <div class="border-2 border-red-500 bg-red-100 rounded-lg p-4 shadow-sm">
+                        <div class="mb-3 rounded-md bg-red-600 px-3 py-2 text-white font-bold text-sm">
+                            Este EPP fue eliminado por la asesora
+                        </div>
                         <h3 class="font-bold text-red-900 mb-3 text-lg"> EPP Anterior (Eliminado)</h3>
                         <div class="grid grid-cols-2 gap-3 text-sm">
-                            <div class="bg-white p-2 rounded border border-red-200">
+                            <div class="bg-red-50 p-2 rounded border border-red-300">
                                 <span class="text-slate-600">ID:</span>
                                 <p class="font-bold text-red-900">${epp_anterior.id}</p>
                             </div>
-                            <div class="bg-white p-2 rounded border border-red-200">
+                            <div class="bg-red-50 p-2 rounded border border-red-300">
                                 <span class="text-slate-600">Nombre:</span>
                                 <p class="font-bold text-red-900">${epp_anterior.nombre_epp || epp_anterior.nombre || 'N/A'}</p>
                             </div>
-                            <div class="bg-white p-2 rounded border border-red-200">
+                            <div class="bg-red-50 p-2 rounded border border-red-300">
                                 <span class="text-slate-600">Cantidad:</span>
                                 <p class="font-bold text-red-900">${epp_anterior.cantidad}</p>
                             </div>
-                            <div class="bg-white p-2 rounded border border-red-200">
+                            <div class="bg-red-50 p-2 rounded border border-red-300">
                                 <span class="text-slate-600">Eliminado:</span>
                                 <p class="font-bold text-red-900">${new Date(epp_anterior.deleted_at).toLocaleString('es-ES')}</p>
                             </div>
                             ${epp_anterior.observaciones ? `
-                            <div class="bg-white p-2 rounded border border-red-200 col-span-2">
+                            <div class="bg-red-50 p-2 rounded border border-red-300 col-span-2">
                                 <span class="text-slate-600">Observaciones:</span>
                                 <p class="font-semibold text-red-900 text-xs mt-1">${epp_anterior.observaciones}</p>
                             </div>
@@ -1503,16 +1574,26 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
     if (historialHomologaciones.length > 1) {
         for (let i = 1; i < historialHomologaciones.length; i++) {
             const cambio = historialHomologaciones[i];
-            const colorClass = i % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50';
+            const estaEliminado = !!cambio.deleted_at;
+            const colorClass = estaEliminado
+                ? 'bg-red-100 hover:bg-red-200'
+                : (i % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50');
+            const badgeClass = estaEliminado
+                ? 'bg-red-600'
+                : 'bg-blue-500';
+            const versionLabel = estaEliminado
+                ? `→ #${i} Eliminado`
+                : `→ #${i}`;
+            const subtituloEliminado = estaEliminado ? '<div class="mt-1 text-[11px] font-bold text-red-700">Este EPP fue eliminado por la asesora</div>' : '';
             
             tablaHtml += `
                 <tr class="border-b border-gray-300 ${colorClass} transition">
                     <td class="px-2 py-3 text-center">
-                        <span class="inline-block bg-blue-500 text-white font-bold px-2 py-1 rounded text-xs">→ #${i}</span>
+                        <span class="inline-block ${badgeClass} text-white font-bold px-2 py-1 rounded text-xs">${versionLabel}</span>
                     </td>
-                    <td class="px-4 py-3 font-medium text-gray-800">${cambio.epp_nombre || 'N/A'}</td>
-                    <td class="px-4 py-3 text-center font-semibold text-gray-800">${cambio.cantidad || 0}</td>
-                    <td class="px-4 py-3 text-center text-gray-700 text-xs">${cambio.fecha_creacion || 'N/A'}</td>
+                    <td class="px-4 py-3 font-medium ${estaEliminado ? 'text-red-900' : 'text-gray-800'}">${cambio.epp_nombre || 'N/A'}${subtituloEliminado}</td>
+                    <td class="px-4 py-3 text-center font-semibold ${estaEliminado ? 'text-red-900' : 'text-gray-800'}">${cambio.cantidad || 0}</td>
+                    <td class="px-4 py-3 text-center ${estaEliminado ? 'text-red-800' : 'text-gray-700'} text-xs">${cambio.fecha_creacion || 'N/A'}</td>
                 </tr>
             `;
         }

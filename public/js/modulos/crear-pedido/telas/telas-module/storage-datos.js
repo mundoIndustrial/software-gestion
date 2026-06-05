@@ -106,8 +106,9 @@ window.limpiarImagenesTemporales = function() {
     console.log('[limpiarImagenesTemporales]  Limpiando imágenes temporales');
     window.imagenesTelaModalNueva = [];
     
-    // Actualizar preview si es necesario
-    if (typeof window.actualizarPreviewTelaTemporal === 'function') {
+    // Actualizar preview solo si el elemento existe en el DOM
+    const previewExists = document.getElementById('nueva-prenda-tela-preview');
+    if (previewExists && typeof window.actualizarPreviewTelaTemporal === 'function') {
         window.actualizarPreviewTelaTemporal();
     }
     

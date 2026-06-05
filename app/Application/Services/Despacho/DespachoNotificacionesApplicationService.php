@@ -40,7 +40,7 @@ class DespachoNotificacionesApplicationService
 
         $newsVistosIds = NewsVisto::where('user_id', $user->id)->pluck('news_id')->toArray();
 
-        $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'epp_homologado', 'order_status_changed', 'order_updated', 'pedido_rechazado_cartera'];
+        $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'epp_homologado', 'epp_eliminado', 'order_status_changed', 'order_updated', 'pedido_rechazado_cartera'];
         $novedadesQuery = News::whereIn('event_type', $novedadesTipos)
             ->where(function ($query) {
                 $query->where('event_type', '!=', 'order_updated')
@@ -76,6 +76,7 @@ class DespachoNotificacionesApplicationService
                 'epp_agregado' => 'health_and_safety',
                 'epp_modificado' => 'edit',
                 'epp_homologado' => 'compare_arrows',
+                'epp_eliminado' => 'delete',
                 'order_status_changed' => 'sync_alt',
                 'order_updated' => 'edit_note',
                 'pedido_rechazado_cartera' => 'gpp_bad',
@@ -88,6 +89,7 @@ class DespachoNotificacionesApplicationService
                 'epp_agregado' => '#8b5cf6',
                 'epp_modificado' => '#f59e0b',
                 'epp_homologado' => '#0ea5e9',
+                'epp_eliminado' => '#ef4444',
                 'order_status_changed' => '#6366f1',
                 'order_updated' => '#0f766e',
                 'pedido_rechazado_cartera' => '#dc2626',
@@ -139,7 +141,7 @@ class DespachoNotificacionesApplicationService
 
     public function marcarTodasComoLeidas(User $user): void
     {
-        $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'epp_homologado', 'order_status_changed', 'order_updated', 'pedido_rechazado_cartera'];
+        $novedadesTipos = ['pedido_creado', 'order_created', 'prenda_agregada', 'prenda_modificada', 'epp_agregado', 'epp_modificado', 'epp_homologado', 'epp_eliminado', 'order_status_changed', 'order_updated', 'pedido_rechazado_cartera'];
         $newsIds = News::whereIn('event_type', $novedadesTipos)
             ->where(function ($query) {
                 $query->where('event_type', '!=', 'order_updated')
@@ -194,4 +196,3 @@ class DespachoNotificacionesApplicationService
         return true;
     }
 }
-

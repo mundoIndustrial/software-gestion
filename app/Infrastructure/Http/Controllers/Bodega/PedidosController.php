@@ -746,41 +746,13 @@ class PedidosController extends Controller
      * @param string $area 'Costura' o 'EPP'
      * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
-    private function obtenerPendientesPorArea(Request $request, string $area): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
-    {
-        try {
-            if (!\Schema::hasTable('bodega_detalles_talla')) {
-                \Log::error('La tabla bodega_detalles_talla no existe en la base de datos');
-                return back()->with('error', 'La tabla de detalles de talla no está disponible. Contacte al administrador.');
-            }
-
-            $datos = $this->pedidoListadoService->obtenerPendientesPorArea($request, $area);
-            $viewName = $datos['viewName'];
-            unset($datos['viewName']);
-
-            return view($viewName, $datos);
-
-        } catch (\Exception $e) {
-            \Log::error("Error en obtenerPendientes{$area}: " . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
-            return back()->with('error', "Error al cargar los pedidos de {$area}: " . $e->getMessage());
-        }
-    }
-
-    /**
-     * Mostrar pedidos pendientes de Costura
-     */
-    public function pendienteCostura(Request $request)
-    {
-        return $this->obtenerPendientesPorArea($request, 'Costura');
-    }
-
-    /**
-     * Mostrar pedidos pendientes de EPP
-     */
     public function pendienteEpp(Request $request)
     {
-        return $this->obtenerPendientesPorArea($request, 'EPP');
+        $datos = $this->pedidoListadoService->obtenerPendientesPorArea($request, 'EPP');
+        $viewName = $datos['viewName'] ?? 'bodega.pendiente-epp';
+        unset($datos['viewName']);
+
+        return view($viewName, $datos);
     }
 
     /**
@@ -794,6 +766,8 @@ class PedidosController extends Controller
             $query = BodegaDetalleTalla::where('bodega_detalles_talla.area', 'EPP')
                 ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
                 ->where('bodega_detalles_talla.pedido_epp_id', '!=', null)
+                ->join('pedido_epp as pe', 'bodega_detalles_talla.pedido_epp_id', '=', 'pe.id')
+                ->whereNull('pe.deleted_at')
                 ->whereNotNull('bodega_detalles_talla.numero_pedido')
                 ->where('bodega_detalles_talla.numero_pedido', '!=', '')
                 ->leftJoin('pedidos_produccion', 'bodega_detalles_talla.pedido_produccion_id', '=', 'pedidos_produccion.id')
@@ -842,6 +816,8 @@ class PedidosController extends Controller
             $query = BodegaDetalleTalla::where('bodega_detalles_talla.area', 'EPP')
                 ->where('bodega_detalles_talla.estado_bodega', 'Pendiente')
                 ->where('bodega_detalles_talla.pedido_epp_id', '!=', null)
+                ->join('pedido_epp as pe', 'bodega_detalles_talla.pedido_epp_id', '=', 'pe.id')
+                ->whereNull('pe.deleted_at')
                 ->whereNotNull('bodega_detalles_talla.numero_pedido')
                 ->where('bodega_detalles_talla.numero_pedido', '!=', '')
                 ->leftJoin('pedidos_produccion', 'bodega_detalles_talla.pedido_produccion_id', '=', 'pedidos_produccion.id')
