@@ -4,7 +4,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
-    const mobileToggle = document.getElementById('mobileToggle');
+    const mobileToggle = document.getElementById('mobileToggle') || document.querySelector('.site-nav .sidebar-toggle');
+
+    if (!sidebar) {
+        return;
+    }
     
     // Toggle sidebar en desktop
     if (sidebarToggle) {
@@ -45,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Cerrar sidebar al hacer click fuera en mobile
     document.addEventListener('click', function(event) {
-        if (window.innerWidth <= 480) {
+        if (window.innerWidth <= 480 && mobileToggle) {
             if (!sidebar.contains(event.target) && !mobileToggle.contains(event.target)) {
                 sidebar.classList.remove('show');
                 document.body.classList.remove('sidebar-open');
@@ -374,4 +378,3 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 });
-
