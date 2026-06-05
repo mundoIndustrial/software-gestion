@@ -11,6 +11,9 @@ class DisenoLogoPedidoNovedad extends Model
     use HasFactory;
 
     protected $table = 'disenos_logo_pedido_novedades';
+    protected $primaryKey = 'id';
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     protected $fillable = [
         'diseno_logo_pedido_id',

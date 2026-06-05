@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class DisenoLogoPedido extends Model
 {
     protected $table = 'disenos_logo_pedido';
+    protected $primaryKey = 'id';
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     protected $fillable = [
         'proceso_prenda_detalle_id',
