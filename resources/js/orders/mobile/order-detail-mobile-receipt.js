@@ -1561,7 +1561,8 @@
                             // Si solo hay sobremedida, mostrar formato especial
                             if (tieneSobremedida && Object.keys(tallasGenero).length === 1) {
                                 const cantidad = resolverCantidad(tallasGenero['SOBREMEDIDA']);
-                                tallasLineas.push(`<strong>${(genero || '').toString().toUpperCase()}:</strong> ${cantidad}`);
+                                const generoLabel = (genero || '').toString().toUpperCase();
+                                tallasLineas.push(`<strong>SOBREMEDIDA:</strong><br>${generoLabel}: <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
                                 console.log(`📱 [RECIBO MOBILE] ${genero} SOBREMEDIDA: ${cantidad}`);
                                 return; // Salir del forEach para no procesar más
                             }
