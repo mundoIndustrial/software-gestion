@@ -25,7 +25,7 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
 
     public function findPedidoByIdConRelaciones(int $pedidoId, bool $filtrarPrendasBodega): ?PedidoProduccion
     {
-        return PedidoProduccion::with([
+        $pedido = PedidoProduccion::with([
             'prendas' => function ($q) use ($filtrarPrendasBodega) {
                 if ($filtrarPrendasBodega) {
                     $q->where('de_bodega', false);
@@ -51,13 +51,15 @@ class PedidoDetalleReadServiceImpl implements PedidoDetalleReadService
                     },
                 ]);
             },
-            'epps' => function ($q) {
-                $q->withTrashed()
-                    ->with([
-                        'epp',
-                    ]);
-            },
         ])->find($pedidoId);
+
+        // Cargar EPP con soft-deleted directamente usando eppsConTrashed
+        // Esto asegura que el nuevo EPP aparezca después de una homologación
+        if ($pedido) {
+            $pedido->setRelation('epps', $pedido->eppsConTrashed()->get());
+        }
+
+        return $pedido;
     }
 
     public function getProcesoTallasDetalle(int $procesoDetalleId): Collection

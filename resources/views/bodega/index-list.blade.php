@@ -170,12 +170,43 @@
                                                     $novedades[] = [
                                                         'texto' => $news->description,
                                                         'fecha' => $news->created_at->format('d/m/Y H:i'),
+                                                        'fechaObj' => $news->created_at,
+                                                        'timestamp' => $news->created_at->getTimestamp(),
                                                         'tipo' => $news->event_type
                                                     ];
                                                 }
                                             }
                                             
-                                            // Reindexar el array
+                                            // Parsear fechas de novedades antiguas y ordenar todo por fecha descendente
+                                            foreach ($novedades as &$nov) {
+                                                if (!isset($nov['timestamp'])) {
+                                                    // Intentar extraer fecha del texto antiguo
+                                                    // Formato: "...fecha, HH:MM:SS am/pm)" 
+                                                    if (preg_match('/(\d{2}\/\d{2}\/\d{4}),?\s+(\d{1,2}):(\d{2}):(\d{2})\s*([apm\.]+)/i', $nov['texto'], $matches)) {
+                                                        $fechaStr = $matches[1] . ' ' . $matches[2] . ':' . $matches[3];
+                                                        try {
+                                                            $fecha = \Carbon\Carbon::createFromFormat('d/m/Y H:i', $fechaStr);
+                                                            $nov['timestamp'] = $fecha->getTimestamp();
+                                                            $nov['fecha'] = $fecha->format('d/m/Y H:i');
+                                                        } catch (\Exception $e) {
+                                                            $nov['timestamp'] = 0; // Si no se puede parsear, enviar al final
+                                                        }
+                                                    } else {
+                                                        $nov['timestamp'] = 0; // Si no se puede extraer fecha, enviar al final
+                                                    }
+                                                }
+                                            }
+                                            unset($nov);
+                                            
+                                            // Ordenar por timestamp descendente (más recientes primero)
+                                            usort($novedades, function($a, $b) {
+                                                return ($b['timestamp'] ?? 0) - ($a['timestamp'] ?? 0);
+                                            });
+                                            
+                                            // Reindexar el array y remover campos internos antes de enviar al JSON
+                                            $novedades = array_map(function($nov) {
+                                                return ['texto' => $nov['texto'], 'fecha' => $nov['fecha'] ?? ''];
+                                            }, $novedades);
                                             $novedades = array_values($novedades);
                                             $cantidadNovedades = count($novedades);
                                         @endphp
@@ -599,10 +630,14 @@
                 const div = document.createElement('div');
                 div.className = 'bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden';
                 
+                const textoNovedad = nov.texto || nov;
+                const fechaNovedad = nov.fecha ? `<div class="text-xs text-slate-500 mt-2">${nov.fecha}</div>` : '';
+                
                 div.innerHTML = `
                     <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
-                        ${nov.texto || nov}
+                        ${textoNovedad}
                     </div>
+                    ${fechaNovedad}
                 `;
                 lista.appendChild(div);
             });

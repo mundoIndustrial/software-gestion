@@ -123,13 +123,6 @@ class EppsPedidoController
                 implode(', ', auth()?->user()?->getRoleNames()?->toArray() ?? ['Asesor'])
             );
 
-            $this->prendaPedidoEdicionAuditoriaService->registrarEppHomologado(
-                (int) $id,
-                (int) $resultado['epp_id_nuevo'],
-                (int) ($resultado['cambios']['epp_id_nuevo'] ?? 0),
-                false
-            );
-
             return $this->json($resultado, 200);
         } catch (ModelNotFoundException $e) {
             Log::warning('[EppsPedidoController] EPP o pedido no encontrado', [

@@ -78,8 +78,6 @@ class ObtenerPedidoUseCase extends AbstractObtenerUseCase
                 $prendasCompletas = $this->prendaDetalleBuilder
                     ->construirPrendasCompletas($modeloEloquent, $modeloEloquent->estado, $this->filtrarProcesosPendientes, $this->modoBodega);
 
-                // IMPORTANTE: Usar eppsConTrashed para incluir EPPs soft-deleted (necesario para historial de homologaciones)
-                $modeloEloquent->setRelation('epps', $modeloEloquent->eppsConTrashed()->get());
                 $eppsCompletos = $this->eppDetalleBuilder
                     ->construirEppsCompletos($modeloEloquent);
 

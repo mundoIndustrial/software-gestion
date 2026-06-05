@@ -377,7 +377,8 @@ class PedidosController extends Controller
                         // Obtener la cadena completa de homologaciones
                         $todaLaCadena = $this->obtenerCadenaEppCompleta($pedidoEppIdParaHistorial);
                         $historial = [];
-                        foreach ($todaLaCadena as $pedidoEpp) {
+                        $todaLaCadena = $todaLaCadena->values();
+                        foreach ($todaLaCadena as $index => $pedidoEpp) {
                             $historial[] = [
                                 'pedido_epp_id' => $pedidoEpp->id,
                                 'epp_id' => $pedidoEpp->epp_id,
@@ -387,6 +388,7 @@ class PedidosController extends Controller
                                 'deleted_at' => $pedidoEpp->deleted_at?->format('Y-m-d H:i'),
                                 'observaciones' => $pedidoEpp->observaciones ?? '',
                                 'es_original' => $pedidoEpp->homologado_de === null,
+                                'tiene_homologacion_posterior' => $todaLaCadena->has($index + 1),
                             ];
                         }
 
@@ -580,7 +582,11 @@ class PedidosController extends Controller
             if (in_array('EPP-Bodega', $rolesDelUsuario)) {
                 if (isset($datos['items']) && is_array($datos['items'])) {
                     $datos['items'] = array_filter($datos['items'], function($item) {
-                        return ($item['area'] ?? '') === 'EPP' && ($item['estado_bodega'] ?? '') === 'Pendiente';
+                        $esEpp = ($item['area'] ?? '') === 'EPP';
+                        $estaPendiente = ($item['estado_bodega'] ?? '') === 'Pendiente';
+                        $tieneHistorial = (bool) ($item['tiene_historial'] ?? false);
+
+                        return $esEpp && ($estaPendiente || $tieneHistorial);
                     });
                     $datos['items'] = array_values($datos['items']);
                 }

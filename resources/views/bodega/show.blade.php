@@ -1400,9 +1400,9 @@ function abrirModalHomologacionBodega(eppId) {
                     <!-- EPP Anterior -->
                     <div class="border-2 border-red-500 bg-red-100 rounded-lg p-4 shadow-sm">
                         <div class="mb-3 rounded-md bg-red-600 px-3 py-2 text-white font-bold text-sm">
-                            Este EPP fue eliminado por la asesora
+                            Este EPP fue homologado y reemplazado por otro
                         </div>
-                        <h3 class="font-bold text-red-900 mb-3 text-lg"> EPP Anterior (Eliminado)</h3>
+                        <h3 class="font-bold text-red-900 mb-3 text-lg"> EPP Anterior (Homologado)</h3>
                         <div class="grid grid-cols-2 gap-3 text-sm">
                             <div class="bg-red-50 p-2 rounded border border-red-300">
                                 <span class="text-slate-600">ID:</span>
@@ -1417,7 +1417,7 @@ function abrirModalHomologacionBodega(eppId) {
                                 <p class="font-bold text-red-900">${epp_anterior.cantidad}</p>
                             </div>
                             <div class="bg-red-50 p-2 rounded border border-red-300">
-                                <span class="text-slate-600">Eliminado:</span>
+                                <span class="text-slate-600">Fecha de homologación:</span>
                                 <p class="font-bold text-red-900">${new Date(epp_anterior.deleted_at).toLocaleString('es-ES')}</p>
                             </div>
                             ${epp_anterior.observaciones ? `
@@ -1574,17 +1574,20 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
     if (historialHomologaciones.length > 1) {
         for (let i = 1; i < historialHomologaciones.length; i++) {
             const cambio = historialHomologaciones[i];
-            const estaEliminado = !!cambio.deleted_at;
+            const fueHomologado = !!cambio.tiene_homologacion_posterior;
+            const estaEliminado = !!cambio.deleted_at && !fueHomologado;
             const colorClass = estaEliminado
                 ? 'bg-red-100 hover:bg-red-200'
-                : (i % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50');
+                : (fueHomologado ? 'bg-blue-50 hover:bg-blue-100' : (i % 2 === 0 ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50'));
             const badgeClass = estaEliminado
                 ? 'bg-red-600'
                 : 'bg-blue-500';
             const versionLabel = estaEliminado
                 ? `→ #${i} Eliminado`
-                : `→ #${i}`;
-            const subtituloEliminado = estaEliminado ? '<div class="mt-1 text-[11px] font-bold text-red-700">Este EPP fue eliminado por la asesora</div>' : '';
+                : (fueHomologado ? `→ #${i} Homologado` : `→ #${i}`);
+            const subtituloEliminado = estaEliminado
+                ? '<div class="mt-1 text-[11px] font-bold text-red-700">Este EPP fue eliminado por la asesora</div>'
+                : (fueHomologado ? '<div class="mt-1 text-[11px] font-bold text-blue-700">Este EPP fue homologado por la asesora</div>' : '');
             
             tablaHtml += `
                 <tr class="border-b border-gray-300 ${colorClass} transition">

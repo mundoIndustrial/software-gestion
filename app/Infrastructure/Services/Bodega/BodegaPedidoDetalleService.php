@@ -152,6 +152,18 @@ class BodegaPedidoDetalleService
             ->with('epp')
             ->get();
 
+        \Log::info('[BodegaPedidoDetalleService::procesarEpps] EPP en BD', [
+            'pedido_produccion_id' => $pedidoProduccion?->id,
+            'total_epps_bd' => $todosLosEppsBD->count(),
+            'epps' => $todosLosEppsBD->map(fn ($e) => [
+                'id' => $e->id,
+                'epp_id' => $e->epp_id,
+                'cantidad' => $e->cantidad,
+                'homologado_de' => $e->homologado_de,
+                'deleted_at' => $e->deleted_at
+            ])->toArray()
+        ]);
+
         $eppsPorId = $todosLosEppsBD->keyBy('id');
         $hijosPorPadre = $todosLosEppsBD->groupBy('homologado_de');
 
@@ -163,9 +175,21 @@ class BodegaPedidoDetalleService
             ->keyBy(fn ($epp) => $epp['pedido_epp_id'] ?? null);
 
         $eppsOriginales = $todosLosEppsBD->whereNull('homologado_de')->values();
+        
+        \Log::info('[BodegaPedidoDetalleService::procesarEpps] EPP originales', [
+            'total_originales' => $eppsOriginales->count(),
+            'ids' => $eppsOriginales->pluck('id')->toArray()
+        ]);
+        
         foreach ($eppsOriginales as $eppOriginal) {
             $pedidoEppIdOriginal = (int) $eppOriginal->id;
             $pedidoEppIdActual = $this->obtenerUltimoPedidoEppIdDeCadena($pedidoEppIdOriginal, $hijosPorPadre);
+            
+            \Log::info('[BodegaPedidoDetalleService::procesarEpps] Cadena de homologación', [
+                'epp_original_id' => $pedidoEppIdOriginal,
+                'epp_actual_id' => $pedidoEppIdActual
+            ]);
+            
             $pedidoEppActual = $eppsPorId->get($pedidoEppIdActual);
 
             if (!$pedidoEppActual) {
@@ -180,7 +204,21 @@ class BodegaPedidoDetalleService
                 ? $this->obtenerDatosEliminacionEpp($pedidoEppActual->id)
                 : null;
 
+            // Si el EPP actual no está en $eppsEnriquecidosPorId (por ejemplo, es un nuevo EPP de homologación),
+            // construir los datos directamente desde el modelo
             $eppEnriquecidoActual = $eppsEnriquecidosPorId->get($pedidoEppIdActual, []);
+            
+            // Si no tenemos datos del EPP enriquecido, construirlo desde el modelo de BD
+            if (empty($eppEnriquecidoActual)) {
+                $eppEnriquecidoActual = [
+                    'pedido_epp_id' => $pedidoEppIdActual,
+                    'nombre' => $pedidoEppActual->epp->nombre_completo ?? $pedidoEppActual->epp->nombre ?? 'EPP sin nombre',
+                    'cantidad' => (int) $pedidoEppActual->cantidad,
+                    'observaciones' => $pedidoEppActual->observaciones ?? '',
+                    'imagenes' => [], // Los EPP nuevos de homologación heredan imágenes del anterior
+                ];
+            }
+            
             $eppEnriquecidoActual['pedido_epp_id'] = $pedidoEppIdActual;
             $eppEnriquecidoActual['nombre'] = $eppEnriquecidoActual['nombre'] ?? ($pedidoEppActual->epp->nombre_completo ?? 'EPP sin nombre');
             $eppEnriquecidoActual['cantidad'] = $eppEnriquecidoActual['cantidad'] ?? (int) $pedidoEppActual->cantidad;
@@ -361,7 +399,8 @@ class BodegaPedidoDetalleService
 
         // Procesar los datos cargados (sin queries adicionales)
         $historial = [];
-        foreach ($todaLaCadena as $pedidoEpp) {
+        $todaLaCadena = $todaLaCadena->values();
+        foreach ($todaLaCadena as $index => $pedidoEpp) {
             $historial[] = [
                 'pedido_epp_id' => $pedidoEpp->id,
                 'epp_id' => $pedidoEpp->epp_id,
@@ -371,6 +410,7 @@ class BodegaPedidoDetalleService
                 'deleted_at' => $pedidoEpp->deleted_at?->format('Y-m-d H:i'),
                 'observaciones' => $pedidoEpp->observaciones ?? '',
                 'es_original' => $pedidoEpp->homologado_de === null,
+                'tiene_homologacion_posterior' => $todaLaCadena->has($index + 1),
             ];
         }
 
