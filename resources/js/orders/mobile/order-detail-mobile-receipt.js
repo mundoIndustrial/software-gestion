@@ -1485,6 +1485,9 @@
                 // EXCEPCIÓN: si estamos viendo un ANEXO de COSTURA (es_parcial=true),
                 // se deben mostrar SOLO las tallas del anexo.
                 let tallasFuente = prenda.tallas;
+                const variantesConSobremedida = Array.isArray(prenda?.variantes)
+                    ? prenda.variantes.filter((variante) => Boolean(variante?.es_sobremedida))
+                    : [];
                 
                 // PRIORIZAR talla_colores si está disponible (como en recibos de costura)
                 // Si viene vacío pero las variantes tienen `colores_detalle`, derivarlo para agrupar por color.
@@ -1497,7 +1500,10 @@
                     prenda.talla_colores = tallaColoresDerivada;
                 }
 
-                if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
+                if (variantesConSobremedida.length > 0) {
+                    console.log('📱 [RECIBO MOBILE] Usando variantes con sobremedida de la prenda:', variantesConSobremedida);
+                    tallasFuente = transformarVariantesAEstructura(prenda.variantes);
+                } else if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
                     console.log('📱 [RECIBO MOBILE] Usando talla_colores de la prenda:', prenda.talla_colores);
                     console.log(' [DEBUG] Rol actual:', userRole, '- talla_colores encontrado:', prenda.talla_colores.length, 'items');
                     tallasFuente = transformarTallaColoresAEstructura(prenda.talla_colores);
@@ -1562,13 +1568,8 @@
                             if (tieneSobremedida && Object.keys(tallasGenero).length === 1) {
                                 const cantidad = resolverCantidad(tallasGenero['SOBREMEDIDA']);
                                 const generoLabel = (genero || '').toString().toUpperCase();
-                                if (generoLabel === 'UNISEX') {
-                                    tallasLineas.push(`<strong>UNISEX:</strong> <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
-                                    console.log(`📱 [RECIBO MOBILE] ${genero} UNISEX sin talla explicita: ${cantidad}`);
-                                } else {
-                                    tallasLineas.push(`<strong>SOBREMEDIDA:</strong><br>${generoLabel}: <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
-                                    console.log(`📱 [RECIBO MOBILE] ${genero} SOBREMEDIDA: ${cantidad}`);
-                                }
+                                tallasLineas.push(`<strong>SOBREMEDIDA:</strong><br>${generoLabel}: <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
+                                console.log(`📱 [RECIBO MOBILE] ${genero} SOBREMEDIDA: ${cantidad}`);
                                 return; // Salir del forEach para no procesar más
                             }
                             
@@ -1870,7 +1871,9 @@
                             // Si no hay tallas en el proceso y NO es anexo, usar fallback de la prenda
                             // Para anexos solo deben mostrarse tallas del anexo.
                             // PRIORIZAR talla_colores de la prenda si está disponible
-                            if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
+                            if (Array.isArray(prenda?.variantes) && prenda.variantes.some((variante) => Boolean(variante?.es_sobremedida))) {
+                                tallasObj = transformarVariantesAEstructura(prenda.variantes);
+                            } else if (prenda.talla_colores && Array.isArray(prenda.talla_colores) && prenda.talla_colores.length > 0) {
                                 console.log('📱 [OPERARIO] Usando talla_colores de la prenda como fallback:', prenda.talla_colores);
                                 tallasObj = transformarTallaColoresAEstructura(prenda.talla_colores);
                             } else {

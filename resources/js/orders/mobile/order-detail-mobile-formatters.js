@@ -107,7 +107,9 @@
 
             console.log(`[OPERARIO] Variante ${idx}: genero=${genero}, talla=${talla}, cant=${cantidad}, es_sobremedida=${esSobremedida}`);
 
-            const tallaFinal = esSobremedida ? 'SOBREMEDIDA' : talla;
+            const tallaFinal = esSobremedida
+                ? 'SOBREMEDIDA'
+                : (talla || 'SIN_TALLA');
 
             console.log(`[OPERARIO] Variante ${idx}: tallaFinal=${tallaFinal}`);
 
@@ -245,7 +247,9 @@
             if (!estructura[registro.genero]) {
                 estructura[registro.genero] = {};
             }
-            const tallaFinal = registro.talla !== '' ? registro.talla : 'SOBREMEDIDA';
+            const tallaFinal = registro.talla !== ''
+                ? registro.talla
+                : 'SIN_TALLA';
             estructura[registro.genero][tallaFinal] = (estructura[registro.genero][tallaFinal] || 0) + registro.cantidad;
         });
 
