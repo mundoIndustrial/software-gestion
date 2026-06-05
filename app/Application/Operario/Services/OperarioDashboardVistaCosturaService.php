@@ -562,10 +562,24 @@ class OperarioDashboardVistaCosturaService
             $numeroPedidoAccion = (string) ($prenda['numero_pedido'] ?? $consecutivoBodega);
             $searchText = strtolower(trim(($consecutivoBodega ?? '') . ' ' . $textoPrendaBodega . ' ' . ($prenda['cliente'] ?? '')));
 
+            $prendaBodegaId = 0;
+            foreach ([
+                $prenda['prenda_bodega_id'] ?? null,
+                $reciboPrincipalBodega['prenda_bodega_id'] ?? null,
+                $prenda['id'] ?? null,
+                $prenda['prenda_id'] ?? null,
+            ] as $candidatePrendaBodegaId) {
+                $candidatePrendaBodegaId = (int) $candidatePrendaBodegaId;
+                if ($candidatePrendaBodegaId > 0) {
+                    $prendaBodegaId = $candidatePrendaBodegaId;
+                    break;
+                }
+            }
+
             $prenda['bodega_view'] = [
                 'consecutivo' => $consecutivoBodega,
                 'recibo_id' => $reciboIdBodega,
-                'prenda_bodega_id' => (int) ($prenda['prenda_bodega_id'] ?? 0),
+                'prenda_bodega_id' => $prendaBodegaId,
                 'tallas' => is_array($prenda['tallas'] ?? null) ? $prenda['tallas'] : [],
                 'estado_control_calidad' => (string) ($prenda['estado_control_calidad'] ?? 'pendiente'),
                 'tallas_control_calidad' => is_array($prenda['tallas_control_calidad'] ?? null)

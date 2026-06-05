@@ -1567,8 +1567,32 @@ class ReciboCosturaController extends Controller
                         ->orderByDesc('created_at')
                         ->get();
 
+                    if ($procesosCostura->isEmpty() && $esBodega && $prendaId > 0) {
+                        $procesosCostura = ProcesoPrenda::query()
+                            ->where('numero_pedido', $pedido->numero_pedido)
+                            ->where('prenda_pedido_id', $prendaId)
+                            ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
+                            ->where('numero_recibo', $consecutivoOriginal)
+                            ->whereNull('deleted_at')
+                            ->orderByDesc('created_at')
+                            ->get();
+                    }
+
                     if ($procesosCostura->isEmpty()) {
-                        throw new \DomainException('No se encontraron procesos de costura para este recibo y prenda');
+                        $procesoCosturaBase = ProcesoPrenda::create([
+                            'numero_pedido' => $pedido->numero_pedido,
+                            'prenda_pedido_id' => $esBodega ? null : $prendaId,
+                            'prenda_bodega_id' => $esBodega ? $prendaBodegaId : null,
+                            'numero_recibo' => $consecutivoOriginal,
+                            'numero_recibo_parcial' => null,
+                            'proceso' => 'Costura',
+                            'fecha_inicio' => now(),
+                            'encargado' => null,
+                            'estado_proceso' => 'Pendiente',
+                            'codigo_referencia' => 'COS-' . $consecutivoOriginal . '-' . date('YmdHis'),
+                        ]);
+
+                        $procesosCostura = collect([$procesoCosturaBase]);
                     }
 
                     foreach ($procesosCostura as $procesoCostura) {

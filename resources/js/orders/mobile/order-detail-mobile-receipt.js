@@ -1562,8 +1562,13 @@
                             if (tieneSobremedida && Object.keys(tallasGenero).length === 1) {
                                 const cantidad = resolverCantidad(tallasGenero['SOBREMEDIDA']);
                                 const generoLabel = (genero || '').toString().toUpperCase();
-                                tallasLineas.push(`<strong>SOBREMEDIDA:</strong><br>${generoLabel}: <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
-                                console.log(`📱 [RECIBO MOBILE] ${genero} SOBREMEDIDA: ${cantidad}`);
+                                if (generoLabel === 'UNISEX') {
+                                    tallasLineas.push(`<strong>UNISEX:</strong> <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
+                                    console.log(`📱 [RECIBO MOBILE] ${genero} UNISEX sin talla explicita: ${cantidad}`);
+                                } else {
+                                    tallasLineas.push(`<strong>SOBREMEDIDA:</strong><br>${generoLabel}: <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
+                                    console.log(`📱 [RECIBO MOBILE] ${genero} SOBREMEDIDA: ${cantidad}`);
+                                }
                                 return; // Salir del forEach para no procesar más
                             }
                             

@@ -336,7 +336,18 @@ class ObtenerDatosRecibosOperarioUseCase
                 && in_array(strtoupper(trim((string) ($reciboBodega->tipo_recibo ?? ''))), ['COSTURA-BODEGA', 'CORTE-PARA-BODEGA'], true);
 
             if ($esParcialBodega) {
-                $prendaBodegaId = (int) ($reciboBodega->prenda_bodega_id ?? 0);
+                $prendaBodegaId = 0;
+                foreach ([
+                    $reciboBodega->prenda_bodega_id ?? null,
+                    $reciboBodega->prenda_id ?? null,
+                    $reciboBodega->prendaBodega?->id ?? null,
+                ] as $candidatePrendaBodegaId) {
+                    $candidatePrendaBodegaId = (int) $candidatePrendaBodegaId;
+                    if ($candidatePrendaBodegaId > 0) {
+                        $prendaBodegaId = $candidatePrendaBodegaId;
+                        break;
+                    }
+                }
 
                 $tallasParcialRows = DB::table('recibos_por_partes_tallas')
                     ->where('recibo_por_partes_id', (int) $parcial->id)
@@ -1140,7 +1151,18 @@ class ObtenerDatosRecibosOperarioUseCase
         if ($isBodegaOnly) {
             $reciboId = (int) $request->query('recibo_id');
             $reciboBodega = \App\Models\ConsecutivoReciboPedido::with(['prendaBodega.fotos'])->find($reciboId);
-            $prendaBodegaId = (int) ($reciboBodega->prenda_bodega_id ?? 0);
+            $prendaBodegaId = 0;
+            foreach ([
+                $reciboBodega->prenda_bodega_id ?? null,
+                $reciboBodega->prenda_id ?? null,
+                $reciboBodega->prendaBodega?->id ?? null,
+            ] as $candidatePrendaBodegaId) {
+                $candidatePrendaBodegaId = (int) $candidatePrendaBodegaId;
+                if ($candidatePrendaBodegaId > 0) {
+                    $prendaBodegaId = $candidatePrendaBodegaId;
+                    break;
+                }
+            }
 
             $tallasBodegaRows = collect();
             if ($prendaBodegaId > 0) {
