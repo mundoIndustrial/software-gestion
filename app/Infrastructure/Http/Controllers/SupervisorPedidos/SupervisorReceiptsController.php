@@ -21,8 +21,10 @@ use App\Application\SupervisorPedidos\DTOs\GetPendingEmbroideryStampingReceiptsR
 use App\Exceptions\ResourceNotFoundException;
 use App\Exceptions\ValidationException;
 use App\Exceptions\ApplicationException;
+use App\Events\PedidoActualizado;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -223,6 +225,26 @@ class SupervisorReceiptsController extends Controller
 
             return $reciboActualizado;
         });
+
+        try {
+            $pedidoProduccionId = (int) ($resultado->pedido_produccion_id ?? 0);
+            $pedido = $pedidoProduccionId > 0 ? PedidoProduccion::find($pedidoProduccionId) : null;
+            $asesor = $pedido ? User::find($pedido->asesor_id) : null;
+
+            if ($pedido && $asesor) {
+                broadcast(new PedidoActualizado(
+                    pedido: $pedido->fresh(),
+                    asesor: $asesor,
+                    changedFields: ['recibo_estado' => 'DEVUELTO_ASESOR'],
+                    action: 'updated'
+                ))->toOthers();
+            }
+        } catch (\Throwable $broadcastError) {
+            \Log::warning('[SupervisorPedidos][pasarReciboARevision] No se pudo emitir broadcast', [
+                'recibo_id' => (int) ($resultado->id ?? $id),
+                'error' => $broadcastError->getMessage(),
+            ]);
+        }
 
         return response()->json([
             'success' => true,

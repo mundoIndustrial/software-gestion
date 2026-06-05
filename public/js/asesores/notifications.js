@@ -5,6 +5,10 @@
 let lastMarkAllReadTime = 0;
 let asesoresRealtimeNotificationsBound = false;
 let asesoresNotificationsRefreshTimeout = null;
+let devueltosNotificationsBootstrapped = false;
+const knownPedidosDevueltosIds = new Set();
+const knownRecibosDevueltosIds = new Set();
+const devueltosNotificationDedupe = new Map();
 
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar que fetchAPI esté disponible
@@ -17,6 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeNotifications() {
+    solicitarPermisoNotificacionSiAplica();
     loadNotifications();
     setupRealtimeNotifications();
     setupCrossModuleNotificationRefresh();
@@ -105,10 +110,140 @@ function setupRealtimeNotifications() {
     });
 }
 
+async function solicitarPermisoNotificacionSiAplica() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
+
+    try {
+        await Notification.requestPermission();
+    } catch (error) {
+        console.warn('[ASESORES-NOTIF] No se pudo solicitar permiso de notificaciones:', error);
+    }
+}
+
+function mostrarNotificacionNavegador(titulo, mensaje, url) {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+
+    try {
+        const notification = new Notification(titulo, {
+            body: mensaje,
+            icon: '/mundo_icon.png',
+        });
+
+        notification.onclick = function () {
+            window.focus();
+            if (url && window.location.pathname !== url) {
+                window.location.href = url;
+            }
+            this.close();
+        };
+    } catch (error) {
+        console.warn('[ASESORES-NOTIF] Error mostrando notificación de navegador:', error);
+    }
+}
+
+function debeNotificarDevuelto(key) {
+    const now = Date.now();
+    const ttlMs = 10000;
+
+    for (const [dedupeKey, timestamp] of devueltosNotificationDedupe.entries()) {
+        if (now - timestamp > ttlMs) {
+            devueltosNotificationDedupe.delete(dedupeKey);
+        }
+    }
+
+    if (devueltosNotificationDedupe.has(key)) {
+        return false;
+    }
+
+    devueltosNotificationDedupe.set(key, now);
+    return true;
+}
+
+function notificarDevueltosNavegador(data) {
+    const pedidosDevueltos = Array.isArray(data?.pedidos_devueltos) ? data.pedidos_devueltos : [];
+    const recibosDevueltos = Array.isArray(data?.recibos_devueltos) ? data.recibos_devueltos : [];
+
+    if (!devueltosNotificationsBootstrapped) {
+        devueltosNotificationsBootstrapped = true;
+        pedidosDevueltos.forEach((pedido) => knownPedidosDevueltosIds.add(pedido.id));
+        recibosDevueltos.forEach((recibo) => knownRecibosDevueltosIds.add(recibo.id));
+        return;
+    }
+
+    const urlRevisarPrenda = '/asesores/pedidos/revisar-prenda';
+
+    pedidosDevueltos.forEach((pedido) => {
+        if (knownPedidosDevueltosIds.has(pedido.id)) {
+            return;
+        }
+
+        knownPedidosDevueltosIds.add(pedido.id);
+
+        const dedupeKey = `pedido_devuelto|${pedido.id}`;
+        if (!debeNotificarDevuelto(dedupeKey)) {
+            return;
+        }
+
+        const numero = String(pedido.numero_pedido || pedido.id).padStart(5, '0');
+        const cliente = pedido.cliente || 'Cliente sin nombre';
+        const motivo = pedido.motivo_revision ? ` · ${pedido.motivo_revision}` : '';
+        mostrarNotificacionNavegador(
+            `Pedido devuelto #${numero}`,
+            `${cliente}${motivo}`,
+            urlRevisarPrenda
+        );
+    });
+
+    recibosDevueltos.forEach((recibo) => {
+        if (knownRecibosDevueltosIds.has(recibo.id)) {
+            return;
+        }
+
+        knownRecibosDevueltosIds.add(recibo.id);
+
+        const esReciboAnulado = recibo.tipo_notificacion === 'recibo_anulado' || recibo.estado === 'Anulada';
+        if (esReciboAnulado) {
+            return;
+        }
+
+        const dedupeKey = `recibo_devuelto|${recibo.id}`;
+        if (!debeNotificarDevuelto(dedupeKey)) {
+            return;
+        }
+
+        const pedidoNumero = recibo.numero_pedido ? String(recibo.numero_pedido) : '--';
+        const reciboNumero = recibo.numero_recibo ? String(recibo.numero_recibo) : '--';
+        const partesMensaje = [];
+
+        if (recibo.prenda_nombre) {
+            partesMensaje.push(recibo.prenda_nombre);
+        }
+        if (recibo.tipo_recibo) {
+            partesMensaje.push(recibo.tipo_recibo);
+        }
+        if (recibo.motivo) {
+            partesMensaje.push(`Motivo: ${recibo.motivo}`);
+        }
+
+        const mensaje = partesMensaje.length > 0
+            ? `Devuelto para corregir · ${partesMensaje.join(' · ')}`
+            : 'Devuelto para corregir';
+
+        mostrarNotificacionNavegador(
+            `Prenda devuelta · Pedido #${pedidoNumero} · Recibo #${reciboNumero}`,
+            mensaje,
+            urlRevisarPrenda
+        );
+    });
+}
+
 async function loadNotifications() {
     try {
         const data = await globalThis.fetchAPI('/api/asesores/notificaciones');
         updateNotificationBadge(data.total_notificaciones);
+        notificarDevueltosNavegador(data);
         renderNotifications(data);
     } catch (error) {
         // Ignorar error 401 (no autenticado)

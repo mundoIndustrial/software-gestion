@@ -105,6 +105,25 @@ class RecibosController extends Controller
                 return $recibo->fresh();
             });
 
+            try {
+                $pedido = \App\Models\PedidoProduccion::find($resultado->pedido_produccion_id);
+                $asesor = $pedido ? User::find($pedido->asesor_id) : null;
+
+                if ($pedido && $asesor) {
+                    broadcast(new PedidoActualizado(
+                        pedido: $pedido->fresh(),
+                        asesor: $asesor,
+                        changedFields: ['recibo_estado' => 'DEVUELTO_ASESOR'],
+                        action: 'updated'
+                    ))->toOthers();
+                }
+            } catch (\Throwable $broadcastError) {
+                Log::warning('[Insumos][pasarRevisar] No se pudo emitir broadcast', [
+                    'recibo_id' => (int) $resultado->id,
+                    'error' => $broadcastError->getMessage(),
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Recibo pasado a revisar correctamente',
