@@ -224,7 +224,7 @@
                 color_nombre: (registro?.color_nombre || '').toString().trim().toUpperCase(),
                 cantidad: parseInt(registro?.cantidad || 0, 10) || 0,
             }))
-            .filter((registro) => registro.talla !== '' && registro.cantidad > 0);
+            .filter((registro) => registro.cantidad > 0);
 
         if (registros.length === 0) {
             return {};
@@ -245,7 +245,8 @@
             if (!estructura[registro.genero]) {
                 estructura[registro.genero] = {};
             }
-            estructura[registro.genero][registro.talla] = (estructura[registro.genero][registro.talla] || 0) + registro.cantidad;
+            const tallaFinal = registro.talla !== '' ? registro.talla : 'SOBREMEDIDA';
+            estructura[registro.genero][tallaFinal] = (estructura[registro.genero][tallaFinal] || 0) + registro.cantidad;
         });
 
         return estructura;

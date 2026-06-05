@@ -1538,13 +1538,30 @@
                         const tallasGenero = tallasFuente[genero] || {};
                         
                         if (typeof tallasGenero === 'object' && !Array.isArray(tallasGenero)) {
+                            const resolverCantidad = (valor) => {
+                                if (Array.isArray(valor)) {
+                                    return valor.reduce((acumulado, item) => {
+                                        if (item && typeof item === 'object') {
+                                            return acumulado + (parseInt(item.cantidad, 10) || 0);
+                                        }
+                                        return acumulado + (parseInt(item, 10) || 0);
+                                    }, 0);
+                                }
+
+                                if (valor && typeof valor === 'object') {
+                                    return parseInt(valor.cantidad, 10) || 0;
+                                }
+
+                                return parseInt(valor, 10) || 0;
+                            };
+
                             // Detectar si hay sobremedida
                             const tieneSobremedida = tallasGenero.hasOwnProperty('SOBREMEDIDA');
                             
                             // Si solo hay sobremedida, mostrar formato especial
                             if (tieneSobremedida && Object.keys(tallasGenero).length === 1) {
-                                const cantidad = tallasGenero['SOBREMEDIDA'];
-                                tallasLineas.push(`<strong>SOBREMEDIDA</strong><br>${(genero || '').toString().toUpperCase()}: ${cantidad}`);
+                                const cantidad = resolverCantidad(tallasGenero['SOBREMEDIDA']);
+                                tallasLineas.push(`<strong>${(genero || '').toString().toUpperCase()}:</strong> ${cantidad}`);
                                 console.log(`📱 [RECIBO MOBILE] ${genero} SOBREMEDIDA: ${cantidad}`);
                                 return; // Salir del forEach para no procesar más
                             }
@@ -1926,9 +1943,15 @@
 	                                            } else {
 	                                                cantidad = parseInt(val) || 0;
 	                                            }
-	                                            if (cantidad > 0) {
-	                                                items.push(`${talla}: <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
-	                                            }
+                                            if (cantidad > 0) {
+                                                const tallaNormalizada = String(talla || '').trim().toUpperCase();
+                                                const esCantidadSinTalla = ['SOBREMEDIDA', 'SIN_TALLA', '__SIN_TALLA__', ''].includes(tallaNormalizada);
+                                                if (esCantidadSinTalla) {
+                                                    items.push(`<span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
+                                                } else {
+                                                    items.push(`${tallaNormalizada}: <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
+                                                }
+                                            }
 	                                        });
 	                                        if (items.length > 0) {
 	                                            tallasLineas.push(`<strong>${generoLabel}:</strong> ${items.join(', ')}`);
@@ -1957,7 +1980,13 @@
                                                 cantidad = parseInt(val) || 0;
                                             }
                                             if (cantidad > 0) {
-                                                items.push(`${talla}: <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
+                                                const tallaNormalizada = String(talla || '').trim().toUpperCase();
+                                                const esCantidadSinTalla = ['SOBREMEDIDA', 'SIN_TALLA', '__SIN_TALLA__', ''].includes(tallaNormalizada);
+                                                if (esCantidadSinTalla) {
+                                                    items.push(`<span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
+                                                } else {
+                                                    items.push(`${tallaNormalizada}: <span style="color: #d32f2f; font-weight: bold;">${cantidad}</span>`);
+                                                }
                                             }
                                         });
                                     }

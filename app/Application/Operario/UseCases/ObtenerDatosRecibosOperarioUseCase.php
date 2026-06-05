@@ -1150,16 +1150,21 @@ class ObtenerDatosRecibosOperarioUseCase
                     ->get();
             }
 
-            $tallasBodega = $tallasBodegaRows
+                $tallasBodega = $tallasBodegaRows
                 ->map(function ($row) {
+                    $talla = strtoupper(trim((string) ($row->talla ?? '')));
+                    if ($talla === '') {
+                        $talla = 'SOBREMEDIDA';
+                    }
+
                     return [
-                        'talla' => strtoupper(trim((string) ($row->talla ?? ''))),
+                        'talla' => $talla,
                         'genero' => strtoupper(trim((string) ($row->genero ?? 'UNISEX'))),
                         'color_nombre' => trim((string) ($row->color ?? '')),
                         'cantidad' => (int) ($row->cantidad ?? 0),
                     ];
                 })
-                ->filter(fn($t) => $t['talla'] !== '' && $t['cantidad'] > 0)
+                ->filter(fn($t) => $t['cantidad'] > 0)
                 ->values()
                 ->all();
 
@@ -1179,12 +1184,13 @@ class ObtenerDatosRecibosOperarioUseCase
             $caballero = [];
             $unisex = [];
             foreach ($tallasBodega as $talla) {
+                $tallaKey = $talla['talla'] !== '' ? $talla['talla'] : 'SOBREMEDIDA';
                 if ($talla['genero'] === 'DAMA') {
-                    $dama[$talla['talla']] = ($dama[$talla['talla']] ?? 0) + (int) $talla['cantidad'];
+                    $dama[$tallaKey] = ($dama[$tallaKey] ?? 0) + (int) $talla['cantidad'];
                 } elseif ($talla['genero'] === 'CABALLERO') {
-                    $caballero[$talla['talla']] = ($caballero[$talla['talla']] ?? 0) + (int) $talla['cantidad'];
+                    $caballero[$tallaKey] = ($caballero[$tallaKey] ?? 0) + (int) $talla['cantidad'];
                 } else {
-                    $unisex[$talla['talla']] = ($unisex[$talla['talla']] ?? 0) + (int) $talla['cantidad'];
+                    $unisex[$tallaKey] = ($unisex[$tallaKey] ?? 0) + (int) $talla['cantidad'];
                 }
             }
 
