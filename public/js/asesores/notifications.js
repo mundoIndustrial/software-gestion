@@ -70,6 +70,36 @@ function setupRealtimeNotifications() {
         window.dispatchEvent(new CustomEvent('asesores:pedido-actualizado'));
     };
 
+    const refreshBadges = () => {
+        // Refrescar badge de Revisar Prenda si existe la función
+        if (typeof window.__actualizarBadgeRevisarPrenda === 'function') {
+            fetch('/api/asesores/conteo-revisar-prenda')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.__actualizarBadgeRevisarPrenda(data.conteo || 0);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al actualizar badge de revisar prenda:', error);
+                });
+        }
+
+        // Refrescar badge total de Pedidos (suma de devueltos + recibos)
+        if (typeof window.__actualizarBadgePedidosTotal === 'function') {
+            fetch('/api/asesores/conteo-pedidos-produccion')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.__actualizarBadgePedidosTotal(data.conteo || 0);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al actualizar badge de pedidos:', error);
+                });
+        }
+    };
+
     globalThis.waitForEcho(() => {
         try {
             const ws = globalThis.shared?.websocket;
@@ -83,6 +113,7 @@ function setupRealtimeNotifications() {
                     return;
                 }
                 refreshNotifications();
+                refreshBadges();
             });
 
             ws.subscribe('notifications', '.notifications-marked-read', (data) => {
@@ -93,14 +124,20 @@ function setupRealtimeNotifications() {
 
             ws.subscribe('cotizaciones', '.cotizacion.creada', refreshNotifications);
             ws.subscribe('cotizaciones', '.cotizacion.estado.cambiado', refreshNotifications);
-            ws.subscribe('pedidos.general', '.pedido.actualizado', refreshNotifications);
+            ws.subscribe('pedidos.general', '.pedido.actualizado', () => {
+                refreshNotifications();
+                refreshBadges();
+            });
             ws.subscribe('asesores.observaciones', '.observacion.despacho', refreshNotifications);
             ws.subscribe('asesores.observaciones', '.bodega.nota', refreshNotifications);
 
             if (currentUserId) {
                 ws.subscribe(`cotizaciones.asesor.${currentUserId}`, '.cotizacion.creada', refreshNotifications);
                 ws.subscribe(`cotizaciones.asesor.${currentUserId}`, '.cotizacion.estado.cambiado', refreshNotifications);
-                ws.subscribe(`pedidos.${currentUserId}`, '.pedido.actualizado', refreshNotifications);
+                ws.subscribe(`pedidos.${currentUserId}`, '.pedido.actualizado', () => {
+                    refreshNotifications();
+                    refreshBadges();
+                });
             }
 
             asesoresRealtimeNotificationsBound = true;

@@ -47,6 +47,8 @@ function registerAsesoresDashboardYPendientesRoutes(): void
         ->name('pedidos.produccion.count');
     Route::get('/conteo-pendientes-logo', [AsesoresPedidosQueryController::class, 'contarPendientesLogo'])
         ->name('pendientes-logo.count');
+    Route::get('/conteo-revisar-prenda', [AsesoresPedidosQueryController::class, 'contarRevisarPrenda'])
+        ->name('revisar-prenda.count');
     Route::get('/diseños-pendientes-logo', [AsesoresPedidosQueryController::class, 'obtenerDiseñosPendientesLogo'])
         ->name('diseños-pendientes-logo');
     Route::get('/obtener-diseños-proceso/{procesoId}', [AsesoresPedidosQueryController::class, 'obtenerDiseñosProceso'])

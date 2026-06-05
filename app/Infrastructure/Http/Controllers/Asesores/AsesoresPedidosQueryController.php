@@ -574,6 +574,38 @@ final class AsesoresPedidosQueryController extends Controller
     }
 
 
+    public function contarRevisarPrenda(): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return $this->failure('No autenticado', 401, ['conteo' => 0]);
+            }
+
+            $conteo = \App\Models\ConsecutivoReciboPedido::query()
+                ->where('activo', 1)
+                ->whereRaw('UPPER(TRIM(tipo_recibo)) IN (?, ?)', ['COSTURA', 'COSTURA-BODEGA'])
+                ->whereRaw("UPPER(REPLACE(TRIM(COALESCE(estado, '')), ' ', '_')) IN (?, ?)", [
+                    'DEVUELTO_ASESOR',
+                    'DEVUELTO_A_ASESOR',
+                ])
+                ->whereHas('pedido', static function ($pedidoQuery) use ($user) {
+                    $pedidoQuery->where('asesor_id', $user->id);
+                })
+                ->count();
+
+            return $this->json([
+                'success' => true,
+                'conteo' => $conteo,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error al contar prendas a revisar', ['error' => $e->getMessage()]);
+            return $this->failure('Error al contar prendas a revisar', 500, [
+                'conteo' => 0,
+            ]);
+        }
+    }
+
     public function obtenerObservacionReciboProceso(Request $request): JsonResponse
     {
         try {
