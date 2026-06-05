@@ -15,12 +15,6 @@ class PrendaEditorTallas {
         const tallasNormalizadas = this._resolverTallas(prenda || {});
         const sobremedidaDetectada = this._resolverSobremedida(prenda || {}, tallasNormalizadas || {});
 
-        console.log('[Tallas] Cargando:', {
-            generos: Object.keys(tallasNormalizadas || {}),
-            estructura: typeof tallasNormalizadas,
-            sobremedida: sobremedidaDetectada
-        });
-
         const container = document.getElementById('tarjetas-generos-container');
         if (!container) {
             console.warn('[Tallas] No encontrado #tarjetas-generos-container');
@@ -31,7 +25,6 @@ class PrendaEditorTallas {
         console.log('[Tallas] Tarjetas limpias');
 
         if (!tallasNormalizadas) {
-            console.warn('[Tallas] Sin datos de tallas');
             return;
         }
 
@@ -405,17 +398,8 @@ class PrendaEditorTallas {
     }
 
     static _renderizarTarjetaSobremedida(genero, cantidad) {
-        console.log('[Tallas] _renderizarTarjetaSobremedida INICIO', {
-            genero,
-            cantidad,
-            existeGlobal: typeof globalThis.crearTarjetaSobremedida === 'function',
-            htmlAntes: document.getElementById('tarjetas-generos-container')?.innerHTML || ''
-        });
         if (typeof globalThis.crearTarjetaSobremedida === 'function') {
             globalThis.crearTarjetaSobremedida(genero, cantidad);
-            console.log('[Tallas] _renderizarTarjetaSobremedida via global', {
-                htmlDespuesGlobal: document.getElementById('tarjetas-generos-container')?.innerHTML || ''
-            });
             return;
         }
 
@@ -487,9 +471,6 @@ class PrendaEditorTallas {
         }
 
         container.appendChild(tarjeta);
-        console.log('[Tallas] _renderizarTarjetaSobremedida fallback append', {
-            htmlDespuesFallback: document.getElementById('tarjetas-generos-container')?.innerHTML || ''
-        });
     }
 
     static limpiar() {

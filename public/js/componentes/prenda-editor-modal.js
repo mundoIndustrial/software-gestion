@@ -1515,13 +1515,6 @@ function limpiarFormularioPrendaNueva() {
  */
 function cargarPrendaEnFormularioModal(prendaData) {
     if (!prendaData) return;
-    console.log('[cargarPrendaEnFormularioModal] INICIO', {
-        cantidad_talla: prendaData?.cantidad_talla,
-        generosConTallas: prendaData?.generosConTallas,
-        tarjetaSobremedidaInicial: !!document.querySelector('#tarjetas-generos-container [data-sobremedida="true"]'),
-        htmlInicial: document.getElementById('tarjetas-generos-container')?.innerHTML || ''
-    });
-    
     // Cargar datos básicos
     const nombreField = document.getElementById('nueva-prenda-nombre');
     const descripcionField = document.getElementById('nueva-prenda-descripcion');
@@ -1627,15 +1620,6 @@ function cargarPrendaEnFormularioModal(prendaData) {
         prendaData.cantidad_talla.SOBREMEDIDA &&
         Object.keys(prendaData.cantidad_talla.SOBREMEDIDA).length > 0;
 
-    console.log('[cargarPrendaEnFormularioModal] deteccion especial', {
-        tieneGenerico,
-        tieneGenericoEnCantidadTalla,
-        tieneSobremedida,
-        tieneSobremedidaEnCantidadTalla,
-        cantidad_talla: prendaData?.cantidad_talla,
-        generosConTallas: prendaData?.generosConTallas
-    });
-    
     if (tieneGenerico || tieneGenericoEnCantidadTalla) {
         console.log('[cargarPrendaEnFormularioModal]  DETECTADA PRENDA CON UNISEX (GENERICO)');
         
@@ -1712,10 +1696,6 @@ function cargarPrendaEnFormularioModal(prendaData) {
         }
     }
 
-    console.log('[cargarPrendaEnFormularioModal] FIN', {
-        tarjetaSobremedidaFinal: !!document.querySelector('#tarjetas-generos-container [data-sobremedida="true"]'),
-        htmlFinal: document.getElementById('tarjetas-generos-container')?.innerHTML || ''
-    });
 }
 
 /**
