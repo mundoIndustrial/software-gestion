@@ -933,15 +933,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const params = new URLSearchParams(window.location.search);
         const esEdicionCotizacionCreada = params.get('editar_cotizacion') === '1';
         if (esEdicionCotizacionCreada) {
+            // Ocultar botón ANTERIOR
+            const btnPrev = document.querySelector('button.btn-prev');
+            if (btnPrev) {
+                btnPrev.style.display = 'none';
+            }
+
+            // Mostrar y cambiar nombre del botón GUARDAR CAMBIOS
             const btnGuardarBorradorPaso5 = document.getElementById('btnGuardarBorrador');
             if (btnGuardarBorradorPaso5) {
                 btnGuardarBorradorPaso5.style.display = '';
                 btnGuardarBorradorPaso5.innerHTML = '<i class="fas fa-save"></i> GUARDAR CAMBIOS';
             }
 
+            // Ocultar botón CREAR COTIZACIÓN
             const btnEnviarPaso5 = document.getElementById('btnEnviarCotizacion');
             if (btnEnviarPaso5) {
-                btnEnviarPaso5.innerHTML = '<i class="fas fa-file-circle-check"></i> CREAR COTIZACIÓN';
+                btnEnviarPaso5.style.display = 'none';
             }
         }
     } catch (e) {

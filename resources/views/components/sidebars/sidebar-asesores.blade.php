@@ -377,11 +377,11 @@
 
     // Cargar conteos solo al cargar la página
     document.addEventListener('DOMContentLoaded', function() {
-        cargarConteoPendientes();
-        cargarConteoPedidosDevueltos();
-        cargarConteoPedidosProduccion();
-        cargarConteoPendientesLogo();
-        cargarConteoRevisarPrenda();
-        cargarConteoPedidosTotalEnTiempoReal();
+        if (typeof cargarConteoPendientes === 'function') cargarConteoPendientes();
+        if (typeof cargarConteoPedidosDevueltos === 'function') cargarConteoPedidosDevueltos();
+        if (typeof cargarConteoPedidosProduccion === 'function') cargarConteoPedidosProduccion();
+        if (typeof cargarConteoPendientesLogo === 'function') cargarConteoPendientesLogo();
+        if (typeof cargarConteoRevisarPrenda === 'function') cargarConteoRevisarPrenda();
+        if (typeof cargarConteoPedidosTotalEnTiempoReal === 'function') cargarConteoPedidosTotalEnTiempoReal();
     });
 </script>
