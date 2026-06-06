@@ -62,6 +62,7 @@ function resolverUrlImagenProceso(img) {
 }
 
 const RENDER_PROCESOS_CONTAINER_ID = 'contenedor-tarjetas-procesos';
+globalThis.RENDER_PROCESOS_CONTAINER_ID = RENDER_PROCESOS_CONTAINER_ID;
 
 function obtenerProcesosConDatos(procesos) {
     return Object.keys(procesos || {}).filter(tipo => {
@@ -106,6 +107,19 @@ function construirHtmlTarjetasProcesos(procesos, tiposConDatos) {
         const procesoCompleto = procesos[tipo];
         const datosProcess = normalizarModoTallasProceso(procesoCompleto.datos);
 
+        console.log('[RENDER-PROCESOS][construirHtmlTarjetasProcesos] entrada', {
+            tipo,
+            modo_tallas: datosProcess.modo_tallas,
+            datosKeys: Object.keys(datosProcess || {}),
+            tallasKeys: Object.keys(datosProcess.tallas || {}),
+            tallasData: datosProcess.tallas,
+            sobremedidaEnTallas: datosProcess.tallas?.sobremedida,
+            tallasCompleto: JSON.stringify(datosProcess.tallas),
+            datosExtendidosKeys: Object.keys(datosProcess.datosExtendidos || datosProcess.datos_extendidos || {}),
+            ubicaciones: datosProcess.ubicaciones,
+            observaciones: datosProcess.observaciones
+        });
+
         console.log(`[RENDER-PROCESOS] Generando tarjeta para: ${tipo}`, {
             modo_tallas: datosProcess.modo_tallas,
             ubicacionesCount: Array.isArray(datosProcess.ubicaciones) ? datosProcess.ubicaciones.length : 0,
@@ -118,7 +132,13 @@ function construirHtmlTarjetasProcesos(procesos, tiposConDatos) {
             datosExtendidosClaves: datosProcess.datosExtendidos ? Object.keys(datosProcess.datosExtendidos) : 'N/A'
         });
 
-        html += generarTarjetaProceso(tipo, datosProcess);
+        const htmlGenerado = generarTarjetaProceso(tipo, datosProcess);
+        console.log('[RENDER-PROCESOS][construirHtmlTarjetasProcesos] HTML generado para', tipo, {
+            htmlLength: htmlGenerado.length,
+            contieneSOBREMEDIDA: htmlGenerado.includes('SOBREMEDIDA'),
+            htmlPreview: htmlGenerado.substring(0, 200)
+        });
+        html += htmlGenerado;
     });
     return html;
 }
@@ -208,7 +228,8 @@ function actualizarCacheProcesosRender(procesos) {
  * Usa batch rendering para evitar reflows multiples
  */
 globalThis.renderizarTarjetasProcesos = function() {
-    const container = document.getElementById(RENDER_PROCESOS_CONTAINER_ID);
+    console.log('[RENDER-PROCESOS] FUNCIÓN LLAMADA - INICIO');
+    const container = document.getElementById(globalThis.RENDER_PROCESOS_CONTAINER_ID || 'contenedor-tarjetas-procesos');
 
     if (!container) {
         console.error('[RENDER-PROCESOS] No se encontro contenedor', {
@@ -239,10 +260,15 @@ globalThis.renderizarTarjetasProcesos = function() {
 
     console.log('[RENDER-PROCESOS] HTML generado:', {
         htmlLength: html.length,
+        contieneSOBREMEDIDA: html.includes('SOBREMEDIDA'),
         htmlPreview: html.substring(0, 100)
     });
 
     container.innerHTML = html;
+    console.log('[RENDER-PROCESOS] HTML insertado en contenedor, verificando:', {
+        contieneSOMBREMEDIDAEnDOM: container.innerHTML.includes('SOBREMEDIDA'),
+        contenedorHTML: container.innerHTML.substring(0, 200)
+    });
     actualizarCacheProcesosRender(procesos);
     etiquetarTarjetasProceso(container);
     mostrarContenedorProcesos(container);
@@ -260,6 +286,15 @@ globalThis.renderizarTarjetasProcesos = function() {
  * Generar HTML de una tarjeta de proceso - VERSION SIMPLIFICADA
  */
 function generarTarjetaProceso(tipo, datos) {
+    console.log('[RENDER-PROCESOS][generarTarjetaProceso] llamado', {
+        tipo,
+        modo_tallas: datos?.modo_tallas,
+        datosKeys: Object.keys(datos || {}),
+        tallasKeys: Object.keys(datos?.tallas || {}),
+        tallasData: datos?.tallas,
+        sobremedidaEnTallas: datos?.tallas?.sobremedida,
+        datosExtendidosKeys: Object.keys(datos?.datosExtendidos || datos?.datos_extendidos || {})
+    });
     if (globalThis.ProcesoCardRendererService && typeof globalThis.ProcesoCardRendererService.generarTarjetaProceso === 'function') {
         return globalThis.ProcesoCardRendererService.generarTarjetaProceso(tipo, datos);
     }

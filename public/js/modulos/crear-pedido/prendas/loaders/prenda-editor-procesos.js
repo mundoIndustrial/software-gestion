@@ -4,6 +4,111 @@
  */
 
 class PrendaEditorProcesos {
+    static _obtenerHelperTallasCanonicas() {
+        if (globalThis.ProcesoTallasCanonicas) {
+            return globalThis.ProcesoTallasCanonicas;
+        }
+
+        const GENEROS_VALIDOS = ['DAMA', 'CABALLERO', 'UNISEX'];
+        const normalizarGenero = (generoRaw) => {
+            const genero = String(generoRaw || '').trim().toUpperCase();
+            if (genero === 'DAMA' || genero.startsWith('DAM')) return 'DAMA';
+            if (genero === 'CABALLERO' || genero.startsWith('CAB')) return 'CABALLERO';
+            if (genero === 'UNISEX' || genero.startsWith('UNI')) return 'UNISEX';
+            return genero;
+        };
+        const normalizarCantidad = (cantidadRaw) => {
+            const cantidad = parseInt(cantidadRaw, 10) || 0;
+            return cantidad > 0 ? cantidad : 0;
+        };
+        const crearAgrupadas = () => ({ dama: {}, caballero: {}, unisex: {}, sobremedida: {} });
+        const desdeFilas = (filasRaw) => {
+            const filas = [];
+            (Array.isArray(filasRaw) ? filasRaw : []).forEach((fila) => agregarFila(filas, fila));
+            return filas;
+        };
+        const agregarFila = (filas, fila) => {
+            const cantidad = normalizarCantidad(fila?.cantidad);
+            if (cantidad <= 0) return;
+            const genero = normalizarGenero(fila?.genero);
+            const esSobremedida = Boolean(fila?.es_sobremedida);
+            const talla = esSobremedida ? null : String(fila?.talla || '').trim();
+            const clave = `${genero}::${esSobremedida ? 'SM' : talla}`;
+            const existente = filas.find((item) => `${item.genero}::${item.es_sobremedida ? 'SM' : item.talla}` === clave);
+            if (existente) {
+                existente.cantidad += cantidad;
+                return;
+            }
+            filas.push({ genero, talla: esSobremedida ? null : talla, es_sobremedida: esSobremedida, cantidad });
+        };
+        const desdeAgrupadas = (tallas) => {
+            const filas = [];
+            Object.entries(tallas || {}).forEach(([grupoRaw, tallasGrupo]) => {
+                const grupo = String(grupoRaw || '').trim().toUpperCase();
+                if (!tallasGrupo || typeof tallasGrupo !== 'object') return;
+                if (grupo === 'SOBREMEDIDA') {
+                    Object.entries(tallasGrupo).forEach(([generoRaw, cantidad]) => agregarFila(filas, { genero: generoRaw, talla: null, es_sobremedida: true, cantidad }));
+                    return;
+                }
+                if (!GENEROS_VALIDOS.includes(grupo)) return;
+                Object.entries(tallasGrupo).forEach(([tallaRaw, valor]) => {
+                    const talla = String(tallaRaw || '').trim();
+                    if (!talla) return;
+                    if (talla.toUpperCase() === 'SOBREMEDIDA') {
+                        if (typeof valor === 'object' && valor !== null) {
+                            Object.entries(valor).forEach(([generoRaw, cantidad]) => agregarFila(filas, { genero: generoRaw, talla: null, es_sobremedida: true, cantidad }));
+                        } else {
+                            agregarFila(filas, { genero: grupo, talla: null, es_sobremedida: true, cantidad: valor });
+                        }
+                        return;
+                    }
+                    agregarFila(filas, { genero: grupo, talla, es_sobremedida: false, cantidad: valor });
+                });
+            });
+            return filas;
+        };
+        const aAgrupadas = (filasCanonicas) => {
+            const agrupadas = crearAgrupadas();
+            (Array.isArray(filasCanonicas) ? filasCanonicas : []).forEach((fila) => {
+                const cantidad = normalizarCantidad(fila?.cantidad);
+                if (cantidad <= 0) return;
+                const genero = normalizarGenero(fila?.genero);
+                if (!genero) return;
+                if (fila?.es_sobremedida) {
+                    agrupadas.sobremedida[genero] = (agrupadas.sobremedida[genero] || 0) + cantidad;
+                    return;
+                }
+                const talla = String(fila?.talla || '').trim();
+                if (!talla) return;
+                agrupadas[genero.toLowerCase()][talla] = (agrupadas[genero.toLowerCase()][talla] || 0) + cantidad;
+            });
+            return agrupadas;
+        };
+
+        globalThis.ProcesoTallasCanonicas = {
+            normalizarGenero,
+            normalizarCantidad,
+            crearAgrupadas,
+            desdeFilas,
+            desdeAgrupadas,
+            aAgrupadas,
+            normalizarDatosProceso(datosProceso) {
+                const datos = datosProceso && typeof datosProceso === 'object' ? datosProceso : {};
+                const tallasCanonicas = Array.isArray(datos.tallasCanonicas)
+                    ? datos.tallasCanonicas
+                    : Array.isArray(datos.tallas)
+                        ? desdeFilas(datos.tallas)
+                        : desdeAgrupadas(datos.tallas || datos.cantidad_talla || datos.generosConTallas);
+                return {
+                    ...datos,
+                    tallasCanonicas,
+                    tallas: aAgrupadas(tallasCanonicas)
+                };
+            }
+        };
+
+        return globalThis.ProcesoTallasCanonicas;
+    }
     /**
      * Cargar procesos en el modal
      */
@@ -176,22 +281,26 @@ class PrendaEditorProcesos {
         }
         delete datos.modoTallas;
         
-        if (datos.imagenes?.length > 0) {
-            this._registrarImagenesDebug(tipo, datos.imagenes);
-            datos.imagenes = this._normalizarImagenes(datos.imagenes);
+        const helperTallas = this._obtenerHelperTallasCanonicas();
+        const datosNormalizados = helperTallas.normalizarDatosProceso(datos);
+
+        if (datosNormalizados.imagenes?.length > 0) {
+            this._registrarImagenesDebug(tipo, datosNormalizados.imagenes);
+            datosNormalizados.imagenes = this._normalizarImagenes(datosNormalizados.imagenes);
         }
-        datos._imagenes_originales = Array.isArray(datos.imagenes)
-            ? datos.imagenes.map((img) => (img && typeof img === 'object' ? { ...img } : img))
+        datosNormalizados._imagenes_originales = Array.isArray(datosNormalizados.imagenes)
+            ? datosNormalizados.imagenes.map((img) => (img && typeof img === 'object' ? { ...img } : img))
             : [];
 
         console.log(`[_normalizarDatosProceso]  RESULTADO para "${tipo}":`, {
-            'ubicaciones': datos.ubicaciones?.length || 0,
-            'tallas': Object.keys(datos.tallas || {}),
-            'imagenes': datos.imagenes?.length || 0,
-            'observaciones': datos.observaciones?.substring(0, 30) || 'sin observaciones'
+            'ubicaciones': datosNormalizados.ubicaciones?.length || 0,
+            'tallas': Object.keys(datosNormalizados.tallas || {}),
+            'tallasCanonicas': datosNormalizados.tallasCanonicas?.length || 0,
+            'imagenes': datosNormalizados.imagenes?.length || 0,
+            'observaciones': datosNormalizados.observaciones?.substring(0, 30) || 'sin observaciones'
         });
-        
-        return datos;
+
+        return datosNormalizados;
     }
 
     /**

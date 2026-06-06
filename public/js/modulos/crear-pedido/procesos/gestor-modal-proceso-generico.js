@@ -33,11 +33,208 @@ const procesoModalModules = globalThis.procesoModalModules || {
 };
 globalThis.procesoModalModules = procesoModalModules;
 
+function crearProcesoTallasCanonicasHelper() {
+    const GENEROS_VALIDOS = ['DAMA', 'CABALLERO', 'UNISEX'];
+
+    const normalizarGenero = (generoRaw) => {
+        const genero = String(generoRaw || '').trim().toUpperCase();
+        if (genero === 'DAMA' || genero.startsWith('DAM')) return 'DAMA';
+        if (genero === 'CABALLERO' || genero.startsWith('CAB')) return 'CABALLERO';
+        if (genero === 'UNISEX' || genero.startsWith('UNI')) return 'UNISEX';
+        return genero;
+    };
+
+    const normalizarCantidad = (cantidadRaw) => {
+        const cantidad = parseInt(cantidadRaw, 10) || 0;
+        return cantidad > 0 ? cantidad : 0;
+    };
+
+    const crearAgrupadas = () => ({
+        dama: {},
+        caballero: {},
+        unisex: {},
+        sobremedida: {}
+    });
+
+    const desdeFilas = (filasRaw) => {
+        const filas = [];
+        (Array.isArray(filasRaw) ? filasRaw : []).forEach((fila) => agregarFilaCanonica(filas, fila));
+        return filas;
+    };
+
+    const agregarFilaCanonica = (filas, fila) => {
+        const cantidad = normalizarCantidad(fila?.cantidad);
+        if (cantidad <= 0) return;
+
+        const genero = normalizarGenero(fila?.genero);
+        const esSobremedida = Boolean(fila?.es_sobremedida);
+        const talla = esSobremedida ? null : String(fila?.talla || '').trim();
+        const clave = `${genero}::${esSobremedida ? 'SM' : talla}`;
+        const existente = filas.find((item) => `${item.genero}::${item.es_sobremedida ? 'SM' : item.talla}` === clave);
+
+        if (existente) {
+            existente.cantidad += cantidad;
+            return;
+        }
+
+        filas.push({
+            genero,
+            talla: esSobremedida ? null : talla,
+            es_sobremedida: esSobremedida,
+            cantidad
+        });
+    };
+
+    const desdeAgrupadas = (tallas) => {
+        const filas = [];
+        const agrupadas = tallas && typeof tallas === 'object' ? tallas : {};
+
+        Object.entries(agrupadas).forEach(([grupoRaw, tallasGrupo]) => {
+            const grupo = String(grupoRaw || '').trim().toUpperCase();
+            if (!tallasGrupo || typeof tallasGrupo !== 'object') return;
+
+            if (grupo === 'SOBREMEDIDA') {
+                Object.entries(tallasGrupo).forEach(([generoRaw, cantidad]) => {
+                    agregarFilaCanonica(filas, {
+                        genero: generoRaw,
+                        talla: null,
+                        es_sobremedida: true,
+                        cantidad
+                    });
+                });
+                return;
+            }
+
+            if (!GENEROS_VALIDOS.includes(grupo)) return;
+
+            Object.entries(tallasGrupo).forEach(([tallaRaw, valor]) => {
+                const talla = String(tallaRaw || '').trim();
+                if (!talla) return;
+
+                if (talla.toUpperCase() === 'SOBREMEDIDA') {
+                    if (typeof valor === 'object' && valor !== null) {
+                        Object.entries(valor).forEach(([generoRaw, cantidad]) => {
+                            agregarFilaCanonica(filas, {
+                                genero: generoRaw,
+                                talla: null,
+                                es_sobremedida: true,
+                                cantidad
+                            });
+                        });
+                        return;
+                    }
+
+                    agregarFilaCanonica(filas, {
+                        genero: grupo,
+                        talla: null,
+                        es_sobremedida: true,
+                        cantidad: valor
+                    });
+                    return;
+                }
+
+                agregarFilaCanonica(filas, {
+                    genero: grupo,
+                    talla,
+                    es_sobremedida: false,
+                    cantidad: valor
+                });
+            });
+        });
+
+        return filas;
+    };
+
+    const aAgrupadas = (filasCanonicas) => {
+        const agrupadas = crearAgrupadas();
+
+        (Array.isArray(filasCanonicas) ? filasCanonicas : []).forEach((fila) => {
+            const cantidad = normalizarCantidad(fila?.cantidad);
+            if (cantidad <= 0) return;
+
+            const genero = normalizarGenero(fila?.genero);
+            if (!genero) return;
+            if (fila?.es_sobremedida) {
+                agrupadas.sobremedida[genero] = (agrupadas.sobremedida[genero] || 0) + cantidad;
+                return;
+            }
+
+            const bucket = genero.toLowerCase();
+            const talla = String(fila?.talla || '').trim();
+            if (!talla) return;
+            agrupadas[bucket][talla] = (agrupadas[bucket][talla] || 0) + cantidad;
+        });
+
+        return agrupadas;
+    };
+
+    const construirEstadoModal = (filasCanonicas) => {
+        const agrupadas = aAgrupadas(filasCanonicas);
+        return {
+            tallasCantidadesProceso: {
+                dama: { ...agrupadas.dama },
+                caballero: { ...agrupadas.caballero },
+                unisex: { ...agrupadas.unisex },
+                sobremedida: { ...agrupadas.sobremedida }
+            },
+            tallasSeleccionadasProceso: {
+                dama: Object.keys(agrupadas.dama),
+                caballero: Object.keys(agrupadas.caballero),
+                unisex: Object.keys(agrupadas.unisex),
+                sobremedida: Object.keys(agrupadas.sobremedida).length > 0 ? { ...agrupadas.sobremedida } : null
+            }
+        };
+    };
+
+    const desdeEstadoModal = (estadoModal) => {
+        const agrupadas = crearAgrupadas();
+        const estado = estadoModal && typeof estadoModal === 'object' ? estadoModal : {};
+
+        agrupadas.dama = { ...(estado.dama || {}) };
+        agrupadas.caballero = { ...(estado.caballero || {}) };
+        agrupadas.unisex = { ...(estado.unisex || {}) };
+        agrupadas.sobremedida = { ...(estado.sobremedida || {}) };
+
+        return desdeAgrupadas(agrupadas);
+    };
+
+    const normalizarDatosProceso = (datosProceso) => {
+        const datos = datosProceso && typeof datosProceso === 'object' ? datosProceso : {};
+        const tallasCanonicas = Array.isArray(datos.tallasCanonicas)
+            ? datos.tallasCanonicas
+            : Array.isArray(datos.tallas)
+                ? desdeFilas(datos.tallas)
+                : desdeAgrupadas(datos.tallas || datos.cantidad_talla || datos.generosConTallas);
+        const tallas = aAgrupadas(tallasCanonicas);
+
+        return {
+            ...datos,
+            tallasCanonicas,
+            tallas
+        };
+    };
+
+    return {
+        normalizarGenero,
+        normalizarCantidad,
+        crearAgrupadas,
+        desdeFilas,
+        desdeAgrupadas,
+        aAgrupadas,
+        construirEstadoModal,
+        desdeEstadoModal,
+        normalizarDatosProceso
+    };
+}
+
+globalThis.ProcesoTallasCanonicas = globalThis.ProcesoTallasCanonicas || crearProcesoTallasCanonicasHelper();
+
 globalThis.tallasSeleccionadasProceso = { dama: [], caballero: [], unisex: [], sobremedida: null };
 globalThis.ubicacionesProcesoSeleccionadas = [];
 // ESTRUCTURA INDEPENDIENTE: Cantidades de TALLAS DEL PROCESO (NO de la prenda)
 // Estructura: { dama: { S: 5, M: 3 }, caballero: { 32: 2 }, sobremedida: { DAMA: 10, CABALLERO: 5 } }
 globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, unisex: {}, sobremedida: {} };
+globalThis.tallasCanonicasProceso = [];
 
 // configuracion por tipo de proceso
 const procesosConfig = {
@@ -107,6 +304,7 @@ function _procesoGenerico_limpiarStorageUniversal(esEdicion) {
 function _procesoGenerico_limpiarCreacion() {
     globalThis.tallasSeleccionadasProceso = { dama: [], caballero: [], unisex: [], sobremedida: null };
     globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, unisex: {}, sobremedida: {} };
+    globalThis.tallasCanonicasProceso = [];
 
     if (globalThis.imagenesProcesoActual) {
         globalThis.imagenesProcesoActual = [null, null, null];
@@ -134,27 +332,18 @@ function _procesoGenerico_limpiarCreacion() {
 
 function _procesoGenerico_cargarEdicion(tipoProceso) {
     const procesoDatos = globalThis.procesosSeleccionados?.[tipoProceso]?.datos;
-    if (!procesoDatos?.tallas) {
+    if (!procesoDatos?.tallas && !Array.isArray(procesoDatos?.tallasCanonicas)) {
         return;
     }
 
-    globalThis.tallasCantidadesProceso = {
-        dama: procesoDatos.tallas.dama ?? {},
-        caballero: procesoDatos.tallas.caballero ?? {},
-        unisex: procesoDatos.tallas.unisex ?? {},
-        sobremedida: procesoDatos.tallas.sobremedida ?? {}
-    };
+    const helper = globalThis.ProcesoTallasCanonicas;
+    const datosNormalizados = helper.normalizarDatosProceso(procesoDatos);
+    globalThis.procesosSeleccionados[tipoProceso].datos = datosNormalizados;
+    globalThis.tallasCanonicasProceso = [...datosNormalizados.tallasCanonicas];
 
-    const sobremedidaSel = Object.keys(procesoDatos.tallas.sobremedida ?? {}).length > 0
-        ? { ...procesoDatos.tallas.sobremedida }
-        : null;
-
-    globalThis.tallasSeleccionadasProceso = {
-        dama: Object.keys(procesoDatos.tallas.dama ?? {}),
-        caballero: Object.keys(procesoDatos.tallas.caballero ?? {}),
-        unisex: Object.keys(procesoDatos.tallas.unisex ?? {}),
-        sobremedida: sobremedidaSel
-    };
+    const estadoModal = helper.construirEstadoModal(datosNormalizados.tallasCanonicas);
+    globalThis.tallasCantidadesProceso = estadoModal.tallasCantidadesProceso;
+    globalThis.tallasSeleccionadasProceso = estadoModal.tallasSeleccionadasProceso;
 
     procesoModalDebug(' [EDICION] Tallas del proceso cargadas en tallasCantidadesProceso y tallasSeleccionadasProceso:', {
         tallasCantidadesProceso: globalThis.tallasCantidadesProceso,

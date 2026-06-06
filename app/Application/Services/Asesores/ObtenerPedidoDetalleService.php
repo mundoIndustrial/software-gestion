@@ -49,12 +49,11 @@ class ObtenerPedidoDetalleService
                     'fotos',
                     'fotosTelas',
                     'variantes' => function ($q3) {
-                        $q3->with(['tela', 'color', 'tipoManga', 'tipoBrocheBoton']);
+                        $q3->with(['tipoManga', 'tipoBrocheBoton']);
                     },
                 ]);
             },
             'asesora',
-            'logoPedidos',
             'epps' => function ($q) {
                 $q->with(['epp', 'imagenes']);
             },

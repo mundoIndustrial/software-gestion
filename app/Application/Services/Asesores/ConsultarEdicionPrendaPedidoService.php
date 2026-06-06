@@ -46,17 +46,16 @@ final class ConsultarEdicionPrendaPedidoService
 
     public function obtenerDatosEdicion(int $pedidoId): array
     {
-        $pedido = $this->obtenerPedidoUseCase->ejecutar(
-            ObtenerProduccionPedidoDTO::fromRequest((string) $pedidoId)
-        );
-        $pedido = $this->enriquecerPedidoConBloqueos($pedido, $pedidoId);
+        $datosEdicion = $this->obtenerPedidoDetalleService->obtenerParaEdicion($pedidoId);
+        $datosEdicion = $this->enriquecerPedidoConBloqueos($datosEdicion, $pedidoId);
+        $pedido = $datosEdicion['pedido'] ?? null;
 
         return [
             'pedido_id' => $pedidoId,
             'numero_pedido' => $this->pick($pedido, 'numero_pedido'),
             'cliente' => $this->pick($pedido, 'cliente'),
             'prendas_count' => $this->countPrendas($pedido),
-            'data' => $pedido,
+            'data' => $datosEdicion,
         ];
     }
 

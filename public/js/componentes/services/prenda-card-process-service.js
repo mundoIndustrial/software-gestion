@@ -5,19 +5,35 @@
 globalThis.PrendaCardProcessService = {
     resolverModoProceso(datos, proceso) {
         if (globalThis.PrendaCardNormalizers?.resolverModoProceso) {
-            return globalThis.PrendaCardNormalizers.resolverModoProceso({ datos, proceso });
+            const modo = globalThis.PrendaCardNormalizers.resolverModoProceso({ datos, proceso });
+            console.debug('[PrendaCardProcessService][resolverModoProceso]', {
+                proceso: proceso?.tipo || datos?.tipo || proceso?.tipoProceso?.nombre || null,
+                modo,
+                tallasKeys: Object.keys(datos?.tallas || {}),
+                datosExtendidosKeys: Object.keys(datos?.datosExtendidos || datos?.datos_extendidos || {})
+            });
+            return modo;
         }
 
         const modoTallasResuelto = datos?.modo_tallas || datos?.modoTallas || proceso?.modo_tallas || proceso?.modoTallas || 'generico';
         const esGeneralMode = modoTallasResuelto === 'general' || modoTallasResuelto === 'generico';
-        const esPorTallas = !esGeneralMode && !!(datos?.datosExtendidos);
+        const datosExtendidos = datos?.datosExtendidos || datos?.datos_extendidos || proceso?.datosExtendidos || proceso?.datos_extendidos || null;
+        const esPorTallas = !esGeneralMode && !!(datosExtendidos);
+        console.debug('[PrendaCardProcessService][resolverModoProceso-fallback]', {
+            proceso: proceso?.tipo || datos?.tipo || proceso?.tipoProceso?.nombre || null,
+            modoTallasResuelto,
+            esGeneralMode,
+            esPorTallas,
+            tallasKeys: Object.keys(datos?.tallas || {}),
+            datosExtendidosKeys: Object.keys(datosExtendidos || {})
+        });
 
         return {
             modoTallasResuelto,
             esGeneralMode,
             esPorTallas,
             tipoRender: esPorTallas ? 'por_tallas' : (esGeneralMode ? 'general' : 'generico'),
-            tieneDatosExtendidos: !!(datos?.datosExtendidos)
+            tieneDatosExtendidos: !!(datosExtendidos)
         };
     },
 
@@ -103,6 +119,22 @@ globalThis.PrendaCardProcessService = {
             const damaObj = obtenerObjetoGenero(datos.tallas, 'dama');
             const caballeroObj = obtenerObjetoGenero(datos.tallas, 'caballero');
             const sobremedidaObj = obtenerObjetoGenero(datos.tallas, 'sobremedida');
+            
+            console.debug('[PrendaCardProcessService][renderProcesoGeneral][tallas] DIAGNÓSTICO COMPLETO', {
+                proceso: nombreProceso,
+                datosTallasCompleto: datos.tallas,
+                datosTallasKeys: Object.keys(datos.tallas || {}),
+                damaObj,
+                damaKeys: Object.keys(damaObj || {}),
+                caballeroObj,
+                caballeroKeys: Object.keys(caballeroObj || {}),
+                sobremedidaObj,
+                sobremedidaKeys: Object.keys(sobremedidaObj || {}),
+                sobremedidaExiste: !!datos.tallas?.sobremedida,
+                sobremedidaValue: datos.tallas?.sobremedida,
+                datosCompletoBruto: JSON.stringify(datos)
+            });
+            
             tallasGeneralesHTML = renderers.renderTallasGeneralesProceso({ damaObj, caballeroObj, sobremedidaObj });
         }
 
@@ -133,7 +165,7 @@ globalThis.PrendaCardProcessService = {
         });
 
         const observacionesPorTallaHTML = renderers.renderObservacionesPorTallaProceso({
-            datosExtendidos: datos.datosExtendidos || {},
+            datosExtendidos: datos.datosExtendidos || datos.datos_extendidos || {},
             tallas: datos.tallas || {}
         });
 
@@ -159,7 +191,14 @@ globalThis.PrendaCardProcessService = {
 
     renderProcesoSegunModo({ meta, deps }) {
         const { datos, icono, nombreProceso, modoProceso } = meta;
-        if (modoProceso.esPorTallas && datos.datosExtendidos) {
+        const datosExtendidos = datos.datosExtendidos || datos.datos_extendidos || {};
+        console.debug('[PrendaCardProcessService][renderProcesoSegunModo]', {
+            proceso: nombreProceso,
+            modoProceso,
+            datosTallasKeys: Object.keys(datos.tallas || {}),
+            datosExtendidosKeys: Object.keys(datosExtendidos || {})
+        });
+        if (modoProceso.esPorTallas && Object.keys(datosExtendidos).length > 0) {
             return this.renderProcesoPorTallas({ datos, icono, nombreProceso, renderers: deps.renderers });
         }
         if (modoProceso.esGeneralMode) {

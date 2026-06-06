@@ -20,6 +20,8 @@ class ObtenerPedidoDetalleTransformadorService
         $this->agregarColorTallaYAsignaciones($prendaArray, (int) $prenda->id);
         $prendaArray['variantes'] = $this->transformarVariantesDePrenda($prenda);
         $prendaArray['colores_telas'] = $this->transformarColoresTelasDePrenda((int) $prenda->id);
+        $prendaArray['tipo_flujo_tallas'] = $this->resolverTipoFlujoTallas($prendaArray);
+        $prendaArray['tipoFlujoTallas'] = $prendaArray['tipo_flujo_tallas'];
 
         return $prendaArray;
     }
@@ -229,6 +231,21 @@ class ObtenerPedidoDetalleTransformadorService
         return $asignaciones;
     }
 
+    private function resolverTipoFlujoTallas(array $prendaArray): string
+    {
+        $tieneTallaColores = !empty($prendaArray['talla_colores']) && is_array($prendaArray['talla_colores']);
+        if ($tieneTallaColores) {
+            return 'talla_color';
+        }
+
+        $tieneTallas = !empty($prendaArray['cantidad_talla']) && is_array($prendaArray['cantidad_talla']);
+        if ($tieneTallas) {
+            return 'normal';
+        }
+
+        return 'sin_tallas';
+    }
+
     private function transformarVariantesDePrenda($prenda): array
     {
         if (!$prenda->variantes) {
@@ -354,19 +371,60 @@ class ObtenerPedidoDetalleTransformadorService
 
     private function construirTallasProcesoRelacional($procesoPrendaDetalleId)
     {
-        $tallas = [];
-        $datosExtendidos = [];
+        $tallas = [
+            'dama' => new \stdClass(),
+            'caballero' => new \stdClass(),
+            'unisex' => new \stdClass(),
+            'sobremedida' => new \stdClass(),
+        ];
+        $datosExtendidos = [
+            'dama' => new \stdClass(),
+            'caballero' => new \stdClass(),
+            'unisex' => new \stdClass(),
+            'sobremedida' => new \stdClass(),
+        ];
         $tallasRelacionales = \App\Models\PedidosProcesosPrendaTalla::where(
             'proceso_prenda_detalle_id',
             $procesoPrendaDetalleId
         )->get();
 
+        // 🔍 DEBUG: Ver atributos RAW del modelo
+        \Log::debug('[construirTallasProcesoRelacional] RAW ATTRS PRIMERA FILA', [
+            'primer_registro_atributos' => $tallasRelacionales->first() ? $tallasRelacionales->first()->getAttributes() : 'vacío',
+            'primer_registro_original' => $tallasRelacionales->first() ? $tallasRelacionales->first()->getOriginal() : 'vacío',
+        ]);
+
+        \Log::debug('[construirTallasProcesoRelacional] Iniciando', [
+            'proceso_prenda_detalle_id' => $procesoPrendaDetalleId,
+            'total_tallas' => $tallasRelacionales->count(),
+            'tallas_data' => $tallasRelacionales->map(function($t) {
+                return [
+                    'genero' => $t->genero,
+                    'talla' => $t->talla,
+                    'cantidad' => $t->cantidad,
+                    'es_sobremedida' => $t->es_sobremedida
+                ];
+            })
+        ]);
+
         foreach ($tallasRelacionales as $tallaRecord) {
-            $genero = $this->normalizarGeneroClave($tallaRecord->genero ?? null);
-            $tallas[$genero] = $tallas[$genero] ?? [];
-            $datosExtendidos[$genero] = $datosExtendidos[$genero] ?? [];
-            $this->agregarDatosTallaRelacional($tallaRecord, $tallas[$genero], $datosExtendidos[$genero]);
+            [$bucket, $claveBase] = $this->resolverGrupoTallaProceso($tallaRecord);
+
+            if ($bucket === '' || $claveBase === '') {
+                continue;
+            }
+
+            $this->agregarDatosTallaRelacional($tallaRecord, $tallas[$bucket], $datosExtendidos[$bucket], $claveBase);
         }
+
+        \Log::debug('[construirTallasProcesoRelacional] Resultado final', [
+            'proceso_id' => $procesoPrendaDetalleId,
+            'tallas_sobremedida_contenido' => $tallas['sobremedida'],
+            'tallas_sobremedida_keys' => array_keys((array) $tallas['sobremedida']),
+            'tallas_sobremedida_json' => json_encode($tallas['sobremedida']),
+            'tallas_completo' => $tallas,
+            'datosExtendidos_keys' => array_keys($datosExtendidos)
+        ]);
 
         return [
             'tallas' => $tallas,
@@ -374,26 +432,26 @@ class ObtenerPedidoDetalleTransformadorService
         ];
     }
 
-    private function agregarDatosTallaRelacional($tallaRecord, array &$tallasGenero, array &$datosExtendidosGenero): void
+    private function agregarDatosTallaRelacional($tallaRecord, array &$tallasGenero, array &$datosExtendidosGenero, string $claveBase): void
     {
         $coloresAsociados = DB::table('pedidos_procesos_prenda_talla_colores')
             ->where('pedidos_procesos_prenda_talla_id', $tallaRecord->id)
             ->get();
 
         if ($coloresAsociados->count() > 0) {
-            $this->agregarTallaConColores($tallaRecord, $coloresAsociados, $tallasGenero, $datosExtendidosGenero);
+            $this->agregarTallaConColores($tallaRecord, $coloresAsociados, $tallasGenero, $datosExtendidosGenero, $claveBase);
             return;
         }
 
-        $this->agregarTallaSimple($tallaRecord, $tallasGenero, $datosExtendidosGenero);
+        $this->agregarTallaSimple($tallaRecord, $tallasGenero, $datosExtendidosGenero, $claveBase);
     }
 
-    private function agregarTallaConColores($tallaRecord, $coloresAsociados, array &$tallasGenero, array &$datosExtendidosGenero): void
+    private function agregarTallaConColores($tallaRecord, $coloresAsociados, array &$tallasGenero, array &$datosExtendidosGenero, string $claveBase): void
     {
         $imagenesPorTalla = $this->obtenerImagenesPorTalla((int) $tallaRecord->id);
 
         foreach ($coloresAsociados as $colorRecord) {
-            $tallaColorKey = $tallaRecord->talla . '__' . $colorRecord->color_nombre;
+            $tallaColorKey = $claveBase . '__' . $colorRecord->color_nombre;
             $cantidadColor = $colorRecord->cantidad ?? $tallaRecord->cantidad;
 
             if ($cantidadColor > 0) {
@@ -409,19 +467,41 @@ class ObtenerPedidoDetalleTransformadorService
         }
     }
 
-    private function agregarTallaSimple($tallaRecord, array &$tallasGenero, array &$datosExtendidosGenero): void
+    private function agregarTallaSimple($tallaRecord, array &$tallasGenero, array &$datosExtendidosGenero, string $tallaKey): void
     {
         if ($tallaRecord->cantidad > 0) {
-            $tallasGenero[$tallaRecord->talla] = $tallaRecord->cantidad;
+            $tallasGenero[$tallaKey] = $tallaRecord->cantidad;
         }
 
-        $tallaKey = $tallaRecord->talla;
         $datosExtendidosGenero[$tallaKey] = [
             'cantidadSeleccionada' => $tallaRecord->cantidad,
             'ubicaciones' => $this->normalizarUbicacionesArray($tallaRecord->ubicaciones ?? null),
             'observaciones' => $tallaRecord->observaciones ?? '',
             'imagenes' => $this->obtenerImagenesPorTalla((int) $tallaRecord->id),
         ];
+    }
+
+    private function resolverGrupoTallaProceso($tallaRecord): array
+    {
+        $esSobremedida = !empty($tallaRecord->es_sobremedida);
+        $genero = strtoupper(trim((string) ($tallaRecord->genero ?? '')));
+
+        if ($esSobremedida) {
+            if (!in_array($genero, ['DAMA', 'CABALLERO', 'UNISEX'], true)) {
+                return ['', ''];
+            }
+
+            return ['sobremedida', $genero];
+        }
+
+        $bucket = strtolower($genero);
+        $talla = trim((string) ($tallaRecord->talla ?? ''));
+
+        if (!in_array($bucket, ['dama', 'caballero', 'unisex'], true) || $talla === '') {
+            return ['', ''];
+        }
+
+        return [$bucket, $talla];
     }
 
     private function obtenerImagenesPorTalla(int $tallaRecordId): array

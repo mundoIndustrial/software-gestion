@@ -264,12 +264,36 @@ window.PrendaCardRenderers = {
         const caballeroHasTallas = Object.keys(caballeroObj).length > 0;
         const sobremedidaHasTallas = Object.keys(sobremedidaObj).length > 0;
 
-        if (!damaHasTallas && !caballeroHasTallas && !sobremedidaHasTallas) return '';
+        console.log('[PrendaCardRenderers][renderTallasGeneralesProceso] ⭐ ENTRADA COMPLETA ⭐', {
+            damaObj,
+            caballeroObj,
+            sobremedidaObj,
+            damaKeys: Object.keys(damaObj || {}),
+            caballeroKeys: Object.keys(caballeroObj || {}),
+            sobremedidaKeys: Object.keys(sobremedidaObj || {}),
+            damaHasTallas,
+            caballeroHasTallas,
+            sobremedidaHasTallas,
+            sobremedidaVacio: Object.keys(sobremedidaObj || {}).length === 0,
+            sobremedidaTieneContenido: JSON.stringify(sobremedidaObj)
+        });
+
+        if (!damaHasTallas && !caballeroHasTallas && !sobremedidaHasTallas) {
+            console.log('[PrendaCardRenderers][renderTallasGeneralesProceso] ⚠️ SIN TALLAS, RETORNANDO VACÍO');
+            return '';
+        }
+
+        const tituloSobremedida = 'SOBREMEDIDA';
+
+        console.log('[PrendaCardRenderers][renderTallasGeneralesProceso] titulo resuelto', {
+            tituloSobremedida,
+            clavesSobremedida: Object.keys(sobremedidaObj || {})
+        });
 
         const generosConfig = {
             dama: { label: 'DAMA', icon: '<i class="fas fa-female" style="color: #be185d;"></i>', color: '#be185d' },
             caballero: { label: 'CABALLERO', icon: '<i class="fas fa-male" style="color: #1d4ed8;"></i>', color: '#1d4ed8' },
-            sobremedida: { label: 'SOBREMEDIDA', icon: '<i class="fas fa-ruler" style="color: #92400e;"></i>', color: '#92400e' }
+            sobremedida: { label: tituloSobremedida, icon: '<i class="fas fa-ruler" style="color: #92400e;"></i>', color: '#92400e' }
         };
 
         let tallasGeneralesHTML = '<div style="margin-top: 0.75rem;">';
@@ -421,10 +445,23 @@ window.PrendaCardRenderers = {
 
     renderProcesoPorTallasItems({ generos = {}, datos = {} }) {
         let porTallasHTML = '';
+        const datosExtendidos = datos.datosExtendidos || datos.datos_extendidos || {};
+
+        console.log('[PrendaCardRenderers][renderProcesoPorTallasItems] entrada', {
+            generosKeys: Object.keys(generos || {}),
+            datosExtendidosKeys: Object.keys(datosExtendidos || {}),
+            datosTallasKeys: Object.keys(datos.tallas || {})
+        });
 
         Object.entries(generos).forEach(([genero, cfg]) => {
-            const tallasGenero = datos.datosExtendidos?.[genero];
+            const tallasGenero = datosExtendidos?.[genero] || datosExtendidos?.[genero.toLowerCase()] || datosExtendidos?.[genero.toUpperCase()];
             if (!tallasGenero || Object.keys(tallasGenero).length === 0) return;
+
+            console.log('[PrendaCardRenderers][renderProcesoPorTallasItems] genero', {
+                genero,
+                keys: Object.keys(tallasGenero || {}),
+                valor: tallasGenero
+            });
 
             Object.entries(tallasGenero).forEach(([tallaKey, datosTalla]) => {
                 const parts = String(tallaKey).split('__');
@@ -481,8 +518,13 @@ window.PrendaCardRenderers = {
     },
 
     renderObservacionesPorTallaProceso({ datosExtendidos = {}, tallas = {} }) {
-        const tieneObservacionesPorTalla = Object.keys(datosExtendidos).some((genero) =>
-            datosExtendidos[genero] && Object.values(datosExtendidos[genero]).some((d) => d.observaciones)
+        const datosExtendidosNormalizados = datosExtendidos || {};
+        console.log('[PrendaCardRenderers][renderObservacionesPorTallaProceso] entrada', {
+            datosExtendidosKeys: Object.keys(datosExtendidosNormalizados || {}),
+            tallasKeys: Object.keys(tallas || {})
+        });
+        const tieneObservacionesPorTalla = Object.keys(datosExtendidosNormalizados).some((genero) =>
+            datosExtendidosNormalizados[genero] && Object.values(datosExtendidosNormalizados[genero]).some((d) => d.observaciones)
         );
         if (!tieneObservacionesPorTalla) return '';
 
@@ -494,7 +536,7 @@ window.PrendaCardRenderers = {
 
         let tarjetasObs = '';
         Object.entries(generosConfigObs).forEach(([genero, cfg]) => {
-            const extendidosGenero = datosExtendidos[genero] || {};
+            const extendidosGenero = datosExtendidosNormalizados[genero] || datosExtendidosNormalizados[genero.toLowerCase()] || datosExtendidosNormalizados[genero.toUpperCase()] || {};
             const tallasGenero = tallas[genero] || {};
 
             Object.entries(extendidosGenero).forEach(([tallaKey, detalle]) => {
@@ -643,5 +685,3 @@ window.PrendaCardRenderers = {
         });
     }
 };
-
-

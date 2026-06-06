@@ -35,30 +35,7 @@
     <script>
         window.modoEdicion = true;
         window.pedidoEditarId = {{ $pedidoEditarId }};
-        // Pasar datos completos con pedido, prendas, EPPs, etc.
-        window.pedidoEditarData = {{ Js::from([
-            'pedido' => [
-                'id' => $pedido->id ?? null,
-                'numero_pedido' => $pedido->numero_pedido ?? null,
-                'orden_compra' => $pedido->orden_compra ?? '',
-                'cliente' => $pedido->cliente_nombre_display ?? '',
-                'forma_de_pago' => $pedido->forma_de_pago ?? '',
-                'dia_de_entrega' => $pedido->dia_de_entrega ?? null,
-                'fecha_estimada_de_entrega' => $pedido->fecha_estimada_de_entrega
-                    ?? $pedido->fecha_estimada_entrega
-                    ?? $pedido->fecha_estimada
-                    ?? null,
-                'observaciones' => $pedido->observaciones ?? '',
-                'estado' => $pedido->estado ?? '',
-                // Contrato explícito: payload ya mapeado por MapearPedidoEdicionService.
-                // No remapear aquí para evitar pérdidas de campos del flujo talla_color.
-                'prendas' => ($pedido->prendas ?? collect())->values()->toArray(),
-            ],
-            'epps' => $epps ?? [],
-            'estados' => $estados ?? [],
-            'areas' => $areas ?? []
-        ]) }};
-
+        window.routePedidoEditarDatosUrl = @json(url('/api/asesores/pedidos-produccion/' . $pedidoEditarId . '/datos-edicion'));
     </script>
 @endif
 

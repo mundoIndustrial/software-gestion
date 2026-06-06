@@ -222,37 +222,25 @@
         }
     }
 
-    function normalizarTallasProceso(tallas) {
-        let damaTallas = tallas?.dama || {};
-        let caballeroTallas = tallas?.caballero || {};
-        const sobremedidaTallas = { ...(tallas?.sobremedida || {}) };
-
-        const extraerSobremedida = (sourceGenero, targetGenero) => {
-            const limpio = {};
-            for (const [talla, valor] of Object.entries(sourceGenero || {})) {
-                if (talla !== 'SOBREMEDIDA') {
-                    limpio[talla] = valor;
-                    continue;
+    function normalizarTallasProceso(datosProceso) {
+        if (!globalThis.ProcesoTallasCanonicas) {
+            const tallas = datosProceso?.tallas || {};
+            return {
+                tallasCanonicas: [],
+                agrupadas: {
+                    dama: { ...(tallas?.dama || {}) },
+                    caballero: { ...(tallas?.caballero || {}) },
+                    unisex: { ...(tallas?.unisex || {}) },
+                    sobremedida: { ...(tallas?.sobremedida || {}) }
                 }
+            };
+        }
 
-                if (typeof valor === 'number') {
-                    sobremedidaTallas[targetGenero] = valor;
-                    continue;
-                }
-
-                if (typeof valor === 'object' && valor !== null) {
-                    Object.entries(valor).forEach(([genero, cantidad]) => {
-                        sobremedidaTallas[genero] = cantidad;
-                    });
-                }
-            }
-            return limpio;
+        const datosNormalizados = globalThis.ProcesoTallasCanonicas.normalizarDatosProceso(datosProceso || {});
+        return {
+            tallasCanonicas: datosNormalizados.tallasCanonicas || [],
+            agrupadas: datosNormalizados.tallas || globalThis.ProcesoTallasCanonicas.crearAgrupadas()
         };
-
-        damaTallas = extraerSobremedida(damaTallas, 'DAMA');
-        caballeroTallas = extraerSobremedida(caballeroTallas, 'CABALLERO');
-
-        return { damaTallas, caballeroTallas, sobremedidaTallas };
     }
 
     function cargarDatosProcesoEnModal(tipo, datos) {
@@ -287,33 +275,26 @@
             obsInput.value = datos.observaciones || '';
         }
 
-        if (!datos.tallas || !globalThis.tallasSeleccionadasProceso) {
+        if ((!datos.tallas && !Array.isArray(datos.tallasCanonicas)) || !globalThis.tallasSeleccionadasProceso) {
             return;
         }
 
-        const { damaTallas, caballeroTallas, sobremedidaTallas } = normalizarTallasProceso(datos.tallas);
-        const unisexTallas = { ...(datos.tallas?.unisex || {}) };
-        if (Object.prototype.hasOwnProperty.call(unisexTallas, 'SOBREMEDIDA')) {
-            const cantidadSobre = Number(unisexTallas.SOBREMEDIDA) || 0;
-            if (cantidadSobre > 0) {
-                sobremedidaTallas.UNISEX = (Number(sobremedidaTallas.UNISEX) || 0) + cantidadSobre;
-            }
-            delete unisexTallas.SOBREMEDIDA;
-        }
+        const { tallasCanonicas, agrupadas } = normalizarTallasProceso(datos);
+        globalThis.tallasCanonicasProceso = [...tallasCanonicas];
 
-        globalThis.tallasSeleccionadasProceso.dama = Object.keys(damaTallas);
-        globalThis.tallasSeleccionadasProceso.caballero = Object.keys(caballeroTallas);
-        globalThis.tallasSeleccionadasProceso.unisex = Object.keys(unisexTallas);
-        globalThis.tallasSeleccionadasProceso.sobremedida = Object.keys(sobremedidaTallas).length > 0 ? sobremedidaTallas : null;
+        globalThis.tallasSeleccionadasProceso.dama = Object.keys(agrupadas.dama || {});
+        globalThis.tallasSeleccionadasProceso.caballero = Object.keys(agrupadas.caballero || {});
+        globalThis.tallasSeleccionadasProceso.unisex = Object.keys(agrupadas.unisex || {});
+        globalThis.tallasSeleccionadasProceso.sobremedida = Object.keys(agrupadas.sobremedida || {}).length > 0 ? { ...agrupadas.sobremedida } : null;
 
         if (!globalThis.tallasCantidadesProceso) {
             globalThis.tallasCantidadesProceso = { dama: {}, caballero: {}, unisex: {}, sobremedida: {} };
         }
 
-        globalThis.tallasCantidadesProceso.dama = { ...damaTallas };
-        globalThis.tallasCantidadesProceso.caballero = { ...caballeroTallas };
-        globalThis.tallasCantidadesProceso.unisex = { ...unisexTallas };
-        globalThis.tallasCantidadesProceso.sobremedida = { ...sobremedidaTallas };
+        globalThis.tallasCantidadesProceso.dama = { ...(agrupadas.dama || {}) };
+        globalThis.tallasCantidadesProceso.caballero = { ...(agrupadas.caballero || {}) };
+        globalThis.tallasCantidadesProceso.unisex = { ...(agrupadas.unisex || {}) };
+        globalThis.tallasCantidadesProceso.sobremedida = { ...(agrupadas.sobremedida || {}) };
 
         const actualizarResumen = globalThis.ProcesoModalController?.tallas?.actualizarResumen || globalThis.actualizarResumenTallasProceso;
         if (typeof actualizarResumen === 'function') {

@@ -193,17 +193,27 @@ function _procesoGenerico_construirDatosProceso(imagenesValidas) {
         datosDelProcesoKeys: datosDelProceso ? Object.keys(datosDelProceso) : []
     });
 
+    const tallasCanonicas = globalThis.ProcesoTallasCanonicas
+        ? globalThis.ProcesoTallasCanonicas.desdeEstadoModal(globalThis.tallasCantidadesProceso)
+        : [];
+    const tallasAgrupadas = globalThis.ProcesoTallasCanonicas
+        ? globalThis.ProcesoTallasCanonicas.aAgrupadas(tallasCanonicas)
+        : {
+            dama: { ...globalThis.tallasCantidadesProceso?.dama } || {},
+            caballero: { ...globalThis.tallasCantidadesProceso?.caballero } || {},
+            unisex: { ...globalThis.tallasCantidadesProceso?.unisex } || {},
+            sobremedida: { ...globalThis.tallasCantidadesProceso?.sobremedida } || {}
+        };
+
+    globalThis.tallasCanonicasProceso = [...tallasCanonicas];
+
     const datos = {
         tipo: procesoModalState.procesoActual,
         modo_tallas: globalThis.procesosSeleccionados?.[procesoModalState.procesoActual]?.datos?.modo_tallas || 'generico',
         ubicaciones: ubicacionesClonadas,
         observaciones: document.getElementById('proceso-observaciones')?.value || '',
-        tallas: {
-            dama: { ...globalThis.tallasCantidadesProceso?.dama } || {},
-            caballero: { ...globalThis.tallasCantidadesProceso?.caballero } || {},
-            unisex: { ...globalThis.tallasCantidadesProceso?.unisex } || {},
-            sobremedida: { ...globalThis.tallasCantidadesProceso?.sobremedida } || {}
-        },
+        tallas: tallasAgrupadas,
+        tallasCanonicas: tallasCanonicas,
         imagenes: imagenesValidas,
         imagenesEliminadas: imagenesEliminadasNormalizadas
     };
@@ -475,4 +485,3 @@ globalThis.obtenerModoActual = function() {
 };
 
 })(globalThis);
-

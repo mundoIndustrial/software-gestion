@@ -84,42 +84,73 @@ class MapearPedidoEdicionService
         })->values()->toArray();
     }
 
-    private function construirTallasProceso($proceso): array
+    private function construirFilasTallasProceso($proceso): array
     {
-        $tallas = [
-            'dama' => [],
-            'caballero' => [],
-            'unisex' => [],
-            'sobremedida' => [],
-        ];
+        return $proceso->tallas->map(function ($talla) use ($proceso) {
+            return [
+                'id' => $talla->id,
+                'proceso_prenda_detalle_id' => $proceso->id,
+                'genero' => $talla->genero,
+                'talla' => $talla->talla,
+                'cantidad' => (int) ($talla->obtenerCantidadTotal()),
+                'es_sobremedida' => (int) ($talla->es_sobremedida ?? 0),
+                'ubicaciones' => $this->decodificarJsonSeguro($talla->ubicaciones),
+                'observaciones' => $talla->observaciones ?? '',
+            ];
+        })->values()->toArray();
+    }
 
-        foreach ($proceso->tallas as $talla) {
-            $genero = strtolower((string) ($talla->genero ?? ''));
-            if (!in_array($genero, ['dama', 'caballero', 'unisex'], true)) {
-                $genero = 'caballero';
-            }
+    private function construirTallaColoresProceso($proceso): array
+    {
+        return $proceso->tallas
+            ->flatMap(function ($talla) {
+                return $talla->coloresAsignados->map(function ($colorAsignado) use ($talla) {
+                    return [
+                        'id' => $colorAsignado->id,
+                        'pedidos_procesos_prenda_talla_id' => $talla->id,
+                        'genero' => $talla->genero,
+                        'talla' => $talla->talla,
+                        'es_sobremedida' => (int) ($talla->es_sobremedida ?? 0),
+                        'color_nombre' => $colorAsignado->color_nombre,
+                        'tela_nombre' => $colorAsignado->tela_nombre,
+                        'cantidad' => (int) ($colorAsignado->cantidad ?? 0),
+                        'ubicaciones' => $this->decodificarJsonSeguro($colorAsignado->ubicaciones),
+                        'observaciones' => $colorAsignado->observaciones ?? '',
+                    ];
+                });
+            })
+            ->values()
+            ->toArray();
+    }
 
-            $claveTalla = $talla->es_sobremedida ? ('SOBREMEDIDA__' . ($talla->talla ?? 'SM')) : (string) $talla->talla;
-            $cantidad = (int) ($talla->obtenerCantidadTotal());
+    private function construirCantidadTallaProceso(array $tallasProceso): array
+    {
+        $cantidadTalla = [];
 
-            if ($talla->es_sobremedida) {
-                $tallas['sobremedida'][$claveTalla] = $cantidad;
+        foreach ($tallasProceso as $talla) {
+            $genero = strtoupper(trim((string) ($talla['genero'] ?? '')));
+            $cantidad = (int) ($talla['cantidad'] ?? 0);
+
+            if ($genero === '' || $cantidad <= 0) {
                 continue;
             }
 
-            if ($talla->coloresAsignados->isNotEmpty()) {
-                foreach ($talla->coloresAsignados as $colorAsignado) {
-                    $colorNombre = strtoupper(trim((string) ($colorAsignado->color_nombre ?? 'SIN_COLOR')));
-                    $claveColor = $claveTalla . '__' . $colorNombre;
-                    $tallas[$genero][$claveColor] = (int) ($colorAsignado->cantidad ?? 0);
-                }
+            if (!empty($talla['es_sobremedida'])) {
+                $cantidadTalla['SOBREMEDIDA'] ??= [];
+                $cantidadTalla['SOBREMEDIDA'][$genero] = $cantidad;
                 continue;
             }
 
-            $tallas[$genero][$claveTalla] = $cantidad;
+            $nombreTalla = trim((string) ($talla['talla'] ?? ''));
+            if ($nombreTalla === '') {
+                continue;
+            }
+
+            $cantidadTalla[$genero] ??= [];
+            $cantidadTalla[$genero][$nombreTalla] = $cantidad;
         }
 
-        return $tallas;
+        return $cantidadTalla;
     }
 
     private function construirDatosExtendidosProceso($proceso): array
@@ -132,22 +163,48 @@ class MapearPedidoEdicionService
         ];
 
         foreach ($proceso->tallas as $talla) {
-            $genero = strtolower((string) ($talla->genero ?? ''));
-            if (!in_array($genero, ['dama', 'caballero', 'unisex'], true)) {
-                $genero = 'caballero';
-            }
-
-            $claveTalla = $talla->es_sobremedida ? ('SOBREMEDIDA__' . ($talla->talla ?? 'SM')) : (string) $talla->talla;
+            $generoAgrupado = $this->normalizarGeneroProceso($talla->genero ?? null);
+            $generoSobremedida = $this->normalizarGeneroProceso($talla->genero ?? null, true);
             $ubicaciones = $this->decodificarJsonSeguro($talla->ubicaciones);
             $observaciones = $talla->observaciones ?? '';
             $imagenesTalla = $this->mapearImagenesColeccion($talla->imagenes ?? []);
+            $esSobremedida = (bool) ($talla->es_sobremedida ?? false);
 
-            if ($talla->es_sobremedida) {
-                $datosExtendidos['sobremedida'][$claveTalla] = [
+            if ($esSobremedida) {
+                if ($generoSobremedida === '') {
+                    continue;
+                }
+
+                if ($talla->coloresAsignados->isNotEmpty()) {
+                    foreach ($talla->coloresAsignados as $colorAsignado) {
+                        $colorNombre = strtoupper(trim((string) ($colorAsignado->color_nombre ?? 'SIN_COLOR')));
+                        $claveColor = $generoSobremedida . '__' . $colorNombre;
+                        $ubicacionesColor = $this->decodificarJsonSeguro($colorAsignado->ubicaciones, $ubicaciones);
+                        $observacionColor = $colorAsignado->observaciones ?? $observaciones;
+
+                        $datosExtendidos['sobremedida'][$claveColor] = [
+                            'ubicaciones' => $ubicacionesColor,
+                            'observaciones' => $observacionColor,
+                            'imagenes' => $imagenesTalla,
+                        ];
+                    }
+                    continue;
+                }
+
+                $datosExtendidos['sobremedida'][$generoSobremedida] = [
                     'ubicaciones' => $ubicaciones,
                     'observaciones' => $observaciones,
                     'imagenes' => $imagenesTalla,
                 ];
+                continue;
+            }
+
+            if ($generoAgrupado === '') {
+                continue;
+            }
+
+            $claveTalla = trim((string) ($talla->talla ?? ''));
+            if ($claveTalla === '') {
                 continue;
             }
 
@@ -158,7 +215,7 @@ class MapearPedidoEdicionService
                     $ubicacionesColor = $this->decodificarJsonSeguro($colorAsignado->ubicaciones, $ubicaciones);
                     $observacionColor = $colorAsignado->observaciones ?? $observaciones;
 
-                    $datosExtendidos[$genero][$claveColor] = [
+                    $datosExtendidos[$generoAgrupado][$claveColor] = [
                         'ubicaciones' => $ubicacionesColor,
                         'observaciones' => $observacionColor,
                         'imagenes' => $imagenesTalla,
@@ -167,7 +224,7 @@ class MapearPedidoEdicionService
                 continue;
             }
 
-            $datosExtendidos[$genero][$claveTalla] = [
+            $datosExtendidos[$generoAgrupado][$claveTalla] = [
                 'ubicaciones' => $ubicaciones,
                 'observaciones' => $observaciones,
                 'imagenes' => $imagenesTalla,
@@ -175,6 +232,18 @@ class MapearPedidoEdicionService
         }
 
         return $datosExtendidos;
+    }
+
+    private function normalizarGeneroProceso(?string $genero, bool $mayusculas = false): string
+    {
+        $valor = strtoupper(trim((string) $genero));
+        $permitidos = ['DAMA', 'CABALLERO', 'UNISEX'];
+
+        if (!in_array($valor, $permitidos, true)) {
+            return '';
+        }
+
+        return $mayusculas ? $valor : strtolower($valor);
     }
 
     private function resolverModoTallasProceso($proceso): string
@@ -479,8 +548,9 @@ class MapearPedidoEdicionService
 
                     $modoTallas = $this->resolverModoTallasProceso($proceso);
                     $ubicaciones = $this->decodificarJsonSeguro($proceso->ubicaciones);
-                    $datosAdicionales = $this->decodificarJsonSeguro($proceso->datos_adicionales);
-                    $tallas = $this->construirTallasProceso($proceso);
+                    $tallas = $this->construirFilasTallasProceso($proceso);
+                    $tallaColores = $this->construirTallaColoresProceso($proceso);
+                    $cantidadTalla = $this->construirCantidadTallaProceso($tallas);
                     $datosExtendidos = $this->construirDatosExtendidosProceso($proceso);
                     $imagenes = $this->mapearImagenesProceso($proceso);
 
@@ -490,8 +560,10 @@ class MapearPedidoEdicionService
                         'ubicaciones' => $ubicaciones,
                         'observaciones' => $proceso->observaciones ?? '',
                         'estado' => $proceso->estado,
-                        'datos_adicionales' => $datosAdicionales,
                         'tallas' => $tallas,
+                        'talla_colores' => $tallaColores,
+                        'cantidad_talla' => $cantidadTalla,
+                        'generosConTallas' => $cantidadTalla,
                         'datosExtendidos' => $datosExtendidos,
                         'imagenes' => $imagenes,
                     ];
@@ -507,8 +579,10 @@ class MapearPedidoEdicionService
                         'observaciones' => $proceso->observaciones ?? '',
                         'estado' => $proceso->estado,
                         'modo_tallas' => $modoTallas,
-                        'datos_adicionales' => $datosAdicionales,
                         'tallas' => $tallas,
+                        'talla_colores' => $tallaColores,
+                        'cantidad_talla' => $cantidadTalla,
+                        'generosConTallas' => $cantidadTalla,
                         'datosExtendidos' => $datosExtendidos,
                         'imagenes' => $imagenes,
                         'datos' => $datos,

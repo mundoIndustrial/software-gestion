@@ -14,6 +14,91 @@ class ItemFormCollector {
         this.procesadores = options.procesadores || this.obtenerProcesadoresDefault();
     }
 
+    _convertirTallasArrayAObjeto(tallas) {
+        if (!Array.isArray(tallas)) {
+            return {};
+        }
+
+        const resultado = {};
+
+        tallas.forEach((tallaObj) => {
+            if (!tallaObj || typeof tallaObj !== 'object') {
+                return;
+            }
+
+            const genero = String(tallaObj.genero || '').toUpperCase().trim();
+            const talla = String(tallaObj.talla || '').toUpperCase().trim();
+            const cantidad = parseInt(tallaObj.cantidad, 10) || 0;
+            const esSobremedida = Boolean(tallaObj.es_sobremedida);
+
+            if (!genero || cantidad <= 0) {
+                return;
+            }
+
+            if (esSobremedida) {
+                if (!resultado.SOBREMEDIDA) {
+                    resultado.SOBREMEDIDA = {};
+                }
+                resultado.SOBREMEDIDA[genero] = cantidad;
+                return;
+            }
+
+            if (!resultado[genero]) {
+                resultado[genero] = {};
+            }
+
+            if (talla) {
+                resultado[genero][talla] = cantidad;
+            }
+        });
+
+        return resultado;
+    }
+
+    _resolverCantidadTallaPrenda(prenda = {}) {
+        const fuentes = [
+            prenda.cantidad_talla,
+            prenda.generosConTallas,
+            prenda.tallas
+        ];
+
+        for (const fuente of fuentes) {
+            if (!fuente) continue;
+
+            if (typeof fuente === 'string') {
+                try {
+                    const parsed = JSON.parse(fuente);
+                    if (parsed && typeof parsed === 'object') {
+                        if (Array.isArray(parsed)) {
+                            const convertida = this._convertirTallasArrayAObjeto(parsed);
+                            if (Object.keys(convertida).length > 0) {
+                                return convertida;
+                            }
+                        } else if (Object.keys(parsed).length > 0) {
+                            return parsed;
+                        }
+                    }
+                } catch (error) {
+                    continue;
+                }
+            }
+
+            if (Array.isArray(fuente)) {
+                const convertida = this._convertirTallasArrayAObjeto(fuente);
+                if (Object.keys(convertida).length > 0) {
+                    return convertida;
+                }
+                continue;
+            }
+
+            if (typeof fuente === 'object' && Object.keys(fuente).length > 0) {
+                return fuente;
+            }
+        }
+
+        return {};
+    }
+
     /**
      * Recolectar datos completos del pedido
      */
@@ -63,7 +148,7 @@ class ItemFormCollector {
                 de_bodega: item.de_bodega,  // Preserve de_bodega from PrendaFormCollector
                 procesos: item.procesos || {},
                 tallas: item.tallas || [],
-                cantidad_talla: (Array.isArray(item.cantidad_talla) ? {} : item.cantidad_talla) || {},
+                cantidad_talla: this._resolverCantidadTallaPrenda(item),
                 variaciones: item.variantes || item.variaciones || {},
                 telas: item.telas || item.telasAgregadas || [],
                 asignacionesColoresPorTalla: item.asignacionesColoresPorTalla || {}, //  Agregar asignaciones de colores
@@ -130,25 +215,7 @@ class ItemFormCollector {
             prendasSinCot.forEach((prenda, prendaIndex) => {
 
                 
-                const cantidadTalla = {};
-                if (prenda.generosConTallas && typeof prenda.generosConTallas === 'object') {
-                    Object.entries(prenda.generosConTallas).forEach(([genero, tallas]) => {
-                        if (tallas && typeof tallas === 'object') {
-                            Object.entries(tallas).forEach(([talla, cantidad]) => {
-                                if (cantidad > 0) {
-                                    cantidadTalla[talla] = cantidad;
-                                }
-                            });
-                        }
-                    });
-                } else if (window.tallasRelacionales) {
-                    // Usar estructura relacional: { DAMA: {T: 10}, CABALLERO: {32: 5} }
-                    Object.values(window.tallasRelacionales).forEach(generoTallas => {
-                        if (generoTallas && typeof generoTallas === 'object') {
-                            Object.assign(cantidadTalla, generoTallas);
-                        }
-                    });
-                }
+                const cantidadTalla = this._resolverCantidadTallaPrenda(prenda);
                 
                 const tipoMangaRaw = prenda.variantes?.tipo_manga ?? 'No aplica';
                 const obsMangaRaw = prenda.variantes?.obs_manga ?? '';

@@ -110,58 +110,27 @@ function _cargarProcesoObservaciones(datos) {
     }
 }
 
-function _extraerSobremedida(tallas, sobremedidaTallas) {
-    const tallasLimpias = {};
-
-    for (const [talla, valor] of Object.entries(tallas || {})) {
-        if (talla !== 'SOBREMEDIDA') {
-            tallasLimpias[talla] = valor;
-            continue;
-        }
-
-        if (typeof valor === 'number') {
-            sobremedidaTallas.DAMA = (sobremedidaTallas.DAMA || 0) + valor;
-        } else if (typeof valor === 'object' && valor !== null) {
-            for (const [genero, cantidad] of Object.entries(valor)) {
-                sobremedidaTallas[genero] = (sobremedidaTallas[genero] || 0) + cantidad;
-            }
-        }
-    }
-
-    return tallasLimpias;
-}
-
 function _cargarProcesoTallas(datos) {
-    if (!datos.tallas || !_ctxGlobal('tallasSeleccionadasProceso')) return;
+    if ((!datos.tallas && !Array.isArray(datos.tallasCanonicas)) || !_ctxGlobal('tallasSeleccionadasProceso')) return;
 
-    let damaTallas = datos.tallas.dama || {};
-    let caballeroTallas = datos.tallas.caballero || {};
-    const unisexTallas = { ...(datos.tallas.unisex || {}) };
-    const sobremedidaTallas = datos.tallas.sobremedida ? { ...datos.tallas.sobremedida } : {};
+    const helper = _ctxGlobal('ProcesoTallasCanonicas');
+    const datosNormalizados = helper ? helper.normalizarDatosProceso(datos) : datos;
+    const agrupadas = datosNormalizados.tallas || datos.tallas;
 
-    damaTallas = _extraerSobremedida(damaTallas, sobremedidaTallas);
-    caballeroTallas = _extraerSobremedida(caballeroTallas, sobremedidaTallas);
-    if (Object.prototype.hasOwnProperty.call(unisexTallas, 'SOBREMEDIDA')) {
-        const cantidadSobre = Number(unisexTallas.SOBREMEDIDA) || 0;
-        if (cantidadSobre > 0) {
-            sobremedidaTallas.UNISEX = (Number(sobremedidaTallas.UNISEX) || 0) + cantidadSobre;
-        }
-        delete unisexTallas.SOBREMEDIDA;
-    }
-
-    _ctxGlobal('tallasSeleccionadasProceso').dama = Object.keys(damaTallas);
-    _ctxGlobal('tallasSeleccionadasProceso').caballero = Object.keys(caballeroTallas);
-    _ctxGlobal('tallasSeleccionadasProceso').unisex = Object.keys(unisexTallas);
-    _ctxGlobal('tallasSeleccionadasProceso').sobremedida = sobremedidaTallas;
+    _ctxGlobal('tallasCanonicasProceso', datosNormalizados.tallasCanonicas || []);
+    _ctxGlobal('tallasSeleccionadasProceso').dama = Object.keys(agrupadas.dama || {});
+    _ctxGlobal('tallasSeleccionadasProceso').caballero = Object.keys(agrupadas.caballero || {});
+    _ctxGlobal('tallasSeleccionadasProceso').unisex = Object.keys(agrupadas.unisex || {});
+    _ctxGlobal('tallasSeleccionadasProceso').sobremedida = Object.keys(agrupadas.sobremedida || {}).length > 0 ? { ...agrupadas.sobremedida } : null;
 
     if (!_ctxGlobal('tallasCantidadesProceso')) {
         _setCtxGlobal('tallasCantidadesProceso', { dama: {}, caballero: {}, unisex: {}, sobremedida: {} });
     }
 
-    _ctxGlobal('tallasCantidadesProceso').dama = damaTallas;
-    _ctxGlobal('tallasCantidadesProceso').caballero = caballeroTallas;
-    _ctxGlobal('tallasCantidadesProceso').unisex = unisexTallas;
-    _ctxGlobal('tallasCantidadesProceso').sobremedida = sobremedidaTallas;
+    _ctxGlobal('tallasCantidadesProceso').dama = { ...(agrupadas.dama || {}) };
+    _ctxGlobal('tallasCantidadesProceso').caballero = { ...(agrupadas.caballero || {}) };
+    _ctxGlobal('tallasCantidadesProceso').unisex = { ...(agrupadas.unisex || {}) };
+    _ctxGlobal('tallasCantidadesProceso').sobremedida = { ...(agrupadas.sobremedida || {}) };
 
     const actualizarResumen = _ctxGlobal('ProcesoModalController')?.tallas?.actualizarResumen || _ctxGlobal('actualizarResumenTallasProceso');
     if (typeof actualizarResumen === 'function') {

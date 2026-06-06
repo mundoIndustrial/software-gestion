@@ -287,6 +287,11 @@
             return {};
         }
 
+        console.debug('[PedidosAdapter][Tallas] Normalizando cantidad_talla canonica', {
+            keys: Object.keys(cantidadTalla || {}),
+            data: cantidadTalla
+        });
+
         const normalizado = {};
         const sobremedida = {};
 
@@ -315,6 +320,10 @@
             if (esWrapperTallas) {
                 const cantidad = parseInt(tallasRaw.tallas, 10) || 0;
                 if (cantidad > 0 && ['DAMA', 'CABALLERO', 'UNISEX'].includes(genero)) {
+                    console.debug('[PedidosAdapter][Tallas] Wrapper sobremedida detectado', {
+                        genero,
+                        cantidad
+                    });
                     sobremedida[genero] = cantidad;
                 }
                 return;
@@ -337,6 +346,8 @@
             normalizado.SOBREMEDIDA = sobremedida;
         }
 
+        console.debug('[PedidosAdapter][Tallas] Resultado normalizado', normalizado);
+
         return normalizado;
     }
 
@@ -348,6 +359,17 @@
                           (prenda.tallas_generico && prenda.tallas_generico.length > 0);
 
         if (hayTallas) {
+            console.debug('[PedidosAdapter][Tallas] Normalizando desde tablas relacionales', {
+                prenda_id: prenda.id || prenda.prenda_pedido_id || null,
+                fuentes: {
+                    tallas_dama: prenda.tallas_dama?.length || 0,
+                    tallas_caballero: prenda.tallas_caballero?.length || 0,
+                    tallas_unisex: prenda.tallas_unisex?.length || 0,
+                    tallas_sobremedida: prenda.tallas_sobremedida?.length || 0,
+                    tallas_generico: prenda.tallas_generico?.length || 0
+                }
+            });
+
             const cantidadTalla = {};
             const generosMap = {
                 tallas_dama: 'DAMA',
@@ -360,7 +382,27 @@
                 if (prenda[prop] && prenda[prop].length > 0) {
                     cantidadTalla[genero] = {};
                     prenda[prop].forEach((t) => {
-                        cantidadTalla[genero][t.talla] = parseInt(t.cantidad) || 0;
+                        const cantidad = parseInt(t.cantidad) || 0;
+                        if (cantidad <= 0) {
+                            return;
+                        }
+
+                        if (t.es_sobremedida) {
+                            // El genero real está en t.genero (DAMA, CABALLERO, etc)
+                            const generoReal = String(t.genero || '').trim().toUpperCase();
+                            if (!cantidadTalla['SOBREMEDIDA']) {
+                                cantidadTalla['SOBREMEDIDA'] = {};
+                            }
+                            cantidadTalla['SOBREMEDIDA'][generoReal] = cantidad;
+                            return;
+                        }
+
+                        const talla = String(t.talla || '').trim().toUpperCase();
+                        if (!talla) {
+                            return;
+                        }
+
+                        cantidadTalla[genero][talla] = cantidad;
                     });
                 }
             });
@@ -372,6 +414,10 @@
         }
 
         if (prenda.cantidad_talla && typeof prenda.cantidad_talla === 'object' && !Array.isArray(prenda.cantidad_talla)) {
+            console.debug('[PedidosAdapter][Tallas] Normalizando cantidad_talla existente', {
+                prenda_id: prenda.id || prenda.prenda_pedido_id || null,
+                cantidad_talla: prenda.cantidad_talla
+            });
             const cantidadTallaNormalizada = _normalizarCantidadTallaCanonica(prenda.cantidad_talla);
             prenda.cantidad_talla = cantidadTallaNormalizada;
             prenda.tallasRelacionales = cantidadTallaNormalizada;

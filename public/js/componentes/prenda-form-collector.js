@@ -14,6 +14,91 @@ class PrendaFormCollector {
         this.notificationService = null;
     }
 
+    _convertirTallasArrayAObjeto(tallas) {
+        if (!Array.isArray(tallas)) {
+            return {};
+        }
+
+        const resultado = {};
+
+        tallas.forEach((tallaObj) => {
+            if (!tallaObj || typeof tallaObj !== 'object') {
+                return;
+            }
+
+            const genero = String(tallaObj.genero || '').toUpperCase().trim();
+            const talla = String(tallaObj.talla || '').toUpperCase().trim();
+            const cantidad = parseInt(tallaObj.cantidad, 10) || 0;
+            const esSobremedida = Boolean(tallaObj.es_sobremedida);
+
+            if (!genero || cantidad <= 0) {
+                return;
+            }
+
+            if (esSobremedida) {
+                if (!resultado.SOBREMEDIDA) {
+                    resultado.SOBREMEDIDA = {};
+                }
+                resultado.SOBREMEDIDA[genero] = cantidad;
+                return;
+            }
+
+            if (!resultado[genero]) {
+                resultado[genero] = {};
+            }
+
+            if (talla) {
+                resultado[genero][talla] = cantidad;
+            }
+        });
+
+        return resultado;
+    }
+
+    _resolverCantidadTallaPrenda(prenda = {}) {
+        const fuentes = [
+            prenda.cantidad_talla,
+            prenda.generosConTallas,
+            prenda.tallas
+        ];
+
+        for (const fuente of fuentes) {
+            if (!fuente) continue;
+
+            if (typeof fuente === 'string') {
+                try {
+                    const parsed = JSON.parse(fuente);
+                    if (parsed && typeof parsed === 'object') {
+                        if (Array.isArray(parsed)) {
+                            const convertida = this._convertirTallasArrayAObjeto(parsed);
+                            if (Object.keys(convertida).length > 0) {
+                                return convertida;
+                            }
+                        } else if (Object.keys(parsed).length > 0) {
+                            return parsed;
+                        }
+                    }
+                } catch (error) {
+                    continue;
+                }
+            }
+
+            if (Array.isArray(fuente)) {
+                const convertida = this._convertirTallasArrayAObjeto(fuente);
+                if (Object.keys(convertida).length > 0) {
+                    return convertida;
+                }
+                continue;
+            }
+
+            if (typeof fuente === 'object' && Object.keys(fuente).length > 0) {
+                return fuente;
+            }
+        }
+
+        return {};
+    }
+
     /**
      * Asignar el servicio de notificaciones
      */
@@ -466,6 +551,27 @@ class PrendaFormCollector {
                 }
             }
 
+            // 🟢 CRÍTICO - FLUJO SIN WIZARD: Preservar SOBREMEDIDA desde window.tallasRelacionales
+            // En flujo sin wizard, sobremedida puede estar en window.tallasRelacionales
+            // pero NO en recalculated quantity_talla (que no viene de asignaciones)
+            // Verificar que SOBREMEDIDA no se pierda en ningún flujo
+            if (window.tallasRelacionales?.SOBREMEDIDA && 
+                Object.keys(window.tallasRelacionales.SOBREMEDIDA).length > 0) {
+                
+                if (!tallasParaGuardar.SOBREMEDIDA || 
+                    Object.keys(tallasParaGuardar.SOBREMEDIDA || {}).length === 0) {
+                    
+                    console.log('[prenda-form-collector]  PRESERVANDO SOBREMEDIDA desde window.tallasRelacionales (flujo sin wizard)', {
+                        sobremedidaActual: tallasParaGuardar.SOBREMEDIDA,
+                        sobremedidaRelacional: window.tallasRelacionales.SOBREMEDIDA
+                    });
+                    
+                    tallasParaGuardar.SOBREMEDIDA = { ...window.tallasRelacionales.SOBREMEDIDA };
+                    
+                    console.log('[prenda-form-collector]  SOBREMEDIDA preservado:', tallasParaGuardar.SOBREMEDIDA);
+                }
+            }
+
             const prendaData = {
                 tipo: 'prenda_nueva',
                 nombre_prenda: nombre,
@@ -837,6 +943,12 @@ class PrendaFormCollector {
                         tallasRecalculadas[genero][talla] = totalCantidad;
                     }
                 });
+                
+                // CRÍTICO: Preservar SOBREMEDIDA que ya estaba en prendaData
+                // porque no viene en las asignaciones del wizard (sobremedida es independiente)
+                if (prendaData.cantidad_talla?.SOBREMEDIDA && Object.keys(prendaData.cantidad_talla.SOBREMEDIDA).length > 0) {
+                    tallasRecalculadas.SOBREMEDIDA = { ...prendaData.cantidad_talla.SOBREMEDIDA };
+                }
                 
                 console.log('[prenda-form-collector]  cantidad_talla ANTES (tallasRelacionales):', prendaData.cantidad_talla);
                 console.log('[prenda-form-collector]  cantidad_talla DESPUÉS (recalculado):', tallasRecalculadas);

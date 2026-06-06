@@ -8,6 +8,14 @@ let tallas = prenda.tallas;
         let generosConTallas = prenda.generosConTallas;
         let cantidadTallaRelacional = prenda.cantidad_talla; // { DAMA: { S: 20, M: 20 } }
         
+        console.debug('[PrendaCardSizing][Tallas] construirTallasYCantidades entrada', {
+            prenda_id: prenda?.id || prenda?.prenda_pedido_id || null,
+            indice,
+            cantidad_talla: cantidadTallaRelacional,
+            generosConTallas,
+            tallas
+        });
+
         // Intentar obtener cantidades desde cantidad_talla (nuevo formato relacional)
         let cantidadesPorTalla = prenda.cantidadesPorTalla || {};
         
@@ -17,7 +25,14 @@ let tallas = prenda.tallas;
             Object.entries(cantidadTallaRelacional).forEach(([genero, tallasObj]) => {
                 if (typeof tallasObj === 'object') {
                     Object.entries(tallasObj).forEach(([talla, cantidad]) => {
-                        cantidadesPorTalla[`${genero.toLowerCase()}-${talla}`] = cantidad;
+                        const cantidadNumerica = parseInt(cantidad, 10) || 0;
+                        if (cantidadNumerica <= 0) {
+                            return;
+                        }
+
+                        const tallaNormalizada = String(talla || '').trim().toUpperCase();
+                        const claveTalla = tallaNormalizada || 'SOBREMEDIDA';
+                        cantidadesPorTalla[`${genero.toLowerCase()}-${claveTalla}`] = cantidadNumerica;
                     });
                 }
             });
@@ -68,8 +83,12 @@ let tallasByGeneroMap = {};
                     if (!generosMap[genero]) {
                         generosMap[genero] = [];
                     }
-                    if (!generosMap[genero].includes(talla)) {
-                        generosMap[genero].push(talla);
+                    const tallaNormalizada = String(talla || '').trim().toUpperCase();
+                    const tallaMostrable = tallaNormalizada && tallaNormalizada !== 'NULL' && tallaNormalizada !== 'UNDEFINED'
+                        ? tallaNormalizada
+                        : 'SOBREMEDIDA';
+                    if (!generosMap[genero].includes(tallaMostrable)) {
+                        generosMap[genero].push(tallaMostrable);
                     }
                 }
             });
@@ -83,11 +102,25 @@ let tallasByGeneroMap = {};
                 if (!cantidadesPorGenero[genero]) {
                     cantidadesPorGenero[genero] = {};
                 }
-                cantidadesPorGenero[genero][talla] = cantidad;
+                const tallaNormalizada = String(talla || '').trim().toUpperCase();
+                const tallaMostrable = tallaNormalizada && tallaNormalizada !== 'NULL' && tallaNormalizada !== 'UNDEFINED'
+                    ? tallaNormalizada
+                    : 'SOBREMEDIDA';
+                cantidadesPorGenero[genero][tallaMostrable] = cantidad;
             }
         });
         
         const totalCantidades = Object.keys(cantidadesPorTalla).length;
+
+        console.debug('[PrendaCardSizing][Tallas] construirTallasYCantidades salida', {
+            prenda_id: prenda?.id || prenda?.prenda_pedido_id || null,
+            totalTallas,
+            totalCantidades,
+            tallasByGeneroMap,
+            cantidadesPorGenero,
+            cantidadesPorTalla,
+            generosConTallas
+        });
 
 if (totalTallas === 0) {
 
@@ -134,11 +167,15 @@ if (totalTallas === 0) {
                 const asignacionesColores = owner._obtenerDataUtils().resolverAsignacionesColoresPorTalla(prenda);
                 
                 const tallasConCantidad = tallasList.map(talla => {
-                    const cantidad = cantidadesGen[talla] || 0;
+                    const tallaNormalizada = String(talla || '').trim().toUpperCase();
+                    const tallaMostrable = tallaNormalizada && tallaNormalizada !== 'NULL' && tallaNormalizada !== 'UNDEFINED'
+                        ? tallaNormalizada
+                        : 'SOBREMEDIDA';
+                    const cantidad = cantidadesGen[tallaMostrable] || cantidadesGen[tallaNormalizada] || cantidadesGen.SOBREMEDIDA || 0;
                     
                     // Buscar colores asignados para esta talla-género
                     let coloresHTML = '';
-                    const asignacion = this._buscarAsignacionColor(asignacionesColores, genero, talla);
+                    const asignacion = this._buscarAsignacionColor(asignacionesColores, genero, tallaMostrable);
                     if (asignacion && asignacion.colores && asignacion.colores.length > 0) {
                         const imagenesAsignacion = owner._normalizarImagenes(asignacion.imagenes)
                             .map((img) => owner._normalizarSrcImagen(img))
@@ -198,7 +235,7 @@ if (totalTallas === 0) {
                                     <span style="display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 999px; background: rgba(255,255,255,0.8); color: #0284c7; flex-shrink: 0;">
                                         <i class="fas fa-ruler" style="font-size: 0.8rem;"></i>
                                     </span>
-                                    <span style="font-size: 0.92rem; font-weight: 800; color: #075985; letter-spacing: 0.02em;">${owner._escapeHtml(talla)}</span>
+                                    <span style="font-size: 0.92rem; font-weight: 800; color: #075985; letter-spacing: 0.02em;">${owner._escapeHtml(tallaMostrable)}</span>
                                 </div>
                                 <span style="background: #0369a1; color: white; padding: 0.24rem 0.65rem; border-radius: 999px; font-size: 0.82rem; font-weight: 800; line-height: 1;">${cantidad}</span>
                             </div>
@@ -293,11 +330,26 @@ if (totalTallas === 0) {
         let cantidadTallaRelacional = prenda.cantidad_talla;
         let cantidadesPorTalla = prenda.cantidadesPorTalla || {};
 
+        console.debug('[PrendaCardSizing][Tallas] construirSeccionCombinada entrada', {
+            prenda_id: prenda?.id || prenda?.prenda_pedido_id || null,
+            indice,
+            cantidad_talla: cantidadTallaRelacional,
+            generosConTallas,
+            tallas: prenda.tallas
+        });
+
         if (cantidadTallaRelacional && typeof cantidadTallaRelacional === 'object' && !Array.isArray(cantidadTallaRelacional)) {
             Object.entries(cantidadTallaRelacional).forEach(([genero, tallasObj]) => {
                 if (typeof tallasObj === 'object') {
                     Object.entries(tallasObj).forEach(([talla, cantidad]) => {
-                        cantidadesPorTalla[`${genero.toLowerCase()}-${talla}`] = cantidad;
+                        const cantidadNumerica = parseInt(cantidad, 10) || 0;
+                        if (cantidadNumerica <= 0) {
+                            return;
+                        }
+
+                        const tallaNormalizada = String(talla || '').trim().toUpperCase();
+                        const claveTalla = tallaNormalizada || 'SOBREMEDIDA';
+                        cantidadesPorTalla[`${genero.toLowerCase()}-${claveTalla}`] = cantidadNumerica;
                     });
                 }
             });
@@ -331,7 +383,11 @@ if (totalTallas === 0) {
                 const [genero, talla] = clave.split('-');
                 if (genero && talla) {
                     if (!generosMap[genero]) generosMap[genero] = [];
-                    if (!generosMap[genero].includes(talla)) generosMap[genero].push(talla);
+                    const tallaNormalizada = String(talla || '').trim().toUpperCase();
+                    const tallaMostrable = tallaNormalizada && tallaNormalizada !== 'NULL' && tallaNormalizada !== 'UNDEFINED'
+                        ? tallaNormalizada
+                        : 'SOBREMEDIDA';
+                    if (!generosMap[genero].includes(tallaMostrable)) generosMap[genero].push(tallaMostrable);
                 }
             });
             tallasByGeneroMap = generosMap;
@@ -342,8 +398,20 @@ if (totalTallas === 0) {
             const [genero, talla] = clave.split('-');
             if (genero && talla) {
                 if (!cantidadesPorGenero[genero]) cantidadesPorGenero[genero] = {};
-                cantidadesPorGenero[genero][talla] = cantidad;
+                const tallaNormalizada = String(talla || '').trim().toUpperCase();
+                const tallaMostrable = tallaNormalizada && tallaNormalizada !== 'NULL' && tallaNormalizada !== 'UNDEFINED'
+                    ? tallaNormalizada
+                    : 'SOBREMEDIDA';
+                cantidadesPorGenero[genero][tallaMostrable] = cantidad;
             }
+        });
+
+        console.debug('[PrendaCardSizing][Tallas] construirSeccionCombinada salida', {
+            prenda_id: prenda?.id || prenda?.prenda_pedido_id || null,
+            totalTallas,
+            tallasByGeneroMap,
+            cantidadesPorGenero,
+            cantidadesPorTalla
         });
 
         if (totalTallas === 0 && telasParaVista.length === 0) return '';
@@ -435,9 +503,13 @@ if (totalTallas === 0) {
                 if (tallasList.length === 0) return;
 
                 const tallasConCantidad = tallasList.map(talla => {
-                    const cantidad = cantidadesGen[talla] || 0;
+                    const tallaNormalizada = String(talla || '').trim().toUpperCase();
+                    const tallaMostrable = tallaNormalizada && tallaNormalizada !== 'NULL' && tallaNormalizada !== 'UNDEFINED'
+                        ? tallaNormalizada
+                        : 'SOBREMEDIDA';
+                    const cantidad = cantidadesGen[tallaMostrable] || cantidadesGen[tallaNormalizada] || cantidadesGen.SOBREMEDIDA || 0;
                     let coloresHTML = '';
-                    const asignacion = this._buscarAsignacionColor(asignacionesColores, genero, talla);
+                    const asignacion = this._buscarAsignacionColor(asignacionesColores, genero, tallaMostrable);
                     if (asignacion && asignacion.colores && asignacion.colores.length > 0) {
                         const coloresItems = asignacion.colores.map(c => {
                             const nombre = c.nombre || c.color || 'Sin nombre';
@@ -493,8 +565,8 @@ if (totalTallas === 0) {
                                     <span style="display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 999px; background: rgba(255,255,255,0.8); color: #0284c7; flex-shrink: 0;">
                                         <i class="fas fa-ruler" style="font-size: 0.8rem;"></i>
                                     </span>
-                                    <span style="font-size: 0.92rem; font-weight: 800; color: #075985; letter-spacing: 0.02em;">${owner._escapeHtml(talla)}</span>
-                                </div>
+                                <span style="font-size: 0.92rem; font-weight: 800; color: #075985; letter-spacing: 0.02em;">${owner._escapeHtml(tallaMostrable)}</span>
+                            </div>
                                 <span style="background: #0369a1; color: white; padding: 0.24rem 0.65rem; border-radius: 999px; font-size: 0.82rem; font-weight: 800; line-height: 1;">${cantidad}</span>
                             </div>
                             ${asignacion && asignacion.colores && asignacion.colores.length > 0 ? `

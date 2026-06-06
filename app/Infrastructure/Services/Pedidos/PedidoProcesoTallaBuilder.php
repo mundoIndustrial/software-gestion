@@ -136,10 +136,11 @@ class PedidoProcesoTallaBuilder
                 foreach ($tallasCant as $tallaParaSobremedida => $cantidad) {
                     $cantidad = (int) $cantidad;
                     if ($cantidad > 0) {
-                        if (!$this->esGeneroSobremedidaValido((string) $tallaParaSobremedida)) {
+                        $generoSobremedida = strtoupper(trim((string) $tallaParaSobremedida));
+                        if (!$this->esGeneroSobremedidaValido($generoSobremedida)) {
                             Log::warning('[PedidoProcesoTallaBuilder::crearDesdeMapaSimple] Entrada de sobremedida inválida, omitida', [
                                 'proceso_id' => $proceso->id,
-                                'talla_raw' => $tallaParaSobremedida,
+                                'genero_raw' => $tallaParaSobremedida,
                                 'cantidad' => $cantidad,
                             ]);
                             continue;
@@ -151,19 +152,19 @@ class PedidoProcesoTallaBuilder
                         if (!$prendasTallasCs) {
                             Log::warning('[PedidoProcesoTallaBuilder::crearDesdeMapaSimple] Prenda sin es_sobremedida detectado, forzando flag en proceso', [
                                 'proceso_id' => $proceso->id,
-                                'talla' => strtoupper($tallaParaSobremedida),
+                                'genero' => $generoSobremedida,
                             ]);
                         }
                         Log::info('[PedidoProcesoTallaBuilder::crearDesdeMapaSimple] Guardando', [
-                            'genero' => 'UNISEX',
-                            'talla' => strtoupper($tallaParaSobremedida),
+                            'genero' => $generoSobremedida,
+                            'talla' => null,
                             'es_sobremedida' => $esSobremedida,
                         ]);
                         DB::table('pedidos_procesos_prenda_tallas')->updateOrInsert(
                             [
                                 'proceso_prenda_detalle_id' => $proceso->id,
-                                'genero' => 'UNISEX',
-                                'talla' => strtoupper($tallaParaSobremedida),
+                                'genero' => $generoSobremedida,
+                                'talla' => null,
                             ],
                             [
                                 'cantidad' => $cantidad,
@@ -308,10 +309,11 @@ class PedidoProcesoTallaBuilder
                 foreach ($tallasCant as $tallaParaSobremedida => $cantidad) {
                     $cantidad = (int) $cantidad;
                     if ($cantidad > 0) {
-                        if (!$this->esGeneroSobremedidaValido((string) $tallaParaSobremedida)) {
+                        $generoSobremedida = strtoupper(trim((string) $tallaParaSobremedida));
+                        if (!$this->esGeneroSobremedidaValido($generoSobremedida)) {
                             Log::warning('[PedidoProcesoTallaBuilder::crearDesdeMapaConAsignaciones] Entrada de sobremedida inválida, omitida', [
                                 'proceso_id' => $proceso->id,
-                                'talla_raw' => $tallaParaSobremedida,
+                                'genero_raw' => $tallaParaSobremedida,
                                 'cantidad' => $cantidad,
                             ]);
                             continue;
@@ -323,18 +325,18 @@ class PedidoProcesoTallaBuilder
                         if (!$prendasTallasCs) {
                             Log::warning('[PedidoProcesoTallaBuilder::crearDesdeMapaConAsignaciones] Prenda sin es_sobremedida detectado, forzando flag en proceso', [
                                 'proceso_id' => $proceso->id,
-                                'talla' => strtoupper($tallaParaSobremedida),
+                                'genero' => $generoSobremedida,
                             ]);
                         }
                         Log::info('[PedidoProcesoTallaBuilder::crearDesdeMapaConAsignaciones] Guardando', [
-                            'genero' => 'UNISEX',
-                            'talla' => strtoupper($tallaParaSobremedida),
+                            'genero' => $generoSobremedida,
+                            'talla' => null,
                             'es_sobremedida' => $esSobremedida,
                         ]);
                         PedidosProcesosPrendaTalla::create([
                             'proceso_prenda_detalle_id' => $proceso->id,
-                            'genero' => 'UNISEX',
-                            'talla' => strtoupper($tallaParaSobremedida),
+                            'genero' => $generoSobremedida,
+                            'talla' => null,
                             'cantidad' => $cantidad,
                             'es_sobremedida' => $esSobremedida,
                         ]);

@@ -50,8 +50,9 @@ function abrirModalProcesoPorTallas(tipoProceso) {
     const tallasPrenda = _cargarTallasDesdeFuentes(tipoProceso);
     const tallasDama = Object.entries(tallasPrenda.dama || {});
     const tallasCaballero = Object.entries(tallasPrenda.caballero || {});
+    const tallassobremedida = Object.entries(tallasPrenda.sobremedida || {});
 
-    if (tallasDama.length === 0 && tallasCaballero.length === 0) {
+    if (tallasDama.length === 0 && tallasCaballero.length === 0 && tallassobremedida.length === 0) {
         PorTallasModulos.ui.mostrarEstadoSinTallas(modal);
         return;
     }
@@ -69,15 +70,20 @@ function abrirModalProcesoPorTallas(tipoProceso) {
 
     const secDama = document.getElementById('seccion-dama-por-tallas');
     const secCab = document.getElementById('seccion-caballero-por-tallas');
+    const secSobremedida = document.getElementById('seccion-sobremedida-por-tallas');
     const contDama = document.getElementById('tallas-dama-por-tallas');
     const contCab = document.getElementById('tallas-caballero-por-tallas');
+    const contSobremedida = document.getElementById('tallas-sobremedida-por-tallas');
     const contDamaGeneral = document.getElementById('tallas-dama-modo-general');
     const secDamaGeneral = document.getElementById('seccion-dama-modo-general');
     const contCabGeneral = document.getElementById('tallas-caballero-modo-general');
     const secCabGeneral = document.getElementById('seccion-caballero-modo-general');
+    const contSobremedidaGeneral = document.getElementById('tallas-sobremedida-modo-general');
+    const secSobremedidaGeneral = document.getElementById('seccion-sobremedida-modo-general');
 
     _renderizarTallasPorGenero('dama', tallasDama, datosExistentes, contDama, secDama, contDamaGeneral, secDamaGeneral);
     _renderizarTallasPorGenero('caballero', tallasCaballero, datosExistentes, contCab, secCab, contCabGeneral, secCabGeneral);
+    _renderizarTallasPorGenero('sobremedida', tallassobremedida, datosExistentes, contSobremedida, secSobremedida, contSobremedidaGeneral, secSobremedidaGeneral);
 
     const modoFinal = _determinarModoFinal(tipoProceso);
     if (modoFinal === 'especifico') {
@@ -156,11 +162,16 @@ function _asegurarProcesoSeleccionadoActual() {
 }
 
 function _construirDatosProcesoParaGuardar(tallas, datosExtendidos) {
+    const tallasCanonicas = globalThis.ProcesoTallasCanonicas
+        ? globalThis.ProcesoTallasCanonicas.desdeAgrupadas(tallas)
+        : [];
+
     return {
         tipo: procesoPorTallasActual,
         ubicaciones: modoModalPorTallasActual === 'general' ? [ubicacionGeneralTemp] : [],
         observaciones: '',
         tallas: tallas,
+        tallasCanonicas: tallasCanonicas,
         //  FIX: Copiar File objects de imagenesFiles a imagenes para que FormData los encuentre
         imagenes: modoModalPorTallasActual === 'general' ? fotosGeneralesFilesTemp : [],
         imagenesFiles: fotosGeneralesFilesTemp,
