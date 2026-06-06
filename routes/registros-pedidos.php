@@ -51,6 +51,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/api/recibos-costura/ejecutando-corte', [RegistroOrdenController::class, 'contarRecibosEjecutandoCostura'])->name('api.recibos-costura.ejecutando-corte');
     Route::post('/api/recibos-costura/{id}/marcar-visto-corte', [RegistroOrdenController::class, 'marcarReciboVistoCostura'])->name('api.recibos-costura.marcar-visto-corte');
     Route::post('/api/recibos-bordado-estampado/toggle-check-logo', [RegistroOrdenController::class, 'toggleCheckReciboLogo'])->name('api.recibos-bordado-estampado.toggle-check-logo');
+    Route::get('/api/recibos-bordado-estampado/areas-disponibles', [RegistroOrdenController::class, 'obtenerAreasDisponiblesPorTipo'])->name('api.recibos-bordado-estampado.areas-disponibles');
     Route::get('/recibos-reflectivo/recibo/{reciboId}', [RegistroOrdenController::class, 'getReciboReflectivoJson'])->name('registros.recibo-reflectivo-json');
     
     // ========================================

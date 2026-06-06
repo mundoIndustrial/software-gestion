@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Recibos de Bordado/Estampado')
 
@@ -14,7 +14,8 @@
                 :conteoBordado="$conteoBordado ?? 0"
                 :conteoEstampado="$conteoEstampado ?? 0"
                 :conteoDtf="$conteoDtf ?? 0"
-                :conteoSublimado="$conteoSublimado ?? 0" />
+                :conteoSublimado="$conteoSublimado ?? 0"
+                :conteosPorArea="$conteosPorArea ?? []" />
         </div>
     </div>
 </div>
@@ -86,6 +87,165 @@
 <link rel="stylesheet" href="{{ asset('css/dropdowns-recibos.css') }}?v={{ time() }}">
 
 <style>
+/* Estilos para recibos bordado/estampado */
+.recibos-vista-scale-80 {
+    zoom: 0.8;
+    transform-origin: top left;
+}
+
+@supports not (zoom: 1) {
+    .recibos-vista-scale-80 {
+        transform: scale(0.8);
+        transform-origin: top left;
+        width: 125%;
+    }
+}
+
+/* Estilos para la sección de filtros */
+.recibos-filters-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 1024px) {
+    .recibos-filters-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.recibos-filter-section {
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.recibos-filter-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 12px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.recibos-filters-section {
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.recibos-tipo-tabs {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.recibos-tipo-tab {
+    text-decoration: none;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #334155;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.recibos-tipo-tab .tab-count {
+    margin-left: 6px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    padding: 2px 7px;
+    font-size: 11px;
+}
+
+.recibos-tipo-tab.is-active {
+    background: #0f172a;
+    color: #fff;
+    border-color: #0f172a;
+}
+
+.recibos-tipo-tab.is-active .tab-count {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.recibos-area-filters {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.recibos-area-filter {
+    text-decoration: none;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #334155;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.recibos-area-filter:hover {
+    border-color: #94a3b8;
+    transform: translateY(-1px);
+}
+
+.recibos-area-filter.is-active {
+    background: #0f172a;
+    color: #fff;
+    border-color: #0f172a;
+}
+
+.area-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* Estilos para paginación compacta */
+.pagination-wrapper-compact {
+    padding: 0 !important;
+    margin-top: -24px !important;
+    display: flex !important;
+    justify-content: center !important;
+}
+
+.pagination-wrapper-compact .pagination {
+    margin: 0 !important;
+    gap: 4px;
+}
+
+.pagination-wrapper-compact .page-link {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+}
+
+.pagination-wrapper-compact .page-item {
+    margin: 0 2px !important;
+}
 </style>
 
 <!-- Estilos adicionales para el modal de agregar proceso -->

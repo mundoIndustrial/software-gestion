@@ -449,16 +449,6 @@
           <span class="menu-label">Dashboard</span>
         </a>
       </li>
-      @if(auth()->check() && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('lider_produccion') || auth()->user()->hasRole('supervisor_produccion')))
-      <li class="menu-item">
-        <a href="{{ route('seguimiento-lavanderia.index') }}"
-           class="menu-link {{ request()->routeIs('seguimiento-lavanderia.*') ? 'active' : '' }}"
-           aria-label="Lavandería">
-          <span class="material-symbols-rounded" aria-hidden="true">local_laundry_service</span>
-          <span class="menu-label">Lavandería</span>
-        </a>
-      </li>
-      @endif
       </ul>
     </div>
 
@@ -572,6 +562,23 @@
       </li>
       </ul>
     </div>
+
+    <!-- Sección Gestión Lavandería -->
+    @if(auth()->check() && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('lider_produccion') || auth()->user()->hasRole('supervisor_produccion')))
+    <div class="menu-section">
+      <span class="menu-section-title">Gestión Lavandería</span>
+      <ul class="menu-list" role="navigation">
+      <li class="menu-item">
+        <a href="{{ route('seguimiento-lavanderia.index') }}"
+           class="menu-link {{ request()->routeIs('seguimiento-lavanderia.*') ? 'active' : '' }}"
+           aria-label="Lavandería">
+          <span class="material-symbols-rounded" aria-hidden="true">local_laundry_service</span>
+          <span class="menu-label">Lavandería</span>
+        </a>
+      </li>
+      </ul>
+    </div>
+    @endif
 
     <!-- Sección Reportes (Entregas, Tableros y Vistas) -->
     <div class="menu-section">

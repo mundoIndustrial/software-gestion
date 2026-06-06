@@ -365,6 +365,8 @@ class RegistroOrdenController extends Controller
             $tipoFiltro = 'BORDADO';
         }
 
+        $areaFiltro = trim((string) $request->query('area', ''));
+
         $requestDTO = new GetPendingEmbroideryStampingReceiptsRequest(
             busqueda: $request->input('busqueda')
         );
@@ -398,7 +400,8 @@ class RegistroOrdenController extends Controller
             return strtoupper((string) ($item['tipo_recibo'] ?? '')) === 'SUBLIMADO';
         })->count();
 
-        $allProcesses = $allProcesses->filter(function ($proceso) use ($tipoFiltro) {
+        // GUARDAR $allProcessesByType ANTES de filtrar por área (para calcular conteos después)
+        $allProcessesByType = $allProcesses->filter(function ($proceso) use ($tipoFiltro) {
             $item = (array) $proceso;
             return strtoupper((string) ($item['tipo_recibo'] ?? '')) === $tipoFiltro;
         })
@@ -411,6 +414,43 @@ class RegistroOrdenController extends Controller
             return sprintf('%010d-%010d', $numeroRecibo, $fechaCreacion);
         })
         ->values();
+
+        $allProcesses = $allProcessesByType;
+
+        // Aplicar filtro de área si se proporciona
+        if (!empty($areaFiltro)) {
+            $prendaIdsTemporal = $allProcesses
+                ->map(fn ($proceso) => (int) ((array) $proceso)['prenda_id'])
+                ->filter(fn ($id) => $id > 0)
+                ->unique()
+                ->values()
+                ->all();
+
+            $areasPorPrendaTemporal = [];
+            if (!empty($prendaIdsTemporal)) {
+                $rowsArea = \DB::table('prenda_areas_logo_pedido')
+                    ->select(['prenda_pedido_id', 'area'])
+                    ->whereIn('prenda_pedido_id', $prendaIdsTemporal)
+                    ->orderByDesc('updated_at')
+                    ->orderByDesc('id')
+                    ->get();
+
+                foreach ($rowsArea as $row) {
+                    $prendaId = (int) ($row->prenda_pedido_id ?? 0);
+                    if ($prendaId <= 0 || isset($areasPorPrendaTemporal[$prendaId])) {
+                        continue;
+                    }
+                    $areasPorPrendaTemporal[$prendaId] = (string) ($row->area ?? '');
+                }
+            }
+
+            // Comparar áreas directamente sin normalizar (como en pedidos-logo)
+            $allProcesses = $allProcesses->filter(function ($proceso) use ($areaFiltro, $areasPorPrendaTemporal) {
+                $prendaId = (int) ((array) $proceso)['prenda_id'];
+                $areaRaw = (string) ($areasPorPrendaTemporal[$prendaId] ?? 'PENDIENTE');
+                return $areaRaw === $areaFiltro;
+            })->values();
+        }
 
         $perPage = (int) $request->query('per_page', 25);
         $perPage = max(10, min($perPage, 100));
@@ -639,6 +679,49 @@ class RegistroOrdenController extends Controller
             return (int) (is_array($proceso) ? ($proceso['cantidad_total_prendas'] ?? 0) : ($proceso->cantidad_total_prendas ?? 0));
         });
 
+        // Calcular conteos por área para TODOS los recibos del tipo filtrado (ANTES del filtro de área)
+        // IMPORTANTE: Devolver áreas SIN normalizar, directamente del enum (como en pedidos-logo)
+        $conteosPorArea = [];
+
+        // Obtener prendas de todos los recibos del tipo filtrado (usar $allProcessesByType, NO el filtrado por área)
+        $prendaIdsAllRecibos = $allProcessesByType
+            ->map(fn ($proceso) => (int) ((array) $proceso)['prenda_id'])
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        if (!empty($prendaIdsAllRecibos)) {
+            // Obtener la última área de cada prenda
+            $rowsAreaAll = \DB::table('prenda_areas_logo_pedido')
+                ->select(['prenda_pedido_id', 'area'])
+                ->whereIn('prenda_pedido_id', $prendaIdsAllRecibos)
+                ->orderByDesc('updated_at')
+                ->orderByDesc('id')
+                ->get();
+
+            // Crear mapa de área por prenda (tomando la más reciente)
+            $areasPorPrendaAll = [];
+            foreach ($rowsAreaAll as $row) {
+                $prendaId = (int) ($row->prenda_pedido_id ?? 0);
+                if ($prendaId <= 0 || isset($areasPorPrendaAll[$prendaId])) {
+                    continue;
+                }
+                $areasPorPrendaAll[$prendaId] = (string) ($row->area ?? 'PENDIENTE');
+            }
+
+            // Contar recibos por área RAW (sin normalizar) - igual que en pedidos-logo
+            foreach ($allProcessesByType as $proceso) {
+                $prendaId = (int) ((array) $proceso)['prenda_id'];
+                $areaRaw = (string) ($areasPorPrendaAll[$prendaId] ?? 'PENDIENTE');
+                
+                if (!isset($conteosPorArea[$areaRaw])) {
+                    $conteosPorArea[$areaRaw] = 0;
+                }
+                $conteosPorArea[$areaRaw]++;
+            }
+        }
+
         return view('registros.recibos-bordado-estampado', compact(
             'recibos',
             'totalCantidadGlobal',
@@ -646,8 +729,97 @@ class RegistroOrdenController extends Controller
             'conteoBordado',
             'conteoEstampado',
             'conteoDtf',
-            'conteoSublimado'
+            'conteoSublimado',
+            'conteosPorArea'
         ));
+    }
+
+    /**
+     * Obtener áreas disponibles por tipo de recibo (para filtros dinámicos AJAX)
+     * GET /api/recibos-bordado-estampado/areas-disponibles?tipo=BORDADO
+     * Retorna áreas sin normalizar, directamente del enum de la BD
+     */
+    public function obtenerAreasDisponiblesPorTipo(Request $request)
+    {
+        try {
+            $tipoFiltro = strtoupper((string) $request->query('tipo', 'BORDADO'));
+            $tiposPermitidos = ['BORDADO', 'ESTAMPADO', 'DTF', 'SUBLIMADO'];
+            
+            if (!in_array($tipoFiltro, $tiposPermitidos, true)) {
+                $tipoFiltro = 'BORDADO';
+            }
+
+            // Obtener todos los procesos del tipo solicitado
+            $requestDTO = new GetPendingEmbroideryStampingReceiptsRequest(
+                busqueda: ''
+            );
+            $response = $this->getPendingEmbroideryStampingReceiptsUseCase->execute($requestDTO);
+
+            $allProcesses = collect($response->getProcesses())
+                ->filter(function ($proceso) use ($tipoFiltro) {
+                    $item = (array) $proceso;
+                    return strtoupper((string) ($item['tipo_recibo'] ?? '')) === $tipoFiltro;
+                })
+                ->values();
+
+            // Obtener prendas únicas
+            $prendaIds = $allProcesses
+                ->map(fn ($proceso) => (int) ((array) $proceso)['prenda_id'])
+                ->filter(fn ($id) => $id > 0)
+                ->unique()
+                ->values()
+                ->all();
+
+            // Conteos por área (sin normalizar - directas del enum)
+            $conteosPorArea = [];
+
+            if (!empty($prendaIds)) {
+                // Obtener áreas más recientes por prenda (sin normalizar)
+                $rowsArea = \DB::table('prenda_areas_logo_pedido')
+                    ->select(['prenda_pedido_id', 'area'])
+                    ->whereIn('prenda_pedido_id', $prendaIds)
+                    ->orderByDesc('updated_at')
+                    ->orderByDesc('id')
+                    ->get();
+
+                // Crear mapa de área por prenda (más reciente)
+                $areasPorPrenda = [];
+                foreach ($rowsArea as $row) {
+                    $prendaId = (int) ($row->prenda_pedido_id ?? 0);
+                    if ($prendaId <= 0 || isset($areasPorPrenda[$prendaId])) {
+                        continue;
+                    }
+                    $areasPorPrenda[$prendaId] = (string) ($row->area ?? 'PENDIENTE');
+                }
+
+                // Contar por área RAW (sin normalizar)
+                foreach ($allProcesses as $proceso) {
+                    $prendaId = (int) ((array) $proceso)['prenda_id'];
+                    $areaRaw = (string) ($areasPorPrenda[$prendaId] ?? 'PENDIENTE');
+                    
+                    if (!isset($conteosPorArea[$areaRaw])) {
+                        $conteosPorArea[$areaRaw] = 0;
+                    }
+                    $conteosPorArea[$areaRaw]++;
+                }
+            }
+
+            // Retornar solo áreas con contador > 0
+            $areasDisponibles = array_filter($conteosPorArea, fn ($count) => $count > 0);
+
+            return response()->json([
+                'success' => true,
+                'tipo' => $tipoFiltro,
+                'areas' => $areasDisponibles,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[obtenerAreasDisponiblesPorTipo] Error', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener áreas disponibles',
+                'areas' => [],
+            ], 500);
+        }
     }
 
     /**
