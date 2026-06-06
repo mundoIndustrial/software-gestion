@@ -220,8 +220,7 @@ class ObtenerDatosPrendaPedidoService
                     'pedidos_procesos_prenda_detalles.observaciones',
                     'pedidos_procesos_prenda_detalles.tallas_dama',
                     'pedidos_procesos_prenda_detalles.tallas_caballero',
-                    'pedidos_procesos_prenda_detalles.estado',
-                    'pedidos_procesos_prenda_detalles.datos_adicionales'
+                    'pedidos_procesos_prenda_detalles.estado'
                 )
                 ->get();
 
@@ -277,22 +276,35 @@ class ObtenerDatosPrendaPedidoService
 
                 $tallasDama = [];
                 $tallasCaballero = [];
+                $tallasUnisex = [];
+                $tallasSobremedida = [];
                 foreach ($tallasRelacionales as $tallaRec) {
-                    $genero = strtolower($tallaRec->genero);
-                    if ($tallaRec->cantidad > 0) {
-                        if ($genero === 'dama') {
-                            $tallasDama[$tallaRec->talla] = $tallaRec->cantidad;
-                        } elseif ($genero === 'caballero') {
-                            $tallasCaballero[$tallaRec->talla] = $tallaRec->cantidad;
-                        }
+                    if ((int) $tallaRec->cantidad <= 0) {
+                        continue;
                     }
-                }
 
-                $datosAdicionales = [];
-                if ($procesoRow->datos_adicionales) {
-                    $datosAdicionales = is_array($procesoRow->datos_adicionales)
-                        ? $procesoRow->datos_adicionales
-                        : json_decode($procesoRow->datos_adicionales, true) ?? [];
+                    $genero = strtoupper(trim((string) ($tallaRec->genero ?? '')));
+                    $esSobremedida = !empty($tallaRec->es_sobremedida);
+
+                    if ($esSobremedida) {
+                        if (in_array($genero, ['DAMA', 'CABALLERO', 'UNISEX'], true)) {
+                            $tallasSobremedida[$genero] = (int) $tallaRec->cantidad;
+                        }
+                        continue;
+                    }
+
+                    $talla = trim((string) ($tallaRec->talla ?? ''));
+                    if ($talla === '') {
+                        continue;
+                    }
+
+                    if ($genero === 'DAMA') {
+                        $tallasDama[$talla] = (int) $tallaRec->cantidad;
+                    } elseif ($genero === 'CABALLERO') {
+                        $tallasCaballero[$talla] = (int) $tallaRec->cantidad;
+                    } elseif ($genero === 'UNISEX') {
+                        $tallasUnisex[$talla] = (int) $tallaRec->cantidad;
+                    }
                 }
 
                 $procesos[] = [
@@ -303,9 +315,10 @@ class ObtenerDatosPrendaPedidoService
                     'observaciones' => $procesoRow->observaciones ?? '',
                     'tallas_dama' => $tallasDama,
                     'tallas_caballero' => $tallasCaballero,
+                    'tallas_unisex' => $tallasUnisex,
+                    'tallas_sobremedida' => $tallasSobremedida,
                     'estado' => $procesoRow->estado ?? 'PENDIENTE',
                     'imagenes' => $imagenesFormato,
-                    'datos_adicionales' => $datosAdicionales,
                 ];
             }
 

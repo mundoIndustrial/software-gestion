@@ -82,7 +82,7 @@ class PrendaEditorTallas {
 
                     console.log(`[Tallas] Actualizando ${generoNormalizado} - ${talla}: ${nuevaCantidad}`);
                     this._actualizarTotal();
-                    this._sincronizarProcesosDesdeTallas();
+                    this._sincronizarProcesosDesdeTallas('prenda-editor-tallas-cambio');
                 };
 
                 input.addEventListener('change', sincronizarInput);
@@ -96,7 +96,7 @@ class PrendaEditorTallas {
 
         globalThis.tallasRelacionales = JSON.parse(JSON.stringify(tallasNormalizadas));
         console.log('[Tallas] Tallas replicadas en globalThis.tallasRelacionales');
-        this._sincronizarProcesosDesdeTallas();
+        this._sincronizarProcesosDesdeTallas('prenda-editor-tallas-inicial');
         console.log('[Tallas] Completado');
     }
 
@@ -174,7 +174,7 @@ class PrendaEditorTallas {
             }
 
             this._actualizarTotal();
-            this._sincronizarProcesosDesdeTallas();
+            this._sincronizarProcesosDesdeTallas('prenda-editor-tallas-cambio');
         };
         btnGroup.appendChild(btnEliminar);
 
@@ -231,15 +231,15 @@ class PrendaEditorTallas {
         console.log(`[Tallas] Total actualizado: ${total}`);
     }
 
-    static _sincronizarProcesosDesdeTallas() {
+    static _sincronizarProcesosDesdeTallas(origen = 'desconocido') {
         try {
             if (typeof globalThis.emitirCambioTallas === 'function') {
-                globalThis.emitirCambioTallas('prenda-editor-tallas-loader');
+                globalThis.emitirCambioTallas(origen);
                 return;
             }
 
             if (typeof globalThis.sincronizarTallasConTarjetasProcesos === 'function') {
-                globalThis.sincronizarTallasConTarjetasProcesos();
+                globalThis.sincronizarTallasConTarjetasProcesos(origen);
             }
         } catch (error) {
             console.error('[PrendaEditorTallas] Error sincronizando tallas con procesos:', error);
@@ -466,7 +466,7 @@ class PrendaEditorTallas {
                     checkMark.style.display = 'none';
                 }
                 this._actualizarTotal();
-                this._sincronizarProcesosDesdeTallas();
+                this._sincronizarProcesosDesdeTallas('prenda-editor-tallas-cambio');
             });
         }
 

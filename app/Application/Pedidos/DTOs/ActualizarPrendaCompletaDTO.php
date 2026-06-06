@@ -81,13 +81,19 @@ final class ActualizarPrendaCompletaDTO
                     foreach ($tallasArray as $talla) {
                         if (isset($talla['genero'], $talla['cantidad'])) {
                             $genero = strtoupper($talla['genero']);
+                            if (!empty($talla['es_sobremedida'])) {
+                                if (!isset($cantidadTalla['SOBREMEDIDA'])) {
+                                    $cantidadTalla['SOBREMEDIDA'] = [];
+                                }
+                                $cantidadTalla['SOBREMEDIDA'][$genero] = $talla['cantidad'];
+                                continue;
+                            }
                             if (!isset($cantidadTalla[$genero])) {
                                 $cantidadTalla[$genero] = [];
                             }
                             $tallaKey = $talla['talla'] ?? null;
-                            $cantidadTalla[$genero][$tallaKey] = $talla['cantidad'];
-                            if (!empty($talla['es_sobremedida'])) {
-                                $cantidadTalla[$genero]['_es_sobremedida'] = true;
+                            if ($tallaKey !== null && $tallaKey !== '') {
+                                $cantidadTalla[$genero][$tallaKey] = $talla['cantidad'];
                             }
                         }
                     }

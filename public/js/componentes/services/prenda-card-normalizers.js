@@ -53,6 +53,11 @@ window.PrendaCardNormalizers = {
             Object.entries(procesos).forEach(([key, value]) => {
                 if (!value) return;
                 const normalizado = this.normalizarEntradaProceso(value, key);
+                if (normalizado?.datos) {
+                    const datosExtendidos = normalizado.datos.datosExtendidos || normalizado.datos.datos_extendidos || {};
+                    normalizado.datos.datosExtendidos = datosExtendidos;
+                    normalizado.datos.datos_extendidos = datosExtendidos;
+                }
                 normalizados[normalizado.tipo] = normalizado;
             });
             return normalizados;
@@ -61,6 +66,11 @@ window.PrendaCardNormalizers = {
         procesos.forEach((value, idx) => {
             if (!value) return;
             const normalizado = this.normalizarEntradaProceso(value, `proceso_${idx}`);
+            if (normalizado?.datos) {
+                const datosExtendidos = normalizado.datos.datosExtendidos || normalizado.datos.datos_extendidos || {};
+                normalizado.datos.datosExtendidos = datosExtendidos;
+                normalizado.datos.datos_extendidos = datosExtendidos;
+            }
             normalizados[normalizado.tipo] = normalizado;
         });
         return normalizados;
@@ -70,7 +80,7 @@ window.PrendaCardNormalizers = {
         const modoCrudo = datos.modo_tallas || datos.modoTallas || proceso.modo_tallas || proceso.modoTallas || 'generico';
         const modoTallasResuelto = String(modoCrudo || 'generico').toLowerCase().trim();
         const esGeneralMode = modoTallasResuelto === 'general' || modoTallasResuelto === 'generico';
-        const tieneDatosExtendidos = !!(datos && datos.datosExtendidos);
+        const tieneDatosExtendidos = !!(datos && (datos.datosExtendidos || datos.datos_extendidos));
         const esPorTallas = !esGeneralMode && tieneDatosExtendidos;
         const tipoRender = esPorTallas ? 'por_tallas' : (esGeneralMode ? 'general' : 'generico');
 

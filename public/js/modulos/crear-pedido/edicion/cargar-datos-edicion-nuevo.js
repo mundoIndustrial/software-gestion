@@ -6,6 +6,79 @@
  */
 
 let datosEditacionCargados = false;
+let datosEdicionPromise = null;
+
+function construirUrlDatosEdicionPedido() {
+    if (window.routePedidoEditarDatosUrl) {
+        return String(window.routePedidoEditarDatosUrl).trim();
+    }
+
+    if (!window.pedidoEditarId) {
+        return '';
+    }
+
+    return `/api/asesores/pedidos-produccion/${window.pedidoEditarId}/datos-edicion`;
+}
+
+function normalizarRespuestaDatosEdicion(payload) {
+    if (!payload || typeof payload !== 'object') {
+        return null;
+    }
+
+    if (payload.data && typeof payload.data === 'object') {
+        return payload.data;
+    }
+
+    if (payload.pedido || payload.epps || payload.prendas) {
+        return payload;
+    }
+
+    return payload;
+}
+
+async function obtenerDatosEdicionPedido() {
+    const existente = window.pedidoEditarData || window.pedidoEdicionData;
+    if (existente && typeof existente === 'object') {
+        return existente;
+    }
+
+    if (datosEdicionPromise) {
+        return datosEdicionPromise;
+    }
+
+    const url = construirUrlDatosEdicionPedido();
+    if (!url) {
+        return null;
+    }
+
+    datosEdicionPromise = fetch(url, {
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+        .then(async (response) => {
+            const payload = await response.json().catch(() => null);
+            if (!response.ok) {
+                throw new Error(payload?.error || payload?.message || `Error HTTP ${response.status}`);
+            }
+
+            const datos = normalizarRespuestaDatosEdicion(payload);
+            if (!datos || typeof datos !== 'object') {
+                throw new Error('La respuesta de edición no tiene un formato válido');
+            }
+
+            window.pedidoEditarData = datos;
+            window.pedidoEdicionData = datos;
+            return datos;
+        })
+        .catch((error) => {
+            datosEdicionPromise = null;
+            throw error;
+        });
+
+    return datosEdicionPromise;
+}
 
 function normalizarGenerosConTallasEdicion(generosConTallas) {
     if (!generosConTallas || typeof generosConTallas !== 'object' || Array.isArray(generosConTallas)) {
@@ -63,6 +136,91 @@ function normalizarGenerosConTallasEdicion(generosConTallas) {
     }
 
     return normalizado;
+}
+
+function convertirTallasArrayAObjetoEdicion(tallas) {
+    if (!Array.isArray(tallas)) {
+        return {};
+    }
+
+    const resultado = {};
+
+    tallas.forEach((tallaObj) => {
+        if (!tallaObj || typeof tallaObj !== 'object') {
+            return;
+        }
+
+        const genero = String(tallaObj.genero || '').toUpperCase().trim();
+        const talla = String(tallaObj.talla || '').toUpperCase().trim();
+        const cantidad = parseInt(tallaObj.cantidad, 10) || 0;
+        const esSobremedida = Boolean(tallaObj.es_sobremedida);
+
+        if (!genero || cantidad <= 0) {
+            return;
+        }
+
+        if (esSobremedida) {
+            if (!resultado.SOBREMEDIDA) {
+                resultado.SOBREMEDIDA = {};
+            }
+            resultado.SOBREMEDIDA[genero] = cantidad;
+            return;
+        }
+
+        if (!resultado[genero]) {
+            resultado[genero] = {};
+        }
+
+        if (talla) {
+            resultado[genero][talla] = cantidad;
+        }
+    });
+
+    return resultado;
+}
+
+function resolverCantidadTallaEdicion(prenda) {
+    const fuentes = [
+        prenda?.cantidad_talla,
+        prenda?.generosConTallas,
+        prenda?.tallas
+    ];
+
+    for (const fuente of fuentes) {
+        if (!fuente) continue;
+
+        if (typeof fuente === 'string') {
+            try {
+                const parsed = JSON.parse(fuente);
+                if (parsed && typeof parsed === 'object') {
+                    if (Array.isArray(parsed)) {
+                        const convertida = convertirTallasArrayAObjetoEdicion(parsed);
+                        if (Object.keys(convertida).length > 0) {
+                            return convertida;
+                        }
+                    } else if (Object.keys(parsed).length > 0) {
+                        return parsed;
+                    }
+                }
+            } catch (error) {
+                continue;
+            }
+        }
+
+        if (Array.isArray(fuente)) {
+            const convertida = convertirTallasArrayAObjetoEdicion(fuente);
+            if (Object.keys(convertida).length > 0) {
+                return convertida;
+            }
+            continue;
+        }
+
+        if (typeof fuente === 'object' && Object.keys(fuente).length > 0) {
+            return fuente;
+        }
+    }
+
+    return {};
 }
 
 /**
@@ -127,12 +285,10 @@ function esperarElementosYCargar(intentos = 0) {
     setTimeout(() => esperarElementosYCargar(intentos + 1), 200);
 }
 
-function cargarDatosEdicion() {
+async function cargarDatosEdicion() {
     try {
-
-        
-        // Si window.pedidoEditarData está dentro de un objeto 'pedido', acceder correctamente
-        let pedido = window.pedidoEditarData || window.pedidoEdicionData;
+        const datosCargados = await obtenerDatosEdicionPedido();
+        let pedido = datosCargados || window.pedidoEditarData || window.pedidoEdicionData;
         
         // Si llega como { pedido: {...}, estados: [...], areas: [...] }
         if (pedido && typeof pedido === 'object' && pedido.pedido && !Array.isArray(pedido)) {
@@ -154,7 +310,7 @@ function cargarDatosEdicion() {
         }
 
         // 2.5. Cargar EPPs si existen
-        const datosCompletos = window.pedidoEditarData || window.pedidoEdicionData;
+        const datosCompletos = datosCargados || window.pedidoEditarData || window.pedidoEdicionData;
         if (datosCompletos && datosCompletos.epps && Array.isArray(datosCompletos.epps) && datosCompletos.epps.length > 0) {
 
             cargarEPPs(datosCompletos.epps);
@@ -174,7 +330,8 @@ function cargarDatosEdicion() {
 
 
     } catch (error) {
-
+        console.error('[cargar-datos-edicion] Error cargando datos de edición desde endpoint:', error);
+        _notificarErrorCarga('No se pudieron cargar los datos del pedido para edición.');
     }
 }
 
@@ -269,7 +426,9 @@ function cargarPrendas(prendas) {
                 }
             }
 
-            generosConTallas = normalizarGenerosConTallasEdicion(generosConTallas);
+            generosConTallas = normalizarGenerosConTallasEdicion(
+                generosConTallas || prenda.cantidad_talla || prenda.tallas || {}
+            );
 
             
             // Buscar variantes (nombre correcto desde backend MapearPedidoEdicionService)
@@ -397,7 +556,7 @@ function cargarPrendas(prendas) {
                 // cantidad_talla es el formato que usa PrendaCardService._construirTallasYCantidades
                 // El backend devuelve generosConTallas: { DAMA: { S: 5, M: 3 } }  misma estructura
                 // FIX: Backend envia [] (PHP empty array) cuando no hay tallas  [] es truthy en JS
-                cantidad_talla: (Array.isArray(generosConTallas) ? {} : generosConTallas) || {},
+                cantidad_talla: resolverCantidadTallaEdicion(prenda),
                 // generosConTallas vacio para que el renderer lo construya desde cantidad_talla
                 generosConTallas: {},
                 tallas: tallas,

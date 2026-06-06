@@ -487,11 +487,16 @@ function _asegurarProcesoSeleccionadoActual() {
 }
 
 function _construirDatosProcesoParaGuardar(tallas, datosExtendidos) {
+    const tallasCanonicas = globalThis.ProcesoTallasCanonicas
+        ? globalThis.ProcesoTallasCanonicas.desdeAgrupadas(tallas)
+        : [];
+
     return {
         tipo: procesoPorTallasActual,
         ubicaciones: modoModalPorTallasActual === 'general' ? [ubicacionGeneralTemp] : [],
         observaciones: '',
         tallas: tallas,
+        tallasCanonicas: tallasCanonicas,
         //  FIX: Copiar File objects de imagenesFiles a imagenes para que FormData los encuentre
         imagenes: modoModalPorTallasActual === 'general' ? fotosGeneralesFilesTemp : [],
         imagenesFiles: fotosGeneralesFilesTemp,
@@ -726,4 +731,3 @@ function configurarDragDropPasteGeneral() {
     // Marcar como configurado para evitar listeners duplicados
     galeria._dragDropConfigured = true;
 };
-

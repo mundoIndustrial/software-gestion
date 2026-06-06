@@ -27,6 +27,42 @@ function convertirTallasArrayAJson(tallas) {
     return resultado;
 }
 
+function normalizarProcesosParaEdicion(procesos) {
+    if (!procesos || typeof procesos !== 'object') {
+        return {};
+    }
+
+    const normalizados = {};
+
+    Object.entries(procesos).forEach(([claveProceso, procesoRaw]) => {
+        if (!procesoRaw || typeof procesoRaw !== 'object') {
+            return;
+        }
+
+        const datosRaw = procesoRaw.datos && typeof procesoRaw.datos === 'object'
+            ? procesoRaw.datos
+            : procesoRaw;
+        const datosExtendidos = datosRaw.datosExtendidos
+            || datosRaw.datos_extendidos
+            || procesoRaw.datosExtendidos
+            || procesoRaw.datos_extendidos
+            || {};
+
+        normalizados[claveProceso] = {
+            ...procesoRaw,
+            datos: {
+                ...datosRaw,
+                datosExtendidos,
+                datos_extendidos: datosExtendidos
+            },
+            datosExtendidos,
+            datos_extendidos: datosExtendidos
+        };
+    });
+
+    return normalizados;
+}
+
 // Esperar a que el DOM esté listo
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', iniciarCargaEdicion);
@@ -177,6 +213,7 @@ function cargarPrendas(prendas) {
                 descripcion: prenda.descripcion || '',
                 genero: prenda.genero || [],
                 generosConTallas: prenda.generosConTallas || convertirTallasArrayAJson(prenda.tallas) || {},
+                cantidad_talla: prenda.cantidad_talla || prenda.generosConTallas || convertirTallasArrayAJson(prenda.tallas) || {},
                 tipo_manga: prenda.tipo_manga || 'No aplica',
                 obs_manga: prenda.obs_manga || '',
                 tipo_broche: prenda.tipo_broche || 'No aplica',
@@ -191,7 +228,7 @@ function cargarPrendas(prendas) {
                 telaFotos: prenda.telaFotos || [],
                 origen: prenda.origen || 'bodega',
                 de_bodega: prenda.de_bodega || 1,
-                procesos: prenda.procesos || {},
+                procesos: normalizarProcesosParaEdicion(prenda.procesos || {}),
                 variaciones: prenda.variaciones || {},
             });
 
@@ -265,7 +302,6 @@ function ocultarLoadingOverlay() {
         }, 300);
     }
 }
-
 
 
 

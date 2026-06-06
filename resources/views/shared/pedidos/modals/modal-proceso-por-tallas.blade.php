@@ -59,6 +59,14 @@
                         </h5>
                         <div id="tallas-caballero-modo-general" style="display: grid; grid-template-columns: 1fr; gap: 1rem;"></div>
                     </div>
+
+                    <!-- Sección SOBREMEDIDA -->
+                    <div id="seccion-sobremedida-modo-general" style="display: none; margin-bottom: 1.5rem;">
+                        <h5 style="margin: 0 0 0.75rem; padding: 0.5rem 1rem; background: #fef3c7; border-radius: 6px; font-size: 0.95rem; font-weight: 600; color: #92400e; display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="material-symbols-rounded" style="font-size: 1.2rem;">straighten</span>SOBREMEDIDA
+                        </h5>
+                        <div id="tallas-sobremedida-modo-general" style="display: grid; grid-template-columns: 1fr; gap: 1rem;"></div>
+                    </div>
                 </div>
 
                 <!-- Imágenes Generales (compartidas) -->
@@ -100,6 +108,14 @@
                     <span class="material-symbols-rounded" style="font-size: 1.2rem;">man</span>CABALLERO
                 </h4>
                 <div id="tallas-caballero-por-tallas" style="display: grid; grid-template-columns: 1fr; gap: 1rem;"></div>
+            </div>
+
+            <!-- Sección SOBREMEDIDA -->
+            <div id="seccion-sobremedida-por-tallas" style="display: none; margin-bottom: 1.5rem;">
+                <h4 style="margin: 0 0 0.75rem; padding: 0.5rem 1rem; background: #fef3c7; border-radius: 6px; font-size: 0.95rem; font-weight: 600; color: #92400e; display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">straighten</span>SOBREMEDIDA
+                </h4>
+                <div id="tallas-sobremedida-por-tallas" style="display: grid; grid-template-columns: 1fr; gap: 1rem;"></div>
             </div>
 
             <!-- Mensaje cuando no hay tallas -->

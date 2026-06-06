@@ -8,6 +8,7 @@ use App\Application\Pedidos\DTOs\ObtenerDatosEdicionResponse;
 use App\Application\Pedidos\Exceptions\ObtenerDatosEdicionException;
 use App\Application\Pedidos\Services\PrendaTransformadorService;
 use App\Application\Pedidos\Services\EppTransformadorService;
+use App\Application\Services\Pedidos\MapearPedidoEdicionService;
 use App\Models\PedidoProduccion;
 use Illuminate\Support\Facades\Log;
 
@@ -28,7 +29,8 @@ class ObtenerDatosEdicionUseCase implements ObtenerDatosEdicionUseCaseContract
 
     public function __construct(
         PrendaTransformadorService $prendaTransformador,
-        EppTransformadorService $eppTransformador
+        EppTransformadorService $eppTransformador,
+        private MapearPedidoEdicionService $mapearPedidoEdicionService
     ) {
         $this->prendaTransformador = $prendaTransformador;
         $this->eppTransformador = $eppTransformador;
@@ -49,11 +51,18 @@ class ObtenerDatosEdicionUseCase implements ObtenerDatosEdicionUseCaseContract
             // 2. Enriquecer prendas (variantes, talla_colores)
             $this->prendaTransformador->enriquecerPrendas($pedido->prendas);
 
-            // 3. Transformar EPPs
+            // 3. Mapear pedido para modo edición usando la estructura normalizada del frontend
+            $pedidoMapeado = $this->mapearPedidoEdicionService->mapearPedidoParaEdicion($pedido);
+
+            // 4. Transformar EPPs para compatibilidad adicional
             $eppsList = $this->eppTransformador->transformarEpps($pedido->epps ?? []);
 
-            // 4. Convertir a array y agregar EPPs transformados
+            // 5. Convertir a array y reemplazar relaciones crudas por la estructura mapeada
             $datosRespuesta = $pedido->toArray();
+            $datosRespuesta['prendas'] = $pedidoMapeado['prendas'] ?? [];
+            $datosRespuesta['epps'] = $pedidoMapeado['epps'] ?? [];
+            $datosRespuesta['cliente_nombre'] = $pedidoMapeado['cliente_nombre'] ?? '';
+            $datosRespuesta['procesos'] = $this->extraerProcesosDesdePrendas($datosRespuesta['prendas']);
             $datosRespuesta['epps_transformados'] = $eppsList;
 
             Log::info('[ObtenerDatosEdicionUseCase] Datos de edicficacion obtenidos', [
@@ -87,12 +96,33 @@ class ObtenerDatosEdicionUseCase implements ObtenerDatosEdicionUseCaseContract
             'prendas.variantes',
             'prendas.coloresTelas.fotos',
             'prendas.procesos.tipoProceso',
+            'prendas.procesos.tallas.coloresAsignados',
+            'prendas.procesos.tallas.imagenes',
+            'prendas.procesos.imagenes',
             'prendas.fotos',
             'prendas.telaFotos',
+            'prendas.tallas.coloresAsignados',
             'epps.epp',
             'asesor:id,name',
             'cliente:id,nombre'
         ])->findOrFail($id);
+    }
+
+    private function extraerProcesosDesdePrendas(array $prendas): array
+    {
+        $procesos = [];
+
+        foreach ($prendas as $prenda) {
+            if (!isset($prenda['procesos']) || !is_array($prenda['procesos'])) {
+                continue;
+            }
+
+            foreach ($prenda['procesos'] as $proceso) {
+                $procesos[] = $proceso;
+            }
+        }
+
+        return $procesos;
     }
 
     public function call(string $method, array $arguments = []): mixed
@@ -104,7 +134,6 @@ class ObtenerDatosEdicionUseCase implements ObtenerDatosEdicionUseCaseContract
         return $this->{$method}(...$arguments);
     }
 }
-
 
 
 

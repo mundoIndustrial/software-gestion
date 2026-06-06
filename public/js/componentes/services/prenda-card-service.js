@@ -68,7 +68,14 @@ globalThis.PrendaCardService = {
 
     _obtenerObjetoGenero(obj, genero) {
         if (!obj || typeof obj !== 'object') return {};
-        return obj[genero] || obj[genero.toUpperCase()] || obj[genero.toLowerCase()] || {};
+        const resultado = obj[genero] || obj[genero.toUpperCase()] || obj[genero.toLowerCase()] || {};
+        console.log('[PrendaCardService][_obtenerObjetoGenero]', {
+            generoPedido: genero,
+            keysDisponibles: Object.keys(obj || {}),
+            resultadoKeys: Object.keys(resultado || {}),
+            resultado
+        });
+        return resultado;
     },
 
     _normalizarUbicaciones(ubicaciones) {
@@ -368,8 +375,6 @@ globalThis.PrendaCardService = {
         });
     }
 };
-
-
 
 
 

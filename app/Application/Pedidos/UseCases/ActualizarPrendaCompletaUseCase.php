@@ -352,8 +352,21 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
         ]);
 
         $tallasExistentes = $prenda->tallas()->get()->keyBy(function ($t) {
+            // SOBREMEDIDA: detectar por talla vacía O por es_sobremedida=1
+            // Soporta ambos: datos viejos (talla="", es_sobremedida=0) y nuevos (talla="", es_sobremedida=1)
+            if (($t->talla === '' || $t->talla === null) && ($t->es_sobremedida || $t->genero !== 'UNISEX')) {
+                // Sobremedida detectada
+                return "{$t->genero}_SOBREMEDIDA_";
+            }
             return "{$t->genero}_{$t->talla}";
         });
+
+        \Log::warning('[actualizarTallas] tallasExistentes keys', [
+            'keys' => array_keys($tallasExistentes->toArray()),
+            'data' => $tallasExistentes->map(function($t) {
+                return ['genero' => $t->genero, 'talla' => $t->talla, 'es_sobremedida' => $t->es_sobremedida];
+            })
+        ]);
 
         [$tallasNuevas, $generosConDatos] = $this->construirTallasNuevas($dto->cantidadTalla);
 
@@ -394,6 +407,8 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
         $tallasNuevas = [];
         $generosConDatos = [];
 
+        \Log::warning('[construirTallasNuevas] ENTRADA - cantidadTalla completo', ['data' => $cantidadTalla]);
+
         foreach ($cantidadTalla as $genero => $tallasCantidad) {
             if ($this->debeOmitirGenero($genero, $tallasCantidad)) {
                 continue;
@@ -420,12 +435,61 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
             }
         }
 
+        // 🔴 CRÍTICO: Procesar SOBREMEDIDA como cantidad sin talla
+        // SOBREMEDIDA contiene {DAMA: 435, CABALLERO: 200} donde DAMA/CABALLERO son GÉNEROS
+        // Convertir a registros con talla="" y es_sobremedida=1
+        if (isset($cantidadTalla['SOBREMEDIDA']) && is_array($cantidadTalla['SOBREMEDIDA'])) {
+            $sobremedida = $cantidadTalla['SOBREMEDIDA'];
+            $tallasRealesSobremedida = $this->filtrarTallasReales($sobremedida);
+
+            if (!empty($tallasRealesSobremedida)) {
+                \Log::info('[ActualizarPrendaCompletaUseCase] Procesando SOBREMEDIDA', [
+                    'sobremedida_crudo' => $sobremedida,
+                    'sobremedida_filtrado' => $tallasRealesSobremedida
+                ]);
+
+                foreach ($tallasRealesSobremedida as $generoSobremedida => $cantidad) {
+                    $generoNorm = strtoupper($generoSobremedida);
+                    $key = $generoNorm . "_SOBREMEDIDA_";  // Key única para sobremedida
+
+                    $tallasNuevas[$key] = [
+                        'genero' => $generoNorm,
+                        'talla' => '',  // ← Talla vacía (sobremedida no tiene talla específica)
+                        'cantidad' => (int) $cantidad,
+                        'es_sobremedida' => 1,  // ← Booleano: es sobremedida
+                    ];
+
+                    if (!in_array($generoNorm, $generosConDatos)) {
+                        $generosConDatos[] = $generoNorm;
+                    }
+
+                    \Log::debug('[ActualizarPrendaCompletaUseCase] Sobremedida agregada', [
+                        'key' => $key,
+                        'genero' => $generoNorm,
+                        'cantidad' => $cantidad,
+                        'talla' => 'vacía'
+                    ]);
+                }
+            }
+        }
+
         return [$tallasNuevas, $generosConDatos];
     }
 
     private function debeOmitirGenero(string $genero, mixed $tallasCantidad): bool
     {
+        // Ignorar géneros privados (inician con _)
         if (strpos($genero, '_') === 0) {
+            return true;
+        }
+
+        // CRÍTICO: Ignorar SOBREMEDIDA que es una estructura especial
+        // SOBREMEDIDA contiene {DAMA: 234} no tallas normales {S: 5, M: 3}
+        // Se procesa de forma independiente en la sincronización de procesos
+        if (strtoupper($genero) === 'SOBREMEDIDA') {
+            \Log::debug('[debeOmitirGenero] Ignorando SOBREMEDIDA (estructura especial)', [
+                'genero' => $genero
+            ]);
             return true;
         }
 
@@ -500,13 +564,35 @@ final class ActualizarPrendaCompletaUseCase implements ActualizarPrendaCompletaU
     private function actualizarOInsertarTallas(PrendaPedido $prenda, $tallasExistentes, array $tallasNuevas): void
     {
         foreach ($tallasNuevas as $key => $dataTalla) {
+            \Log::warning('[actualizarOInsertarTallas] Procesando talla', [
+                'key' => $key,
+                'data' => $dataTalla,
+                'existe_previo' => isset($tallasExistentes[$key])
+            ]);
+
             if (isset($tallasExistentes[$key])) {
+                \Log::warning('[actualizarOInsertarTallas] ACTUALIZANDO', [
+                    'id' => $tallasExistentes[$key]->id,
+                    'antes' => [
+                        'genero' => $tallasExistentes[$key]->genero,
+                        'talla' => $tallasExistentes[$key]->talla,
+                        'cantidad' => $tallasExistentes[$key]->cantidad,
+                        'es_sobremedida' => $tallasExistentes[$key]->es_sobremedida
+                    ],
+                    'datos_a_asignar' => $dataTalla
+                ]);
+
                 $tallasExistentes[$key]->update([
                     'cantidad' => $dataTalla['cantidad'],
                     'es_sobremedida' => $dataTalla['es_sobremedida'],
                 ]);
                 continue;
             }
+
+            \Log::warning('[actualizarOInsertarTallas] CREANDO NUEVA', [
+                'key' => $key,
+                'data' => $dataTalla
+            ]);
 
             $prenda->tallas()->create($dataTalla);
         }

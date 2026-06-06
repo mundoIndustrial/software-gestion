@@ -646,12 +646,30 @@ function _cargarTallasDesdeRelacionales() {
     _log('[por-tallas]FUENTE 2 - Leyendo desde tallasRelacionales');
     
     const { SOBREMEDIDA = {}, UNISEX = {} } = tallasRel;
-    const sobremedidaKeys = { ...SOBREMEDIDA, ...UNISEX };
+    
+    // Procesar sobremedida: convertir de { DAMA: 34 } a { SOBREMEDIDA: 34 }
+    let sobremedidaKeys = {};
+    if (Object.keys(SOBREMEDIDA).length > 0) {
+        // SOBREMEDIDA puede ser { DAMA: 34 } o directamente con cantidad
+        // Lo convertimos a una clave única "SOBREMEDIDA" con la cantidad
+        Object.entries(SOBREMEDIDA).forEach(([genero, cantidad]) => {
+            if (typeof cantidad === 'number' && cantidad > 0) {
+                sobremedidaKeys['SOBREMEDIDA'] = cantidad;
+            }
+        });
+    }
+    
     const tallasPrenda = {
         dama: { ...tallasRel.DAMA },
         caballero: { ...tallasRel.CABALLERO },
         sobremedida: Object.keys(sobremedidaKeys).length > 0 ? sobremedidaKeys : null
     };
+    
+    _log('[por-tallas] Tallas cargadas desde relacionales:', {
+        dama: Object.keys(tallasPrenda.dama).length,
+        caballero: Object.keys(tallasPrenda.caballero).length,
+        sobremedida: tallasPrenda.sobremedida ? 'presente' : 'ausente'
+    });
     
     return { tallasPrenda, hayTallas: true };
 }
@@ -986,8 +1004,10 @@ function _limpiarContenedores() {
     const elementosALimpiar = [
         'tallas-dama-por-tallas',
         'tallas-caballero-por-tallas',
+        'tallas-sobremedida-por-tallas',
         'tallas-dama-modo-general',
         'tallas-caballero-modo-general',
+        'tallas-sobremedida-modo-general',
         'prt-galeria-general'
     ];
     

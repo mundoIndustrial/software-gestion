@@ -22,6 +22,103 @@
         return nuevo;
     }
 
+    function convertirTallasArrayAObjeto(tallas) {
+        if (!Array.isArray(tallas)) {
+            return {};
+        }
+
+        const resultado = {};
+
+        tallas.forEach((tallaObj) => {
+            if (!tallaObj || typeof tallaObj !== 'object') {
+                return;
+            }
+
+            const genero = String(tallaObj.genero || '').toUpperCase().trim();
+            const talla = String(tallaObj.talla || '').toUpperCase().trim();
+            const cantidad = parseInt(tallaObj.cantidad, 10) || 0;
+            const esSobremedida = Boolean(tallaObj.es_sobremedida);
+
+            if (!genero || cantidad <= 0) {
+                return;
+            }
+
+        if (esSobremedida) {
+            if (!resultado.SOBREMEDIDA) {
+                resultado.SOBREMEDIDA = {};
+            }
+            resultado.SOBREMEDIDA[genero] = cantidad;
+            return;
+        }
+
+            if (!resultado[genero]) {
+                resultado[genero] = {};
+            }
+
+            if (talla) {
+                resultado[genero][talla] = cantidad;
+            }
+        });
+
+        return resultado;
+    }
+
+    function resolverCantidadTallaPrenda(prenda = {}) {
+        const fuentes = [
+            prenda.cantidad_talla,
+            prenda.generosConTallas,
+            prenda.tallas
+        ];
+
+        console.debug('[DraftPedidoSerializer][Tallas] resolverCantidadTallaPrenda entrada', {
+            prenda_id: prenda?.id || prenda?.prenda_pedido_id || null,
+            cantidad_talla: prenda?.cantidad_talla,
+            generosConTallas: prenda?.generosConTallas,
+            tallas: prenda?.tallas
+        });
+
+        for (const fuente of fuentes) {
+            if (!fuente) continue;
+
+            if (typeof fuente === 'string') {
+                try {
+                    const parsed = JSON.parse(fuente);
+                    if (parsed && typeof parsed === 'object') {
+                        if (Array.isArray(parsed)) {
+                            const convertida = convertirTallasArrayAObjeto(parsed);
+                            if (Object.keys(convertida).length > 0) {
+                                console.debug('[DraftPedidoSerializer][Tallas] convertido desde array', convertida);
+                                return convertida;
+                            }
+                        } else if (Object.keys(parsed).length > 0) {
+                            console.debug('[DraftPedidoSerializer][Tallas] parsed directo', parsed);
+                            return parsed;
+                        }
+                    }
+                } catch (error) {
+                    continue;
+                }
+            }
+
+            if (Array.isArray(fuente)) {
+                const convertida = convertirTallasArrayAObjeto(fuente);
+                if (Object.keys(convertida).length > 0) {
+                    console.debug('[DraftPedidoSerializer][Tallas] convertido desde array fuente', convertida);
+                    return convertida;
+                }
+                continue;
+            }
+
+            if (typeof fuente === 'object' && Object.keys(fuente).length > 0) {
+                console.debug('[DraftPedidoSerializer][Tallas] usando objeto fuente directo', fuente);
+                return fuente;
+            }
+        }
+
+        console.debug('[DraftPedidoSerializer][Tallas] sin datos');
+        return {};
+    }
+
     function formularioNuevaPrendaTieneContenido() {
         const nombre = document.getElementById('nueva-prenda-nombre')?.value?.trim() || '';
         const descripcion = document.getElementById('nueva-prenda-descripcion')?.value?.trim() || '';
@@ -384,7 +481,10 @@
             nombre: gestionItems.prendas[prendaEditIndex]?.nombre_prenda || gestionItems.prendas[prendaEditIndex]?.nombre_producto,
             imagenes: gestionItems.prendas[prendaEditIndex]?.imagenes?.length || 0,
             telas: gestionItems.prendas[prendaEditIndex]?.telasAgregadas?.length || gestionItems.prendas[prendaEditIndex]?.telas?.length || 0,
-            procesos: Object.keys(gestionItems.prendas[prendaEditIndex]?.procesos || {}).length
+            procesos: Object.keys(gestionItems.prendas[prendaEditIndex]?.procesos || {}).length,
+            cantidad_talla: gestionItems.prendas[prendaEditIndex]?.cantidad_talla,
+            tallas: gestionItems.prendas[prendaEditIndex]?.tallas,
+            generosConTallas: gestionItems.prendas[prendaEditIndex]?.generosConTallas
         });
 
         return true;
@@ -429,7 +529,11 @@
         };
 
         // FIX: prenda.tallas es [] (truthy) de crearPrendaBase() — usar cantidad_talla (fuente canónica relacional)
-        const tallasData = (Array.isArray(prenda.cantidad_talla) ? {} : prenda.cantidad_talla) || {};
+        const tallasData = resolverCantidadTallaPrenda(prenda);
+        console.debug('[DraftPedidoSerializer][Tallas] tallasData final', {
+            prenda_id: prenda?.id || prenda?.prenda_pedido_id || null,
+            tallasData
+        });
         const variantes = prenda.variantes && Object.keys(prenda.variantes).length > 0 ? prenda.variantes : null;
         const asignacionesColores = prenda.asignacionesColoresPorTalla !== undefined && prenda.asignacionesColoresPorTalla !== null
             ? prenda.asignacionesColoresPorTalla

@@ -47,8 +47,70 @@ window.obtenerSnapshotTallasParaProcesos = function() {
  * Sincroniza las tallas de prenda hacia tarjetas de procesos renderizadas.
  * Esto permite ver cambios de cantidades/tallas en tiempo real en cada tarjeta.
  */
-window.sincronizarTallasConTarjetasProcesos = function() {
+window.sincronizarTallasConTarjetasProcesos = function(origen = 'desconocido') {
     try {
+        const origenIgnorado = new Set([
+            'prenda-editor-tallas-inicial',
+            'prenda-editor-tallas-loader',
+            'carga-inicial-pedido'
+        ]);
+        const debeSincronizarTarjetas = !origenIgnorado.has(origen);
+        
+        console.log('[sincronizarTallasConTarjetasProcesos] INICIO', {
+            origen,
+            debeSincronizarTarjetas,
+            procesosCount: Object.keys(window.procesosSeleccionados || {}).length,
+            tallasRelacionales: window.tallasRelacionales
+        });
+
+        const resolverPrendaEditandoIndex = () => {
+            const candidatos = [
+                window.gestionItemsUI?.prendaEditIndex,
+                window.prendaEditIndex,
+                window.prendaEditor?.prendaEditIndex
+            ];
+
+            for (const candidato of candidatos) {
+                const indice = Number.parseInt(candidato, 10);
+                if (Number.isInteger(indice) && indice >= 0) {
+                    return indice;
+                }
+            }
+
+            return null;
+        };
+
+        const sincronizarProcesosEnPrendaReadOnly = (procesosActualizados) => {
+            const prendaEditandoIndex = resolverPrendaEditandoIndex();
+            if (prendaEditandoIndex === null) {
+                return false;
+            }
+
+            const colecciones = [
+                window.gestionItemsUI?.prendas,
+                window.gestorPrendaSinCotizacion?.prendas,
+                window.datosEdicionPedido?.prendas
+            ];
+
+            let sincronizo = false;
+            colecciones.forEach((coleccion) => {
+                if (!Array.isArray(coleccion) || !coleccion[prendaEditandoIndex]) {
+                    return;
+                }
+
+                const prendaActual = coleccion[prendaEditandoIndex];
+                prendaActual.procesos = procesosActualizados;
+                sincronizo = true;
+            });
+
+            return sincronizo;
+        };
+
+        if (!debeSincronizarTarjetas) {
+            console.log('[sincronizarTallasConTarjetasProcesos] Sincronización omitida por origen inicial:', origen);
+            return;
+        }
+
         const crearDetalleExtendidoVacio = () => ({
             ubicaciones: [],
             observaciones: '',
@@ -97,7 +159,21 @@ window.sincronizarTallasConTarjetasProcesos = function() {
 
         const procesos = window.procesosSeleccionados || {};
         const tipos = Object.keys(procesos);
-        if (tipos.length === 0) return;
+        
+        // CRÍTICO: Si es actualización de sobremedida y hay procesos, SIEMPRE renderizar
+        // aunque inicialmente no hubiera cambios documentados
+        const esActualizacionSobremedida = origen === 'actualizar-sobremedida' || origen === 'confirmar-sobremedida' || origen === 'eliminar-sobremedida';
+        
+        console.log('[sincronizarTallasConTarjetasProcesos] Procesos encontrados:', { tipos, esActualizacionSobremedida, tiposCount: tipos.length });
+        
+        if (tipos.length === 0) {
+            console.log('[sincronizarTallasConTarjetasProcesos] No hay procesos seleccionados, renderizado omitido');
+            if (esActualizacionSobremedida && typeof window.renderizarTarjetasProcesos === 'function') {
+                console.log('[sincronizarTallasConTarjetasProcesos] PERO: Es actualización sobremedida, intentando renderizar de todas formas');
+                window.renderizarTarjetasProcesos();
+            }
+            return;
+        }
 
         const tallasSnapshot = window.obtenerSnapshotTallasParaProcesos();
         let huboCambios = false;
@@ -108,9 +184,22 @@ window.sincronizarTallasConTarjetasProcesos = function() {
             if (!proceso.datos || typeof proceso.datos !== 'object') return;
 
             const modoTallas = proceso.datos.modo_tallas || 'generico';
+            
+            console.log('[sincronizarTallasConTarjetasProcesos] ANTES de actualizar tallas', {
+                tipo,
+                tallasSnapshotSobremedida: tallasSnapshot.sobremedida,
+                tallasActualesSobremedida: proceso.datos.tallas?.sobremedida,
+                tallasRelacionalesSobremedida: window.tallasRelacionales?.SOBREMEDIDA
+            });
+            
             proceso.datos.tallas = {
                 ...tallasSnapshot
             };
+            
+            console.log('[sincronizarTallasConTarjetasProcesos] DESPUÉS de actualizar tallas', {
+                tipo,
+                tallasNuevasSobremedida: proceso.datos.tallas?.sobremedida
+            });
 
             // Mantener detalle por talla alineado al editar tallas en modo GENERAL/ESPECIFICO.
             if (modoTallas === 'general' || modoTallas === 'especifico') {
@@ -120,9 +209,36 @@ window.sincronizarTallasConTarjetasProcesos = function() {
             huboCambios = true;
         });
 
-        if (huboCambios && typeof window.renderizarTarjetasProcesos === 'function') {
-            window.renderizarTarjetasProcesos();
+        if (huboCambios) {
+            sincronizarProcesosEnPrendaReadOnly(procesos);
+            console.log('[sincronizarTallasConTarjetasProcesos] Cambios sincronizados en prenda:', { huboCambios, debeSincronizarTarjetas });
         }
+
+        if (huboCambios && debeSincronizarTarjetas && typeof window.renderizarTarjetasProcesos === 'function') {
+            console.log('[sincronizarTallasConTarjetasProcesos] Llamando renderizarTarjetasProcesos...', {
+                tipoDeRenderizarTarjetasProcesos: typeof window.renderizarTarjetasProcesos,
+                esFunction: typeof window.renderizarTarjetasProcesos === 'function'
+            });
+            window.renderizarTarjetasProcesos();
+        } else if (huboCambios && debeSincronizarTarjetas) {
+            console.error('[sincronizarTallasConTarjetasProcesos] NO se puede llamar renderizarTarjetasProcesos', {
+                tipoDeRenderizarTarjetasProcesos: typeof window.renderizarTarjetasProcesos,
+                huboCambios,
+                debeSincronizarTarjetas
+            });
+        }
+
+        // NO re-renderizar items aquí - renderizarTarjetasProcesos ya actualiza todo
+        // if (huboCambios && debeSincronizarTarjetas) {
+        //     if (typeof window.renderizarItemsRegistrados === 'function') {
+        //         window.renderizarItemsRegistrados();
+        //     } else if (window.gestionItemsUI?.renderer && typeof window.gestionItemsUI.renderer.actualizar === 'function' && typeof window.gestionItemsUI.obtenerItemsOrdenados === 'function') {
+        //         Promise.resolve(window.gestionItemsUI.renderer.actualizar(window.gestionItemsUI.obtenerItemsOrdenados()))
+        //             .catch((error) => {
+        //                 console.error('[sincronizarTallasConTarjetasProcesos] Error re-renderizando items registrados:', error);
+        //             });
+        //     }
+        // }
     } catch (error) {
         console.error('[sincronizarTallasConTarjetasProcesos] Error:', error);
     }
@@ -133,10 +249,10 @@ window.sincronizarTallasConTarjetasProcesos = function() {
  * Cuando se actualizan las tallas de la prenda, sincronizar automáticamente
  * el resumen de tallas en el modal del proceso (si está abierto)
  */
-window.sincronizarTallasConModalProceso = function() {
+window.sincronizarTallasConModalProceso = function(origen = 'desconocido') {
     try {
         // Siempre mantener las tarjetas de proceso alineadas con las tallas de prenda.
-        window.sincronizarTallasConTarjetasProcesos();
+        window.sincronizarTallasConTarjetasProcesos(origen);
 
         // Solo sincronizar si el modal del proceso está visible
         const modalProceso = document.getElementById('modal-proceso-generico');
@@ -286,8 +402,15 @@ window.sincronizarTallasConModalProceso = function() {
  */
 window.notificarCambioTallas = function(origen = 'desconocido') {
     try {
+        // CRÍTICO: Siempre sincronizar tarjetas de procesos (aunque modal no esté visible)
+        // Las tarjetas renderizadas necesitan actualizarse con las nuevas tallas
+        if (typeof window.sincronizarTallasConTarjetasProcesos === 'function') {
+            window.sincronizarTallasConTarjetasProcesos(origen);
+        }
+        
+        // También sincronizar con modal si está visible
         if (typeof window.sincronizarTallasConModalProceso === 'function') {
-            window.sincronizarTallasConModalProceso();
+            window.sincronizarTallasConModalProceso(origen);
         }
 
         const snapshot = (typeof window.obtenerSnapshotTallasParaProcesos === 'function')
@@ -1291,6 +1414,117 @@ window.cerrarModalSobremedida = function() {
 };
 
 /**
+ * Abrir modal para editar sobremedida existente
+ */
+window.abrirModalSobremedidaParaEditar = async function(genero, cantidadActual) {
+    const modal = document.createElement('div');
+    modal.id = 'modal-sobremedida-editar';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1060000;';
+    
+    const container = document.createElement('div');
+    container.style.cssText = 'background: white; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); overflow: hidden;';
+    
+    // Header
+    const header = document.createElement('div');
+    header.style.cssText = 'background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 1.5rem; display: flex; align-items: center; justify-content: space-between;';
+    
+    const headerContent = document.createElement('div');
+    headerContent.style.cssText = 'display: flex; align-items: center; gap: 0.75rem;';
+    headerContent.innerHTML = `<span class="material-symbols-rounded" style="font-size: 1.5rem;">straighten</span><h2 style="margin: 0; font-size: 1.25rem;">Editar Sobremedida</h2>`;
+    header.appendChild(headerContent);
+    
+    const btnCerrar = document.createElement('button');
+    btnCerrar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.5rem;">close</span>';
+    btnCerrar.style.cssText = 'background: transparent; color: white; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;';
+    btnCerrar.onclick = () => cerrarModalSobremedidaEditar();
+    header.appendChild(btnCerrar);
+    
+    container.appendChild(header);
+    
+    // Content
+    const content = document.createElement('div');
+    content.style.cssText = 'padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;';
+    
+    // Info del género actual
+    const infoDiv = document.createElement('div');
+    infoDiv.style.cssText = 'background: #f0f9ff; border-left: 4px solid #0066cc; padding: 1rem; border-radius: 4px;';
+    infoDiv.innerHTML = `
+        <p style="margin: 0; color: #1f2937; font-size: 0.95rem; font-weight: 600;">Género: <strong>${genero}</strong></p>
+    `;
+    content.appendChild(infoDiv);
+    
+    // Input de Cantidad
+    const cantidadLabel = document.createElement('label');
+    cantidadLabel.style.cssText = 'display: flex; flex-direction: column; gap: 0.5rem; font-weight: 600; color: #1f2937;';
+    cantidadLabel.innerHTML = `<span>Nueva Cantidad *</span>`;
+    
+    const cantidadInput = document.createElement('input');
+    cantidadInput.id = 'sobremedida-cantidad-edit';
+    cantidadInput.type = 'number';
+    cantidadInput.min = '1';
+    cantidadInput.value = cantidadActual;
+    cantidadInput.style.cssText = 'padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 6px; font-size: 1rem; font-weight: 600;';
+    cantidadLabel.appendChild(cantidadInput);
+    content.appendChild(cantidadLabel);
+    
+    container.appendChild(content);
+    
+    // Footer
+    const footer = document.createElement('div');
+    footer.style.cssText = 'display: flex; gap: 1rem; justify-content: flex-end; padding: 1.5rem; border-top: 1px solid #e5e7eb;';
+    
+    const btnCancelar = document.createElement('button');
+    btnCancelar.type = 'button';
+    btnCancelar.textContent = 'Cancelar';
+    btnCancelar.style.cssText = 'background: #e5e7eb; color: #1f2937; border: none; border-radius: 6px; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 500; transition: all 0.2s;';
+    btnCancelar.onmouseover = () => btnCancelar.style.background = '#d1d5db';
+    btnCancelar.onmouseout = () => btnCancelar.style.background = '#e5e7eb';
+    btnCancelar.onclick = () => cerrarModalSobremedidaEditar();
+    footer.appendChild(btnCancelar);
+    
+    const btnConfirmar = document.createElement('button');
+    btnConfirmar.type = 'button';
+    btnConfirmar.textContent = 'Actualizar';
+    btnConfirmar.style.cssText = 'background: #0066cc; color: white; border: none; border-radius: 6px; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 500; transition: all 0.2s;';
+    btnConfirmar.onmouseover = () => btnConfirmar.style.background = '#0052a3';
+    btnConfirmar.onmouseout = () => btnConfirmar.style.background = '#0066cc';
+    btnConfirmar.onclick = () => {
+        const nuevaCantidad = parseInt(document.getElementById('sobremedida-cantidad-edit').value) || 0;
+        
+        if (nuevaCantidad <= 0) {
+            alert('La cantidad debe ser mayor a 0');
+            document.getElementById('sobremedida-cantidad-edit').focus();
+            return;
+        }
+        
+        guardarSobremedida(genero, nuevaCantidad);
+        cerrarModalSobremedidaEditar();
+        crearTarjetaSobremedida(genero, nuevaCantidad);
+        actualizarTotalPrendas();
+        window.notificarCambioTallas('actualizar-sobremedida');
+    };
+    footer.appendChild(btnConfirmar);
+    
+    container.appendChild(footer);
+    modal.appendChild(container);
+    
+    document.body.appendChild(modal);
+    
+    // Focus en cantidad y seleccionar todo
+    setTimeout(() => document.getElementById('sobremedida-cantidad-edit').select(), 100);
+};
+
+/**
+ * Cerrar modal de edición de sobremedida
+ */
+window.cerrarModalSobremedidaEditar = function() {
+    const modal = document.getElementById('modal-sobremedida-editar');
+    if (modal) {
+        modal.remove();
+    }
+};
+
+/**
  * Guardar sobremedida en la estructura relacional
  */
 window.guardarSobremedida = function(genero, cantidad) {
@@ -1421,20 +1655,44 @@ window.crearTarjetaSobremedida = function(genero, cantidad) {
     cantidadDiv.style.cssText = `
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: space-between;
         gap: 0.75rem;
         background: #f0f9ff;
         border-radius: 6px;
         padding: 0.75rem;
         border: 1px solid #bfdbfe;
     `;
-    cantidadDiv.innerHTML = `
+    
+    const cantidadDisplay = document.createElement('div');
+    cantidadDisplay.style.cssText = 'display: flex; align-items: center; gap: 0.75rem; flex: 1;';
+    cantidadDisplay.innerHTML = `
         <span class="material-symbols-rounded" style="font-size: 1.25rem; color: #0066cc;">shopping_bag</span>
-        <div style="text-align: center;">
+        <div style="text-align: center; flex: 1;">
             <p style="margin: 0; color: #6b7280; font-size: 0.7rem; text-transform: uppercase; font-weight: 600;">Cantidad</p>
             <p style="margin: 0; color: #0066cc; font-size: 1.5rem; font-weight: 700;">${cantidad}</p>
         </div>
     `;
+    cantidadDiv.appendChild(cantidadDisplay);
+    
+    // Botón editar
+    const btnEditar = document.createElement('button');
+    btnEditar.type = 'button';
+    btnEditar.title = 'Editar cantidad';
+    btnEditar.style.cssText = 'background: transparent; border: none; color: #0066cc; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; border-radius: 6px; flex-shrink: 0;';
+    btnEditar.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.25rem;">edit</span>';
+    btnEditar.onmouseover = () => {
+        btnEditar.style.color = '#0052a3';
+        btnEditar.style.background = '#e0f2fe';
+    };
+    btnEditar.onmouseout = () => {
+        btnEditar.style.color = '#0066cc';
+        btnEditar.style.background = 'transparent';
+    };
+    btnEditar.onclick = () => {
+        abrirModalSobremedidaParaEditar(genero, cantidad);
+    };
+    cantidadDiv.appendChild(btnEditar);
+    
     tarjeta.appendChild(cantidadDiv);
     
     container.appendChild(tarjeta);
