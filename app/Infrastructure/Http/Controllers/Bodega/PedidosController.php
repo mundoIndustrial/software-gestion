@@ -752,6 +752,21 @@ class PedidosController extends Controller
      * @param string $area 'Costura' o 'EPP'
      * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
+    public function pendientesCostura(Request $request)
+    {
+        $datos = $this->pedidoListadoService->obtenerPendientesPorArea($request, 'Costura');
+        $viewName = $datos['viewName'] ?? 'bodega.pendiente-costura';
+        unset($datos['viewName']);
+
+        return view($viewName, $datos);
+    }
+
+    /**
+     * Método genérico para obtener pedidos pendientes por área
+     * @param Request $request
+     * @param string $area 'Costura' o 'EPP'
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+     */
     public function pendienteEpp(Request $request)
     {
         $datos = $this->pedidoListadoService->obtenerPendientesPorArea($request, 'EPP');

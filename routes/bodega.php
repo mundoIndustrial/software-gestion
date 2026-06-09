@@ -57,7 +57,7 @@ Route::middleware(['auth', 'role:bodeguero,EPP-Bodega,supervisor_pedidos,supervi
         ->name('pedidos-entregados');
 
     // Pendiente Costura
-    Route::get('/pendiente-costura', [PedidosController::class, 'pendienteCostura'])
+    Route::get('/pendiente-costura', [PedidosController::class, 'pendientesCostura'])
         ->name('pendientes-costura');
 
     // Mostrar detalles de pedido específico para Pendiente Costura
