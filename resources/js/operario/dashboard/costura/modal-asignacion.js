@@ -2038,7 +2038,11 @@ function confirmarDistribucionTaller() {
 
         const asignaciones = Object.entries(window.asignacionesPorTaller || {})
             .map(([tallerIdStr, asignacionesTallas]) => {
-                const taller = talleresDisponibles.find((t) => String(t.id) === String(tallerIdStr));
+                // Buscar en talleres disponibles o en talleres seleccionados (que incluyen nuevos)
+                let taller = talleresDisponibles.find((t) => String(t.id) === String(tallerIdStr));
+                if (!taller && window.talleresSeleccionadosDistribucion) {
+                    taller = window.talleresSeleccionadosDistribucion.find((t) => String(t.id) === String(tallerIdStr));
+                }
                 const encargado = (taller?.name || taller?.nombre || '').trim();
 
                 if (!encargado) return null;
@@ -2997,11 +3001,12 @@ function cargarInterfazDistribucionTallerConDatos(tallas, talleres) {
     let html = '<div style="display: grid; gap: 1.5rem;">';
     
     talleres.forEach(taller => {
+        const nombreTaller = taller.nombre || taller.name || 'Taller sin nombre';
         html += `
             <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; overflow: hidden;">
                 <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb;">
                     <div style="flex: 1; min-width: 0;">
-                        <h6 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: #1e293b;">${taller.nombre}</h6>
+                        <h6 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: #1e293b;">${nombreTaller}</h6>
                     </div>
                 </div>
                 <div id="tallas-taller-${taller.id}" style="display: grid; gap: 0.75rem;">
