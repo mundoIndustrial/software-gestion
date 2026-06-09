@@ -79,6 +79,10 @@ Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion,vi
     Route::get('/api/prestamos/{tipo}/{id}/detalle', [App\Http\Controllers\Admin\TalleresController::class, 'apiDetallePrestamo'])->name('api.prestamos.detalle');
 });
 
+Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion,visualizador_talleres'])->prefix('entrada')->name('entrada.')->group(function () {
+    Route::get('/', [App\Http\Controllers\Admin\EntradaCosturaController::class, 'index'])->name('index');
+});
+
 Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion'])->prefix('talleres')->name('talleres.')->group(function () {
     // Rutas de escritura (sin acceso para visualizador_talleres)
     Route::patch('/{id}/toggle-status', [App\Http\Controllers\Admin\TalleresController::class, 'toggleStatus'])->name('toggle-status');

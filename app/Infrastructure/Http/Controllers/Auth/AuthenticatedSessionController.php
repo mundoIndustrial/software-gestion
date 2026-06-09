@@ -57,8 +57,8 @@ class AuthenticatedSessionController extends Controller
         }
 
         if ($user && $user->hasRole('visualizador_talleres')) {
-            \Log::info('→ Redirigiendo a talleres.index');
-            return redirect(route('talleres.index', absolute: false));
+            \Log::info('→ Redirigiendo a entrada.index');
+            return redirect(route('entrada.index', absolute: false));
         }
 
         if ($user && ($user->hasRole('diseñador-logos') || $user->hasRole('bordador'))) {

@@ -561,6 +561,9 @@ export class ReceiptRenderer {
             });
 
             const endpoints = this._getObservacionProcesoEndpoints();
+            if (!Array.isArray(endpoints) || endpoints.length === 0) {
+                return;
+            }
             let observacion = '';
 
             for (const endpoint of endpoints) {
@@ -597,6 +600,10 @@ export class ReceiptRenderer {
 
     static _getObservacionProcesoEndpoints() {
         const path = String(window?.location?.pathname || '').toLowerCase();
+
+        if (path.includes('/talleres') || path.includes('/entrada')) {
+            return [];
+        }
 
         if (path.includes('/visualizador-logo/pedidos-logo')) {
             return [

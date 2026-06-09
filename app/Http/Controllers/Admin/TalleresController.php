@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class TalleresController extends Controller
@@ -16,8 +17,6 @@ class TalleresController extends Controller
         $search = $request->input('search');
         $view = $request->input('view', 'talleres');
         $status = $request->input('status', 'activos');
-        
-        // Solo cargar talleres si estamos en la vista de talleres
         if ($view === 'talleres') {
             $activoVal = ($status === 'inactivos') ? 0 : 1;
             $talleres = $useCase->execute($search, 9, $activoVal);
@@ -25,7 +24,12 @@ class TalleresController extends Controller
             $talleres = collect(); // Colección vacía
         }
         
-        return view('admin.talleres.index', compact('talleres', 'search', 'view', 'status'));
+        return view('admin.talleres.index', compact(
+            'talleres',
+            'search',
+            'view',
+            'status'
+        ));
     }
 
     public function showRecibos($id, \App\Application\Talleres\UseCases\ObtenerDashboardTallerUseCase $useCase)
@@ -461,8 +465,11 @@ class TalleresController extends Controller
     public function apiReciboCompleto(Request $request)
     {
         try {
+            $reciboId = (int) $request->query('recibo_id', 0);
             $numeroRecibo = trim((string) $request->query('numero_recibo', ''));
             $tipoRecibo = strtoupper(trim((string) $request->query('tipo_recibo', '')));
+            $pedidoProduccionId = (int) $request->query('pedido_produccion_id', 0);
+            $prendaId = (int) $request->query('prenda_id', 0);
 
             if ($numeroRecibo === '' || $tipoRecibo === '') {
                 return response()->json([
@@ -471,13 +478,33 @@ class TalleresController extends Controller
                 ], 422);
             }
 
+            if (!in_array($tipoRecibo, ['COSTURA', 'CORTE-PARA-BODEGA'], true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El recibo solicitado no está disponible en esta vista'
+                ], 422);
+            }
+
             // CORTE-PARA-BODEGA: resolver por consecutivo base
             if ($tipoRecibo === 'CORTE-PARA-BODEGA') {
-                $prendaBodegaId = DB::table('consecutivos_recibos_pedidos')
-                    ->where('tipo_recibo', 'CORTE-PARA-BODEGA')
-                    ->where('consecutivo_actual', $numeroRecibo)
-                    ->orderByDesc('id')
-                    ->value('prenda_bodega_id');
+                $reciboBodegaQuery = DB::table('consecutivos_recibos_pedidos')
+                    ->where('tipo_recibo', 'CORTE-PARA-BODEGA');
+
+                if ($reciboId > 0) {
+                    $reciboBodegaQuery->where('id', $reciboId);
+                } else {
+                    $reciboBodegaQuery->where('consecutivo_actual', $numeroRecibo);
+                }
+
+                if ($pedidoProduccionId > 0) {
+                    $reciboBodegaQuery->where('pedido_produccion_id', $pedidoProduccionId);
+                }
+
+                if ($prendaId > 0) {
+                    $reciboBodegaQuery->where('prenda_id', $prendaId);
+                }
+
+                $prendaBodegaId = $reciboBodegaQuery->orderByDesc('id')->value('prenda_bodega_id');
 
                 if (!$prendaBodegaId) {
                     return response()->json(['success' => false, 'message' => 'Recibo no encontrado'], 404);
@@ -511,15 +538,28 @@ class TalleresController extends Controller
                 ]);
             }
 
-            // COSTURA: resolver por consecutivo base
-            $reciboBase = DB::table('consecutivos_recibos_pedidos')
-                ->where('tipo_recibo', 'COSTURA')
-                ->where('consecutivo_actual', $numeroRecibo)
-                ->orderByDesc('id')
-                ->first();
+            // COSTURA / REFLECTIVO / otros: resolver por tipo real y, si existe, por ID exacto
+            $reciboBaseQuery = DB::table('consecutivos_recibos_pedidos')
+                ->where('tipo_recibo', $tipoRecibo);
+
+            if ($reciboId > 0) {
+                $reciboBaseQuery->where('id', $reciboId);
+            } else {
+                $reciboBaseQuery->where('consecutivo_actual', $numeroRecibo);
+            }
+
+            if ($pedidoProduccionId > 0) {
+                $reciboBaseQuery->where('pedido_produccion_id', $pedidoProduccionId);
+            }
+
+            if ($prendaId > 0) {
+                $reciboBaseQuery->where('prenda_id', $prendaId);
+            }
+
+            $reciboBase = $reciboBaseQuery->orderByDesc('id')->first();
 
             if (!$reciboBase || !$reciboBase->prenda_id) {
-                return response()->json(['success' => false, 'message' => 'Recibo de costura no encontrado'], 404);
+                return response()->json(['success' => false, 'message' => 'Recibo no encontrado'], 404);
             }
 
             $prenda = DB::table('prendas_pedido')->where('id', $reciboBase->prenda_id)->first();
@@ -559,116 +599,4 @@ class TalleresController extends Controller
         }
     }
 
-    public function apiDetallePrestamo(string $tipo, int $id)
-    {
-        if (!in_array($tipo, ['insumos', 'contramuestra'], true)) {
-            return response()->json(['success' => false, 'message' => 'Tipo inválido'], 422);
-        }
-
-        if ($tipo === 'insumos') {
-            $recibo = DB::table('recibos_prestamo_insumos')
-                ->leftJoin('users as u', 'u.id', '=', 'recibos_prestamo_insumos.creado_por')
-                ->select(
-                    'recibos_prestamo_insumos.id',
-                    'recibos_prestamo_insumos.numero_orden',
-                    'recibos_prestamo_insumos.fecha',
-                    'recibos_prestamo_insumos.nombre_costurero',
-                    'recibos_prestamo_insumos.novedades',
-                    'recibos_prestamo_insumos.confirmado_entrada_en',
-                    'recibos_prestamo_insumos.firma_mensajero',
-                    'recibos_prestamo_insumos.firma_costurero',
-                    DB::raw('COALESCE(u.name, "-") as encargado')
-                )
-                ->where('recibos_prestamo_insumos.id', $id)
-                ->first();
-
-            if (!$recibo) {
-                return response()->json(['success' => false, 'message' => 'Recibo no encontrado'], 404);
-            }
-
-            $items = DB::table('recibos_prestamo_insumos_items')
-                ->select('cantidad', 'descripcion', 'orden_fila')
-                ->where('recibo_prestamo_insumo_id', $id)
-                ->orderBy('orden_fila')
-                ->get();
-
-            return response()->json([
-                'success' => true,
-                'tipo' => 'insumos',
-                'recibo' => $recibo,
-                'items' => $items,
-            ]);
-        }
-
-        $recibo = DB::table('recibos_prestamo_contramuestra')
-            ->leftJoin('users as u', 'u.id', '=', 'recibos_prestamo_contramuestra.creado_por')
-            ->select(
-                'recibos_prestamo_contramuestra.id',
-                'recibos_prestamo_contramuestra.numero_orden',
-                'recibos_prestamo_contramuestra.fecha',
-                'recibos_prestamo_contramuestra.nombre_costurero',
-                'recibos_prestamo_contramuestra.descripcion',
-                'recibos_prestamo_contramuestra.novedades',
-                'recibos_prestamo_contramuestra.confirmado_entrada_en',
-                'recibos_prestamo_contramuestra.firma_mensajero',
-                'recibos_prestamo_contramuestra.firma_costurero',
-                DB::raw('COALESCE(u.name, "-") as encargado')
-            )
-            ->where('recibos_prestamo_contramuestra.id', $id)
-            ->first();
-
-        if (!$recibo) {
-            return response()->json(['success' => false, 'message' => 'Recibo no encontrado'], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'tipo' => 'contramuestra',
-            'recibo' => $recibo,
-            'items' => [],
-        ]);
-    }
-
-    public function toggleStatus($id, \App\Application\Talleres\UseCases\ToggleEstadoTallerUseCase $useCase)
-    {
-        $result = $useCase->execute($id);
-        return response()->json($result);
-    }
-
-    public function actualizarPrecio(Request $request, $id)
-    {
-        $request->validate([
-            'precio' => 'required|numeric|min:0'
-        ]);
-
-        $entrega = \App\Models\EntregaReciboCostura::findOrFail($id);
-        $entrega->precio = $request->precio;
-        $entrega->save();
-
-        return response()->json(['success' => true]);
-    }
-
-    public function store(Request $request, \App\Application\Talleres\UseCases\CrearTallerUseCase $useCase)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255'
-        ]);
-
-        $result = $useCase->execute($request->all());
-
-        return response()->json($result);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255'
-        ]);
-
-        $user = \App\Models\User::findOrFail($id);
-        $user->name = $request->name;
-        $user->save();
-
-        return response()->json(['success' => true, 'message' => 'Taller actualizado correctamente.']);
-    }
 }
