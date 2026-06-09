@@ -16,6 +16,7 @@ use App\Models\ProcesoPrenda;
 use App\Models\SeleccionPedido;
 use App\Models\TipoCotizacion;
 use App\Services\CalculadorDiasService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -607,6 +608,122 @@ class PedidoProduccionReadService
             ->pluck('nombre_prenda')
             ->unique()
             ->implode(', ') ?: '-';
+    }
+
+    public function getDiasEntregaHtml(PedidoProduccion $pedido): ?string
+    {
+        try {
+            $hoy = now()->startOfDay();
+            $fechaEstimada = $this->resolveFechaEstimadaDeEntrega($pedido);
+
+            if ($fechaEstimada) {
+                $fechaEstimada = $fechaEstimada->copy()->startOfDay();
+
+                if ($fechaEstimada->equalTo($hoy)) {
+                    return $this->buildDiasEntregaHtml('Vence hoy', null, $fechaEstimada->format('d/m/Y'));
+                }
+
+                if ($fechaEstimada->greaterThan($hoy)) {
+                    $diasRestantes = $this->contarDiasHabilesEntre($hoy, $fechaEstimada);
+                    return $this->buildDiasEntregaHtml(
+                        $diasRestantes . ' días',
+                        'restantes',
+                        $fechaEstimada->format('d/m/Y')
+                    );
+                }
+
+                $diasVencidos = $this->contarDiasHabilesEntre($fechaEstimada, $hoy);
+                return $this->buildDiasEntregaHtml(
+                    'Vencido hace ' . $diasVencidos . ' días',
+                    null,
+                    $fechaEstimada->format('d/m/Y'),
+                    '#b91c1c'
+                );
+            }
+
+            if (!$pedido->created_at) {
+                return null;
+            }
+
+            $diasTranscurridos = $this->contarDiasHabilesEntre(
+                Carbon::parse($pedido->created_at)->startOfDay(),
+                $hoy
+            );
+
+            return $this->buildDiasEntregaHtml(
+                $diasTranscurridos . ' días',
+                'transcurridos',
+                null
+            );
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function resolveFechaEstimadaDeEntrega(PedidoProduccion $pedido): ?Carbon
+    {
+        $valor = $pedido->fecha_estimada_de_entrega
+            ?? $pedido->fecha_estimada_entrega
+            ?? $pedido->fecha_estimada
+            ?? null;
+
+        if (empty($valor)) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($valor);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function contarDiasHabilesEntre(Carbon $inicio, Carbon $fin): int
+    {
+        $inicio = $inicio->copy()->startOfDay();
+        $fin = $fin->copy()->startOfDay();
+
+        if ($inicio->equalTo($fin)) {
+            return 0;
+        }
+
+        if ($inicio->greaterThan($fin)) {
+            [$inicio, $fin] = [$fin, $inicio];
+        }
+
+        $contados = 0;
+        $cursor = $inicio->copy()->addDay();
+
+        while ($cursor->lte($fin)) {
+            if ($cursor->isBusinessDay()) {
+                $contados++;
+            }
+            $cursor->addDay();
+        }
+
+        return max(0, $contados);
+    }
+
+    private function buildDiasEntregaHtml(
+        string $lineaPrincipal,
+        ?string $lineaSecundaria = null,
+        ?string $fechaEstimada = null,
+        string $colorPrincipal = '#dc2626'
+    ): string {
+        $html = '<span style="display: inline-flex; flex-direction: column; line-height: 1.1; color: ' . $colorPrincipal . '; font-weight: 700; font-size: 0.78rem;">';
+        $html .= '<span>' . e($lineaPrincipal) . '</span>';
+
+        if ($lineaSecundaria !== null && $lineaSecundaria !== '') {
+            $html .= '<span>' . e($lineaSecundaria) . '</span>';
+        }
+
+        if ($fechaEstimada !== null && $fechaEstimada !== '') {
+            $html .= '<span style="margin-top: 0.2rem; color: #6b7280; font-weight: 600; font-size: 0.72rem;">Est.: ' . e($fechaEstimada) . '</span>';
+        }
+
+        $html .= '</span>';
+
+        return $html;
     }
 
     private function applyStatusFilters($query, ListOrdersRequest $request): void
