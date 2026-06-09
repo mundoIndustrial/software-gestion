@@ -620,6 +620,33 @@
                     Los recibos se mostrarán ordenados por fecha (más antiguos primero)
                 </p>
             </div>
+
+            <div class="form-group" style="margin-top: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">
+                    Seleccionar Áreas
+                </label>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.95rem;">
+                        <input type="checkbox" id="areaInsumos" value="INSUMOS" checked style="cursor: pointer;">
+                        <span>Insumos</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.95rem;">
+                        <input type="checkbox" id="areaCorte" value="CORTE" checked style="cursor: pointer;">
+                        <span>Corte</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.95rem;">
+                        <input type="checkbox" id="areaCostura" value="COSTURA" checked style="cursor: pointer;">
+                        <span>Costura</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.95rem;">
+                        <input type="checkbox" id="areaEntrega" value="ENTREGA" checked style="cursor: pointer;">
+                        <span>Entrega</span>
+                    </label>
+                </div>
+                <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #6b7280;">
+                    Selecciona las áreas que deseas incluir en el reporte
+                </p>
+            </div>
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" onclick="cerrarModalGenerarReporte()">Cancelar</button>
@@ -1257,6 +1284,12 @@ window.abrirModalGenerarReporte = function() {
         modal.style.display = 'flex';
         const select = document.getElementById('filtroAntiguedad');
         if (select) select.value = '';
+        
+        // Inicializar checkboxes (todos seleccionados por defecto)
+        document.getElementById('areaInsumos').checked = true;
+        document.getElementById('areaCorte').checked = true;
+        document.getElementById('areaCostura').checked = true;
+        document.getElementById('areaEntrega').checked = true;
     }
 };
 
@@ -1284,6 +1317,18 @@ window.generarReporteCostura = function() {
     // Agregar parámetro de antigüedad si está seleccionado
     if (filtroAntiguedad) {
         reporteUrl.searchParams.set('dias_antiguedad', filtroAntiguedad);
+    }
+
+    // Obtener áreas seleccionadas
+    const areasSeleccionadas = [];
+    if (document.getElementById('areaInsumos')?.checked) areasSeleccionadas.push('INSUMOS');
+    if (document.getElementById('areaCorte')?.checked) areasSeleccionadas.push('CORTE');
+    if (document.getElementById('areaCostura')?.checked) areasSeleccionadas.push('COSTURA');
+    if (document.getElementById('areaEntrega')?.checked) areasSeleccionadas.push('ENTREGA');
+
+    // Si hay áreas seleccionadas, agregarlas como parámetro
+    if (areasSeleccionadas.length > 0) {
+        reporteUrl.searchParams.set('areas', areasSeleccionadas.join(','));
     }
 
     window.cerrarModalGenerarReporte();
