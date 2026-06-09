@@ -902,9 +902,13 @@ window.nextPrendas = function() {
 /**
  * Escuchar el evento de apertura del modal
  */
+const waitForNextPaint = () => new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     // Listener para cargar datos de la orden
-    window.addEventListener('load-order-detail', function(event) {
+    window.addEventListener('load-order-detail', async function(event) {
         const orden = event.detail;
         renderOrderDetail(orden);
 
@@ -917,13 +921,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        await waitForNextPaint();
         window.openOrderDetailModal();
     });
     // DEBUG: Contador de eventos
     window.loadOrderDetailLogoCount = 0;
 
     // Listener para cargar datos del logo/bordados de la orden
-    window.addEventListener('load-order-detail-logo', function(event) {
+    window.addEventListener('load-order-detail-logo', async function(event) {
         window.loadOrderDetailLogoCount++;
 
         const orden = event.detail;
@@ -1094,6 +1099,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
 
+        await waitForNextPaint();
         window.openOrderDetailModalLogo();
 
     });

@@ -34,8 +34,8 @@ class DashboardController extends Controller
         }
 
         if ($user->hasRole('visualizador_talleres')) {
-            \Log::info(' Redirigiendo a talleres.index');
-            return redirect()->route('talleres.index');
+            \Log::info(' Redirigiendo a entrada.index');
+            return redirect()->route('entrada.index');
         }
 
         \Log::info(' Usuario autenticado', [

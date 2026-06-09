@@ -83,6 +83,13 @@
                         </a>
                     </div>
                 </div>
+                <a href="{{ route('entrada.index') }}"
+                   class="sidebar-item {{ request()->routeIs('entrada.*') ? 'active' : '' }}"
+                   id="navEntradaCostura"
+                   aria-label="Ir a Entrada Costura">
+                    <span class="material-symbols-rounded">assignment_return</span>
+                    <span class="nav-label">Entrada Costura</span>
+                </a>
                 <a href="{{ route('seguimiento-lavanderia.index') }}"
                    class="sidebar-item"
                    aria-label="Ir a Lavandería">

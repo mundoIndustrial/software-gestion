@@ -30,6 +30,7 @@
         @php
             $currentView = request('view');
             $isOrdenesView = $currentView === 'ordenes';
+            $isTalleresView = !$isOrdenesView;
             $isVisualizador = auth()->user()->hasRole('visualizador_talleres');
         @endphp
         <nav class="sidebar-nav">
@@ -42,10 +43,10 @@
                         <span class="material-symbols-rounded expand-icon">expand_more</span>
                     </button>
                     <div class="sidebar-submenu" id="talleresSubmenu">
-                        <button class="sidebar-item sidebar-subitem {{ !$isOrdenesView && $status !== 'inactivos' ? 'active' : '' }}" data-view="viewTalleres" data-status="activos" id="navTalleres">
+                        <button class="sidebar-item sidebar-subitem {{ $isTalleresView && $status !== 'inactivos' ? 'active' : '' }}" data-view="viewTalleres" data-status="activos" id="navTalleres">
                             <span class="nav-label">Activos</span>
                         </button>
-                        <button class="sidebar-item sidebar-subitem {{ !$isOrdenesView && $status === 'inactivos' ? 'active' : '' }}" data-view="viewTalleres" data-status="inactivos" id="navTalleresInactivos">
+                        <button class="sidebar-item sidebar-subitem {{ $isTalleresView && $status === 'inactivos' ? 'active' : '' }}" data-view="viewTalleres" data-status="inactivos" id="navTalleresInactivos">
                             <span class="nav-label">Inactivos</span>
                         </button>
                         <button class="sidebar-item sidebar-subitem {{ $isOrdenesView ? 'active' : '' }}" data-view="viewOrdenes" id="navOrdenes">
@@ -68,6 +69,13 @@
                         </a>
                     </div>
                 </div>
+                <a href="{{ route('entrada.index') }}"
+                   class="sidebar-item {{ request()->routeIs('entrada.*') ? 'active' : '' }}"
+                   id="navEntradaCostura"
+                   aria-label="Ir a Entrada Costura">
+                    <span class="material-symbols-rounded">assignment_return</span>
+                    <span class="nav-label">Entrada Costura</span>
+                </a>
                 <a href="{{ route('seguimiento-lavanderia.index') }}"
                    class="sidebar-item {{ request()->routeIs('seguimiento-lavanderia.*') ? 'active' : '' }}"
                    aria-label="Ir a Lavandería">
@@ -267,6 +275,7 @@
                 </div>
             </div>
         </div>
+
     </main>
 
     @include('components.orders-components.recibo-corte-bodega-detail-modal')
@@ -340,10 +349,6 @@
 @endsection
 
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script type="module" src="{{ asset('js/modulos/pedidos-recibos/loader.js') }}?v={{ filemtime(public_path('js/modulos/pedidos-recibos/loader.js')) }}"></script>
     <script src="{{ asset('js/ordersjs/order-detail-modal-manager.js') }}"></script>
-    <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
-    <script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}"></script>
     <script src="{{ asset('js/modulos/talleres/talleres-admin.js') }}?v={{ time() }}"></script>
 @endpush

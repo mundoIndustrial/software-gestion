@@ -27,18 +27,19 @@ class RedirectVisualizadorPedidos
 
         // Si el usuario autenticado es visualizador_talleres
         if (auth()->check() && auth()->user()->hasRole('visualizador_talleres')) {
-            // Si intenta acceder al dashboard, redirigir al módulo de talleres
+            // Si intenta acceder al dashboard, redirigir al módulo de entrada
             if ($request->routeIs('dashboard')) {
-                return redirect('/talleres');
+                return redirect('/entrada');
             }
 
-            // Si intenta acceder a cualquier otra ruta que no sea del módulo talleres, redirigir
+            // Permitir acceso a talleres, entrada, profile y logout
             if (
                 !$request->routeIs('talleres.*')
+                && !$request->routeIs('entrada.*')
                 && !$request->routeIs('profile.*')
                 && !$request->routeIs('logout')
             ) {
-                return redirect('/talleres');
+                return redirect('/entrada');
             }
         }
 

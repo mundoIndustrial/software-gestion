@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initTalleresSearch();
     initOrdenesSearch();
     initViewHandlers();
+    initReciboCompletoEvents();
     loadTalleresStats();
     initStatusToggles();
     initNewTallerModal();
@@ -28,6 +29,12 @@ function initInitialStatus() {
     const url = new URL(window.location.href);
     const statusParam = url.searchParams.get('status');
     currentState.activeTab = statusParam === 'inactivos' ? 'inactivos' : 'activos';
+    console.log('[TalleresSidebar:initInitialStatus]', {
+        pathname: window.location.pathname,
+        search: window.location.search,
+        statusParam,
+        activeTab: currentState.activeTab
+    });
 }
 
 function initSidebarToggle() {
@@ -1100,6 +1107,60 @@ function initSidebarNavigation() {
     const debugPrefix = '[TalleresSidebar]';
     const mainContainer = document.querySelector('.main-container');
     const hasSpaRoutes = Boolean(mainContainer && mainContainer.dataset.routeApiSearch);
+    const isEntradaRoute = window.location.pathname === '/entrada' || window.location.pathname === '/entrada/';
+    const isPrestamosGlobalRoute = window.location.pathname.includes('/talleres/prestamos/global');
+    console.log('[TalleresSidebar:initSidebarNavigation]', {
+        pathname: window.location.pathname,
+        search: window.location.search,
+        hasSpaRoutes,
+        isEntradaRoute,
+        isPrestamosGlobalRoute,
+        sidebarItems: sidebarItems.length
+    });
+
+    const setSidebarActiveById = (id) => {
+        sidebarItems.forEach(item => item.classList.remove('active'));
+        const target = document.getElementById(id);
+        if (target) {
+            target.classList.add('active');
+        }
+    };
+
+    const syncSidebarActiveState = () => {
+        const url = new URL(window.location.href);
+        const view = url.searchParams.get('view');
+        const status = url.searchParams.get('status') === 'inactivos' ? 'inactivos' : 'activos';
+        console.log('[TalleresSidebar:syncSidebarActiveState]', {
+            pathname: window.location.pathname,
+            search: window.location.search,
+            view,
+            status,
+            activeTab: currentState.activeTab,
+            isEntradaRoute
+        });
+
+        if (isEntradaRoute) {
+            setSidebarActiveById('navEntradaCostura');
+            return;
+        }
+
+        if (isPrestamosGlobalRoute) {
+            setSidebarActiveById(url.searchParams.get('tab') === 'contramuestra' ? 'navPrestamosContramuestras' : 'navPrestamosInsumos');
+            return;
+        }
+
+        if (view === 'ordenes') {
+            setSidebarActiveById('navOrdenes');
+            return;
+        }
+
+        if (view === 'recibos') {
+            setSidebarActiveById(status === 'inactivos' ? 'navTalleresInactivos' : 'navTalleres');
+            return;
+        }
+
+        setSidebarActiveById(status === 'inactivos' ? 'navTalleresInactivos' : 'navTalleres');
+    };
 
     sidebarItems.forEach(item => {
         item.addEventListener('click', function(event) {
@@ -1127,16 +1188,17 @@ function initSidebarNavigation() {
             }
 
             event.preventDefault();
-            
-            // Remover clase active de todos los items
-            sidebarItems.forEach(i => i.classList.remove('active'));
-            
-            // Agregar clase active al item clickeado
-            this.classList.add('active');
+
+            setSidebarActiveById(this.id);
             
             // Cambiar URL según la vista
             if (viewName === 'viewTalleres') {
                 currentState.activeTab = this.dataset.status || 'activos';
+                console.log('[TalleresSidebar:click:viewTalleres]', {
+                    id: this.id || null,
+                    status: currentState.activeTab,
+                    href
+                });
                 // Reset search inputs when switching views
                 const searchInput = document.getElementById('searchInput');
                 if (searchInput) {
@@ -1149,6 +1211,10 @@ function initSidebarNavigation() {
                 url.searchParams.delete('search');
                 url.searchParams.set('status', currentState.activeTab || 'activos');
                 url.searchParams.delete('view');
+                console.log('[TalleresSidebar:pushState:viewTalleres]', {
+                    before: window.location.href,
+                    after: url.toString()
+                });
                 window.history.pushState({ view: 'talleres' }, 'Gestión Talleres', url.toString());
                 showTalleres();
 
@@ -1159,6 +1225,10 @@ function initSidebarNavigation() {
                     performRealtimeSearch('', apiRoute);
                 }
             } else if (viewName === 'viewOrdenes') {
+                console.log('[TalleresSidebar:click:viewOrdenes]', {
+                    id: this.id || null,
+                    href
+                });
                 // Reset search inputs when switching views
                 const searchInput = document.getElementById('searchInput');
                 if (searchInput) {
@@ -1171,37 +1241,38 @@ function initSidebarNavigation() {
                 url.searchParams.delete('search');
                 url.searchParams.set('view', 'ordenes');
                 url.searchParams.delete('status');
+                console.log('[TalleresSidebar:pushState:viewOrdenes]', {
+                    before: window.location.href,
+                    after: url.toString()
+                });
                 window.history.pushState({ view: 'ordenes' }, 'Órdenes', url.toString());
                 showOrdenes();
             }
         });
     });
 
-    const setSidebarActiveByStatus = (status) => {
-        sidebarItems.forEach(i => i.classList.remove('active'));
-        const target = status === 'inactivos'
-            ? document.getElementById('navTalleresInactivos')
-            : document.getElementById('navTalleres');
-        if (target) target.classList.add('active');
-    };
-
     // Manejar el botón atrás del navegador
     window.addEventListener('popstate', function(event) {
+        console.log('[TalleresSidebar:popstate]', {
+            state: event.state,
+            href: window.location.href
+        });
         if (event.state && event.state.view === 'ordenes') {
-            sidebarItems.forEach(i => i.classList.remove('active'));
-            document.querySelector('[data-view="viewOrdenes"]').classList.add('active');
+            setSidebarActiveById('navOrdenes');
             showOrdenes();
         } else if (event.state && event.state.view === 'recibos' && event.state.taller_id) {
             currentState.activeTab = event.state.status === 'inactivos' ? 'inactivos' : (currentState.activeTab || 'activos');
-            setSidebarActiveByStatus(currentState.activeTab);
-            document.querySelector('[data-view="viewOrdenes"]').classList.remove('active');
+            setSidebarActiveById(currentState.activeTab === 'inactivos' ? 'navTalleresInactivos' : 'navTalleres');
             const row = document.querySelector(`tr[data-taller-id="${event.state.taller_id}"]`);
             const name = row ? row.querySelector('.col-taller-name')?.textContent?.trim() : 'Taller';
             showRecibos(event.state.taller_id, name || 'Taller');
         } else {
             currentState.activeTab = event.state?.status === 'inactivos' ? 'inactivos' : (currentState.activeTab || 'activos');
-            setSidebarActiveByStatus(currentState.activeTab);
-            document.querySelector('[data-view="viewOrdenes"]').classList.remove('active');
+            if (isEntradaRoute) {
+                setSidebarActiveById('navEntradaCostura');
+            } else {
+                setSidebarActiveById(currentState.activeTab === 'inactivos' ? 'navTalleresInactivos' : 'navTalleres');
+            }
             showTalleres();
         }
     });
@@ -1209,8 +1280,11 @@ function initSidebarNavigation() {
     // Verificar si hay parámetro view en la URL al cargar
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('view') === 'ordenes') {
-        sidebarItems.forEach(i => i.classList.remove('active'));
-        document.querySelector('[data-view="viewOrdenes"]').classList.add('active');
+        console.log('[TalleresSidebar:initial-url:view=ordenes]', {
+            href: window.location.href,
+            search: urlParams.get('search') || ''
+        });
+        setSidebarActiveById('navOrdenes');
         
         const searchVal = urlParams.get('search') || '';
         const searchInput = document.getElementById('searchInput');
@@ -1224,16 +1298,31 @@ function initSidebarNavigation() {
         }
         showOrdenes(searchVal);
     } else if (urlParams.get('view') === 'recibos' && urlParams.get('taller_id')) {
+        console.log('[TalleresSidebar:initial-url:view=recibos]', {
+            href: window.location.href,
+            tallerId: urlParams.get('taller_id'),
+            status: urlParams.get('status')
+        });
         currentState.activeTab = urlParams.get('status') === 'inactivos' ? 'inactivos' : (currentState.activeTab || 'activos');
-        setSidebarActiveByStatus(currentState.activeTab);
-        document.querySelector('[data-view="viewOrdenes"]').classList.remove('active');
+        setSidebarActiveById(currentState.activeTab === 'inactivos' ? 'navTalleresInactivos' : 'navTalleres');
         const tallerId = urlParams.get('taller_id');
         const row = document.querySelector(`tr[data-taller-id="${tallerId}"]`);
         const tallerName = row ? row.querySelector('.col-taller-name')?.textContent?.trim() : 'Taller';
         showRecibos(tallerId, tallerName || 'Taller');
+    } else if (isPrestamosGlobalRoute) {
+        console.log('[TalleresSidebar:initial-url:prestamos-global]', {
+            href: window.location.href,
+            tab: urlParams.get('tab') || 'insumos'
+        });
+        setSidebarActiveById(urlParams.get('tab') === 'contramuestra' ? 'navPrestamosContramuestras' : 'navPrestamosInsumos');
     } else {
+        console.log('[TalleresSidebar:initial-url:default]', {
+            href: window.location.href,
+            status: urlParams.get('status'),
+            currentStateActiveTab: currentState.activeTab
+        });
         currentState.activeTab = urlParams.get('status') === 'inactivos' ? 'inactivos' : 'activos';
-        setSidebarActiveByStatus(currentState.activeTab);
+        syncSidebarActiveState();
     }
 }
 
@@ -1502,13 +1591,23 @@ function initReciboCompletoEvents() {
     const mainContainer = document.querySelector('.main-container');
     const apiRoute = mainContainer?.dataset?.routeApiReciboCompleto;
 
+    const aplicarNormalizacionModal = () => {
+        normalizeCosturaModalForTalleres();
+        requestAnimationFrame(() => normalizeCosturaModalForTalleres());
+    };
+
     buttons.forEach(btn => {
         btn.addEventListener('click', async function() {
+            const reciboId = String(this.dataset.reciboId || '').trim();
             const numeroRecibo = String(this.dataset.numeroRecibo || '').trim();
             const tipoRecibo = String(this.dataset.tipoRecibo || '').trim().toUpperCase();
             const pedidoProduccionId = String(this.dataset.pedidoProduccionId || '').trim();
             const prendaId = String(this.dataset.prendaId || '').trim();
             if (!numeroRecibo || !tipoRecibo) return;
+            if (!['COSTURA', 'CORTE-PARA-BODEGA'].includes(tipoRecibo)) {
+                Swal.fire('No disponible', 'Este recibo no se puede abrir desde la vista de Entrada.', 'info');
+                return;
+            }
 
             try {
                 // COSTURA se abre con el modal completo de pedido (order-detail-modal-wrapper)
@@ -1526,14 +1625,14 @@ function initReciboCompletoEvents() {
                             'costura'
                         );
                         applyReciboFechaToCosturaModal(numeroRecibo, tipoRecibo, apiRoute);
-                        setTimeout(normalizeCosturaModalForTalleres, 60);
+                        aplicarNormalizacionModal();
                         return;
                     }
 
                     if (typeof window.verFactura === 'function') {
                         window.verFactura(numeroRecibo);
                         applyReciboFechaToCosturaModal(numeroRecibo, tipoRecibo, apiRoute);
-                        setTimeout(normalizeCosturaModalForTalleres, 60);
+                        aplicarNormalizacionModal();
                         return;
                     }
                     const pedidoLimpio = numeroRecibo.replace('#', '');
@@ -1547,7 +1646,7 @@ function initReciboCompletoEvents() {
                     const costuraData = await costuraResponse.json();
                     window.dispatchEvent(new CustomEvent('load-order-detail', { detail: costuraData }));
                     applyReciboFechaToCosturaModal(numeroRecibo, tipoRecibo, apiRoute);
-                    setTimeout(normalizeCosturaModalForTalleres, 60);
+                    aplicarNormalizacionModal();
                     return;
                 }
 
@@ -1556,8 +1655,17 @@ function initReciboCompletoEvents() {
                 }
 
                 const url = new URL(apiRoute, window.location.origin);
+                if (reciboId) {
+                    url.searchParams.set('recibo_id', reciboId);
+                }
                 url.searchParams.set('numero_recibo', numeroRecibo);
                 url.searchParams.set('tipo_recibo', tipoRecibo);
+                if (pedidoProduccionId) {
+                    url.searchParams.set('pedido_produccion_id', pedidoProduccionId);
+                }
+                if (prendaId) {
+                    url.searchParams.set('prenda_id', prendaId);
+                }
 
                 const response = await fetch(url.toString());
                 const raw = await response.text();
