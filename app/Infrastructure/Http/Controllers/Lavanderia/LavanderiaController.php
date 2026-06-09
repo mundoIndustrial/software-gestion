@@ -232,23 +232,13 @@ class LavanderiaController extends Controller
                 $cantidadOriginal = (int) ($talla['cantidad_original'] ?? 0);
                 $saldo = (int) ($saldosPorTalla[$key] ?? 0);
 
-                if ($tipoMovimiento === 'ENTRADA') {
-                    // Para ENTRADA: mostrar tallas que fueron enviadas pero no recibidas
-                    // El saldo negativo significa que hay más salidas que entradas
-                    $cantidadDisponible = abs($saldo);
-                    if ($cantidadDisponible > 0) {
-                        $talla['cantidad_disponible'] = $cantidadDisponible;
-                        $talla['cantidad'] = $cantidadDisponible;
-                        $tallasDisponibles[] = $talla;
-                    }
-                } else {
-                    // Para SALIDA: mostrar tallas que aún no han sido completamente enviadas
-                    $cantidadDisponible = max(0, $cantidadOriginal + $saldo);
-                    if ($cantidadDisponible > 0) {
-                        $talla['cantidad_disponible'] = $cantidadDisponible;
-                        $talla['cantidad'] = $cantidadDisponible;
-                        $tallasDisponibles[] = $talla;
-                    }
+                // Calcular cantidad disponible: original + saldo (saldo negativo = más salidas que entradas)
+                $cantidadDisponible = max(0, $cantidadOriginal + $saldo);
+                
+                if ($cantidadDisponible > 0) {
+                    $talla['cantidad_disponible'] = $cantidadDisponible;
+                    $talla['cantidad'] = $cantidadDisponible;
+                    $tallasDisponibles[] = $talla;
                 }
             }
 
@@ -832,15 +822,8 @@ class LavanderiaController extends Controller
                     $generoKey = strtoupper(trim((string) ($talla['genero'] ?? '')));
                     $saldoMovimiento = (int) ($saldoTallasPorRecibo[$recibo->id][$prendaKey . '|' . $tallaKey . '|' . $generoKey] ?? 0);
                     
-                    // Calcular cantidad disponible según el tipo de movimiento
-                    if ($tipoMovimiento === 'ENTRADA') {
-                        // Para ENTRADA: mostrar tallas que fueron enviadas pero no recibidas
-                        // El saldo negativo significa que hay más salidas que entradas
-                        $cantidadDisponible = abs($saldoMovimiento);
-                    } else {
-                        // Para SALIDA: mostrar tallas que aún no han sido completamente enviadas
-                        $cantidadDisponible = max(0, $cantidadOriginal + $saldoMovimiento);
-                    }
+                    // Calcular cantidad disponible: original + saldo (saldo negativo = más salidas que entradas)
+                    $cantidadDisponible = max(0, $cantidadOriginal + $saldoMovimiento);
 
                     if ($cantidadDisponible <= 0) {
                         continue;
