@@ -278,8 +278,32 @@ class EloquentReceiptRepository implements ReceiptRepository
                     ->where('ppar.activo', 1)
                     ->whereNull('ppar.deleted_at');
             })
+            ->leftJoin('procesos_prenda as pp_proceso', function ($join) use ($receiptTypes) {
+                $join->on('pp_proceso.numero_recibo', '=', 'crp.consecutivo_actual')
+                    ->on('pp_proceso.prenda_pedido_id', '=', 'crp.prenda_id')
+                    ->where('pp_proceso.deleted_at', null);
+                
+                // Mapear tipos de recibo a procesos
+                $procesoMapping = [
+                    'BORDADO' => 'Bordado',
+                    'ESTAMPADO' => 'Estampado',
+                    'DTF' => 'DTF',
+                    'SUBLIMADO' => 'Sublimado',
+                ];
+                
+                $procesosBuscados = [];
+                foreach ($receiptTypes as $tipo) {
+                    if (isset($procesoMapping[$tipo])) {
+                        $procesosBuscados[] = strtolower(trim($procesoMapping[$tipo]));
+                    }
+                }
+                
+                if (!empty($procesosBuscados)) {
+                    $join->whereIn(DB::raw('LOWER(TRIM(pp_proceso.proceso))'), $procesosBuscados);
+                }
+            })
             ->select([
-                'p.created_at as fecha_creacion',
+                DB::raw('COALESCE(pp_proceso.fecha_inicio, pp_proceso.created_at, crp.created_at) as fecha_creacion'),
                 'crp.consecutivo_actual as numero_recibo',
                 'p.cliente',
                 'p.numero_pedido',
@@ -367,8 +391,14 @@ class EloquentReceiptRepository implements ReceiptRepository
                     ->where('ppar.activo', 1)
                     ->whereNull('ppar.deleted_at');
             })
+            ->leftJoin('procesos_prenda as pp', function ($join) {
+                $join->on('pp.numero_recibo', '=', 'crp.consecutivo_actual')
+                    ->on('pp.prenda_pedido_id', '=', 'crp.prenda_id')
+                    ->whereRaw('LOWER(TRIM(pp.proceso)) = ?', ['costura'])
+                    ->where('pp.deleted_at', null);
+            })
             ->select([
-                'crp.created_at as fecha_creacion',
+                DB::raw('COALESCE(pp.fecha_inicio, pp.created_at, crp.created_at) as fecha_creacion'),
                 'crp.consecutivo_actual as numero_recibo',
                 'crp.prenda_id as prenda_id',
                 'p.cliente',
@@ -389,7 +419,7 @@ class EloquentReceiptRepository implements ReceiptRepository
             ])
             ->where('crp.tipo_recibo', 'COSTURA')
             ->where('crp.activo', 1)
-            ->orderBy('crp.created_at', 'desc');
+            ->orderBy(DB::raw('COALESCE(pp.fecha_inicio, pp.created_at, crp.created_at)'), 'desc');
 
         $this->applyPendingReceiptFilters($query, $filters, 'crp.created_at');
 
@@ -440,11 +470,40 @@ class EloquentReceiptRepository implements ReceiptRepository
     {
         $areasFiltradas = $filters['area'] ?? [];
 
+        // Determinar qué proceso buscar según el área
+        $procesoBuscado = [];
+        $usarProcesoParaFecha = true;
+        
+        if (!empty($areasFiltradas)) {
+            // Si hay un área explícita
+            if (in_array('Entrega', $areasFiltradas, true)) {
+                $procesoBuscado = ['entrega'];
+            } elseif (in_array('Reflectivo', $areasFiltradas, true)) {
+                // Para Reflectivo, usar fecha de creación del recibo
+                $usarProcesoParaFecha = false;
+            } else {
+                $procesoBuscado = ['control calidad', 'control de calidad'];
+            }
+        } else {
+            // Por defecto, buscar procesos de Control Calidad
+            $procesoBuscado = ['control calidad', 'control de calidad'];
+        }
+
         $query = DB::table('consecutivos_recibos_pedidos as crp')
             ->join('pedidos_produccion as p', 'crp.pedido_produccion_id', '=', 'p.id')
-            ->leftJoin('users as u', 'p.asesor_id', '=', 'u.id')
-            ->select([
-                'p.created_at as fecha_creacion',
+            ->leftJoin('users as u', 'p.asesor_id', '=', 'u.id');
+
+        // Solo hacer LEFT JOIN a procesos_prenda si lo necesitamos
+        if ($usarProcesoParaFecha && !empty($procesoBuscado)) {
+            $query->leftJoin('procesos_prenda as pp', function ($join) use ($procesoBuscado) {
+                $join->on('pp.numero_recibo', '=', 'crp.consecutivo_actual')
+                    ->on('pp.prenda_pedido_id', '=', 'crp.prenda_id')
+                    ->whereIn(DB::raw('LOWER(TRIM(pp.proceso))'), $procesoBuscado)
+                    ->where('pp.deleted_at', null);
+            });
+            
+            $query->select([
+                DB::raw('COALESCE(pp.fecha_inicio, pp.created_at, crp.created_at) as fecha_creacion'),
                 'crp.consecutivo_actual as numero_recibo',
                 'crp.prenda_id as prenda_id',
                 'p.cliente',
@@ -458,10 +517,34 @@ class EloquentReceiptRepository implements ReceiptRepository
                 'crp.color_control_calidad',
                 'crp.color_entrega',
                 'crp.area',
-            ])
-            ->whereRaw('UPPER(TRIM(crp.tipo_recibo)) IN (?, ?)', ['COSTURA', 'REFLECTIVO'])
+            ]);
+            
+            $orderByField = DB::raw('COALESCE(pp.fecha_inicio, pp.created_at, crp.created_at)');
+        } else {
+            // Para Reflectivo o sin procesos, usar solo fecha del recibo
+            $query->select([
+                'crp.created_at as fecha_creacion',
+                'crp.consecutivo_actual as numero_recibo',
+                'crp.prenda_id as prenda_id',
+                'p.cliente',
+                'p.id as pedido_id',
+                'p.aprobado_por_cartera_en',
+                'p.dia_de_entrega',
+                'p.fecha_estimada_de_entrega',
+                'u.name as asesor',
+                'crp.tipo_recibo',
+                'crp.color_costura',
+                'crp.color_control_calidad',
+                'crp.color_entrega',
+                'crp.area',
+            ]);
+            
+            $orderByField = 'crp.created_at';
+        }
+
+        $query->whereRaw('UPPER(TRIM(crp.tipo_recibo)) IN (?, ?)', ['COSTURA', 'REFLECTIVO'])
             ->where('crp.activo', 1)
-            ->orderBy('p.created_at', 'desc');
+            ->orderBy($orderByField, 'desc');
 
         // Comportamiento por defecto del listado: mostrar Control Calidad.
         // Si llega un filtro de área explícito (ej. Entrega), respetarlo.

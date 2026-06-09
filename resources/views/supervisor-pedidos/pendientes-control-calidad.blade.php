@@ -272,7 +272,7 @@
                                 <span>Actions</span>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span>Fecha de Creacion</span>
+                                <span>Fecha de Asignación</span>
                             </div>
                             <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span>N° Recibo</span>

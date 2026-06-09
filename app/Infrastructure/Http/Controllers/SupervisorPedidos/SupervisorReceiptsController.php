@@ -629,15 +629,28 @@ class SupervisorReceiptsController extends Controller
         $response = $this->getPendingSewingReceiptsUseCase->execute($requestDTO);
         $diasAntiguedad = (int) $request->input('dias_antiguedad', 0);
 
+        // Obtener áreas seleccionadas del parámetro 'areas', o usar todas las permitidas por defecto
+        $areasSeleccionadas = $request->input('areas');
+        if ($areasSeleccionadas) {
+            $areasSeleccionadas = array_map('strtolower', array_map('trim', explode(',', (string) $areasSeleccionadas)));
+        } else {
+            $areasSeleccionadas = ['insumos', 'corte', 'costura', 'entrega'];
+        }
+
         $areasPermitidas = ['insumos', 'corte', 'costura', 'entrega'];
 
         $receipts = collect($response->getReceipts())
-            ->filter(function ($item) use ($areasPermitidas) {
+            ->filter(function ($item) use ($areasSeleccionadas, $areasPermitidas) {
                 $area = mb_strtolower(trim((string) data_get($item, 'area', '')));
                 $estado = mb_strtolower(trim((string) data_get($item, 'estado', '')));
 
                 // Solo mostrar áreas permitidas
                 if (!in_array($area, $areasPermitidas, true)) {
+                    return false;
+                }
+
+                // Filtrar por áreas seleccionadas
+                if (!in_array($area, $areasSeleccionadas, true)) {
                     return false;
                 }
 
