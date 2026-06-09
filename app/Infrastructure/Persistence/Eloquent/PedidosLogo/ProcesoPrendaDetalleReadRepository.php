@@ -183,8 +183,16 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
             ->leftJoin('clientes as cli', 'cli.id', '=', 'ped.cliente_id')
             ->leftJoin('pedidos_procesos_prenda_detalles as ppd_any', 'ppd_any.prenda_pedido_id', '=', 'pp.id')
             ->leftJoin('prenda_areas_logo_pedido as palp_any', function ($join) {
-                $join->on('palp_any.proceso_prenda_detalle_id', '=', 'ppd_any.id')
-                    ->on('palp_any.pedido_parcial_id', '=', 'ppar.id');
+                $join->where(function ($query) {
+                    // Opción 1: proceso_prenda_detalle_id coincide con ppd_any.id
+                    $query->on('palp_any.proceso_prenda_detalle_id', '=', 'ppd_any.id')
+                        ->on('palp_any.pedido_parcial_id', '=', 'ppar.id');
+                })
+                ->orWhere(function ($query) {
+                    // Opción 2: proceso_prenda_detalle_id es NULL y solo coincide pedido_parcial_id
+                    $query->whereNull('palp_any.proceso_prenda_detalle_id')
+                        ->on('palp_any.pedido_parcial_id', '=', 'ppar.id');
+                });
             })
             ->leftJoin('consecutivos_recibos_pedidos as crp', function ($join) {
                 $join->on('crp.pedido_produccion_id', '=', 'pp.pedido_produccion_id')
@@ -251,8 +259,16 @@ final class ProcesoPrendaDetalleReadRepository implements ProcesoPrendaDetalleRe
             ->leftJoin('clientes as cli', 'cli.id', '=', 'ped.cliente_id')
             ->leftJoin('pedidos_procesos_prenda_detalles as ppd_any', 'ppd_any.prenda_pedido_id', '=', 'pp.id')
             ->leftJoin('prenda_areas_logo_pedido as palp_any', function ($join) {
-                $join->on('palp_any.proceso_prenda_detalle_id', '=', 'ppd_any.id')
-                    ->whereNull('palp_any.pedido_parcial_id');
+                $join->where(function ($query) {
+                    // Opción 1: proceso_prenda_detalle_id coincide con ppd_any.id y pedido_parcial_id es NULL
+                    $query->on('palp_any.proceso_prenda_detalle_id', '=', 'ppd_any.id')
+                        ->whereNull('palp_any.pedido_parcial_id');
+                })
+                ->orWhere(function ($query) {
+                    // Opción 2: proceso_prenda_detalle_id es NULL y pedido_parcial_id también es NULL
+                    $query->whereNull('palp_any.proceso_prenda_detalle_id')
+                        ->whereNull('palp_any.pedido_parcial_id');
+                });
             })
             ->where('crp.activo', 1)
             ->whereRaw("{$tipoProcesoCaseFromCrp} IN (" . implode(',', array_map('intval', $tipoProcesoIds)) . ")")

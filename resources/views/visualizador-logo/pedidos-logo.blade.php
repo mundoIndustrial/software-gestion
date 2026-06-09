@@ -343,6 +343,7 @@ window.__guardarAreaNovedadLogo = async function(procesoPrendaDetalleId, area, n
     })();
     const pedidoParcialResolved = pedidoParcialId ?? (rowResolved ? rowResolved.dataset.pedidoParcialId : null);
     const consecutivoReciboResolved = consecutivoReciboId ?? (rowResolved ? rowResolved.dataset.consecutivoReciboId : null);
+    const prendaPedidoIdResolved = rowResolved ? rowResolved.dataset.prendaPedidoId : null;
 
     const response = await fetch(`{{ route('visualizador-logo.pedidos-logo.area-novedad') }}`, {
         method: 'POST',
@@ -357,6 +358,7 @@ window.__guardarAreaNovedadLogo = async function(procesoPrendaDetalleId, area, n
             novedades,
             pedido_parcial_id: pedidoParcialResolved ? parseInt(pedidoParcialResolved) : null,
             consecutivo_recibo_id: consecutivoReciboResolved ? parseInt(consecutivoReciboResolved) : null,
+            prenda_pedido_id: prendaPedidoIdResolved ? parseInt(prendaPedidoIdResolved) : null,
         }),
     });
 
@@ -945,7 +947,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const btnTitle = completado ? 'Click para deshacer completado' : 'Marcar como completado';
                 
                 return `
-                    <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-completado="${completado ? '1' : '0'}" data-pedido-parcial-id="${pedidoParcialId || ''}" data-consecutivo-recibo-id="${consecutivoReciboId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
+                    <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-completado="${completado ? '1' : '0'}" data-pedido-parcial-id="${pedidoParcialId || ''}" data-consecutivo-recibo-id="${consecutivoReciboId || ''}" data-prenda-pedido-id="${prendaId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
                         min-width: 900px;
                         display: grid;
                         grid-template-columns: 100px 200px 120px 340px 180px 140px;
@@ -1013,7 +1015,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (window.__isDisenadorLogos) {
                 return `
-                    <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-pedido-parcial-id="${pedidoParcialId || ''}" data-consecutivo-recibo-id="${consecutivoReciboId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
+                    <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-pedido-parcial-id="${pedidoParcialId || ''}" data-consecutivo-recibo-id="${consecutivoReciboId || ''}" data-prenda-pedido-id="${prendaId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
                         min-width: 1080px;
                         display: grid;
                         grid-template-columns: 100px 200px 340px 120px 180px 140px;
@@ -1085,7 +1087,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }).join('');
 
             return `
-                <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-area="${area}" data-total-dias="${totalDias}" data-fecha-creacion-recibo="${fechaCreacionRecibo || ''}" data-fecha-entrega="${fechaEntrega || ''}" data-pedido-parcial-id="${pedidoParcialId || ''}" data-consecutivo-recibo-id="${consecutivoReciboId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
+                <div data-recibo-row="1" data-proceso-id="${procesoPrendaDetalleId}" data-area="${area}" data-total-dias="${totalDias}" data-fecha-creacion-recibo="${fechaCreacionRecibo || ''}" data-fecha-entrega="${fechaEntrega || ''}" data-pedido-parcial-id="${pedidoParcialId || ''}" data-consecutivo-recibo-id="${consecutivoReciboId || ''}" data-prenda-pedido-id="${prendaId || ''}" class="${completado ? 'recibo-completado-logo' : ''}" style="
                     min-width: 2150px;
                     display: grid;
                     grid-template-columns: 100px 120px 200px 300px 120px 170px 230px 190px 260px 160px;

@@ -86,4 +86,61 @@ final class SeguimientoAreaRepository implements SeguimientoAreaRepositoryInterf
             'updated_at' => $timestamp,
         ]);
     }
+
+    /**
+     * Guardar seguimiento para recibos sin proceso (proceso_prenda_detalle_id = NULL)
+     */
+    public function upsertSeguimientoSinProceso(?int $procesoPrendaDetalleId, int $prendaPedidoId, string $area, ?string $novedades, array $fechasAreas, string $timestamp, ?int $pedidoParcialId = null, ?int $consecutivoReciboId = null): void
+    {
+        // Para recibos sin proceso, buscar por pedido_parcial_id o ambos NULL
+        $query = DB::table('prenda_areas_logo_pedido');
+        
+        if ($pedidoParcialId !== null) {
+            // Parcial sin proceso: buscar por pedido_parcial_id y proceso_prenda_detalle_id = NULL
+            $query->whereNull('proceso_prenda_detalle_id')
+                ->where('pedido_parcial_id', $pedidoParcialId);
+        } else {
+            // Recibo base sin proceso: ambos NULL
+            $query->whereNull('proceso_prenda_detalle_id')
+                ->whereNull('pedido_parcial_id');
+        }
+
+        $existente = $query->first();
+
+        if ($existente) {
+            // Update
+            $updateQuery = DB::table('prenda_areas_logo_pedido')
+                ->whereNull('proceso_prenda_detalle_id');
+            
+            if ($pedidoParcialId !== null) {
+                $updateQuery->where('pedido_parcial_id', $pedidoParcialId);
+            } else {
+                $updateQuery->whereNull('pedido_parcial_id');
+            }
+
+            $updateQuery->update([
+                'prenda_pedido_id' => $prendaPedidoId,
+                'area' => $area,
+                'novedades' => $novedades,
+                'fechas_areas' => json_encode($fechasAreas),
+                'pedido_parcial_id' => $pedidoParcialId,
+                'consecutivo_recibo_id' => $consecutivoReciboId,
+                'updated_at' => $timestamp,
+            ]);
+            return;
+        }
+
+        // Insert
+        DB::table('prenda_areas_logo_pedido')->insert([
+            'proceso_prenda_detalle_id' => $procesoPrendaDetalleId,
+            'prenda_pedido_id' => $prendaPedidoId,
+            'area' => $area,
+            'novedades' => $novedades,
+            'fechas_areas' => json_encode($fechasAreas),
+            'pedido_parcial_id' => $pedidoParcialId,
+            'consecutivo_recibo_id' => $consecutivoReciboId,
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ]);
+    }
 }
