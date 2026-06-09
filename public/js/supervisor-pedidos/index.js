@@ -228,32 +228,6 @@ function _spFormatDateTime12h(value) {
     return `${dd}/${mm}/${yyyy} ${String(hh).padStart(2, '0')}:${min} ${ampm}`;
 }
 
-function _spCountBusinessDays(startDate, endDate) {
-    if (!(startDate instanceof Date) || !(endDate instanceof Date)) return 0;
-    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return 0;
-
-    const from = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-    const to = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-
-    if (from.getTime() === to.getTime()) return 0;
-
-    const forward = from < to;
-    const a = forward ? from : to;
-    const b = forward ? to : from;
-
-    let count = 0;
-    const cursor = new Date(a);
-    cursor.setDate(cursor.getDate() + 1);
-
-    while (cursor <= b) {
-        const day = cursor.getDay();
-        if (day !== 0 && day !== 6) count += 1;
-        cursor.setDate(cursor.getDate() + 1);
-    }
-
-    return forward ? count : -count;
-}
-
 function _spCountNovedades(novedades) {
     const value = String(novedades ?? '').trim();
     if (!value) return 0;
@@ -396,7 +370,7 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                     <div class="th-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><span>Listo</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><span>Acciones</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Aprob. Cartera</span></div>
-                    <div class="th-wrapper" style="display: flex; align-items: center;"><span>Días Restantes</span></div>
+                    <div class="th-wrapper" style="display: flex; align-items: center;"><span>Entrega</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Numero</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Cliente</span></div>
                     <div class="th-wrapper" style="display: flex; align-items: center; gap: 0.5rem;"><span>Asesora</span></div>
@@ -427,17 +401,7 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
             const fecha = _spFormatDateTime(orden?.created_at);
             const fechaAprobacionCartera = _spFormatDateTime12h(orden?.aprobado_por_cartera_en);
             const fechaAprobacionSupervisor = _spFormatDateTime12h(orden?.aprobado_por_supervisor_en);
-            const fechaEstimadaRaw = orden?.fecha_estimada_de_entrega ?? orden?.fecha_estimada_entrega ?? orden?.fecha_estimada ?? null;
-            const fechaEstimada = _spFormatDate(fechaEstimadaRaw) ?? '-';
-            const diaEntrega = Number(orden?.dia_de_entrega);
-            let diasRestantes = null;
-            if (Number.isFinite(diaEntrega) && orden?.created_at) {
-                const transcurridos = _spCountBusinessDays(new Date(orden.created_at), new Date());
-                diasRestantes = Math.max(0, diaEntrega - transcurridos);
-            } else if (fechaEstimadaRaw) {
-                const hastaFechaEstimada = _spCountBusinessDays(new Date(), new Date(fechaEstimadaRaw));
-                diasRestantes = Math.max(0, hastaFechaEstimada);
-            }
+            const diasEntregaHtml = String(orden?.dias_entrega_html ?? '').trim();
             const canApprove = estado === 'PENDIENTE_SUPERVISOR' && !Boolean(orden?.es_solo_epp);
             const canBulkDeliver = !_spHasAllPrendasEntregadas(orden);
             const isDelivered = !canBulkDeliver;
@@ -476,10 +440,7 @@ window.renderSupervisorOrdersTable = function renderSupervisorOrdersTable(payloa
                     </div>
                     <div><span class="sp-date-cell">${fechaAprobacionCartera}</span></div>
                     <div>
-                        ${diasRestantes !== null
-                            ? `<span style="display: inline-flex; flex-direction: column; line-height: 1.1; color: #dc2626; font-weight: 700; font-size: 0.78rem;"><span>${diasRestantes} días</span><span>hábiles restantes</span><span style="margin-top: 0.2rem; color: #6b7280; font-weight: 600; font-size: 0.72rem;">Est.: ${fechaEstimada}</span></span>`
-                            : `<span style="display: inline-flex; flex-direction: column; line-height: 1.1; color: #6b7280; font-weight: 600; font-size: 0.78rem;"><span>-</span><span style="margin-top: 0.2rem; font-size: 0.72rem;">Est.: ${fechaEstimada}</span></span>`
-                        }
+                        ${diasEntregaHtml || '<span style="display: inline-flex; flex-direction: column; line-height: 1.1; color: #6b7280; font-weight: 600; font-size: 0.78rem;"><span>-</span></span>'}
                     </div>
                     <div><span style="font-weight: 600; color: #1e5ba8;">${numeroPedidoText}</span></div>
                     <div><span>${cliente}</span></div>
