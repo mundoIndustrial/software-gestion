@@ -18,6 +18,7 @@
         '/js/componentes/epp-agregar-pedido.js',
         '/js/componentes/prenda-form-collector.js',
         '/js/componentes/swal-utils.js',
+        '/js/componentes/pedidos-novedad-helper.js',
         '/js/componentes/prenda-editor-pedidos-data-utils.js',
         '/js/componentes/prenda-editor-pedidos-fallback-utils.js',
         '/js/componentes/prenda-editor-pedidos-ui-utils.js',

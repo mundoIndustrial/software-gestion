@@ -764,6 +764,9 @@ globalThis.guardarTallasSeleccionadas = function() {
             unisex: globalThis.tallasCantidadesProceso.unisex || {},
             sobremedida: globalThis.tallasCantidadesProceso.sobremedida || {}
         };
+        globalThis.procesosSeleccionados[procesoModalState.procesoActual].datos.tallasCanonicas = globalThis.ProcesoTallasCanonicas
+            ? globalThis.ProcesoTallasCanonicas.desdeEstadoModal(globalThis.tallasCantidadesProceso)
+            : globalThis.procesosSeleccionados[procesoModalState.procesoActual].datos.tallasCanonicas;
         
         procesoModalDebug(` [guardarTallasSeleccionadas] Tallas guardadas en proceso "${procesoModalState.procesoActual}":`, {
             tallas: globalThis.procesosSeleccionados[procesoModalState.procesoActual].datos.tallas,

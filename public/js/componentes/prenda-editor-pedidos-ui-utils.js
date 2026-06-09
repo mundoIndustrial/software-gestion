@@ -5,48 +5,35 @@
 (function() {
     'use strict';
 
-    function _toFunction(fn, fallback) {
-        return typeof fn === 'function' ? fn : fallback;
-    }
-
     function pedirNovedad(options = {}) {
-        const fallbackValue = options.fallbackValue || 'edicion de prenda desde lista de pedidos';
-        const ensureOverlayStyle = _toFunction(options.ensureOverlayStyle, () => {});
-        const centerOverlay = _toFunction(options.centerOverlay, () => {});
+        if (window.PedidosNovedadHelper && typeof window.PedidosNovedadHelper.pedirNovedad === 'function') {
+            return window.PedidosNovedadHelper.pedirNovedad(options);
+        }
 
-        return new Promise((resolve) => {
-            if (typeof Swal === 'undefined') {
-                resolve(fallbackValue);
-                return;
+        if (typeof Swal === 'undefined') {
+            return Promise.resolve(null);
+        }
+
+        return Swal.fire({
+            title: 'Novedad del cambio',
+            input: 'textarea',
+            inputLabel: 'Por que hiciste este cambio?',
+            inputPlaceholder: 'Describe brevemente el motivo...',
+            inputAttributes: { 'aria-label': 'Novedad del cambio' },
+            showCancelButton: true,
+            confirmButtonText: ' Guardar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#10b981',
+            customClass: {
+                container: 'swal-galeria-container swal-centered-container swal-modal-novedad',
+                popup: 'swal-centered-popup swal-popup-top'
+            },
+            inputValidator: (value) => {
+                if (!value || !value.trim()) {
+                    return 'Debes ingresar una novedad del cambio';
+                }
             }
-
-            ensureOverlayStyle('swal-galeria-zindex-style', 'swal-galeria-container');
-
-            Swal.fire({
-                title: 'Novedad del cambio',
-                input: 'textarea',
-                inputLabel: 'Por que hiciste este cambio?',
-                inputPlaceholder: 'Describe brevemente el motivo...',
-                inputAttributes: { 'aria-label': 'Novedad del cambio' },
-                showCancelButton: true,
-                confirmButtonText: ' Guardar',
-                cancelButtonText: 'Cancelar',
-                confirmButtonColor: '#10b981',
-                customClass: { container: 'swal-galeria-container' },
-                didOpen: (modal) => centerOverlay(modal),
-                inputValidator: (value) => {
-                    if (!value || !value.trim()) {
-                        return 'Debes ingresar una novedad del cambio';
-                    }
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    resolve(result.value.trim());
-                    return;
-                }
-                resolve(null);
-            });
-        });
+        }).then((result) => (result.isConfirmed ? result.value.trim() : null));
     }
 
     function mostrarLoadingEditarPrenda() {

@@ -80,59 +80,104 @@
      * @private
      */
     function _pedirNovedad() {
+        if (window.PedidosNovedadHelper && typeof window.PedidosNovedadHelper.pedirNovedad === 'function') {
+            return window.PedidosNovedadHelper.pedirNovedad({
+                inputLabel: '¿Por qué agregas esta prenda?',
+                confirmButtonText: ' Agregar',
+                confirmButtonColor: '#10b981',
+                validationMessage: 'Debes ingresar un motivo',
+                fallbackValue: 'Prenda nueva agregada al pedido',
+            });
+        }
+
         return new Promise((resolve) => {
-            if (typeof Swal === 'undefined') {
-                resolve('Prenda nueva agregada al pedido');
+            let resuelto = false;
+            let timeoutId = null;
+            const finalizar = (valor) => {
+                if (resuelto) {
+                    return;
+                }
+                resuelto = true;
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+                }
+                resolve(valor);
+            };
+
+            const mostrarModal = () => {
+                if (resuelto) {
+                    return;
+                }
+                if (typeof Swal === 'undefined') {
+                    finalizar(null);
+                    return;
+                }
+
+                // CSS para z-index encima del modal de prenda (1050000)
+                let galeriaStyle = document.getElementById('swal-galeria-zindex-style');
+                if (!galeriaStyle) {
+                    galeriaStyle = document.createElement('style');
+                    galeriaStyle.id = 'swal-galeria-zindex-style';
+                    document.head.appendChild(galeriaStyle);
+                }
+                galeriaStyle.textContent = `
+                    .swal-galeria-container {
+                        z-index: 2000000 !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        position: fixed !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        width: 100% !important;
+                        height: 100% !important;
+                    }
+                    .swal-galeria-container .swal2-popup {
+                        margin: auto !important;
+                    }
+                `;
+
+                Swal.fire({
+                    title: 'Novedad del cambio',
+                    input: 'textarea',
+                    inputLabel: '¿Por qué agregas esta prenda?',
+                    inputPlaceholder: 'Describe brevemente el motivo...',
+                    inputAttributes: { 'aria-label': 'Novedad del cambio' },
+                    showCancelButton: true,
+                    confirmButtonText: ' Agregar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#10b981',
+                    customClass: {
+                        container: 'swal-galeria-container swal-centered-container swal-modal-novedad',
+                        popup: 'swal-centered-popup swal-popup-top'
+                    },
+                    didOpen: (modal) => {
+                        if (typeof _centrarOverlaySwal === 'function') {
+                            _centrarOverlaySwal(modal);
+                        }
+                    },
+                    inputValidator: (value) => {
+                        if (!value || !value.trim()) {
+                            return 'Debes ingresar un motivo';
+                        }
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        finalizar(result.value.trim());
+                        return;
+                    }
+                    finalizar(null);
+                });
+            };
+
+            if (typeof Swal === 'undefined' && typeof _ensureSwal === 'function') {
+                _ensureSwal(mostrarModal);
+                timeoutId = setTimeout(() => finalizar(null), 5500);
                 return;
             }
 
-            // CSS para z-index encima del modal de prenda (1050000)
-            let galeriaStyle = document.getElementById('swal-galeria-zindex-style');
-            if (!galeriaStyle) {
-                galeriaStyle = document.createElement('style');
-                galeriaStyle.id = 'swal-galeria-zindex-style';
-                document.head.appendChild(galeriaStyle);
-            }
-            galeriaStyle.textContent = `
-                .swal-galeria-container {
-                    z-index: 2000000 !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    position: fixed !important;
-                    top: 0 !important;
-                    left: 0 !important;
-                    width: 100% !important;
-                    height: 100% !important;
-                }
-                .swal-galeria-container .swal2-popup {
-                    margin: auto !important;
-                }
-            `;
-
-            Swal.fire({
-                title: 'Novedad del cambio',
-                input: 'textarea',
-                inputLabel: '¿Por qué agregas esta prenda?',
-                inputPlaceholder: 'Describe brevemente el motivo...',
-                inputAttributes: { 'aria-label': 'Novedad del cambio' },
-                showCancelButton: true,
-                confirmButtonText: ' Agregar',
-                cancelButtonText: 'Cancelar',
-                confirmButtonColor: '#10b981',
-                customClass: { container: 'swal-galeria-container' },
-                inputValidator: (value) => {
-                    if (!value || !value.trim()) {
-                        return 'Debes ingresar un motivo';
-                    }
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    resolve(result.value.trim());
-                } else {
-                    resolve(null);
-                }
-            });
+            mostrarModal();
         });
     }
 

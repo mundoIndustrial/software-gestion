@@ -155,12 +155,14 @@
         const abrirModalManual = options.abrirModalManual;
 
         const prendaId = prenda.id || prenda.prenda_pedido_id;
+        const prendaLocalId = prenda._local_id || prenda.local_id || prenda.localId || null;
         console.log('[PedidosAdapter] Editando prenda:', prenda.nombre_prenda || prenda.nombre, 'id:', prendaId, 'pedidoId:', pedidoId);
 
         window._editandoPrendaDePedido = {
             pedidoId: pedidoId,
             prendaIndex: prendaIndex,
-            prendaId: prendaId
+            prendaId: prendaId,
+            prendaLocalId: prendaLocalId,
         };
 
         mostrarLoadingEditarPrenda();

@@ -216,6 +216,7 @@
 <script defer src="{{ js_asset('js/modulos/crear-pedido/telas/telas-module/manejo-imagenes.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prenda-form-collector.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/swal-utils.js') }}?v={{ $v }}"></script>
+<script defer src="{{ js_asset('js/componentes/pedidos-novedad-helper.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-data-utils.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-fallback-utils.js') }}?v={{ $v }}"></script>
 <script defer src="{{ js_asset('js/componentes/prenda-editor-pedidos-ui-utils.js') }}?v={{ $v }}"></script>

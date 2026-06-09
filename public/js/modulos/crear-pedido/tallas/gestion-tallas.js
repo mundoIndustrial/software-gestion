@@ -195,6 +195,9 @@ window.sincronizarTallasConTarjetasProcesos = function(origen = 'desconocido') {
             proceso.datos.tallas = {
                 ...tallasSnapshot
             };
+            proceso.datos.tallasCanonicas = globalThis.ProcesoTallasCanonicas
+                ? globalThis.ProcesoTallasCanonicas.desdeEstadoModal(tallasSnapshot)
+                : proceso.datos.tallasCanonicas;
             
             console.log('[sincronizarTallasConTarjetasProcesos] DESPUÉS de actualizar tallas', {
                 tipo,
