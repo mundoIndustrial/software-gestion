@@ -491,6 +491,14 @@
             </a>
           </li>
           <li class="submenu-item">
+            <a href="{{ route('entrada.index') }}"
+               class="menu-link {{ request()->is('entrada') || request()->is('entrada/*') ? 'active' : '' }}"
+               aria-label="Ver entrada costura">
+              <span class="material-symbols-rounded" aria-hidden="true">assignment_return</span>
+              <span class="menu-label">Entrada Costura</span>
+            </a>
+          </li>
+          <li class="submenu-item">
             <a href="/recibos-reflectivo"
                class="menu-link {{ request()->is('recibos-reflectivo') ? 'active' : '' }}"
                aria-label="Ver recibos de reflectivo">
