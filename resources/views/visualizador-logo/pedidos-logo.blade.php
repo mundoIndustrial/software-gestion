@@ -1230,6 +1230,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 id_recibo: parseInt(idRecibo),
                 numero_recibo: parseInt(numeroRecibo),
                 consecutivo_recibo_id: consecutivoReciboId ? parseInt(consecutivoReciboId) : null,
+                pedido_parcial_id: row && row.dataset.pedidoParcialId ? parseInt(row.dataset.pedidoParcialId) : null,
             };
             
             console.log('[marcarReciboCompletado] Enviando request con body:', bodyData);

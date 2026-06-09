@@ -175,6 +175,7 @@ final class PedidosLogoController extends Controller
             'id_recibo' => 'required|integer',
             'numero_recibo' => 'required|integer',
             'consecutivo_recibo_id' => 'nullable|integer|min:1',
+            'pedido_parcial_id' => 'nullable|integer|min:1',
         ]);
 
         $user = Auth::user();
@@ -183,8 +184,9 @@ final class PedidosLogoController extends Controller
         $idRecibo = (int) $request->id_recibo;
         $numeroRecibo = (int) $request->numero_recibo;
         $consecutivoReciboId = $request->input('consecutivo_recibo_id') ? (int) $request->input('consecutivo_recibo_id') : null;
+        $pedidoParcialId = $request->input('pedido_parcial_id') ? (int) $request->input('pedido_parcial_id') : null;
 
-        \Log::info('[marcarCompletado] Parámetros procesados:', compact('idRecibo', 'numeroRecibo', 'consecutivoReciboId', 'area'));
+        \Log::info('[marcarCompletado] Parámetros procesados:', compact('idRecibo', 'numeroRecibo', 'consecutivoReciboId', 'pedidoParcialId', 'area'));
 
         // Verificar si ya existe registro de completado
         $existente = PrendaReciboCompletado::where('id_recibo', $idRecibo)
@@ -199,13 +201,25 @@ final class PedidosLogoController extends Controller
             $existente->delete();
             
             // Revertir el área a BORDANDO en prenda_areas_logo_pedido
-            DB::table('prenda_areas_logo_pedido')
-                ->where('proceso_prenda_detalle_id', $idRecibo)
-                ->whereNull('pedido_parcial_id')
-                ->update([
-                    'area' => 'BORDANDO',
-                    'updated_at' => now(),
-                ]);
+            if ($idRecibo === 0 || $pedidoParcialId) {
+                // Recibo ANEXO sin proceso: buscar por proceso_prenda_detalle_id = NULL
+                DB::table('prenda_areas_logo_pedido')
+                    ->whereNull('proceso_prenda_detalle_id')
+                    ->where('pedido_parcial_id', $pedidoParcialId)
+                    ->update([
+                        'area' => 'BORDANDO',
+                        'updated_at' => now(),
+                    ]);
+            } else {
+                // Recibo normal: buscar por proceso_prenda_detalle_id
+                DB::table('prenda_areas_logo_pedido')
+                    ->where('proceso_prenda_detalle_id', $idRecibo)
+                    ->whereNull('pedido_parcial_id')
+                    ->update([
+                        'area' => 'BORDANDO',
+                        'updated_at' => now(),
+                    ]);
+            }
 
             \Log::info('[marcarCompletado] Área revertida a BORDANDO en BD');
             
@@ -227,15 +241,28 @@ final class PedidosLogoController extends Controller
 
         \Log::info('[marcarCompletado] Registro completado creado:', $completado->toArray());
 
-        // Actualizar DIRECTAMENTE el área a BORDADO en prenda_areas_logo_pedido (sin upsert)
-        $updated = DB::table('prenda_areas_logo_pedido')
-            ->where('proceso_prenda_detalle_id', $idRecibo)
-            ->whereNull('pedido_parcial_id')
-            ->update([
-                'area' => 'BORDADO',
-                'novedades' => 'Completado por bordador: ' . ($user->name ?? 'Bordador'),
-                'updated_at' => now(),
-            ]);
+        // Actualizar el área a BORDADO en prenda_areas_logo_pedido
+        if ($idRecibo === 0 || $pedidoParcialId) {
+            // Recibo ANEXO sin proceso: buscar por proceso_prenda_detalle_id = NULL
+            $updated = DB::table('prenda_areas_logo_pedido')
+                ->whereNull('proceso_prenda_detalle_id')
+                ->where('pedido_parcial_id', $pedidoParcialId)
+                ->update([
+                    'area' => 'BORDADO',
+                    'novedades' => 'Completado por bordador: ' . ($user->name ?? 'Bordador'),
+                    'updated_at' => now(),
+                ]);
+        } else {
+            // Recibo normal: buscar por proceso_prenda_detalle_id
+            $updated = DB::table('prenda_areas_logo_pedido')
+                ->where('proceso_prenda_detalle_id', $idRecibo)
+                ->whereNull('pedido_parcial_id')
+                ->update([
+                    'area' => 'BORDADO',
+                    'novedades' => 'Completado por bordador: ' . ($user->name ?? 'Bordador'),
+                    'updated_at' => now(),
+                ]);
+        }
 
         \Log::info('[marcarCompletado] Filas actualizadas en prenda_areas_logo_pedido:', ['updated_count' => $updated]);
 
