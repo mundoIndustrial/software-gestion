@@ -226,7 +226,10 @@
             }
         });
         const prendasArray = window.datosEdicionPedido?.prendas || [];
-        const prendaLocalId = prendasArray?.[prendaIndex]?._local_id || null;
+        const prendaLocalId = window._editandoPrendaDePedido?.prendaLocalId
+            || prendasArray?.[prendaIndex]?._local_id
+            || prendasArray?.[prendaIndex]?.local_id
+            || null;
         return collector.construirPrendaDesdeFormulario(
             prendaIndex,
             prendasArray,
@@ -548,6 +551,5 @@
         }
     }
 })();
-
 
 

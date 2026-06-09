@@ -372,16 +372,16 @@ class ObtenerPedidoDetalleTransformadorService
     private function construirTallasProcesoRelacional($procesoPrendaDetalleId)
     {
         $tallas = [
-            'dama' => new \stdClass(),
-            'caballero' => new \stdClass(),
-            'unisex' => new \stdClass(),
-            'sobremedida' => new \stdClass(),
+            'dama' => [],
+            'caballero' => [],
+            'unisex' => [],
+            'sobremedida' => [],
         ];
         $datosExtendidos = [
-            'dama' => new \stdClass(),
-            'caballero' => new \stdClass(),
-            'unisex' => new \stdClass(),
-            'sobremedida' => new \stdClass(),
+            'dama' => [],
+            'caballero' => [],
+            'unisex' => [],
+            'sobremedida' => [],
         ];
         $tallasRelacionales = \App\Models\PedidosProcesosPrendaTalla::where(
             'proceso_prenda_detalle_id',
