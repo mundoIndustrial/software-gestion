@@ -352,12 +352,11 @@
                             <tr>
                                 <th>Acciones</th>
                                 <th>N° Recibo</th>
-                                <th>Pedido</th>
                                 <th>Cliente</th>
-                                <th>Encargado</th>
                                 <th>Prenda</th>
                                 <th>Detalle de tallas</th>
                                 <th>Cantidad total</th>
+                                <th>Encargado</th>
                                 <th>Fecha</th>
                             </tr>
                         </thead>
@@ -387,9 +386,7 @@
                                         </button>
                                     </td>
                                     <td>#{{ $identificadorRecibo }}</td>
-                                    <td>{{ $pedidoReferencia }}</td>
                                     <td>{{ $clienteReferencia }}</td>
-                                    <td>{{ $encargadoReferencia }}</td>
                                     <td>{{ $prendaReferencia }}</td>
                                     <td>
                                         <div style="display:flex;flex-wrap:wrap;gap:6px;">
@@ -425,11 +422,12 @@
                                         </div>
                                     </td>
                                     <td><strong>{{ $entrada['total_unidades'] ?? 0 }}</strong></td>
+                                    <td>{{ $encargadoReferencia }}</td>
                                     <td>{{ $entrada['fecha'] ?? '-' }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" style="text-align:center;padding:24px;color:#94a3b8;">
+                                    <td colspan="8" style="text-align:center;padding:24px;color:#94a3b8;">
                                         No hay entradas registradas para la fecha seleccionada.
                                     </td>
                                 </tr>
