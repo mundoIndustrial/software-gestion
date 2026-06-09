@@ -4,12 +4,58 @@
 
 @section('page-title', 'Logos Confirmados y Devueltos')
 
+@push('styles')
+<style>
+    #modal-historial-novedades-overlay .table-talleres {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    #modal-historial-novedades-overlay .table-talleres thead th {
+        padding: 14px 16px;
+        text-align: left;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        color: #475569;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    #modal-historial-novedades-overlay .table-talleres tbody td {
+        padding: 14px 16px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #1e293b;
+        font-size: 14px;
+        vertical-align: middle;
+    }
+
+    #modal-historial-novedades-overlay .table-talleres tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    #modal-historial-novedades-overlay .table-talleres tbody tr:hover {
+        background: #f8fafc;
+    }
+</style>
+@endpush
+
 @section('content')
 <div style="padding: 1rem 1rem 2rem 1rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); min-height: calc(100vh - 60px); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
     <div style="display: flex; justify-content: center;">
         <div style="width: 100%; max-width: 1200px;">
-            <!-- TABS STYLE BUTTONS -->
-            <div style="display: flex; gap: 12px; align-items: center; justify-content: flex-start; margin-bottom: 14px; flex-wrap: wrap;">
+            <!-- TABS + HISTORIAL -->
+            <div style="display: flex; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
                 <button id="btn-tab-confirmados" type="button" data-tab="confirmados" onclick="setTabLogos('confirmados')" style="
                     position: relative;
                     padding: 10px 14px;
@@ -75,6 +121,25 @@
                         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
                         display: none;
                     ">0</span>
+                </button>
+                </div>
+
+                <button id="btn-historial-novedades" type="button" title="Historial de novedades" onclick="window.__abrirHistorialNovedadesLogos()" style="
+                    background: white;
+                    border: 2px solid #e2e8f0;
+                    color: #334155;
+                    padding: 10px 14px;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    font-weight: 700;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+                    transition: all 0.2s;
+                " onmouseover="this.style.borderColor='#0ea5e9'; this.style.color='#0ea5e9';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.color='#334155';">
+                    <i class="fas fa-history" style="font-size: 1.1rem;"></i>
+                    Historial
                 </button>
             </div>
 
@@ -430,7 +495,260 @@ document.addEventListener('DOMContentLoaded', function() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    window.__verDisenoLogo = function(logosArray) {
+    window.__abrirHistorialNovedadesLogos = function() {
+        const existing = document.getElementById('modal-historial-novedades-overlay');
+        if (existing) existing.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'modal-historial-novedades-overlay';
+        overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999998; display:flex; align-items:center; justify-content:center; padding: 16px;';
+
+        const modal = document.createElement('div');
+        modal.style.cssText = 'width: 100%; max-width: 900px; background: white; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); overflow: hidden; max-height: 85vh; display: flex; flex-direction: column;';
+
+        modal.innerHTML = `
+            <div style="padding: 14px 16px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; font-weight: 900; letter-spacing: 0.5px; display:flex; justify-content: space-between; align-items:center; flex-shrink: 0;">
+                <span><i class="fas fa-history" style="margin-right: 8px;"></i>Historial de Novedades</span>
+                <button id="modal-historial-novedades-close" type="button" style="border:none; background: rgba(255,255,255,0.18); color:white; font-weight:900; width:34px; height:34px; border-radius: 10px; cursor:pointer;">×</button>
+            </div>
+            <div id="modal-historial-novedades-toolbar" style="display: none; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; flex-shrink: 0;">
+                <div style="position: relative; max-width: 320px;">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.9rem;"></i>
+                    <input id="modal-historial-novedades-search" type="text" placeholder="Buscar por número de recibo..." style="
+                        width: 100%;
+                        padding: 10px 36px 10px 36px;
+                        border: 2px solid #e2e8f0;
+                        border-radius: 10px;
+                        font-size: 0.9rem;
+                        font-weight: 500;
+                        color: #334155;
+                        background: white;
+                        box-sizing: border-box;
+                        outline: none;
+                    " onfocus="this.style.borderColor='#0ea5e9'" onblur="this.style.borderColor='#e2e8f0'">
+                    <button id="modal-historial-novedades-clear" type="button" title="Limpiar búsqueda" style="
+                        display: none;
+                        position: absolute;
+                        right: 8px;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        border: none;
+                        background: transparent;
+                        color: #94a3b8;
+                        cursor: pointer;
+                        font-size: 1rem;
+                        padding: 4px;
+                    ">×</button>
+                </div>
+            </div>
+            <div id="modal-historial-novedades-body" style="overflow-y: auto; flex: 1;">
+                <div style="padding: 3rem 2rem; text-align: center; color: #64748b;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
+                    <p style="margin: 0; font-weight: 500;">Cargando historial...</p>
+                </div>
+            </div>
+        `;
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        const cerrar = () => overlay.remove();
+        modal.querySelector('#modal-historial-novedades-close').addEventListener('click', cerrar);
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) cerrar();
+        });
+
+        const onKey = (e) => {
+            if (!document.getElementById('modal-historial-novedades-overlay')) {
+                document.removeEventListener('keydown', onKey);
+                return;
+            }
+            if (e.key === 'Escape') {
+                cerrar();
+                document.removeEventListener('keydown', onKey);
+            }
+        };
+        document.addEventListener('keydown', onKey);
+
+        function historialTipoBadge(tipoNovedad) {
+            const tipo = String(tipoNovedad || '').toLowerCase();
+            if (tipo === 'confirmado') {
+                return {
+                    label: 'Confirmación',
+                    bg: '#dcfce7',
+                    color: '#166534',
+                    border: '#86efac',
+                    icon: 'fa-check-circle',
+                };
+            }
+            if (tipo === 'devuelto') {
+                return {
+                    label: 'Devolución',
+                    bg: '#ffedd5',
+                    color: '#c2410c',
+                    border: '#fdba74',
+                    icon: 'fa-undo',
+                };
+            }
+            if (tipo === 'reemplazo_imagen') {
+                return {
+                    label: 'Reemplazo',
+                    bg: '#e0f2fe',
+                    color: '#0369a1',
+                    border: '#7dd3fc',
+                    icon: 'fa-image',
+                };
+            }
+            return {
+                label: 'Otro',
+                bg: '#f1f5f9',
+                color: '#475569',
+                border: '#cbd5e1',
+                icon: 'fa-info-circle',
+            };
+        }
+
+        function renderHistorialNovedadesRows(items, searchTerm = '') {
+            const term = String(searchTerm || '').trim().toLowerCase();
+            const filtered = term
+                ? items.filter((item) => String(item.numero_recibo || '').toLowerCase().includes(term))
+                : items;
+
+            if (filtered.length === 0) {
+                return `
+                    <div style="padding: 3rem 2rem; text-align: center; color: #64748b;">
+                        <i class="fas fa-search" style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
+                        <p style="margin: 0; font-weight: 500;">
+                            ${term ? 'No se encontraron novedades para ese recibo' : 'No hay novedades registradas'}
+                        </p>
+                    </div>
+                `;
+            }
+
+            const rowsHtml = filtered.map((item) => {
+                const fecha = formatearFechaHora12h(item.fecha);
+                const logosJson = JSON.stringify(item.logos || []).replace(/'/g, "\\'");
+                const tieneLogos = Array.isArray(item.logos) && item.logos.length > 0;
+                const badge = historialTipoBadge(item.tipo_novedad);
+
+                return `
+                    <tr>
+                        <td style="font-weight: 700; color: #1e293b;">#${escapeHtml(item.numero_recibo || '-')}</td>
+                        <td>
+                            <span style="
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 5px;
+                                padding: 4px 10px;
+                                border-radius: 999px;
+                                font-size: 12px;
+                                font-weight: 600;
+                                white-space: nowrap;
+                                background: ${badge.bg};
+                                color: ${badge.color};
+                                border: 1px solid ${badge.border};
+                            ">
+                                <i class="fas ${badge.icon}"></i>
+                                ${badge.label}
+                            </span>
+                        </td>
+                        <td style="color: #64748b; font-size: 13px; white-space: nowrap;">${escapeHtml(fecha)}</td>
+                        <td style="color: #64748b; font-size: 13px; max-width: 320px; word-wrap: break-word; white-space: normal; line-height: 1.5;">${escapeHtml(item.observacion || '-')}</td>
+                        <td>
+                            ${tieneLogos ? `
+                                <button type="button" onclick='window.__verDisenoLogo(${logosJson}, true)' style="
+                                    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+                                    border: none;
+                                    color: white;
+                                    padding: 8px 12px;
+                                    border-radius: 8px;
+                                    cursor: pointer;
+                                    font-weight: 700;
+                                    font-size: 0.85rem;
+                                ">Ver</button>
+                            ` : '<span style="color:#94a3b8; font-size:12px;">—</span>'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            return `
+                <div style="padding: 0 16px 16px;">
+                    <table class="table-talleres" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Recibo</th>
+                                <th>Tipo</th>
+                                <th>Fecha</th>
+                                <th>Observación</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        fetch(`{{ route('visualizador-logo.logos-confirmados.historial-novedades') }}`)
+            .then(r => r.json())
+            .then(json => {
+                const body = document.getElementById('modal-historial-novedades-body');
+                const toolbar = document.getElementById('modal-historial-novedades-toolbar');
+                const searchInput = document.getElementById('modal-historial-novedades-search');
+                const clearBtn = document.getElementById('modal-historial-novedades-clear');
+                if (!body) return;
+
+                if (!json || json.success !== true) {
+                    throw new Error('Respuesta inválida');
+                }
+
+                const items = Array.isArray(json.items) ? json.items : [];
+
+                if (toolbar) {
+                    toolbar.style.display = items.length > 0 ? 'block' : 'none';
+                }
+
+                body.innerHTML = renderHistorialNovedadesRows(items);
+
+                if (searchInput) {
+                    let searchTimeout;
+                    searchInput.addEventListener('input', function() {
+                        const value = this.value.trim();
+                        if (clearBtn) {
+                            clearBtn.style.display = value ? 'block' : 'none';
+                        }
+                        clearTimeout(searchTimeout);
+                        searchTimeout = setTimeout(() => {
+                            body.innerHTML = renderHistorialNovedadesRows(items, value);
+                        }, 200);
+                    });
+                }
+
+                if (clearBtn && searchInput) {
+                    clearBtn.addEventListener('click', function() {
+                        searchInput.value = '';
+                        this.style.display = 'none';
+                        body.innerHTML = renderHistorialNovedadesRows(items);
+                        searchInput.focus();
+                    });
+                }
+            })
+            .catch(() => {
+                const body = document.getElementById('modal-historial-novedades-body');
+                if (!body) return;
+                body.innerHTML = `
+                    <div style="padding: 3rem 2rem; text-align: center; color: #dc2626;">
+                        <i class="fas fa-triangle-exclamation" style="font-size: 2.5rem; margin-bottom: 1rem; display: block;"></i>
+                        <p style="margin: 0; font-weight: 700;">Error cargando el historial</p>
+                    </div>
+                `;
+            });
+    };
+
+    window.__verDisenoLogo = function(logosArray, soloLectura = false) {
         const logos = Array.isArray(logosArray) ? logosArray : [];
         if (!logos.length) return;
 
@@ -466,6 +784,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         ">
                             <i class="fas fa-eye"></i> Ver Novedades
                         </button>
+                        ${soloLectura ? '' : `
                         <button type="button" class="reemplazar-btn" data-id="${logo.id}" style="
                             background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
                             border: none;
@@ -483,6 +802,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <i class="fas fa-upload"></i> Reemplazar
                         </button>
                         <input type="file" id="file-${logo.id}" accept="image/*" style="display: none;" />
+                        `}
                     </div>
                 </div>
             `;
@@ -533,23 +853,23 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        // Add event listeners to "Reemplazar" buttons
-        overlay.querySelectorAll('.reemplazar-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = parseInt(btn.getAttribute('data-id'));
-                document.getElementById(`file-${id}`).click();
+        if (!soloLectura) {
+            overlay.querySelectorAll('.reemplazar-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = parseInt(btn.getAttribute('data-id'));
+                    document.getElementById(`file-${id}`).click();
+                });
             });
-        });
 
-        // Add event listeners to file inputs
-        overlay.querySelectorAll('input[type="file"]').forEach(input => {
-            input.addEventListener('change', async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const id = parseInt(input.id.replace('file-', ''));
-                await reemplazarImagen(id, file);
+            overlay.querySelectorAll('input[type="file"]').forEach(input => {
+                input.addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const id = parseInt(input.id.replace('file-', ''));
+                    await reemplazarImagen(id, file);
+                });
             });
-        });
+        }
 
         // Add double-click event to images for full view
         overlay.querySelectorAll('.gallery-image').forEach(img => {
@@ -585,15 +905,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const novedadesHtml = novedades.length > 0 
                 ? novedades.map((novedad) => {
-                    const fecha = novedad.created_at 
-                        ? new Date(novedad.created_at).toLocaleString('es-ES', { 
-                            year: 'numeric', 
-                            month: '2-digit', 
-                            day: '2-digit', 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                        }) 
-                        : 'Fecha desconocida';
+                    const fecha = formatearFechaHora12h(novedad.created_at) || 'Fecha desconocida';
                     const usuario = novedad.usuario?.name || 'Usuario desconocido';
                     return `
                         <div style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
@@ -728,6 +1040,24 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     };
+
+    function formatearFechaHora12h(value) {
+        if (!value) return '-';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '-';
+
+        const dia = String(date.getDate()).padStart(2, '0');
+        const mes = String(date.getMonth() + 1).padStart(2, '0');
+        const anio = date.getFullYear();
+        const minutos = String(date.getMinutes()).padStart(2, '0');
+
+        let horas = date.getHours();
+        const periodo = horas >= 12 ? 'PM' : 'AM';
+        horas = horas % 12;
+        horas = horas === 0 ? 12 : horas;
+
+        return `${dia}/${mes}/${anio}, ${horas}:${minutos} ${periodo}`;
+    }
 
     function formatearFechaISO(value) {
         if (!value) return '-';

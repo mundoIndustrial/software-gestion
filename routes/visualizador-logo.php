@@ -34,6 +34,7 @@ Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_prod
 
     Route::get('/logos-confirmados', [VisualizadorLogoController::class, 'logosConfirmados'])->name('logos-confirmados');
     Route::get('/logos-confirmados/data', [VisualizadorLogoController::class, 'logosConfirmadosData'])->name('logos-confirmados.data');
+    Route::get('/logos-confirmados/historial-novedades', [VisualizadorLogoController::class, 'logosConfirmadosHistorialNovedades'])->name('logos-confirmados.historial-novedades');
     Route::post('/logos-confirmados/{disenoId}/marcar-revisado', [VisualizadorLogoController::class, 'marcarComoRevisado'])->name('logos-confirmados.marcar-revisado');
     Route::post('/logos-confirmados/{disenoId}/reemplazar', [VisualizadorLogoController::class, 'reemplazarImagen'])->name('logos-confirmados.reemplazar');
 

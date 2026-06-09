@@ -268,6 +268,115 @@ final class VisualizadorLogoController extends Controller
         }
     }
 
+    public function logosConfirmadosHistorialNovedades(Request $request)
+    {
+        $disenos = \App\Models\DisenoLogoPedido::with([
+            'proceso.prenda',
+            'novedades.usuario',
+        ])
+            ->whereIn('estado', ['logo_confirmado', 'devuelto_a_diseño'])
+            ->get();
+
+        $gruposLogos = [];
+        foreach ($disenos as $diseno) {
+            $prendaPedido = $diseno->proceso?->prenda;
+            $groupKey = ($prendaPedido?->pedido_produccion_id ?? '0') . '-' . ($prendaPedido?->id ?? '0');
+
+            if (!isset($gruposLogos[$groupKey])) {
+                $gruposLogos[$groupKey] = [];
+            }
+
+            $gruposLogos[$groupKey][] = [
+                'id' => $diseno->id,
+                'url' => $diseno->url,
+                'revisada' => (bool) $diseno->revisada,
+                'novedades' => $diseno->novedades,
+            ];
+        }
+
+        $disenoGroupMap = [];
+        foreach ($disenos as $diseno) {
+            $prendaPedido = $diseno->proceso?->prenda;
+            $groupKey = ($prendaPedido?->pedido_produccion_id ?? '0') . '-' . ($prendaPedido?->id ?? '0');
+            $disenoGroupMap[$diseno->id] = $groupKey;
+        }
+
+        $novedades = \App\Models\DisenoLogoPedidoNovedad::with(['diseno.proceso.prenda'])
+            ->whereHas('diseno', function ($q) {
+                $q->whereIn('estado', ['logo_confirmado', 'devuelto_a_diseño']);
+            })
+            ->orderByDesc('created_at')
+            ->get();
+
+        $items = $novedades->map(function ($novedad) use ($gruposLogos, $disenoGroupMap) {
+            $diseno = $novedad->diseno;
+            $groupKey = $diseno ? ($disenoGroupMap[$diseno->id] ?? null) : null;
+
+            return [
+                'id' => $novedad->id,
+                'numero_recibo' => $diseno ? $this->resolveNumeroRecibo($diseno) : '-',
+                'fecha' => $novedad->created_at,
+                'observacion' => $novedad->novedad,
+                'tipo_novedad' => $novedad->tipo_novedad,
+                'logos' => $groupKey && isset($gruposLogos[$groupKey])
+                    ? array_values($gruposLogos[$groupKey])
+                    : [],
+            ];
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'items' => $items,
+        ]);
+    }
+
+    private function resolveNumeroRecibo(\App\Models\DisenoLogoPedido $diseno): string
+    {
+        $proceso = $diseno->proceso;
+        $prendaPedido = $proceso?->prenda;
+
+        if (!$proceso || !$prendaPedido) {
+            return '-';
+        }
+
+        $tipoRecibo = match ($proceso->tipo_proceso_id) {
+            1 => 'REFLECTIVO',
+            2 => 'BORDADO',
+            3 => 'ESTAMPADO',
+            4 => 'DTF',
+            5 => 'SUBLIMADO',
+            default => null,
+        };
+
+        $crp = null;
+        if ($tipoRecibo) {
+            $crp = DB::table('consecutivos_recibos_pedidos')
+                ->where('pedido_produccion_id', $prendaPedido->pedido_produccion_id)
+                ->where('prenda_id', $prendaPedido->id)
+                ->where('activo', 1)
+                ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [$tipoRecibo])
+                ->first();
+        }
+
+        if (!$crp) {
+            $crp = DB::table('consecutivos_recibos_pedidos')
+                ->where('pedido_produccion_id', $prendaPedido->pedido_produccion_id)
+                ->where('prenda_id', $prendaPedido->id)
+                ->where('activo', 1)
+                ->first();
+        }
+
+        if ($crp && $crp->consecutivo_actual) {
+            return (string) $crp->consecutivo_actual;
+        }
+
+        if ($proceso->numero_recibo) {
+            return (string) $proceso->numero_recibo;
+        }
+
+        return '-';
+    }
+
     public function logosConfirmadosData(Request $request)
     {
         $perPage = (int) $request->get('per_page', 20);
@@ -302,51 +411,7 @@ final class VisualizadorLogoController extends Controller
             $prendaPedido = $proceso?->prenda;
             $pedido = $prendaPedido?->pedidoProduccion;
 
-            // Now let's try to find the consecutivo_recibo_pedido
-            $numeroRecibo = '-';
-
-            if ($proceso && $prendaPedido && $pedido) {
-                // Map tipo_proceso_id to tipo_recibo
-                $tipoRecibo = match($proceso->tipo_proceso_id) {
-                    1 => 'REFLECTIVO',
-                    2 => 'BORDADO',
-                    3 => 'ESTAMPADO',
-                    4 => 'DTF',
-                    5 => 'SUBLIMADO',
-                    default => null
-                };
-                
-                // First, try using the mapped tipo_recibo
-                $crp = null;
-                if ($tipoRecibo) {
-                    $crpQuery = \DB::table('consecutivos_recibos_pedidos')
-                        ->where('pedido_produccion_id', $prendaPedido->pedido_produccion_id)
-                        ->where('prenda_id', $prendaPedido->id)
-                        ->where('activo', 1)
-                        ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [$tipoRecibo]);
-                    
-                    $crp = $crpQuery->first();
-                }
-
-                // If no luck, try any active CRP for this pedido AND prenda_pedido.id
-                if (!$crp) {
-                    $crpQuery = \DB::table('consecutivos_recibos_pedidos')
-                        ->where('pedido_produccion_id', $prendaPedido->pedido_produccion_id)
-                        ->where('prenda_id', $prendaPedido->id)
-                        ->where('activo', 1);
-                    
-                    $crp = $crpQuery->first();
-                }
-
-                // If we found a CRP, use its consecutivo_actual
-                if ($crp && $crp->consecutivo_actual) {
-                    $numeroRecibo = $crp->consecutivo_actual;
-                }
-                // Fallback to ppd's numero_recibo
-                else if ($proceso->numero_recibo) {
-                    $numeroRecibo = $proceso->numero_recibo;
-                }
-            }
+            $numeroRecibo = $this->resolveNumeroRecibo($diseno);
 
             // Get last novedad for display
             $ultimaNovedad = $diseno->novedades->first();
