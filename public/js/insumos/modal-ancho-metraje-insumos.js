@@ -359,9 +359,78 @@ function resolverAnchoGeneralInicial(modal, datosData) {
 
 function registrarSyncAnchoCompartido(input, modal) {
     if (!input || !modal) return;
-    input.addEventListener('input', () => {
+    if (input.dataset.anchoCompartidoBound === '1') {
         modal.dataset.anchoCompartido = input.value.trim();
+        return;
+    }
+
+    input.dataset.anchoCompartidoBound = '1';
+
+    const sincronizar = () => {
+        modal.dataset.anchoCompartido = input.value.trim();
+    };
+
+    input.addEventListener('input', sincronizar);
+    input.addEventListener('change', sincronizar);
+    sincronizar();
+}
+
+function normalizarValorTexto(valor) {
+    return String(valor ?? '').trim();
+}
+
+function hayMetrajeModificado(modal, modoSeleccionado) {
+    if (!modal) return false;
+
+    if (modoSeleccionado === 'normal') {
+        const input = document.getElementById('metrajeInput');
+        if (!input) return false;
+        return normalizarValorTexto(input.value) !== normalizarValorTexto(input.dataset.originalValue);
+    }
+
+    const contenedor = modoSeleccionado === 'pieza'
+        ? document.getElementById('piezaInputsContainer')
+        : document.getElementById('colorInputsContainer');
+
+    if (!contenedor) {
+        return false;
+    }
+
+    return Array.from(contenedor.querySelectorAll('.colorMetraje')).some((input) => {
+        if (!(input instanceof HTMLInputElement)) {
+            return false;
+        }
+
+        return normalizarValorTexto(input.value) !== normalizarValorTexto(input.dataset.originalValue);
     });
+}
+
+function requiereReemplazoPorCambioDeMetraje(modal, modoSeleccionado) {
+    const modoGuardado = modal?.tipoModoGuardado || null;
+    if (!modoGuardado || modoGuardado === modoSeleccionado) {
+        return false;
+    }
+
+    return hayMetrajeModificado(modal, modoSeleccionado);
+}
+
+function requiereReemplazoAlVolverANormal(modal, modoSeleccionado) {
+    const modoGuardado = modal?.tipoModoGuardado || null;
+    if (modoSeleccionado !== 'normal') {
+        return false;
+    }
+
+    return ['color', 'pieza'].includes(String(modoGuardado || '').toLowerCase());
+}
+
+function requiereReemplazoAlSalirDeManual(modal, modoSeleccionado) {
+    const modoGuardado = String(modal?.tipoModoGuardado || '').toLowerCase();
+    return modoGuardado === 'mano' && modoSeleccionado !== 'mano';
+}
+
+function requiereReemplazoAlIngresarManual(modal, modoSeleccionado) {
+    const modoGuardado = String(modal?.tipoModoGuardado || '').toLowerCase();
+    return modoSeleccionado === 'mano' && modoGuardado !== 'mano';
 }
 
 function normalizarClaveColor(valor) {
@@ -372,22 +441,10 @@ function normalizarClaveColor(valor) {
 }
 
 function requiereConfirmacionCambioModo(modal, modoSeleccionado) {
-    const modoGuardado = modal.tipoModoGuardado;
-    const tieneDatosGuardados = modal.tieneDatosGuardados;
-
-    if (!modoGuardado || !tieneDatosGuardados) {
-        return false;
-    }
-
-    if (modoSeleccionado === 'mano') {
-        return modoGuardado !== modoSeleccionado;
-    }
-
-    if (modoGuardado === 'color' && modoSeleccionado === 'normal') {
-        return true;
-    }
-
-    return false;
+    return requiereReemplazoAlVolverANormal(modal, modoSeleccionado)
+        || requiereReemplazoAlIngresarManual(modal, modoSeleccionado)
+        || requiereReemplazoAlSalirDeManual(modal, modoSeleccionado)
+        || requiereReemplazoPorCambioDeMetraje(modal, modoSeleccionado);
 }
 
 async function confirmarCambioModoAntesDeGuardar(modal, modoSeleccionado) {
@@ -398,11 +455,27 @@ async function confirmarCambioModoAntesDeGuardar(modal, modoSeleccionado) {
     const modoAnterior = getModoLabel(modal.tipoModoGuardado);
     const modoNuevo = getModoLabel(modoSeleccionado);
     const tituloAdvertencia = 'Cambio de modo';
+    const esEntradaAManual = modoSeleccionado === 'mano' && modal.tipoModoGuardado !== 'mano';
+    const esSalidaDesdeManual = modal.tipoModoGuardado === 'mano' && modoSeleccionado !== 'mano';
     const esCambioColorANormal = modal.tipoModoGuardado === 'color' && modoSeleccionado === 'normal';
-    const mensaje = esCambioColorANormal
+    const mensaje = esEntradaAManual
+        ? `Se eliminara la informacion previa guardada en "${modoAnterior}" y se reemplazara por contenido manual en "${modoNuevo}".`
+        : esSalidaDesdeManual
+        ? `Se eliminara el contenido guardado en modo "${modoAnterior}" y se reemplazara por "${modoNuevo}".`
+        : esCambioColorANormal
         ? `Se mantendra el ancho general, pero se eliminaran los metrajes por color guardados en "${modoAnterior}" y se reemplazaran por "${modoNuevo}".`
         : `Se eliminaran los datos previos de ancho y metraje guardados en "${modoAnterior}" y se reemplazaran por "${modoNuevo}".`;
-    const mensajeHtml = esCambioColorANormal
+    const mensajeHtml = esEntradaAManual
+        ? `
+        <span style="color:#dc2626;font-weight:800;">SE ELIMINARA</span>
+        <span> la informacion previa guardada en "<strong>${modoAnterior}</strong>" y se reemplazara por contenido manual en "<strong>${modoNuevo}</strong>".</span>
+    `
+        : esSalidaDesdeManual
+        ? `
+        <span style="color:#dc2626;font-weight:800;">SE ELIMINARA</span>
+        <span> el contenido libre guardado en "<strong>${modoAnterior}</strong>" y se reemplazara por "<strong>${modoNuevo}</strong>".</span>
+    `
+        : esCambioColorANormal
         ? `
         <span style="color:#dc2626;font-weight:800;">SE REEMPLAZARAN</span>
         <span> los metrajes por color guardados en "<strong>${modoAnterior}</strong>". El <strong>ancho</strong> se mantendra y el nuevo modo sera "<strong>${modoNuevo}</strong>".</span>
@@ -531,6 +604,7 @@ function generarInputsPorColor(coloresData, datosData) {
                 placeholder="Ingresa metraje..."
                 data-color="${colorNombre}"
                 data-talla=""
+                data-original-value="${metrajeGuardado}"
                 value="${metrajeGuardado}"
             >
         `;
@@ -635,6 +709,7 @@ function generarInputsPorTallaColor(coloresData, datosData) {
                 min="0"
                 data-color="${colorNombre}"
                 data-talla=""
+                data-original-value="${metrajeGuardado}"
                 value="${metrajeGuardado}"
             >
         `;
@@ -785,6 +860,11 @@ function cambiarModoAnchoMetraje(e) {
             document.getElementById('anchoInput').value = '';
             document.getElementById('metrajeInput').value = '';
         }
+        const metrajeInputNormal = document.getElementById('metrajeInput');
+        if (metrajeInputNormal) {
+            metrajeInputNormal.dataset.originalValue = normalizarValorTexto(metrajeInputNormal.value);
+        }
+        registrarSyncAnchoCompartido(document.getElementById('anchoInput'), modal);
         
     } else if (modo === 'color') {
         // MODO COLOR - multiples colores (mismo metraje para todas las tallas)
@@ -993,6 +1073,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
         consecutivo_recibo_id: consecutivoReciboId,
         tipo_recibo: tipoRecibo,
     };
+    const reemplazarDatosPrevios = requiereConfirmacionCambioModo(modal, modoSeleccionado);
     
     if (modoSeleccionado === 'normal') {
         // GUARDAR MODO NORMAL
@@ -1035,6 +1116,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                 tipo_modo: 'normal',
                 ancho: ancho,
                 metraje: metraje,
+                reemplazar_datos_previos: reemplazarDatosPrevios,
                 ...extraPayload
             })
         })
@@ -1082,8 +1164,11 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
         
         // Guardar ancho general si existe
         const anchoGeneralInput = document.getElementById('anchoGeneralInput');
-        if (anchoGeneralInput && anchoGeneralInput.value.trim()) {
-            const anchoGeneral = anchoGeneralInput.value.trim();
+        const anchoGeneral = (anchoGeneralInput?.value || '').trim()
+            || leerAnchoCompartidoTemporal(modal)
+            || String(modal.datosData?.ancho || '').trim();
+
+        if (anchoGeneral) {
                 promises.push(
                     fetch(`/insumos/materiales/${pedido}/guardar-ancho-metraje-prenda`, {
                         method: 'POST',
@@ -1097,6 +1182,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                             tipo_modo: 'color',
                             ancho: anchoGeneral,
                             metraje: null,
+                            reemplazar_datos_previos: reemplazarDatosPrevios,
                             ...extraPayload
                         })
                     }).then(r => r.json())
@@ -1122,6 +1208,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                                 tipo_modo: 'color',
                                 ancho: null,
                                 metraje: metrajeVal,
+                                reemplazar_datos_previos: reemplazarDatosPrevios,
                                 ...extraPayload
                             })
                         }).then(r => r.json())
@@ -1169,8 +1256,11 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
         
         // Guardar ancho general si existe
         const anchoGeneralPiezaInput = document.getElementById('anchoGeneralPiezaInput');
-        if (anchoGeneralPiezaInput && anchoGeneralPiezaInput.value.trim()) {
-            const anchoGeneral = anchoGeneralPiezaInput.value.trim();
+        const anchoGeneral = (anchoGeneralPiezaInput?.value || '').trim()
+            || leerAnchoCompartidoTemporal(modal)
+            || String(modal.datosData?.ancho || '').trim();
+
+        if (anchoGeneral) {
                 promises.push(
                     fetch(`/insumos/materiales/${pedido}/guardar-ancho-metraje-prenda`, {
                         method: 'POST',
@@ -1184,6 +1274,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                             tipo_modo: 'pieza',
                             ancho: anchoGeneral,
                             metraje: null,
+                            reemplazar_datos_previos: reemplazarDatosPrevios,
                             ...extraPayload
                         })
                     }).then(r => r.json())
@@ -1209,6 +1300,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                                 tipo_modo: 'pieza',
                                 ancho: null,
                                 metraje: metrajeVal,
+                                reemplazar_datos_previos: reemplazarDatosPrevios,
                                 ...extraPayload
                             })
                         }).then(r => r.json())
@@ -1271,6 +1363,7 @@ function guardarAnchoMetrajePorModo(modal, prendaId, pedido, modoSeleccionado) {
                 tipo_modo: 'mano',
                 ancho: null,
                 metraje: null,
+                reemplazar_datos_previos: reemplazarDatosPrevios,
                 contenido_mano: contenidoMano,
                 ...extraPayload
             })

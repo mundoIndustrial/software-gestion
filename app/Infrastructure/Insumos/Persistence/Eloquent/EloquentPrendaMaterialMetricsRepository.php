@@ -167,7 +167,9 @@ class EloquentPrendaMaterialMetricsRepository implements PrendaMaterialMetricsRe
                 $tipoModoExistente = $metrajeExistente->tipo_modo;
             }
 
-            if ($tipoModoExistente && $tipoModoNuevo !== $tipoModoExistente) {
+            $debeLimpiarDatosModoAnterior = !empty($datos['reemplazar_datos_previos']);
+
+            if ($tipoModoExistente && $tipoModoNuevo !== $tipoModoExistente && $debeLimpiarDatosModoAnterior) {
                 $deleteAnchoQuery = PedidoAnchoGeneral::query();
                 $deleteMetrajeQuery = PedidoMetrajeColor::query();
                 if ($pedidoId === null) {
