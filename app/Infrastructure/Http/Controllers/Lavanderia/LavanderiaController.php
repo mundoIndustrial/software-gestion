@@ -405,6 +405,7 @@ class LavanderiaController extends Controller
             $page = max(1, (int) $request->query('page', 1));
             $perPage = min(max(1, (int) $request->query('per_page', 25)), 100);
             $search = trim((string) $request->query('search', ''));
+            $tipo = trim((string) $request->query('tipo', ''));
 
             $query = \App\Models\LavanderiaMovimiento::with([
                 'recibos.recibo.pedido.cliente',
@@ -416,6 +417,11 @@ class LavanderiaController extends Controller
             // Aplicar filtro de búsqueda por número de movimiento
             if (!empty($search)) {
                 $query->where('id', 'like', '%' . $search . '%');
+            }
+
+            // Aplicar filtro por tipo de movimiento (ENTRADA o SALIDA)
+            if (!empty($tipo) && in_array($tipo, ['ENTRADA', 'SALIDA'])) {
+                $query->where('tipo_movimiento', $tipo);
             }
 
             $movimientos = $query->orderBy('fecha_movimiento', 'desc')

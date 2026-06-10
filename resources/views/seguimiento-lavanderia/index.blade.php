@@ -113,26 +113,48 @@
                     <h1 class="section-title" style="margin: 0;">Historial de Movimientos</h1>
                     <p class="section-subtitle" style="margin: 6px 0 0 0;"></p>
                 </div>
+            </div>
 
-                <div class="page-actions">
-                    <form class="gooey-search-wrapper" id="historialSearchForm">
-                        <span class="material-symbols-rounded gooey-search-icon">search</span>
-                        <input
-                            type="text"
-                            id="historialSearchInput"
-                            class="gooey-search-input"
-                            placeholder="Buscar por número de movimiento..."
-                        >
-                        <button
-                            class="gooey-search-clear"
-                            id="historialSearchClear"
-                            type="button"
-                            style="display: none;"
-                        >
-                            <span class="material-symbols-rounded">close</span>
-                        </button>
-                    </form>
+            <!-- Tabs de Entrada/Salida + Búsqueda -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; gap: 24px;">
+                <div class="historial-tabs" style="display: flex; gap: 0; flex: 1;">
+                    <button class="historial-tab active" data-tab="todos" style="padding: 12px 24px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 500; color: #64748b; border-bottom: 3px solid transparent; transition: all 0.3s ease;">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <span class="material-symbols-rounded" style="font-size: 18px;">dashboard</span>
+                            Todos
+                        </span>
+                    </button>
+                    <button class="historial-tab" data-tab="entrada" style="padding: 12px 24px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 500; color: #64748b; border-bottom: 3px solid transparent; transition: all 0.3s ease;">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <span class="material-symbols-rounded" style="font-size: 18px;">input</span>
+                            Entrada
+                        </span>
+                    </button>
+                    <button class="historial-tab" data-tab="salida" style="padding: 12px 24px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 500; color: #64748b; border-bottom: 3px solid transparent; transition: all 0.3s ease;">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <span class="material-symbols-rounded" style="font-size: 18px;">output</span>
+                            Salida
+                        </span>
+                    </button>
                 </div>
+
+                <form class="gooey-search-wrapper" id="historialSearchForm" style="flex-shrink: 0;">
+                    <span class="material-symbols-rounded gooey-search-icon">search</span>
+                    <input
+                        type="text"
+                        id="historialSearchInput"
+                        class="gooey-search-input"
+                        placeholder="Buscar por número de movimiento..."
+                    >
+                    <button
+                        class="gooey-search-clear"
+                        id="historialSearchClear"
+                        type="button"
+                        style="display: none;"
+                    >
+                        <span class="material-symbols-rounded">close</span>
+                    </button>
+                </form>
             </div>
 
             <div id="historialLoadingState" class="text-center py-4" style="display: none;">

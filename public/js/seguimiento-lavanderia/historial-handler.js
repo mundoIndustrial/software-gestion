@@ -11,6 +11,7 @@ class HistorialHandler {
         this.currentPage = 1;
         this.perPage = 25;
         this.currentSearch = '';
+        this.currentTab = 'todos';
         this.historialLoaded = false;
 
         this.elements = {
@@ -21,6 +22,53 @@ class HistorialHandler {
             historialSearchInput: document.getElementById('historialSearchInput'),
             historialSearchClear: document.getElementById('historialSearchClear'),
         };
+
+        this.setupTabListeners();
+    }
+
+    /**
+     * Configura los event listeners de los tabs
+     */
+    setupTabListeners() {
+        const tabButtons = document.querySelectorAll('.historial-tab');
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabName = btn.dataset.tab;
+                this.setTab(tabName);
+            });
+        });
+    }
+
+    /**
+     * Cambia el tab activo y recarga datos
+     */
+    setTab(tabName) {
+        if (!['todos', 'entrada', 'salida'].includes(tabName)) return;
+
+        this.currentTab = tabName;
+        this.currentPage = 1;
+        this.currentSearch = '';
+
+        // Actualizar interfaz de tabs
+        const tabButtons = document.querySelectorAll('.historial-tab');
+        tabButtons.forEach(btn => {
+            const isActive = btn.dataset.tab === tabName;
+            btn.classList.toggle('active', isActive);
+            btn.style.borderBottomColor = isActive ? '#2450ef' : 'transparent';
+            btn.style.color = isActive ? '#2450ef' : '#64748b';
+        });
+
+        // Limpiar búsqueda
+        const { historialSearchInput, historialSearchClear } = this.elements;
+        if (historialSearchInput) {
+            historialSearchInput.value = '';
+        }
+        if (historialSearchClear) {
+            historialSearchClear.style.display = 'none';
+        }
+
+        // Cargar movimientos del nuevo tab
+        this.loadMovimientos(1);
     }
 
     /**
@@ -41,6 +89,17 @@ class HistorialHandler {
             
             if (this.currentSearch) {
                 url.searchParams.set('search', this.currentSearch);
+            }
+
+            // Agregar filtro de tipo si no es 'todos'
+            if (this.currentTab !== 'todos') {
+                const tipoMap = {
+                    'entrada': 'ENTRADA',
+                    'salida': 'SALIDA'
+                };
+                if (tipoMap[this.currentTab]) {
+                    url.searchParams.set('tipo', tipoMap[this.currentTab]);
+                }
             }
 
             const response = await fetch(url.toString(), {
