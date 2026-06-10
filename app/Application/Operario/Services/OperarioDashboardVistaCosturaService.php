@@ -7,12 +7,51 @@ use App\Models\ConsecutivoReciboPedido;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class OperarioDashboardVistaCosturaService
 {
     public function __construct(
         private OperarioDashboardRepository $operarioDashboardRepository,
     ) {}
+
+    private function obtenerTallasPedidoParcial(int $pedidoParcialId): array
+    {
+        if ($pedidoParcialId <= 0) {
+            return [];
+        }
+
+        return DB::table('pedidos_parciales_tallas')
+            ->where('pedido_parcial_id', $pedidoParcialId)
+            ->orderBy('id')
+            ->get()
+            ->map(function ($talla) {
+                return [
+                    'talla' => (string) ($talla->talla ?? ''),
+                    'genero' => (string) ($talla->genero ?? ''),
+                    'color_nombre' => (string) ($talla->color_nombre ?? ''),
+                    'cantidad' => (int) ($talla->cantidad ?? 0),
+                ];
+            })
+            ->filter(fn (array $talla) => trim((string) ($talla['talla'] ?? '')) !== '')
+            ->values()
+            ->all();
+    }
+
+    private function resolverTallasParaVistaCostura(array $prenda, ?array $reciboPreferido): array
+    {
+        $parcialId = (int) ($reciboPreferido['pedido_parcial_id'] ?? 0);
+
+        if ($parcialId > 0) {
+            $tallasParcial = $this->obtenerTallasPedidoParcial($parcialId);
+
+            if (!empty($tallasParcial)) {
+                return $tallasParcial;
+            }
+        }
+
+        return is_array($prenda['tallas'] ?? null) ? $prenda['tallas'] : [];
+    }
 
     public function formatearRecibosControlCalidadParaDashboard(array $recibos, string $tipoRecibo): Collection
     {
@@ -771,6 +810,7 @@ class OperarioDashboardVistaCosturaService
             $reciboCompletadoCostura = (bool) ($reciboPrincipalCard['completado_costura'] ?? false);
             $reciboCompletadoReflectivo = (bool) ($reciboReflectivoFiltroCard['completado_costura'] ?? false);
             $reciboParaBusqueda = collect($recibos)->first(fn ($recibo) => !empty($recibo['pedido_parcial_id'])) ?? $reciboPrincipalCard;
+            $tallasParaVista = $this->resolverTallasParaVistaCostura($prenda, is_array($reciboParaBusqueda) ? $reciboParaBusqueda : null);
             $tipoReciboPreferido = $reciboParaBusqueda['tipo_recibo'] ?? '';
             $parcialIdPreferido = !empty($reciboParaBusqueda['pedido_parcial_id']) ? (int) $reciboParaBusqueda['pedido_parcial_id'] : 'null';
             $consecutivoPreferido = $reciboParaBusqueda['consecutivo_parcial'] ?? ($reciboParaBusqueda['consecutivo_actual'] ?? '');
@@ -851,6 +891,7 @@ class OperarioDashboardVistaCosturaService
                 'tipo_distribucion' => $tipoDistribucion,
                 'acciones' => $acciones,
             ];
+            $prenda['tallas'] = $tallasParaVista;
 
             return $prenda;
         })->values();
@@ -1064,11 +1105,12 @@ class OperarioDashboardVistaCosturaService
                             'area' => $areaActual ?? 'COSTURA',
                             'proceso_id' => $procesoId,
                             'estado_control_calidad' => $estadoControlCalidad,
+                            'pedido_parcial_id' => $reciboItem['pedido_parcial_id'] ?? null,
                             'tallas_control_calidad' => is_array($reciboItem['tallas_control_calidad'] ?? null)
                                 ? $reciboItem['tallas_control_calidad']
                                 : [],
                         ],
-                        'visible_filtro' => 'costura',
+                    'visible_filtro' => 'costura',
                     ];
                 }
             }

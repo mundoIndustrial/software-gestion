@@ -355,10 +355,15 @@
                                                     : [];
                                             @endphp
                                             @if($accion['tipo'] === 'pasar_cc')
+                                                @php
+                                                    $pedidoParcialIdAccion = !empty($accion['datos']['pedido_parcial_id'])
+                                                        ? (int) $accion['datos']['pedido_parcial_id']
+                                                        : null;
+                                                @endphp
                                                 <button class="{{ $accion['clase'] }}" 
                                                         type="button"
                                                         data-visible-filtro="{{ $accion['visible_filtro'] }}"
-                                                        data-recibo-id="{{ $accion['datos']['recibo_id'] ?? '' }}"
+                                                        data-recibo-id="{{ $pedidoParcialIdAccion ?? ($accion['datos']['recibo_id'] ?? '') }}"
                                                         data-pedido-id="{{ $accion['datos']['pedido_id'] }}"
                                                         data-prenda-id="{{ $accion['datos']['prenda_id'] }}"
                                                         data-nombre="{{ $accion['datos']['nombre'] }}"
@@ -367,6 +372,8 @@
                                                         data-area="{{ $accion['datos']['area'] }}"
                                                         data-proceso-id="{{ $accion['datos']['proceso_id'] }}"
                                                         data-estado-control-calidad="{{ $accion['datos']['estado_control_calidad'] ?? '' }}"
+                                                        data-es-parcial="{{ !empty($pedidoParcialIdAccion) ? '1' : '0' }}"
+                                                        data-parcial-id="{{ $pedidoParcialIdAccion ?? '' }}"
                                                         data-tallas-control-calidad='@json($tallasCcAccion)'
                                                         onclick="pasarAControlCalidad(this); return false;">
                                                     <span class="material-symbols-rounded">{{ $accion['icono'] }}</span>
@@ -929,7 +936,7 @@
                                                 {{-- Boton "Pasar a C.C" o "DESHACER" --}}
                                                 <button type="button" class="btn-pasar-cc"
                                                         id="btn-cc-{{ $prenda['prenda_id'] }}-{{ $consecutivoActual }}"
-                                                        data-recibo-id="{{ $reciboItem['id'] ?? ($reciboItem['recibo_id'] ?? '') }}"
+                                                        data-recibo-id="{{ $reciboItem['pedido_parcial_id'] ?? ($reciboItem['id'] ?? ($reciboItem['recibo_id'] ?? '')) }}"
                                                         data-pedido-id="{{ $prenda['pedido_id'] }}"
                                                         data-prenda-id="{{ $prenda['prenda_id'] }}"
                                                         data-nombre="{{ $prenda['nombre_prenda'] }}"
@@ -938,6 +945,8 @@
                                                         data-area="{{ $areaActual ?? 'COSTURA' }}"
                                                         data-proceso-id="{{ $procesoId }}"
                                                         data-estado-control-calidad="{{ $estadoControlCalidad }}"
+                                                        data-es-parcial="{{ !empty($reciboItem['pedido_parcial_id']) ? '1' : '0' }}"
+                                                        data-parcial-id="{{ $reciboItem['pedido_parcial_id'] ?? '' }}"
                                                         data-tallas-control-calidad='@json($reciboItem["tallas_control_calidad"] ?? [])'
                                                         onclick="pasarAControlCalidad(this); return false;">
                                                     <span class="material-symbols-rounded">{{ $ccIcono }}</span>

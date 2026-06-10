@@ -22,6 +22,7 @@ use App\Events\ControlCalidadUpdated;
 use App\Events\OperarioRecibosActualizados;
 use App\Events\ReciboAsignadoCosturero;
 use App\Models\PedidoProduccion;
+use App\Models\PedidoParcial;
 use App\Models\ConsecutivoReciboPedido;
 use App\Models\PrendaBodega;
 use App\Models\ProcesoPrenda;
@@ -79,6 +80,82 @@ class ReciboCosturaController extends Controller
                 ];
             })
             ->filter(fn (array $talla) => $talla['talla'] !== '' && $talla['cantidad'] > 0)
+            ->values()
+            ->all();
+    }
+
+    private function normalizarTallasParaComparacion(array $tallas): array
+    {
+        $normalizadas = [];
+
+        foreach ($tallas as $talla) {
+            if (!is_array($talla)) {
+                continue;
+            }
+
+            $clave = implode('|', [
+                strtoupper(trim((string) ($talla['talla'] ?? ''))),
+                strtoupper(trim((string) ($talla['genero'] ?? ''))),
+                strtoupper(trim((string) ($talla['color_nombre'] ?? ''))),
+            ]);
+
+            if ($clave === '||') {
+                continue;
+            }
+
+            $normalizadas[$clave] = ($normalizadas[$clave] ?? 0) + (int) ($talla['cantidad'] ?? 0);
+        }
+
+        ksort($normalizadas);
+
+        return $normalizadas;
+    }
+
+    private function tallasCoincidenExactamente(array $tallasOriginales, array $tallasEnviadas): bool
+    {
+        $originales = $this->normalizarTallasParaComparacion($tallasOriginales);
+        $enviadas = $this->normalizarTallasParaComparacion($tallasEnviadas);
+
+        if (empty($originales) || empty($enviadas)) {
+            return false;
+        }
+
+        return $originales === $enviadas;
+    }
+
+    private function obtenerTallasPedidoParcialParaComparacion(PedidoParcial|ReciboPorPartes $parcial): array
+    {
+        if ($parcial instanceof PedidoParcial) {
+            return DB::table('pedidos_parciales_tallas')
+                ->where('pedido_parcial_id', (int) $parcial->id)
+                ->orderBy('id')
+                ->get()
+                ->map(function ($talla) {
+                    return [
+                        'talla' => (string) ($talla->talla ?? ''),
+                        'cantidad' => (int) ($talla->cantidad ?? 0),
+                        'genero' => (string) ($talla->genero ?? ''),
+                        'color_nombre' => (string) ($talla->color_nombre ?? ''),
+                    ];
+                })
+                ->filter(fn (array $talla) => trim($talla['talla']) !== '' && $talla['cantidad'] > 0)
+                ->values()
+                ->all();
+        }
+
+        return DB::table('recibos_por_partes_tallas')
+            ->where('recibo_por_partes_id', (int) $parcial->id)
+            ->orderBy('id')
+            ->get()
+            ->map(function ($talla) {
+                return [
+                    'talla' => (string) ($talla->talla ?? ''),
+                    'cantidad' => (int) ($talla->cantidad ?? 0),
+                    'genero' => (string) ($talla->genero ?? ''),
+                    'color_nombre' => (string) ($talla->color_nombre ?? ''),
+                ];
+            })
+            ->filter(fn (array $talla) => trim($talla['talla']) !== '' && $talla['cantidad'] > 0)
             ->values()
             ->all();
     }
@@ -787,6 +864,31 @@ class ReciboCosturaController extends Controller
         }
     }
 
+    private function resolverParcialParaControlCalidad(
+        int $pedidoId,
+        int $prendaId,
+        string $tipoRecibo,
+        int $parcialId
+    ): PedidoParcial|ReciboPorPartes|null {
+        $parcialNuevo = PedidoParcial::query()
+            ->where('id', $parcialId)
+            ->where('pedido_produccion_id', $pedidoId)
+            ->where('prenda_pedido_id', $prendaId)
+            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [$tipoRecibo])
+            ->first();
+
+        if ($parcialNuevo) {
+            return $parcialNuevo;
+        }
+
+        return ReciboPorPartes::query()
+            ->where('id', $parcialId)
+            ->where('pedido_produccion_id', $pedidoId)
+            ->where('prenda_pedido_id', $prendaId)
+            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [$tipoRecibo])
+            ->first();
+    }
+
     /**
      * Pasar recibo a Costura - crea proceso con encargado y actualiza Area
      */
@@ -799,7 +901,7 @@ class ReciboCosturaController extends Controller
         $request->validate([
             'prenda_id' => 'required|integer|exists:prendas_pedido,id',
             'tipo_recibo' => 'required|string',
-            'parcial_id' => 'required|integer|exists:recibo_por_partes,id',
+            'parcial_id' => 'required|integer|min:1',
             'tallas_control_calidad' => 'required|array|min:1',
             'tallas_control_calidad.*.talla' => 'required|string|max:50',
             'tallas_control_calidad.*.cantidad' => 'required|integer|min:1',
@@ -810,12 +912,12 @@ class ReciboCosturaController extends Controller
         $pedido = PedidoProduccion::findOrFail($pedidoId);
         $tipoRecibo = strtoupper(trim((string) $request->tipo_recibo));
 
-        $parcial = ReciboPorPartes::query()
-            ->where('id', (int) $request->parcial_id)
-            ->where('pedido_produccion_id', $pedidoId)
-            ->where('prenda_pedido_id', (int) $request->prenda_id)
-            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [$tipoRecibo])
-            ->first();
+        $parcial = $this->resolverParcialParaControlCalidad(
+            $pedidoId,
+            (int) $request->prenda_id,
+            $tipoRecibo,
+            (int) $request->parcial_id
+        );
 
         if (!$parcial) {
             return response()->json([
@@ -824,18 +926,42 @@ class ReciboCosturaController extends Controller
             ], 404);
         }
 
+        $tallasOriginalesParcial = $this->obtenerTallasPedidoParcialParaComparacion($parcial);
+        if (!$this->tallasCoincidenExactamente($tallasOriginalesParcial, $tallasControlCalidad)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Las tallas enviadas no coinciden exactamente con las tallas registradas en el parcial',
+            ], 422);
+        }
+
+        $consecutivoParcial = (int) ($parcial->consecutivo_parcial ?? $parcial->consecutivo_actual ?? 0);
+
         try {
             DB::beginTransaction();
 
             $procesoExistente = ProcesoPrenda::query()
                 ->where('numero_pedido', $pedido->numero_pedido)
                 ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
-                ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                ->where(function ($query) use ($consecutivoParcial) {
+                    $query->where('numero_recibo_parcial', $consecutivoParcial)
+                        ->orWhere(function ($query) use ($consecutivoParcial) {
+                            $query->whereNull('numero_recibo_parcial')
+                                ->where('codigo_referencia', 'like', 'CCP-%')
+                                ->where('numero_recibo', $consecutivoParcial);
+                        });
+                })
                 ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
                 ->latest('created_at')
                 ->first();
 
             if ($procesoExistente) {
+                if ((int) ($procesoExistente->numero_recibo_parcial ?? 0) !== $consecutivoParcial) {
+                    $procesoExistente->update([
+                        'numero_recibo' => null,
+                        'numero_recibo_parcial' => $consecutivoParcial,
+                    ]);
+                }
+
                 DB::table('prenda_recibo_completado')->updateOrInsert(
                     [
                         'id_parcial' => (int) $parcial->id,
@@ -843,7 +969,7 @@ class ReciboCosturaController extends Controller
                     ],
                     [
                         'id_recibo' => (int) $parcial->id,
-                        'numero_recibo' => (int) ($parcial->consecutivo_parcial ?? 0),
+                        'numero_recibo' => $consecutivoParcial,
                         'nombre_operario' => (string) (auth()->user()->name ?? 'control'),
                         'fecha_completado' => now(),
                         'tallas_control_calidad' => !empty($tallasControlCalidad)
@@ -872,7 +998,7 @@ class ReciboCosturaController extends Controller
                         'proceso_id' => $procesoExistente->id,
                         'area_nueva' => 'Control Calidad',
                         'parcial_id' => $parcial->id,
-                        'consecutivo_parcial' => (string) $parcial->consecutivo_parcial,
+                        'consecutivo_parcial' => (string) $consecutivoParcial,
                         'total_parciales' => $estadoParcialesCc['total_parciales'],
                         'parciales_en_cc' => $estadoParcialesCc['parciales_en_cc'],
                         'todos_parciales_en_cc' => $estadoParcialesCc['todos_parciales_en_cc'],
@@ -880,17 +1006,17 @@ class ReciboCosturaController extends Controller
                 ]);
             }
 
-            $nuevoProceso = ProcesoPrenda::create([
-                'numero_pedido' => $pedido->numero_pedido,
-                'prenda_pedido_id' => $parcial->prenda_pedido_id,
-                'numero_recibo' => null,
-                'numero_recibo_parcial' => $parcial->consecutivo_parcial,
-                'proceso' => 'Control de Calidad',
-                'fecha_inicio' => now(),
-                'encargado' => 'control',
-                'estado_proceso' => 'En Progreso',
-                'codigo_referencia' => 'CCP-' . $parcial->consecutivo_parcial . '-' . date('YmdHis'),
-            ]);
+                $nuevoProceso = ProcesoPrenda::create([
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'prenda_pedido_id' => $parcial->prenda_pedido_id,
+                    'numero_recibo' => null,
+                    'numero_recibo_parcial' => $consecutivoParcial,
+                    'proceso' => 'Control de Calidad',
+                    'fecha_inicio' => now(),
+                    'encargado' => 'control',
+                    'estado_proceso' => 'En Progreso',
+                    'codigo_referencia' => 'CCP-' . $consecutivoParcial . '-' . date('YmdHis'),
+                ]);
 
             $estadoParcialesCc = $this->sincronizarProcesoControlCalidadOriginal($pedido, $parcial);
 
@@ -901,7 +1027,7 @@ class ReciboCosturaController extends Controller
                 ],
                 [
                     'id_recibo' => (int) $parcial->id,
-                    'numero_recibo' => (int) ($parcial->consecutivo_parcial ?? 0),
+                    'numero_recibo' => $consecutivoParcial,
                     'nombre_operario' => (string) (auth()->user()->name ?? 'control'),
                     'fecha_completado' => now(),
                     'tallas_control_calidad' => !empty($tallasControlCalidad)
@@ -930,8 +1056,8 @@ class ReciboCosturaController extends Controller
                     'nombre_prenda' => $prenda?->nombre_prenda,
                     'descripcion' => $prenda?->descripcion,
                     'tipo_recibo' => $parcial->tipo_recibo,
-                    'consecutivo_actual' => (string) ($parcial->getRawOriginal('consecutivo_parcial') ?? $parcial->consecutivo_parcial),
-                    'consecutivo_original' => (string) ($parcial->getRawOriginal('consecutivo_original') ?? $parcial->consecutivo_original),
+                    'consecutivo_actual' => (string) ($parcial->getRawOriginal('consecutivo_parcial') ?? $parcial->consecutivo_parcial ?? $parcial->consecutivo_actual ?? ''),
+                    'consecutivo_original' => (string) ($parcial->getRawOriginal('consecutivo_original') ?? $parcial->consecutivo_original ?? $parcial->consecutivo_inicial ?? ''),
                     'es_parcial' => true,
                     'parcial_id' => (int) $parcial->id,
                     'completado_area' => false,
@@ -950,18 +1076,18 @@ class ReciboCosturaController extends Controller
             $this->notificarVistaCosturaCambioControlCalidadParcial($pedido, $parcial, $estadoParcialesCc, true);
 
             return response()->json([
-                'success' => true,
-                'message' => 'Parcial enviado a Control de Calidad correctamente',
-                'data' => [
-                    'proceso_id' => $nuevoProceso->id,
-                    'area_nueva' => 'Control Calidad',
-                    'parcial_id' => $parcial->id,
-                    'consecutivo_parcial' => (string) $parcial->consecutivo_parcial,
-                    'total_parciales' => $estadoParcialesCc['total_parciales'],
-                    'parciales_en_cc' => $estadoParcialesCc['parciales_en_cc'],
-                    'todos_parciales_en_cc' => $estadoParcialesCc['todos_parciales_en_cc'],
-                ],
-            ]);
+                    'success' => true,
+                    'message' => 'Parcial enviado a Control de Calidad correctamente',
+                    'data' => [
+                        'proceso_id' => $nuevoProceso->id,
+                        'area_nueva' => 'Control Calidad',
+                        'parcial_id' => $parcial->id,
+                        'consecutivo_parcial' => (string) $consecutivoParcial,
+                        'total_parciales' => $estadoParcialesCc['total_parciales'],
+                        'parciales_en_cc' => $estadoParcialesCc['parciales_en_cc'],
+                        'todos_parciales_en_cc' => $estadoParcialesCc['todos_parciales_en_cc'],
+                    ],
+                ]);
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -982,18 +1108,13 @@ class ReciboCosturaController extends Controller
     {
         $request->validate([
             'tipo_recibo' => 'required|string',
-            'parcial_id' => 'required|integer|exists:recibo_por_partes,id',
+            'parcial_id' => 'required|integer|min:1',
         ]);
 
         $pedido = PedidoProduccion::findOrFail($pedidoId);
         $tipoRecibo = strtoupper(trim((string) $request->tipo_recibo));
 
-        $parcial = ReciboPorPartes::query()
-            ->where('id', (int) $request->parcial_id)
-            ->where('pedido_produccion_id', $pedidoId)
-            ->where('prenda_pedido_id', $prendaId)
-            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [$tipoRecibo])
-            ->first();
+        $parcial = $this->resolverParcialParaControlCalidad($pedidoId, $prendaId, $tipoRecibo, (int) $request->parcial_id);
 
         if (!$parcial) {
             return response()->json([
@@ -1005,10 +1126,19 @@ class ReciboCosturaController extends Controller
         try {
             DB::beginTransaction();
 
+            $consecutivoParcial = (int) ($parcial->consecutivo_parcial ?? $parcial->consecutivo_actual ?? 0);
+
             $procesoCC = ProcesoPrenda::query()
                 ->where('numero_pedido', $pedido->numero_pedido)
                 ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
-                ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                ->where(function ($query) use ($consecutivoParcial) {
+                    $query->where('numero_recibo_parcial', $consecutivoParcial)
+                        ->orWhere(function ($query) use ($consecutivoParcial) {
+                            $query->whereNull('numero_recibo_parcial')
+                                ->where('codigo_referencia', 'like', 'CCP-%')
+                                ->where('numero_recibo', $consecutivoParcial);
+                        });
+                })
                 ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
                 ->latest('created_at')
                 ->first();
@@ -1025,7 +1155,7 @@ class ReciboCosturaController extends Controller
             $procesoAnterior = ProcesoPrenda::query()
                 ->where('numero_pedido', $pedido->numero_pedido)
                 ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
-                ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
+                ->where('numero_recibo_parcial', $consecutivoParcial)
                 ->whereRaw('LOWER(TRIM(proceso)) NOT IN (?, ?)', ['control calidad', 'control de calidad'])
                 ->latest('created_at')
                 ->first();
@@ -1047,8 +1177,8 @@ class ReciboCosturaController extends Controller
                     'nombre_prenda' => $parcial->prenda?->nombre_prenda,
                     'descripcion' => $parcial->prenda?->descripcion,
                     'tipo_recibo' => $parcial->tipo_recibo,
-                    'consecutivo_actual' => (string) ($parcial->getRawOriginal('consecutivo_parcial') ?? $parcial->consecutivo_parcial),
-                    'consecutivo_original' => (string) ($parcial->getRawOriginal('consecutivo_original') ?? $parcial->consecutivo_original),
+                    'consecutivo_actual' => (string) ($parcial->getRawOriginal('consecutivo_parcial') ?? $consecutivoParcial),
+                    'consecutivo_original' => (string) ($parcial->getRawOriginal('consecutivo_original') ?? $parcial->consecutivo_original ?? $parcial->consecutivo_inicial ?? ''),
                     'es_parcial' => true,
                     'parcial_id' => (int) $parcial->id,
                     'completado_area' => false,
@@ -1095,31 +1225,57 @@ class ReciboCosturaController extends Controller
         }
     }
 
-    private function sincronizarProcesoControlCalidadOriginal(PedidoProduccion $pedido, ReciboPorPartes $parcial): array
+    private function sincronizarProcesoControlCalidadOriginal(PedidoProduccion $pedido, mixed $parcial): array
     {
-        $parcialesRelacionados = ReciboPorPartes::query()
+        $esParcialNuevo = $parcial instanceof PedidoParcial;
+        $tablaParciales = $esParcialNuevo ? 'pedidos_parciales' : 'recibo_por_partes';
+        $campoOriginal = $esParcialNuevo ? 'consecutivo_inicial' : 'consecutivo_original';
+        $campoParcial = $esParcialNuevo ? 'consecutivo_actual' : 'consecutivo_parcial';
+
+        $parcialesRelacionados = DB::table($tablaParciales)
             ->where('pedido_produccion_id', $parcial->pedido_produccion_id)
             ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
             ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim((string) $parcial->tipo_recibo))])
-            ->where('consecutivo_original', $parcial->consecutivo_original)
-            ->get(['id', 'consecutivo_parcial']);
+            ->where($campoOriginal, $esParcialNuevo ? $parcial->consecutivo_inicial : $parcial->consecutivo_original)
+            ->get(['id', $campoParcial]);
 
         $totalParciales = $parcialesRelacionados->count();
         $consecutivosParciales = $parcialesRelacionados
-            ->pluck('consecutivo_parcial')
+            ->pluck($campoParcial)
             ->filter(fn($valor) => $valor !== null && $valor !== '')
             ->values();
 
-        $parcialesEnCc = $consecutivosParciales->isEmpty()
-            ? 0
-            : ProcesoPrenda::query()
+        $parcialesEnCc = $parcialesRelacionados->filter(function ($parcialRelacionado) use ($pedido, $parcial, $campoParcial) {
+            $consecutivoParcial = (int) ($parcialRelacionado->{$campoParcial} ?? 0);
+
+            if ($consecutivoParcial <= 0) {
+                return false;
+            }
+
+            $tieneProcesoCc = ProcesoPrenda::query()
                 ->where('numero_pedido', $pedido->numero_pedido)
                 ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
-                ->whereIn('numero_recibo_parcial', $consecutivosParciales->all())
+                ->where(function ($query) use ($consecutivoParcial) {
+                    $query->where('numero_recibo_parcial', $consecutivoParcial)
+                        ->orWhere(function ($query) use ($consecutivoParcial) {
+                            $query->whereNull('numero_recibo_parcial')
+                                ->where('codigo_referencia', 'like', 'CCP-%')
+                                ->where('numero_recibo', $consecutivoParcial);
+                        });
+                })
                 ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
                 ->whereNull('deleted_at')
-                ->distinct('numero_recibo_parcial')
-                ->count('numero_recibo_parcial');
+                ->exists();
+
+            if ($tieneProcesoCc) {
+                return true;
+            }
+
+            return DB::table('prenda_recibo_completado')
+                ->where('id_parcial', (int) $parcialRelacionado->id)
+                ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
+                ->exists();
+        })->count();
 
         $todosParcialesEnCc = $totalParciales > 0 && $parcialesEnCc >= $totalParciales;
         $algunParcialEnCc = $parcialesEnCc > 0;
@@ -1127,7 +1283,7 @@ class ReciboCosturaController extends Controller
         $procesoOriginalCc = ProcesoPrenda::query()
             ->where('numero_pedido', $pedido->numero_pedido)
             ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
-            ->where('numero_recibo', $parcial->consecutivo_original)
+            ->where('numero_recibo', $esParcialNuevo ? $parcial->consecutivo_inicial : $parcial->consecutivo_original)
             ->where(function ($query) {
                 $query->whereNull('numero_recibo_parcial')
                     ->orWhere('numero_recibo_parcial', 0);
@@ -1149,7 +1305,7 @@ class ReciboCosturaController extends Controller
                     $procesoOriginalCc = ProcesoPrenda::create([
                         'numero_pedido' => $pedido->numero_pedido,
                         'prenda_pedido_id' => $parcial->prenda_pedido_id,
-                        'numero_recibo' => $parcial->consecutivo_original,
+                        'numero_recibo' => $esParcialNuevo ? $parcial->consecutivo_inicial : $parcial->consecutivo_original,
                         'numero_recibo_parcial' => null,
                         'proceso' => 'Control de Calidad',
                         'fecha_inicio' => now(),
@@ -1167,7 +1323,7 @@ class ReciboCosturaController extends Controller
         // IMPORTANTE: Si TODOS los parciales estan en Control Calidad, actualizar el recibo original y el proceso padre
         if ($todosParcialesEnCc) {
             // 1. Cambiar el recibo original a Control Calidad en consecutivos_recibos_pedidos
-            $consecutivoNum = (int) $parcial->consecutivo_original;
+            $consecutivoNum = (int) ($esParcialNuevo ? $parcial->consecutivo_inicial : $parcial->consecutivo_original);
             $actualizados = ConsecutivoReciboPedido::query()
                 ->where('pedido_produccion_id', $parcial->pedido_produccion_id)
                 ->where('consecutivo_actual', $consecutivoNum)
@@ -1217,7 +1373,7 @@ class ReciboCosturaController extends Controller
             'numero_pedido' => (int) $pedido->numero_pedido,
             'prenda_id' => (int) $parcial->prenda_pedido_id,
             'tipo_recibo' => (string) $parcial->tipo_recibo,
-            'consecutivo_original' => (string) $parcial->consecutivo_original,
+                'consecutivo_original' => (string) $parcial->consecutivo_original,
             'total_parciales' => $totalParciales,
             'parciales_en_cc' => $parcialesEnCc,
             'todos_parciales_en_cc' => $todosParcialesEnCc,
@@ -1235,7 +1391,7 @@ class ReciboCosturaController extends Controller
 
     private function notificarVistaCosturaCambioControlCalidadParcial(
         PedidoProduccion $pedido,
-        ReciboPorPartes $parcial,
+        PedidoParcial|ReciboPorPartes $parcial,
         array $estadoParcialesCc,
         bool $parcialEnviadoAcc
     ): void {

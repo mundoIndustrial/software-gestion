@@ -3,11 +3,13 @@
 namespace App\Infrastructure\Services\Operario;
 
 use App\Infrastructure\Repositories\Operario\OperarioRecibosRepository;
+use App\Models\ConsecutivoReciboPedido;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\ReciboPorPartes;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class ObtenerPrendasRecibosParcialesService
 {
@@ -15,6 +17,124 @@ class ObtenerPrendasRecibosParcialesService
         private readonly OperarioRecibosRepository $operarioRecibosRepository,
         private readonly ObtenerPrendasRecibosSupportService $supportService
     ) {}
+
+    private function construirClaveEstadoControlCalidad(?string $talla, ?string $genero, ?string $colorNombre): string
+    {
+        return implode('|', [
+            strtoupper(trim((string) $talla)),
+            strtoupper(trim((string) $genero)),
+            strtoupper(trim((string) $colorNombre)),
+        ]);
+    }
+
+    private function normalizarCantidadesPorClaveControlCalidad(array $tallas): array
+    {
+        $normalizadas = [];
+
+        foreach ($tallas as $talla) {
+            if (!is_array($talla)) {
+                continue;
+            }
+
+            $clave = $this->construirClaveEstadoControlCalidad(
+                (string) ($talla['talla'] ?? ''),
+                (string) ($talla['genero'] ?? ''),
+                (string) ($talla['color_nombre'] ?? '')
+            );
+
+            if ($clave === '||') {
+                continue;
+            }
+
+            $normalizadas[$clave] = ($normalizadas[$clave] ?? 0) + (int) ($talla['cantidad'] ?? 0);
+        }
+
+        return $normalizadas;
+    }
+
+    private function resolverEstadoControlCalidadDesdeTallas(array $tallasOriginales, array $tallasEnviadas): string
+    {
+        if (empty($tallasEnviadas)) {
+            return 'pendiente';
+        }
+
+        $originales = $this->normalizarCantidadesPorClaveControlCalidad($tallasOriginales);
+        $enviadas = $this->normalizarCantidadesPorClaveControlCalidad($tallasEnviadas);
+
+        if (empty($originales)) {
+            return 'pendiente';
+        }
+
+        foreach ($originales as $clave => $cantidadOriginal) {
+            if ((int) ($enviadas[$clave] ?? 0) < (int) $cantidadOriginal) {
+                return 'parcial';
+            }
+        }
+
+        return 'completo';
+    }
+
+    private function normalizarTallasControlCalidad(mixed $tallasRaw): array
+    {
+        if (is_string($tallasRaw) && $tallasRaw !== '') {
+            $decoded = json_decode($tallasRaw, true);
+            $tallasRaw = is_array($decoded) ? $decoded : [];
+        }
+
+        if (!is_array($tallasRaw)) {
+            return [];
+        }
+
+        return collect($tallasRaw)
+            ->filter(fn ($talla) => is_array($talla))
+            ->map(fn (array $talla) => [
+                'talla' => (string) ($talla['talla'] ?? ''),
+                'genero' => (string) ($talla['genero'] ?? ''),
+                'color_nombre' => (string) ($talla['color_nombre'] ?? ''),
+                'cantidad' => (int) ($talla['cantidad'] ?? 0),
+            ])
+            ->filter(fn (array $talla) => trim($talla['talla']) !== '' && $talla['cantidad'] > 0)
+            ->values()
+            ->all();
+    }
+
+    private function resolverCompletadoControlCalidadParcial(mixed $parcial, bool $esAnexo): ?object
+    {
+        $completadoParcial = $this->operarioRecibosRepository->obtenerCompletadoParcialEnControlCalidad((int) $parcial->id);
+        if ($completadoParcial) {
+            return $completadoParcial;
+        }
+
+        if ($esAnexo) {
+            return null;
+        }
+
+        $totalParcialesMismoOriginal = DB::table('pedidos_parciales')
+            ->where('pedido_produccion_id', (int) $parcial->pedido_produccion_id)
+            ->where('prenda_pedido_id', (int) $parcial->prenda_pedido_id)
+            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim((string) $parcial->tipo_recibo))])
+            ->count();
+
+        if ($totalParcialesMismoOriginal !== 1) {
+            return null;
+        }
+
+        $reciboOriginalId = ConsecutivoReciboPedido::query()
+            ->where('pedido_produccion_id', (int) $parcial->pedido_produccion_id)
+            ->where('prenda_id', (int) $parcial->prenda_pedido_id)
+            ->where('consecutivo_actual', (int) $parcial->consecutivo_actual)
+            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim((string) $parcial->tipo_recibo))])
+            ->value('id');
+
+        if (!$reciboOriginalId) {
+            return null;
+        }
+
+        return DB::table('prenda_recibo_completado')
+            ->where('id_recibo', (int) $reciboOriginalId)
+            ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
+            ->first();
+    }
 
     public function obtenerPrendasParcialesCostura(?User $usuario, bool $modoTodosCostura): Collection
     {
@@ -100,7 +220,12 @@ class ObtenerPrendasRecibosParcialesService
                 ->sortByDesc('created_at')
                 ->first();
             $procesoReciente = $procesosCostura->sortByDesc('created_at')->first();
-            $areaActual = $this->resolverAreaActualParcial(isset($completadosMap[$parcial->id]), $procesoReciente);
+            $completadoControlCalidad = $this->resolverCompletadoControlCalidadParcial($parcial, false);
+            $areaActual = $this->resolverAreaActualParcial(
+                isset($completadosMap[$parcial->id]),
+                !empty($completadoControlCalidad),
+                $procesoReciente
+            );
 
             $items->push([
                 'parcial' => $parcial,
@@ -133,7 +258,12 @@ class ObtenerPrendasRecibosParcialesService
                 (string) $anexo->consecutivo_actual
             );
             $completadoCorte = $this->operarioRecibosRepository->existeCompletadoParcialEnCorte((int) $anexo->id);
-            $areaActual = $this->resolverAreaActualParcial($completadoCorte, $procesoReciente);
+            $completadoControlCalidad = $this->resolverCompletadoControlCalidadParcial($anexo, true);
+            $areaActual = $this->resolverAreaActualParcial(
+                $completadoCorte,
+                !empty($completadoControlCalidad),
+                $procesoReciente
+            );
 
             $items->push([
                 'parcial' => $anexo,
@@ -150,8 +280,12 @@ class ObtenerPrendasRecibosParcialesService
         return $items;
     }
 
-    private function resolverAreaActualParcial(bool $completadoCorte, mixed $procesoReciente): string
+    private function resolverAreaActualParcial(bool $completadoCorte, bool $completadoControlCalidad, mixed $procesoReciente): string
     {
+        if ($completadoControlCalidad) {
+            return 'Control Calidad';
+        }
+
         if ($completadoCorte) {
             return 'Costura';
         }
@@ -219,9 +353,11 @@ class ObtenerPrendasRecibosParcialesService
         $consecutivoParcial = $this->formatearConsecutivoParcial($parcial->consecutivo_parcial ?? $parcial->consecutivo_actual);
         $registroCompletadoCostura = $this->operarioRecibosRepository->obtenerCompletadoParcialEnCostura((int) $parcial->id);
         $completadoCostura = !empty($registroCompletadoCostura);
+        $tallasControlCalidad = $this->normalizarTallasControlCalidad($registroCompletadoCostura?->tallas_control_calidad ?? null);
         $fechaCompletadoCostura = $registroCompletadoCostura->fecha_completado ?? null;
         $encargadoCostura = $proceso?->encargado ?: (!$esAnexo ? $parcial->encargado : null);
         $encargadoCorte = ($item['area_detectada'] ?? '') === 'Corte' ? $procesoReciente?->encargado : null;
+        $estadoControlCalidad = $this->resolverEstadoControlCalidadDesdeTallas($tallas, $tallasControlCalidad);
 
         return [
             'prenda_id' => $prenda->id,
@@ -235,6 +371,7 @@ class ObtenerPrendasRecibosParcialesService
             'descripcion' => $prenda->descripcion,
             'de_bodega' => $prenda->de_bodega ?? false,
             'tallas' => $tallas,
+            'tallas_control_calidad' => $tallasControlCalidad,
             'recibos' => [[
                 'id' => null,
                 'tipo_recibo' => (string) ($parcial->tipo_recibo ?: 'PARCIAL'),
@@ -256,7 +393,9 @@ class ObtenerPrendasRecibosParcialesService
                 'completado_corte' => false,
                 'completado_costura' => $completadoCostura,
                 'fecha_completado_costura' => $fechaCompletadoCostura,
-                'completado_control_calidad' => false,
+                'completado_control_calidad' => $estadoControlCalidad === 'completo',
+                'estado_control_calidad' => $estadoControlCalidad,
+                'tallas_control_calidad' => $tallasControlCalidad,
                 'es_parcial' => true,
                 'pedido_parcial_id' => $parcial->id,
                 'tiene_parciales' => false,

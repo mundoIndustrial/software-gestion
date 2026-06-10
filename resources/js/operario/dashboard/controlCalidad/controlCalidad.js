@@ -53,6 +53,36 @@ function obtenerClaveTalla(talla) {
     ].join('|');
 }
 
+function tallasCoincidenExactamente(tallasOrigen = [], tallasComparadas = []) {
+    const normalizar = (lista) => {
+        const acumuladas = new Map();
+
+        (Array.isArray(lista) ? lista : []).forEach((talla) => {
+            const clave = obtenerClaveTalla(talla);
+            if (!clave || clave === '||') {
+                return;
+            }
+
+            const cantidad = Number.parseInt(talla?.cantidad ?? 0, 10) || 0;
+            acumuladas.set(clave, (acumuladas.get(clave) || 0) + cantidad);
+        });
+
+        return Array.from(acumuladas.entries()).sort(([a], [b]) => a.localeCompare(b));
+    };
+
+    const origen = normalizar(tallasOrigen);
+    const comparadas = normalizar(tallasComparadas);
+
+    if (origen.length === 0 || comparadas.length === 0 || origen.length !== comparadas.length) {
+        return false;
+    }
+
+    return origen.every(([clave, cantidad], index) => {
+        const [claveComparada, cantidadComparada] = comparadas[index] || [];
+        return clave === claveComparada && cantidad === cantidadComparada;
+    });
+}
+
 function acumularTallasControlCalidad(tallasExistentes = [], tallasNuevas = []) {
     const acumuladas = new Map();
 
@@ -103,6 +133,11 @@ function obtenerReciboIdControlCalidad(btn) {
     const cardReciboId = Number.parseInt(card?.dataset?.reciboId || '', 10);
     if (Number.isFinite(cardReciboId) && cardReciboId > 0) {
         return cardReciboId;
+    }
+
+    const parcialId = Number.parseInt(btn?.dataset?.parcialId || '', 10);
+    if (Number.isFinite(parcialId) && parcialId > 0) {
+        return parcialId;
     }
 
     const alterno = card?.querySelector('[data-recibo-id]');
@@ -721,6 +756,7 @@ export async function pasarAControlCalidad(btn) {
 
                     if (esParcial) {
                         actualizarInterfazControlCalidadParcial(btn, nuevoArea, '', true);
+                        sincronizarBotonesControlCalidad(nuevoArea, '', 'pendiente');
                     } else {
                         btn.dataset.area = nuevoArea;
                         btn.dataset.procesoId = '';
@@ -792,7 +828,7 @@ export async function pasarAControlCalidad(btn) {
         const cantidad = Number.parseInt(talla?.cantidad ?? 0, 10);
         return acumulado + (Number.isFinite(cantidad) ? cantidad : 0);
     }, 0);
-    const esControlCalidadParcial = totalTallasOrigen > 0 && totalTallasSeleccionadas < totalTallasOrigen;
+    const esControlCalidadParcial = !tallasCoincidenExactamente(tallasRecibo, tallasControlCalidadAcumuladas);
     const estadoControlCalidad = esControlCalidadParcial ? 'parcial' : 'completo';
     const sincronizarBotonesControlCalidad = (areaNueva = 'Control Calidad', procesoId = '', estado = estadoControlCalidad) => {
         if (!card) return;
@@ -838,6 +874,11 @@ export async function pasarAControlCalidad(btn) {
                         data.data?.area_nueva || 'Control Calidad',
                         data.data?.proceso_id || '',
                         false
+                    );
+                    sincronizarBotonesControlCalidad(
+                        data.data?.area_nueva || 'Control Calidad',
+                        data.data?.proceso_id || '',
+                        estadoControlCalidad
                     );
                 } else {
                     const areaNueva = data.data?.area_nueva || 'Control Calidad';

@@ -189,6 +189,14 @@ class OperarioRecibosRepository
             ->first();
     }
 
+    public function obtenerCompletadoParcialEnControlCalidad(int $parcialId): ?object
+    {
+        return DB::table('prenda_recibo_completado')
+            ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
+            ->where('id_parcial', $parcialId)
+            ->first();
+    }
+
     public function buscarUsuarioPorNombreNormalizado(string $nombreNormalizado): ?User
     {
         return User::query()

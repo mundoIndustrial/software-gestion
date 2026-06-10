@@ -201,6 +201,7 @@ final class VisualizadorLogoController extends Controller
         try {
             $params = $request->query();
             $params['user_id'] = $request->user()?->id;
+            $params['is_visualizador'] = true;
 
             $response = $this->listOrdersUseCase->execute(new ListOrdersRequest($params));
             

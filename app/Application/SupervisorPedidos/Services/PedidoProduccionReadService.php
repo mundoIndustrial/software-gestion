@@ -62,10 +62,14 @@ class PedidoProduccionReadService
 
         $this->applyStatusFilters($query, $request);
         $this->applyHiddenFilter($query, $request);
-        $this->applyDespachoVisibilityFilter($query, $request);
+        if (!$request->isVisualizador()) {
+            $this->applyDespachoVisibilityFilter($query, $request);
+        }
         $this->applyPendingNumberFilter($query);
         $this->applyEppOnlyFilter($query);
-        $this->applyApprovalFilter($query, $request);
+        if (!$request->isVisualizador()) {
+            $this->applyApprovalFilter($query, $request);
+        }
         $this->applySearchFilter($query, $request);
         $this->applyColumnFilters($query, $request);
         $this->applyDateFilters($query, $request);
@@ -728,6 +732,13 @@ class PedidoProduccionReadService
 
     private function applyStatusFilters($query, ListOrdersRequest $request): void
     {
+        // Para el visualizador, no aplicar filtros restrictivos de estado
+        if ($request->isVisualizador()) {
+            $query->whereNotNull('numero_pedido')
+                ->where('numero_pedido', '!=', '');
+            return;
+        }
+
         $filtrosCartera = array_values(array_filter(array_map('trim', explode(',', (string) ($request->getAprobacionCartera() ?? '')))));
         $incluyeNoAprobadoCartera = in_array('no_aprobado', $filtrosCartera, true);
         $estadoSolicitado = trim((string) ($request->getEstado() ?? ''));

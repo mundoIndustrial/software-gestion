@@ -81,10 +81,8 @@ class ControlCalidadController extends Controller
             return 'pendiente';
         }
 
-        foreach ($originales as $clave => $cantidadOriginal) {
-            if ((int) ($enviadas[$clave] ?? 0) < (int) $cantidadOriginal) {
-                return 'parcial';
-            }
+        if ($originales !== $enviadas) {
+            return 'parcial';
         }
 
         return 'completo';

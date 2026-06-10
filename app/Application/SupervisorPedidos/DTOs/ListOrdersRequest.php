@@ -20,6 +20,7 @@ class ListOrdersRequest
     private ?string $fecha_desde = null;
     private ?string $fecha_hasta = null;
     private bool $verTodosDespacho = false;
+    private bool $isVisualizador = false;
     private int $page = 1;
     private int $perPage = 15;
 
@@ -41,6 +42,7 @@ class ListOrdersRequest
         $this->fecha_desde = $params['fecha_desde'] ?? null;
         $this->fecha_hasta = $params['fecha_hasta'] ?? null;
         $this->verTodosDespacho = filter_var($params['ver_todos_despacho'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $this->isVisualizador = filter_var($params['is_visualizador'] ?? false, FILTER_VALIDATE_BOOLEAN);
         $this->page = $params['page'] ?? 1;
         $this->perPage = $params['perPage'] ?? 15;
     }
@@ -59,6 +61,7 @@ class ListOrdersRequest
     public function getFechaDesde(): ?string { return $this->fecha_desde; }
     public function getFechaHasta(): ?string { return $this->fecha_hasta; }
     public function shouldIncludeDespacho(): bool { return $this->verTodosDespacho; }
+    public function isVisualizador(): bool { return $this->isVisualizador; }
     public function getPage(): int { return $this->page; }
     public function getPerPage(): int { return $this->perPage; }
     public function getUserId(): ?int { return $this->userId; }
