@@ -579,6 +579,17 @@
     text-overflow: ellipsis;
 }
 
+.table-entregas .prenda-desc-limit {
+    max-width: none;
+    display: block;
+    -webkit-line-clamp: unset;
+    -webkit-box-orient: initial;
+    overflow: visible;
+    text-overflow: initial;
+    white-space: normal;
+    word-break: break-word;
+}
+
 .col-cantidad {
     text-align: right;
     font-weight: 800;

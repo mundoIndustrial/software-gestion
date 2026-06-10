@@ -23,14 +23,14 @@ class ObtenerHistorialEntregasTallerUseCase
 
         // Procesar entregas
         foreach ($entregas as $e) {
-            $msgColor = $e->color_nombre ? " - {$e->color_nombre}" : "";
-            
             $items[] = [
                 'id' => $e->id,
                 'cantidad_total' => $e->cantidad_entregada,
                 'fecha' => $e->created_at->format('d/m/Y H:i'),
                 'encargado' => $e->encargado,
-                'detalle' => "{$e->talla} ({$e->genero}){$msgColor}",
+                'talla' => $e->talla,
+                'genero' => $e->genero,
+                'color' => $e->color_nombre,
                 'observaciones' => $e->observaciones,
                 'es_novedad' => false,
                 'created_at' => $e->created_at
@@ -44,7 +44,9 @@ class ObtenerHistorialEntregasTallerUseCase
                 'cantidad_total' => '📝 NOVEDAD',
                 'fecha' => $n->created_at->format('d/m/Y H:i'),
                 'encargado' => $n->encargado,
-                'detalle' => 'Novedad registrada',
+                'talla' => '-',
+                'genero' => '-',
+                'color' => null,
                 'observaciones' => $n->observaciones,
                 'es_novedad' => true,
                 'created_at' => $n->created_at

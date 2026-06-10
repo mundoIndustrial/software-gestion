@@ -18,6 +18,10 @@ function formatFechaSalida(fechaSalida) {
     }).format(fecha);
 }
 
+function formatFechaAcordeon(fecha) {
+    return formatFechaSalida(fecha);
+}
+
 function syncOrdenesTabButtons(activeTab) {
     const tabs = document.querySelectorAll('.ordenes-tab-btn');
     tabs.forEach((tabBtn) => {
@@ -898,18 +902,20 @@ function cargarEntregasAcordeon(reciboId, esParcial, reciboNumero, tipoRecibo, c
                 return;
             }
 
-            const fecha = (data.dia && data.mes && data.ano)
+            const fecha = data.fecha_salida || ((data.dia && data.mes && data.ano)
                 ? `${String(data.dia).padStart(2, '0')}/${String(data.mes).padStart(2, '0')}/${String(data.ano)}`
-                : 'N/A';
+                : 'N/A');
+            const totalAsignado = Number(data.total || 0);
 
             const descripcion = data.descripcion || 'Sin descripcion';
+            const historialId = `historial-entregas-${reciboId}-${esParcial ? 'parcial' : 'normal'}`;
 
             let html = '<div style="padding: 20px;">';
             html += `
                 <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                     <thead>
                         <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
-                            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Fecha proceso</th>
+                            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Fecha salida</th>
                             <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Descripcion</th>
                             <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Talla</th>
                             <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Cantidad</th>
@@ -924,7 +930,7 @@ function cargarEntregasAcordeon(reciboId, esParcial, reciboNumero, tipoRecibo, c
 
                 html += `<tr style="border-bottom: 1px solid #e2e8f0; background: ${bgColor};">`;
                 if (index === 0) {
-                    html += `<td rowspan="${tallas.length}" style="padding: 12px; font-size: 13px; color: #334155; vertical-align: top; font-weight: 600;">${escapeHtml(fecha)}</td>`;
+                    html += `<td rowspan="${tallas.length}" style="padding: 12px; font-size: 13px; color: #334155; vertical-align: top; font-weight: 600;">${escapeHtml(formatFechaAcordeon(fecha))}</td>`;
                     html += `<td rowspan="${tallas.length}" style="padding: 12px; font-size: 13px; color: #334155; vertical-align: top;">${escapeHtml(descripcion)}</td>`;
                 }
                 html += `<td style="padding: 12px; font-size: 13px; color: #334155;">${escapeHtml(talla)}</td>`;
@@ -936,17 +942,140 @@ function cargarEntregasAcordeon(reciboId, esParcial, reciboNumero, tipoRecibo, c
                     </tbody>
                 </table>
                 <div style="margin-top: 15px; text-align: right; font-size: 14px; font-weight: 600; color: #475569;">
-                    Total asignado: <span style="color: #2563eb;">${Number(data.total || 0)} unidades</span>
+                    Total asignado: <span style="color: #2563eb;">${totalAsignado} unidades</span>
                 </div>
+            `;
+            html += `
+                <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
+                    <button
+                        type="button"
+                        class="btn-historial-entregas"
+                        data-recibo-id="${reciboId}"
+                        data-es-parcial="${esParcial ? '1' : '0'}"
+                        data-target-id="${historialId}"
+                        style="
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 8px;
+                            padding: 8px 14px;
+                            border: 1px solid #cbd5e1;
+                            border-radius: 10px;
+                            background: #ffffff;
+                            color: #1e40af;
+                            font-weight: 700;
+                            font-size: 0.85rem;
+                            cursor: pointer;
+                        "
+                    >
+                        <span class="material-symbols-rounded" style="font-size: 16px;">unfold_more</span>
+                        Ver historial de entregas
+                    </button>
+                </div>
+                <div id="${historialId}" class="historial-entregas-panel" style="display:none; margin-top: 14px;"></div>
             `;
             html += '</div>';
 
             contentDiv.innerHTML = html;
+            initHistorialEntregasAccordion(contentDiv);
         })
         .catch(error => {
             console.error('Error al cargar asignaciones del recibo:', error);
             contentDiv.innerHTML = '<div style="padding: 30px; text-align: center; color: #64748b;"><p>No hay datos de asignacion disponibles</p></div>';
         });
+}
+
+function initHistorialEntregasAccordion(contentDiv) {
+    const buttons = contentDiv.querySelectorAll('.btn-historial-entregas');
+
+    buttons.forEach((button) => {
+        button.addEventListener('click', async () => {
+            const targetId = button.dataset.targetId;
+            const reciboId = button.dataset.reciboId;
+            const esParcial = button.dataset.esParcial === '1';
+            const panel = document.getElementById(targetId);
+
+            if (!panel) return;
+
+            const isVisible = panel.style.display !== 'none';
+            if (isVisible) {
+                panel.style.display = 'none';
+                button.querySelector('.material-symbols-rounded').textContent = 'unfold_more';
+                return;
+            }
+
+            panel.style.display = 'block';
+            panel.innerHTML = `
+                <div style="padding: 16px; text-align: center; color: #64748b;">
+                    <div class="loading-spinner" style="margin: 0 auto 10px auto;"></div>
+                    <p>Cargando historial de entregas...</p>
+                </div>
+            `;
+            button.querySelector('.material-symbols-rounded').textContent = 'expand_less';
+
+            try {
+                const response = await fetch(`/entregas-talleres/historial/${reciboId}?es_parcial=${esParcial ? '1' : '0'}`);
+                const data = await response.json();
+                const entregas = Array.isArray(data) ? data.filter((item) => !item.es_novedad) : [];
+
+                if (!entregas.length) {
+                    panel.innerHTML = `
+                        <div style="padding: 16px; text-align: center; color: #64748b;">
+                            <p>No hay entregas registradas.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let historyHtml = `
+                    <div style="padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; gap: 12px; flex-wrap: wrap;">
+                            <h4 style="margin:0; font-size: 14px; color: #0f172a;">Historial de entregas</h4>
+                            <span style="font-size: 12px; color: #64748b;">${entregas.length} movimientos</span>
+                        </div>
+                        <div style="overflow:auto;">
+                            <table style="width:100%; border-collapse: collapse; background: white; border-radius: 8px; overflow:hidden;">
+                                <thead>
+                                    <tr style="background:#f1f5f9; border-bottom:1px solid #e2e8f0;">
+                                        <th style="padding:10px; text-align:left; font-size:12px; color:#475569; text-transform:uppercase;">Fecha entrada</th>
+                                        <th style="padding:10px; text-align:left; font-size:12px; color:#475569; text-transform:uppercase;">Talla</th>
+                                        <th style="padding:10px; text-align:left; font-size:12px; color:#475569; text-transform:uppercase;">Género</th>
+                                        <th style="padding:10px; text-align:left; font-size:12px; color:#475569; text-transform:uppercase;">Cantidad</th>
+                                        <th style="padding:10px; text-align:left; font-size:12px; color:#475569; text-transform:uppercase;">Observaciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+
+                entregas.forEach((item) => {
+                    historyHtml += `
+                        <tr style="border-bottom:1px solid #e2e8f0;">
+                            <td style="padding:10px; font-size:13px; color:#334155; vertical-align:top; white-space:nowrap;">${escapeHtml(item.fecha || '-')}</td>
+                            <td style="padding:10px; font-size:13px; color:#334155; vertical-align:top;">${escapeHtml((item.talla || '-'))}</td>
+                            <td style="padding:10px; font-size:13px; color:#334155; vertical-align:top;">${escapeHtml((item.genero || '-'))}</td>
+                            <td style="padding:10px; font-size:13px; color:#0f172a; vertical-align:top; font-weight:700;">${escapeHtml(String(item.cantidad_total ?? 0))}</td>
+                            <td style="padding:10px; font-size:13px; color:#334155; vertical-align:top;">${escapeHtml(item.observaciones || '-')}</td>
+                        </tr>
+                    `;
+                });
+
+                historyHtml += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+
+                panel.innerHTML = historyHtml;
+            } catch (error) {
+                console.error('Error al cargar historial de entregas:', error);
+                panel.innerHTML = `
+                    <div style="padding: 16px; text-align: center; color: #b91c1c;">
+                        <p>No se pudo cargar el historial de entregas.</p>
+                    </div>
+                `;
+            }
+        });
+    });
 }
 
 function isOrdenesViewActive() {

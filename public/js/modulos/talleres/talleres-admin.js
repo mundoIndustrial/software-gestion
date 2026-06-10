@@ -213,6 +213,10 @@ function formatFechaSalidaRecibos(fechaSalida) {
     }).format(fecha);
 }
 
+function formatFechaReciboAcordeon(fecha) {
+    return formatFechaSalidaRecibos(fecha);
+}
+
 function initNewTallerModal() {
     const btnNewTaller = document.getElementById('btnNewTaller');
     const modal = document.getElementById('modalNewTaller');
@@ -967,7 +971,7 @@ function showEntregas(tallerId, reciboId, esParcial, reciboNumero, cliente, pren
                 const semana = semanaGroup[0].grupo;
                 html += '<div class="semana-group">';
                 html += '<div class="semana-header"><span class="material-symbols-rounded">calendar_month</span>' + semana + '</div>';
-                html += '<table class="table-entregas"><thead><tr><th class="col-fecha">FECHA</th><th>DESCRIPCIÓN</th><th class="col-genero">GÉNERO</th><th class="col-talla">TALLA</th><th class="col-cantidad">CANT.</th><th>PROGRESO</th><th>PRECIO</th></tr></thead><tbody>';
+                html += '<table class="table-entregas"><thead><tr><th class="col-fecha-salida">FECHA SALIDA</th><th>DESCRIPCIÓN</th><th class="col-genero">GÉNERO</th><th class="col-talla">TALLA</th><th class="col-cantidad">CANT.</th><th>PROGRESO</th><th>PRECIO</th><th class="col-fecha-entrada">FECHA ENTRADA</th></tr></thead><tbody>';
 
                 semanaGroup.forEach(entrega => {
                     const colorMsg = entrega.color ? `<br><small style="color:#64748b">Color: ${entrega.color}</small>` : '';
@@ -979,7 +983,7 @@ function showEntregas(tallerId, reciboId, esParcial, reciboNumero, cliente, pren
                     
                     html += `
                         <tr>
-                            <td class="col-fecha">${entrega.fecha_formateada}</td>
+                            <td class="col-fecha-salida">${entrega.fecha_salida || '-'}</td>
                             <td>
                                 <div class="prenda-desc-limit" title="${entrega.descripcion}">
                                     ${entrega.descripcion}
@@ -1009,6 +1013,7 @@ function showEntregas(tallerId, reciboId, esParcial, reciboNumero, cliente, pren
                                            placeholder="0">
                                 </div>
                             </td>
+                            <td class="col-fecha-entrada">${entrega.fecha_entrada || entrega.fecha_formateada}</td>
                         </tr>
                     `;
                 });

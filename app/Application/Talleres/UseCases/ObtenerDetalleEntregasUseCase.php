@@ -68,6 +68,14 @@ class ObtenerDetalleEntregasUseCase
         
         if (!$recibo) return null;
 
+        $fechaSalida = DB::table('procesos_prenda')
+            ->where($isParcial ? 'numero_recibo_parcial' : 'numero_recibo', $recibo->numero_recibo)
+            ->whereRaw("LOWER(TRIM(proceso)) = 'costura'")
+            ->orderByDesc('fecha_de_asignacion_encargado')
+            ->orderByDesc('id')
+            ->selectRaw('COALESCE(fecha_de_asignacion_encargado, created_at) as fecha_salida')
+            ->value('fecha_salida');
+
         $mapaTotales = [];
         foreach ($totalesAsignados as $t) {
             $key = $this->generarKey($t->talla, $t->genero ?? 'UNISEX', $t->color_nombre ?? '');
@@ -106,6 +114,8 @@ class ObtenerDetalleEntregasUseCase
                 $entregasProcesadas->push([
                     'id' => $entrega->id,
                     'fecha_formateada' => $fecha->format('d/m/Y'),
+                    'fecha_salida' => $fechaSalida ? Carbon::parse($fechaSalida)->format('d/m/Y h:i A') : '-',
+                    'fecha_entrada' => $fecha->format('d/m/Y h:i A'),
                     'descripcion' => mb_strtoupper($recibo->descripcion_prenda),
                     'talla_nombre' => $item['talla'],
                     'genero' => $item['genero'],

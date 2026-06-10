@@ -543,6 +543,19 @@ class TalleresController extends Controller
                     ->where('recibo_por_partes_id', $reciboParcial->id)
                     ->get(['talla', 'genero', 'color_nombre as color', 'cantidad']);
 
+                $procesoSalida = DB::table('procesos_prenda')
+                    ->where('numero_recibo_parcial', $reciboParcial->consecutivo_parcial)
+                    ->whereRaw("LOWER(TRIM(proceso)) = 'costura'")
+                    ->orderByDesc('fecha_de_asignacion_encargado')
+                    ->orderByDesc('id')
+                    ->selectRaw('COALESCE(fecha_de_asignacion_encargado, created_at) as fecha_salida')
+                    ->value('fecha_salida');
+
+                $entregasRecibo = DB::table('entrega_recibo_costura')
+                    ->where('recibo_parcial_id', $reciboParcial->id);
+                $totalEntregado = (int) (clone $entregasRecibo)->sum('cantidad_entregada');
+                $fechaEntrada = (clone $entregasRecibo)->max('created_at');
+
                 return response()->json([
                     'success' => true,
                     'tipo_recibo' => $tipoReciboParcial,
@@ -551,6 +564,8 @@ class TalleresController extends Controller
                     'dia' => $fechaParcial->format('d'),
                     'mes' => $fechaParcial->format('m'),
                     'ano' => $fechaParcial->format('Y'),
+                    'fecha_salida' => $procesoSalida ? \Carbon\Carbon::parse($procesoSalida)->format('d/m/Y h:i A') : '-',
+                    'fecha_entrada' => $fechaEntrada ? \Carbon\Carbon::parse($fechaEntrada)->format('d/m/Y h:i A') : null,
                     'tallas' => $tallas->map(fn($t) => [
                         'talla' => $t->talla,
                         'genero' => $t->genero,
@@ -558,6 +573,7 @@ class TalleresController extends Controller
                         'cantidad' => (int) $t->cantidad,
                     ])->toArray(),
                     'total' => (int) $tallas->sum('cantidad'),
+                    'total_entregado' => $totalEntregado,
                 ]);
             }
 
@@ -582,7 +598,8 @@ class TalleresController extends Controller
                     $reciboBodegaQuery->where('prenda_id', $prendaId);
                 }
 
-                $prendaBodegaId = $reciboBodegaQuery->orderByDesc('id')->value('prenda_bodega_id');
+                $reciboBodega = $reciboBodegaQuery->orderByDesc('id')->first();
+                $prendaBodegaId = $reciboBodega->prenda_bodega_id ?? null;
 
                 if (!$prendaBodegaId) {
                     return response()->json(['success' => false, 'message' => 'Recibo no encontrado'], 404);
@@ -597,6 +614,19 @@ class TalleresController extends Controller
                     ->where('prenda_bodega_id', $prendaBodegaId)
                     ->get(['talla', 'genero', 'color', 'cantidad']);
 
+                $procesoSalida = DB::table('procesos_prenda')
+                    ->where('prenda_bodega_id', $prendaBodegaId)
+                    ->whereRaw("LOWER(TRIM(proceso)) = 'costura'")
+                    ->orderByDesc('fecha_de_asignacion_encargado')
+                    ->orderByDesc('id')
+                    ->selectRaw('COALESCE(fecha_de_asignacion_encargado, created_at) as fecha_salida')
+                    ->value('fecha_salida');
+
+                $entregasRecibo = DB::table('entrega_recibo_costura')
+                    ->where('consecutivo_recibo_id', $reciboBodega->id ?? 0);
+                $totalEntregado = (int) (clone $entregasRecibo)->sum('cantidad_entregada');
+                $fechaEntrada = (clone $entregasRecibo)->max('created_at');
+
                 $fecha = Carbon::parse($prenda->created_at);
                 return response()->json([
                     'success' => true,
@@ -606,6 +636,8 @@ class TalleresController extends Controller
                     'dia' => $fecha->format('d'),
                     'mes' => $fecha->format('m'),
                     'ano' => $fecha->format('Y'),
+                    'fecha_salida' => $procesoSalida ? \Carbon\Carbon::parse($procesoSalida)->format('d/m/Y h:i A') : '-',
+                    'fecha_entrada' => $fechaEntrada ? \Carbon\Carbon::parse($fechaEntrada)->format('d/m/Y h:i A') : null,
                     'tallas' => $tallas->map(fn($t) => [
                         'talla' => $t->talla,
                         'genero' => $t->genero,
@@ -613,6 +645,7 @@ class TalleresController extends Controller
                         'cantidad' => (int) $t->cantidad,
                     ])->toArray(),
                     'total' => (int) $tallas->sum('cantidad'),
+                    'total_entregado' => $totalEntregado,
                 ]);
             }
 
@@ -653,6 +686,19 @@ class TalleresController extends Controller
                     DB::raw('COALESCE(ppc.cantidad, ppt.cantidad) as cantidad')
                 ]);
 
+            $procesoSalida = DB::table('procesos_prenda')
+                ->where('numero_recibo', $reciboBase->consecutivo_actual)
+                ->whereRaw("LOWER(TRIM(proceso)) = 'costura'")
+                ->orderByDesc('fecha_de_asignacion_encargado')
+                ->orderByDesc('id')
+                ->selectRaw('COALESCE(fecha_de_asignacion_encargado, created_at) as fecha_salida')
+                ->value('fecha_salida');
+
+            $entregasRecibo = DB::table('entrega_recibo_costura')
+                ->where('consecutivo_recibo_id', $reciboBase->id);
+            $totalEntregado = (int) (clone $entregasRecibo)->sum('cantidad_entregada');
+            $fechaEntrada = (clone $entregasRecibo)->max('created_at');
+
             $fecha = Carbon::parse($reciboBase->created_at);
             return response()->json([
                 'success' => true,
@@ -662,6 +708,8 @@ class TalleresController extends Controller
                 'dia' => $fecha->format('d'),
                 'mes' => $fecha->format('m'),
                 'ano' => $fecha->format('Y'),
+                'fecha_salida' => $procesoSalida ? \Carbon\Carbon::parse($procesoSalida)->format('d/m/Y h:i A') : '-',
+                'fecha_entrada' => $fechaEntrada ? \Carbon\Carbon::parse($fechaEntrada)->format('d/m/Y h:i A') : null,
                 'tallas' => $tallasColor->map(fn($t) => [
                     'talla' => $t->talla,
                     'genero' => $t->genero,
@@ -669,6 +717,7 @@ class TalleresController extends Controller
                     'cantidad' => (int) $t->cantidad,
                 ])->toArray(),
                 'total' => (int) $tallasColor->sum('cantidad'),
+                'total_entregado' => $totalEntregado,
             ]);
         } catch (\Throwable $e) {
             \Log::error('Error en apiReciboCompleto: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
