@@ -37,8 +37,8 @@
     if (!empty($fechaCreacionRaw)) {
         try {
             $fechaCreacion = $fechaCreacionRaw instanceof \Carbon\CarbonInterface
-                ? $fechaCreacionRaw->format('d/m/Y')
-                : \Carbon\Carbon::parse($fechaCreacionRaw)->format('d/m/Y');
+                ? $fechaCreacionRaw->format('d/m/Y h:i A')
+                : \Carbon\Carbon::parse($fechaCreacionRaw)->format('d/m/Y h:i A');
         } catch (\Throwable $e) {
             $fechaCreacion = '-';
         }

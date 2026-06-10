@@ -570,6 +570,33 @@ class TalleresController extends Controller
         }
     }
 
+    public function apiStats(Request $request, \App\Application\Talleres\UseCases\ObtenerDashboardTallerUseCase $useCase)
+    {
+        try {
+            $ids = $request->input('ids', []);
+
+            if (is_string($ids)) {
+                $ids = array_filter(array_map('trim', explode(',', $ids)));
+            }
+
+            $ids = array_values(array_unique(array_map('intval', is_array($ids) ? $ids : [])));
+
+            $stats = $useCase->executeBatchStats($ids);
+
+            return response()->json([
+                'success' => true,
+                'data' => $stats,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error en apiStats de talleres: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudieron cargar las estadísticas de los talleres',
+            ], 500);
+        }
+    }
+
     public function apiRecibos($id, \App\Application\Talleres\UseCases\ObtenerDashboardTallerUseCase $useCase)
     {
         $data = $useCase->execute($id);

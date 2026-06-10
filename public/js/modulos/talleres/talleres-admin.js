@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initRecibosContentDelegation();
     initReciboCompletoEvents();
     initStatusToggles();
+    loadTalleresStats();
     initNewTallerModal();
     initEditTaller();
     initSidebarNavigation();
@@ -356,26 +357,45 @@ function initStatusToggles() {
 function loadTalleresStats() {
     const mainContainer = document.querySelector('.main-container');
     const statNodes = document.querySelectorAll('.stat-value[data-taller-id]');
-    const apiRouteBase = mainContainer.dataset.routeApiRecibos;
     const uniqueIds = [...new Set(Array.from(statNodes).map(el => el.getAttribute('data-taller-id')).filter(Boolean))];
-    
-    uniqueIds.forEach(tallerId => {
-        const completadosSpans = document.querySelectorAll(`.stat-completed[data-taller-id="${tallerId}"]`);
-        const pendientesSpans = document.querySelectorAll(`.stat-pending[data-taller-id="${tallerId}"]`);
-        const finalRoute = apiRouteBase.replace(':id', tallerId);
 
-        fetch(finalRoute)
-            .then(response => response.json())
-            .then(data => {
-                completadosSpans.forEach(span => span.textContent = data.completados);
-                pendientesSpans.forEach(span => span.textContent = data.pendientes);
-            })
-            .catch(error => {
-                console.error('Error loading stats for taller:', tallerId, error);
+    if (uniqueIds.length === 0) {
+        return;
+    }
+
+    const apiRoute = mainContainer.dataset.routeApiTalleresStats;
+    const url = new URL(apiRoute, window.location.origin);
+
+    uniqueIds.forEach(tallerId => {
+        url.searchParams.append('ids[]', tallerId);
+    });
+
+    fetch(url.toString())
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success || !data.data) {
+                throw new Error('Invalid stats response');
+            }
+
+            uniqueIds.forEach(tallerId => {
+                const completadosSpans = document.querySelectorAll(`.stat-completed[data-taller-id="${tallerId}"]`);
+                const pendientesSpans = document.querySelectorAll(`.stat-pending[data-taller-id="${tallerId}"]`);
+                const stats = data.data[tallerId] || { completados: 0, pendientes: 0 };
+
+                completadosSpans.forEach(span => span.textContent = stats.completados);
+                pendientesSpans.forEach(span => span.textContent = stats.pendientes);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading stats for talleres:', error);
+            uniqueIds.forEach(tallerId => {
+                const completadosSpans = document.querySelectorAll(`.stat-completed[data-taller-id="${tallerId}"]`);
+                const pendientesSpans = document.querySelectorAll(`.stat-pending[data-taller-id="${tallerId}"]`);
+
                 completadosSpans.forEach(span => span.textContent = '0');
                 pendientesSpans.forEach(span => span.textContent = '0');
             });
-    });
+        });
 }
 
 function initTalleresSearch() {
@@ -482,6 +502,7 @@ function performRealtimeSearch(searchTerm, apiRoute) {
             }
             
             talleresRows.innerHTML = renderTalleresRows(data.data);
+            loadTalleresStats();
             
             // Renderizar paginación
             let paginationHtml = '';
@@ -601,6 +622,7 @@ function performTalleresPaginationSearch(searchTerm, page, apiRoute) {
             }
             
             talleresRows.innerHTML = renderTalleresRows(data.data);
+            loadTalleresStats();
             
             // Renderizar paginación
             let paginationHtml = '';

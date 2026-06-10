@@ -114,6 +114,7 @@
           data-selected-taller-name="{{ $selectedTallerName ?? '' }}"
           data-route-toggle-status="{{ route('talleres.toggle-status', ':id') }}"
           data-route-api-search="{{ route('talleres.api.search') }}"
+          data-route-api-talleres-stats="{{ route('talleres.api.stats') }}"
           data-route-api-recibos="{{ route('talleres.api.recibos', ':id') }}"
           data-route-api-entregas="{{ route('talleres.api.entregas', [':taller_id', ':recibo_id', ':es_parcial']) }}"
           data-route-actualizar-precio="{{ route('talleres.actualizar-precio', ':id') }}"

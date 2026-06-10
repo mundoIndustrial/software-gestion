@@ -179,6 +179,143 @@ class ObtenerDashboardTallerUseCase
         ];
     }
 
+    public function executeBatchStats(array $userIds): array
+    {
+        $users = User::whereIn('id', $userIds)
+            ->get(['id', 'name'])
+            ->filter(fn ($user) => !empty(trim((string) $user->name)));
+
+        if ($users->isEmpty()) {
+            return [];
+        }
+
+        $names = $users->pluck('name')->map(fn ($name) => trim((string) $name))->values()->all();
+
+        $recibosNormales = $this->obtenerRecibosNormalesPorNombres($names);
+        $recibosNormalesBodega = $this->obtenerRecibosNormalesBodegaPorNombres($names);
+        $recibosParciales = $this->obtenerRecibosParcialesPorNombres($names);
+
+        $recibosPorTaller = [];
+        foreach ($recibosNormales->concat($recibosNormalesBodega)->concat($recibosParciales) as $recibo) {
+            $tallerNombre = trim((string) ($recibo->taller_nombre ?? ''));
+            if ($tallerNombre === '') {
+                continue;
+            }
+
+            $recibosPorTaller[$tallerNombre] ??= [];
+            $recibosPorTaller[$tallerNombre][] = $recibo;
+        }
+
+        $idsNormales = $recibosNormales->pluck('id')->merge($recibosNormalesBodega->pluck('id'))->values()->all();
+        $idsParciales = $recibosParciales->pluck('id')->values()->all();
+
+        $completadosNormales = $this->contarCompletadosPorOperario($names, 'id_recibo', $idsNormales);
+        $completadosParciales = $this->contarCompletadosPorOperario($names, 'id_parcial', $idsParciales);
+
+        $resultado = [];
+
+        foreach ($users as $user) {
+            $nombreTaller = trim((string) $user->name);
+            $total = count($recibosPorTaller[$nombreTaller] ?? []);
+            $completados = (int) ($completadosNormales[$nombreTaller] ?? 0) + (int) ($completadosParciales[$nombreTaller] ?? 0);
+
+            $resultado[$user->id] = [
+                'taller_id' => $user->id,
+                'completados' => $completados,
+                'pendientes' => max(0, $total - $completados),
+                'total' => $total,
+            ];
+        }
+
+        return $resultado;
+    }
+
+    private function obtenerRecibosNormalesPorNombres(array $nombres)
+    {
+        return DB::table('consecutivos_recibos_pedidos as crp')
+            ->join('pedidos_produccion as ppro', 'crp.pedido_produccion_id', '=', 'ppro.id')
+            ->join('procesos_prenda as ppren', function($join) {
+                $join->on('ppro.numero_pedido', '=', 'ppren.numero_pedido')
+                     ->on('crp.consecutivo_actual', '=', 'ppren.numero_recibo')
+                     ->whereRaw("LOWER(TRIM(ppren.proceso)) = 'costura'");
+            })
+            ->whereIn('crp.tipo_recibo', ['REFLECTIVO', 'COSTURA'])
+            ->whereRaw("LOWER(TRIM(COALESCE(crp.area, ''))) = 'costura'")
+            ->whereIn('ppren.encargado', $nombres)
+            ->select(
+                'crp.id',
+                'ppren.encargado as taller_nombre',
+                DB::raw('0 as es_parcial')
+            )
+            ->groupBy('crp.id', 'ppren.encargado')
+            ->get();
+    }
+
+    private function obtenerRecibosNormalesBodegaPorNombres(array $nombres)
+    {
+        return DB::table('consecutivos_recibos_pedidos as crp')
+            ->join('procesos_prenda as ppren', function ($join) {
+                $join->on('crp.consecutivo_actual', '=', 'ppren.numero_recibo')
+                    ->whereRaw("LOWER(TRIM(ppren.proceso)) = 'costura'");
+            })
+            ->where('crp.tipo_recibo', 'CORTE-PARA-BODEGA')
+            ->whereRaw("LOWER(TRIM(COALESCE(crp.area, ''))) = 'costura'")
+            ->whereIn('ppren.encargado', $nombres)
+            ->select(
+                'crp.id',
+                'ppren.encargado as taller_nombre',
+                DB::raw('0 as es_parcial')
+            )
+            ->groupBy('crp.id', 'ppren.encargado')
+            ->get();
+    }
+
+    private function obtenerRecibosParcialesPorNombres(array $nombres)
+    {
+        return DB::table('recibo_por_partes as rpp')
+            ->join('procesos_prenda as ppren', function($join) {
+                $join->on('rpp.consecutivo_parcial', '=', 'ppren.numero_recibo_parcial')
+                    ->whereRaw("LOWER(TRIM(ppren.proceso)) = 'costura'");
+            })
+            ->whereIn('rpp.tipo_recibo', ['REFLECTIVO', 'COSTURA', 'CORTE-PARA-BODEGA'])
+            ->whereIn('ppren.encargado', $nombres)
+            ->select(
+                'rpp.id',
+                'ppren.encargado as taller_nombre',
+                DB::raw('1 as es_parcial')
+            )
+            ->groupBy('rpp.id', 'ppren.encargado')
+            ->get();
+    }
+
+    private function contarCompletadosPorOperario(array $nombres, string $columnaId, array $ids): array
+    {
+        if (empty($nombres) || empty($ids)) {
+            return [];
+        }
+
+        $rows = DB::table('prenda_recibo_completado')
+            ->whereIn('nombre_operario', $nombres)
+            ->where('area', 'Costura')
+            ->whereIn($columnaId, $ids)
+            ->select('nombre_operario', $columnaId)
+            ->distinct()
+            ->get();
+
+        $conteos = [];
+
+        foreach ($rows as $row) {
+            $nombre = trim((string) $row->nombre_operario);
+            if ($nombre === '') {
+                continue;
+            }
+
+            $conteos[$nombre] = ($conteos[$nombre] ?? 0) + 1;
+        }
+
+        return $conteos;
+    }
+
     private function calcularCompletados($nombreTaller, $normales, $parciales)
     {
         $idsNormales = $normales->pluck('id')->toArray();

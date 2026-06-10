@@ -103,10 +103,10 @@ class FacturaPedidoService implements FacturaPedidoServiceContract
         return $pedido->created_at 
             ? (is_string($pedido->created_at) 
                 ? $pedido->created_at 
-                : $pedido->created_at->format('d/m/Y'))
+                : $pedido->created_at->format('d/m/Y h:i A'))
             : ($pedido->created_at 
-                ? $pedido->created_at->format('d/m/Y')
-                : date('d/m/Y'));
+                ? $pedido->created_at->format('d/m/Y h:i A')
+                : date('d/m/Y h:i A'));
     }
 
     /**
