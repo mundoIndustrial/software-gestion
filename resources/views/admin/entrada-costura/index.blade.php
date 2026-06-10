@@ -214,6 +214,12 @@
             </button>
         </div>
         <nav class="sidebar-nav">
+            @if(auth()->user()?->hasRole('admin'))
+                <a href="{{ route('dashboard') }}" class="sidebar-item" id="navVolver" aria-label="Volver al Dashboard">
+                    <span class="material-symbols-rounded">arrow_back</span>
+                    <span class="nav-label">Volver</span>
+                </a>
+            @endif
             @if(auth()->user()?->hasRole('visualizador_talleres'))
                 <div class="sidebar-group">
                     <button type="button" class="sidebar-item sidebar-group-toggle expanded" id="navTalleresGroup">
