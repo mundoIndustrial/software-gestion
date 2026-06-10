@@ -55,6 +55,30 @@
     }
   };
 
+  window.formatDateWithAmPm = window.formatDateWithAmPm || function formatDateWithAmPm(dateString) {
+    if (!dateString) return null;
+
+    try {
+      const date = window.toDateObject(dateString);
+      if (!date) return null;
+
+      const datePart = date.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+      const timePart = date.toLocaleString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+      return `${datePart} ${timePart}`;
+    } catch (e) {
+      return null;
+    }
+  };
+
   window.normalizeConsecutivos = window.normalizeConsecutivos || function normalizeConsecutivos(consecutivos) {
     if (!consecutivos) return [];
     if (Array.isArray(consecutivos)) return consecutivos;

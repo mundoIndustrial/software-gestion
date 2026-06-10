@@ -247,8 +247,8 @@ export class TrackingTimelineController {
             : `${totalDiasInsumos} día${totalDiasInsumos !== 1 ? 's' : ''}`
         },
         fechas_formateadas: {
-          fecha_llegada: this.formatDate(reciboCreatedAt) || '---',
-          fecha_fin: fechaEnvioProduccion ? (this.formatDate(fechaEnvioProduccion) || '---') : '---'
+          fecha_llegada: (typeof formatDateWithAmPm === 'function' ? formatDateWithAmPm(reciboCreatedAt) : this.formatDate(reciboCreatedAt)) || '---',
+          fecha_fin: fechaEnvioProduccion ? ((typeof formatDateWithAmPm === 'function' ? formatDateWithAmPm(fechaEnvioProduccion) : this.formatDate(fechaEnvioProduccion)) || '---') : '---'
         }
       };
     }
@@ -347,9 +347,9 @@ export class TrackingTimelineController {
         esta_activo_display: estaActivo
       },
       fechas_formateadas: {
-        fecha_llegada: this.formatDate(fechaInicioReal) || '---',
+        fecha_llegada: (typeof formatDateWithAmPm === 'function' ? formatDateWithAmPm(fechaInicioReal) : this.formatDate(fechaInicioReal)) || '---',
         fecha_asignacion: '---',
-        fecha_fin: this.formatDate(fechaFinReal) || '---'
+        fecha_fin: (typeof formatDateWithAmPm === 'function' ? formatDateWithAmPm(fechaFinReal) : this.formatDate(fechaFinReal)) || '---'
       }
     }, prenda?.readonly || false);
 
@@ -380,9 +380,10 @@ export class TrackingTimelineController {
     const iconSvg = this.svgIcons.get(area);
     
     //  USAR FECHAS DEL BACKEND si están disponibles, formatearlas si es necesario
-    const fechaLlegada = fechasFormateadas?.fecha_llegada || this.formatDate(data.fecha_inicio) || '---';
-    const fechaAsignacion = fechasFormateadas?.fecha_asignacion || this.formatDate(data.fecha_de_asignacion_encargado) || '---';
-    const fechaFin = fechasFormateadas?.fecha_fin || this.formatDate(data.fecha_fin) || this.formatDate(data.fecha_completado) || '---';
+    // Usar formatDateWithAmPm para mostrar fecha + hora en formato AM/PM
+    const fechaLlegada = fechasFormateadas?.fecha_llegada || (typeof formatDateWithAmPm === 'function' ? formatDateWithAmPm(data.fecha_inicio) : this.formatDate(data.fecha_inicio)) || '---';
+    const fechaAsignacion = fechasFormateadas?.fecha_asignacion || (typeof formatDateWithAmPm === 'function' ? formatDateWithAmPm(data.fecha_de_asignacion_encargado) : this.formatDate(data.fecha_de_asignacion_encargado)) || '---';
+    const fechaFin = fechasFormateadas?.fecha_fin || (typeof formatDateWithAmPm === 'function' ? formatDateWithAmPm(data.fecha_fin) : this.formatDate(data.fecha_fin)) || (typeof formatDateWithAmPm === 'function' ? formatDateWithAmPm(data.fecha_completado) : this.formatDate(data.fecha_completado)) || '---';
 
     //  USAR VALORES DEL BACKEND: duraciones.total_dias_numero que el backend calcula
     const formatDuracionDias = (dias) => {

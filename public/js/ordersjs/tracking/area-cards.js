@@ -10,6 +10,37 @@ class AreaCards {
     // Inicialización si es necesaria
   }
 
+  formatDateWithAmPm(dateString) {
+    if (!dateString) return '---';
+
+    try {
+      const raw = (dateString && typeof dateString === 'object' && dateString.date)
+        ? dateString.date
+        : dateString;
+
+      const date = raw instanceof Date ? raw : new Date(raw);
+      if (isNaN(date.getTime())) return '---';
+
+      const fechaFormato = date.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+
+      const horaFormato = date.toLocaleString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+
+      return `${fechaFormato} ${horaFormato}`;
+    } catch (error) {
+      console.warn('[AreaCards.formatDateWithAmPm] Error formateando fecha:', dateString, error);
+      return '---';
+    }
+  }
+
   // Crear tarjeta de área/proceso
   createAreaCard(area, data, readonly = false) {
     const card = document.createElement('div');
@@ -84,7 +115,7 @@ class AreaCards {
       }
     };
 
-    const fechaLlegada = typeof formatDate === 'function' ? formatDate(data.fecha_inicio) : '---';
+    const fechaLlegada = this.formatDateWithAmPm(data.fecha_inicio);
     
     // Lógica dinámica para fecha_fin según el tipo de proceso
     let fechaFinRaw = null;
@@ -96,9 +127,9 @@ class AreaCards {
       fechaFinRaw = data.fecha_completado || data.fecha_fin || null;
     }
     
-    const fechaFin = typeof formatDate === 'function' ? formatDate(fechaFinRaw) : (data.esta_activo ? '---' : '---');
+    const fechaFin = this.formatDateWithAmPm(fechaFinRaw);
 
-    const fechaAsignacion = typeof formatDate === 'function' ? formatDate(data.fecha_de_asignacion_encargado) : '---';
+    const fechaAsignacion = this.formatDateWithAmPm(data.fecha_de_asignacion_encargado);
     const duracionAsignacion = (function() {
       if (!shouldShowAssignmentDuration) return '---';
       const ini = typeof toDateObject === 'function' ? toDateObject(data.fecha_inicio) : null;

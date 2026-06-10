@@ -94,6 +94,40 @@ if (typeof DateUtils !== 'undefined') {
     }
   }
 
+  // Formatear fecha con hora en formato AM/PM americano
+  formatDateWithAmPm(dateString) {
+    if (!dateString) return '---';
+
+    try {
+      const raw = (dateString && typeof dateString === 'object' && dateString.date)
+        ? dateString.date
+        : dateString;
+
+      const date = raw instanceof Date ? raw : new Date(raw);
+      if (isNaN(date.getTime())) return '---';
+
+      // Formatear fecha en formato es-ES (dd/mm/yyyy)
+      const fechaFormato = date.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+
+      // Formatear hora en formato 12 horas con AM/PM
+      const horaFormato = date.toLocaleString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+
+      return `${fechaFormato} ${horaFormato}`;
+    } catch (error) {
+      console.warn('[formatDateWithAmPm] Error formateando fecha:', dateString, error);
+      return '---';
+    }
+  }
+
   // Convertir a objeto Date
   toDateObject(value) {
     if (!value) return null;
@@ -415,6 +449,9 @@ window.formatDate = function(dateString) {
 window.formatDateTime = function(dateString) {
   return window.dateUtils.formatDateTime(dateString);
 };
+window.formatDateWithAmPm = function(dateString) {
+  return window.dateUtils.formatDateWithAmPm(dateString);
+};
 window.toDateObject = function(value) {
   return window.dateUtils.toDateObject(value);
 };
@@ -438,4 +475,3 @@ window.calcularDiasHabilesSync = function(fechaInicio, fechaFin) {
 };
 
 } // Cierre del else - proteccion contra redeclaraciones
-

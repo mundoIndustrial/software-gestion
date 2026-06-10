@@ -88,6 +88,39 @@ class DateUtils {
   }
 
   /**
+   * Formatear fecha con hora en formato dd/mm/yyyy hh:mm:ss AM/PM
+   */
+  formatDateWithAmPm(dateString) {
+    if (!dateString) return null;
+
+    try {
+      const raw = (dateString && typeof dateString === 'object' && dateString.date)
+        ? dateString.date
+        : dateString;
+
+      const date = raw instanceof Date ? raw : new Date(raw);
+      if (isNaN(date.getTime())) return String(dateString);
+
+      const datePart = date.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+      const timePart = date.toLocaleString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+
+      return `${datePart} ${timePart}`;
+    } catch (error) {
+      console.warn('[DateUtils.formatDateWithAmPm] Error:', dateString, error);
+      return String(dateString);
+    }
+  }
+
+  /**
    * Normalizar consecutivos (array u objeto indexado → array)
    */
   normalizeConsecutivos(consecutivos) {
