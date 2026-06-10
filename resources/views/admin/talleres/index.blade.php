@@ -111,6 +111,7 @@
     <!-- Main Content -->
     <main class="main-container" 
           data-csrf-token="{{ csrf_token() }}"
+          data-selected-taller-name="{{ $selectedTallerName ?? '' }}"
           data-route-toggle-status="{{ route('talleres.toggle-status', ':id') }}"
           data-route-api-search="{{ route('talleres.api.search') }}"
           data-route-api-recibos="{{ route('talleres.api.recibos', ':id') }}"

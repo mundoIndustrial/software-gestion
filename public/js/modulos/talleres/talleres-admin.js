@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initTalleresSearch();
     initOrdenesTabs();
     initViewHandlers();
+    initRecibosContentDelegation();
     initReciboCompletoEvents();
     initStatusToggles();
     initNewTallerModal();
@@ -693,6 +694,75 @@ function initViewHandlers() {
     }
 }
 
+function initRecibosContentDelegation() {
+    const recibosContent = document.getElementById('recibosContent');
+    if (!recibosContent || recibosContent.dataset.delegationBound === '1') {
+        return;
+    }
+
+    recibosContent.dataset.delegationBound = '1';
+
+    recibosContent.addEventListener('click', function(e) {
+        const expandBtn = e.target.closest('.btn-expandir-detalles');
+        if (expandBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const reciboId = expandBtn.getAttribute('data-recibo-id');
+            const esParcial = expandBtn.getAttribute('data-es-parcial');
+            const reciboNumero = expandBtn.getAttribute('data-recibo-numero');
+            const tipoRecibo = expandBtn.getAttribute('data-tipo-recibo');
+            const reciboRow = expandBtn.closest('tr');
+
+            if (!reciboRow) return;
+
+            let accordionRow = reciboRow.nextElementSibling;
+            if (!accordionRow || !accordionRow.classList.contains('recibo-accordion-row')) {
+                accordionRow = document.createElement('tr');
+                accordionRow.className = 'recibo-accordion-row';
+                accordionRow.innerHTML = `
+                    <td colspan="7">
+                        <div class="recibo-accordion-content" style="padding: 20px; text-align: center; color: #64748b;">
+                            <div style="font-size: 1.5rem; margin-bottom: 10px;">⏳</div>
+                            <p>Cargando entregas...</p>
+                        </div>
+                    </td>
+                `;
+                reciboRow.parentNode.insertBefore(accordionRow, reciboRow.nextSibling);
+            }
+
+            if (accordionRow.style.display === 'none' || !accordionRow.style.display) {
+                document.querySelectorAll('.recibo-accordion-row').forEach(row => {
+                    if (row !== accordionRow) {
+                        row.style.display = 'none';
+                    }
+                });
+
+                accordionRow.style.display = 'table-row';
+
+                const contentDiv = accordionRow.querySelector('.recibo-accordion-content');
+                if (contentDiv && contentDiv.textContent.includes('Cargando')) {
+                    cargarEntregasAcordeon(reciboId, esParcial, reciboNumero, tipoRecibo, contentDiv);
+                }
+            } else {
+                accordionRow.style.display = 'none';
+            }
+            return;
+        }
+
+        const entregasBtn = e.target.closest('.btn-ver-entregas');
+        if (entregasBtn) {
+            const tallerId = entregasBtn.getAttribute('data-taller-id');
+            const reciboId = entregasBtn.getAttribute('data-recibo-id');
+            const esParcial = entregasBtn.getAttribute('data-es-parcial');
+            const reciboNumero = entregasBtn.getAttribute('data-recibo-numero');
+            const cliente = entregasBtn.getAttribute('data-cliente');
+            const prenda = entregasBtn.getAttribute('data-prenda');
+            showEntregas(tallerId, reciboId, esParcial, reciboNumero, cliente, prenda);
+        }
+    });
+}
+
 function switchView(newView) {
     const viewTalleres = document.getElementById('viewTalleres');
     const viewRecibos = document.getElementById('viewRecibos');
@@ -733,6 +803,12 @@ function showTalleres() {
     url.searchParams.delete('view');
     url.searchParams.set('status', currentState.activeTab || 'activos');
     window.history.replaceState({ view: 'talleres', status: currentState.activeTab || 'activos' }, '', url.toString());
+
+    const mainContainer = document.querySelector('.main-container');
+    const apiRoute = mainContainer ? mainContainer.dataset.routeApiSearch : null;
+    if (apiRoute) {
+        performRealtimeSearch('', apiRoute);
+    }
 }
 
 function showRecibos(tallerId, tallerName) {
@@ -840,70 +916,6 @@ function showRecibos(tallerId, tallerName) {
                     });
             });
 
-            // Event delegation para el botón Expandir Detalles - Acordeón
-            recibosContent.addEventListener('click', function(e) {
-                const btn = e.target.closest('.btn-expandir-detalles');
-                if (!btn) return;
-                
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const reciboId = btn.getAttribute('data-recibo-id');
-                const esParcial = btn.getAttribute('data-es-parcial');
-                const reciboNumero = btn.getAttribute('data-recibo-numero');
-                const tipoRecibo = btn.getAttribute('data-tipo-recibo');
-                const reciboRow = btn.closest('tr');
-                
-                // Crear o encontrar la fila del acordeón
-                let accordionRow = reciboRow.nextElementSibling;
-                if (!accordionRow || !accordionRow.classList.contains('recibo-accordion-row')) {
-                    accordionRow = document.createElement('tr');
-                    accordionRow.className = 'recibo-accordion-row';
-                    accordionRow.innerHTML = `
-                        <td colspan="7">
-                            <div class="recibo-accordion-content" style="padding: 20px; text-align: center; color: #64748b;">
-                                <div style="font-size: 1.5rem; margin-bottom: 10px;">⏳</div>
-                                <p>Cargando entregas...</p>
-                            </div>
-                        </td>
-                    `;
-                    reciboRow.parentNode.insertBefore(accordionRow, reciboRow.nextSibling);
-                }
-                
-                // Toggle del acordeón
-                if (accordionRow.style.display === 'none' || !accordionRow.style.display) {
-                    // Cerrar otros acordeones
-                    document.querySelectorAll('.recibo-accordion-row').forEach(row => {
-                        if (row !== accordionRow) {
-                            row.style.display = 'none';
-                        }
-                    });
-                    
-                    // Abrir este acordeón
-                    accordionRow.style.display = 'table-row';
-                    
-                    // Cargar entregas
-                    const contentDiv = accordionRow.querySelector('.recibo-accordion-content');
-                    if (contentDiv.textContent.includes('Cargando')) {
-                        cargarEntregasAcordeon(reciboId, esParcial, reciboNumero, tipoRecibo, contentDiv);
-                    }
-                } else {
-                    accordionRow.style.display = 'none';
-                }
-            });
-            
-            // Manejador para el botón Ver Entregas original (ir a otra vista)
-            document.querySelectorAll('.btn-ver-entregas').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const tallerId = this.getAttribute('data-taller-id');
-                    const reciboId = this.getAttribute('data-recibo-id');
-                    const esParcial = this.getAttribute('data-es-parcial');
-                    const reciboNumero = this.getAttribute('data-recibo-numero');
-                    const cliente = this.getAttribute('data-cliente');
-                    const prenda = this.getAttribute('data-prenda');
-                    showEntregas(tallerId, reciboId, esParcial, reciboNumero, cliente, prenda);
-                });
-            });
         })
         .catch(error => {
             console.error('Error:', error);
@@ -1300,7 +1312,8 @@ function initSidebarNavigation() {
         setSidebarActiveById(currentState.activeTab === 'inactivos' ? 'navTalleresInactivos' : 'navTalleres');
         const tallerId = urlParams.get('taller_id');
         const row = document.querySelector(`tr[data-taller-id="${tallerId}"]`);
-        const tallerName = row ? row.querySelector('.col-taller-name')?.textContent?.trim() : 'Taller';
+        const tallerNameFallback = document.querySelector('.main-container')?.dataset.selectedTallerName || 'Taller';
+        const tallerName = row ? row.querySelector('.col-taller-name')?.textContent?.trim() : tallerNameFallback;
         showRecibos(tallerId, tallerName || 'Taller');
     } else if (isPrestamosGlobalRoute) {
         console.log('[TalleresSidebar:initial-url:prestamos-global]', {

@@ -17,18 +17,24 @@ class TalleresController extends Controller
         $search = $request->input('search');
         $view = $request->input('view', 'talleres');
         $status = $request->input('status', 'activos');
+        $selectedTallerName = null;
         if ($view === 'talleres') {
             $activoVal = ($status === 'inactivos') ? 0 : 1;
             $talleres = $useCase->execute($search, 9, $activoVal);
         } else {
             $talleres = collect(); // Colección vacía
         }
+
+        if ($view === 'recibos' && $request->filled('taller_id')) {
+            $selectedTallerName = User::where('id', $request->integer('taller_id'))->value('name');
+        }
         
         return view('admin.talleres.index', compact(
             'talleres',
             'search',
             'view',
-            'status'
+            'status',
+            'selectedTallerName'
         ));
     }
 
