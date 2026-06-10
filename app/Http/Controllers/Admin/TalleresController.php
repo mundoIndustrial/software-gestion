@@ -377,6 +377,150 @@ class TalleresController extends Controller
         </tr>';
     }
 
+    public function apiDetallePrestamo(string $tipo, int $id)
+    {
+        try {
+            $tipoNormalizado = strtolower(trim($tipo));
+
+            if (!in_array($tipoNormalizado, ['insumos', 'contramuestra'], true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tipo de préstamo inválido.',
+                ], 422);
+            }
+
+            if ($tipoNormalizado === 'insumos') {
+                $recibo = DB::table('recibos_prestamo_insumos')
+                    ->leftJoin('users', 'users.id', '=', 'recibos_prestamo_insumos.creado_por')
+                    ->select(
+                        'recibos_prestamo_insumos.id',
+                        'recibos_prestamo_insumos.numero_orden',
+                        'recibos_prestamo_insumos.fecha',
+                        'recibos_prestamo_insumos.nombre_costurero',
+                        'recibos_prestamo_insumos.firma_costurero',
+                        'recibos_prestamo_insumos.firma_costurero_fecha',
+                        'recibos_prestamo_insumos.firma_mensajero',
+                        'recibos_prestamo_insumos.firma_mensajero_fecha',
+                        'recibos_prestamo_insumos.anulado',
+                        'recibos_prestamo_insumos.anulado_en',
+                        'recibos_prestamo_insumos.confirmado_entrada',
+                        'recibos_prestamo_insumos.confirmado_entrada_en',
+                        'recibos_prestamo_insumos.novedades',
+                        'recibos_prestamo_insumos.created_at',
+                        'users.name as encargado'
+                    )
+                    ->where('recibos_prestamo_insumos.id', $id)
+                    ->first();
+
+                if (!$recibo) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Recibo no encontrado.',
+                    ], 404);
+                }
+
+                $items = DB::table('recibos_prestamo_insumos_items')
+                    ->select('cantidad', 'descripcion', 'orden_fila')
+                    ->where('recibo_prestamo_insumo_id', $id)
+                    ->orderBy('orden_fila')
+                    ->get()
+                    ->map(function ($item) {
+                        return [
+                            'cantidad' => $item->cantidad,
+                            'descripcion' => $item->descripcion,
+                            'orden_fila' => $item->orden_fila,
+                        ];
+                    })
+                    ->values()
+                    ->all();
+
+                return response()->json([
+                    'success' => true,
+                    'tipo' => 'insumos',
+                    'recibo' => [
+                        'id' => $recibo->id,
+                        'numero_orden' => $recibo->numero_orden,
+                        'fecha' => $recibo->fecha ? Carbon::parse($recibo->fecha)->toDateString() : null,
+                        'nombre_costurero' => $recibo->nombre_costurero,
+                        'encargado' => $recibo->encargado,
+                        'firma_costurero' => $recibo->firma_costurero,
+                        'firma_costurero_fecha' => $recibo->firma_costurero_fecha,
+                        'firma_mensajero' => $recibo->firma_mensajero,
+                        'firma_mensajero_fecha' => $recibo->firma_mensajero_fecha,
+                        'anulado' => (bool) $recibo->anulado,
+                        'anulado_en' => $recibo->anulado_en,
+                        'confirmado_entrada' => (bool) $recibo->confirmado_entrada,
+                        'confirmado_entrada_en' => $recibo->confirmado_entrada_en,
+                        'novedades' => $recibo->novedades,
+                        'created_at' => $recibo->created_at,
+                    ],
+                    'items' => $items,
+                ]);
+            }
+
+            $recibo = DB::table('recibos_prestamo_contramuestra')
+                ->leftJoin('users', 'users.id', '=', 'recibos_prestamo_contramuestra.creado_por')
+                ->select(
+                    'recibos_prestamo_contramuestra.id',
+                    'recibos_prestamo_contramuestra.numero_orden',
+                    'recibos_prestamo_contramuestra.fecha',
+                    'recibos_prestamo_contramuestra.nombre_costurero',
+                    'recibos_prestamo_contramuestra.descripcion',
+                    'recibos_prestamo_contramuestra.firma_costurero',
+                    'recibos_prestamo_contramuestra.firma_costurero_fecha',
+                    'recibos_prestamo_contramuestra.firma_mensajero',
+                    'recibos_prestamo_contramuestra.firma_mensajero_fecha',
+                    'recibos_prestamo_contramuestra.anulado',
+                    'recibos_prestamo_contramuestra.anulado_en',
+                    'recibos_prestamo_contramuestra.confirmado_entrada',
+                    'recibos_prestamo_contramuestra.confirmado_entrada_en',
+                    'recibos_prestamo_contramuestra.novedades',
+                    'recibos_prestamo_contramuestra.created_at',
+                    'users.name as encargado'
+                )
+                ->where('recibos_prestamo_contramuestra.id', $id)
+                ->first();
+
+            if (!$recibo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado.',
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'tipo' => 'contramuestra',
+                'recibo' => [
+                    'id' => $recibo->id,
+                    'numero_orden' => $recibo->numero_orden,
+                    'fecha' => $recibo->fecha ? Carbon::parse($recibo->fecha)->toDateString() : null,
+                    'nombre_costurero' => $recibo->nombre_costurero,
+                    'descripcion' => $recibo->descripcion,
+                    'encargado' => $recibo->encargado,
+                    'firma_costurero' => $recibo->firma_costurero,
+                    'firma_costurero_fecha' => $recibo->firma_costurero_fecha,
+                    'firma_mensajero' => $recibo->firma_mensajero,
+                    'firma_mensajero_fecha' => $recibo->firma_mensajero_fecha,
+                    'anulado' => (bool) $recibo->anulado,
+                    'anulado_en' => $recibo->anulado_en,
+                    'confirmado_entrada' => (bool) $recibo->confirmado_entrada,
+                    'confirmado_entrada_en' => $recibo->confirmado_entrada_en,
+                    'novedades' => $recibo->novedades,
+                    'created_at' => $recibo->created_at,
+                ],
+                'items' => [],
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error en apiDetallePrestamo: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener el detalle del préstamo',
+            ], 500);
+        }
+    }
+
     public function showEntregas($taller_id, $recibo_id, $es_parcial, \App\Application\Talleres\UseCases\ObtenerDetalleEntregasUseCase $useCase)
     {
         $isParcial = $es_parcial == '1';
