@@ -62,6 +62,7 @@ class PrendaEditorTallas {
                 if (!input) return;
 
                 input.value = cantidad || 0;
+                this._bloquearAjusteAutomatico(input);
 
                 const sincronizarInput = () => {
                     const nuevaCantidad = parseInt(input.value, 10) || 0;
@@ -202,6 +203,26 @@ class PrendaEditorTallas {
         tarjeta.appendChild(grid);
 
         return tarjeta;
+    }
+
+    static _bloquearAjusteAutomatico(input) {
+        if (!input || input.dataset?.bloqueoRuedaAplicado === '1') {
+            return;
+        }
+
+        input.dataset.bloqueoRuedaAplicado = '1';
+        input.style.MozAppearance = 'textfield';
+        input.style.appearance = 'textfield';
+
+        input.addEventListener('wheel', (event) => {
+            event.preventDefault();
+        }, { passive: false });
+
+        input.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                event.preventDefault();
+            }
+        });
     }
 
     static _actualizarTotal() {
