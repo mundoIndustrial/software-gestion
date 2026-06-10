@@ -56,6 +56,7 @@ class ObtenerRecibosNormalesQuery
             'clientes.nombre as cliente',
             'crp.tipo_recibo',
             'ppren.encargado as taller_encargado',
+            DB::raw('COALESCE(ppren.fecha_de_asignacion_encargado, ppren.created_at) as fecha_salida'),
             'ppt.talla as talla_nombre',
             'ppt.cantidad as cantidad_talla',
             DB::raw('0 as es_parcial')
@@ -96,6 +97,7 @@ class ObtenerRecibosNormalesQuery
             DB::raw("'Bodega' as cliente"),
             'crp.tipo_recibo',
             'ppren.encargado as taller_encargado',
+            DB::raw('COALESCE(ppren.fecha_de_asignacion_encargado, ppren.created_at) as fecha_salida'),
             'ptb.talla as talla_nombre',
             'ptb.cantidad as cantidad_talla',
             DB::raw('0 as es_parcial')

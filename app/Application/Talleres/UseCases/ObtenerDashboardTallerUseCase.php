@@ -33,6 +33,7 @@ class ObtenerDashboardTallerUseCase
                 'pp.descripcion as descripcion_prenda',
                 'clientes.nombre as cliente', 
                 'crp.tipo_recibo',
+                DB::raw('MAX(COALESCE(ppren.fecha_de_asignacion_encargado, ppren.created_at)) as fecha_salida'),
                 DB::raw('0 as es_parcial')
             )
             ->groupBy('crp.id')
@@ -55,6 +56,7 @@ class ObtenerDashboardTallerUseCase
                 'pb.descripcion as descripcion_prenda',
                 DB::raw("'Bodega' as cliente"),
                 'crp.tipo_recibo',
+                DB::raw('MAX(COALESCE(ppren.fecha_de_asignacion_encargado, ppren.created_at)) as fecha_salida'),
                 DB::raw('0 as es_parcial')
             )
             ->groupBy('crp.id')
@@ -84,6 +86,7 @@ class ObtenerDashboardTallerUseCase
                 DB::raw('ANY_VALUE(COALESCE(pp.descripcion, pb.descripcion, "N/A")) as descripcion_prenda'),
                 DB::raw('ANY_VALUE(COALESCE(clientes.nombre, "Bodega")) as cliente'),
                 DB::raw('ANY_VALUE(rpp.tipo_recibo) as tipo_recibo'),
+                DB::raw('MAX(COALESCE(ppren.fecha_de_asignacion_encargado, ppren.created_at)) as fecha_salida'),
                 DB::raw('1 as es_parcial')
             )
             ->groupBy('rpp.id')

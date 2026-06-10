@@ -6,15 +6,15 @@ let currentState = {
     view: 'talleres', // talleres, recibos, entregas
     selectedTaller: null,
     selectedRecibo: null,
-    activeTab: 'activos'
+    activeTab: 'activos',
+    ordenesTab: 'pedidos'
 };
 
 document.addEventListener('DOMContentLoaded', function() {
     initTalleresSearch();
-    initOrdenesSearch();
+    initOrdenesTabs();
     initViewHandlers();
     initReciboCompletoEvents();
-    loadTalleresStats();
     initStatusToggles();
     initNewTallerModal();
     initEditTaller();
@@ -199,6 +199,20 @@ function initEditTaller() {
     }
 }
 
+function formatFechaSalidaRecibos(fechaSalida) {
+    if (!fechaSalida) return '-';
+
+    const fecha = new Date(fechaSalida);
+    if (Number.isNaN(fecha.getTime())) {
+        return String(fechaSalida);
+    }
+
+    return new Intl.DateTimeFormat('es-CO', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+    }).format(fecha);
+}
+
 function initNewTallerModal() {
     const btnNewTaller = document.getElementById('btnNewTaller');
     const modal = document.getElementById('modalNewTaller');
@@ -370,15 +384,7 @@ function initTalleresSearch() {
         talleresForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const searchTerm = searchInput ? searchInput.value.trim() : '';
-            const isOrdenesView = currentState.view === 'ordenes' || new URLSearchParams(window.location.search).get('view') === 'ordenes';
-            if (isOrdenesView) {
-                const url = new URL(window.location.href);
-                url.searchParams.set('view', 'ordenes');
-                if (searchTerm) url.searchParams.set('search', searchTerm);
-                else url.searchParams.delete('search');
-                url.searchParams.delete('page');
-                window.history.pushState({ view: 'ordenes' }, '', url.toString());
-                showOrdenes(searchTerm, 1);
+            if (window.TalleresOrdenes?.handleOrdenesSearch(searchTerm, 1)) {
                 return;
             }
             
@@ -410,17 +416,9 @@ function initTalleresSearch() {
             clearTimeout(searchTimeout);
             
             const searchTerm = this.value.trim();
-            const isOrdenesView = currentState.view === 'ordenes' || new URLSearchParams(window.location.search).get('view') === 'ordenes';
             
             searchTimeout = setTimeout(() => {
-                if (isOrdenesView) {
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('view', 'ordenes');
-                    if (searchTerm) url.searchParams.set('search', searchTerm);
-                    else url.searchParams.delete('search');
-                    url.searchParams.delete('page');
-                    window.history.pushState({ view: 'ordenes' }, '', url.toString());
-                    showOrdenes(searchTerm, 1);
+                if (window.TalleresOrdenes?.handleOrdenesSearch(searchTerm, 1)) {
                     return;
                 }
                 const url = new URL(window.location.href);
@@ -438,14 +436,7 @@ function initTalleresSearch() {
             clearButton.addEventListener('click', () => {
                 searchInput.value = '';
                 toggleClear();
-                const isOrdenesView = currentState.view === 'ordenes' || new URLSearchParams(window.location.search).get('view') === 'ordenes';
-                if (isOrdenesView) {
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('view', 'ordenes');
-                    url.searchParams.delete('search');
-                    url.searchParams.delete('page');
-                    window.history.pushState({ view: 'ordenes' }, '', url.toString());
-                    showOrdenes('', 1);
+                if (window.TalleresOrdenes?.handleOrdenesClearSearch()) {
                     return;
                 }
                 
@@ -495,7 +486,6 @@ function performRealtimeSearch(searchTerm, apiRoute) {
             paginationContainer.innerHTML = paginationHtml;
             
             // Reinicializar eventos
-            loadTalleresStats();
             initStatusToggles();
             initViewHandlers();
             initEditTaller();
@@ -615,7 +605,6 @@ function performTalleresPaginationSearch(searchTerm, page, apiRoute) {
             paginationContainer.innerHTML = paginationHtml;
             
             // Reinicializar eventos
-            loadTalleresStats();
             initStatusToggles();
             initViewHandlers();
             initEditTaller();
@@ -720,8 +709,16 @@ function switchView(newView) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+function setTalleresTopNavVisible(isVisible) {
+    const topNav = document.querySelector('.top-nav');
+    if (!topNav) return;
+
+    topNav.style.display = isVisible ? '' : 'none';
+}
+
 function showTalleres() {
     switchView('talleres');
+    setTalleresTopNavVisible(true);
     currentState.selectedTaller = null;
     currentState.selectedRecibo = null;
     sessionStorage.removeItem('talleres.lastView');
@@ -743,6 +740,7 @@ function showRecibos(tallerId, tallerName) {
 
     if (recibosTitle) recibosTitle.textContent = tallerName;
     if (recibosContent) recibosContent.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Cargando recibos...</p></div>';
+    setTalleresTopNavVisible(false);
     switchView('recibos');
     
     const url = new URL(window.location.href);
@@ -764,11 +762,12 @@ function showRecibos(tallerId, tallerName) {
                 return;
             }
 
-            let html = '<div class="table-container"><table class="table-recibos"><thead><tr><th>Nº RECIBO</th><th>CLIENTE</th><th>DESCRIPCIÓN PRENDA</th><th>PROGRESO</th><th>NOVEDADES</th><th>ACCIONES</th></tr></thead><tbody>';
+            let html = '<div class="table-container"><table class="table-recibos"><thead><tr><th>FECHA SALIDA</th><th>Nº RECIBO</th><th>CLIENTE</th><th>DESCRIPCIÓN PRENDA</th><th>PROGRESO</th><th>NOVEDADES</th><th>ACCIONES</th></tr></thead><tbody>';
 
             data.recibos.forEach(recibo => {
                 html += `
                     <tr>
+                        <td class="col-fecha-salida">${formatFechaSalidaRecibos(recibo.fecha_salida)}</td>
                         <td class="col-recibo">${recibo.numero_recibo}</td>
                         <td class="col-cliente">${recibo.cliente}</td>
                         <td>
@@ -857,7 +856,7 @@ function showRecibos(tallerId, tallerName) {
                     accordionRow = document.createElement('tr');
                     accordionRow.className = 'recibo-accordion-row';
                     accordionRow.innerHTML = `
-                        <td colspan="6">
+                        <td colspan="7">
                             <div class="recibo-accordion-content" style="padding: 20px; text-align: center; color: #64748b;">
                                 <div style="font-size: 1.5rem; margin-bottom: 10px;">⏳</div>
                                 <p>Cargando entregas...</p>
@@ -1125,6 +1124,7 @@ function initSidebarNavigation() {
             target.classList.add('active');
         }
     };
+    window.setSidebarActiveById = setSidebarActiveById;
 
     const syncSidebarActiveState = () => {
         const url = new URL(window.location.href);
@@ -1150,6 +1150,9 @@ function initSidebarNavigation() {
         }
 
         if (view === 'ordenes') {
+            if (window.TalleresOrdenes?.handleOrdenesSidebarNavigation()) {
+                return;
+            }
             setSidebarActiveById('navOrdenes');
             return;
         }
@@ -1241,12 +1244,14 @@ function initSidebarNavigation() {
                 url.searchParams.delete('search');
                 url.searchParams.set('view', 'ordenes');
                 url.searchParams.delete('status');
+                url.searchParams.set('tab', currentState.ordenesTab || 'pedidos');
                 console.log('[TalleresSidebar:pushState:viewOrdenes]', {
                     before: window.location.href,
                     after: url.toString()
                 });
-                window.history.pushState({ view: 'ordenes' }, 'Órdenes', url.toString());
-                showOrdenes();
+                if (window.TalleresOrdenes?.handleOrdenesSidebarNavigation()) {
+                    return;
+                }
             }
         });
     });
@@ -1257,9 +1262,8 @@ function initSidebarNavigation() {
             state: event.state,
             href: window.location.href
         });
-        if (event.state && event.state.view === 'ordenes') {
-            setSidebarActiveById('navOrdenes');
-            showOrdenes();
+        if (window.TalleresOrdenes?.handleOrdenesPopstate(event)) {
+            return;
         } else if (event.state && event.state.view === 'recibos' && event.state.taller_id) {
             currentState.activeTab = event.state.status === 'inactivos' ? 'inactivos' : (currentState.activeTab || 'activos');
             setSidebarActiveById(currentState.activeTab === 'inactivos' ? 'navTalleresInactivos' : 'navTalleres');
@@ -1279,24 +1283,8 @@ function initSidebarNavigation() {
 
     // Verificar si hay parámetro view en la URL al cargar
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('view') === 'ordenes') {
-        console.log('[TalleresSidebar:initial-url:view=ordenes]', {
-            href: window.location.href,
-            search: urlParams.get('search') || ''
-        });
-        setSidebarActiveById('navOrdenes');
-        
-        const searchVal = urlParams.get('search') || '';
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.value = searchVal;
-            searchInput.placeholder = 'Buscar número de orden...';
-            const clearButton = document.getElementById('clearSearch');
-            if (clearButton) {
-                clearButton.style.display = searchVal.length > 0 ? 'flex' : 'none';
-            }
-        }
-        showOrdenes(searchVal);
+    if (window.TalleresOrdenes?.handleOrdenesInitialUrl(urlParams, document.getElementById('searchInput'), document.getElementById('clearSearch'))) {
+        return;
     } else if (urlParams.get('view') === 'recibos' && urlParams.get('taller_id')) {
         console.log('[TalleresSidebar:initial-url:view=recibos]', {
             href: window.location.href,
@@ -1324,954 +1312,4 @@ function initSidebarNavigation() {
         currentState.activeTab = urlParams.get('status') === 'inactivos' ? 'inactivos' : 'activos';
         syncSidebarActiveState();
     }
-}
-
-/**
- * Obtener color de progreso basado en porcentaje
- */
-function getProgressColor(percentage) {
-    if (percentage <= 33) {
-        return '#ef4444'; // Rojo
-    } else if (percentage <= 66) {
-        return '#f59e0b'; // Amarillo
-    } else {
-        return '#10b981'; // Verde
-    }
-}
-
-/**
- * Inicializar búsqueda en Órdenes
- */
-function initOrdenesSearch() {
-    // La búsqueda de órdenes se maneja desde initTalleresSearch usando #searchInput
-}
-
-/**
- * Mostrar vista de Órdenes
- */
-function showOrdenes(search = '', page = 1) {
-    switchView('ordenes');
-    const mainContainer = document.querySelector('.main-container');
-    const ordenesContent = document.getElementById('ordenesContent');
-    const apiRoute = mainContainer.dataset.routeApiOrdenes;
-
-    if (ordenesContent) {
-        ordenesContent.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Cargando órdenes...</p></div>';
-    }
-
-    // Construir URL con parámetros
-    const url = new URL(apiRoute, window.location.origin);
-    if (search) url.searchParams.append('search', search);
-    url.searchParams.append('page', page);
-
-    fetch(url.toString())
-        .then(response => response.json())
-        .then(data => {
-            if (!data.ordenes || data.ordenes.length === 0) {
-                let html = '<div class="empty-state"><div class="empty-state-icon">📦</div><p>No hay órdenes asignadas a talleres.</p></div>';
-                
-                // Agregar controles de paginación si hay búsqueda
-                if (search || page > 1) {
-                    html += renderPaginationControls(data.pagination, search);
-                }
-                
-                ordenesContent.innerHTML = html;
-                return;
-            }
-
-            let html = '<div class="table-container"><table class="table-ordenes"><thead><tr><th class="col-acciones">ACCIONES</th><th class="col-numero">Nº ORDEN</th><th>DESCRIPCIÓN</th><th class="col-cantidad">CANT. TOTAL</th><th>PROGRESO TOTAL</th><th>ENCARGADO</th><th>DISTRIBUCIÓN</th></tr></thead><tbody>';
-
-            data.ordenes.forEach(orden => {
-                const rowClass = orden.es_dividido ? 'orden-dividida' : '';
-                const tipoRecibo = String(orden.tipo_recibo || '').trim().toUpperCase();
-                const etiquetaOrden = tipoRecibo === 'CORTE-PARA-BODEGA' ? 'Bodega' : 'Pedido';
-                
-                // Fila principal
-                html += `
-                    <tr class="${rowClass}" data-orden-id="${orden.id}">
-                        <td class="col-acciones">
-                            <button class="btn-ver-recibo-completo"
-                                data-numero-recibo="${orden.numero_recibo}"
-                                data-tipo-recibo="${orden.tipo_recibo}"
-                                data-pedido-produccion-id="${orden.pedido_produccion_id ?? ''}"
-                                data-prenda-id="${orden.prenda_id ?? ''}"
-                                title="Ver recibo completo">
-                                <span class="material-symbols-rounded">visibility</span>
-                            </button>
-                        </td>
-                        <td class="col-numero"><strong>${etiquetaOrden} #${orden.numero_recibo}</strong></td>
-                        <td>
-                            <div class="prenda-nombre">${orden.descripcion}</div>
-                            <p class="prenda-desc">${orden.cliente}</p>
-                        </td>
-                        <td class="col-cantidad">${orden.cantidad_total}</td>
-                        <td>
-                            <div class="progress-container">
-                                <div class="progress-info">
-                                    <span class="progress-text">${orden.cantidad_entregada} / ${orden.cantidad_total}</span>
-                                    <span class="progress-percentage">${orden.porcentaje}%</span>
-                                </div>
-                                <div class="progress-bar-wrapper">
-                                    <div class="progress-bar-fill" style="width: ${orden.porcentaje}%; background: ${getProgressColor(orden.porcentaje)}"></div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="col-encargado">
-                            <span class="encargado-badge">${orden.encargado_display}</span>
-                        </td>
-                        <td class="col-distribucion">
-                            ${orden.es_dividido ? 
-                                `<button class="btn-ver-distribucion" data-orden-id="${orden.id}">
-                                    <span class="material-symbols-rounded">expand_more</span>
-                                    Ver Distribución
-                                </button>` 
-                                : 
-                                `<span class="distribucion-badge completa">${orden.distribucion}</span>`
-                            }
-                        </td>
-                    </tr>
-                `;
-
-                // Si está dividida, agregar fila expandible con distribución
-                if (orden.es_dividido) {
-                    html += `<tr class="distribucion-expandible" id="distribucion-${orden.id}" style="display: none;">
-                        <td colspan="7">
-                            <div class="distribucion-container">
-                                <div class="distribucion-titulo">
-                                    <span class="material-symbols-rounded">call_split</span>
-                                    DISTRIBUCIÓN TÉCNICA DEL RECIBO ${orden.numero_recibo}
-                                </div>
-                                <div class="distribucion-ramas">`;
-                    
-                    // Agrupar por número de parte
-                    const partesPorNumero = {};
-                    orden.distribucion_detalles.forEach(detalle => {
-                        if (!partesPorNumero[detalle.numero_recibo_parte]) {
-                            partesPorNumero[detalle.numero_recibo_parte] = [];
-                        }
-                        partesPorNumero[detalle.numero_recibo_parte].push(detalle);
-                    });
-                    
-                    // Renderizar cada parte con sus tallas como ramas
-                    Object.keys(partesPorNumero).forEach(numeroParte => {
-                        const tallas = partesPorNumero[numeroParte];
-                        const reciboParcialId = tallas.find(t => t?.recibo_parcial_id)?.recibo_parcial_id || '';
-                        html += `
-                            <div class="rama-parte">
-                                <div class="rama-parte-header">
-                                    <span class="rama-parte-numero">${numeroParte}</span>
-                                    ${reciboParcialId ? `
-                                        <button
-                                            type="button"
-                                            class="btn-ver-recibo-parcial"
-                                            data-recibo-parcial-id="${reciboParcialId}"
-                                            data-pedido-produccion-id="${orden.pedido_produccion_id || ''}"
-                                            data-prenda-id="${orden.prenda_id || ''}"
-                                            data-numero-recibo="${orden.numero_recibo || ''}"
-                                            data-tipo-recibo="${String(orden.tipo_recibo || '').trim().toUpperCase()}"
-                                            title="Ver recibo parcial"
-                                        >
-                                            <span class="material-symbols-rounded">receipt_long</span>
-                                        </button>
-                                    ` : ''}
-                                </div>
-                                <div class="rama-tallas">`;
-                        
-                        tallas.forEach((detalle, index) => {
-                            html += `
-                                <div class="rama-talla-item">
-                                    <div class="rama-talla-content">
-                                        <span class="talla-nombre">${detalle.talla}</span>
-                                        <span class="talla-cantidad">${detalle.cantidad}</span>
-                                        <div class="talla-progreso">
-                                            <span class="progreso-text">${detalle.cantidad_entregada} / ${detalle.cantidad}</span>
-                                            <span class="progreso-percentage">${detalle.porcentaje}%</span>
-                                            <div class="progress-bar-wrapper">
-                                                <div class="progress-bar-fill" style="width: ${detalle.porcentaje}%; background: ${getProgressColor(detalle.porcentaje)}"></div>
-                                            </div>
-                                        </div>
-                                        <span class="talla-encargado">${detalle.taller_nombre}</span>
-                                    </div>
-                                </div>
-                            `;
-                        });
-                        
-                        html += `
-                                </div>
-                            </div>
-                        `;
-                    });
-                    
-                    html += `
-                                </div>
-                            </div>
-                        </td>
-                    </tr>`;
-                }
-            });
-
-            html += '</tbody></table></div>';
-            
-            // Agregar controles de paginación
-            html += renderPaginationControls(data.pagination, search);
-            
-            ordenesContent.innerHTML = html;
-
-            // Inicializar eventos de distribución
-            initDistribucionEvents();
-            initReciboCompletoEvents();
-            
-            // Inicializar eventos de paginación
-            initPaginationEvents(search);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            ordenesContent.innerHTML = '<div class="empty-state"><p>Error al cargar las órdenes.</p></div>';
-        });
-}
-
-/**
- * Inicializar eventos de distribución
- */
-function initDistribucionEvents() {
-    const expandButtons = document.querySelectorAll('.btn-ver-distribucion');
-    const reciboButtons = document.querySelectorAll('.btn-ver-recibo-parcial');
-    
-    expandButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const ordenId = this.dataset.ordenId;
-            const expandibleRow = document.getElementById(`distribucion-${ordenId}`);
-            
-            if (expandibleRow) {
-                const isVisible = expandibleRow.style.display !== 'none';
-                expandibleRow.style.display = isVisible ? 'none' : 'table-row';
-                this.classList.toggle('expanded');
-            }
-        });
-    });
-
-    reciboButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const parcialId = this.dataset.reciboParcialId;
-            const tipoRecibo = String(this.dataset.tipoRecibo || '').trim().toUpperCase();
-            const pedidoProduccionId = Number(this.dataset.pedidoProduccionId || 0);
-            const prendaId = Number(this.dataset.prendaId || 0);
-            const numeroRecibo = String(this.dataset.numeroRecibo || '').trim();
-
-            if (!parcialId) return;
-
-            const esTipoCostura = ['COSTURA', 'COSTURA-BODEGA'].includes(tipoRecibo);
-
-            if (esTipoCostura && typeof window.pedidosRecibosModule?.abrirReciboParcial === 'function') {
-                if (pedidoProduccionId > 0 && prendaId > 0) {
-                    window.pedidosRecibosModule.abrirReciboParcial(
-                        pedidoProduccionId,
-                        prendaId,
-                        'costura',
-                        Number(parcialId),
-                        numeroRecibo ? `COSTURA ANEXO ${numeroRecibo}` : 'COSTURA ANEXO'
-                    );
-                    return;
-                }
-            }
-
-            if (tipoRecibo === 'CORTE-PARA-BODEGA' && typeof window.openReciboCorteBodegaParcialModal === 'function') {
-                window.openReciboCorteBodegaParcialModal(parcialId, tipoRecibo);
-            } else if (typeof window.openReciboCorteBodegaModal === 'function') {
-                window.openReciboCorteBodegaModal(parcialId);
-            } else {
-                Swal.fire('Error', 'El modal de recibo no está disponible en esta vista.', 'error');
-            }
-        });
-    });
-}
-
-function initReciboCompletoEvents() {
-    const buttons = document.querySelectorAll('.btn-ver-recibo-completo');
-    const mainContainer = document.querySelector('.main-container');
-    const apiRoute = mainContainer?.dataset?.routeApiReciboCompleto;
-
-    const aplicarNormalizacionModal = () => {
-        normalizeCosturaModalForTalleres();
-        requestAnimationFrame(() => normalizeCosturaModalForTalleres());
-    };
-
-    buttons.forEach(btn => {
-        btn.addEventListener('click', async function() {
-            const reciboId = String(this.dataset.reciboId || '').trim();
-            const numeroRecibo = String(this.dataset.numeroRecibo || '').trim();
-            const tipoRecibo = String(this.dataset.tipoRecibo || '').trim().toUpperCase();
-            const pedidoProduccionId = String(this.dataset.pedidoProduccionId || '').trim();
-            const prendaId = String(this.dataset.prendaId || '').trim();
-            if (!numeroRecibo || !tipoRecibo) return;
-            if (!['COSTURA', 'CORTE-PARA-BODEGA'].includes(tipoRecibo)) {
-                Swal.fire('No disponible', 'Este recibo no se puede abrir desde la vista de Entrada.', 'info');
-                return;
-            }
-
-            try {
-                // COSTURA se abre con el modal completo de pedido (order-detail-modal-wrapper)
-                if (tipoRecibo === 'COSTURA') {
-                    if (
-                        typeof window.pedidosRecibosModule !== 'undefined' &&
-                        window.pedidosRecibosModule &&
-                        typeof window.pedidosRecibosModule.abrirRecibo === 'function' &&
-                        pedidoProduccionId &&
-                        prendaId
-                    ) {
-                        window.pedidosRecibosModule.abrirRecibo(
-                            Number(pedidoProduccionId),
-                            Number(prendaId),
-                            'costura'
-                        );
-                        applyReciboFechaToCosturaModal(numeroRecibo, tipoRecibo, apiRoute);
-                        aplicarNormalizacionModal();
-                        return;
-                    }
-
-                    if (typeof window.verFactura === 'function') {
-                        window.verFactura(numeroRecibo);
-                        applyReciboFechaToCosturaModal(numeroRecibo, tipoRecibo, apiRoute);
-                        aplicarNormalizacionModal();
-                        return;
-                    }
-                    const pedidoLimpio = numeroRecibo.replace('#', '');
-                    let costuraResponse = await fetch(`/registros/${pedidoLimpio}`);
-                    if (!costuraResponse.ok) {
-                        costuraResponse = await fetch(`/orders/${pedidoLimpio}`);
-                    }
-                    if (!costuraResponse.ok) {
-                        throw new Error('No se pudo cargar el recibo de costura');
-                    }
-                    const costuraData = await costuraResponse.json();
-                    window.dispatchEvent(new CustomEvent('load-order-detail', { detail: costuraData }));
-                    applyReciboFechaToCosturaModal(numeroRecibo, tipoRecibo, apiRoute);
-                    aplicarNormalizacionModal();
-                    return;
-                }
-
-                if (!apiRoute) {
-                    throw new Error('Ruta de recibo completo no disponible');
-                }
-
-                const url = new URL(apiRoute, window.location.origin);
-                if (reciboId) {
-                    url.searchParams.set('recibo_id', reciboId);
-                }
-                url.searchParams.set('numero_recibo', numeroRecibo);
-                url.searchParams.set('tipo_recibo', tipoRecibo);
-                if (pedidoProduccionId) {
-                    url.searchParams.set('pedido_produccion_id', pedidoProduccionId);
-                }
-                if (prendaId) {
-                    url.searchParams.set('prenda_id', prendaId);
-                }
-
-                const response = await fetch(url.toString());
-                const raw = await response.text();
-                let data = null;
-                try {
-                    data = JSON.parse(raw);
-                } catch (e) {
-                    throw new Error(`Respuesta inválida del servidor (${response.status})`);
-                }
-                if (!response.ok || !data.success) {
-                    throw new Error(data.message || 'No se pudo obtener el recibo');
-                }
-
-                if (typeof window.renderReciboCorteBodegaData === 'function') {
-                    window.renderReciboCorteBodegaData(data);
-                } else {
-                    throw new Error('Modal no disponible');
-                }
-            } catch (error) {
-                console.error('Error abriendo recibo completo:', error);
-                Swal.fire('Error', error.message || 'No se pudo abrir el recibo', 'error');
-            }
-        });
-    });
-}
-
-async function applyReciboFechaToCosturaModal(numeroRecibo, tipoRecibo, apiRoute) {
-    if (!apiRoute) return;
-    
-    // DEBUG: Log para ver qué se está intentando hacer
-    console.log('[applyReciboFechaToCosturaModal] Intentando aplicar fecha:', {
-        numeroRecibo,
-        tipoRecibo,
-        apiRoute,
-        esParcial: String(numeroRecibo || '').includes('.')
-    });
-    
-    // IMPORTANTE: Si es un recibo parcial (contiene punto, ej: "95.4"),
-    // NO intentar sobrescribir la fecha porque ya fue establecida por ReceiptRenderer
-    // desde los datos del recibo_por_partes
-    if (String(numeroRecibo || '').includes('.')) {
-        console.log('[applyReciboFechaToCosturaModal] Es un recibo parcial - NO sobrescribir fecha (ya fue establecida por ReceiptRenderer)');
-        return;
-    }
-    
-    try {
-        const url = new URL(apiRoute, window.location.origin);
-        url.searchParams.set('numero_recibo', String(numeroRecibo || '').trim());
-        url.searchParams.set('tipo_recibo', String(tipoRecibo || '').trim().toUpperCase());
-        const response = await fetch(url.toString());
-        const data = await response.json();
-        if (!response.ok || !data?.success) return;
-
-        const dia = String(data.dia || '').padStart(2, '0');
-        const mes = String(data.mes || '').padStart(2, '0');
-        const ano = String(data.ano || '');
-        if (!dia || !mes || !ano) return;
-
-        const paintFecha = () => {
-            const wrapper = document.getElementById('order-detail-modal-wrapper');
-            if (!wrapper) return false;
-
-            const dayBox = wrapper.querySelector('.day-box');
-            const monthBox = wrapper.querySelector('.month-box');
-            const yearBox = wrapper.querySelector('.year-box');
-            if (!dayBox || !monthBox || !yearBox) return false;
-
-            dayBox.textContent = dia;
-            monthBox.textContent = mes;
-            yearBox.textContent = ano;
-            return true;
-        };
-
-        // Pintar ahora y reintentar tras renders tardíos del modal.
-        paintFecha();
-        setTimeout(paintFecha, 80);
-        setTimeout(paintFecha, 220);
-        setTimeout(paintFecha, 500);
-        setTimeout(paintFecha, 900);
-    } catch (error) {
-        console.warn('No se pudo aplicar la fecha del recibo en modal de costura:', error);
-    }
-}
-
-function normalizeCosturaModalForTalleres() {
-    const rcbFloating = document.getElementById('rcb-floating-buttons');
-    if (rcbFloating) {
-        rcbFloating.classList.remove('is-visible');
-    }
-
-    const wrapper = document.getElementById('order-detail-modal-wrapper');
-    if (wrapper) {
-        wrapper.style.top = '50%';
-        wrapper.style.maxHeight = '';
-        wrapper.style.overflowY = 'visible';
-        wrapper.style.overflowX = 'visible';
-        wrapper.style.paddingRight = '0';
-    }
-
-    const btnFactura = document.getElementById('btn-factura');
-    const btnGaleria = document.getElementById('btn-galeria');
-    if (btnFactura) {
-        btnFactura.title = 'Ver galería';
-        btnFactura.innerHTML = '<i class="fas fa-images"></i>';
-    }
-    if (btnGaleria) {
-        btnGaleria.style.display = 'none';
-        btnGaleria.style.visibility = 'hidden';
-        btnGaleria.style.zIndex = '-1';
-    }
-}
-
-/**
- * Renderizar controles de paginación
- */
-function renderPaginationControls(pagination, search) {
-    const { current_page, last_page, total, per_page } = pagination;
-    
-    let html = '<div class="pagination-controls">';
-    html += `<div class="pagination-info">Mostrando ${(current_page - 1) * per_page + 1} - ${Math.min(current_page * per_page, total)} de ${total} órdenes</div>`;
-    html += '<div class="pagination-buttons">';
-    
-    // Botón anterior
-    if (current_page > 1) {
-        html += `<button class="btn-pagination btn-prev" data-page="${current_page - 1}" data-search="${search}">
-                    <span class="material-symbols-rounded">chevron_left</span>
-                    Anterior
-                </button>`;
-    } else {
-        html += `<button class="btn-pagination btn-prev" disabled>
-                    <span class="material-symbols-rounded">chevron_left</span>
-                    Anterior
-                </button>`;
-    }
-    
-    // Números de página
-    html += '<div class="pagination-numbers">';
-    for (let i = 1; i <= last_page; i++) {
-        if (i === current_page) {
-            html += `<span class="page-number active">${i}</span>`;
-        } else if (i === 1 || i === last_page || (i >= current_page - 1 && i <= current_page + 1)) {
-            html += `<button class="page-number" data-page="${i}" data-search="${search}">${i}</button>`;
-        } else if (i === 2 || i === last_page - 1) {
-            html += `<span class="page-number">...</span>`;
-        }
-    }
-    html += '</div>';
-    
-    // Botón siguiente
-    if (current_page < last_page) {
-        html += `<button class="btn-pagination btn-next" data-page="${current_page + 1}" data-search="${search}">
-                    Siguiente
-                    <span class="material-symbols-rounded">chevron_right</span>
-                </button>`;
-    } else {
-        html += `<button class="btn-pagination btn-next" disabled>
-                    Siguiente
-                    <span class="material-symbols-rounded">chevron_right</span>
-                </button>`;
-    }
-    
-    html += '</div></div>';
-    return html;
-}
-
-/**
- * Inicializar eventos de paginación
- */
-function initPaginationEvents(search) {
-    const paginationButtons = document.querySelectorAll('#viewOrdenes .btn-pagination, #viewOrdenes .page-number:not(.active)');
-    
-    paginationButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const page = this.dataset.page;
-            const searchTerm = this.dataset.search || '';
-            showOrdenes(searchTerm, page);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-    });
-}
-
-
-/**
- * Abrir modal de novedades
- */
-function openNovedadesModal(reciboId, esParcial) {
-    // Crear el modal si no existe
-    let modal = document.getElementById('novedadesModal');
-    if (!modal) {
-        modal = createNovedadesModal();
-        document.body.appendChild(modal);
-    }
-
-    // Mostrar el modal
-    modal.style.display = 'flex';
-    
-    // Cargar las novedades
-    loadNovedades(reciboId, esParcial);
-}
-
-/**
- * Crear el HTML del modal
- */
-function createNovedadesModal() {
-    const modal = document.createElement('div');
-    modal.id = 'novedadesModal';
-    modal.style.cssText = `
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 9999;
-        align-items: center;
-        justify-content: center;
-        backdrop-filter: blur(4px);
-    `;
-
-    modal.innerHTML = `
-        <div style="
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-            max-width: 700px;
-            width: 90%;
-            max-height: 85vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            animation: slideUp 0.3s ease-out;
-        ">
-            <!-- Header -->
-            <div style="
-                padding: 28px 32px;
-                border-bottom: 1px solid #e2e8f0;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-            ">
-                <div>
-                    <h2 style="
-                        margin: 0;
-                        font-size: 22px;
-                        font-weight: 800;
-                        color: #0f172a;
-                        display: flex;
-                        align-items: center;
-                        gap: 10px;
-                    ">
-                        <span style="font-size: 24px;">📝</span>
-                        Novedades Registradas
-                    </h2>
-                    <p style="
-                        margin: 6px 0 0 0;
-                        font-size: 13px;
-                        color: #64748b;
-                        font-weight: 500;
-                    ">Historial de eventos y observaciones</p>
-                </div>
-                <button onclick="closeNovedadesModal()" style="
-                    background: white;
-                    border: 1px solid #e2e8f0;
-                    font-size: 20px;
-                    cursor: pointer;
-                    color: #94a3b8;
-                    padding: 8px;
-                    width: 40px;
-                    height: 40px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    border-radius: 10px;
-                    transition: all 0.2s;
-                    flex-shrink: 0;
-                " onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#cbd5e1'; this.style.color='#475569';" onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0'; this.style.color='#94a3b8';">
-                    ✕
-                </button>
-            </div>
-
-            <!-- Content -->
-            <div id="novedadesContent" style="
-                padding: 24px 32px;
-                overflow-y: auto;
-                flex: 1;
-            ">
-                <div style="text-align: center; padding: 40px 20px;">
-                    <div style="
-                        width: 48px;
-                        height: 48px;
-                        border: 3px solid #e2e8f0;
-                        border-top-color: #3b82f6;
-                        border-radius: 50%;
-                        animation: spin 1s linear infinite;
-                        margin: 0 auto 16px;
-                    "></div>
-                    <p style="color: #94a3b8; font-weight: 500;">Cargando novedades...</p>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Agregar estilos de animación
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-        #novedadesContent::-webkit-scrollbar {
-            width: 8px;
-        }
-        #novedadesContent::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        #novedadesContent::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        #novedadesContent::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-    `;
-    document.head.appendChild(style);
-
-    // Cerrar al hacer clic en el overlay
-    modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeNovedadesModal();
-        }
-    });
-
-    return modal;
-}
-
-/**
- * Cerrar modal de novedades
- */
-function closeNovedadesModal() {
-    const modal = document.getElementById('novedadesModal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-
-/**
- * Cargar novedades del recibo
- */
-function loadNovedades(reciboId, esParcial) {
-    const content = document.getElementById('novedadesContent');
-    
-    fetch(`/entregas-talleres/historial/${reciboId}?es_parcial=${esParcial ? '1' : '0'}`)
-        .then(response => response.json())
-        .then(data => {
-            // Filtrar solo las novedades
-            const novedades = data.filter(item => item.es_novedad);
-            
-            if (novedades.length === 0) {
-                content.innerHTML = `
-                    <div style="text-align: center; padding: 60px 20px;">
-                        <div style="
-                            width: 80px;
-                            height: 80px;
-                            background: #f0fdf4;
-                            border-radius: 50%;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            margin: 0 auto 20px;
-                            font-size: 40px;
-                        ">✓</div>
-                        <h3 style="
-                            margin: 0 0 8px 0;
-                            font-size: 16px;
-                            font-weight: 700;
-                            color: #1e293b;
-                        ">Sin novedades</h3>
-                        <p style="
-                            margin: 0;
-                            font-size: 14px;
-                            color: #64748b;
-                        ">No hay novedades registradas para este recibo.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            let html = `<div style="display: flex; flex-direction: column; gap: 14px;">`;
-            
-            novedades.forEach((novedad) => {
-                // Obtener iniciales del encargado
-                const iniciales = novedad.encargado
-                    .split(' ')
-                    .map(word => word[0])
-                    .join('')
-                    .toUpperCase()
-                    .substring(0, 2);
-
-                html += `
-                    <div style="
-                        background: white;
-                        border: 1px solid #e2e8f0;
-                        border-radius: 12px;
-                        padding: 18px;
-                        transition: all 0.2s ease;
-                    " onmouseover="this.style.boxShadow='0 6px 18px rgba(15,23,42,0.08)'; this.style.borderColor='#cbd5e1';" onmouseout="this.style.boxShadow='none'; this.style.borderColor='#e2e8f0';">
-                        <!-- Encabezado -->
-                        <div style="
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: center;
-                            margin-bottom: 14px;
-                        ">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <div style="
-                                    width: 40px;
-                                    height: 40px;
-                                    border-radius: 50%;
-                                    background: #eff6ff;
-                                    color: #2563eb;
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    font-weight: 700;
-                                    font-size: 14px;
-                                    flex-shrink: 0;
-                                ">${iniciales}</div>
-                                <div>
-                                    <div style="
-                                        font-size: 14px;
-                                        font-weight: 600;
-                                        color: #0f172a;
-                                    ">${novedad.encargado}</div>
-                                    <div style="
-                                        font-size: 12px;
-                                        color: #64748b;
-                                    ">${novedad.fecha}</div>
-                                </div>
-                            </div>
-                            <span style="
-                                background: #fef3c7;
-                                color: #92400e;
-                                padding: 4px 10px;
-                                border-radius: 20px;
-                                font-size: 11px;
-                                font-weight: 600;
-                                text-transform: uppercase;
-                                letter-spacing: 0.3px;
-                                flex-shrink: 0;
-                            ">Novedad</span>
-                        </div>
-
-                        <!-- Contenido -->
-                        <div style="
-                            background: #f8fafc;
-                            border: 1px solid #e2e8f0;
-                            border-radius: 10px;
-                            padding: 14px;
-                            color: #334155;
-                            font-size: 14px;
-                            line-height: 1.6;
-                            word-break: break-word;
-                        ">
-                            ${escapeHtml(novedad.observaciones || 'Sin descripción')}
-                        </div>
-                    </div>
-                `;
-            });
-
-            html += '</div>';
-            content.innerHTML = html;
-        })
-        .catch(error => {
-            console.error('Error al cargar novedades:', error);
-            content.innerHTML = `
-                <div style="text-align: center; padding: 60px 20px;">
-                    <div style="
-                        width: 80px;
-                        height: 80px;
-                        background: #fee2e2;
-                        border-radius: 50%;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        margin: 0 auto 20px;
-                        font-size: 40px;
-                    ">⚠</div>
-                    <h3 style="
-                        margin: 0 0 8px 0;
-                        font-size: 16px;
-                        font-weight: 700;
-                        color: #1e293b;
-                    ">Error al cargar</h3>
-                    <p style="
-                        margin: 0;
-                        font-size: 14px;
-                        color: #64748b;
-                    ">No pudimos cargar las novedades. Intenta de nuevo.</p>
-                </div>
-            `;
-        });
-}
-
-
-/**
- * Cargar entregas en el acordeón
- */
-function cargarEntregasAcordeon(reciboId, esParcial, reciboNumero, tipoRecibo, contentDiv) {
-    const mainContainer = document.querySelector('.main-container');
-    const apiReciboCompletoBase = mainContainer?.dataset?.routeApiReciboCompleto;
-
-    if (!apiReciboCompletoBase || !reciboNumero || !tipoRecibo) {
-        contentDiv.innerHTML = '<div style="padding: 30px; text-align: center; color: #64748b;"><p>No hay datos de asignacion disponibles</p></div>';
-        return;
-    }
-
-    const params = new URLSearchParams({
-        recibo_id: String(reciboId || ''),
-        numero_recibo: String(reciboNumero),
-        tipo_recibo: String(tipoRecibo),
-        es_parcial: String(esParcial || ''),
-    });
-
-    fetch(`${apiReciboCompletoBase}?${params.toString()}`)
-        .then(async response => {
-            let body = {};
-            try {
-                body = await response.json();
-            } catch (error) {
-                body = {};
-            }
-
-            if (!response.ok || body.success === false) {
-                throw new Error(body.message || `HTTP ${response.status}`);
-            }
-
-            return body;
-        })
-        .then(data => {
-            const tallas = Array.isArray(data.tallas) ? data.tallas : [];
-
-            if (tallas.length === 0) {
-                contentDiv.innerHTML = '<div style="padding: 30px; text-align: center; color: #64748b;"><p>No hay datos de asignacion disponibles</p></div>';
-                return;
-            }
-
-            const fecha = (data.dia && data.mes && data.ano)
-                ? `${String(data.dia).padStart(2, '0')}/${String(data.mes).padStart(2, '0')}/${String(data.ano)}`
-                : 'N/A';
-
-            const descripcion = data.descripcion || 'Sin descripcion';
-
-            let html = '<div style="padding: 20px;">';
-            html += `
-                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                    <thead>
-                        <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
-                            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Fecha proceso</th>
-                            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Descripcion</th>
-                            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Talla</th>
-                            <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Cantidad</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-
-            tallas.forEach((row, index) => {
-                const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
-                const talla = row.talla || 'N/A';
-                const cantidad = Number(row.cantidad || 0);
-
-                html += `<tr style="border-bottom: 1px solid #e2e8f0; background: ${bgColor};">`;
-                if (index === 0) {
-                    html += `<td rowspan="${tallas.length}" style="padding: 12px; font-size: 13px; color: #334155; vertical-align: top; font-weight: 600;">${escapeHtml(fecha)}</td>`;
-                    html += `<td rowspan="${tallas.length}" style="padding: 12px; font-size: 13px; color: #334155; vertical-align: top;">${escapeHtml(descripcion)}</td>`;
-                }
-                html += `<td style="padding: 12px; font-size: 13px; color: #334155;">${escapeHtml(talla)}</td>`;
-                html += `<td style="padding: 12px; text-align: center; font-size: 14px; font-weight: 600; color: #2563eb;">${cantidad}</td>`;
-                html += '</tr>';
-            });
-
-            html += `
-                    </tbody>
-                </table>
-                <div style="margin-top: 15px; text-align: right; font-size: 14px; font-weight: 600; color: #475569;">
-                    Total asignado: <span style="color: #2563eb;">${Number(data.total || 0)} unidades</span>
-                </div>
-            `;
-            html += '</div>';
-
-            contentDiv.innerHTML = html;
-        })
-        .catch(error => {
-            console.error('Error al cargar asignaciones del recibo:', error);
-            contentDiv.innerHTML = '<div style="padding: 30px; text-align: center; color: #64748b;"><p>No hay datos de asignacion disponibles</p></div>';
-        });
 }

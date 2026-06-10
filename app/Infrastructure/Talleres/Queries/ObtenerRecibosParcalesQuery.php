@@ -63,6 +63,7 @@ class ObtenerRecibosParcalesQuery
             DB::raw('COALESCE(clientes.nombre, "Bodega") as cliente'),
             'rpp.tipo_recibo',
             'ppren.encargado as taller_encargado',
+            DB::raw('COALESCE(ppren.fecha_de_asignacion_encargado, ppren.created_at) as fecha_salida'),
             'rpt.talla as talla_nombre',
             'rpt.cantidad as cantidad_talla',
             DB::raw('1 as es_parcial')

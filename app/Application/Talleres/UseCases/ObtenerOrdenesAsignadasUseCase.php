@@ -18,10 +18,16 @@ class ObtenerOrdenesAsignadasUseCase
         private FiltroOrdenesServiceContract $filtro
     ) {}
 
-    public function execute(string $search = '', int $page = 1): array
+    public function execute(string $search = '', int $page = 1, string $tab = 'pedidos'): array
     {
         // 1. Obtener órdenes del repositorio
         $todosRecibos = $this->repository->obtenerAsignadas($search);
+        $todosRecibos = $this->filtrarPorTab($todosRecibos, $tab);
+        $todosRecibos = $todosRecibos
+            ->sortByDesc(function ($recibo) {
+                return (float) ($recibo->numero_recibo ?? 0);
+            })
+            ->values();
 
         if ($todosRecibos->isEmpty()) {
             return [
@@ -50,9 +56,34 @@ class ObtenerOrdenesAsignadasUseCase
             $cantidadesTotales,
             $entregasPorTalla
         );
+        $ordenesFormateadas = collect($ordenesFormateadas)
+            ->sortByDesc(function (array $orden) {
+                return (float) ($orden['numero_recibo'] ?? 0);
+            })
+            ->values()
+            ->all();
 
         // 6. Paginar
         return $this->filtro->paginar($ordenesFormateadas, $page, 10);
+    }
+
+    private function filtrarPorTab(Collection $recibos, string $tab): Collection
+    {
+        $tabNormalizado = strtolower(trim($tab));
+
+        if ($tabNormalizado === 'bodega') {
+            return $recibos->filter(function ($recibo) {
+                return strtoupper(trim((string) ($recibo->tipo_recibo ?? ''))) === 'CORTE-PARA-BODEGA';
+            })->values();
+        }
+
+        if ($tabNormalizado === 'pedidos') {
+            return $recibos->filter(function ($recibo) {
+                return strtoupper(trim((string) ($recibo->tipo_recibo ?? ''))) !== 'CORTE-PARA-BODEGA';
+            })->values();
+        }
+
+        return $recibos->values();
     }
 
     private function agruparPorNumeroBase(Collection $recibos): array
@@ -186,10 +217,11 @@ class ObtenerOrdenesAsignadasUseCase
                 color: $progreso->getColor(),
                 esDividido: $esDividido,
                 encargadoDisplay: $esDividido ? 'Distribuido en talleres' : ($primerRecibo->taller_encargado ?? 'Sin asignar'),
-                distribucion: $esDividido ? 'Ver Distribución' : 'Sin dividir',
+                distribucion: $esDividido ? 'Ver Distribución' : 'No Aplica',
                 distribucionDetalles: $distribucionDetalles,
                 pedidoProduccionId: isset($primerRecibo->pedido_produccion_id) ? (int) $primerRecibo->pedido_produccion_id : null,
-                prendaId: isset($primerRecibo->prenda_id) ? (int) $primerRecibo->prenda_id : null
+                prendaId: isset($primerRecibo->prenda_id) ? (int) $primerRecibo->prenda_id : null,
+                fechaSalida: isset($primerRecibo->fecha_salida) ? (string) $primerRecibo->fecha_salida : null
             );
 
             $ordenes[] = $orden->toArray();
@@ -240,7 +272,8 @@ class ObtenerOrdenesAsignadasUseCase
                     'taller_nombre' => $recibo->taller_encargado ?? 'Sin asignar',
                     'cantidad_entregada' => $cantidadEntregada,
                     'porcentaje' => $progreso->getPorcentaje(),
-                    'color' => $progreso->getColor()
+                    'color' => $progreso->getColor(),
+                    'fecha_salida' => isset($recibo->fecha_salida) ? (string) $recibo->fecha_salida : null
                 ];
             }
         }

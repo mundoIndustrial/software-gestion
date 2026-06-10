@@ -260,11 +260,21 @@
         <!-- Vista 4: ordenes (Todos los Recibos)-->
         <div id="viewOrdenes" class="view-container" style="display: none;">
             <div class="recibos-card">
-                <div class="card-header">
+                <div class="card-header" style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; gap:12px;">
                     <div class="icon">
                         <span class="material-symbols-rounded" style="font-size: 18px;">assignment</span>
                     </div>
                     <h2>Listado de Órdenes Asignadas a Talleres</h2>
+                    </div>
+                    <div class="ordenes-tabs" style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button type="button" class="ordenes-tab-btn active" data-tab="pedidos">
+                            Pedidos
+                        </button>
+                        <button type="button" class="ordenes-tab-btn" data-tab="bodega">
+                            Bodega
+                        </button>
+                    </div>
                 </div>
                 
                 <div id="ordenesContent" style="padding: 20px;">
@@ -351,4 +361,5 @@
 @push('scripts')
     <script src="{{ asset('js/ordersjs/order-detail-modal-manager.js') }}"></script>
     <script src="{{ asset('js/modulos/talleres/talleres-admin.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modulos/talleres/talleres-ordenes.js') }}?v={{ time() }}"></script>
 @endpush

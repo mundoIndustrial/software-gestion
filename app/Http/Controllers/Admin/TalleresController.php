@@ -32,6 +32,22 @@ class TalleresController extends Controller
         ));
     }
 
+    public function toggleStatus(Request $request, $id, \App\Application\Talleres\UseCases\ToggleEstadoTallerUseCase $useCase)
+    {
+        try {
+            $result = $useCase->execute((int) $id);
+
+            return response()->json($result);
+        } catch (\Throwable $e) {
+            \Log::error('Error en toggleStatus de talleres: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo cambiar el estado del taller',
+            ], 500);
+        }
+    }
+
     public function showRecibos($id, \App\Application\Talleres\UseCases\ObtenerDashboardTallerUseCase $useCase)
     {
         $data = $useCase->execute($id);
@@ -449,8 +465,9 @@ class TalleresController extends Controller
         try {
             $search = $request->input('search', '');
             $page = $request->input('page', 1);
+            $tab = $request->input('tab', 'pedidos');
 
-            $resultado = $useCase->execute($search, $page);
+            $resultado = $useCase->execute($search, $page, $tab);
 
             return response()->json($resultado);
         } catch (\Exception $e) {

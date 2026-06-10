@@ -19,6 +19,7 @@ class OrdenDTO
     public array $distribucionDetalles;
     public ?int $pedidoProduccionId;
     public ?int $prendaId;
+    public ?string $fechaSalida;
 
     public function __construct(
         int $id,
@@ -35,7 +36,8 @@ class OrdenDTO
         string $distribucion,
         array $distribucionDetalles = [],
         ?int $pedidoProduccionId = null,
-        ?int $prendaId = null
+        ?int $prendaId = null,
+        ?string $fechaSalida = null
     ) {
         $this->id = $id;
         $this->numeroRecibo = $numeroRecibo;
@@ -52,6 +54,7 @@ class OrdenDTO
         $this->distribucionDetalles = $distribucionDetalles;
         $this->pedidoProduccionId = $pedidoProduccionId;
         $this->prendaId = $prendaId;
+        $this->fechaSalida = $fechaSalida;
     }
 
     public function toArray(): array
@@ -72,7 +75,8 @@ class OrdenDTO
             'distribucion_detalles' => $this->distribucionDetalles,
             'distribucion' => $this->distribucion,
             'pedido_produccion_id' => $this->pedidoProduccionId,
-            'prenda_id' => $this->prendaId
+            'prenda_id' => $this->prendaId,
+            'fecha_salida' => $this->fechaSalida
         ];
     }
 }

@@ -603,6 +603,36 @@ input:checked + .slider:before {
     overflow-x: auto;
 }
 
+.ordenes-tabs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.ordenes-tab-btn {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ordenes-tab-btn:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+
+.ordenes-tab-btn.active {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    border-color: #2563eb;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.18);
+}
+
 .table-ordenes {
     width: 100%;
     border-collapse: collapse;
