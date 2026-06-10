@@ -88,6 +88,9 @@ document.addEventListener('DOMContentLoaded', function () {
         addProcesoModal.classList.add('show');
     }
 
+    // Exponer globalmente para que sea accesible desde event listeners
+    window.openAdminAddProcesoModal = openAdminAddProcesoModal;
+
     async function ensureEncargadoSelectForCorte() {
         if (!procesoEncargadoGroup) return;
         procesoEncargadoGroup.style.display = 'block';
@@ -1397,7 +1400,66 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 document.addEventListener('DOMContentLoaded', function() {
+    const areaFilterTabs = document.getElementById('areaFilterTabs');
+    
+    // Obtener el parámetro 'area' de la URL si existe
+    const urlParams = new URLSearchParams(window.location.search);
+    const areaFromUrl = urlParams.get('area') || '';
+    
+    // Si hay un área en la URL, activar ese tab
+    if (areaFromUrl) {
+        const tabToActivate = areaFilterTabs?.querySelector(`button[data-area="${areaFromUrl}"]`);
+        if (tabToActivate) {
+            // Remover clase active de todos los tabs
+            areaFilterTabs.querySelectorAll('button').forEach(btn => {
+                btn.classList.remove('active');
+                btn.setAttribute('aria-selected', 'false');
+            });
+            // Activar el tab correspondiente
+            tabToActivate.classList.add('active');
+            tabToActivate.setAttribute('aria-selected', 'true');
+        }
+    }
+    
+    // Cargar recibos inicialmente
     loadRecibosCorteForBodega();
+    
+    // Agregar evento de cambio en los tabs
+    if (areaFilterTabs) {
+        const tabButtons = areaFilterTabs.querySelectorAll('button[data-area]');
+        tabButtons.forEach(button => {
+            // Remover atributos de Bootstrap para evitar conflicto
+            button.removeAttribute('data-bs-toggle');
+            button.removeAttribute('data-bs-target');
+            
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const selectedArea = this.getAttribute('data-area');
+                
+                // Remover clase active de todos los tabs
+                tabButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.setAttribute('aria-selected', 'false');
+                });
+                
+                // Activar el tab actual
+                this.classList.add('active');
+                this.setAttribute('aria-selected', 'true');
+                
+                // Actualizar la URL sin recargar la página
+                if (selectedArea) {
+                    window.history.pushState(null, '', `?area=${encodeURIComponent(selectedArea)}`);
+                } else {
+                    window.history.pushState(null, '', window.location.pathname);
+                }
+                
+                // Cargar los recibos filtrados
+                loadRecibosCorteForBodega();
+            });
+        });
+    }
 });
 
 const festivosReciboBodega = Array.isArray(recibosBodegaConfig.festivosReciboBodega)
@@ -1467,15 +1529,49 @@ function calcularDiasHabilesDesdeSiguienteHabil(fechaInicio, fechaFin = new Date
     return diasHabiles;
 }
 
+function getAreaBadgeClass(area) {
+    const areaNormalizada = String(area || '').toLowerCase().trim();
+    
+    if (areaNormalizada === 'anulado') {
+        return 'bg-dark text-white';
+    } else if (areaNormalizada === 'costura') {
+        return 'bg-primary text-white';
+    } else if (areaNormalizada === 'corte') {
+        return 'bg-success text-white';
+    } else if (areaNormalizada === 'insumos') {
+        return 'bg-purple text-white';
+    } else if (areaNormalizada === 'control calidad') {
+        return 'bg-info text-dark';
+    }
+    return 'bg-info text-dark';
+}
+
 function loadRecibosCorteForBodega(forceRefresh = false) {
     const tbody = document.getElementById('recibo-corte-bodega-tbody');
+    const areaFilterTabs = document.getElementById('areaFilterTabs');
+    
     if (!tbody) {
         return;
     }
 
-    const url = forceRefresh
+    // Obtener el tab activo
+    let selectedArea = '';
+    if (areaFilterTabs) {
+        const activeTab = areaFilterTabs.querySelector('button.active');
+        if (activeTab) {
+            selectedArea = activeTab.getAttribute('data-area') || '';
+        }
+    }
+    
+    let url = forceRefresh
         ? `/api/recibo-corte-bodega?_=${Date.now()}`
         : '/api/recibo-corte-bodega';
+    
+    // Agregar parámetro de filtro si está seleccionada un área
+    if (selectedArea) {
+        const separator = url.includes('?') ? '&' : '?';
+        url += separator + 'area=' + encodeURIComponent(selectedArea);
+    }
 
     fetch(url, {
         cache: 'no-store',
@@ -1497,14 +1593,9 @@ function loadRecibosCorteForBodega(forceRefresh = false) {
                     );
                     const fechaBaseCalculo = prenda.created_at || prenda.fecha_creacion || prenda.fecha_corta;
                     const diasHabilesTranscurridos = calcularDiasHabilesDesdeSiguienteHabil(fechaBaseCalculo, new Date());
-                    const estaAtrasado = diasHabilesTranscurridos > 3;
                     const row = document.createElement('tr');
-                    if (estaAtrasado) {
-                        row.classList.add('recibo-atrasado-row');
-                        row.title = `Atrasado: ${diasHabilesTranscurridos} dias habiles transcurridos`;
-                    }
                     row.innerHTML = `
-                        <td class="acciones-column" style="text-align: center; position: relative;">
+                        <td class="acciones-column">
                             <button type="button"
                                 class="btn-ver-dropdown-bodega"
                                 title="Ver Opciones"
@@ -1522,18 +1613,13 @@ function loadRecibosCorteForBodega(forceRefresh = false) {
                                 <i class="fas fa-eye"></i>
                             </button>
                         </td>
-                        <td style="text-align: center;">
-                            <span class="badge rounded-pill bg-info text-dark"
-                                  style="${canAssignByBadge ? 'cursor:pointer;' : ''}"
-                                  title="${canAssignByBadge ? 'Click para asignar proceso' : ''}"
-                                  ${canAssignByBadge ? `onclick="openAddProcesoFromBodegaBadge({ area: '${String(prenda.area || 'Corte').replace(/'/g, "\\'")}', numero_recibo: ${prenda.numero_recibo || 'null'}, pedido_produccion_id: ${prenda.pedido_produccion_id || 'null'}, prenda_id: ${prenda.prenda_id || 'null'}, prenda_bodega_id: ${prenda.id || 'null'} })"` : ''}>${prenda.area || '-'}</span>
-                        </td>
-                        <td style="text-align: center;"><strong>${prenda.numero_recibo || '-'}</strong></td>
+                        <td><span class="badge ${diasHabilesTranscurridos > 15 ? 'bg-danger' : 'bg-primary'}">${diasHabilesTranscurridos}-días</span></td>
+                        <td><span class="badge rounded-pill ${getAreaBadgeClass(prenda.area)}" style="cursor: pointer;" data-area-badge="true" data-pedido-id="${prenda.pedido_produccion_id || ''}" data-prenda-id="${prenda.prenda_id || ''}" data-numero-recibo="${prenda.numero_recibo || ''}" data-recibo-id="${prenda.id}" data-prenda-bodega-id="${prenda.id}">${prenda.area || '-'}</span></td>
+                        <td><strong>${prenda.numero_recibo || '-'}</strong></td>
                         <td>${prenda.descripcion || '-'}</td>
-                        <td style="text-align: center;">${prenda.cantidad_tallas}</td>
-                        <td style="text-align: center;"><span class="badge bg-success">${prenda.total_cantidad}</span></td>
-                        <td style="text-align: center;">${prenda.fecha_corta}</td>
-                        <td style="text-align: center;">${prenda.encargado || '-'}</td>
+                        <td><span class="badge bg-success">${prenda.total_cantidad}</span></td>
+                        <td>${prenda.fecha_corta}</td>
+                        <td>${prenda.encargado || '-'}</td>
                     `;
                     tbody.appendChild(row);
                 });
@@ -1819,7 +1905,7 @@ async function openReciboBodegaDistribucion(numeroRecibo, prendaBodegaId) {
                 const estado = String(p?.estado_proceso || 'Pendiente');
                 const estadoNormalizado = estado.trim().toLowerCase();
                 const estadoPillClass = estadoNormalizado === 'anulado'
-                    ? 'distribution-pill--red'
+                    ? 'distribution-pill--dark'
                     : 'distribution-pill--slate';
                 const numeroReciboParcial = p?.numero_recibo_parcial || (idx + 1);
                 const parcialLabel = String(numeroReciboParcial).includes('.')
@@ -2074,6 +2160,7 @@ document.addEventListener('click', function (event) {
 
 document.addEventListener('click', function (event) {
     const btnVer = event.target.closest('.btn-ver-dropdown-bodega');
+    const areaBadge = event.target.closest('[data-area-badge="true"]');
     const inMenu = event.target.closest('.dropdown-menu-recibos');
 
     if (btnVer) {
@@ -2085,6 +2172,19 @@ document.addEventListener('click', function (event) {
         event.preventDefault();
         event.stopPropagation();
         openReciboBodegaDropdown(btnVer);
+        return;
+    }
+
+    if (areaBadge && isAdminBodega) {
+        event.preventDefault();
+        event.stopPropagation();
+        const context = {
+            pedido_produccion_id: areaBadge.getAttribute('data-pedido-id'),
+            prenda_id: areaBadge.getAttribute('data-prenda-id'),
+            numero_recibo: areaBadge.getAttribute('data-numero-recibo'),
+            prenda_bodega_id: areaBadge.getAttribute('data-prenda-bodega-id'),
+        };
+        openAdminAddProcesoModal(context);
         return;
     }
 

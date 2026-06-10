@@ -54,9 +54,10 @@ class ReciboCorteBodegaController extends Controller
         return null;
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $esAdmin = (bool) (auth()->user()?->hasRole('admin'));
+        $areaFilter = $request->query('area', '');
 
         $prendasQuery = PrendaBodega::with(['tallas', 'fotos'])
             ->orderBy('created_at', 'desc');
@@ -71,15 +72,36 @@ class ReciboCorteBodegaController extends Controller
             });
         }
 
+        // Filtro por área si se proporciona - APLICAR ANTES DE PAGINAR
+        if (!empty($areaFilter)) {
+            $prendasQuery->whereExists(function ($query) use ($areaFilter) {
+                $query->select(DB::raw(1))
+                    ->from('consecutivos_recibos_pedidos as crp')
+                    ->whereColumn('crp.prenda_bodega_id', 'prenda_bodega.id')
+                    ->where('crp.tipo_recibo', 'CORTE-PARA-BODEGA')
+                    ->whereRaw("LOWER(TRIM(COALESCE(crp.area, ''))) = ?", [strtolower(trim($areaFilter))]);
+            });
+        }
+
+        // PAGINAR AQUÍ - DESPUÉS DE APLICAR TODOS LOS FILTROS
         $prendas = $prendasQuery->paginate(25);
 
         $prendaIds = $prendas->pluck('id')->all();
         $recibosMap = [];
+        
         if (!empty($prendaIds)) {
-            $recibosMap = DB::table('consecutivos_recibos_pedidos')
-                ->whereIn('prenda_bodega_id', $prendaIds)
-                ->where('tipo_recibo', 'CORTE-PARA-BODEGA')
-                ->orderByDesc('id')
+            $recibosQuery = DB::table('consecutivos_recibos_pedidos as crp')
+                ->whereIn('crp.prenda_bodega_id', $prendaIds)
+                ->where('crp.tipo_recibo', 'CORTE-PARA-BODEGA')
+                ->orderByDesc('crp.id');
+            
+            // Aplicar filtro de área también aquí para mantener consistencia
+            if (!empty($areaFilter)) {
+                $recibosQuery->whereRaw("LOWER(TRIM(COALESCE(crp.area, ''))) = ?", [strtolower(trim($areaFilter))]);
+            }
+            
+            $recibosMap = $recibosQuery
+                ->select('crp.*')
                 ->get()
                 ->groupBy('prenda_bodega_id')
                 ->map(function ($rows) {
@@ -269,7 +291,7 @@ class ReciboCorteBodegaController extends Controller
                     'nombre' => $prenda->nombre,
                     'descripcion' => $prenda->descripcion,
                     'total_cantidad' => $prenda->tallas->sum('cantidad'),
-                    'cantidad_tallas' => $prenda->tallas->count(),
+                    'cantidad_tallas' => $prenda->tallas->first() && strtolower(trim($prenda->tallas->first()->genero ?? '')) === 'unisex' ? 'N/A' : ($prenda->tallas->count() === 0 ? 'N/A' : $prenda->tallas->count()),
                     'fotos' => $prenda->fotos->map(fn($f) => [
                         'id' => (int) $f->id,
                         'ruta' => $f->ruta,

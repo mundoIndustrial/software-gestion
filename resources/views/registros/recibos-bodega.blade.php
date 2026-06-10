@@ -16,27 +16,48 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            @unless(auth()->user()?->hasRole('admin'))
+            @if(auth()->user()?->hasRole('admin'))
                 <div class="mb-3 d-flex justify-content-end">
                     <button type="button" id="openReciboBodegaModalBtn" class="btn btn-primary">
                         Registrar recibo
                     </button>
                 </div>
-            @endunless
+            @endif
+
+            <!-- Filtro por Área con Tabs -->
+            <div class="mb-3">
+                <div class="nav nav-tabs" id="areaFilterTabs" role="tablist">
+                    <button class="nav-link active" id="area-todas-tab" type="button" role="tab" aria-controls="area-todas" aria-selected="true" data-area="">
+                        Todas
+                    </button>
+                    <button class="nav-link" id="area-insumos-tab" type="button" role="tab" aria-controls="area-insumos" aria-selected="false" data-area="INSUMOS">
+                        Insumos
+                    </button>
+                    <button class="nav-link" id="area-corte-tab" type="button" role="tab" aria-controls="area-corte" aria-selected="false" data-area="CORTE">
+                        Corte
+                    </button>
+                    <button class="nav-link" id="area-costura-tab" type="button" role="tab" aria-controls="area-costura" aria-selected="false" data-area="Costura">
+                        Costura
+                    </button>
+                    <button class="nav-link" id="area-control-tab" type="button" role="tab" aria-controls="area-control" aria-selected="false" data-area="Control Calidad">
+                        Control Calidad
+                    </button>
+                </div>
+            </div>
 
             <div id="recibo-corte-bodega-container">
                 <div class="table-scroll-container">
                     <table id="recibo-corte-bodega-table" class="table table-striped table-hover modern-table">
                         <thead class="table-header">
                             <tr>
-                                <th style="width: 60px; text-align: center;">Acciones</th>
-                                <th style="width: 140px; text-align: center;">Área</th>
-                                <th style="width: 120px; text-align: center;">N&deg; Recibo</th>
-                                <th style="width: 300px;">Descripción</th>
-                                <th style="width: 120px; text-align: center;">Tallas</th>
-                                <th style="width: 120px; text-align: center;">Cantidad Total</th>
-                                <th style="width: 150px; text-align: center;">Fecha de creación</th>
-                                <th style="width: 180px; text-align: center;">Encargado</th>
+                                <th>Acciones</th>
+                                <th>Días</th>
+                                <th>Área</th>
+                                <th>Nº Recibo</th>
+                                <th>Descripción</th>
+                                <th>Cant.</th>
+                                <th>Fecha</th>
+                                <th>Encargado</th>
                             </tr>
                         </thead>
                         <tbody id="recibo-corte-bodega-tbody">

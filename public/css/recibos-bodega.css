@@ -1,10 +1,54 @@
-﻿/* Ajustes exclusivos para tabla Recibo Corte Bodega */
-#recibo-corte-bodega-table {
+﻿/* Contenedor de scroll de la tabla */
+#recibo-corte-bodega-container .table-scroll-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     width: 100%;
-    min-width: 860px;
-    table-layout: fixed;
-    border-collapse: separate;
-    border-spacing: 0;
+    margin: 0;
+    padding: 0;
+}
+
+/* Estilos para los tabs de filtro de Área */
+#areaFilterTabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 16px;
+}
+
+#areaFilterTabs button {
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+}
+
+#areaFilterTabs button:hover {
+    color: #374151;
+    background: rgba(59, 130, 246, 0.05);
+}
+
+#areaFilterTabs button.active {
+    color: #1d4ed8 !important;
+    border-bottom-color: #1d4ed8 !important;
+    background: rgba(59, 130, 246, 0.08) !important;
+    font-weight: 600 !important;
+}
+
+/* Ajustes exclusivos para tabla Recibo Corte Bodega */
+#recibo-corte-bodega-table {
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-width: 100% !important; /* Override min-width de otros archivos CSS */
 }
 
 #recibo-corte-bodega-table th,
@@ -13,21 +57,122 @@
     white-space: normal;
     word-break: break-word;
     overflow-wrap: anywhere;
-    line-height: 1.35;
+    line-height: 1.2;
+    padding: 8px 6px;
+    font-size: 0.85rem;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+#recibo-corte-bodega-table .acciones-column {
+    position: relative;
+    text-align: center;
 }
 
 #recibo-corte-bodega-table th:nth-child(1),
-#recibo-corte-bodega-table td:nth-child(1) { width: 60px; text-align: center; }
+#recibo-corte-bodega-table td:nth-child(1) { width: 8% !important; }
 #recibo-corte-bodega-table th:nth-child(2),
-#recibo-corte-bodega-table td:nth-child(2) { width: 120px; text-align: center; white-space: nowrap; }
+#recibo-corte-bodega-table td:nth-child(2) { width: 9% !important; }
 #recibo-corte-bodega-table th:nth-child(3),
-#recibo-corte-bodega-table td:nth-child(3) { width: 440px; }
+#recibo-corte-bodega-table td:nth-child(3) { width: 8% !important; }
 #recibo-corte-bodega-table th:nth-child(4),
-#recibo-corte-bodega-table td:nth-child(4) { width: 120px; text-align: center; }
+#recibo-corte-bodega-table td:nth-child(4) { width: 8% !important; }
 #recibo-corte-bodega-table th:nth-child(5),
-#recibo-corte-bodega-table td:nth-child(5) { width: 140px; text-align: center; }
+#recibo-corte-bodega-table td:nth-child(5) { width: 24% !important; }
 #recibo-corte-bodega-table th:nth-child(6),
-#recibo-corte-bodega-table td:nth-child(6) { width: 150px; text-align: center; white-space: nowrap; }
+#recibo-corte-bodega-table td:nth-child(6) { width: 8% !important; }
+#recibo-corte-bodega-table th:nth-child(7),
+#recibo-corte-bodega-table td:nth-child(7) { width: 12% !important; }
+#recibo-corte-bodega-table th:nth-child(8),
+#recibo-corte-bodega-table td:nth-child(8) { width: 13% !important; }
+
+
+
+
+#recibo-corte-bodega-table td:nth-child(6) .badge {
+    max-width: 65px;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.25rem;
+}
+
+#recibo-corte-bodega-table .badge {
+    display: block;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
+    width: 100%;
+    max-width: 100%;
+    line-height: 1.2;
+    padding: 0.2rem 0.25rem;
+    font-size: 0.7rem;
+    white-space: normal;
+}
+
+#recibo-corte-bodega-table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#recibo-corte-bodega-table td:nth-child(5) {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+}
+
+/* Media queries para responsividad */
+@media (max-width: 1200px) {
+    #recibo-corte-bodega-table th,
+    #recibo-corte-bodega-table td {
+        padding: 6px 4px;
+        font-size: 0.8rem;
+    }
+    
+    #recibo-corte-bodega-table td:nth-child(5) {
+        max-width: 130px;
+    }
+}
+
+@media (max-width: 992px) {
+    #recibo-corte-bodega-table th,
+    #recibo-corte-bodega-table td {
+        padding: 4px 3px;
+        font-size: 0.75rem;
+    }
+    
+    #recibo-corte-bodega-table td:nth-child(5) {
+        max-width: 110px;
+    }
+}
+
+@media (max-width: 768px) {
+    #recibo-corte-bodega-table th,
+    #recibo-corte-bodega-table td {
+        padding: 3px 2px;
+        font-size: 0.7rem;
+    }
+    
+    .badge {
+        font-size: 0.6rem !important;
+        padding: 0.15rem 0.2rem !important;
+    }
+    
+    #recibo-corte-bodega-table td:nth-child(5) {
+        max-width: 90px;
+    }
+}
+
+@media (max-width: 576px) {
+    #recibo-corte-bodega-table th,
+    #recibo-corte-bodega-table td {
+        padding: 2px 1px;
+        font-size: 0.65rem;
+    }
+    
+    .badge {
+        font-size: 0.55rem !important;
+        padding: 0.1rem 0.15rem !important;
+    }
+}
 .recibos-costura-scale-90 {
     zoom: 0.9;
 }
@@ -140,6 +285,17 @@
 .badge.bg-secondary {
     background-color: #6b7280 !important;
     color: white !important;
+}
+
+/* Estilos para distribution-pill (usado en modales) */
+.distribution-pill--dark {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    background: #1f2937;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 500;
 }
 
 /* Toast Notifications */
