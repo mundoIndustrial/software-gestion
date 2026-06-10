@@ -716,7 +716,7 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                 divImagen.style.cssText = 'padding: 12px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;';
                 divImagen.innerHTML = `
                     <label style="font-weight: 600; font-size: 0.9rem; color: #333; display: block; margin-bottom: 8px;">
-                        Imágenes - ${tecnica.nombre} (Máximo 3)
+                        Imágenes - ${tecnica.nombre}
                     </label>
                     <div class="dImagenesDropzone-p3-${idx}" style="
                         border: 2px dashed #ddd;
@@ -729,7 +729,7 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                     ">
                         <div style="margin-bottom: 6px; font-size: 1.3rem;"></div>
                         <p style="margin: 0 0 4px 0; font-weight: 500; color: #333; font-size: 0.9rem;">Arrastra imágenes aquí</p>
-                        <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar (máx. 3)</p>
+                        <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar</p>
                         <input type="file" class="dImagenInput-p3-${idx}" accept="image/*" multiple style="display: none;" />
                     </div>
                     <div class="dImagenesPreview-p3-${idx}" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
@@ -826,7 +826,6 @@ function abrirModalDatosIgualesPaso3(tecnicas) {
                     if (imagenes.length === 0) return;
                     
                     for (const archivo of imagenes) {
-                        if (imagenesAgregadasPorTecnica[idx].length >= 3) break;
                         imagenesAgregadasPorTecnica[idx].push(archivo);
                     }
                     
@@ -2375,12 +2374,12 @@ function abrirModalEditarPrendaPaso3(nombrePrenda) {
             const blockImg = document.createElement('div');
             blockImg.style.cssText = 'padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;';
             blockImg.innerHTML = `
-                <div style="font-weight: 800; color: #0f172a; margin-bottom: 8px;">Imágenes - ${tecnicaNombre} (máx. 3)</div>
+                <div style="font-weight: 800; color: #0f172a; margin-bottom: 8px;">Imágenes - ${tecnicaNombre}</div>
                 <div class="p3-edit-existentes" data-tecnica-key="${key}" style="display:flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;"></div>
                 <div class="p3-edit-drop" data-tecnica-key="${key}" style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 14px; text-align: center; background: #ffffff; cursor: pointer;">
                     <div style="font-size: 1.2rem; margin-bottom: 6px;"></div>
                     <div style="font-weight: 700; color: #334155;">Arrastra imágenes aquí o haz clic</div>
-                    <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">(solo imágenes, máximo 3)</div>
+                    <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">(solo imágenes)</div>
                     <input type="file" class="p3-edit-file" data-tecnica-key="${key}" accept="image/*" multiple style="display:none;" />
                 </div>
                 <div class="p3-edit-previews" data-tecnica-key="${key}" style="display:flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;"></div>
@@ -2464,7 +2463,6 @@ function abrirModalEditarPrendaPaso3(nombrePrenda) {
                 const arr = window.p3EdicionContexto.imagenesPorTecnica[key] || [];
                 const existentes = window.p3EdicionContexto.imagenesExistentesPorTecnica[key] || [];
                 for (const f of imagenes) {
-                    if ((arr.length + existentes.length) >= 3) break;
                     arr.push(f);
                 }
                 window.p3EdicionContexto.imagenesPorTecnica[key] = arr;

@@ -189,7 +189,7 @@ async function cargarTiposDisponibles() {
     }
 }
 
-function configurarDropzoneImagenes({ dropzone, input, previewContainer, maximo = 3 }) {
+function configurarDropzoneImagenes({ dropzone, input, previewContainer, maximo = null }) {
     const imagenesAgregadas = [];
 
     const actualizarPrevisualizaciones = () => {
@@ -246,9 +246,6 @@ function configurarDropzoneImagenes({ dropzone, input, previewContainer, maximo 
         }
 
         for (const archivo of imagenes) {
-            if (imagenesAgregadas.length >= maximo) {
-                break;
-            }
             imagenesAgregadas.push(archivo);
         }
 
@@ -816,12 +813,12 @@ function abrirModalDatosIguales(tecnicas) {
                     divImagen.style.cssText = 'padding: 12px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;';
                     divImagen.innerHTML = `
                         <label style="font-weight: 600; font-size: 0.9rem; color: #333; display: block; margin-bottom: 8px;">
-                            Imágenes - ${tecnica.nombre} (Máximo 3)
+                            Imágenes - ${tecnica.nombre}
                         </label>
                         <div class="dImagenesDropzone-${idx}" style="border: 2px dashed #ddd; border-radius: 6px; padding: 16px; text-align: center; background: #fafafa; cursor: pointer; transition: all 0.2s; color: #999; font-size: 0.85rem;" onmouseover="this.style.background='#f0f0f0'; this.style.borderColor='#1e40af'" onmouseout="this.style.background='#fafafa'; this.style.borderColor='#ddd'">
                             <div style="margin-bottom: 6px; font-size: 1.3rem;"></div>
                             <p style="margin: 0 0 4px 0; font-weight: 500; color: #333; font-size: 0.9rem;">Arrastra imágenes aquí</p>
-                            <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar (máx. 3)</p>
+                            <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar</p>
                             <input type="file" class="dImagenTecnicaInput-${idx}" accept="image/*" multiple style="display: none;" />
                         </div>
                         <div class="dImagenesPreview-${idx}" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
@@ -872,11 +869,8 @@ function abrirModalDatosIguales(tecnicas) {
                             return;
                         }
                         
-                        // Agregar imágenes hasta el límite de 3
+                        // Agregar todas las imágenes recibidas
                         for (const archivo of imagenes) {
-                            if (imagenesAgregadas.length >= 3) {
-                                break;
-                            }
                             imagenesAgregadas.push(archivo);
                         }
                         
@@ -1515,11 +1509,11 @@ function agregarFilaPrenda() {
                         
             <!-- Imágenes de Prenda (máximo 3) con Drag and Drop -->
             <div>
-                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">Imágenes (máximo 3)</label>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.85rem;">Imágenes</label>
                 <div class="imagenes-dropzone-${prendasIndex}" style="border: 2px dashed #ddd; border-radius: 6px; padding: 24px; text-align: center; background: #fafafa; cursor: pointer; transition: all 0.2s; color: #999; font-size: 0.85rem;" onmouseover="this.style.background='#f0f0f0'; this.style.borderColor='#1e40af'" onmouseout="this.style.background='#fafafa'; this.style.borderColor='#ddd'">
                     <div style="margin-bottom: 8px; font-size: 1.5rem;"></div>
                     <p style="margin: 0 0 4px 0; font-weight: 500; color: #333;">Arrastra imágenes aquí</p>
-                    <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar (máx. 3)</p>
+                    <p style="margin: 0; font-size: 0.8rem; color: #999;">O haz clic para seleccionar</p>
                     <input type="file" class="imagen-prenda-input-${prendasIndex}" accept="image/*" multiple style="display: none;" />
                 </div>
                 <div class="imagenes-preview-${prendasIndex}" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
@@ -1534,7 +1528,7 @@ function agregarFilaPrenda() {
     const dropzone = fila.querySelector(`.imagenes-dropzone-${prendasIndex}`);
     const input = fila.querySelector(`.imagen-prenda-input-${prendasIndex}`);
     const previewContainer = fila.querySelector(`.imagenes-preview-${prendasIndex}`);
-    const imagenesAgregadas = configurarDropzoneImagenes({ dropzone, input, previewContainer, maximo: 3 });
+    const imagenesAgregadas = configurarDropzoneImagenes({ dropzone, input, previewContainer });
 
     Object.defineProperty(fila, 'imagenesAgregadas', {
         get: function() { return imagenesAgregadas; }
