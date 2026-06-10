@@ -468,6 +468,8 @@ class TalleresController extends Controller
             $reciboId = (int) $request->query('recibo_id', 0);
             $numeroRecibo = trim((string) $request->query('numero_recibo', ''));
             $tipoRecibo = strtoupper(trim((string) $request->query('tipo_recibo', '')));
+            $esParcial = $request->boolean('es_parcial');
+            $pedidoParcialId = (int) $request->query('pedido_parcial_id', 0);
             $pedidoProduccionId = (int) $request->query('pedido_produccion_id', 0);
             $prendaId = (int) $request->query('prenda_id', 0);
 
@@ -485,6 +487,63 @@ class TalleresController extends Controller
                 ], 422);
             }
 
+            if ($esParcial) {
+                $reciboParcialQuery = DB::table('recibo_por_partes');
+
+                if ($reciboId > 0) {
+                    $reciboParcialQuery->where('id', $reciboId);
+                } elseif ($numeroRecibo !== '') {
+                    $reciboParcialQuery->where('consecutivo_parcial', $numeroRecibo);
+                }
+
+                if ($pedidoProduccionId > 0) {
+                    $reciboParcialQuery->where('pedido_produccion_id', $pedidoProduccionId);
+                }
+
+                $reciboParcial = $reciboParcialQuery->orderByDesc('id')->first();
+
+                if (!$reciboParcial) {
+                    return response()->json(['success' => false, 'message' => 'Recibo no encontrado'], 404);
+                }
+
+                $tipoReciboParcial = strtoupper(trim((string) ($reciboParcial->tipo_recibo ?? $tipoRecibo)));
+                $fechaParcial = Carbon::parse($reciboParcial->created_at);
+                $prenda = DB::table('prendas_pedido')->where('id', $reciboParcial->prenda_pedido_id)->first();
+                if (!$prenda && $tipoReciboParcial === 'CORTE-PARA-BODEGA') {
+                    $reciboBase = DB::table('consecutivos_recibos_pedidos')
+                        ->where('tipo_recibo', 'CORTE-PARA-BODEGA')
+                        ->where('pedido_produccion_id', $reciboParcial->pedido_produccion_id)
+                        ->where('consecutivo_actual', $reciboParcial->consecutivo_original)
+                        ->orderByDesc('id')
+                        ->first();
+
+                    if ($reciboBase && $reciboBase->prenda_bodega_id) {
+                        $prenda = DB::table('prenda_bodega')->where('id', $reciboBase->prenda_bodega_id)->first();
+                    }
+                }
+
+                $tallas = DB::table('recibos_por_partes_tallas')
+                    ->where('recibo_por_partes_id', $reciboParcial->id)
+                    ->get(['talla', 'genero', 'color_nombre as color', 'cantidad']);
+
+                return response()->json([
+                    'success' => true,
+                    'tipo_recibo' => $tipoReciboParcial,
+                    'numero_recibo' => (float) $reciboParcial->consecutivo_parcial,
+                    'descripcion' => $prenda->descripcion ?? ($prenda->nombre_prenda ?? 'Recibo parcial'),
+                    'dia' => $fechaParcial->format('d'),
+                    'mes' => $fechaParcial->format('m'),
+                    'ano' => $fechaParcial->format('Y'),
+                    'tallas' => $tallas->map(fn($t) => [
+                        'talla' => $t->talla,
+                        'genero' => $t->genero,
+                        'color' => $t->color,
+                        'cantidad' => (int) $t->cantidad,
+                    ])->toArray(),
+                    'total' => (int) $tallas->sum('cantidad'),
+                ]);
+            }
+
             // CORTE-PARA-BODEGA: resolver por consecutivo base
             if ($tipoRecibo === 'CORTE-PARA-BODEGA') {
                 $reciboBodegaQuery = DB::table('consecutivos_recibos_pedidos')
@@ -492,6 +551,8 @@ class TalleresController extends Controller
 
                 if ($reciboId > 0) {
                     $reciboBodegaQuery->where('id', $reciboId);
+                } elseif ($pedidoParcialId > 0) {
+                    $reciboBodegaQuery->where('pedido_parcial_id', $pedidoParcialId);
                 } else {
                     $reciboBodegaQuery->where('consecutivo_actual', $numeroRecibo);
                 }
@@ -544,6 +605,8 @@ class TalleresController extends Controller
 
             if ($reciboId > 0) {
                 $reciboBaseQuery->where('id', $reciboId);
+            } elseif ($pedidoParcialId > 0) {
+                $reciboBaseQuery->where('pedido_parcial_id', $pedidoParcialId);
             } else {
                 $reciboBaseQuery->where('consecutivo_actual', $numeroRecibo);
             }

@@ -2196,8 +2196,10 @@ function cargarEntregasAcordeon(reciboId, esParcial, reciboNumero, tipoRecibo, c
     }
 
     const params = new URLSearchParams({
+        recibo_id: String(reciboId || ''),
         numero_recibo: String(reciboNumero),
         tipo_recibo: String(tipoRecibo),
+        es_parcial: String(esParcial || ''),
     });
 
     fetch(`${apiReciboCompletoBase}?${params.toString()}`)
