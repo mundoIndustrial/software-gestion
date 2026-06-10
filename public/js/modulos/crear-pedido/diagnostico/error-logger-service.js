@@ -264,6 +264,10 @@
             })
             .then(response => {
                 if (!response.ok) {
+                    if (response.status === 401 || response.status === 403 || response.status === 419) {
+                        console.warn(`[ErrorLogger] No se enviará el error por autenticación inválida (HTTP ${response.status})`);
+                        return;
+                    }
                     throw new Error(`HTTP ${response.status}`);
                 }
                 console.log('[ErrorLogger] Error enviado al servidor:', logEntry.tipo);

@@ -12,10 +12,14 @@ let currentState = {
 
 document.addEventListener('DOMContentLoaded', function() {
     initTalleresSearch();
-    initOrdenesTabs();
+    if (typeof window.TalleresOrdenes?.initOrdenesTabs === 'function') {
+        window.TalleresOrdenes.initOrdenesTabs();
+    }
     initViewHandlers();
     initRecibosContentDelegation();
-    initReciboCompletoEvents();
+    if (typeof initReciboCompletoEvents === 'function') {
+        initReciboCompletoEvents();
+    }
     initStatusToggles();
     loadTalleresStats();
     initNewTallerModal();
