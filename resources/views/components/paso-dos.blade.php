@@ -64,6 +64,8 @@
                         });
                     });
                 </script>
+            @elseif(isset($esEdicion) && $esEdicion)
+                {{-- cargarBorrador.js crea las cards del Paso 2 --}}
             @else
                 <!-- Agregar prenda 1 por defecto cuando no es edición -->
                 <script>

@@ -1,3 +1,213 @@
+function obtenerProductoCardsPaso2() {
+    const contenedor = document.getElementById('productosContainer');
+    if (contenedor) {
+        return contenedor.querySelectorAll('.producto-card');
+    }
+    const paso2 = document.querySelector('.form-step[data-step="2"]');
+    if (paso2) {
+        return paso2.querySelectorAll('.producto-card');
+    }
+    return document.querySelectorAll('.producto-card');
+}
+
+function extraerTallasPorGeneroDePrenda(prenda) {
+    const tallasPorGenero = { dama: [], caballero: [] };
+    const tallasValores = [];
+    const tallasLetras = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'];
+
+    const procesarTalla = (item) => {
+        if (!item) return;
+        const tallaValor = typeof item === 'string' ? item : (item.talla || null);
+        if (!tallaValor) return;
+        tallasValores.push(tallaValor);
+
+        const generoId = typeof item === 'object' ? (item.genero_id ?? null) : null;
+        if (generoId === 2 || generoId === '2') {
+            tallasPorGenero.dama.push(tallaValor);
+        } else if (generoId === 1 || generoId === '1') {
+            tallasPorGenero.caballero.push(tallaValor);
+        }
+    };
+
+    const fuentes = [
+        prenda?.tallas,
+        prenda?.prendas_tallas,
+        prenda?.prenda_tallas,
+    ];
+
+    fuentes.forEach((fuente) => {
+        if (!Array.isArray(fuente)) return;
+        fuente.forEach(procesarTalla);
+    });
+
+    const tienePorGenero = tallasPorGenero.dama.length > 0 || tallasPorGenero.caballero.length > 0;
+    if (tienePorGenero) {
+        const porGenero = {};
+        if (tallasPorGenero.dama.length > 0) {
+            porGenero.dama = Array.from(new Set(tallasPorGenero.dama));
+        }
+        if (tallasPorGenero.caballero.length > 0) {
+            porGenero.caballero = Array.from(new Set(tallasPorGenero.caballero));
+        }
+        return porGenero;
+    }
+
+    const unicas = Array.from(new Set(tallasValores));
+    if (unicas.length === 0) {
+        return {};
+    }
+
+    const esLetra = unicas.some((t) => tallasLetras.includes(String(t).toUpperCase()));
+    if (esLetra) {
+        return { dama: unicas, caballero: unicas };
+    }
+
+    return { general: unicas };
+}
+
+function aplicarTallasGuardadasEnProducto(productoCard, prenda, intento = 0) {
+    if (!productoCard || !prenda) return false;
+
+    const porGenero = extraerTallasPorGeneroDePrenda(prenda);
+    if (Object.keys(porGenero).length === 0) {
+        return false;
+    }
+
+    const tallasLetras = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'];
+    const todas = Object.values(porGenero).flat();
+    const esLetra = todas.some((t) => tallasLetras.includes(String(t).toUpperCase()));
+
+    const tipoSelect = productoCard.querySelector('.talla-tipo-select');
+    if (tipoSelect && !tipoSelect.value) {
+        tipoSelect.value = esLetra ? 'letra' : 'numero';
+    }
+
+    const generoSelectors = productoCard.querySelector('.talla-genero-selectores');
+    const cbDama = generoSelectors ? generoSelectors.querySelector('.talla-genero-checkbox[value="dama"]') : null;
+    const cbCab = generoSelectors ? generoSelectors.querySelector('.talla-genero-checkbox[value="caballero"]') : null;
+    if (cbDama) cbDama.checked = !!(porGenero.dama && porGenero.dama.length);
+    if (cbCab) cbCab.checked = !!(porGenero.caballero && porGenero.caballero.length);
+    if (generoSelectors && (porGenero.dama?.length || porGenero.caballero?.length)) {
+        generoSelectors.style.display = 'flex';
+    }
+
+    const generoIdHidden = productoCard.querySelector('.genero-id-hidden');
+    if (generoIdHidden) {
+        const ids = [];
+        if (porGenero.dama?.length) ids.push('2');
+        if (porGenero.caballero?.length) ids.push('1');
+        if (ids.length > 0) {
+            generoIdHidden.value = JSON.stringify(ids);
+        }
+    }
+
+    const ok = rehidratarTallasDirectoEnProducto(productoCard, porGenero);
+    if (!ok && intento < 10) {
+        setTimeout(() => aplicarTallasGuardadasEnProducto(productoCard, prenda, intento + 1), 250);
+        return false;
+    }
+
+    if (ok) {
+        console.log('[cargarBorrador] Tallas rehidratadas en prenda', prenda.id || prenda.nombre_producto, porGenero);
+    }
+
+    return ok;
+}
+
+/**
+ * Pinta las tallas guardadas en BD directamente en la UI (sin depender de clics en botones).
+ * Replica la salida visual de agregarTallasSeleccionadas + actualizarTallasHidden.
+ */
+function rehidratarTallasDirectoEnProducto(productoCard, tallasPorGenero) {
+    if (!productoCard || !tallasPorGenero || typeof tallasPorGenero !== 'object') {
+        return false;
+    }
+
+    const tallasAgregadas = productoCard.querySelector('.tallas-agregadas');
+    const tallasSection = productoCard.querySelector('.tallas-section');
+    if (!tallasAgregadas || !tallasSection) {
+        console.warn('[cargarBorrador] No se encontró .tallas-agregadas o .tallas-section en la card');
+        return false;
+    }
+
+    const containerTallas = tallasSection.closest('.producto-section') || productoCard;
+
+    const porGenero = {};
+    Object.keys(tallasPorGenero).forEach((genero) => {
+        const lista = Array.isArray(tallasPorGenero[genero]) ? tallasPorGenero[genero] : [];
+        const unicas = Array.from(new Set(lista.map((t) => String(t).trim()).filter(Boolean)));
+        if (unicas.length > 0) {
+            porGenero[genero] = unicas;
+        }
+    });
+
+    if (Object.keys(porGenero).length === 0) {
+        return false;
+    }
+
+    const tallasHiddenExistente = tallasAgregadas.querySelector('.tallas-hidden')
+        || productoCard.querySelector('.tallas-hidden');
+
+    tallasAgregadas.innerHTML = '';
+
+    Object.keys(porGenero).forEach((genero) => {
+        const grupoDiv = document.createElement('div');
+        grupoDiv.className = 'grupo-genero-tallas';
+        grupoDiv.dataset.genero = genero;
+        grupoDiv.style.cssText = 'margin-bottom: 1rem;';
+
+        const titulo = document.createElement('div');
+        titulo.style.cssText = 'font-weight: 600; color: #0066cc; margin-bottom: 0.5rem; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;';
+        titulo.innerHTML = genero === 'dama'
+            ? 'Tallas Dama:'
+            : (genero === 'caballero' ? 'Tallas Caballero:' : 'Tallas:');
+        grupoDiv.appendChild(titulo);
+
+        const tallasGeneroDiv = document.createElement('div');
+        tallasGeneroDiv.style.cssText = 'display: flex; flex-wrap: wrap; gap: 0.5rem;';
+
+        porGenero[genero].forEach((talla) => {
+            const tag = document.createElement('div');
+            tag.className = 'talla-item';
+            tag.dataset.talla = talla;
+            tag.dataset.genero = genero;
+            tag.style.cssText = 'background: #0066cc; color: white; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600;';
+            tag.innerHTML = `
+                <span>${talla}</span>
+                <button type="button" onclick="this.closest('.talla-item').remove(); actualizarTallasHidden(this.closest('.producto-section'))" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1;">✕</button>
+            `;
+            tallasGeneroDiv.appendChild(tag);
+        });
+
+        grupoDiv.appendChild(tallasGeneroDiv);
+        tallasAgregadas.appendChild(grupoDiv);
+    });
+
+    if (tallasHiddenExistente) {
+        tallasAgregadas.appendChild(tallasHiddenExistente);
+    } else {
+        const nuevoHidden = document.createElement('input');
+        nuevoHidden.type = 'hidden';
+        nuevoHidden.name = 'productos_friendly[][tallas]';
+        nuevoHidden.className = 'tallas-hidden';
+        nuevoHidden.value = '';
+        tallasAgregadas.appendChild(nuevoHidden);
+    }
+
+    tallasSection.style.display = 'block';
+
+    if (typeof actualizarTallasHidden === 'function') {
+        actualizarTallasHidden(containerTallas);
+    } else {
+        const hidden = tallasAgregadas.querySelector('.tallas-hidden');
+        if (hidden) {
+            hidden.value = JSON.stringify(porGenero);
+        }
+    }
+
+    return true;
+}
+
 function __hidratarPaso3DesdeBorrador(cotizacion) {
     if (!cotizacion) return;
 
@@ -429,57 +639,30 @@ function cargarBorrador(cotizacion) {
         return String(nombre).trim().length > 0;
     });
 
-    // Deduplicar por nombre (case-insensitive) y quedarse con la prenda "más completa"
-    // Esto evita que se rendericen duplicados vacíos (típico cuando viene una prenda asociada a logo sin tallas/variantes/fotos).
-    const prendasMap = new Map();
-    const prendasOrden = [];
-    const scorePrenda = (p) => {
-        const tallas = Array.isArray(p?.tallas) ? p.tallas.length : 0;
-        const variantes = Array.isArray(p?.variantes) ? p.variantes.length : 0;
-        const fotos = Array.isArray(p?.fotos) ? p.fotos.length : 0;
-        const telas = Array.isArray(p?.tela_fotos) ? p.tela_fotos.length : 0;
-        return (tallas * 10) + (variantes * 5) + fotos + telas;
-    };
-
-    prendasFiltradas.forEach((p) => {
-        const key = String(p.nombre_producto || p.nombre || p.tipo || '').trim().toLowerCase();
-        if (!key) return;
-
-        if (!prendasMap.has(key)) {
-            prendasMap.set(key, p);
-            prendasOrden.push(key);
-            return;
-        }
-
-        const actual = prendasMap.get(key);
-        if (scorePrenda(p) > scorePrenda(actual)) {
-            prendasMap.set(key, p);
-        }
+    // Orden estable por id. NO deduplicar por nombre: varias prendas pueden
+    // compartir nombre y tallas (ej. 3 líneas iguales) y cada una es un registro distinto en BD.
+    const prendas = prendasFiltradas.slice().sort((a, b) => {
+        const idA = Number(a?.id) || 0;
+        const idB = Number(b?.id) || 0;
+        if (idA && idB) return idA - idB;
+        return 0;
     });
-
-    const prendas = prendasOrden.map(k => prendasMap.get(k)).filter(Boolean);
     
     if (prendas && Array.isArray(prendas) && prendas.length > 0) {
+        const contenedorProductos = document.getElementById('productosContainer');
+        if (contenedorProductos) {
+            contenedorProductos.innerHTML = '';
+        }
 
-        
+        while (obtenerProductoCardsPaso2().length < prendas.length) {
+            agregarProductoFriendly();
+        }
+
         prendas.forEach((prenda, index) => {
-
-            
-            //  CAPTURAR EL ÍNDICE EN UNA CONSTANTE PARA EVITAR PROBLEMAS DE CLOSURE
             const prendaIndexActual = index;
-            
-            // Agregar un nuevo producto solo si no es el primero (el primero ya existe)
-            if (prendaIndexActual > 0) {
-                agregarProductoFriendly();
-            }
-            
-            // Esperar más tiempo y con reintentos
-            const intentarCargar = (intento = 0) => {
-                const productosCards = document.querySelectorAll('.producto-card');
-                
 
-                
-                // IMPORTANTE: Usar el producto correspondiente al índice, NO el último
+            const intentarCargar = (intento = 0) => {
+                const productosCards = obtenerProductoCardsPaso2();
                 const productoActual = productosCards[prendaIndexActual];
                 
                 if (!productoActual) {
@@ -722,108 +905,52 @@ function cargarBorrador(cotizacion) {
                 } catch (e) {
                     console.error('Error rehidratando tallas_color en borrador:', e);
                 }
-                    
 
-                    
-                    if (tallasValores.length > 0) {
-                        // Detectar tipo de talla (letra o número)
-                        const tallasLetras = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'];
-                        const esLetra = tallasValores.some(t => tallasLetras.includes(t));
-                        const tipoTalla = esLetra ? 'letra' : 'numero';
-                        
-
-
-                        
-                        // Seleccionar tipo de talla
-                        const tipoSelect = productoActual.querySelector('.talla-tipo-select');
-                        if (tipoSelect) {
-                            tipoSelect.value = tipoTalla;
-                            tipoSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                            tipoSelect.dispatchEvent(new Event('input', { bubbles: true }));
-
-
+                const tieneTallasPorGenero = tallasPorGenero.dama.length > 0 || tallasPorGenero.caballero.length > 0;
+                if (tieneTallasPorGenero || tallasValores.length > 0) {
+                    const porGenero = {};
+                    if (tieneTallasPorGenero) {
+                        if (tallasPorGenero.dama.length > 0) {
+                            porGenero.dama = Array.from(new Set(tallasPorGenero.dama));
                         }
-                        
-                        // Esperar a que se carguen los controles (aumentar delay)
-                        setTimeout(() => {
-
-                            
-                            // Verificar que los botones existan
-                            const botonesExistentes = productoActual.querySelectorAll('.talla-btn');
-
-                            
-                            // Marcar géneros usando checkboxes (UI nueva)
-                        const generoSelectors = productoActual.querySelector('.talla-genero-selectores');
-                        const cbDama = generoSelectors ? generoSelectors.querySelector('.talla-genero-checkbox[value="dama"]') : null;
-                        const cbCab = generoSelectors ? generoSelectors.querySelector('.talla-genero-checkbox[value="caballero"]') : null;
-
-                        let tieneDama = tallasPorGenero.dama.length > 0;
-                        let tieneCab = tallasPorGenero.caballero.length > 0;
-
-                        // Si las tallas vienen sin genero_id, usar género guardado en la prenda/variante
-                        if (!tieneDama && !tieneCab && generoInferido) {
-                            tieneDama = generoInferido === 'dama';
-                            tieneCab = generoInferido === 'caballero';
+                        if (tallasPorGenero.caballero.length > 0) {
+                            porGenero.caballero = Array.from(new Set(tallasPorGenero.caballero));
                         }
-
-                        if (cbDama) cbDama.checked = !!tieneDama;
-                        if (cbCab) cbCab.checked = !!tieneCab;
-
-                        // Disparar update para que se construyan botones de tallas
-                        if (cbDama) cbDama.dispatchEvent(new Event('change', { bubbles: true }));
-                        if (cbCab) cbCab.dispatchEvent(new Event('change', { bubbles: true }));
-
-                        // Si son tallas de letras, es obligatorio seleccionar modo para que se creen los botones
-                        if (tipoTalla === 'letra') {
-                            const modoSelect = productoActual.querySelector('.talla-modo-select');
-                            if (modoSelect) {
-                                modoSelect.value = 'manual';
-                                modoSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                            }
-                        }
-                            
-                            // Esperar a que se carguen los botones del género
-                            setTimeout(() => {
-
-                                
-                                // Hacer clic en los botones de talla
-                                let tallasActivadas = 0;
-                                const activarTallas = (lista, genero) => {
-                                    lista.forEach(tallaValor => {
-                                        const selectorConGenero = `.talla-btn[data-talla="${tallaValor}"][data-genero="${genero}"]`;
-                                        const tallaBtn = productoActual.querySelector(selectorConGenero) || productoActual.querySelector(`.talla-btn[data-talla="${tallaValor}"]`);
-                                        if (tallaBtn) {
-                                            tallaBtn.click();
-                                            tallasActivadas++;
-                                        }
-                                    });
-                                };
-
-                                if (tieneDama || tieneCab) {
-                                    // Si no tenemos separación por genero_id, activarlas con el género inferido
-                                    if (tallasPorGenero.dama.length === 0 && tallasPorGenero.caballero.length === 0 && generoInferido) {
-                                        activarTallas(tallasValores, generoInferido);
-                                    } else {
-                                        activarTallas(tallasPorGenero.dama, 'dama');
-                                        activarTallas(tallasPorGenero.caballero, 'caballero');
-                                    }
-                                } else {
-                                    activarTallas(tallasValores, '');
-                                }
-                                
-
-                                
-                                // Hacer clic en "Agregar Tallas"
-                                setTimeout(() => {
-                                    const btnAgregarTallas = productoActual.querySelector('button[onclick*="agregarTallasSeleccionadas"]');
-                                    if (btnAgregarTallas) {
-                                        btnAgregarTallas.click();
-
-                                    }
-                                }, 300);
-                            }, 500);
-                        }, 500);
+                    } else {
+                        const generoFallback = generoInferido || 'general';
+                        porGenero[generoFallback] = tallasValores;
                     }
+
+                    const tallasLetras = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'];
+                    const todas = Object.values(porGenero).flat();
+                    const esLetra = todas.some((t) => tallasLetras.includes(String(t).toUpperCase()));
+
+                    const tipoSelect = productoActual.querySelector('.talla-tipo-select');
+                    if (tipoSelect) {
+                        tipoSelect.value = esLetra ? 'letra' : 'numero';
+                    }
+
+                    const generoSelectors = productoActual.querySelector('.talla-genero-selectores');
+                    const cbDama = generoSelectors ? generoSelectors.querySelector('.talla-genero-checkbox[value="dama"]') : null;
+                    const cbCab = generoSelectors ? generoSelectors.querySelector('.talla-genero-checkbox[value="caballero"]') : null;
+                    if (cbDama) cbDama.checked = !!(porGenero.dama && porGenero.dama.length);
+                    if (cbCab) cbCab.checked = !!(porGenero.caballero && porGenero.caballero.length);
+                    if (generoSelectors && (porGenero.dama?.length || porGenero.caballero?.length)) {
+                        generoSelectors.style.display = 'flex';
+                    }
+
+                    const generoIdHidden = productoActual.querySelector('.genero-id-hidden');
+                    if (generoIdHidden) {
+                        const ids = [];
+                        if (porGenero.dama?.length) ids.push('2');
+                        if (porGenero.caballero?.length) ids.push('1');
+                        if (ids.length > 0) {
+                            generoIdHidden.value = JSON.stringify(ids);
+                        }
+                    }
+
+                    rehidratarTallasDirectoEnProducto(productoActual, porGenero);
+                }
                     
                     // Cargar variantes (color, tela, referencia, manga, bolsillos, broche, reflectivo)
                     // Soportar múltiples formatos: objeto directo, array [object], o relación Eloquent
