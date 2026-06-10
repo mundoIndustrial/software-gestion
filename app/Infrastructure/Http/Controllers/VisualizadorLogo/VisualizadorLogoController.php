@@ -271,7 +271,8 @@ final class VisualizadorLogoController extends Controller
     public function logosConfirmadosHistorialNovedades(Request $request)
     {
         $disenos = \App\Models\DisenoLogoPedido::with([
-            'proceso.prenda',
+            'proceso.prenda.pedidoProduccion.cliente',
+            'proceso.prenda.pedidoProduccion.asesora',
             'novedades.usuario',
         ])
             ->whereIn('estado', ['logo_confirmado', 'devuelto_a_diseño'])
@@ -301,7 +302,7 @@ final class VisualizadorLogoController extends Controller
             $disenoGroupMap[$diseno->id] = $groupKey;
         }
 
-        $novedades = \App\Models\DisenoLogoPedidoNovedad::with(['diseno.proceso.prenda'])
+        $novedades = \App\Models\DisenoLogoPedidoNovedad::with(['diseno.proceso.prenda.pedidoProduccion.cliente', 'diseno.proceso.prenda.pedidoProduccion.asesora'])
             ->whereHas('diseno', function ($q) {
                 $q->whereIn('estado', ['logo_confirmado', 'devuelto_a_diseño']);
             })
@@ -311,10 +312,24 @@ final class VisualizadorLogoController extends Controller
         $items = $novedades->map(function ($novedad) use ($gruposLogos, $disenoGroupMap) {
             $diseno = $novedad->diseno;
             $groupKey = $diseno ? ($disenoGroupMap[$diseno->id] ?? null) : null;
+            
+            // Obtener cliente directamente del pedido producción
+            $cliente = '-';
+            if ($diseno && $diseno->proceso && $diseno->proceso->prenda && $diseno->proceso->prenda->pedidoProduccion) {
+                $cliente = $diseno->proceso->prenda->pedidoProduccion->cliente ?? '-';
+            }
+
+            // Obtener nombre de la asesora (usuario) desde pedidoProduccion->asesora
+            $asesora = '-';
+            if ($diseno && $diseno->proceso && $diseno->proceso->prenda && $diseno->proceso->prenda->pedidoProduccion && $diseno->proceso->prenda->pedidoProduccion->asesora) {
+                $asesora = $diseno->proceso->prenda->pedidoProduccion->asesora->name ?? '-';
+            }
 
             return [
                 'id' => $novedad->id,
                 'numero_recibo' => $diseno ? $this->resolveNumeroRecibo($diseno) : '-',
+                'cliente' => $cliente,
+                'asesora' => $asesora,
                 'fecha' => $novedad->created_at,
                 'observacion' => $novedad->novedad,
                 'tipo_novedad' => $novedad->tipo_novedad,

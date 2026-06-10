@@ -514,7 +514,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div id="modal-historial-novedades-toolbar" style="display: none; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; flex-shrink: 0;">
                 <div style="position: relative; max-width: 320px;">
                     <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.9rem;"></i>
-                    <input id="modal-historial-novedades-search" type="text" placeholder="Buscar por número de recibo..." style="
+                    <input id="modal-historial-novedades-search" type="text" placeholder="Buscar por recibo, cliente o asesora..." style="
                         width: 100%;
                         padding: 10px 36px 10px 36px;
                         border: 2px solid #e2e8f0;
@@ -611,7 +611,12 @@ document.addEventListener('DOMContentLoaded', function() {
         function renderHistorialNovedadesRows(items, searchTerm = '') {
             const term = String(searchTerm || '').trim().toLowerCase();
             const filtered = term
-                ? items.filter((item) => String(item.numero_recibo || '').toLowerCase().includes(term))
+                ? items.filter((item) => {
+                    const recibo = String(item.numero_recibo || '').toLowerCase();
+                    const cliente = String(item.cliente || '').toLowerCase();
+                    const asesora = String(item.asesora || '').toLowerCase();
+                    return recibo.includes(term) || cliente.includes(term) || asesora.includes(term);
+                })
                 : items;
 
             if (filtered.length === 0) {
@@ -619,13 +624,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div style="padding: 3rem 2rem; text-align: center; color: #64748b;">
                         <i class="fas fa-search" style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
                         <p style="margin: 0; font-weight: 500;">
-                            ${term ? 'No se encontraron novedades para ese recibo' : 'No hay novedades registradas'}
+                            ${term ? 'No se encontraron novedades para ese recibo o cliente' : 'No hay novedades registradas'}
                         </p>
                     </div>
                 `;
             }
 
-            const rowsHtml = filtered.map((item) => {
+                const rowsHtml = filtered.map((item) => {
                 const fecha = formatearFechaHora12h(item.fecha);
                 const logosJson = JSON.stringify(item.logos || []).replace(/'/g, "\\'");
                 const tieneLogos = Array.isArray(item.logos) && item.logos.length > 0;
@@ -634,6 +639,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return `
                     <tr>
                         <td style="font-weight: 700; color: #1e293b;">#${escapeHtml(item.numero_recibo || '-')}</td>
+                        <td style="color: #475569; font-weight: 500;">${escapeHtml(item.cliente || '-')}</td>
+                        <td style="color: #475569; font-weight: 500;">${escapeHtml(item.asesora || '-')}</td>
                         <td>
                             <span style="
                                 display: inline-flex;
@@ -678,6 +685,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <thead>
                             <tr>
                                 <th>Recibo</th>
+                                <th>Cliente</th>
+                                <th>Asesora</th>
                                 <th>Tipo</th>
                                 <th>Fecha</th>
                                 <th>Observación</th>
