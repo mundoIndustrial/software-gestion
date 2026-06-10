@@ -1081,7 +1081,7 @@
                     rowDiv.setAttribute('data-cliente', pedido.cliente || '');
                     rowDiv.setAttribute('data-estado', pedido.estado || '');
                     rowDiv.setAttribute('data-forma-pago', pedido.forma_pago || '');
-                    rowDiv.style.cssText = 'display: grid; grid-template-columns: 140px 170px 190px 140px 170px 200px 160px 170px 170px; gap: 1.8rem; padding: 0.75rem 1.25rem; align-items: center; transition: 0.3s; min-width: min-content; background: white; border-radius: 6px; margin-bottom: 0.75rem; box-shadow: rgba(0, 0, 0, 0.05) 0px 2px 4px;';
+                    rowDiv.style.cssText = 'display: grid; grid-template-columns: 140px 170px 140px 200px 200px 190px 140px 170px 170px; gap: 1.8rem; padding: 0.75rem 1.25rem; align-items: center; transition: 0.3s; min-width: min-content; background: white; border-radius: 6px; margin-bottom: 0.75rem; box-shadow: rgba(0, 0, 0, 0.05) 0px 2px 4px;';
                     rowDiv.onmouseover = function() {
                         this.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
                         this.style.transform = 'translateY(-2px)';
@@ -1120,6 +1120,15 @@
                                 ${estadoTexto}
                             </span>
                         </div>
+                        <div style="display: flex; align-items: center; color: #2563eb; font-weight: 700; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            #${pedido.numero_pedido}
+                        </div>
+                        <div style="display: flex; align-items: center; color: #374151; font-size: 0.85rem; font-weight: 500; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            ${pedido.cliente || '-'}
+                        </div>
+                        <div style="color: #374151; font-weight: 500; font-size: 0.8rem; text-align: left; white-space: pre-wrap; word-break: break-word; max-width: 320px;">
+                            <span style="color: #d1d5db;">-</span>
+                        </div>
                         <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
                             ${pedido.fecha_creacion ? new Date(pedido.fecha_creacion).toLocaleDateString('es-ES') : '-'}
                         </div>
@@ -1131,15 +1140,6 @@
                                     Entrega: ${pedido.fecha_estimada ? new Date(pedido.fecha_estimada + 'T12:00:00').toLocaleDateString('es-ES') : '-'}
                                 </span>
                             ` : '-'}
-                        </div>
-                        <div style="display: flex; align-items: center; color: #2563eb; font-weight: 700; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                            #${pedido.numero_pedido}
-                        </div>
-                        <div style="display: flex; align-items: center; color: #374151; font-size: 0.85rem; font-weight: 500; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                            ${pedido.cliente || '-'}
-                        </div>
-                        <div style="color: #374151; font-weight: 500; font-size: 0.8rem; text-align: left; white-space: pre-wrap; word-break: break-word; max-width: 320px;">
-                            <span style="color: #d1d5db;">-</span>
                         </div>
                         <div style="display: flex; align-items: center; color: #374151; font-size: 0.8rem; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                             ${pedido.forma_pago || '-'}

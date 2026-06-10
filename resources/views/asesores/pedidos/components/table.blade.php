@@ -8,7 +8,7 @@
             color: white;
             padding: 0.75rem 1.25rem;
             display: grid;
-            grid-template-columns: 140px 170px 190px 140px 170px 200px 160px 170px 170px;
+            grid-template-columns: 140px 170px 140px 200px 200px 190px 140px 170px 170px;
             gap: 1.8rem;
             font-weight: 600;
             font-size: 0.8rem;
@@ -30,18 +30,6 @@
                 </button>
             </div>
             <div class="th-wrapper">
-                <span>Fecha Creación</span>
-                <button type="button" class="btn-filter-column" title="Filtrar Fecha Creación">
-                    <span class="material-symbols-rounded">filter_alt</span>
-                </button>
-            </div>
-            <div class="th-wrapper">
-                <span>Días Restantes</span>
-                <button type="button" class="btn-filter-column" title="Filtrar Días Restantes">
-                    <span class="material-symbols-rounded">filter_alt</span>
-                </button>
-            </div>
-            <div class="th-wrapper">
                 <span>Pedido</span>
                 <button type="button" class="btn-filter-column" title="Filtrar Pedido">
                     <span class="material-symbols-rounded">filter_alt</span>
@@ -56,6 +44,18 @@
             <div class="th-wrapper">
                 <span>Novedades</span>
                 <button type="button" class="btn-filter-column" title="Filtrar Novedades">
+                    <span class="material-symbols-rounded">filter_alt</span>
+                </button>
+            </div>
+            <div class="th-wrapper">
+                <span>Fecha Creación</span>
+                <button type="button" class="btn-filter-column" title="Filtrar Fecha Creación">
+                    <span class="material-symbols-rounded">filter_alt</span>
+                </button>
+            </div>
+            <div class="th-wrapper">
+                <span>Días Restantes</span>
+                <button type="button" class="btn-filter-column" title="Filtrar Días Restantes">
                     <span class="material-symbols-rounded">filter_alt</span>
                 </button>
             </div>

@@ -80,7 +80,7 @@
      data-prendas="{{ json_encode($pedidoPrendas) }}"
      style="
     display: grid;
-    grid-template-columns: 140px 170px 190px 140px 170px 200px 160px 170px 170px;
+    grid-template-columns: 140px 170px 140px 200px 200px 190px 140px 170px 170px;
     gap: 1.8rem;
     padding: 0.75rem 1.25rem;
     align-items: center;
@@ -141,25 +141,6 @@
         </span>
     </div>
 
-    <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
-        {{ $fechaCreacion }}
-    </div>
-
-    <div style="display: flex; flex-direction: column; justify-content: center; color: #dc2626; font-size: 0.78rem; font-weight: 700; line-height: 1.1;">
-        @if(isset($pedido->dias_restantes_entrega) && $pedido->dias_restantes_entrega !== null)
-            <span>{{ $pedido->dias_restantes_entrega }} d&iacute;as</span>
-            <span>h&aacute;biles restantes</span>
-            <span style="color:#2563eb; font-size:0.7rem; font-weight:600; margin-top:2px;">
-                Entrega: {{ $fechaEstimada }}
-            </span>
-        @else
-            <span>-</span>
-            <span style="color:#2563eb; font-size:0.7rem; font-weight:600; margin-top:2px;">
-                Entrega: {{ $fechaEstimada }}
-            </span>
-        @endif
-    </div>
-
     <div style="display: flex; align-items: center; color: #2563eb; font-weight: 700; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
         {{ $numeroPedido }}
     </div>
@@ -193,6 +174,25 @@
             </script>
         @else
             <span style="color: #d1d5db;">-</span>
+        @endif
+    </div>
+
+    <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
+        {{ $fechaCreacion }}
+    </div>
+
+    <div style="display: flex; flex-direction: column; justify-content: center; color: #dc2626; font-size: 0.78rem; font-weight: 700; line-height: 1.1;">
+        @if(isset($pedido->dias_restantes_entrega) && $pedido->dias_restantes_entrega !== null)
+            <span>{{ $pedido->dias_restantes_entrega }} d&iacute;as</span>
+            <span>h&aacute;biles restantes</span>
+            <span style="color:#2563eb; font-size:0.7rem; font-weight:600; margin-top:2px;">
+                Entrega: {{ $fechaEstimada }}
+            </span>
+        @else
+            <span>-</span>
+            <span style="color:#2563eb; font-size:0.7rem; font-weight:600; margin-top:2px;">
+                Entrega: {{ $fechaEstimada }}
+            </span>
         @endif
     </div>
 
