@@ -1,4 +1,4 @@
-﻿/**
+/**
  * REGISTRATION HANDLER - Lavandería
  * Maneja el registro de nuevos movimientos con múltiples recibos
  */
@@ -667,7 +667,6 @@ class RegistrationHandler {
         const modal = document.getElementById('modalSalida');
         if (modal) {
             modal.classList.add('active');
-            this.clearForm();
         }
     }
 
