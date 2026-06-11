@@ -265,7 +265,7 @@ class HistorialHandler {
             // Botón de novedades
             const tieneNovedades = mov.novedad && mov.novedad.trim().length > 0;
             const btnNovedades = tieneNovedades
-                ? `<button class="btn-ver-novedades" onclick="window.abrirNovedadesModal(${mov.id}, '${escapeHtml(mov.novedad)}', '${escapeHtml(mov.fecha_movimiento)}')">
+                ? `<button class="btn-ver-novedades" onclick="window.abrirNovedadesModal(${mov.id}, '${escapeHtml(mov.novedad)}', '${escapeHtml(mov.fecha_movimiento)}', '${mov.numero_movimiento || mov.id}')">
                     <span class="material-symbols-rounded" style="font-size: 16px;">note</span>
                     Ver
                   </button>`
@@ -274,7 +274,7 @@ class HistorialHandler {
             // Estado de firma
             const tieneFirma = mov.firma_movimiento && mov.firma_movimiento !== 'pendiente';
             const btnFirma = tieneFirma
-                ? `<button class="btn-ver-firma" onclick="window.abrirFirmaModal(${mov.id}, '${mov.fecha_firma || mov.fecha_movimiento}')">
+                ? `<button class="btn-ver-firma" onclick="window.abrirFirmaModal(${mov.id}, '${mov.fecha_firma || mov.fecha_movimiento}', '${mov.numero_movimiento || mov.id}')">
                     <span class="material-symbols-rounded" style="font-size: 16px;">image</span>
                     Ver Firma
                   </button>`
@@ -283,7 +283,7 @@ class HistorialHandler {
             return `
                 <tr>
                     <td style="font-weight: 700; color: #1e293b;">
-                        #${mov.id}
+                        #${mov.numero_movimiento || mov.id}
                     </td>
                     <td>
                         <span style="background: ${bgColorTipo}; color: ${colorTipo}; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">

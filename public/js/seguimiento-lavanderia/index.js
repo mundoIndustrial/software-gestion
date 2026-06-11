@@ -123,21 +123,22 @@ function initSeguimientoLavanderia() {
         window.seguimientoLavanderiaManager.detallesModalHandler.cerrarModal();
     };
 
-    window.abrirFirmaModal = (movimientoId, fecha) => {
-        window.seguimientoLavanderiaManager.firmaModalHandler.abrirModal(movimientoId, fecha);
+    window.abrirFirmaModal = (movimientoId, fecha, numeroMovimiento = null) => {
+        window.seguimientoLavanderiaManager.firmaModalHandler.abrirModal(movimientoId, fecha, numeroMovimiento);
     };
 
     window.cerrarFirmaModal = () => {
         window.seguimientoLavanderiaManager.firmaModalHandler.cerrarModal();
     };
 
-    window.abrirNovedadesModal = (movimientoId, novedad, fecha) => {
+    window.abrirNovedadesModal = (movimientoId, novedad, fecha, numeroMovimiento = null) => {
         const modal = document.getElementById('novedadesModal');
         const title = document.getElementById('novedadesModalTitle');
         const fechaEl = document.getElementById('novedadesModalFecha');
         const body = document.getElementById('novedadesModalBody');
         
-        title.textContent = `Novedades del Movimiento #${movimientoId}`;
+        const displayNum = numeroMovimiento || movimientoId;
+        title.textContent = `Novedades del Movimiento #${displayNum}`;
         fechaEl.textContent = `Fecha: ${fecha}`;
         body.innerHTML = `<div style="padding: 20px; color: #1e293b; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word;">${novedad}</div>`;
         

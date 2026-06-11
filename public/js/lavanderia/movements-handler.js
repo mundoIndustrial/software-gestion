@@ -1,4 +1,4 @@
-﻿/**
+/**
  * MOVEMENTS HANDLER - Lavandería
  * Maneja la carga, renderizado y filtrado de movimientos
  */
@@ -373,7 +373,7 @@ class MovementsHandler {
                 <div class="card-header-top">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="font-weight: 700; font-size: 14px; color: #1e293b;">
-                            #${m.id}
+                            Movimiento #${m.numeroMovimiento || m.id}
                         </span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 12px; margin-left: auto;">
@@ -433,8 +433,9 @@ class MovementsHandler {
 
         const searchTerm = query.toLowerCase();
         const filteredMovements = this.getFilteredMovements().filter(m => {
-            // Buscar por ID del movimiento
-            const idMatch = m.id.toString().includes(searchTerm);
+            // Buscar por ID o número de movimiento
+            const idMatch = m.id.toString().includes(searchTerm) || 
+                            (m.numeroMovimiento && m.numeroMovimiento.toString().includes(searchTerm));
 
             // Buscar por nombre de prenda en recibos
             const prendasRecibosText = Array.isArray(m.recibos)

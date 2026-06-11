@@ -15,12 +15,14 @@ class FirmaModalHandler {
     /**
      * Abre el modal y carga la firma del movimiento
      */
-    abrirModal(movimientoId, fecha) {
+    abrirModal(movimientoId, fecha, numeroMovimiento = null) {
         if (!this.modal || !this.modalBody) return;
+
+        const displayNum = numeroMovimiento || movimientoId;
 
         // Mostrar modal con estado de carga
         this.modal.classList.add('show');
-        this.modalTitle.textContent = `Firma del Movimiento #${movimientoId}`;
+        this.modalTitle.textContent = `Firma del Movimiento #${displayNum}`;
         this.modalBody.innerHTML = `
             <div style="text-align: center; padding: 32px;">
                 <div class="loading-spinner"></div>

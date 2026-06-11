@@ -11,6 +11,7 @@ class LavanderiaMovimiento extends Model
     protected $table = 'lavanderia_movimientos';
 
     protected $fillable = [
+        'numero_movimiento',
         'tipo_movimiento',
         'fecha_movimiento',
         'firma_movimiento',

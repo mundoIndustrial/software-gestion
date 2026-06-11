@@ -559,6 +559,7 @@ class LavanderiaController extends Controller
 
                 return [
                     'id' => $movimiento->id,
+                    'numero_movimiento' => $movimiento->numero_movimiento,
                     'tipo_movimiento' => $movimiento->tipo_movimiento,
                     'fecha_movimiento' => $movimiento->fecha_movimiento?->format('Y-m-d H:i') ?? '-',
                     'estado' => $movimiento->estado,
@@ -998,6 +999,7 @@ class LavanderiaController extends Controller
 
                 return [
                     'id' => $movimiento->id,
+                    'numeroMovimiento' => $movimiento->numero_movimiento,
                     'recibos' => $recibosInfo,
                     'estado' => $movimiento->estado,
                     'estadoFirma' => $estadoFirma,
@@ -1123,81 +1125,113 @@ class LavanderiaController extends Controller
                 ], 422);
             }
 
-            // Crear movimiento
-            $movimiento = \App\Models\LavanderiaMovimiento::create([
-                'tipo_movimiento' => $data['tipo_movimiento'] ?? 'SALIDA',
-                'fecha_movimiento' => now(),
-                'firma_movimiento' => 'pendiente',
-                'novedad' => $data['novedad'] ?? null,
-                'estado' => 'PENDIENTE'
-            ]);
+            $movimiento = \DB::transaction(function () use ($data, $tieneRecibos, $tienePrendasManuales) {
+                $tipoMovimiento = $data['tipo_movimiento'] ?? 'SALIDA';
 
-            \Log::info('Movimiento creado:', ['id' => $movimiento->id]);
+                // Obtener y actualizar secuencia de forma atómica
+                $secuencia = \DB::table('lavanderia_secuencias')
+                    ->where('tipo_movimiento', $tipoMovimiento)
+                    ->lockForUpdate()
+                    ->first();
 
-            // Crear registros de recibos asociados al movimiento
-            if ($tieneRecibos) {
-                foreach ($data['recibos'] as $recibo) {
-                    \App\Models\LavanderiaMovimientoRecibo::create([
-                        'lavanderia_movimiento_id' => $movimiento->id,
-                        'consecutivo_recibo_pedido_id' => (int)$recibo['recibo_id'],
-                        'numero_recibo' => (int)$recibo['numero_recibo'],
-                        'tipo_recibo' => $recibo['tipo_recibo'],
+                if (!$secuencia) {
+                    \DB::table('lavanderia_secuencias')->insert([
+                        'tipo_movimiento' => $tipoMovimiento,
+                        'siguiente_numero' => 2,
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ]);
+                    $numeroMovimiento = 1;
+                } else {
+                    $numeroMovimiento = $secuencia->siguiente_numero;
+                    \DB::table('lavanderia_secuencias')
+                        ->where('tipo_movimiento', $tipoMovimiento)
+                        ->update([
+                            'siguiente_numero' => $numeroMovimiento + 1,
+                            'updated_at' => now()
+                        ]);
                 }
 
-                \Log::info('Recibos asociados al movimiento:', ['cantidad' => count($data['recibos'])]);
-            }
+                // Crear movimiento
+                $mov = \App\Models\LavanderiaMovimiento::create([
+                    'numero_movimiento' => $numeroMovimiento,
+                    'tipo_movimiento' => $tipoMovimiento,
+                    'fecha_movimiento' => now(),
+                    'firma_movimiento' => 'pendiente',
+                    'novedad' => $data['novedad'] ?? null,
+                    'estado' => 'PENDIENTE'
+                ]);
 
-            // Crear prendas manuales y mapear IDs temporales a IDs reales
-            $prendaManualIdMap = []; // Mapeo de IDs temporales a IDs reales
-            if ($tienePrendasManuales) {
-                foreach ($data['prendas_manuales'] as $index => $prendaManual) {
-                    $tempId = $prendaManual['temp_id'] ?? $index;
-                    $prendaAgregada = \App\Models\LavanderiaPrendaAgregada::create([
-                        'lavanderia_movimiento_id' => $movimiento->id,
-                        'descripcion' => $prendaManual['descripcion'],
-                    ]);
-                    
-                    // Mapear el ID temporal (índice) al ID real de la base de datos
-                    $prendaManualIdMap[$tempId] = $prendaAgregada->id;
+                \Log::info('Movimiento creado:', ['id' => $mov->id, 'numero_movimiento' => $numeroMovimiento]);
+
+                // Crear registros de recibos asociados al movimiento
+                if ($tieneRecibos) {
+                    foreach ($data['recibos'] as $recibo) {
+                        \App\Models\LavanderiaMovimientoRecibo::create([
+                            'lavanderia_movimiento_id' => $mov->id,
+                            'consecutivo_recibo_pedido_id' => (int)$recibo['recibo_id'],
+                            'numero_recibo' => (int)$recibo['numero_recibo'],
+                            'tipo_recibo' => $recibo['tipo_recibo'],
+                        ]);
+                    }
+
+                    \Log::info('Recibos asociados al movimiento:', ['cantidad' => count($data['recibos'])]);
                 }
 
-                \Log::info('Prendas manuales agregadas:', ['cantidad' => count($data['prendas_manuales']), 'map' => $prendaManualIdMap]);
-            }
+                // Crear prendas manuales y mapear IDs temporales a IDs reales
+                $prendaManualIdMap = []; // Mapeo de IDs temporales a IDs reales
+                if ($tienePrendasManuales) {
+                    foreach ($data['prendas_manuales'] as $index => $prendaManual) {
+                        $tempId = $prendaManual['temp_id'] ?? $index;
+                        $prendaAgregada = \App\Models\LavanderiaPrendaAgregada::create([
+                            'lavanderia_movimiento_id' => $mov->id,
+                            'descripcion' => $prendaManual['descripcion'],
+                        ]);
+                        
+                        // Mapear el ID temporal (índice) al ID real de la base de datos
+                        $prendaManualIdMap[$tempId] = $prendaAgregada->id;
+                    }
 
-            // Crear registros de tallas
-            foreach ($data['tallas'] as $talla) {
-                $tallaData = [
-                    'lavanderia_movimiento_id' => $movimiento->id,
-                    'talla' => $talla['talla'],
-                    'genero' => $talla['genero'] ?? null,
-                    'color' => null,
-                    'cantidad_enviada' => (int)$talla['cantidad_enviada'],
-                    'cantidad_recibida' => 0,
-                ];
-
-                // Agregar relación a prenda según el tipo
-                if (!empty($talla['prenda_bodega_id'])) {
-                    $tallaData['prenda_bodega_id'] = $talla['prenda_bodega_id'];
-                } elseif (!empty($talla['prenda_agregada_id'])) {
-                    // Usar el ID real mapeado desde el ID temporal
-                    $tempId = $talla['prenda_agregada_id'];
-                    $tallaData['prenda_agregada_id'] = $prendaManualIdMap[$tempId] ?? $tempId;
-                } elseif (!empty($talla['prenda_id'])) {
-                    // Guardar prenda_id de PrendaPedido (sin validación de clave foránea)
-                    $tallaData['prenda_id'] = $talla['prenda_id'];
+                    \Log::info('Prendas manuales agregadas:', ['cantidad' => count($data['prendas_manuales']), 'map' => $prendaManualIdMap]);
                 }
 
-                \App\Models\LavanderiaMovimientoTalla::create($tallaData);
-            }
+                // Crear registros de tallas
+                foreach ($data['tallas'] as $talla) {
+                    $tallaData = [
+                        'lavanderia_movimiento_id' => $mov->id,
+                        'talla' => $talla['talla'],
+                        'genero' => $talla['genero'] ?? null,
+                        'color' => null,
+                        'cantidad_enviada' => (int)$talla['cantidad_enviada'],
+                        'cantidad_recibida' => 0,
+                    ];
 
-            \Log::info('Salida registrada exitosamente', ['movimiento_id' => $movimiento->id]);
+                    // Agregar relación a prenda según el tipo
+                    if (!empty($talla['prenda_bodega_id'])) {
+                        $tallaData['prenda_bodega_id'] = $talla['prenda_bodega_id'];
+                    } elseif (!empty($talla['prenda_agregada_id'])) {
+                        // Usar el ID real mapeado desde el ID temporal
+                        $tempId = $talla['prenda_agregada_id'];
+                        $tallaData['prenda_agregada_id'] = $prendaManualIdMap[$tempId] ?? $tempId;
+                    } elseif (!empty($talla['prenda_id'])) {
+                        // Guardar prenda_id de PrendaPedido (sin validación de clave foránea)
+                        $tallaData['prenda_id'] = $talla['prenda_id'];
+                    }
+
+                    \App\Models\LavanderiaMovimientoTalla::create($tallaData);
+                }
+
+                return $mov;
+            });
+
+            \Log::info('Salida registrada exitosamente', ['movimiento_id' => $movimiento->id, 'numero_movimiento' => $movimiento->numero_movimiento]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Salida registrada exitosamente',
                 'data' => [
                     'id' => $movimiento->id,
+                    'numero_movimiento' => $movimiento->numero_movimiento,
                     'recibos_count' => $tieneRecibos ? count($data['recibos']) : 0,
                     'prendas_manuales_count' => $tienePrendasManuales ? count($data['prendas_manuales']) : 0
                 ]
