@@ -13,6 +13,8 @@ use App\Application\Operario\UseCases\DeshacerControlCalidadUseCase;
 use App\Application\Operario\UseCases\DeshacerCosturaUseCase;
 use App\Application\Operario\UseCases\LimpiarEncargadoCosturaUseCase;
 use App\Application\Operario\UseCases\PasarACosturaUseCase;
+use App\Application\Operario\Services\ReciboTallerContextService;
+use App\Application\Operario\Services\ReciboTallerDistributionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -37,6 +39,8 @@ class ReciboCosturaController extends Controller
         private readonly PasarACosturaUseCase $pasarACosturaUseCase,
         private readonly DeshacerCosturaUseCase $deshacerCosturaUseCase,
         private readonly LimpiarEncargadoCosturaUseCase $limpiarEncargadoCosturaUseCase,
+        private readonly ReciboTallerContextService $reciboTallerContextService,
+        private readonly ReciboTallerDistributionService $reciboTallerDistributionService,
     ) {
         $this->middleware('auth');
     }
@@ -1466,9 +1470,15 @@ class ReciboCosturaController extends Controller
 
             $prendaId = (int) $request->input('prenda_id', 0);
             $prendaBodegaId = $esBodega ? (int) $request->input('prenda_bodega_id') : null;
+            $contextoRecibo = $this->reciboTallerContextService->resolver(
+                pedidoIdParam: (int) $pedidoId,
+                numeroRecibo: (int) $numeroRecibo,
+                tipoRecibo: $tipoRecibo,
+                prendaBodegaId: $prendaBodegaId
+            );
 
             $resultado = $this->pasarACosturaUseCase->execute(new PasarACosturaCommandDTO(
-                pedidoId: (int) $pedidoId,
+                pedidoId: (int) ($contextoRecibo['pedido_id'] ?? $pedidoId),
                 numeroRecibo: (int) $numeroRecibo,
                 prendaId: $prendaId,
                 prendaBodegaId: $prendaBodegaId,
@@ -1628,12 +1638,25 @@ class ReciboCosturaController extends Controller
 
             $request->validate($rules);
 
-            $pedido = PedidoProduccion::findOrFail((int) $pedidoId);
             $prendaId = (int) $request->input('prenda_id', $request->input('prenda_bodega_id', 0));
             $prendaBodegaId = $esBodega ? (int) $request->input('prenda_bodega_id', $prendaId) : null;
             $consecutivoOriginal = (int) $numeroRecibo;
             $subtipoTaller = (string) $request->subtipo_taller;
             $esEdicion = (bool) $request->es_edicion;
+
+            $contextoRecibo = $this->reciboTallerContextService->resolver(
+                pedidoIdParam: (int) $pedidoId,
+                numeroRecibo: (int) $numeroRecibo,
+                tipoRecibo: $tipoRecibo,
+                prendaBodegaId: $prendaBodegaId
+            );
+            $pedido = $contextoRecibo['pedido'] ?? null;
+            $recibo = $contextoRecibo['recibo'] ?? null;
+            $pedidoId = (int) ($contextoRecibo['pedido_id'] ?? $pedidoId);
+
+            if (!$pedido) {
+                $pedido = PedidoProduccion::findOrFail($pedidoId);
+            }
 
             Log::info('[TALLER] Procesando distribucion', [
                 'pedido_id' => (int) $pedidoId,
@@ -1644,12 +1667,14 @@ class ReciboCosturaController extends Controller
                 'es_edicion' => $esEdicion,
             ]);
 
-            $recibo = ConsecutivoReciboPedido::query()
-                ->where('pedido_produccion_id', (int) $pedidoId)
-                ->where('consecutivo_actual', $consecutivoOriginal)
-                ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim($tipoRecibo))])
-                ->where('activo', 1)
-                ->first();
+            if (!$recibo) {
+                $recibo = ConsecutivoReciboPedido::query()
+                    ->where('pedido_produccion_id', (int) $pedidoId)
+                    ->where('consecutivo_actual', $consecutivoOriginal)
+                    ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim($tipoRecibo))])
+                    ->where('activo', 1)
+                    ->first();
+            }
 
             if (!$recibo && !$esBodega) {
                 return response()->json([
@@ -1773,36 +1798,23 @@ class ReciboCosturaController extends Controller
                 });
 
                 return response()->json($resultado, 200);
-
             } else {
-                // Multiples talleres
-                $asignaciones = (array) $request->asignaciones;
-
-                if (empty($asignaciones)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'No hay asignaciones de talleres'
-                    ], 400);
-                }
-
-                // Si es edicion, eliminar parciales existentes y recrearlos
-                if ($esEdicion) {
-                    $resultado = $this->procesarEdicionDistribucionTaller(
-                        $pedido, $recibo, $pedidoId, $prendaId, $tipoReciboReal, 
-                        $consecutivoOriginal, $asignaciones, $esBodega, $prendaBodegaId
-                    );
-                } else {
-                    // Crear nuevos parciales (flujo original)
-                    $resultado = $this->procesarNuevaDistribucionTaller(
-                        $pedido, $recibo, $pedidoId, $prendaId, $tipoReciboReal, 
-                        $consecutivoOriginal, $asignaciones, $esBodega, $prendaBodegaId
-                    );
-                }
+                $resultado = $this->reciboTallerDistributionService->distribuir(
+                pedido: $pedido,
+                recibo: $recibo,
+                pedidoId: (int) $pedidoId,
+                prendaId: $prendaId,
+                tipoReciboReal: $tipoReciboReal,
+                consecutivoOriginal: $consecutivoOriginal,
+                requestData: $request->all(),
+                esBodega: $esBodega,
+                prendaBodegaId: $prendaBodegaId
+            );
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Recibo distribuido a talleres correctamente',
-                    'data' => $resultado,
+                    'message' => $resultado['message'] ?? 'Recibo distribuido a talleres correctamente',
+                    'data' => $resultado['data'] ?? $resultado,
                 ], 200);
             }
 
@@ -1830,317 +1842,6 @@ class ReciboCosturaController extends Controller
             ], 500);
         }
     }
-
-    /**
-     * Procesar edicion de distribucion a talleres
-     */
-    private function procesarEdicionDistribucionTaller($pedido, $recibo, $pedidoId, $prendaId, $tipoReciboReal, $consecutivoOriginal, $asignaciones, bool $esBodega = false, ?int $prendaBodegaId = null)
-    {
-        return DB::transaction(function () use ($pedido, $recibo, $pedidoId, $prendaId, $tipoReciboReal, $consecutivoOriginal, $asignaciones, $esBodega, $prendaBodegaId) {
-            $prendaColumn = $esBodega ? 'prenda_bodega_id' : 'prenda_pedido_id';
-            // En edición no se eliminan parciales históricos; solo se agregan nuevos.
-
-            // Buscar el proceso padre de Costura
-            $procesoPadre = ProcesoPrenda::query()
-                ->where('numero_pedido', $pedido->numero_pedido)
-                ->where($prendaColumn, $prendaId)
-                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                ->where('numero_recibo', $consecutivoOriginal)
-                ->where(function ($query) {
-                    $query->whereNull('numero_recibo_parcial')
-                        ->orWhere('numero_recibo_parcial', 0);
-                })
-                ->whereNull('deleted_at')
-                ->orderByDesc('created_at')
-                ->first();
-
-            if (!$procesoPadre) {
-                // Si no existe, crear el proceso padre
-                $procesoPadre = ProcesoPrenda::create([
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'prenda_pedido_id' => $esBodega ? null : $prendaId,
-                    'prenda_bodega_id' => $esBodega ? $prendaBodegaId : null,
-                    'numero_recibo' => $consecutivoOriginal,
-                    'numero_recibo_parcial' => null,
-                    'proceso' => 'Costura',
-                    'fecha_inicio' => now(),
-                    'encargado' => null,
-                    'estado_proceso' => 'Pendiente',
-                    'codigo_referencia' => 'COS-' . $consecutivoOriginal . '-' . date('YmdHis'),
-                ]);
-            }
-
-            // Crear nuevos parciales continuando la numeracion existente.
-            $maxParcialExistente = DB::table('recibo_por_partes')
-                ->where('pedido_produccion_id', (int) $pedidoId)
-                ->where('prenda_pedido_id', $prendaId)
-                ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim($tipoReciboReal))])
-                ->where('consecutivo_original', $consecutivoOriginal)
-                ->max('consecutivo_parcial');
-            $siguienteConsecutivoParcial = $this->obtenerSiguienteConsecutivoParcial($consecutivoOriginal, $maxParcialExistente);
-            $creados = [];
-
-            foreach ($asignaciones as $asig) {
-                $encargado = trim((string) ($asig['encargado'] ?? ''));
-                $tallas = (array) ($asig['tallas'] ?? []);
-
-                if ($encargado === '' || empty($tallas)) {
-                    continue;
-                }
-
-                // Verificar que el usuario existe y tiene rol 'taller'
-                $taller = User::where('name', $encargado)
-                    ->get()
-                    ->first(function ($user) {
-                        return $user->hasRole('taller');
-                    });
-
-                // Si no existe, crear el taller
-                if (!$taller) {
-                    $taller = User::create([
-                        'name' => $encargado,
-                        'email' => strtolower(str_replace(' ', '.', $encargado)) . '@taller.local',
-                        'password' => bcrypt('password123'),
-                        'email_verified_at' => now(),
-                    ]);
-
-                    $tallerRole = \App\Models\Role::where('name', 'taller')->first();
-                    if ($tallerRole) {
-                        $taller->addRole((int) $tallerRole->id);
-                    }
-
-                    \Log::info('[TALLER] Nuevo taller creado en edicion', [
-                        'taller_id' => $taller->id,
-                        'taller_nombre' => $taller->name,
-                    ]);
-                }
-
-                // Calcular consecutivo parcial en decimas validas para DECIMAL(10,1)
-                $consecutivoParcialDb = $this->formatearConsecutivoParcial($siguienteConsecutivoParcial);
-                $siguienteConsecutivoParcial = round($siguienteConsecutivoParcial + 0.1, 1);
-
-                // Crear proceso hijo para el taller
-                $procesoHijo = ProcesoPrenda::create([
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'prenda_pedido_id' => $esBodega ? null : $prendaId,
-                    'prenda_bodega_id' => $esBodega ? $prendaBodegaId : null,
-                    'numero_recibo' => null,
-                    'numero_recibo_parcial' => $consecutivoParcialDb,
-                    'proceso' => 'Costura',
-                    'fecha_inicio' => now(),
-                    'encargado' => $encargado,
-                    'fecha_de_asignacion_encargado' => now(),
-                    'estado_proceso' => 'En Progreso',
-                    'codigo_referencia' => 'COS-' . $consecutivoParcialDb . '-' . date('YmdHis'),
-                ]);
-
-                // Crear registro en recibo_por_partes
-                $reciboParteId = DB::table('recibo_por_partes')->insertGetId([
-                    'pedido_produccion_id' => (int) $pedidoId,
-                    'prenda_pedido_id' => $prendaId,
-                    'tipo_recibo' => $tipoReciboReal,
-                    'consecutivo_original' => $consecutivoOriginal,
-                    'consecutivo_parcial' => $consecutivoParcialDb,
-                    'estado' => 'En ejecucion',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                // Crear registros de tallas para el parcial
-                foreach ($tallas as $t) {
-                    $talla = trim((string) ($t['talla'] ?? ''));
-                    $cantidad = (int) ($t['cantidad'] ?? 0);
-                    $genero = isset($t['genero']) ? (string) $t['genero'] : null;
-                    $colorNombre = isset($t['color_nombre']) ? (string) $t['color_nombre'] : null;
-
-                    if ($talla === '' || $cantidad <= 0) {
-                        continue;
-                    }
-
-                    $this->insertReciboParteTalla($reciboParteId, [
-                        'talla' => $talla,
-                        'cantidad' => $cantidad,
-                        'genero' => $genero,
-                        'color_nombre' => $colorNombre,
-                    ]);
-                }
-
-                $creados[] = [
-                    'proceso_id' => (int) $procesoHijo->id,
-                    'numero_recibo' => null,
-                    'numero_recibo_parcial' => $consecutivoParcialDb,
-                    'parcial_id' => (int) $reciboParteId,
-                    'encargado' => $encargado,
-                ];
-            }
-
-            if (empty($creados)) {
-                throw new \Exception('No se pudieron crear procesos para los talleres especificados');
-            }
-
-            return [
-                'proceso_padre_id' => (int) $procesoPadre->id,
-                'hijos' => $creados,
-                'recibo_id' => (int) $recibo->id,
-            ];
-        });
-    }
-
-    /**
-     * Procesar nueva distribucion a talleres
-     */
-    private function procesarNuevaDistribucionTaller($pedido, $recibo, $pedidoId, $prendaId, $tipoReciboReal, $consecutivoOriginal, $asignaciones, bool $esBodega = false, ?int $prendaBodegaId = null)
-    {
-        return DB::transaction(function () use ($pedido, $recibo, $pedidoId, $prendaId, $tipoReciboReal, $consecutivoOriginal, $asignaciones, $esBodega, $prendaBodegaId) {
-            $prendaColumn = $esBodega ? 'prenda_bodega_id' : 'prenda_pedido_id';
-            // Buscar el proceso padre de Costura
-            $procesoPadre = ProcesoPrenda::query()
-                ->where('numero_pedido', $pedido->numero_pedido)
-                ->where($prendaColumn, $prendaId)
-                ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
-                ->where('numero_recibo', $consecutivoOriginal)
-                ->where(function ($query) {
-                    $query->whereNull('numero_recibo_parcial')
-                        ->orWhere('numero_recibo_parcial', 0);
-                })
-                ->whereNull('deleted_at')
-                ->orderByDesc('created_at')
-                ->first();
-
-            if (!$procesoPadre) {
-                // Si no existe, crear el proceso padre
-                $procesoPadre = ProcesoPrenda::create([
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'prenda_pedido_id' => $esBodega ? null : $prendaId,
-                    'prenda_bodega_id' => $esBodega ? $prendaBodegaId : null,
-                    'numero_recibo' => $consecutivoOriginal,
-                    'numero_recibo_parcial' => null,
-                    'proceso' => 'Costura',
-                    'fecha_inicio' => now(),
-                    'encargado' => null,
-                    'estado_proceso' => 'Pendiente',
-                    'codigo_referencia' => 'COS-' . $consecutivoOriginal . '-' . date('YmdHis'),
-                ]);
-            }
-
-            // Calcular el siguiente iÂ­ndice de parcial
-            $maxParcialExistente = DB::table('recibo_por_partes')
-                ->where('pedido_produccion_id', (int) $pedidoId)
-                ->where('prenda_pedido_id', $prendaId)
-                ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim($tipoReciboReal))])
-                ->where('consecutivo_original', $consecutivoOriginal)
-                ->max('consecutivo_parcial');
-
-            $siguienteConsecutivoParcial = $this->obtenerSiguienteConsecutivoParcial($consecutivoOriginal, $maxParcialExistente);
-
-            $creados = [];
-
-            foreach ($asignaciones as $asig) {
-                $encargado = trim((string) ($asig['encargado'] ?? ''));
-                $tallas = (array) ($asig['tallas'] ?? []);
-
-                if ($encargado === '' || empty($tallas)) {
-                    continue;
-                }
-
-                // Verificar que el usuario existe y tiene rol 'taller'
-                $taller = User::where('name', $encargado)
-                    ->get()
-                    ->first(function ($user) {
-                        return $user->hasRole('taller');
-                    });
-
-                // Si no existe, crear el taller
-                if (!$taller) {
-                    $taller = User::create([
-                        'name' => $encargado,
-                        'email' => strtolower(str_replace(' ', '.', $encargado)) . '@taller.local',
-                        'password' => bcrypt('password123'),
-                        'email_verified_at' => now(),
-                    ]);
-
-                    $tallerRole = \App\Models\Role::where('name', 'taller')->first();
-                    if ($tallerRole) {
-                        $taller->addRole((int) $tallerRole->id);
-                    }
-
-                    \Log::info('[TALLER] Nuevo taller creado en multiples talleres', [
-                        'taller_id' => $taller->id,
-                        'taller_nombre' => $taller->name,
-                    ]);
-                }
-
-                // Calcular numero de parcial
-                $consecutivoParcialDb = $this->formatearConsecutivoParcial($siguienteConsecutivoParcial);
-                $siguienteConsecutivoParcial = round($siguienteConsecutivoParcial + 0.1, 1);
-
-                // Crear proceso hijo para el taller
-                $procesoHijo = ProcesoPrenda::create([
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'prenda_pedido_id' => $esBodega ? null : $prendaId,
-                    'prenda_bodega_id' => $esBodega ? $prendaBodegaId : null,
-                    'numero_recibo' => null,
-                    'numero_recibo_parcial' => $consecutivoParcialDb,
-                    'proceso' => 'Costura',
-                    'fecha_inicio' => now(),
-                    'encargado' => $encargado,
-                    'fecha_de_asignacion_encargado' => now(),
-                    'estado_proceso' => 'En Progreso',
-                    'codigo_referencia' => 'COS-' . $consecutivoParcialDb . '-' . date('YmdHis'),
-                ]);
-
-                // Crear registro en recibo_por_partes
-                $reciboParteId = DB::table('recibo_por_partes')->insertGetId([
-                    'pedido_produccion_id' => (int) $pedidoId,
-                    'prenda_pedido_id' => $prendaId,
-                    'tipo_recibo' => $tipoReciboReal,
-                    'consecutivo_original' => $consecutivoOriginal,
-                    'consecutivo_parcial' => $consecutivoParcialDb,
-                    'estado' => 'En ejecucion',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                // Crear registros de tallas para el parcial
-                foreach ($tallas as $t) {
-                    $talla = trim((string) ($t['talla'] ?? ''));
-                    $cantidad = (int) ($t['cantidad'] ?? 0);
-                    $genero = isset($t['genero']) ? (string) $t['genero'] : null;
-                    $colorNombre = isset($t['color_nombre']) ? (string) $t['color_nombre'] : null;
-
-                    if ($talla === '' || $cantidad <= 0) {
-                        continue;
-                    }
-
-                    $this->insertReciboParteTalla($reciboParteId, [
-                        'talla' => $talla,
-                        'cantidad' => $cantidad,
-                        'genero' => $genero,
-                        'color_nombre' => $colorNombre,
-                    ]);
-                }
-
-                $creados[] = [
-                    'proceso_id' => (int) $procesoHijo->id,
-                    'numero_recibo' => null,
-                    'numero_recibo_parcial' => $consecutivoParcialDb,
-                    'parcial_id' => (int) $reciboParteId,
-                    'encargado' => $encargado,
-                ];
-            }
-
-            if (empty($creados)) {
-                throw new \Exception('No se pudieron crear procesos para los talleres especificados');
-            }
-
-            return [
-                'proceso_padre_id' => (int) $procesoPadre->id,
-                'hijos' => $creados,
-                'recibo_id' => (int) $recibo->id,
-            ];
-        });
-    }
-
     /**
      * Obtiene el siguiente consecutivo parcial valido para una columna DECIMAL(10,1).
      * Ejemplo: 1.3 -> 1.4, 1.9 -> 2.0

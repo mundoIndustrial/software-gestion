@@ -66,7 +66,7 @@ export function abrirEditarEncargados(btn) {
         tipoRecibo
     });
 
-    if (!reciboId || !prendaId || !pedidoId || !numeroPedido) {
+    if (!reciboId || !prendaId || (!esReciboBodega && (!pedidoId || !numeroPedido))) {
         mostrarError('Error: Faltan datos necesarios para editar los encargados');
         return;
     }
@@ -92,7 +92,8 @@ export function abrirEditarEncargados(btn) {
                     numeroRecibo,
                     data,
                     numeroPedido,
-                    prendaBodegaIdFinal
+                    prendaBodegaIdFinal,
+                    reciboId
                 );
             } else {
                 mostrarError(data.message || 'Error obteniendo la distribución actual');
@@ -112,7 +113,8 @@ function abrirModalCosturaConDatos(
     recibo,
     datosDistribucion,
     numeroPedido,
-    prendaBodegaId = null
+    prendaBodegaId = null,
+    reciboId = null
 ) {
     const claveEdicion = `${recibo || ''}|${prendaId || ''}|${tipoRecibo || ''}`;
     window.__edicionDistribucionActiva = {
@@ -125,7 +127,7 @@ function abrirModalCosturaConDatos(
     window.__datosParcialesEdicion = JSON.parse(JSON.stringify(datosDistribucion?.parciales || []));
 
     // Abrir el modal normalmente
-    abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, null, numeroPedido, null, prendaBodegaId);
+    abrirModalCostura(pedidoId, prendaId, nombre, tipoRecibo, recibo, null, numeroPedido, null, prendaBodegaId, reciboId);
     
     // Marcar que estamos en modo edición
     if (window.datosModalCostura) {
