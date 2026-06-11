@@ -11,8 +11,7 @@ Route::middleware(['auth', 'role:visualizador-pedidos,admin'])->prefix('visualiz
     // Dashboard (ruta principal - tabla de pedidos)
     Route::get('/', [VisualizadorPedidosController::class, 'dashboard'])->name('index');
     
-    // API para obtener datos de pedidos (usa el mismo endpoint del visualizador-logo)
-    Route::get('/data', [VisualizadorLogoController::class, 'pedidosVisualizacionData'])->name('data');
+    Route::get('/data', [VisualizadorPedidosController::class, 'getVisualizadorPedidosData'])->name('data');
 
     // API para marcar un pedido como revisado
     Route::post('/marcar-revisado', [VisualizadorPedidosController::class, 'marcarRevisado'])->name('marcar-revisado');

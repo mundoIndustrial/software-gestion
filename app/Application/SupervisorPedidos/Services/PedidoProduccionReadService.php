@@ -72,7 +72,7 @@ class PedidoProduccionReadService
             $this->applyDespachoVisibilityFilter($query, $request);
         }
         $this->applyPendingNumberFilter($query);
-        $this->applyEppOnlyFilter($query);
+        $this->applyEppOnlyFilter($query, $request);
         if (!$request->isVisualizador()) {
             $this->applyApprovalFilter($query, $request);
         }
@@ -780,6 +780,7 @@ class PedidoProduccionReadService
         }
     }
 
+
     /**
      * Replica la lógica de Cartera para ocultar pedidos no productivos:
      * - Excluye pedidos solo EPP (sin prendas)
@@ -834,6 +835,10 @@ class PedidoProduccionReadService
 
     private function applyHiddenFilter($query, ListOrdersRequest $request): void
     {
+        if ($request->isVisualizador()) {
+            return;
+        }
+
         if ($request->getMostrar() === 'ocultos') {
             $query->whereNotNull('ocultado_en');
             return;
@@ -891,8 +896,12 @@ class PedidoProduccionReadService
         ) > 0");
     }
 
-    private function applyEppOnlyFilter($query): void
+    private function applyEppOnlyFilter($query, ListOrdersRequest $request): void
     {
+        if ($request->isVisualizador()) {
+            return;
+        }
+
         // Mantener 1 fila por pedido (sin JOIN directo) para que paginate/count
         // no duplique registros cuando un pedido tiene varias prendas.
         $query->whereExists(function ($subquery) {
@@ -1071,6 +1080,11 @@ class PedidoProduccionReadService
 
     private function orderAndPaginate($query, ListOrdersRequest $request)
     {
+        if ($request->isVisualizador()) {
+            return $query->orderBy('pedidos_produccion.created_at', 'desc')
+                ->paginate($request->getPerPage(), ['*'], 'page', $request->getPage());
+        }
+
         $filtrosCartera = array_values(array_filter(array_map('trim', explode(',', (string) ($request->getAprobacionCartera() ?? '')))));
         $incluyeNoAprobadoCartera = in_array('no_aprobado', $filtrosCartera, true);
 
