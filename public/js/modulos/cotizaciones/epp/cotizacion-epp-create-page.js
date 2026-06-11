@@ -1476,19 +1476,34 @@
             });
         }
 
-        // Ajustes UI para edición de cotización ya creada (NO borrador)
+        // Ajustes UI para edición de cotización
         try {
             const params = new URLSearchParams(globalThis.location.search);
             const esEdicionCotizacionCreada = params.get('editar_cotizacion') === '1';
             if (esEdicionCotizacionCreada) {
-                const btnBorradorUi = document.getElementById('btnGuardarBorradorEpp');
-                if (btnBorradorUi) {
-                    btnBorradorUi.style.display = 'none';
-                }
+                const esBorrador = window.__EPP_COTIZACION_ES_BORRADOR__ === true;
+                if (esBorrador) {
+                    const btnBorradorUi = document.getElementById('btnGuardarBorradorEpp');
+                    if (btnBorradorUi) {
+                        btnBorradorUi.style.display = 'inline-flex';
+                        btnBorradorUi.innerHTML = '<i class="fas fa-save" style="font-size: 0.9rem;"></i> Guardar Borrador';
+                    }
 
-                const btnEnviarUi = document.getElementById('btnEnviarCotizacionEpp');
-                if (btnEnviarUi) {
-                    btnEnviarUi.innerHTML = '<i class="fas fa-save" style="font-size: 0.9rem;"></i> Guardar cambios';
+                    const btnEnviarUi = document.getElementById('btnEnviarCotizacionEpp');
+                    if (btnEnviarUi) {
+                        btnEnviarUi.style.display = 'inline-flex';
+                        btnEnviarUi.innerHTML = '<i class="fas fa-paper-plane" style="font-size: 0.9rem;"></i> Crear Cotización';
+                    }
+                } else {
+                    const btnBorradorUi = document.getElementById('btnGuardarBorradorEpp');
+                    if (btnBorradorUi) {
+                        btnBorradorUi.style.display = 'none';
+                    }
+
+                    const btnEnviarUi = document.getElementById('btnEnviarCotizacionEpp');
+                    if (btnEnviarUi) {
+                        btnEnviarUi.innerHTML = '<i class="fas fa-save" style="font-size: 0.9rem;"></i> Guardar cambios';
+                    }
                 }
             }
         } catch (e) {

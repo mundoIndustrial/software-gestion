@@ -14,6 +14,7 @@
         window.__EPP_COTIZACION_MODE__ = true;
         window.__EPP_COTIZACION_EDIT__ = {{ isset($cotizacion) ? 'true' : 'false' }};
         window.__EPP_COTIZACION_ID__ = {{ isset($cotizacion) ? (int)$cotizacion->id : 'null' }};
+        window.__EPP_COTIZACION_ES_BORRADOR__ = {{ isset($cotizacion) ? ((bool)$cotizacion->es_borrador ? 'true' : 'false') : 'false' }};
         window.__EPP_COTIZACION_ITEMS__ = {!! json_encode($itemsUi ?? []) !!};
         window.__EPP_COTIZACION_TIPO_VENTA__ = {!! json_encode($eppCot->tipo_venta ?? ($cotizacion->tipo_venta ?? null)) !!};
         window.__EPP_COTIZACION_CLIENTE__ = {!! json_encode($cotizacion->cliente?->nombre ?? null) !!};
@@ -262,13 +263,13 @@ NIT 1.093.738.433-3</textarea>
 
             <div class="form-actions">
                 <div style="display: flex; gap: 0.5rem; flex: 1; justify-content: flex-end;">
-                    @if(!isset($cotizacion) || !$cotizacion)
+                    @if(!isset($cotizacion) || !$cotizacion || (isset($cotizacion) && $cotizacion->es_borrador))
                     <button id="btnGuardarBorradorEpp" type="button" class="btn btn-primary" style="padding: 0.5rem 1.2rem; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); border: 2px solid #3d8b40; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.85rem; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='linear-gradient(135deg, #45a049 0%, #3d8b40 100%)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(76, 175, 80, 0.2)';" onmouseout="this.style.background='linear-gradient(135deg, #4CAF50 0%, #45a049 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';" onfocus="this.style.background='linear-gradient(135deg, #45a049 0%, #3d8b40 100%)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(76, 175, 80, 0.2)';" onblur="this.style.background='linear-gradient(135deg, #4CAF50 0%, #45a049 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
                         <i class="fas fa-save" style="font-size: 0.9rem;"></i> Guardar Borrador
                     </button>
                     @endif
                     <button id="btnEnviarCotizacionEpp" type="button" class="btn btn-primary" style="padding: 0.5rem 1.2rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); border: 2px solid #003d7a; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.85rem; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='linear-gradient(135deg, #0052a3 0%, #003d7a 100%)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 12px rgba(0, 102, 204, 0.3)';" onmouseout="this.style.background='linear-gradient(135deg, #0066cc 0%, #0052a3 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';" onfocus="this.style.background='linear-gradient(135deg, #0052a3 0%, #003d7a 100%)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 12px rgba(0, 102, 204, 0.3)';" onblur="this.style.background='linear-gradient(135deg, #0066cc 0%, #0052a3 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-                        <i class="fas fa-paper-plane" style="font-size: 0.9rem;"></i> {{ (isset($cotizacion) && $cotizacion) ? 'Guardar cambios' : 'Crear' }}
+                        <i class="fas fa-paper-plane" style="font-size: 0.9rem;"></i> {{ (isset($cotizacion) && $cotizacion && !$cotizacion->es_borrador) ? 'Guardar cambios' : 'Crear' }}
                     </button>
                 </div>
             </div>

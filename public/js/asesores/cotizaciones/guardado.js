@@ -926,30 +926,45 @@ function toggleAplicaPaso(paso, btn) {
 // ============ INICIALIZACIÓN DE VALIDACIÓN DE TIPO DE VENTA ============
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Ajustes UI para edición de cotización ya creada (NO borrador):
-    // - Ocultar "Guardar como borrador"
-    // - Renombrar "Enviar cotización" a "Guardar cambios"
+    // Ajustes UI para edición de cotización:
     try {
         const params = new URLSearchParams(window.location.search);
         const esEdicionCotizacionCreada = params.get('editar_cotizacion') === '1';
         if (esEdicionCotizacionCreada) {
-            // Ocultar botón ANTERIOR
-            const btnPrev = document.querySelector('button.btn-prev');
-            if (btnPrev) {
-                btnPrev.style.display = 'none';
-            }
+            const esBorrador = window.esBorradorCotizacion === true;
 
-            // Mostrar y cambiar nombre del botón GUARDAR CAMBIOS
-            const btnGuardarBorradorPaso5 = document.getElementById('btnGuardarBorrador');
-            if (btnGuardarBorradorPaso5) {
-                btnGuardarBorradorPaso5.style.display = '';
-                btnGuardarBorradorPaso5.innerHTML = '<i class="fas fa-save"></i> GUARDAR CAMBIOS';
-            }
+            if (esBorrador) {
+                // Si es un borrador (draft), no ocultamos el botón de enviar
+                // y ponemos un texto apropiado para guardar cambios del borrador
+                const btnGuardarBorradorPaso5 = document.getElementById('btnGuardarBorrador');
+                if (btnGuardarBorradorPaso5) {
+                    btnGuardarBorradorPaso5.style.display = '';
+                    btnGuardarBorradorPaso5.innerHTML = '<i class="fas fa-save"></i> GUARDAR CAMBIOS';
+                }
+                const btnEnviarPaso5 = document.getElementById('btnEnviarCotizacion');
+                if (btnEnviarPaso5) {
+                    btnEnviarPaso5.style.display = '';
+                }
+            } else {
+                // Si ya es cotización creada (no borrador):
+                // Ocultar botón ANTERIOR
+                const btnPrev = document.querySelector('button.btn-prev');
+                if (btnPrev) {
+                    btnPrev.style.display = 'none';
+                }
 
-            // Ocultar botón CREAR COTIZACIÓN
-            const btnEnviarPaso5 = document.getElementById('btnEnviarCotizacion');
-            if (btnEnviarPaso5) {
-                btnEnviarPaso5.style.display = 'none';
+                // Mostrar y cambiar nombre del botón GUARDAR CAMBIOS
+                const btnGuardarBorradorPaso5 = document.getElementById('btnGuardarBorrador');
+                if (btnGuardarBorradorPaso5) {
+                    btnGuardarBorradorPaso5.style.display = '';
+                    btnGuardarBorradorPaso5.innerHTML = '<i class="fas fa-save"></i> GUARDAR CAMBIOS';
+                }
+
+                // Ocultar botón CREAR COTIZACIÓN
+                const btnEnviarPaso5 = document.getElementById('btnEnviarCotizacion');
+                if (btnEnviarPaso5) {
+                    btnEnviarPaso5.style.display = 'none';
+                }
             }
         }
     } catch (e) {

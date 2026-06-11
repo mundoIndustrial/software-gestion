@@ -126,6 +126,9 @@
 <x-modal-especificaciones />
 
 @push('scripts')
+<script>
+    window.esBorradorCotizacion = @json(isset($cotizacion) ? (bool)$cotizacion->es_borrador : false);
+</script>
 <!-- 1. Módulos base del sistema de cotizaciones -->
 <script src="{{ asset('js/asesores/cotizaciones/rutas.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones/pastillas.js') }}"></script>

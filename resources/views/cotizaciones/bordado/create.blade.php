@@ -546,15 +546,26 @@ OR
                 const esEdicionCotizacionCreada = params.get('editar_cotizacion') === '1';
                 if (!esEdicionCotizacionCreada) return;
 
+                const esBorrador = window.esBorradorCotizacion === true;
                 const botones = Array.from(document.querySelectorAll('#cotizacionBordadoForm .form-actions button[type="submit"]'));
                 const btnBorrador = botones.find(b => (b.getAttribute('value') || '') === 'borrador');
                 const btnEnviar = botones.find(b => (b.getAttribute('value') || '') === 'enviar');
 
-                if (btnBorrador) {
-                    btnBorrador.style.display = 'none';
-                }
-                if (btnEnviar) {
-                    btnEnviar.innerHTML = '<i class="fas fa-save" style="font-size: 0.9rem;"></i> Guardar cambios';
+                if (esBorrador) {
+                    if (btnBorrador) {
+                        btnBorrador.style.display = 'inline-flex';
+                        btnBorrador.innerHTML = '<i class="fas fa-save" style="font-size: 0.9rem;"></i> Guardar Borrador';
+                    }
+                    if (btnEnviar) {
+                        btnEnviar.innerHTML = '<i class="fas fa-paper-plane" style="font-size: 0.9rem;"></i> Enviar';
+                    }
+                } else {
+                    if (btnBorrador) {
+                        btnBorrador.style.display = 'none';
+                    }
+                    if (btnEnviar) {
+                        btnEnviar.innerHTML = '<i class="fas fa-save" style="font-size: 0.9rem;"></i> Guardar cambios';
+                    }
                 }
             } catch (e) {
             }
@@ -810,6 +821,8 @@ OR
 @endif
 
 <script>
+window.esBorradorCotizacion = @json(isset($cotizacion) ? (bool)$cotizacion->es_borrador : false);
+
 // Arrays para almacenar datos
 let tecnicasSeleccionadas = [];
 let observacionesGenerales = [];
