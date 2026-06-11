@@ -17,6 +17,7 @@ use App\Models\SeleccionPedido;
 use App\Models\TipoCotizacion;
 use App\Services\CalculadorDiasService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -44,20 +45,25 @@ class PedidoProduccionReadService
 
         $query = PedidoProduccion::withTrashed()
             ->select([
-                'id',
-                'numero_pedido',
-                'cliente',
-                'novedades',
-                'asesor_id',
-                'forma_de_pago',
-                'dia_de_entrega',
-                'aprobado_por_cartera_en',
-                'aprobado_por_supervisor_en',
-                'estado',
-                'created_at',
-                'updated_at',
-                'ocultado_en',
+                'pedidos_produccion.id',
+                'pedidos_produccion.numero_pedido',
+                'pedidos_produccion.cliente',
+                'pedidos_produccion.novedades',
+                'pedidos_produccion.asesor_id',
+                'pedidos_produccion.forma_de_pago',
+                'pedidos_produccion.dia_de_entrega',
+                'pedidos_produccion.aprobado_por_cartera_en',
+                'pedidos_produccion.aprobado_por_supervisor_en',
+                'pedidos_produccion.estado',
+                'pedidos_produccion.created_at',
+                'pedidos_produccion.updated_at',
+                'pedidos_produccion.ocultado_en',
+                DB::raw('pedidos_vistos_supervisor.id IS NOT NULL as is_reviewed_by_user'),
             ])
+            ->leftJoin('pedidos_vistos_supervisor', function ($join) use ($request) {
+                $join->on('pedidos_vistos_supervisor.pedido_id', '=', 'pedidos_produccion.id')
+                    ->where('pedidos_vistos_supervisor.user_id', '=', $request->getUserId());
+            })
             ->with(['asesora:id,name']);
 
         $this->applyStatusFilters($query, $request);
@@ -76,7 +82,18 @@ class PedidoProduccionReadService
         $filtersMs = (microtime(true) - $filtersStartedAt) * 1000;
 
         $queryExecutionStartedAt = microtime(true);
+
+        Log::debug('[PedidoProduccionReadService] SQL Query:', ['sql' => $query->toSql()]);
+        Log::debug('[PedidoProduccionReadService] SQL Bindings:', ['bindings' => $query->getBindings()]);
+
         $result = $this->orderAndPaginate($query, $request);
+
+        // Asegurarse de que el atributo is_reviewed_by_user se establezca en el modelo
+        $result->getCollection()->transform(function ($pedido) {
+            $pedido->is_reviewed_by_user = (bool) $pedido->is_reviewed_by_user;
+            return $pedido;
+        });
+
         $queryExecutionMs = (microtime(true) - $queryExecutionStartedAt) * 1000;
 
         if ($perfEnabled) {
@@ -885,6 +902,7 @@ class PedidoProduccionReadService
                 ->whereNull('prendas_pedido.deleted_at');
         })->select([
             'pedidos_produccion.*',
+            DB::raw('pedidos_vistos_supervisor.id IS NOT NULL as is_reviewed_by_user'),
             DB::raw("(
                 SELECT COUNT(*)
                 FROM prendas_pedido pp

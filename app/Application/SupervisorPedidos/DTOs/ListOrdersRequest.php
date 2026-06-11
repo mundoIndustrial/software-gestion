@@ -2,6 +2,8 @@
 
 namespace App\Application\SupervisorPedidos\DTOs;
 
+use Illuminate\Support\Facades\Log;
+
 class ListOrdersRequest
 {
     private array $rawParams = [];

@@ -25,7 +25,7 @@
                 flex-shrink: 0;
             ">
                 <div style="text-align: center; color: #cbd5e1;">Acciones</div>
-                <div style="color: #cbd5e1;">Número</div>
+                <div style="color: #cbd5e1; text-align: center;">Número</div>
                 <div style="color: #cbd5e1;">Cliente</div>
                 <div style="color: #cbd5e1;">Asesora</div>
                 <div style="color: #cbd5e1;">Fecha</div>
@@ -119,6 +119,41 @@
     height: 60px;
     display: flex;
     align-items: center;
+}
+
+/* Estilo para filas revisadas */
+.pedido-revisado {
+    background-color: #bce4ffff !important; /* Azul claro */
+}
+
+/* Estilo para el botón de revisar */
+.btn-accion--revisar {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%); /* Verde */
+    color: white;
+    border: none;
+    padding: 0.6rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.btn-accion--revisar:hover:not(:disabled) {
+    transform: translateY(-3px) scale(1.1);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+}
+
+.btn-accion--revisar:disabled {
+    background: #9ca3af; /* Gris */
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
 }
 </style>
 
@@ -227,6 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let numeroPedido = String(pedido.numero_pedido || pedido.id || '-');
             let cliente = String(pedido.cliente || '-');
             let asesora = String(pedido.asesora?.name || pedido.asesor?.name || pedido.asesor_nombre || '-');
+            const isReviewed = pedido.is_reviewed_by_user;
             
             // Resaltar término de búsqueda si existe
             if (searchTerm) {
@@ -236,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             return `
-                <div style="
+                <div class="pedido-row ${isReviewed ? 'pedido-revisado' : ''}" data-pedido-id="${pedido.id}" style="
                     display: grid;
                     grid-template-columns: 60px 1fr 2fr 1fr 1fr;
                     gap: 2rem;
@@ -276,6 +312,30 @@ document.addEventListener('DOMContentLoaded', function() {
                             <i class="fas fa-eye"></i>
                             <span class="btn-ver-bodega-badge" data-bodega-button-badge="" style="display: none; position: absolute; top: -7px; right: -7px; min-width: 18px; height: 18px; padding: 0px 5px; border-radius: 999px; background: rgb(220, 38, 38); color: rgb(255, 255, 255); font-size: 10px; font-weight: 700; line-height: 18px; text-align: center; box-shadow: rgba(0, 0, 0, 0.25) 0px 2px 6px;">0</span>
                         </button>
+                        <button 
+                            class="btn-accion btn-accion--revisar"
+                            data-pedido-id="${pedido.id}"
+                            title="${isReviewed ? 'Desmarcar Revisión' : 'Marcar como Revisado'}"
+                            style="
+                                position: relative;
+                                overflow: visible;
+                                background: ${isReviewed ? '#9ca3af' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)'};
+                                color: white;
+                                border: none;
+                                padding: 0.6rem;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                font-size: 1rem;
+                                transition: all 0.3s ease;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                width: 40px;
+                                height: 40px;
+                                box-shadow: ${isReviewed ? 'none' : '0 2px 8px rgba(16, 185, 129, 0.2)'};
+                            " onmouseover="if(!${isReviewed}) {this.style.transform='translateY(-3px) scale(1.1)'; this.style.boxShadow='0 6px 16px rgba(16, 185, 129, 0.35)'}" onmouseout="if(!${isReviewed}) {this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 2px 8px rgba(16, 185, 129, 0.2)'}">
+                            <i class="fas ${isReviewed ? 'fa-times-circle' : 'fa-check-circle'}"></i>
+                        </button>
                         <div id="menu-ver-${pedido.id}" class="dropdown-menu" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #d1d5db; border-radius: 12px; box-shadow: rgba(15, 23, 42, 0.22) 0px 14px 30px; z-index: 1000; min-width: 220px; margin-top: 0.5rem; overflow: hidden;">
                             <button type="button" onclick="openPedidoModal(${pedido.id})" style="width: 100%; border: none; background: white; padding: 12px 14px; text-align: left; cursor: pointer; color: #111827; font-size: 15px; font-weight: 600; line-height: 1.2; transition: background-color 0.15s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='white'">
                                 <span style="display: inline-flex; align-items: center; gap: 10px;">
@@ -286,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                     
-                    <div style="font-weight: 700; color: #0ea5e9; font-size: 0.95rem; white-space: nowrap;">${numeroPedido}</div>
+                    <div style="font-weight: 700; color: #0ea5e9; font-size: 0.95rem; white-space: nowrap; text-align: center;">${numeroPedido}</div>
                     <div style="color: #334155; font-size: 0.95rem; font-weight: 500;">${cliente}</div>
                     <div style="color: #64748b; font-size: 0.95rem; white-space: nowrap;">${asesora}</div>
                     <div style="color: #64748b; font-size: 0.95rem; white-space: nowrap;">${formatearFecha(pedido.fecha_pedido || pedido.created_at)}</div>
@@ -296,6 +356,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('Llamando a renderizarPaginacion con:', pedidos);
         renderizarPaginacion(pedidos);
+
+        // Attach event listeners for the new "Revisar" buttons
+        document.querySelectorAll('.btn-accion--revisar').forEach(button => {
+            button.addEventListener('click', function() {
+                const pedidoId = this.dataset.pedidoId;
+                marcarPedidoComoRevisado(pedidoId, this);
+            });
+        });
     }
     
     function formatearFecha(fecha) {
@@ -305,6 +373,94 @@ document.addEventListener('DOMContentLoaded', function() {
             year: 'numeric', 
             month: 'short', 
             day: 'numeric' 
+        });
+    }
+
+    function marcarPedidoComoRevisado(pedidoId, buttonElement) {
+        const originalButtonHtml = buttonElement.innerHTML;
+        const originalButtonTitle = buttonElement.title;
+        const originalButtonStyle = buttonElement.getAttribute('style');
+
+        // Deshabilitar el botón y mostrar un spinner temporalmente
+        buttonElement.disabled = true;
+        buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        buttonElement.title = 'Procesando...';
+
+        fetch('{{ route("visualizador-pedidos.marcar-revisado") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ pedido_id: pedidoId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            const row = buttonElement.closest('.pedido-row');
+            if (data.success) {
+                if (data.is_reviewed) {
+                    row.classList.add('pedido-revisado');
+                    buttonElement.setAttribute('style', `
+                        position: relative;
+                        overflow: visible;
+                        background: #9ca3af;
+                        color: white;
+                        border: none;
+                        padding: 0.6rem;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 1rem;
+                        transition: all 0.3s ease;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 40px;
+                        height: 40px;
+                        box-shadow: none;
+                    `);
+                    buttonElement.innerHTML = '<i class="fas fa-times-circle"></i>';
+                    buttonElement.title = 'Desmarcar Revisión';
+                } else {
+                    row.classList.remove('pedido-revisado');
+                    buttonElement.setAttribute('style', `
+                        position: relative;
+                        overflow: visible;
+                        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                        color: white;
+                        border: none;
+                        padding: 0.6rem;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 1rem;
+                        transition: all 0.3s ease;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 40px;
+                        height: 40px;
+                        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+                    `);
+                    buttonElement.innerHTML = '<i class="fas fa-check-circle"></i>';
+                    buttonElement.title = 'Marcar como Revisado';
+                }
+                buttonElement.disabled = false; // Re-habilitar el botón
+            } else {
+                // Revertir el estado del botón si hay un error
+                buttonElement.disabled = false;
+                buttonElement.innerHTML = originalButtonHtml;
+                buttonElement.title = originalButtonTitle;
+                buttonElement.setAttribute('style', originalButtonStyle);
+                alert(data.message || 'Error al alternar el estado de revisión.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Revertir el estado del botón si hay un error de red
+            buttonElement.disabled = false;
+            buttonElement.innerHTML = originalButtonHtml;
+            buttonElement.title = originalButtonTitle;
+            buttonElement.setAttribute('style', originalButtonStyle);
+            alert('Error de conexión al alternar el estado de revisión.');
         });
     }
     

@@ -30,7 +30,7 @@ class ListOrdersUseCase
             $estados = $this->readService->listDistinctStates();
             $pedidosSeleccionados = $this->readService->getSelectedOrders($request->getUserId());
 
-            Log::info('[ListOrdersUseCase] Retrieved ' . $ordenes->count() . ' orders with ' . count($estados) . ' states');
+            Log::info('[ListOrdersUseCase] Retrieved ' . $ordenes->total() . ' orders with ' . count($estados) . ' states');
 
             return new ListOrdersResponse($ordenes, $estados, $pedidosSeleccionados);
         } catch (\Exception $e) {

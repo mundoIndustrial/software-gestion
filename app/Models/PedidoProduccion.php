@@ -107,10 +107,21 @@ class PedidoProduccion extends Model
     ];
 
     protected $appends = [
+        'is_reviewed_by_user',
         // 'numero_pedido_mostrable', // @deprecated La tabla logo_pedidos ha sido eliminada (23/01/2026)
         // 'descripcion_prendas', // Movido a PedidoDescriptionService - usar servicio directamente
         // 'cantidad_total', // Movido a PedidoDescriptionService - usar servicio directamente
     ];
+
+    /**
+     * Accesor para el atributo is_reviewed_by_user.
+     *
+     * @return bool
+     */
+    public function getIsReviewedByUserAttribute(): bool
+    {
+        return (bool) ($this->attributes['is_reviewed_by_user'] ?? false);
+    }
 
     protected static function boot()
     {

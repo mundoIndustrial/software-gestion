@@ -13,4 +13,7 @@ Route::middleware(['auth', 'role:visualizador-pedidos,admin'])->prefix('visualiz
     
     // API para obtener datos de pedidos (usa el mismo endpoint del visualizador-logo)
     Route::get('/data', [VisualizadorLogoController::class, 'pedidosVisualizacionData'])->name('data');
+
+    // API para marcar un pedido como revisado
+    Route::post('/marcar-revisado', [VisualizadorPedidosController::class, 'marcarRevisado'])->name('marcar-revisado');
 });

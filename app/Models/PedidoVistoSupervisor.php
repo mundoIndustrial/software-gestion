@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PedidoVistoSupervisor extends Model
 {
+    use HasFactory;
+
     protected $table = 'pedidos_vistos_supervisor';
 
     public $timestamps = false;
@@ -16,12 +19,18 @@ class PedidoVistoSupervisor extends Model
         'user_id',
     ];
 
+    /**
+     * Get the pedido that owns the PedidoVistoSupervisor.
+     */
     public function pedido(): BelongsTo
     {
         return $this->belongsTo(PedidoProduccion::class, 'pedido_id');
     }
 
-    public function usuario(): BelongsTo
+    /**
+     * Get the user that owns the PedidoVistoSupervisor.
+     */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
