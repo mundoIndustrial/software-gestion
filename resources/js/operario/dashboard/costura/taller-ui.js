@@ -118,12 +118,18 @@ export function mostrarContenidoTallerMultiple() {
     const esEdicion = Boolean(window.datosModalCostura?.esEdicion);
     const parcialesEdicion = window.__datosParcialesEdicion || [];
 
+    const wizardHeader = `
+        <div style="display: grid; gap: 0.75rem; margin-bottom: 1rem;">
+        </div>
+    `;
+
     if (esEdicion) {
         contenidoDiv.innerHTML = `
             <div>
+                ${wizardHeader}
                 <div style="margin-bottom: 1rem;">
                     <h4 style="margin: 0; font-size: 1rem; font-weight: 600; color: #1e293b;">Tallas Disponibles para Asignar</h4>
-                    <p style="margin: 0.35rem 0 0; font-size: 0.85rem; color: #64748b;">Selecciona una talla y luego el taller con rol taller.</p>
+                    <p style="margin: 0.35rem 0 0; font-size: 0.85rem; color: #64748b;">Selecciona una talla y luego el taller activo.</p>
                 </div>
                 <div id="interfazDistribucionTaller" style="margin-top: 1rem;">
                     ${generarEstadoCargaTaller('Cargando tallas disponibles...')}
@@ -146,31 +152,25 @@ export function mostrarContenidoTallerMultiple() {
 
     contenidoDiv.innerHTML = `
         <div>
-            <h4 style="margin: 0 0 1rem 0; font-size: 1rem; font-weight: 600; color: #1e293b;">Multiples Destinos</h4>
-            <div style="position: relative; margin-bottom: 1rem;">
+            ${wizardHeader}
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1rem; margin-bottom: 1rem;">
+                <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: 700; color: #0f172a;">1. Elige un taller</h4>
                 <div style="position: relative;">
-                    <span class="material-symbols-rounded" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 1.25rem; pointer-events: none;">search</span>
                     <input type="text" id="tallerMultipleSelector" list="listaTalleresMultiplesDatalist"
-                        placeholder="Buscar y agregar..."
-                        style="width: 100%; padding: 0.75rem 0.75rem 0.75rem 2.5rem; border: 2px solid #d1d5db; border-radius: 8px; background: white; font-size: 0.875rem; transition: all 0.2s; outline: none; box-sizing: border-box;"
-                        onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.1)';"
-                        onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none';"
+                        placeholder="Escribe el nombre del taller..."
+                        style="width: 100%; padding: 0.9rem 0.95rem; border: 1.5px solid #cbd5e1; border-radius: 10px; background: white; font-size: 0.95rem; transition: all 0.2s; outline: none; box-sizing: border-box;"
+                        onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.12)';"
+                        onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';"
                         onkeypress="if(event.key === 'Enter') agregarTallerSeleccionado()"
                         onchange="setTimeout(() => agregarTallerSeleccionado(), 100)"
                     >
                     <datalist id="listaTalleresMultiplesDatalist"></datalist>
                 </div>
+                <button type="button" onclick="agregarTallerSeleccionado()" style="margin-top: 0.75rem; width: 100%; padding: 0.9rem 1rem; border: none; border-radius: 10px; background: #2563eb; color: white; font-size: 0.95rem; font-weight: 700; cursor: pointer;">Agregar taller</button>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
-                <div style="padding: 0.75rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px;">
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <span class="material-symbols-rounded" style="color: #ea580c; font-size: 1rem;">list</span>
-                        <div style="flex: 1;">
-                            <p style="margin: 0; font-size: 0.75rem; font-weight: 600; color: #9a3412;">Talleres seleccionados</p>
-                            <div id="listaTalleresSeleccionados" style="display: grid; gap: 0.5rem; margin-top: 0.5rem;"></div>
-                        </div>
-                    </div>
-                </div>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1rem; margin-bottom: 1rem;">
+                <h4 style="margin: 0 0 0.75rem 0; font-size: 0.95rem; font-weight: 700; color: #0f172a;">2. Talleres del proceso</h4>
+                <div id="listaTalleresSeleccionados" style="display: grid; gap: 0.5rem;"></div>
             </div>
             <div id="interfazDistribucionTaller" style="margin-top: 1rem;">
                 ${generarEstadoCargaTaller('Seleccione uno o mas talleres para ver las tallas disponibles')}

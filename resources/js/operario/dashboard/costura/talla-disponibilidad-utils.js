@@ -1,6 +1,6 @@
 import { construirTallaIdUnico, normalizarColor, normalizarGenero, parseTallaIdUnico } from './talla-utils';
 
-export function getTotalOriginalTallaId(tallaId) {
+export function getTotalOriginalTallaId(tallaId, fallbackCantidad = 0) {
     const { base, colorNorm, generoNorm } = parseTallaIdUnico(tallaId);
     const tallas = window?.datosDistribucion?.tallas || [];
     const colorObjetivo = colorNorm || 'sin_color';
@@ -16,7 +16,8 @@ export function getTotalOriginalTallaId(tallaId) {
         return g === generoNorm;
     });
 
-    return parseInt(item?.cantidad) || 0;
+    const total = parseInt(item?.cantidad) || 0;
+    return total > 0 ? total : (parseInt(fallbackCantidad) || 0);
 }
 
 export function getColorParaTallaId(tallaId) {
@@ -57,14 +58,14 @@ export function getGeneroParaTallaId(tallaId) {
     return item?.genero || null;
 }
 
-export function getDisponibleRestanteGlobal(tallaId) {
-    const totalOriginal = getTotalOriginalTallaId(tallaId);
+export function getDisponibleRestanteGlobal(tallaId, fallbackCantidad = 0) {
+    const totalOriginal = getTotalOriginalTallaId(tallaId, fallbackCantidad);
     const asignadoTotal = getTotalAsignadoTalla(tallaId, null);
     return Math.max(0, totalOriginal - asignadoTotal);
 }
 
-export function getMaxDisponibleParaModulo(tallaId, moduloId) {
-    const totalOriginal = getTotalOriginalTallaId(tallaId);
+export function getMaxDisponibleParaModulo(tallaId, moduloId, fallbackCantidad = 0) {
+    const totalOriginal = getTotalOriginalTallaId(tallaId, fallbackCantidad);
     const totalAsignadoOtros = getTotalAsignadoTalla(tallaId, moduloId);
     const max = Math.max(0, totalOriginal - totalAsignadoOtros);
     console.log(`[MAX DISPONIBLE] Talla ID: ${tallaId}, Total original: ${totalOriginal}, Asignado otros: ${totalAsignadoOtros}, Max: ${max}`);
@@ -93,7 +94,8 @@ export function refrescarDistribucionUI() {
         const moduloId = parseInt(input.dataset.moduloid);
         if (!tallaId || !Number.isFinite(moduloId)) return;
 
-        const max = getMaxDisponibleParaModulo(tallaId, moduloId);
+        const fallbackCantidad = parseInt(input.dataset.cantidad || '0') || 0;
+        const max = getMaxDisponibleParaModulo(tallaId, moduloId, fallbackCantidad);
         input.max = String(max);
 
         const asignado = (() => {
@@ -142,6 +144,7 @@ export function refrescarDistribucionUI() {
     disps.forEach((el) => {
         const tallaId = el.dataset.tallaid;
         if (!tallaId) return;
-        el.textContent = `Disp: ${getDisponibleRestanteGlobal(tallaId)}`;
+        const fallbackCantidad = parseInt(el.dataset.cantidad || '0') || 0;
+        el.textContent = `Disp: ${getDisponibleRestanteGlobal(tallaId, fallbackCantidad)}`;
     });
 }

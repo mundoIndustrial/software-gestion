@@ -125,39 +125,40 @@ function mostrarInterfazDistribucionNormal(tallas, modulos) {
     window.modulosSeleccionadosDistribucion = [];
 
     let html = `
-        <div style="margin-bottom: 1.5rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Seleccionar Modulo:</label>
-            <div style="display: flex; gap: 0.5rem;">
-                <div style="position: relative; flex: 1;">
-                    <input type="text" id="moduloSelector" list="listaModulosDisponibles"
-                        placeholder="Seleccione o escriba un Modulo para asignar tallas..."
-                        style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; background: white; font-size: 0.875rem; outline: none; transition: all 0.2s;"
-                        onfocus="this.style.borderColor='#10b981'; this.style.boxShadow='0 0 0 3px rgba(16, 185, 129, 0.1)';"
-                        onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none';"
-                        onkeypress="if(event.key === 'Enter') agregarEncargadoSeleccionado()"
+        <div style="display: grid; gap: 1rem;">
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1rem;">
+                <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: 700; color: #0f172a;">Módulo</h4>
+                <div style="display: grid; gap: 0.75rem;">
+                    <div style="position: relative;">
+                        <input type="text" id="moduloSelector" list="listaModulosDisponibles"
+                            placeholder="Escriba el módulo..."
+                            style="width: 100%; padding: 0.9rem 0.95rem; border: 1.5px solid #cbd5e1; border-radius: 10px; background: white; font-size: 0.95rem; outline: none; transition: all 0.2s;"
+                            onfocus="this.style.borderColor='#10b981'; this.style.boxShadow='0 0 0 3px rgba(16, 185, 129, 0.12)';"
+                            onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';"
+                            onkeypress="if(event.key === 'Enter') agregarEncargadoSeleccionado()"
+                        >
+                        <datalist id="listaModulosDisponibles">
+                            ${modulos.map((modulo) => `<option value="${modulo.encargado}"></option>`).join('')}
+                        </datalist>
+                    </div>
+                    <button onclick="agregarEncargadoSeleccionado()"
+                        style="width: 100%; padding: 0.9rem 1rem; background: #10b981; color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: background 0.2s;"
+                        onmouseover="this.style.background='#059669'"
+                        onmouseout="this.style.background='#10b981'"
                     >
-                    <datalist id="listaModulosDisponibles">
-                        ${modulos.map((modulo) => `<option value="${modulo.encargado}"></option>`).join('')}
-                    </datalist>
+                        Agregar
+                    </button>
                 </div>
-                <button onclick="agregarEncargadoSeleccionado()"
-                    style="padding: 0.75rem 1.25rem; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;"
-                    onmouseover="this.style.background='#059669'"
-                    onmouseout="this.style.background='#10b981'"
-                >
-                    <span class="material-symbols-rounded" style="font-size: 1.25rem;">add</span>
-                    Agregar
-                </button>
             </div>
-        </div>
 
-        <div id="cardsEncargadosPlaceholder" style="min-height: 120px;">
-            <div style="text-align: center; padding: 2rem; color: #6b7280;">
-                <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.75rem;">playlist_add_check</span>
-                <p style="font-size: 0.875rem; margin: 0;">Seleccione un Modulo para ver las tallas disponibles</p>
+            <div id="cardsEncargadosPlaceholder" style="min-height: 120px;">
+                <div style="text-align: center; padding: 1.5rem; color: #6b7280; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px;">
+                    <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;">playlist_add_check</span>
+                    <p style="font-size: 0.875rem; margin: 0;">Agrega un módulo para asignar tallas</p>
+                </div>
             </div>
+            <div id="cardsEncargadosSeleccionados" style="display: grid; gap: 0.75rem;"></div>
         </div>
-        <div id="cardsEncargadosSeleccionados" style="display: grid; gap: 1rem;"></div>
     `;
 
     interfazDiv.innerHTML = html;
@@ -204,7 +205,6 @@ function agregarEncargadoSeleccionado() {
 function renderCardsEncargadosSeleccionados() {
     const container = document.getElementById('cardsEncargadosSeleccionados');
     const placeholder = document.getElementById('cardsEncargadosPlaceholder');
-    const selector = document.getElementById('moduloSelector');
 
     if (!container || !window.datosDistribucion) return;
 
@@ -215,12 +215,6 @@ function renderCardsEncargadosSeleccionados() {
     if (selected.length === 0) {
         container.innerHTML = '';
         if (placeholder) placeholder.style.display = '';
-        if (selector) {
-            selector.innerHTML = `
-                <option value="">Seleccione un Modulo para asignar tallas...</option>
-                ${modulos.map((modulo) => `<option value="${modulo.id}">${modulo.encargado}</option>`).join('')}
-            `;
-        }
         return;
     }
 
@@ -243,28 +237,21 @@ function renderCardsEncargadosSeleccionados() {
             const asignacionesModulo = window.asignacionesPorModulo[moduloId] || {};
 
             return `
-                <div style="background: white; border: 1px solid #d1d5db; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
-                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #f3f4f6; flex-wrap: wrap;">
-                        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                            <span class="material-symbols-rounded" style="color: white; font-size: 1.5rem;">person</span>
+                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; overflow: hidden;">
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                        <div style="min-width: 0;">
+                            <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem;">Módulo activo</div>
+                            <h5 style="margin: 0; font-size: 1rem; font-weight: 700; color: #0f172a; line-height: 1.3; word-break: break-word;">${modulo.encargado}</h5>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.8rem; color: #64748b;">Asigna tallas y luego finaliza abajo</p>
                         </div>
-                        <div style="flex: 1; min-width: 0;">
-                            <h5 style="margin: 0; font-size: 1.125rem; font-weight: 600; color: #1f2937; line-height: 1.3; word-break: break-word;">${modulo.encargado}</h5>
-                            <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #6b7280;">Encargado de produccion</p>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
-                            <span style="padding: 0.25rem 0.75rem; background: #ecfdf5; color: #059669; font-size: 0.75rem; font-weight: 500; border-radius: 9999px; white-space: nowrap;">
-                                ${Object.keys(asignacionesModulo).length} tallas asignadas
-                            </span>
-                            <button onclick="eliminarModuloSeleccionado(${moduloId})"
-                                style="width: 32px; height: 32px; border: none; background: #fee2e2; color: #dc2626; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; flex-shrink: 0;"
-                                onmouseover="this.style.background='#fecaca'"
-                                onmouseout="this.style.background='#fee2e2'"
-                                title="Eliminar encargado"
-                            >
-                                <span class="material-symbols-rounded" style="font-size: 1.25rem;">delete</span>
-                            </button>
-                        </div>
+                        <button onclick="eliminarModuloSeleccionado(${moduloId})"
+                            style="width: 36px; height: 36px; border: none; background: #fee2e2; color: #dc2626; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; flex-shrink: 0;"
+                            onmouseover="this.style.background='#fecaca'"
+                            onmouseout="this.style.background='#fee2e2'"
+                            title="Eliminar módulo"
+                        >
+                            <span class="material-symbols-rounded" style="font-size: 1.25rem;">delete</span>
+                        </button>
                     </div>
 
                     ${window.generarHtmlTallasParaEncargado ? window.generarHtmlTallasParaEncargado(tallas, moduloId, asignacionesModulo) : ''}
@@ -293,7 +280,8 @@ function toggleTallaSeleccion(talla, moduloId, checked) {
     const input = document.getElementById(`talla_${talla}_modulo_${moduloId}`);
     if (!input) return;
 
-    const maxValue = getMaxDisponibleParaModulo(talla, moduloId);
+    const fallbackCantidad = parseInt(input.dataset.cantidad || '0') || 0;
+    const maxValue = getMaxDisponibleParaModulo(talla, moduloId, fallbackCantidad);
     input.max = String(maxValue);
 
     if (!Number.isFinite(maxValue) || maxValue <= 0) {
@@ -328,6 +316,7 @@ function ajustarCantidad(talla, moduloId, delta) {
     const input = document.getElementById(`talla_${talla}_modulo_${moduloId}`);
     if (!input || input.disabled) return;
 
+    const fallbackCantidad = parseInt(input.dataset.cantidad || '0') || 0;
     const currentValue = parseInt(input.value) || 0;
     const maxValue = parseInt(input.max);
     const newValue = Math.max(0, Math.min(maxValue, currentValue + delta));
@@ -346,7 +335,9 @@ function ajustarCantidad(talla, moduloId, delta) {
 function actualizarAsignacion(talla, moduloId, cantidad, esNueva = false) {
     cantidad = parseInt(cantidad) || 0;
 
-    const maxValue = getMaxDisponibleParaModulo(talla, moduloId);
+    const input = document.getElementById(`talla_${talla}_modulo_${moduloId}`);
+    const fallbackCantidad = parseInt(input?.dataset.cantidad || '0') || 0;
+    const maxValue = getMaxDisponibleParaModulo(talla, moduloId, fallbackCantidad);
     if (cantidad > maxValue) {
         cantidad = maxValue;
     }

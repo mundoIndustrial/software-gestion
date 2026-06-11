@@ -4,6 +4,91 @@ import {
     ocultarEstadoCargaDistribucionTaller,
 } from './taller-ui';
 
+function normalizarTallerSeleccionado(taller) {
+    return {
+        ...taller,
+        estado: taller?.estado || 'pendiente',
+    };
+}
+
+function asegurarTallerActivo() {
+    if (!Array.isArray(window.talleresSeleccionadosDistribucion)) {
+        window.talleresSeleccionadosDistribucion = [];
+    }
+
+    const tieneActivo = window.talleresSeleccionadosDistribucion.some((taller) => taller.estado === 'activo');
+    const tienePendientes = window.talleresSeleccionadosDistribucion.some((taller) => taller.estado !== 'completado');
+    if (!tieneActivo && tienePendientes) {
+        const siguiente = window.talleresSeleccionadosDistribucion.find((taller) => taller.estado !== 'completado');
+        if (siguiente) {
+            siguiente.estado = 'activo';
+        }
+    }
+}
+
+function obtenerIndiceTallerActivo() {
+    if (!Array.isArray(window.talleresSeleccionadosDistribucion)) return -1;
+    return window.talleresSeleccionadosDistribucion.findIndex((taller) => taller.estado === 'activo');
+}
+
+function obtenerIndiceSiguientePendiente(desdeIndice = -1) {
+    if (!Array.isArray(window.talleresSeleccionadosDistribucion)) return -1;
+
+    for (let i = desdeIndice + 1; i < window.talleresSeleccionadosDistribucion.length; i += 1) {
+        if (window.talleresSeleccionadosDistribucion[i].estado !== 'completado') {
+            return i;
+        }
+    }
+
+    for (let i = 0; i < window.talleresSeleccionadosDistribucion.length; i += 1) {
+        if (window.talleresSeleccionadosDistribucion[i].estado !== 'completado') {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+function activarTallerSeleccionado(index) {
+    if (!Array.isArray(window.talleresSeleccionadosDistribucion)) return;
+    if (index < 0 || index >= window.talleresSeleccionadosDistribucion.length) return;
+
+    window.talleresSeleccionadosDistribucion.forEach((taller, idx) => {
+        if (idx === index) {
+            taller.estado = 'activo';
+        } else if (taller.estado === 'activo') {
+            taller.estado = 'pendiente';
+        }
+    });
+
+    actualizarListaTalleresSeleccionados();
+    if (window.talleresSeleccionadosDistribucion.length > 0) {
+        cargarInterfazDistribucionTallerMultiple(window.talleresSeleccionadosDistribucion);
+    }
+}
+
+function marcarTallerComoCompletado(index) {
+    if (!Array.isArray(window.talleresSeleccionadosDistribucion)) return;
+    if (index < 0 || index >= window.talleresSeleccionadosDistribucion.length) return;
+
+    window.talleresSeleccionadosDistribucion[index].estado = 'completado';
+    const siguienteIndice = obtenerIndiceSiguientePendiente(index);
+
+    window.talleresSeleccionadosDistribucion.forEach((taller, idx) => {
+        if (idx === siguienteIndice) {
+            taller.estado = 'activo';
+        } else if (idx !== index && taller.estado === 'activo') {
+            taller.estado = 'pendiente';
+        }
+    });
+
+    actualizarListaTalleresSeleccionados();
+
+    if (window.talleresSeleccionadosDistribucion.length > 0) {
+        cargarInterfazDistribucionTallerMultiple(window.talleresSeleccionadosDistribucion);
+    }
+}
+
 function normalizarColor(color) {
     const colorLimpio = String(color || '').trim().toLowerCase();
     if (!colorLimpio || colorLimpio === 'sin color') {
@@ -89,12 +174,16 @@ export function agregarTallerSeleccionado() {
         window.talleresSeleccionadosDistribucion = [];
     }
 
+    const eraPrimerTaller = window.talleresSeleccionadosDistribucion.length === 0;
+
     window.talleresSeleccionadosDistribucion.push({
         id: taller.id,
         nombre: taller.name,
+        estado: eraPrimerTaller ? 'activo' : 'pendiente',
         esNuevo: taller.esNuevo || false,
     });
 
+    asegurarTallerActivo();
     input.value = '';
     actualizarListaTalleresSeleccionados();
     cargarTalleresParaDistribucionHelper();
@@ -108,12 +197,9 @@ export function actualizarListaTalleresSeleccionados() {
     const listaTalleres = document.getElementById('listaTalleresSeleccionados');
     if (!listaTalleres) return;
 
-    const count = window.talleresSeleccionadosDistribucion?.length || 0;
+    asegurarTallerActivo();
 
-    const labelElement = document.querySelector('label[style*="Seleccionados"]');
-    if (labelElement) {
-        labelElement.textContent = `Seleccionados (${count})`;
-    }
+    const count = window.talleresSeleccionadosDistribucion?.length || 0;
 
     if (!window.talleresSeleccionadosDistribucion || window.talleresSeleccionadosDistribucion.length === 0) {
         listaTalleres.innerHTML = '<p style="text-align: center; color: #9ca3af; padding: 1rem; font-size: 0.875rem; grid-column: 1/-1;">No hay talleres seleccionados</p>';
@@ -123,18 +209,27 @@ export function actualizarListaTalleresSeleccionados() {
     listaTalleres.innerHTML = window.talleresSeleccionadosDistribucion
         .map((taller, index) => {
             const esNuevo = taller.esNuevo;
+            const esActivo = taller.estado === 'activo';
+            const esCompletado = taller.estado === 'completado';
+            const colorFondo = esCompletado ? '#f0fdf4' : esActivo ? '#eff6ff' : '#f8fafc';
+            const borde = esCompletado ? '#bbf7d0' : esActivo ? '#bfdbfe' : '#e2e8f0';
             return `
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: ${esNuevo ? '#fef3c7' : '#f3f4f6'}; border: 1px solid ${esNuevo ? '#fcd34d' : '#d1d5db'}; border-radius: 8px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: ${colorFondo}; border: 1px solid ${borde}; border-radius: 8px; gap: 0.75rem;">
                     <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
-                        <span class="material-symbols-rounded" style="color: ${esNuevo ? '#f59e0b' : '#6366f1'}; font-size: 1.25rem;">apartment</span>
+                        <span class="material-symbols-rounded" style="color: ${esCompletado ? '#059669' : esActivo ? '#2563eb' : '#64748b'}; font-size: 1.25rem;">apartment</span>
                         <div>
                             <div style="font-weight: 600; font-size: 0.875rem; color: #1e293b;">${taller.nombre}</div>
+                            <div style="font-size: 0.75rem; color: #64748b;">${esCompletado ? 'Listo' : esActivo ? 'Asignando tallas' : 'Pendiente'}</div>
                             ${esNuevo ? '<div style="font-size: 0.75rem; color: #b45309;">Nuevo taller (se creara al confirmar)</div>' : ''}
                         </div>
                     </div>
-                    <button type="button" onclick="removerTallerSeleccionado(${index})" style="background: #fee2e2; border: none; border-radius: 6px; padding: 0.5rem; cursor: pointer; color: #dc2626; transition: all 0.2s;">
-                        <span class="material-symbols-rounded" style="font-size: 1rem;">close</span>
-                    </button>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        ${!esActivo ? `<button type="button" onclick="activarTallerSeleccionado(${index})" style="background: #dbeafe; border: none; border-radius: 6px; padding: 0.5rem 0.75rem; cursor: pointer; color: #1d4ed8; font-size: 0.75rem; font-weight: 600; transition: all 0.2s;">Asignar tallas</button>` : ''}
+                        ${esActivo ? `<button type="button" onclick="marcarTallerComoCompletado(${index})" style="background: #dcfce7; border: none; border-radius: 6px; padding: 0.5rem 0.75rem; cursor: pointer; color: #166534; font-size: 0.75rem; font-weight: 600; transition: all 0.2s;">Finalizar</button>` : ''}
+                        <button type="button" onclick="removerTallerSeleccionado(${index})" style="background: #fee2e2; border: none; border-radius: 6px; padding: 0.5rem; cursor: pointer; color: #dc2626; transition: all 0.2s;">
+                            <span class="material-symbols-rounded" style="font-size: 1rem;">close</span>
+                        </button>
+                    </div>
                 </div>
             `;
         })
@@ -145,6 +240,7 @@ export function removerTallerSeleccionado(index) {
     if (!window.talleresSeleccionadosDistribucion) return;
 
     window.talleresSeleccionadosDistribucion.splice(index, 1);
+    asegurarTallerActivo();
     actualizarListaTalleresSeleccionados();
     cargarTalleresParaDistribucionHelper();
 
@@ -158,6 +254,9 @@ export function removerTallerSeleccionado(index) {
         interfazDiv.innerHTML = '';
     }
 }
+
+window.activarTallerSeleccionado = activarTallerSeleccionado;
+window.marcarTallerComoCompletado = marcarTallerComoCompletado;
 
 export function cargarInterfazDistribucionTallerMultiple(talleresSeleccionados) {
     if (!window.datosModalCostura) {

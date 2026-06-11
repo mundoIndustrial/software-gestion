@@ -25,6 +25,11 @@ import {
     getDisponibleRestanteGlobalTaller,
 } from './talla-taller-disponibilidad-utils';
 
+function obtenerTallerActivoSeleccionado() {
+    const seleccionados = Array.isArray(window.talleresSeleccionadosDistribucion) ? window.talleresSeleccionadosDistribucion : [];
+    return seleccionados.find((item) => item.estado === 'activo') || seleccionados.find((item) => item.estado !== 'completado') || null;
+}
+
 function seleccionarTipoTaller(tipo) {
     window.tipoDistribucionTaller = tipo;
 
@@ -182,7 +187,7 @@ function renderTallasDisponiblesTallerEdicion() {
 
             tallasColor.forEach((talla) => {
                 const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, color, talla.genero);
-                const totalOriginal = getTotalOriginalTallaIdTaller(tallaIdUnico);
+                const totalOriginal = getTotalOriginalTallaIdTaller(tallaIdUnico, talla.cantidad);
                 const totalAsignado = getTotalAsignadoTallaTaller(tallaIdUnico);
                 const disponible = Math.max(0, totalOriginal - totalAsignado);
 
@@ -224,7 +229,13 @@ function renderTallasDisponiblesTallerEdicion() {
 }
 
 function asignarTallaDisponibleTaller(tallaIdUnico, disponible) {
+    const tallerActivo = obtenerTallerActivoSeleccionado();
     let talleres = Array.isArray(window.talleresDisponiblesAsignacion) ? window.talleresDisponiblesAsignacion : [];
+
+    if (tallerActivo) {
+        abrirModalAsignacionTallaTaller(tallaIdUnico, disponible, talleres, tallerActivo);
+        return;
+    }
 
     if (talleres.length === 0) {
         obtenerTalleresDisponiblesParaAsignarTaller()
@@ -235,7 +246,7 @@ function asignarTallaDisponibleTaller(tallaIdUnico, disponible) {
                     return;
                 }
 
-                abrirModalAsignacionTallaTaller(tallaIdUnico, disponible, talleres);
+                abrirModalAsignacionTallaTaller(tallaIdUnico, disponible, talleres, tallerActivo);
             })
             .catch((error) => {
                 console.error('Error cargando talleres para asignar:', error);
@@ -244,33 +255,43 @@ function asignarTallaDisponibleTaller(tallaIdUnico, disponible) {
         return;
     }
 
-    abrirModalAsignacionTallaTaller(tallaIdUnico, disponible, talleres);
+    abrirModalAsignacionTallaTaller(tallaIdUnico, disponible, talleres, tallerActivo);
 }
 
-function abrirModalAsignacionTallaTaller(tallaIdUnico, disponible, talleres) {
+function abrirModalAsignacionTallaTaller(tallaIdUnico, disponible, talleres, tallerActivo = null) {
     const talleresHTML = talleres
         .map((taller) => `<option value="${taller?.name || taller?.nombre || 'Taller'}"></option>`)
         .join('');
+
+    const modoSecuencial = Boolean(tallerActivo);
+    const nombreTallerActivo = String(tallerActivo?.nombre || tallerActivo?.name || '').trim();
 
     const modalHTML = `
         <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;">
             <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 400px; width: 90%; box-shadow: 0 20px 25px rgba(0,0,0,0.15);">
                 <h5 style="margin: 0 0 1rem 0; font-size: 1.125rem; font-weight: 600; color: #1f2937;">Asignar Talla</h5>
 
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #374151;">Taller:</label>
-                    <input
-                        type="text"
-                        id="inputTallerAsignar"
-                        list="listaTalleresAsignar"
-                        placeholder="Escribe para buscar un taller..."
-                        autocomplete="off"
-                        style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem;"
-                    >
-                    <datalist id="listaTalleresAsignar">
-                        ${talleresHTML}
-                    </datalist>
-                </div>
+                ${modoSecuencial ? `
+                    <div style="margin-bottom: 1rem; padding: 0.75rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;">
+                        <label style="display: block; margin-bottom: 0.25rem; font-size: 0.75rem; font-weight: 600; color: #1d4ed8;">Taller activo</label>
+                        <div style="font-size: 0.95rem; font-weight: 600; color: #1e293b;">${nombreTallerActivo}</div>
+                    </div>
+                ` : `
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #374151;">Taller:</label>
+                        <input
+                            type="text"
+                            id="inputTallerAsignar"
+                            list="listaTalleresAsignar"
+                            placeholder="Escribe para buscar un taller..."
+                            autocomplete="off"
+                            style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem;"
+                        >
+                        <datalist id="listaTalleresAsignar">
+                            ${talleresHTML}
+                        </datalist>
+                    </div>
+                `}
 
                 <div style="margin-bottom: 1.5rem;">
                     <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #374151;">Cantidad (max: ${disponible}):</label>
@@ -310,10 +331,13 @@ function abrirModalAsignacionTallaTaller(tallaIdUnico, disponible, talleres) {
 function confirmarAsignacionTallaTaller(tallaIdUnico) {
     const inputTaller = document.getElementById('inputTallerAsignar');
     const inputCantidad = document.getElementById('inputCantidadAsignarTaller');
+    const tallerActivo = obtenerTallerActivoSeleccionado();
 
-    if (!inputTaller || !inputCantidad) return;
+    if (!inputCantidad) return;
 
-    const tallerNombre = String(inputTaller.value || '').trim();
+    const tallerNombre = tallerActivo
+        ? String(tallerActivo.nombre || tallerActivo.name || '').trim()
+        : String(inputTaller?.value || '').trim();
     const cantidad = parseInt(inputCantidad.value) || 0;
 
     if (!tallerNombre) {
@@ -334,7 +358,7 @@ function confirmarAsignacionTallaTaller(tallaIdUnico) {
         return;
     }
 
-    const taller = resolverOCrearTallerAsignacionPorNombre(tallerNombre);
+    const taller = tallerActivo || resolverOCrearTallerAsignacionPorNombre(tallerNombre);
 
     if (!taller) {
         alert('Por favor, selecciona un taller de la lista o escribe uno valido');
@@ -402,33 +426,64 @@ function cargarInterfazDistribucionTallerConDatos(tallas, talleres) {
         }
     });
 
-    let html = '<div style="display: grid; gap: 1.5rem;">';
+    const talleresPendientes = talleres.filter((taller) => taller.estado !== 'completado').length;
+    const tallerActivo = obtenerTallerActivoSeleccionado();
 
-    talleres.forEach((taller) => {
-        const nombreTaller = taller.nombre || taller.name || 'Taller sin nombre';
-        html += `
+    if (talleresPendientes === 0) {
+        interfazDiv.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #166534; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px;">
+                <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.75rem;">check_circle</span>
+                <p style="font-size: 0.95rem; margin: 0; font-weight: 600;">Todos los talleres quedaron completados</p>
+                <p style="font-size: 0.8rem; margin: 0.35rem 0 0;">Puedes confirmar la distribución cuando quieras.</p>
+            </div>
+        `;
+        return;
+    }
+
+    if (!tallerActivo) {
+        interfazDiv.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.75rem;">info</span>
+                <p style="font-size: 0.875rem; margin: 0;">Seleccione un taller para empezar a trabajar las tallas</p>
+            </div>
+        `;
+        return;
+    }
+
+    const indiceActivo = talleres.findIndex((taller) => String(taller.id) === String(tallerActivo.id));
+    const nombreTallerActivo = tallerActivo.nombre || tallerActivo.name || 'Taller sin nombre';
+
+    let html = `
+        <div style="display: grid; gap: 1rem;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; display: grid; gap: 0.75rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+                    <div>
+                        <h6 style="margin: 0; font-size: 0.875rem; font-weight: 700; color: #0f172a;">Taller activo</h6>
+                        <p style="margin: 0.25rem 0 0; font-size: 0.875rem; color: #334155; font-weight: 600;">${nombreTallerActivo}</p>
+                    </div>
+                    <span style="font-size: 0.75rem; font-weight: 600; color: #475569; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 999px; padding: 0.25rem 0.5rem;">Pendientes ${talleresPendientes}</span>
+                </div>
+                <p style="margin: 0; font-size: 0.8rem; color: #64748b;">Asigna las tallas de este taller y luego continúa con el siguiente.</p>
+            </div>
             <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; overflow: hidden;">
                 <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb;">
                     <div style="flex: 1; min-width: 0;">
-                        <h6 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: #1e293b;">${nombreTaller}</h6>
+                        <h6 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: #1e293b;">${nombreTallerActivo}</h6>
                     </div>
                 </div>
-                <div id="tallas-taller-${taller.id}" style="display: grid; gap: 0.75rem;">
-                    ${generarHtmlTallasParaTaller(tallas, taller.id)}
+                <div id="tallas-taller-${tallerActivo.id}" style="display: grid; gap: 0.75rem;">
+                    ${generarHtmlTallasParaTaller(tallas, tallerActivo.id)}
                 </div>
             </div>
-        `;
-    });
-
-    html += '</div>';
+            <button type="button" onclick="marcarTallerComoCompletado(${indiceActivo})" style="padding: 0.9rem 1rem; border: none; border-radius: 12px; background: #10b981; color: white; font-size: 0.95rem; font-weight: 700; cursor: pointer;">Finalizar taller</button>
+        </div>
+    `;
     interfazDiv.innerHTML = html;
 
     setTimeout(() => {
         tallas.forEach((talla) => {
-            talleres.forEach((taller) => {
-                const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, talla.color, talla.genero);
-                actualizarDisponibilidad(tallaIdUnico, taller.id);
-            });
+            const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, talla.color, talla.genero);
+            actualizarDisponibilidad(tallaIdUnico, tallerActivo.id);
         });
     }, 100);
 }
@@ -523,6 +578,7 @@ function generarHtmlTallasParaTaller(tallas, tallerId) {
                                 onchange="toggleTallaSeleccionTaller('${tallaIdUnico}', ${tallerId}, this.checked)"
                                 data-tallaid="${tallaIdUnico}"
                                 data-tallerid="${tallerId}"
+                                data-cantidad="${talla.cantidad}"
                             />
                             <div style="font-size: 0.875rem; font-weight: 500; color: #374151;">
                                 ${talla.tallaOriginal}
@@ -533,6 +589,7 @@ function generarHtmlTallasParaTaller(tallas, tallerId) {
                                 id="talla_${tallaIdUnico}_taller_${tallerId}"
                                 data-tallaid="${tallaIdUnico}"
                                 data-tallerid="${tallerId}"
+                                data-cantidad="${talla.cantidad}"
                                 min="0"
                                 max="${maxDisponible}"
                                 value="${asignado}"
@@ -541,7 +598,7 @@ function generarHtmlTallasParaTaller(tallas, tallerId) {
                                 onchange="actualizarAsignacionTaller('${tallaIdUnico}', ${tallerId}, this.value)"
                                 style="width: 70px; text-align: center; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem; font-weight: 500;"
                             />
-                            <div class="dist-disp" data-tallaid="${tallaIdUnico}" data-tallerid="${tallerId}" style="font-size: 0.75rem; color: #6366f1; font-weight: 500;">
+                            <div class="dist-disp" data-tallaid="${tallaIdUnico}" data-tallerid="${tallerId}" data-cantidad="${talla.cantidad}" style="font-size: 0.75rem; color: #6366f1; font-weight: 500;">
                                 Disp: ${Math.max(0, disponibleInicial)}
                             </div>
                         </div>

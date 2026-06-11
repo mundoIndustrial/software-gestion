@@ -43,6 +43,7 @@ import {
     getTotalAsignadoTallaTaller,
     getDisponibleRestanteGlobalTaller,
 } from './talla-taller-disponibilidad-utils';
+import { cargarTallasPrendaDesdeModal } from './tallas-loader';
 import { confirmarAsignacion as confirmarAsignacionFlow } from './asignacion-flow';
 import { confirmarPasarACostura as confirmarPasarACosturaFlow } from './pasar-costura-flow';
 import './taller-distribucion-flow';
@@ -334,7 +335,7 @@ function cargarDatosDistribucion() {
     
     // Cargar tallas de la prenda
     Promise.all([
-        cargarTallasPrenda(prendaId, tipoRecibo),
+        cargarTallasPrendaDesdeModal(),
         cargarUsuariosPorTipo(tipoRecibo)
     ])
     .then(([tallas, usuarios]) => {
@@ -353,87 +354,6 @@ function cargarDatosDistribucion() {
         mostrarErrorDistribucion();
     });
 }
-
-// Funcion para cargar tallas de la prenda
-function cargarTallasPrenda(prendaId, tipoRecibo) {
-    if (!window.datosModalCostura) {
-        return Promise.resolve([]);
-    }
-
-    const { numeroPedido, recibo, parcialId, prendaBodegaId } = window.datosModalCostura;
-
-    if (prendaBodegaId) {
-        return httpJson(`/operario/api/prenda-bodega/${prendaBodegaId}`, {
-            method: 'GET'
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                console.log('[CARGAR TALLAS BODEGA] Datos recibidos:', data);
-
-                if (!data?.success) {
-                    throw new Error(data?.message || 'Error cargando prenda de bodega');
-                }
-
-                return data?.data?.tallas || [];
-            });
-    }
-
-    const numeroPedidoCandidatos = [];
-    if (numeroPedido !== undefined && numeroPedido !== null) numeroPedidoCandidatos.push(String(numeroPedido));
-
-    const tr = String(tipoRecibo || '').trim();
-    const params = new URLSearchParams();
-    params.set('prenda_id', String(prendaId));
-    if (tr) params.set('tipo_recibo', tr);
-    
-    // Si tenemos parcialId (es un recibo parcial), lo enviamos prioritariamente
-    if (parcialId) params.set('parcial_id', String(parcialId));
-    
-    // Si tenemos consecutivo de recibo, lo enviamos para filtrar tallas exactas
-    if (recibo) params.set('recibo', String(recibo));
-
-    const intentar = (idx) => {
-        if (idx >= numeroPedidoCandidatos.length) {
-            return Promise.resolve([]);
-        }
-        const numeroPedido = numeroPedidoCandidatos[idx];
-        // Usar la ruta correcta: /operario/api/pedido/{numeroPedido}
-        return httpJson(`/operario/api/pedido/${numeroPedido}?${params.toString()}`, {
-            method: 'GET'
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                console.log('[CARGAR TALLAS] Datos recibidos:', data);
-                
-                if (!data?.success) throw new Error(data?.message || 'Error cargando pedido');
-
-                const prendas = data?.data?.prendas || [];
-                const prenda = prendas.find((p) => String(p.id) === String(prendaId) || String(p.prenda_pedido_id) === String(prendaId));
-                const variantes = prenda?.variantes || [];
-                
-                console.log('[CARGAR TALLAS] Prenda encontrada:', prenda);
-                console.log('[CARGAR TALLAS] Variantes:', variantes);
-                
-                // Verificar si las variantes tienen colores_detalle
-                variantes.forEach((variante, index) => {
-                    console.log(`[CARGAR TALLAS] Variante ${index}:`, {
-                        talla: variante.talla,
-                        genero: variante.genero,
-                        cantidad: variante.cantidad,
-                        colores_detalle: variante.colores_detalle,
-                        color_info: variante.color_info
-                    });
-                });
-                
-                return variantes;
-            })
-            .catch(() => intentar(idx + 1));
-    };
-
-    return intentar(0);
-}
-
-window.cargarTallasPrenda = cargarTallasPrenda;
 
 // Funcion para cargar usuarios segun tipo de recibo
 function cargarUsuariosPorTipo(tipoRecibo) {
@@ -459,6 +379,7 @@ window.agruparTallasPorGeneroYColor = agruparTallasPorGeneroYColor;
 window.procesarUsuariosParaDistribucion = procesarUsuariosParaDistribucion;
 window.mostrarErrorDistribucion = mostrarErrorDistribucion;
 window.cargarInterfazDistribucionConDatos = cargarInterfazDistribucionConDatos;
+window.generarHtmlTallasParaEncargado = generarHtmlTallasParaEncargado;
 
 // Funcion para mostrar cards de encargados (modo edicion)
 window.mostrarCardsEncargados = function(tallas, modulos) {
@@ -560,15 +481,13 @@ function generarHtmlTallasParaEncargado(tallas, moduloId, asignaciones) {
                         asignado = asignaciones[tallaIdUnico];
                     }
                     
-                    const maxDisponible = getMaxDisponibleParaModulo(tallaIdUnico, moduloId);
-                    const disponible = getDisponibleRestanteGlobal(tallaIdUnico);
+                    const totalBase = getTotalOriginalTallaId(tallaIdUnico, talla.cantidad);
+                    const maxDisponible = getMaxDisponibleParaModulo(tallaIdUnico, moduloId, talla.cantidad);
+                    const disponible = typeof getDisponibleRestanteGlobal === 'function'
+                        ? getDisponibleRestanteGlobal(tallaIdUnico, talla.cantidad)
+                        : Math.max(0, totalBase - (typeof window.getTotalAsignadoTalla === 'function' ? (parseInt(window.getTotalAsignadoTalla(tallaIdUnico, null)) || 0) : 0));
                     const isSelected = asignado > 0;
-                    
-                    // NO mostrar tallas con disponibilidad 0
-                    if (disponible <= 0 && !isSelected) {
-                        return;
-                    }
-                    
+
                     if (asignado > maxDisponible) {
                         window.actualizarAsignacion(tallaIdUnico, moduloId, maxDisponible);
                     }
@@ -583,6 +502,7 @@ function generarHtmlTallasParaEncargado(tallas, moduloId, asignaciones) {
                                     onchange="toggleTallaSeleccion('${tallaIdUnico}', ${moduloId}, this.checked)"
                                     data-tallaid="${tallaIdUnico}"
                                     data-moduloid="${moduloId}"
+                                    data-cantidad="${talla.cantidad}"
                                 />
                                 <div style="font-size: 0.875rem; font-weight: 500; color: #374151;">
                                     ${talla.tallaOriginal}
@@ -594,6 +514,7 @@ function generarHtmlTallasParaEncargado(tallas, moduloId, asignaciones) {
                                     id="talla_${tallaIdUnico}_modulo_${moduloId}"
                                     data-tallaid="${tallaIdUnico}"
                                     data-moduloid="${moduloId}"
+                                    data-cantidad="${talla.cantidad}"
                                     min="0"
                                     max="${maxDisponible}"
                                     value="${asignado}"
@@ -602,7 +523,7 @@ function generarHtmlTallasParaEncargado(tallas, moduloId, asignaciones) {
                                     onchange="actualizarAsignacion('${tallaIdUnico}', ${moduloId}, this.value)"
                                     style="width: 70px; text-align: center; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem; font-weight: 500;"
                                 />
-                                <div class="dist-disp" data-tallaid="${tallaIdUnico}" data-moduloid="${moduloId}" style="font-size: 0.75rem; color: #dc2626; font-weight: 500;">
+                                <div class="dist-disp" data-tallaid="${tallaIdUnico}" data-moduloid="${moduloId}" data-cantidad="${talla.cantidad}" style="font-size: 0.75rem; color: #dc2626; font-weight: 500;">
                                     Disp: ${disponible}
                                 </div>
                             </div>
@@ -748,8 +669,12 @@ function generarHtmlTallasParaParte(tallasParte, moduloId, asignaciones) {
                     asignado = asignaciones[tallaIdUnico];
                 }
                 
-                const maxDisponible = getMaxDisponibleParaModulo(tallaIdUnico, moduloId);
-                const disponible = getDisponibleRestanteGlobal(tallaIdUnico);
+                const totalBase = getTotalOriginalTallaId(tallaIdUnico, talla.cantidad);
+                const totalAsignado = typeof window.getTotalAsignadoTalla === 'function'
+                    ? (parseInt(window.getTotalAsignadoTalla(tallaIdUnico, null)) || 0)
+                    : 0;
+                const maxDisponible = Math.max(0, totalBase - totalAsignado);
+                const disponible = Math.max(0, totalBase - totalAsignado);
                 const isSelected = asignado > 0;
                 
                 if (asignado > maxDisponible) {
@@ -765,6 +690,7 @@ function generarHtmlTallasParaParte(tallasParte, moduloId, asignaciones) {
                             onchange="toggleTallaSeleccion('${tallaIdUnico}', ${moduloId}, this.checked)"
                             data-tallaid="${tallaIdUnico}"
                             data-moduloid="${moduloId}"
+                            data-cantidad="${talla.cantidad}"
                             style="width: 16px; height: 16px; cursor: pointer;"
                         />
                         <div style="font-size: 0.8rem; font-weight: 500; color: #374151;">
@@ -777,6 +703,7 @@ function generarHtmlTallasParaParte(tallasParte, moduloId, asignaciones) {
                             id="talla_${tallaIdUnico}_modulo_${moduloId}"
                             data-tallaid="${tallaIdUnico}"
                             data-moduloid="${moduloId}"
+                            data-cantidad="${talla.cantidad}"
                             min="0"
                             max="${maxDisponible}"
                             value="${asignado}"
@@ -785,7 +712,7 @@ function generarHtmlTallasParaParte(tallasParte, moduloId, asignaciones) {
                             onchange="actualizarAsignacion('${tallaIdUnico}', ${moduloId}, this.value)"
                             style="width: 60px; text-align: center; padding: 0.2rem; border: 1px solid #d1d5db; border-radius: 3px; font-size: 0.8rem; font-weight: 500;"
                         />
-                        <div class="dist-disp" data-tallaid="${tallaIdUnico}" data-moduloid="${moduloId}" style="font-size: 0.7rem; color: #dc2626; font-weight: 500; white-space: nowrap;">
+                        <div class="dist-disp" data-tallaid="${tallaIdUnico}" data-moduloid="${moduloId}" data-cantidad="${talla.cantidad}" style="font-size: 0.7rem; color: #dc2626; font-weight: 500; white-space: nowrap;">
                             ${disponible}
                         </div>
                     </div>
@@ -817,7 +744,7 @@ window.renderTallasDisponibles = function() {
     const tallasDisponibles = tallas.filter(talla => {
         const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, talla.color, talla.genero);
         const totalAsignado = window.getTotalAsignadoTalla(tallaIdUnico, null);
-        const totalOriginal = getTotalOriginalTallaId(tallaIdUnico);
+        const totalOriginal = getTotalOriginalTallaId(tallaIdUnico, talla.cantidad);
         return totalAsignado < totalOriginal;
     });
 
@@ -862,9 +789,9 @@ window.renderTallasDisponibles = function() {
             
             tallasColor.forEach(talla => {
                 const tallaIdUnico = construirTallaIdUnico(talla.tallaOriginal, color, talla.genero);
-                const totalOriginal = getTotalOriginalTallaId(tallaIdUnico);
+                const totalOriginal = getTotalOriginalTallaId(tallaIdUnico, talla.cantidad);
                 const totalAsignado = window.getTotalAsignadoTalla(tallaIdUnico, null);
-                const disponible = totalOriginal - totalAsignado;
+                const disponible = Math.max(0, totalOriginal - totalAsignado);
                 
                 html += `
                     <div style="padding: 0.5rem; border: 1px solid #f3f4f6; border-radius: 6px; display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 0.75rem; background: #fafafa;">

@@ -1,6 +1,6 @@
 import { normalizarColor, normalizarGenero, parseTallaIdUnico } from './talla-utils';
 
-export function getTotalOriginalTallaIdTaller(tallaId) {
+export function getTotalOriginalTallaIdTaller(tallaId, fallbackCantidad = 0) {
     const { base, colorNorm, generoNorm } = parseTallaIdUnico(tallaId);
     const tallas = window?.datosDistribucion?.tallas || [];
     const colorObjetivo = colorNorm || 'sin_color';
@@ -12,7 +12,8 @@ export function getTotalOriginalTallaIdTaller(tallaId) {
         return normalizarGenero(t.genero) === generoNorm;
     });
 
-    return parseInt(item?.cantidad) || 0;
+    const total = parseInt(item?.cantidad) || 0;
+    return total > 0 ? total : (parseInt(fallbackCantidad) || 0);
 }
 
 export function getTotalAsignadoTallaTaller(tallaId) {
