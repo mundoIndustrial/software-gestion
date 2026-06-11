@@ -195,6 +195,7 @@ class OperarioController extends Controller
                     $query->orderBy('genero')->orderBy('talla')->orderBy('color');
                 },
             ])->findOrFail((int) $prendaBodegaId);
+            $totalCantidad = (int) $prenda->tallas->sum('cantidad');
 
             return response()->json([
                 'success' => true,
@@ -203,6 +204,7 @@ class OperarioController extends Controller
                     'numero_recibo' => (int) $prenda->numero_recibo,
                     'nombre' => (string) $prenda->nombre,
                     'descripcion' => (string) $prenda->descripcion,
+                    'total_cantidad' => $totalCantidad,
                     'tallas' => $prenda->tallas->map(function ($talla) {
                         return [
                             'talla' => (string) $talla->talla,

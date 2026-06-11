@@ -24,7 +24,23 @@ export function cargarTallasSegunOrigen({
                     throw new Error(data?.message || 'Error cargando prenda de bodega');
                 }
 
-                return data?.data?.tallas || [];
+                const tallas = Array.isArray(data?.data?.tallas) ? data.data.tallas : [];
+                const totalCantidad = parseInt(data?.data?.total_cantidad || '0') || 0;
+
+                if (tallas.length > 0) {
+                    return tallas;
+                }
+
+                if (totalCantidad > 0) {
+                    return [{
+                        talla: 'SIN_TALLA',
+                        genero: 'UNISEX',
+                        color: null,
+                        cantidad: totalCantidad,
+                    }];
+                }
+
+                return [];
             });
     }
 
