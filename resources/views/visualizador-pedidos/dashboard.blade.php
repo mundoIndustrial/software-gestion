@@ -7,7 +7,7 @@
 @section('content')
 <div style="padding: 1rem 1rem 2rem 1rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); min-height: calc(100vh - 60px); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; width: 100%; display: flex; justify-content: center;">
     <!-- Tabla de Pedidos -->
-    <div style="width: auto; max-width: 90%; transform: scale(0.9); transform-origin: top center;">
+    <div style="width: auto; max-width: 100%; transform: scale(0.9); transform-origin: top center;">
         <!-- Container -->
         <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0; position: relative; display: flex; flex-direction: column; height: fit-content;">
             <!-- Header -->
@@ -16,7 +16,7 @@
                 color: white;
                 padding: 0.75rem 1rem;
                 display: grid;
-                grid-template-columns: 60px minmax(80px, auto) minmax(200px, auto) minmax(150px, auto) minmax(120px, auto);
+                grid-template-columns: 60px 1fr 2fr 1fr 1fr;
                 gap: 2rem;
                 font-weight: 700;
                 font-size: 0.85rem;
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return `
                 <div style="
                     display: grid;
-                    grid-template-columns: 60px minmax(80px, auto) minmax(200px, auto) minmax(150px, auto) minmax(120px, auto);
+                    grid-template-columns: 60px 1fr 2fr 1fr 1fr;
                     gap: 2rem;
                     padding: 0.75rem 1rem;
                     align-items: center;
@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     
                     <div style="font-weight: 700; color: #0ea5e9; font-size: 0.95rem; white-space: nowrap;">${numeroPedido}</div>
-                    <div style="color: #334155; font-size: 0.95rem; font-weight: 500; white-space: nowrap;">${cliente}</div>
+                    <div style="color: #334155; font-size: 0.95rem; font-weight: 500;">${cliente}</div>
                     <div style="color: #64748b; font-size: 0.95rem; white-space: nowrap;">${asesora}</div>
                     <div style="color: #64748b; font-size: 0.95rem; white-space: nowrap;">${formatearFecha(pedido.fecha_pedido || pedido.created_at)}</div>
                 </div>
