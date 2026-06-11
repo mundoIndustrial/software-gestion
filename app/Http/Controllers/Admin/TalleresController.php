@@ -690,7 +690,7 @@ class TalleresController extends Controller
                     $reciboParcialQuery->where('consecutivo_parcial', $numeroRecibo);
                 }
 
-                if ($pedidoProduccionId > 0) {
+                if ($pedidoProduccionId > 0 && $tipoRecibo !== 'CORTE-PARA-BODEGA') {
                     $reciboParcialQuery->where('pedido_produccion_id', $pedidoProduccionId);
                 }
 
@@ -702,20 +702,65 @@ class TalleresController extends Controller
 
                 $tipoReciboParcial = strtoupper(trim((string) ($reciboParcial->tipo_recibo ?? $tipoRecibo)));
                 $fechaParcial = Carbon::parse($reciboParcial->created_at);
-                $prenda = DB::table('prendas_pedido')->where('id', $reciboParcial->prenda_pedido_id)->first();
-                if (!$prenda && $tipoReciboParcial === 'CORTE-PARA-BODEGA') {
-                    $reciboBase = DB::table('consecutivos_recibos_pedidos')
-                        ->where('tipo_recibo', 'CORTE-PARA-BODEGA')
-                        ->where('pedido_produccion_id', $reciboParcial->pedido_produccion_id)
-                        ->where('consecutivo_actual', $reciboParcial->consecutivo_original)
-                        ->orderByDesc('id')
+                if ($tipoReciboParcial === 'CORTE-PARA-BODEGA') {
+                    $prendaBodegaId = (int) ($reciboParcial->prenda_pedido_id ?? 0);
+
+                    $reciboBase = DB::table('consecutivos_recibos_pedidos as crp_base')
+                        ->where('crp_base.tipo_recibo', 'CORTE-PARA-BODEGA')
+                        ->where('crp_base.consecutivo_actual', $reciboParcial->consecutivo_original)
+                        ->where('crp_base.prenda_bodega_id', $prendaBodegaId)
+                        ->orderByDesc('crp_base.id')
                         ->first();
 
                     if ($reciboBase && $reciboBase->prenda_bodega_id) {
-                        $prenda = DB::table('prenda_bodega')->where('id', $reciboBase->prenda_bodega_id)->first();
+                        $prendaBodegaId = (int) $reciboBase->prenda_bodega_id;
                     }
+
+                    $prenda = DB::table('prenda_bodega')->where('id', $prendaBodegaId)->first();
+
+                    if (!$prenda) {
+                        return response()->json(['success' => false, 'message' => 'Prenda no encontrada'], 404);
+                    }
+
+                    $tallas = DB::table('prenda_tallas_bodega')
+                        ->where('prenda_bodega_id', $prendaBodegaId)
+                        ->get(['talla', 'genero', 'color', 'cantidad']);
+
+                    $procesoSalida = DB::table('procesos_prenda')
+                        ->where('prenda_bodega_id', $prendaBodegaId)
+                        ->whereRaw("LOWER(TRIM(proceso)) = 'costura'")
+                        ->orderByDesc('fecha_de_asignacion_encargado')
+                        ->orderByDesc('id')
+                        ->selectRaw('COALESCE(fecha_de_asignacion_encargado, created_at) as fecha_salida')
+                        ->value('fecha_salida');
+
+                    $entregasRecibo = DB::table('entrega_recibo_costura')
+                        ->where('recibo_parcial_id', $reciboParcial->id);
+                    $totalEntregado = (int) (clone $entregasRecibo)->sum('cantidad_entregada');
+                    $fechaEntrada = (clone $entregasRecibo)->max('created_at');
+
+                    return response()->json([
+                        'success' => true,
+                        'tipo_recibo' => $tipoReciboParcial,
+                        'numero_recibo' => (float) $reciboParcial->consecutivo_parcial,
+                        'descripcion' => $prenda->descripcion ?? ($prenda->nombre ?? 'Recibo parcial'),
+                        'dia' => $fechaParcial->format('d'),
+                        'mes' => $fechaParcial->format('m'),
+                        'ano' => $fechaParcial->format('Y'),
+                        'fecha_salida' => $procesoSalida ? \Carbon\Carbon::parse($procesoSalida)->format('d/m/Y h:i A') : '-',
+                        'fecha_entrada' => $fechaEntrada ? \Carbon\Carbon::parse($fechaEntrada)->format('d/m/Y h:i A') : null,
+                        'tallas' => $tallas->map(fn($t) => [
+                            'talla' => $t->talla,
+                            'genero' => $t->genero,
+                            'color' => $t->color,
+                            'cantidad' => (int) $t->cantidad,
+                        ])->toArray(),
+                        'total' => (int) $tallas->sum('cantidad'),
+                        'total_entregado' => $totalEntregado,
+                    ]);
                 }
 
+                $prenda = DB::table('prendas_pedido')->where('id', $reciboParcial->prenda_pedido_id)->first();
                 $tallas = DB::table('recibos_por_partes_tallas')
                     ->where('recibo_por_partes_id', $reciboParcial->id)
                     ->get(['talla', 'genero', 'color_nombre as color', 'cantidad']);
@@ -765,14 +810,6 @@ class TalleresController extends Controller
                     $reciboBodegaQuery->where('pedido_parcial_id', $pedidoParcialId);
                 } else {
                     $reciboBodegaQuery->where('consecutivo_actual', $numeroRecibo);
-                }
-
-                if ($pedidoProduccionId > 0) {
-                    $reciboBodegaQuery->where('pedido_produccion_id', $pedidoProduccionId);
-                }
-
-                if ($prendaId > 0) {
-                    $reciboBodegaQuery->where('prenda_id', $prendaId);
                 }
 
                 $reciboBodega = $reciboBodegaQuery->orderByDesc('id')->first();

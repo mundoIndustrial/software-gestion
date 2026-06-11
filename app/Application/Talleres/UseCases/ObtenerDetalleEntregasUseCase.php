@@ -15,20 +15,42 @@ class ObtenerDetalleEntregasUseCase
         
         if ($isParcial) {
             $recibo = DB::table('recibo_por_partes as rpp')
-                ->join('prendas_pedido as pp', 'rpp.prenda_pedido_id', '=', 'pp.id')
-                ->join('pedidos_produccion as ppro', 'rpp.pedido_produccion_id', '=', 'ppro.id')
-                ->join('clientes', 'ppro.cliente_id', '=', 'clientes.id')
+                ->leftJoin('consecutivos_recibos_pedidos as crp_base', function ($join) {
+                    $join->on('rpp.consecutivo_original', '=', 'crp_base.consecutivo_actual')
+                        ->where('crp_base.tipo_recibo', '=', 'CORTE-PARA-BODEGA')
+                        ->whereColumn('crp_base.prenda_bodega_id', 'rpp.prenda_pedido_id');
+                })
+                ->leftJoin('prenda_bodega as pb', 'crp_base.prenda_bodega_id', '=', 'pb.id')
+                ->leftJoin('prendas_pedido as pp', 'rpp.prenda_pedido_id', '=', 'pp.id')
+                ->leftJoin('pedidos_produccion as ppro', 'rpp.pedido_produccion_id', '=', 'ppro.id')
+                ->leftJoin('clientes', 'ppro.cliente_id', '=', 'clientes.id')
                 ->where('rpp.id', $reciboId)
-                ->select('rpp.id', 'rpp.consecutivo_parcial as numero_recibo', 'pp.nombre_prenda', 'pp.descripcion as descripcion_prenda', 'clientes.nombre as cliente')
+                ->select(
+                    'rpp.id',
+                    'rpp.consecutivo_parcial as numero_recibo',
+                    'rpp.tipo_recibo',
+                    'rpp.prenda_pedido_id',
+                    'crp_base.prenda_bodega_id',
+                    'pp.nombre_prenda as nombre_prenda_pedido',
+                    'pp.descripcion as descripcion_prenda_pedido',
+                    'pb.nombre as nombre_prenda_bodega',
+                    'pb.descripcion as descripcion_prenda_bodega',
+                    'clientes.nombre as cliente_pedido'
+                )
                 ->first();
-                
+
             $entregasRaw = EntregaReciboCostura::where('recibo_parcial_id', $reciboId)
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            $totalesAsignados = DB::table('recibos_por_partes_tallas')
-                ->where('recibo_por_partes_id', $reciboId)
-                ->get();
+            $totalesAsignados = $recibo && strtoupper(trim((string) ($recibo->tipo_recibo ?? ''))) === 'CORTE-PARA-BODEGA'
+                ? DB::table('prenda_tallas_bodega')
+                    ->where('prenda_bodega_id', (int) ($recibo->prenda_bodega_id ?? 0))
+                    ->select('talla', 'genero', 'color', 'cantidad')
+                    ->get()
+                : DB::table('recibos_por_partes_tallas')
+                    ->where('recibo_por_partes_id', $reciboId)
+                    ->get();
         } else {
             $recibo = DB::table('consecutivos_recibos_pedidos as crp')
                 ->join('prendas_pedido as pp', 'crp.prenda_id', '=', 'pp.id')
@@ -68,18 +90,43 @@ class ObtenerDetalleEntregasUseCase
         
         if (!$recibo) return null;
 
-        $fechaSalida = DB::table('procesos_prenda')
-            ->where($isParcial ? 'numero_recibo_parcial' : 'numero_recibo', $recibo->numero_recibo)
-            ->whereRaw("LOWER(TRIM(proceso)) = 'costura'")
+        $esBodega = $isParcial && strtoupper(trim((string) ($recibo->tipo_recibo ?? ''))) === 'CORTE-PARA-BODEGA';
+        $prendaBodegaId = (int) ($recibo->prenda_bodega_id ?? 0);
+        $fechaSalidaQuery = DB::table('procesos_prenda')
+            ->whereRaw("LOWER(TRIM(proceso)) = 'costura'");
+
+        if ($isParcial) {
+            $fechaSalidaQuery->where('numero_recibo_parcial', $recibo->numero_recibo);
+            if ($esBodega && $prendaBodegaId > 0) {
+                $fechaSalidaQuery->where('prenda_bodega_id', $prendaBodegaId);
+            } else {
+                $fechaSalidaQuery->where('prenda_pedido_id', (int) ($recibo->prenda_pedido_id ?? 0));
+            }
+        } else {
+            $fechaSalidaQuery->where('numero_recibo', $recibo->numero_recibo);
+        }
+
+        $fechaSalida = $fechaSalidaQuery
             ->orderByDesc('fecha_de_asignacion_encargado')
             ->orderByDesc('id')
             ->selectRaw('COALESCE(fecha_de_asignacion_encargado, created_at) as fecha_salida')
             ->value('fecha_salida');
 
+        if ($esBodega) {
+            $recibo->nombre_prenda = $recibo->nombre_prenda_bodega ?? 'N/A';
+            $recibo->descripcion_prenda = $recibo->descripcion_prenda_bodega ?? '';
+            $recibo->cliente = 'Bodega';
+        } elseif ($isParcial) {
+            $recibo->nombre_prenda = $recibo->nombre_prenda_pedido ?? 'N/A';
+            $recibo->descripcion_prenda = $recibo->descripcion_prenda_pedido ?? '';
+            $recibo->cliente = $recibo->cliente_pedido ?? 'N/A';
+        }
+
         $mapaTotales = [];
         foreach ($totalesAsignados as $t) {
-            $key = $this->generarKey($t->talla, $t->genero ?? 'UNISEX', $t->color_nombre ?? '');
-            $mapaTotales[$key] = ($mapaTotales[$key] ?? 0) + $t->cantidad;
+            $color = $t->color_nombre ?? $t->color ?? '';
+            $key = $this->generarKey($t->talla, $t->genero ?? 'UNISEX', $color);
+            $mapaTotales[$key] = ($mapaTotales[$key] ?? 0) + (int) $t->cantidad;
         }
 
         $acumulados = [];

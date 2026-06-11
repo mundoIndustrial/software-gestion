@@ -19,7 +19,29 @@ function formatFechaSalida(fechaSalida) {
 }
 
 function formatFechaAcordeon(fecha) {
-    return formatFechaSalida(fecha);
+    if (!fecha) return '-';
+
+    const texto = String(fecha).trim();
+    const fechaPartes = texto.split(',');
+    const fechaSolo = fechaPartes[0].trim();
+    const horaTexto = fechaPartes.slice(1).join(',').trim();
+    const partes = fechaSolo.split(/[/-]/).map(parte => parte.trim()).filter(Boolean);
+
+    if (partes.length === 3) {
+        if (partes[0].length === 4) {
+            const [ano, mes, dia] = partes;
+            return horaTexto
+                ? `${dia.padStart(2, '0')}/${mes.padStart(2, '0')}/${ano} ${horaTexto}`
+                : `${dia.padStart(2, '0')}/${mes.padStart(2, '0')}/${ano}`;
+        }
+
+        const [dia, mes, ano] = partes;
+        return horaTexto
+            ? `${dia.padStart(2, '0')}/${mes.padStart(2, '0')}/${ano} ${horaTexto}`
+            : `${dia.padStart(2, '0')}/${mes.padStart(2, '0')}/${ano}`;
+    }
+
+    return horaTexto ? `${fechaSolo} ${horaTexto}` : fechaSolo;
 }
 
 function syncOrdenesTabButtons(activeTab) {
@@ -902,9 +924,11 @@ function cargarEntregasAcordeon(reciboId, esParcial, reciboNumero, tipoRecibo, c
                 return;
             }
 
-            const fecha = data.fecha_salida || ((data.dia && data.mes && data.ano)
-                ? `${String(data.dia).padStart(2, '0')}/${String(data.mes).padStart(2, '0')}/${String(data.ano)}`
-                : 'N/A');
+            const fecha = data.fecha_salida
+                ? formatFechaAcordeon(data.fecha_salida)
+                : ((data.dia && data.mes && data.ano)
+                    ? `${String(data.dia).padStart(2, '0')}/${String(data.mes).padStart(2, '0')}/${String(data.ano)}`
+                    : 'N/A');
             const totalAsignado = Number(data.total || 0);
 
             const descripcion = data.descripcion || 'Sin descripcion';

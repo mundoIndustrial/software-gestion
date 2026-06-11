@@ -68,9 +68,9 @@ class ObtenerDashboardTallerUseCase
             ->leftJoin('pedidos_produccion as ppro', 'rpp.pedido_produccion_id', '=', 'ppro.id')
             ->leftJoin('clientes', 'ppro.cliente_id', '=', 'clientes.id')
             ->leftJoin('consecutivos_recibos_pedidos as crp_base', function ($join) {
-                $join->on('rpp.pedido_produccion_id', '=', 'crp_base.pedido_produccion_id')
-                    ->on('rpp.consecutivo_original', '=', 'crp_base.consecutivo_actual')
-                    ->where('crp_base.tipo_recibo', '=', 'CORTE-PARA-BODEGA');
+                $join->on('rpp.consecutivo_original', '=', 'crp_base.consecutivo_actual')
+                    ->where('crp_base.tipo_recibo', '=', 'CORTE-PARA-BODEGA')
+                    ->whereColumn('crp_base.prenda_bodega_id', 'rpp.prenda_pedido_id');
             })
             ->leftJoin('prenda_bodega as pb', 'crp_base.prenda_bodega_id', '=', 'pb.id')
             ->join('procesos_prenda as ppren', function($join) {
@@ -82,9 +82,9 @@ class ObtenerDashboardTallerUseCase
             ->select(
                 'rpp.id',
                 DB::raw('ANY_VALUE(rpp.consecutivo_parcial) as numero_recibo'),
-                DB::raw('ANY_VALUE(COALESCE(pp.nombre_prenda, pb.nombre, "N/A")) as nombre_prenda'),
-                DB::raw('ANY_VALUE(COALESCE(pp.descripcion, pb.descripcion, "N/A")) as descripcion_prenda'),
-                DB::raw('ANY_VALUE(COALESCE(clientes.nombre, "Bodega")) as cliente'),
+                DB::raw("ANY_VALUE(CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) = 'CORTE-PARA-BODEGA' THEN COALESCE(pb.nombre, 'N/A') ELSE COALESCE(pp.nombre_prenda, 'N/A') END) as nombre_prenda"),
+                DB::raw("ANY_VALUE(CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) = 'CORTE-PARA-BODEGA' THEN COALESCE(pb.descripcion, 'N/A') ELSE COALESCE(pp.descripcion, 'N/A') END) as descripcion_prenda"),
+                DB::raw("ANY_VALUE(CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) = 'CORTE-PARA-BODEGA' THEN 'Bodega' ELSE COALESCE(clientes.nombre, 'Bodega') END) as cliente"),
                 DB::raw('ANY_VALUE(rpp.tipo_recibo) as tipo_recibo'),
                 DB::raw('MAX(COALESCE(ppren.fecha_de_asignacion_encargado, ppren.created_at)) as fecha_salida'),
                 DB::raw('1 as es_parcial')

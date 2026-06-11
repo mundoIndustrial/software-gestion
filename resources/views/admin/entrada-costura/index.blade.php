@@ -369,7 +369,7 @@
                         <tbody>
                             @forelse($entradaCostura as $entrada)
                                 @php
-                                    $identificadorRecibo = (int) ($entrada['numero_recibo'] ?? 0);
+                                    $identificadorRecibo = trim((string) ($entrada['numero_recibo'] ?? ''));
                                     $pedidoReferencia = $entrada['numero_pedido'] ?? '-';
                                     $clienteReferencia = $entrada['cliente'] ?? '-';
                                     $encargadoReferencia = $entrada['encargado'] ?? ($entrada['nombre_operario'] ?? '-');
