@@ -953,4 +953,89 @@
     }
     </style>
 
+@push('scripts')
+<script>
+    (function () {
+        const originalPasarAControlCalidad = window.pasarAControlCalidad;
+
+        function normalizarTallasParaBodega(tallas) {
+            if (!Array.isArray(tallas)) {
+                return [];
+            }
+
+            return tallas
+                .map((talla) => {
+                    const nombre = String(talla?.talla ?? talla?.nombre ?? '').trim() || 'SIN_TALLA';
+                    const cantidad = Number.parseInt(talla?.cantidad ?? 0, 10) || 0;
+
+                    return {
+                        talla: nombre,
+                        genero: String(talla?.genero ?? 'UNISEX').trim() || 'UNISEX',
+                        color_nombre: String(talla?.color_nombre ?? talla?.color ?? '').trim(),
+                        cantidad,
+                    };
+                })
+                .filter((talla) => talla.cantidad > 0 || talla.talla === 'SIN_TALLA');
+        }
+
+        async function prepararTallasBodegaSiFaltan(btn) {
+            const card = btn?.closest?.('.orden-card-simple');
+            const prendaBodegaId = Number.parseInt(btn?.dataset?.prendaBodegaId || card?.dataset?.prendaBodegaId || '', 10);
+
+            if (!card || !Number.isFinite(prendaBodegaId) || prendaBodegaId <= 0) {
+                return;
+            }
+
+            const tallasActuales = normalizarTallasParaBodega(
+                (() => {
+                    try {
+                        return JSON.parse(card.dataset.tallas || btn.dataset.tallas || '[]');
+                    } catch (error) {
+                        return [];
+                    }
+                })()
+            );
+
+            if (tallasActuales.length > 0) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/operario/api/prenda-bodega/${prendaBodegaId}`, {
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin',
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                const tallasApi = Array.isArray(data?.data?.tallas) ? data.data.tallas : [];
+                const tallasNormalizadas = normalizarTallasParaBodega(tallasApi);
+
+                if (tallasNormalizadas.length > 0) {
+                    const serializado = JSON.stringify(tallasNormalizadas);
+                    card.dataset.tallas = serializado;
+                    btn.dataset.tallas = serializado;
+                }
+            } catch (error) {
+                console.warn('[ControlCalidad] No se pudo preparar tallas de bodega:', error);
+            }
+        }
+
+        window.pasarAControlCalidad = async function (btn) {
+            await prepararTallasBodegaSiFaltan(btn);
+            if (typeof originalPasarAControlCalidad === 'function') {
+                return originalPasarAControlCalidad(btn);
+            }
+            return undefined;
+        };
+    })();
+</script>
+@endpush
+
 @endsection

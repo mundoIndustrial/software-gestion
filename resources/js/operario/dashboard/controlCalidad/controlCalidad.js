@@ -19,7 +19,7 @@ function normalizarTallasRecibo(tallasRaw) {
 
     return tallas
         .map((talla, index) => {
-            const nombreTalla = String(talla?.talla ?? talla?.nombre ?? '').trim();
+            const nombreTalla = String(talla?.talla ?? talla?.nombre ?? '').trim() || 'SIN_TALLA';
             const cantidad = Number.parseInt(talla?.cantidad ?? 0, 10);
 
             return {
@@ -36,7 +36,7 @@ function normalizarTallasRecibo(tallasRaw) {
                     : [],
             };
         })
-        .filter((talla) => talla.talla !== '');
+        .filter((talla) => talla.cantidad > 0 || talla.talla === 'SIN_TALLA');
 }
 
 function obtenerTallasDesdeCard(btn) {

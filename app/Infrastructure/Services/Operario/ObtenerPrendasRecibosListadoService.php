@@ -324,6 +324,19 @@ class ObtenerPrendasRecibosListadoService
                     })
                     ->values()
                     ->all();
+
+                if (empty($tallasBodega) && (int) ($reciboPrincipal->cantidad ?? 0) > 0) {
+                    $tallasBodega = [[
+                        'id' => 0,
+                        'genero' => 'UNISEX',
+                        'talla' => 'SIN_TALLA',
+                        'cantidad' => (int) $reciboPrincipal->cantidad,
+                        'tipo_talla' => null,
+                        'es_sobremedida' => false,
+                        'tela' => null,
+                        'colores' => [],
+                    ]];
+                }
                 $tallasControlCalidadBodega = $tallasControlCalidadPorRecibo->get($reciboPrincipalId, []);
                 $estadoControlCalidad = $this->resolverEstadoControlCalidadDesdeTallas($tallasBodega, $tallasControlCalidadBodega);
                 $completadoCosturaRecibo = ($reciboPrincipalId > 0 && $completadosCosturaPorReciboId->has($reciboPrincipalId))

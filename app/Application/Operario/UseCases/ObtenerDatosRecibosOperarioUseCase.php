@@ -1172,7 +1172,7 @@ class ObtenerDatosRecibosOperarioUseCase
                     ->get();
             }
 
-                $tallasBodega = $tallasBodegaRows
+            $tallasBodega = $tallasBodegaRows
                 ->map(function ($row) {
                     $genero = strtoupper(trim((string) ($row->genero ?? 'UNISEX')));
                     if (!in_array($genero, ['DAMA', 'CABALLERO', 'UNISEX'], true)) {
@@ -1194,6 +1194,15 @@ class ObtenerDatosRecibosOperarioUseCase
                 ->filter(fn($t) => $t['cantidad'] > 0)
                 ->values()
                 ->all();
+
+            if (empty($tallasBodega) && (int) ($reciboBodega->cantidad ?? 0) > 0) {
+                $tallasBodega = [[
+                    'talla' => 'SIN_TALLA',
+                    'genero' => 'UNISEX',
+                    'color_nombre' => '',
+                    'cantidad' => (int) $reciboBodega->cantidad,
+                ]];
+            }
 
             $tallaColoresBodega = collect($tallasBodega)
                 ->map(function (array $t) {

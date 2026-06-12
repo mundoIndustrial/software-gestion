@@ -118,6 +118,39 @@ class CambiarAreaControlCalidadUseCase
         return true;
     }
 
+    private function esTallaSinDetalle(array $talla): bool
+    {
+        $nombreTalla = strtoupper(trim((string) ($talla['talla'] ?? '')));
+
+        return $nombreTalla === '' || in_array($nombreTalla, ['SIN_TALLA', 'SIN TALLA', 'SIN-TALLA'], true);
+    }
+
+    private function soloManejaCantidad(array $tallas): bool
+    {
+        $tallasValidas = array_filter($tallas, function (array $talla) {
+            return (int) ($talla['cantidad'] ?? 0) > 0;
+        });
+
+        if (empty($tallasValidas)) {
+            return false;
+        }
+
+        foreach ($tallasValidas as $talla) {
+            if (!$this->esTallaSinDetalle($talla)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function calcularCantidadTotal(array $tallas): int
+    {
+        return (int) collect($tallas)->sum(function (array $talla) {
+            return (int) ($talla['cantidad'] ?? 0);
+        });
+    }
+
     public function execute(CambiarAreaControlCalidadCommandDTO $cmd): ReciboCommandResultDTO
     {
         try {
@@ -399,7 +432,16 @@ class CambiarAreaControlCalidadUseCase
                 $cmd->tallasControlCalidad
             );
             $tallasOriginales = $this->obtenerTallasOriginalesPrendaBodega((int) $cmd->prendaBodegaId);
-            $reciboCompletoEnCc = $this->reciboQuedaCompletoEnControlCalidad($tallasOriginales, $tallasAcumuladas);
+            $usaComparacionPorCantidad = $this->soloManejaCantidad($tallasOriginales)
+                && $this->soloManejaCantidad($tallasAcumuladas);
+
+            if ($usaComparacionPorCantidad) {
+                $cantidadOriginal = $this->calcularCantidadTotal($tallasOriginales);
+                $cantidadEnviada = $this->calcularCantidadTotal($tallasAcumuladas);
+                $reciboCompletoEnCc = $cantidadOriginal > 0 && $cantidadEnviada >= $cantidadOriginal;
+            } else {
+                $reciboCompletoEnCc = $this->reciboQuedaCompletoEnControlCalidad($tallasOriginales, $tallasAcumuladas);
+            }
             $areaNueva = $reciboCompletoEnCc ? 'Control Calidad' : 'Costura';
             $estadoControlCalidad = $reciboCompletoEnCc ? 'completo' : 'parcial';
 
