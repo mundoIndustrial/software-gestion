@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Helpers\EntradaCosturaHelper;
 use App\Http\Controllers\Controller;
+use App\Models\PrendaReciboCompletado;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -44,6 +45,27 @@ class EntradaCosturaController extends Controller
             'entradaCostura' => $entradaCostura,
             'resumenTallasEntradaCostura' => $resumenTallasEntradaCostura,
             'totalesEntradaCostura' => $totalesEntradaCostura,
+        ]);
+    }
+
+    public function registrarDestino(Request $request, int $registro)
+    {
+        $validated = $request->validate([
+            'destino' => ['required', 'string', 'in:logo,empacar'],
+        ]);
+
+        $reciboCompletado = PrendaReciboCompletado::findOrFail($registro);
+        $destino = $validated['destino'];
+
+        $reciboCompletado->update([
+            'destino_costura' => $destino,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Destino registrado como " . ($destino === 'logo' ? 'Logo' : 'Empacar') . '.',
+            'destino' => $destino,
+            'registro_id' => $reciboCompletado->id,
         ]);
     }
 
@@ -89,6 +111,7 @@ class EntradaCosturaController extends Controller
                 'prc.id_recibo',
                 'prc.numero_recibo',
                 'prc.area',
+                'prc.destino_costura',
                 'prc.nombre_operario',
                 'prc.fecha_completado',
                 'prc.tallas_control_calidad',
@@ -252,6 +275,7 @@ class EntradaCosturaController extends Controller
                 'tipo_recibo' => (string) ($registro->tipo_recibo ?? 'COSTURA'),
                 'id_parcial' => $registro->id_parcial ? (int) $registro->id_parcial : null,
                 'area' => $registro->area,
+                'destino_costura' => $registro->destino_costura,
                 'cliente' => $registro->cliente !== null && $registro->cliente !== '' ? (string) $registro->cliente : null,
                 'nombre_operario' => $registro->nombre_operario,
                 'encargado' => $this->resolverEncargadoCostura(

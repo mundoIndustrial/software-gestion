@@ -344,7 +344,8 @@
           data-route-store="{{ route('talleres.store') }}"
           data-route-update="{{ route('talleres.update', ':id') }}"
           data-route-api-ordenes="{{ route('talleres.api.ordenes') }}"
-          data-route-api-recibo-completo="{{ route('talleres.api.recibo-completo') }}">
+          data-route-api-recibo-completo="{{ route('talleres.api.recibo-completo') }}"
+          data-route-registrar-destino="{{ route('entrada.registrar-destino', ['registro' => '__REGISTRO__']) }}">
         <div class="entrada-costura-page">
             <div id="viewEntradaCostura" class="view-container">
             <div class="entrada-costura-filters-shell">
@@ -439,6 +440,8 @@
                                 @php
                                     $identificadorRecibo = trim((string) ($entrada['numero_recibo'] ?? ''));
                                     $tipoReciboEntrada = strtoupper(trim((string) ($entrada['tipo_recibo'] ?? '')));
+                                    $areaEntrada = strtolower(trim((string) ($entrada['area'] ?? '')));
+                                    $destinoCostura = strtolower(trim((string) ($entrada['destino_costura'] ?? '')));
                                     $idReciboParaModal = (int) ($entrada['id_recibo'] ?? $entrada['id'] ?? 0);
                                     $idParcialParaModal = (int) ($entrada['id_parcial'] ?? 0);
                                     $idPrendaBodegaParaModal = (int) ($entrada['prenda_bodega_id'] ?? 0);
@@ -451,21 +454,47 @@
                                 @endphp
                                 <tr>
                                     <td>
-                                        <button
-                                            type="button"
-                                            class="btn-ver-recibo-completo"
-                                            data-recibo-id="{{ $idReciboParaModal }}"
-                                            data-parcial-id="{{ $idParcialParaModal }}"
-                                            data-prenda-bodega-id="{{ $idPrendaBodegaParaModal }}"
-                                            data-numero-recibo="{{ $identificadorRecibo }}"
-                                            data-tipo-recibo="{{ $tipoReciboEntrada !== '' ? $tipoReciboEntrada : 'COSTURA' }}"
-                                            data-pedido-produccion-id="{{ $entrada['numero_pedido'] ?? '' }}"
-                                            data-prenda-id="{{ $entrada['prenda_id'] ?? '' }}"
-                                            title="Ver recibo"
-                                            aria-label="Ver recibo"
-                                            style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border:none;border-radius:10px;background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);color:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(37,99,235,.18);">
-                                            <span class="material-symbols-rounded" style="font-size:20px;line-height:1;">visibility</span>
-                                        </button>
+                                        @php
+                                            $puedeRegistrarDestino = auth()->user()?->hasRole('admin') || auth()->user()?->hasRole('supervisor_pedidos');
+                                        @endphp
+                                        <div style="display:inline-flex;align-items:center;gap:8px;flex-wrap:nowrap;">
+                                            <button
+                                                type="button"
+                                                class="btn-ver-recibo-completo"
+                                                data-recibo-id="{{ $idReciboParaModal }}"
+                                                data-parcial-id="{{ $idParcialParaModal }}"
+                                                data-prenda-bodega-id="{{ $idPrendaBodegaParaModal }}"
+                                                data-numero-recibo="{{ $identificadorRecibo }}"
+                                                data-tipo-recibo="{{ $tipoReciboEntrada !== '' ? $tipoReciboEntrada : 'COSTURA' }}"
+                                                data-pedido-produccion-id="{{ $entrada['numero_pedido'] ?? '' }}"
+                                                data-prenda-id="{{ $entrada['prenda_id'] ?? '' }}"
+                                                data-area="{{ $areaEntrada }}"
+                                                data-destino-costura="{{ $destinoCostura }}"
+                                                title="Ver recibo"
+                                                aria-label="Ver recibo"
+                                                style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border:none;border-radius:10px;background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);color:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(37,99,235,.18);">
+                                                <span class="material-symbols-rounded" style="font-size:20px;line-height:1;">visibility</span>
+                                            </button>
+
+                                            @if($puedeRegistrarDestino)
+                                                <button
+                                                type="button"
+                                                class="btn-registrar-destino-entrada"
+                                                data-registro-id="{{ $entrada['id'] }}"
+                                                data-area="{{ $areaEntrada }}"
+                                                data-destino-costura="{{ $destinoCostura }}"
+                                                title="Registrar destino"
+                                                aria-label="Registrar destino"
+                                                style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border:none;border-radius:10px;background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);color:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(217,119,6,.18);">
+                                                    <span class="material-symbols-rounded" style="font-size:20px;line-height:1;">route</span>
+                                                </button>
+                                            @endif
+                                            @if(($puedeRegistrarDestino) && $destinoCostura !== '')
+                                                <span style="display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 10px;border-radius:999px;background:{{ $destinoCostura === 'logo' ? '#dbeafe' : '#fef3c7' }};color:{{ $destinoCostura === 'logo' ? '#1d4ed8' : '#92400e' }};font-size:12px;font-weight:700;white-space:nowrap;">
+                                                    {{ $destinoCostura === 'logo' ? 'Logo' : 'Empacar' }}
+                                                </span>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td>#{{ $identificadorRecibo }}</td>
                                     <td>{{ $clienteReferencia }}</td>

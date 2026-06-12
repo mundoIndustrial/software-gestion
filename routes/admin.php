@@ -82,6 +82,7 @@ Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion,vi
 
 Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion,visualizador_talleres,supervisor_pedidos'])->prefix('entrada')->name('entrada.')->group(function () {
     Route::get('/', [App\Http\Controllers\Admin\EntradaCosturaController::class, 'index'])->name('index');
+    Route::post('/{registro}/destino', [App\Http\Controllers\Admin\EntradaCosturaController::class, 'registrarDestino'])->name('registrar-destino');
 });
 
 Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion'])->prefix('talleres')->name('talleres.')->group(function () {

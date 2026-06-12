@@ -19,6 +19,7 @@ class PrendaReciboCompletado extends Model
         'id_parcial',
         'numero_recibo',
         'area',
+        'destino_costura',
         'nombre_operario',
         'fecha_completado',
         'tallas_control_calidad',

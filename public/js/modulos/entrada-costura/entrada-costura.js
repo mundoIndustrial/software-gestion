@@ -37,6 +37,7 @@ function initEntradaCosturaSidebar() {
 function initEntradaCosturaRecibos() {
     const mainContainer = document.querySelector('.main-container');
     const apiRoute = mainContainer?.dataset?.routeApiReciboCompleto || '';
+    const registrarDestinoRoute = mainContainer?.dataset?.routeRegistrarDestino || '';
 
     document.addEventListener('click', async function (event) {
         const button = event.target.closest('.btn-ver-recibo-completo');
@@ -132,6 +133,86 @@ function initEntradaCosturaRecibos() {
             if (typeof Swal !== 'undefined') {
                 Swal.fire('Error', error.message || 'No se pudo abrir el recibo', 'error');
             }
+        }
+    });
+
+    document.addEventListener('click', async function (event) {
+        const button = event.target.closest('.btn-registrar-destino-entrada');
+        if (!button) {
+            return;
+        }
+
+        const registroId = String(button.dataset.registroId || '').trim();
+        const destinoActual = String(button.dataset.destinoCostura || '').trim().toLowerCase();
+        if (!registroId) {
+            return;
+        }
+
+        const resultado = await Swal.fire({
+            title: 'Registrar destino',
+            text: 'Selecciona el destino de este recibo.',
+            input: 'radio',
+            inputOptions: {
+                logo: 'Logo',
+                empacar: 'Empacar',
+            },
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Debes seleccionar un destino';
+                }
+                return null;
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Guardar',
+            cancelButtonText: 'Cancelar',
+            customClass: {
+                popup: 'swal-wide',
+            },
+            didOpen: () => {
+                if (!destinoActual) {
+                    return;
+                }
+
+                const radio = document.querySelector(`.swal2-radio input[value="${destinoActual}"]`);
+                if (radio) {
+                    radio.checked = true;
+                }
+            },
+        });
+
+        if (!resultado.isConfirmed || !resultado.value) {
+            return;
+        }
+
+        if (!registrarDestinoRoute) {
+            Swal.fire('Error', 'No se encontró la ruta para registrar el destino.', 'error');
+            return;
+        }
+
+        try {
+            const url = new URL(registrarDestinoRoute.replace('__REGISTRO__', registroId), window.location.origin);
+            const response = await fetch(url.toString(), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({
+                    destino: resultado.value,
+                }),
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data?.success) {
+                throw new Error(data?.message || 'No se pudo registrar el destino');
+            }
+
+            await Swal.fire('Guardado', data.message || 'Destino registrado correctamente', 'success');
+            window.location.reload();
+        } catch (error) {
+            console.error('Error registrando destino:', error);
+            Swal.fire('Error', error.message || 'No se pudo registrar el destino', 'error');
         }
     });
 }
