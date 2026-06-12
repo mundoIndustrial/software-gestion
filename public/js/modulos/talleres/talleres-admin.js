@@ -10,6 +10,8 @@ let currentState = {
     ordenesTab: 'pedidos'
 };
 
+let talleresListAbortController = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     initTalleresSearch();
     if (typeof window.TalleresOrdenes?.initOrdenesTabs === 'function') {
@@ -438,26 +440,9 @@ function initTalleresSearch() {
 
         toggleClear();
         
-        // Búsqueda en tiempo real con de-bounce
-        let searchTimeout;
+        // La búsqueda se ejecuta solo al enviar el formulario o presionar Enter.
         searchInput.addEventListener('input', function() {
             toggleClear();
-            clearTimeout(searchTimeout);
-            
-            const searchTerm = this.value.trim();
-            
-            searchTimeout = setTimeout(() => {
-                if (window.TalleresOrdenes?.handleOrdenesSearch(searchTerm, 1)) {
-                    return;
-                }
-                const url = new URL(window.location.href);
-                if (searchTerm) url.searchParams.set('search', searchTerm);
-                else url.searchParams.delete('search');
-                url.searchParams.delete('page');
-                window.history.pushState({ view: 'talleres', status: currentState.activeTab }, '', url.toString());
-
-                performRealtimeSearch(searchTerm, apiRoute);
-            }, 300);
         });
         
         // Limpiar búsqueda preservando el tab activo
@@ -487,6 +472,12 @@ function performRealtimeSearch(searchTerm, apiRoute) {
     const talleresRows = document.getElementById('talleresRows');
     const paginationContainer = document.querySelector('.pagination-container');
     
+    if (talleresListAbortController) {
+        talleresListAbortController.abort();
+    }
+    const searchController = new AbortController();
+    talleresListAbortController = searchController;
+    
     // Mostrar estado de carga
     talleresRows.innerHTML = '<tr><td colspan="5" class="table-empty-state"><div class="loading"><div class="loading-spinner"></div><p>Buscando talleres...</p></div></td></tr>';
     
@@ -496,9 +487,12 @@ function performRealtimeSearch(searchTerm, apiRoute) {
     url.searchParams.append('per_page', 15);
     url.searchParams.append('status', currentState.activeTab || 'activos');
     
-    fetch(url.toString())
+    fetch(url.toString(), { signal: searchController.signal })
         .then(response => response.json())
         .then(data => {
+            if (searchController.signal.aborted) {
+                return;
+            }
             if (!data.success || !data.data || data.data.length === 0) {
                 talleresRows.innerHTML = '<tr><td colspan="5" class="table-empty-state">No se encontraron talleres que coincidan con "' + escapeHtml(searchTerm) + '"</td></tr>';
                 paginationContainer.innerHTML = '';
@@ -522,6 +516,9 @@ function performRealtimeSearch(searchTerm, apiRoute) {
             initTalleresPaginationEvents(searchTerm);
         })
         .catch(error => {
+            if (error && error.name === 'AbortError') {
+                return;
+            }
             console.error('Error en búsqueda:', error);
             talleresRows.innerHTML = '<tr><td colspan="5" class="table-empty-state">Error al buscar talleres. Intenta de nuevo.</td></tr>';
             paginationContainer.innerHTML = '';
@@ -606,6 +603,12 @@ function performTalleresPaginationSearch(searchTerm, page, apiRoute) {
     const talleresRows = document.getElementById('talleresRows');
     const paginationContainer = document.querySelector('.pagination-container');
     
+    if (talleresListAbortController) {
+        talleresListAbortController.abort();
+    }
+    const pageController = new AbortController();
+    talleresListAbortController = pageController;
+    
     // Mostrar estado de carga
     talleresRows.innerHTML = '<tr><td colspan="5" class="table-empty-state"><div class="loading"><div class="loading-spinner"></div><p>Cargando página...</p></div></td></tr>';
     
@@ -616,9 +619,12 @@ function performTalleresPaginationSearch(searchTerm, page, apiRoute) {
     url.searchParams.append('page', page);
     url.searchParams.append('status', currentState.activeTab || 'activos');
     
-    fetch(url.toString())
+    fetch(url.toString(), { signal: pageController.signal })
         .then(response => response.json())
         .then(data => {
+            if (pageController.signal.aborted) {
+                return;
+            }
             if (!data.success || !data.data || data.data.length === 0) {
                 talleresRows.innerHTML = '<tr><td colspan="5" class="table-empty-state">No hay resultados en esta página.</td></tr>';
                 paginationContainer.innerHTML = '';
@@ -642,6 +648,9 @@ function performTalleresPaginationSearch(searchTerm, page, apiRoute) {
             initTalleresPaginationEvents(searchTerm);
         })
         .catch(error => {
+            if (error && error.name === 'AbortError') {
+                return;
+            }
             console.error('Error en búsqueda paginada:', error);
             talleresRows.innerHTML = '<tr><td colspan="5" class="table-empty-state">Error al cargar la página. Intenta de nuevo.</td></tr>';
             paginationContainer.innerHTML = '';
