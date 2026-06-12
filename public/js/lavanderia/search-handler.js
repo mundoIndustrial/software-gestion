@@ -7,6 +7,7 @@ class SearchHandler {
     constructor(apiSearchUrl) {
         this.apiSearchUrl = apiSearchUrl;
         this.currentRecibo = null;
+        this.reciboCache = {};
     }
 
     /**
@@ -62,6 +63,12 @@ class SearchHandler {
         const results = document.querySelector('.autocomplete-results');
         const searchInput = document.getElementById('searchRecibo');
         
+        // Almacenar los datos en memoria en lugar de en atributos HTML
+        this.reciboCache = {};
+        recibos.forEach(recibo => {
+            this.reciboCache[recibo.id] = recibo;
+        });
+        
         results.innerHTML = recibos.map(recibo => {
             // Determinar color según tipo de recibo
             let colorTipo = '#2450ef'; // Azul para COSTURA
@@ -73,7 +80,7 @@ class SearchHandler {
             }
             
             return `
-            <div class="autocomplete-item" data-recibo-id="${recibo.id}" data-recibo-data='${JSON.stringify(recibo)}'>
+            <div class="autocomplete-item" data-recibo-id="${recibo.id}">
                 <div style="display: flex; justify-content: space-between; align-items: start; gap: 8px;">
                     <div style="flex: 1;">
                         <strong style="color: #1e293b; display: block; margin-bottom: 2px;">
@@ -112,8 +119,13 @@ class SearchHandler {
      * Selecciona un recibo del autocomplete
      */
     selectRecibo(item) {
-        const reciboId = item.dataset.reciboId;
-        const reciboData = JSON.parse(item.dataset.reciboData);
+        const reciboId = parseInt(item.dataset.reciboId, 10);
+        const reciboData = this.reciboCache[reciboId];
+        
+        if (!reciboData) {
+            console.error('Recibo no encontrado en cache:', reciboId);
+            return;
+        }
         
         this.currentRecibo = reciboData;
 

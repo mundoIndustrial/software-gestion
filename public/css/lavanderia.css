@@ -1764,3 +1764,126 @@
         font-size: 12px;
     }
 }
+
+
+/* ============================================
+   SELECTOR DE TIPO DE MOVIMIENTO - RADIOS CIRCULARES
+   ============================================ */
+.tipo-movimiento-selector {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.radio-circular {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+    flex: 1;
+}
+
+.radio-circular input[type="radio"] {
+    display: none;
+}
+
+.radio-circle {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #e2e8f0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+    position: relative;
+    background: white;
+}
+
+.radio-circular input[type="radio"]:checked + .radio-circle {
+    border-color: #2450ef;
+    background: #2450ef;
+    box-shadow: 0 0 0 4px rgba(36, 80, 239, 0.1);
+}
+
+.radio-circular input[type="radio"]:checked + .radio-circle::after {
+    content: '✓';
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    position: absolute;
+}
+
+.radio-circle::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #2450ef;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.radio-circular input[type="radio"]:checked + .radio-circle::before {
+    opacity: 1;
+}
+
+.radio-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+    transition: color 0.3s ease;
+}
+
+.radio-circular:hover .radio-circle {
+    border-color: #cbd5e1;
+}
+
+.radio-circular input[type="radio"]:checked + .radio-circle {
+    border-color: #2450ef;
+}
+
+.radio-circular input[type="radio"]:checked ~ .radio-label {
+    color: #2450ef;
+}
+
+@media (max-width: 768px) {
+    .tipo-movimiento-selector {
+        gap: 16px;
+        flex-direction: column;
+    }
+
+    .radio-circular {
+        flex: 1;
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        background: white;
+        transition: all 0.3s ease;
+    }
+
+    .radio-circular:hover {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+    }
+
+    .radio-circular input[type="radio"]:checked + .radio-circle {
+        box-shadow: 0 0 0 0;
+    }
+
+    .radio-circular input[type="radio"]:checked {
+        display: none;
+    }
+
+    .radio-circular input[type="radio"]:checked ~ .radio-label {
+        color: #2450ef;
+    }
+
+    .radio-circular:has(input[type="radio"]:checked) {
+        border-color: #2450ef;
+        background: #f0f4ff;
+    }
+}

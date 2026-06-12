@@ -51,6 +51,31 @@ class LavanderiaManager {
      * Configura los event listeners del DOM
      */
     setupEventListeners() {
+        // Sincronizar radios circulares con select oculto
+        const radioButtons = document.querySelectorAll('input[name="tipoMovimiento"]');
+        const selectTipoMovimiento = document.getElementById('selectTipoMovimiento');
+
+        if (radioButtons.length > 0) {
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    if (selectTipoMovimiento && e.target.checked) {
+                        selectTipoMovimiento.value = e.target.value;
+                        console.log('[LavanderiaManager] Tipo de movimiento actualizado a:', e.target.value);
+                    }
+                });
+            });
+        }
+
+        // Sincronizar select con radios (para compatibilidad)
+        if (selectTipoMovimiento) {
+            selectTipoMovimiento.addEventListener('change', (e) => {
+                const radio = document.querySelector(`input[name="tipoMovimiento"][value="${e.target.value}"]`);
+                if (radio) {
+                    radio.checked = true;
+                }
+            });
+        }
+
         // Búsqueda de movimientos
         const searchMovimientosInput = document.getElementById('searchMovimientosInput');
         const searchMovimientosClear = document.getElementById('searchMovimientosClear');

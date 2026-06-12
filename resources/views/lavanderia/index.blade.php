@@ -1,4 +1,4 @@
-﻿@extends('layouts.lavanderia')
+@extends('layouts.lavanderia')
 
 @section('content')
 <!-- LOADING SCREEN -->
@@ -107,7 +107,20 @@
             <!-- Tipo de Movimiento -->
             <div class="form-group">
                 <label class="form-label">Tipo de Movimiento</label>
-                <select id="selectTipoMovimiento" class="form-select">
+                <div class="tipo-movimiento-selector">
+                    <label class="radio-circular">
+                        <input type="radio" name="tipoMovimiento" value="SALIDA" checked>
+                        <span class="radio-circle"></span>
+                        <span class="radio-label">Salida</span>
+                    </label>
+                    <label class="radio-circular">
+                        <input type="radio" name="tipoMovimiento" value="ENTRADA">
+                        <span class="radio-circle"></span>
+                        <span class="radio-label">Entrada</span>
+                    </label>
+                </div>
+                <!-- Input oculto para compatibilidad con el resto del código -->
+                <select id="selectTipoMovimiento" class="form-select" style="display: none;">
                     <option value="SALIDA">Salida</option>
                     <option value="ENTRADA">Entrada</option>
                 </select>
@@ -172,18 +185,16 @@
             </div>
 
             <!-- Recibos Seleccionados con Tallas -->
-            <div style="margin-top: 24px;">
+            <div style="margin-top: 24px; display: none;">
                 <label class="form-label">Recibos Agregados</label>
                 <div id="recibosSeleccionadosContainer" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; min-height: 100px; background: #f8fafc;">
-                    <p style="color: #94a3b8; text-align: center; margin: 0;">No hay recibos agregados</p>
                 </div>
             </div>
 
             <!-- Prendas Manuales Agregadas -->
-            <div style="margin-top: 24px;">
+            <div style="margin-top: 24px; display: none;">
                 <label class="form-label">Prendas Manuales Agregadas</label>
                 <div id="prendasManualContainer" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; min-height: 100px; background: #f8fafc;">
-                    <p style="color: #94a3b8; text-align: center; margin: 0;">No hay prendas manuales agregadas</p>
                 </div>
             </div>
 

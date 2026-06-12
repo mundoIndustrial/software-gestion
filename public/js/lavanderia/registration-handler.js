@@ -161,10 +161,20 @@ class RegistrationHandler {
         if (!container) return;
 
         const recibos = this.multiReceiptHandler.selectedRecibos;
+        const containerSection = container.closest('div') ? container.parentElement : container;
 
         if (recibos.length === 0) {
-            container.innerHTML = '<p style="color: #94a3b8; text-align: center; margin: 0;">No hay recibos agregados</p>';
+            // Ocultar todo el contenedor si no hay recibos
+            if (containerSection && containerSection.style) {
+                containerSection.style.display = 'none';
+            }
+            container.innerHTML = '';
             return;
+        }
+
+        // Mostrar el contenedor cuando hay recibos
+        if (containerSection && containerSection.style) {
+            containerSection.style.display = 'block';
         }
 
         container.innerHTML = recibos.map(recibo => {
@@ -629,12 +639,20 @@ class RegistrationHandler {
         
         const container = document.getElementById('recibosSeleccionadosContainer');
         if (container) {
-            container.innerHTML = '<p style="color: #94a3b8; text-align: center; margin: 0;">No hay recibos agregados</p>';
+            const containerSection = container.parentElement;
+            if (containerSection && containerSection.style) {
+                containerSection.style.display = 'none';
+            }
+            container.innerHTML = '';
         }
 
         const containerManual = document.getElementById('prendasManualContainer');
         if (containerManual) {
-            containerManual.innerHTML = '<p style="color: #94a3b8; text-align: center; margin: 0;">No hay prendas manuales agregadas</p>';
+            const containerManualSection = containerManual.parentElement;
+            if (containerManualSection && containerManualSection.style) {
+                containerManualSection.style.display = 'none';
+            }
+            containerManual.innerHTML = '';
         }
 
         this.renderManualPrendaResumen();
@@ -1192,16 +1210,28 @@ class RegistrationHandler {
 
     /**
      * Renderiza las prendas manuales agregadas
+    /**
+     * Renderiza las prendas manuales agregadas
      */
     renderManualPrendas() {
         const container = document.getElementById('prendasManualContainer');
         if (!container) return;
 
         const prendas = this.manualPrendaHandler.getAllManualPrendas();
+        const containerSection = container.parentElement;
 
         if (prendas.length === 0) {
-            container.innerHTML = '<p style="color: #94a3b8; text-align: center; margin: 0;">No hay prendas manuales agregadas</p>';
+            // Ocultar el contenedor si no hay prendas manuales
+            if (containerSection && containerSection.style) {
+                containerSection.style.display = 'none';
+            }
+            container.innerHTML = '';
             return;
+        }
+
+        // Mostrar el contenedor cuando hay prendas manuales
+        if (containerSection && containerSection.style) {
+            containerSection.style.display = 'block';
         }
 
         container.innerHTML = prendas.map(prenda => {
