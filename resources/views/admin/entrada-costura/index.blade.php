@@ -280,6 +280,11 @@
                     <span class="material-symbols-rounded">arrow_back</span>
                     <span class="nav-label">Volver</span>
                 </a>
+            @elseif(auth()->user()?->hasRole('supervisor_pedidos'))
+                <a href="{{ route('supervisor-pedidos.index') }}" class="sidebar-item" id="navVolverSupervisorPedidos" aria-label="Volver a Supervisor de Pedidos">
+                    <span class="material-symbols-rounded">arrow_back</span>
+                    <span class="nav-label">Volver</span>
+                </a>
             @endif
             @if(auth()->user()?->hasRole('visualizador_talleres'))
                 <div class="sidebar-group">
@@ -320,10 +325,12 @@
                 <span class="material-symbols-rounded">assignment_return</span>
                 <span class="nav-label">Entrada Costura</span>
             </a>
-            <a href="{{ route('seguimiento-lavanderia.index') }}" class="sidebar-item" aria-label="Ir a Lavandería">
-                <span class="material-symbols-rounded">local_laundry_service</span>
-                <span class="nav-label">Lavandería</span>
-            </a>
+            @unless(auth()->user()?->hasRole('supervisor_pedidos'))
+                <a href="{{ route('seguimiento-lavanderia.index') }}" class="sidebar-item" aria-label="Ir a Lavandería">
+                    <span class="material-symbols-rounded">local_laundry_service</span>
+                    <span class="nav-label">Lavandería</span>
+                </a>
+            @endunless
         </nav>
     </aside>
 

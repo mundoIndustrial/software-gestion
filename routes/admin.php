@@ -80,7 +80,7 @@ Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion,vi
     Route::get('/api/prestamos/{tipo}/{id}/detalle', [App\Http\Controllers\Admin\TalleresController::class, 'apiDetallePrestamo'])->name('api.prestamos.detalle');
 });
 
-Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion,visualizador_talleres'])->prefix('entrada')->name('entrada.')->group(function () {
+Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion,visualizador_talleres,supervisor_pedidos'])->prefix('entrada')->name('entrada.')->group(function () {
     Route::get('/', [App\Http\Controllers\Admin\EntradaCosturaController::class, 'index'])->name('index');
 });
 

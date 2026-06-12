@@ -124,6 +124,14 @@
                     </ul>
                 </li>
                 <li class="menu-item">
+                    <a href="{{ route('entrada.index', ['page' => 1]) }}"
+                       class="menu-link {{ request()->routeIs('entrada.*') ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">move_to_inbox</span>
+                        <span class="menu-label">Entradas Costura</span>
+                    </a>
+                </li>
+                <li class="menu-item">
                     <a href="{{ route('supervisor-pedidos.entregas-recibidas') }}"
                        class="menu-link {{ request()->routeIs('supervisor-pedidos.entregas-recibidas') ? 'active' : '' }}"
                        style="display:flex;align-items:center;gap:0.5rem;">
