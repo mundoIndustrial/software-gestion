@@ -711,6 +711,12 @@ class ReciboCorteBodegaController extends Controller
     public function showParcial($id)
     {
         $parcial = DB::table('recibo_por_partes as rpp')
+            ->leftJoin('consecutivos_recibos_pedidos as crp_base', function ($join) {
+                $join->on('rpp.consecutivo_original', '=', 'crp_base.consecutivo_actual')
+                    ->where('crp_base.tipo_recibo', '=', 'CORTE-PARA-BODEGA')
+                    ->whereColumn('crp_base.prenda_bodega_id', 'rpp.prenda_pedido_id');
+            })
+            ->leftJoin('prenda_bodega as pb', 'crp_base.prenda_bodega_id', '=', 'pb.id')
             ->leftJoin('prendas_pedido as pp', 'rpp.prenda_pedido_id', '=', 'pp.id')
             ->where('rpp.id', $id)
             ->select(
@@ -718,8 +724,10 @@ class ReciboCorteBodegaController extends Controller
                 'rpp.consecutivo_parcial',
                 'rpp.tipo_recibo',
                 'rpp.created_at',
-                'pp.nombre_prenda',
-                'pp.descripcion as descripcion_prenda'
+                DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) = 'CORTE-PARA-BODEGA' THEN COALESCE(pb.nombre, 'PRENDA') ELSE COALESCE(pp.nombre_prenda, 'PRENDA') END as nombre_prenda"),
+                DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) = 'CORTE-PARA-BODEGA' THEN COALESCE(pb.descripcion, '') ELSE COALESCE(pp.descripcion, '') END as descripcion_prenda"),
+                DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) = 'CORTE-PARA-BODEGA' THEN NULL ELSE rpp.pedido_produccion_id END as pedido_produccion_id"),
+                DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) = 'CORTE-PARA-BODEGA' THEN NULL ELSE rpp.prenda_pedido_id END as prenda_pedido_id")
             )
             ->first();
 

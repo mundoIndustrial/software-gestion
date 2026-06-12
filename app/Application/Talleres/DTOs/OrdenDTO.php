@@ -19,6 +19,7 @@ class OrdenDTO
     public array $distribucionDetalles;
     public ?int $pedidoProduccionId;
     public ?int $prendaId;
+    public ?int $prendaBodegaId;
     public ?string $fechaSalida;
 
     public function __construct(
@@ -37,6 +38,7 @@ class OrdenDTO
         array $distribucionDetalles = [],
         ?int $pedidoProduccionId = null,
         ?int $prendaId = null,
+        ?int $prendaBodegaId = null,
         ?string $fechaSalida = null
     ) {
         $this->id = $id;
@@ -54,6 +56,7 @@ class OrdenDTO
         $this->distribucionDetalles = $distribucionDetalles;
         $this->pedidoProduccionId = $pedidoProduccionId;
         $this->prendaId = $prendaId;
+        $this->prendaBodegaId = $prendaBodegaId;
         $this->fechaSalida = $fechaSalida;
     }
 
@@ -76,6 +79,7 @@ class OrdenDTO
             'distribucion' => $this->distribucion,
             'pedido_produccion_id' => $this->pedidoProduccionId,
             'prenda_id' => $this->prendaId,
+            'prenda_bodega_id' => $this->prendaBodegaId,
             'fecha_salida' => $this->fechaSalida
         ];
     }

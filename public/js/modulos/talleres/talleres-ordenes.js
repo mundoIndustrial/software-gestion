@@ -130,10 +130,12 @@ function showOrdenes(search = '', page = 1, tab = 'pedidos') {
                     <tr class="${rowClass}" data-orden-id="${orden.id}">
                         <td class="col-acciones">
                             <button class="btn-ver-recibo-completo"
+                                data-recibo-id="${orden.id}"
                                 data-numero-recibo="${orden.numero_recibo}"
                                 data-tipo-recibo="${orden.tipo_recibo}"
                                 data-pedido-produccion-id="${orden.pedido_produccion_id ?? ''}"
                                 data-prenda-id="${orden.prenda_id ?? ''}"
+                                data-prenda-bodega-id="${orden.prenda_bodega_id ?? ''}"
                                 title="Ver recibo completo">
                                 <span class="material-symbols-rounded">visibility</span>
                             </button>
@@ -197,13 +199,20 @@ function showOrdenes(search = '', page = 1, tab = 'pedidos') {
                         const tallas = partesPorNumero[numeroParte];
                         const reciboParcialId = tallas.find(t => t?.recibo_parcial_id)?.recibo_parcial_id || '';
                         const fechaSalidaParte = tallas.find(t => t?.fecha_salida)?.fecha_salida || '';
+                        const estadoParte = String(tallas.find(t => t?.estado)?.estado || '').trim().toUpperCase();
+                        const esAnulada = ['ANULADA', 'ANULADO'].includes(estadoParte);
                         html += `
-                            <div class="rama-parte">
-                                <div class="rama-parte-header">
+                            <div class="rama-parte" style="${esAnulada ? 'border: 1px solid #fecaca; background: #fff1f2; border-left: 4px solid #ef4444;' : ''}">
+                                <div class="rama-parte-header" style="${esAnulada ? 'background: #ffe4e6; border-bottom: 1px solid #fecaca;' : ''}">
                                     <span class="rama-parte-numero">${numeroParte}</span>
-                                    <span class="rama-parte-fecha" style="font-size: 12px; color: #64748b;">
+                                    <span class="rama-parte-fecha" style="font-size: 12px; color: ${esAnulada ? '#b91c1c' : '#64748b'};">
                                         ${formatFechaSalida(fechaSalidaParte)}
                                     </span>
+                                    ${esAnulada ? `
+                                        <span style="display:inline-flex; align-items:center; padding: 4px 10px; border-radius: 999px; background: #ef4444; color: white; font-size: 11px; font-weight: 700; text-transform: uppercase;">
+                                            Anulada
+                                        </span>
+                                    ` : ''}
                                     ${reciboParcialId ? `
                                         <button
                                             type="button"
@@ -219,28 +228,41 @@ function showOrdenes(search = '', page = 1, tab = 'pedidos') {
                                         </button>
                                     ` : ''}
                                 </div>
-                                <div class="rama-tallas">`;
-                        
-                        tallas.forEach((detalle, index) => {
-                            html += `
-                                <div class="rama-talla-item">
-                                    <div class="rama-talla-content">
-                                        <span class="talla-nombre">${detalle.talla}</span>
-                                        <span class="talla-cantidad">${detalle.cantidad}</span>
-                                        <div class="talla-progreso">
-                                            <span class="progreso-text">${detalle.cantidad_entregada} / ${detalle.cantidad}</span>
-                                            <span class="progreso-percentage">${detalle.porcentaje}%</span>
-                                            <div class="progress-bar-wrapper">
-                                                <div class="progress-bar-fill" style="width: ${detalle.porcentaje}%; background: ${getProgressColor(detalle.porcentaje)}"></div>
-                                            </div>
-                                        </div>
-                                        <span class="talla-encargado">${detalle.taller_nombre}</span>
+                                ${esAnulada ? `
+                                    <div style="padding: 10px 14px 0 14px; color: #b91c1c; font-weight: 700; font-size: 12px;">
+                                        Esta distribucion fue anulada
                                     </div>
-                                </div>
-                            `;
+                                ` : ''}
+                                <div class="rama-tallas" style="overflow-x: auto;">
+                                    <table style="width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid ${esAnulada ? '#fecaca' : '#e2e8f0'};">
+                                        <thead>
+                                            <tr style="background: ${esAnulada ? '#fff1f2' : '#f8fafc'}; border-bottom: 1px solid ${esAnulada ? '#fecaca' : '#e2e8f0'};">
+                                                <th style="padding: 10px 12px; text-align: left; font-size: 12px; font-weight: 800; color: ${esAnulada ? '#b91c1c' : '#475569'}; text-transform: uppercase;">Género</th>
+                                                <th style="padding: 10px 12px; text-align: left; font-size: 12px; font-weight: 800; color: ${esAnulada ? '#b91c1c' : '#475569'}; text-transform: uppercase;">Talla</th>
+                                                <th style="padding: 10px 12px; text-align: left; font-size: 12px; font-weight: 800; color: ${esAnulada ? '#b91c1c' : '#475569'}; text-transform: uppercase;">Color</th>
+                                                <th style="padding: 10px 12px; text-align: center; font-size: 12px; font-weight: 800; color: ${esAnulada ? '#b91c1c' : '#475569'}; text-transform: uppercase;">Cantidad</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>`;
+
+                        tallas.forEach((detalle, index) => {
+                            const genero = String(detalle.genero || '-').trim();
+                            const talla = String(detalle.talla || '-').trim();
+                            const color = String(detalle.color_nombre || '-').trim();
+                            const cantidad = Number(detalle.cantidad || 0);
+                            html += `
+                                            <tr style="border-bottom: 1px solid ${esAnulada ? '#fee2e2' : '#e2e8f0'}; background: ${esAnulada ? (index % 2 === 0 ? '#fff' : '#fff7f7') : (index % 2 === 0 ? '#fff' : '#f8fafc')};">
+                                                <td style="padding: 10px 12px; font-size: 13px; color: ${esAnulada ? '#7f1d1d' : '#334155'}; font-weight: 700;">${escapeHtml(genero)}</td>
+                                                <td style="padding: 10px 12px; font-size: 13px; color: ${esAnulada ? '#7f1d1d' : '#334155'}; font-weight: 700;">${escapeHtml(talla)}</td>
+                                                <td style="padding: 10px 12px; font-size: 13px; color: ${esAnulada ? '#7f1d1d' : '#334155'};">${escapeHtml(color)}</td>
+                                                <td style="padding: 10px 12px; text-align: center; font-size: 14px; color: ${esAnulada ? '#7f1d1d' : '#0f172a'}; font-weight: 800;">${cantidad}</td>
+                                            </tr>
+                                        `;
                         });
-                        
+
                         html += `
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         `;
@@ -344,6 +366,7 @@ function initReciboCompletoEvents() {
             const tipoRecibo = String(this.dataset.tipoRecibo || '').trim().toUpperCase();
             const pedidoProduccionId = String(this.dataset.pedidoProduccionId || '').trim();
             const prendaId = String(this.dataset.prendaId || '').trim();
+            const prendaBodegaId = String(this.dataset.prendaBodegaId || '').trim();
             if (!numeroRecibo || !tipoRecibo) return;
             if (!['COSTURA', 'CORTE-PARA-BODEGA'].includes(tipoRecibo)) {
                 Swal.fire('No disponible', 'Este recibo no se puede abrir desde la vista de Entrada.', 'info');
@@ -389,6 +412,25 @@ function initReciboCompletoEvents() {
                     applyReciboFechaToCosturaModal(numeroRecibo, tipoRecibo, apiRoute);
                     aplicarNormalizacionModal();
                     return;
+                }
+
+                if (tipoRecibo === 'CORTE-PARA-BODEGA') {
+                    if (prendaBodegaId && typeof window.openReciboCorteBodegaModal === 'function') {
+                        window.openReciboCorteBodegaModal(prendaBodegaId);
+                        return;
+                    }
+
+                    if (typeof window.openReciboCorteBodegaParcialModal === 'function') {
+                        window.openReciboCorteBodegaParcialModal(reciboId, tipoRecibo);
+                        return;
+                    }
+
+                    if (typeof window.openReciboCorteBodegaModal === 'function') {
+                        window.openReciboCorteBodegaModal(reciboId);
+                        return;
+                    }
+
+                    throw new Error('No se pudo abrir el recibo de bodega');
                 }
 
                 if (!apiRoute) {
@@ -924,41 +966,35 @@ function cargarEntregasAcordeon(reciboId, esParcial, reciboNumero, tipoRecibo, c
                 return;
             }
 
-            const fecha = data.fecha_salida
-                ? formatFechaAcordeon(data.fecha_salida)
-                : ((data.dia && data.mes && data.ano)
-                    ? `${String(data.dia).padStart(2, '0')}/${String(data.mes).padStart(2, '0')}/${String(data.ano)}`
-                    : 'N/A');
             const totalAsignado = Number(data.total || 0);
-
-            const descripcion = data.descripcion || 'Sin descripcion';
             const historialId = `historial-entregas-${reciboId}-${esParcial ? 'parcial' : 'normal'}`;
 
             let html = '<div style="padding: 20px;">';
             html += `
-                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); table-layout: fixed;">
                     <thead>
                         <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
-                            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Fecha salida</th>
-                            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Descripcion</th>
-                            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Talla</th>
-                            <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Cantidad</th>
+                            <th style="width: 22%; padding: 12px; text-align: center; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Genero</th>
+                            <th style="width: 18%; padding: 12px; text-align: center; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Talla</th>
+                            <th style="width: 40%; padding: 12px; text-align: center; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Color</th>
+                            <th style="width: 20%; padding: 12px; text-align: center; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase;">Cantidad</th>
                         </tr>
                     </thead>
                     <tbody>`;
 
             tallas.forEach((row, index) => {
                 const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+                const genero = row.genero || 'UNISEX';
                 const talla = row.talla || 'N/A';
+                const colorNombre = String(row.color_nombre || row.color || '').trim();
+                const color = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(colorNombre) ? '-' : (colorNombre || '-');
                 const cantidad = Number(row.cantidad || 0);
 
                 html += `<tr style="border-bottom: 1px solid #e2e8f0; background: ${bgColor};">`;
-                if (index === 0) {
-                    html += `<td rowspan="${tallas.length}" style="padding: 12px; font-size: 13px; color: #334155; vertical-align: top; font-weight: 600;">${escapeHtml(formatFechaAcordeon(fecha))}</td>`;
-                    html += `<td rowspan="${tallas.length}" style="padding: 12px; font-size: 13px; color: #334155; vertical-align: top;">${escapeHtml(descripcion)}</td>`;
-                }
-                html += `<td style="padding: 12px; font-size: 13px; color: #334155;">${escapeHtml(talla)}</td>`;
-                html += `<td style="padding: 12px; text-align: center; font-size: 14px; font-weight: 600; color: #2563eb;">${cantidad}</td>`;
+                html += `<td style="padding: 12px; font-size: 13px; color: #334155; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(genero)}</td>`;
+                html += `<td style="padding: 12px; font-size: 13px; color: #334155; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(talla)}</td>`;
+                html += `<td style="padding: 12px; font-size: 13px; color: #334155; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(color)}</td>`;
+                html += `<td style="padding: 12px; text-align: center; font-size: 14px; font-weight: 600; color: #2563eb; vertical-align: middle; white-space: nowrap;">${cantidad}</td>`;
                 html += '</tr>';
             });
 

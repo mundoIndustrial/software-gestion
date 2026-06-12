@@ -78,6 +78,7 @@ class ObtenerDashboardTallerUseCase
                     ->whereRaw("LOWER(TRIM(ppren.proceso)) = 'costura'");
             })
             ->whereIn('rpp.tipo_recibo', ['REFLECTIVO', 'COSTURA', 'CORTE-PARA-BODEGA'])
+            ->whereRaw("LOWER(TRIM(COALESCE(rpp.estado, ''))) NOT IN ('anulada', 'anulado')")
             ->where('ppren.encargado', '=', $nombreTaller)
             ->select(
                 'rpp.id',

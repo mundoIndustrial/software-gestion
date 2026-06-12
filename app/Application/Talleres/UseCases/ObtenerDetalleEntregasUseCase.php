@@ -44,9 +44,9 @@ class ObtenerDetalleEntregasUseCase
                 ->get();
 
             $totalesAsignados = $recibo && strtoupper(trim((string) ($recibo->tipo_recibo ?? ''))) === 'CORTE-PARA-BODEGA'
-                ? DB::table('prenda_tallas_bodega')
-                    ->where('prenda_bodega_id', (int) ($recibo->prenda_bodega_id ?? 0))
-                    ->select('talla', 'genero', 'color', 'cantidad')
+                ? DB::table('recibos_por_partes_tallas')
+                    ->where('recibo_por_partes_id', $reciboId)
+                    ->select('talla', 'genero', 'color_nombre', 'cantidad')
                     ->get()
                 : DB::table('recibos_por_partes_tallas')
                     ->where('recibo_por_partes_id', $reciboId)
@@ -167,6 +167,7 @@ class ObtenerDetalleEntregasUseCase
                     'talla_nombre' => $item['talla'],
                     'genero' => $item['genero'],
                     'color' => $item['color'],
+                    'color_nombre' => $item['color'],
                     'cantidad' => $item['cantidad'],
                     'total_entregado' => $acumulados[$key] ?? 0,
                     'total_asignado' => $mapaTotales[$key] ?? 0,
@@ -197,7 +198,8 @@ class ObtenerDetalleEntregasUseCase
                 'talla' => $entrega->talla,
                 'cantidad' => (int)$entrega->cantidad_entregada,
                 'genero' => $entrega->genero ?? 'UNISEX',
-                'color' => $entrega->color_nombre
+                'color' => $entrega->color_nombre,
+                'color_nombre' => $entrega->color_nombre
             ]];
         }
         
@@ -210,7 +212,8 @@ class ObtenerDetalleEntregasUseCase
                         'talla' => $talla,
                         'cantidad' => (int)$cantidad,
                         'genero' => 'UNISEX',
-                        'color' => null
+                        'color' => null,
+                        'color_nombre' => null
                     ];
                 }
             }

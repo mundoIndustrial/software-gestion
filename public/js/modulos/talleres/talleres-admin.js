@@ -1009,10 +1009,13 @@ function showEntregas(tallerId, reciboId, esParcial, reciboNumero, cliente, pren
                 const semana = semanaGroup[0].grupo;
                 html += '<div class="semana-group">';
                 html += '<div class="semana-header"><span class="material-symbols-rounded">calendar_month</span>' + semana + '</div>';
-                html += '<table class="table-entregas"><thead><tr><th class="col-fecha-salida">FECHA SALIDA</th><th>DESCRIPCIÓN</th><th class="col-genero">GÉNERO</th><th class="col-talla">TALLA</th><th class="col-cantidad">CANT.</th><th>PROGRESO</th><th>PRECIO</th><th class="col-fecha-entrada">FECHA ENTRADA</th></tr></thead><tbody>';
+                html += '<table class="table-entregas" style="table-layout: fixed; width: 100%;"><thead><tr><th class="col-fecha-salida" style="width: 13%; text-align: center;">FECHA SALIDA</th><th style="width: 27%; text-align: center;">DESCRIPCIÓN</th><th class="col-genero" style="width: 12%; text-align: center;">GÉNERO</th><th class="col-talla" style="width: 12%; text-align: center;">TALLA</th><th class="col-cantidad" style="width: 10%; text-align: center;">CANT.</th><th style="width: 16%; text-align: center;">PROGRESO</th><th style="width: 5%; text-align: center;">PRECIO</th><th class="col-fecha-entrada" style="width: 15%; text-align: center;">FECHA ENTRADA</th></tr></thead><tbody>';
 
                 semanaGroup.forEach(entrega => {
-                    const colorMsg = entrega.color ? `<br><small style="color:#64748b">Color: ${entrega.color}</small>` : '';
+                    const colorTexto = String(entrega.color_nombre || entrega.color || '').trim();
+                    const colorMsg = colorTexto && !/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(colorTexto)
+                        ? `<br><small style="color:#64748b">Color: ${colorTexto}</small>`
+                        : '';
                     
                     // Cálculo de progreso
                     const totalEntregado = entrega.total_entregado || 0;
@@ -1021,16 +1024,16 @@ function showEntregas(tallerId, reciboId, esParcial, reciboNumero, cliente, pren
                     
                     html += `
                         <tr>
-                            <td class="col-fecha-salida">${entrega.fecha_salida || '-'}</td>
-                            <td>
-                                <div class="prenda-desc-limit" title="${entrega.descripcion}">
+                            <td class="col-fecha-salida" style="vertical-align: middle; white-space: nowrap;">${entrega.fecha_salida || '-'}</td>
+                            <td style="vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                <div class="prenda-desc-limit" title="${entrega.descripcion}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                     ${entrega.descripcion}
                                     ${colorMsg}
                                 </div>
                             </td>
-                            <td class="col-genero">${entrega.genero || 'UNISEX'}</td>
-                            <td class="col-talla">${entrega.talla_nombre}</td>
-                            <td class="col-cantidad">${entrega.cantidad}<small>UND</small></td>
+                            <td class="col-genero" style="vertical-align: middle; white-space: nowrap;">${entrega.genero || 'UNISEX'}</td>
+                            <td class="col-talla" style="vertical-align: middle; white-space: nowrap;">${entrega.talla_nombre}</td>
+                            <td class="col-cantidad" style="vertical-align: middle; white-space: nowrap;">${entrega.cantidad}<small>UND</small></td>
                             <td>
                                 <div class="progress-container">
                                     <div class="progress-info">

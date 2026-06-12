@@ -183,7 +183,7 @@ class ObtenerOrdenesAsignadasUseCase
             $recibosYaProcesados = [];
             $tallasYaProcesadas = []; // Evitar contar la misma talla múltiples veces
 
-            foreach ($grupo as $recibo) {
+        foreach ($grupo as $recibo) {
                 // Obtener cantidad total solo una vez por número de recibo
                 if (!isset($recibosYaProcesados[$recibo->numero_recibo])) {
                     $cantidadTotalOriginal += $cantidadesTotales[$recibo->numero_recibo] ?? 0;
@@ -191,7 +191,12 @@ class ObtenerOrdenesAsignadasUseCase
                 }
 
                 // Obtener entregas únicas por talla usando numero_recibo (no id)
-                $claveTalla = $recibo->numero_recibo . '|' . $recibo->talla_nombre;
+                $claveTalla = $this->construirClaveTalla(
+                    $recibo->numero_recibo,
+                    (string) ($recibo->talla_nombre ?? ''),
+                    (string) ($recibo->genero_nombre ?? ''),
+                    (string) ($recibo->color_nombre ?? '')
+                );
                 if (!isset($tallasYaProcesadas[$claveTalla])) {
                     $cantidadEntregadaTotal += $entregasPorTalla[$claveTalla] ?? 0;
                     $tallasYaProcesadas[$claveTalla] = true;
@@ -205,6 +210,9 @@ class ObtenerOrdenesAsignadasUseCase
             $distribucionDetalles = $this->obtenerDistribucionDetalles($grupo, $cantidadesTotales, $entregasPorTalla);
 
             // Crear DTO
+            $esReciboBodega = strtoupper(trim((string) ($primerRecibo->tipo_recibo ?? ''))) === 'CORTE-PARA-BODEGA';
+            $prendaBodegaId = isset($primerRecibo->prenda_bodega_id) ? (int) $primerRecibo->prenda_bodega_id : null;
+
             $orden = new OrdenDTO(
                 id: $primerRecibo->id ?? 0,
                 numeroRecibo: $numeroBase,
@@ -219,8 +227,9 @@ class ObtenerOrdenesAsignadasUseCase
                 encargadoDisplay: $esDividido ? 'Distribuido en talleres' : ($primerRecibo->taller_encargado ?? 'Sin asignar'),
                 distribucion: $esDividido ? 'Ver Distribución' : 'No Aplica',
                 distribucionDetalles: $distribucionDetalles,
-                pedidoProduccionId: isset($primerRecibo->pedido_produccion_id) ? (int) $primerRecibo->pedido_produccion_id : null,
-                prendaId: isset($primerRecibo->prenda_id) ? (int) $primerRecibo->prenda_id : null,
+                pedidoProduccionId: $esReciboBodega || !isset($primerRecibo->pedido_produccion_id) ? null : (int) $primerRecibo->pedido_produccion_id,
+                prendaId: $esReciboBodega || !isset($primerRecibo->prenda_id) ? null : (int) $primerRecibo->prenda_id,
+                prendaBodegaId: $esReciboBodega ? $prendaBodegaId : null,
                 fechaSalida: isset($primerRecibo->fecha_salida) ? (string) $primerRecibo->fecha_salida : null
             );
 
@@ -234,6 +243,7 @@ class ObtenerOrdenesAsignadasUseCase
     {
         $distribucion = [];
         $partesPorNumero = [];
+        $esReciboBodega = strtoupper(trim((string) ($grupo[0]->tipo_recibo ?? ''))) === 'CORTE-PARA-BODEGA';
 
         // Agrupar por número de parte
         foreach ($grupo as $recibo) {
@@ -245,29 +255,52 @@ class ObtenerOrdenesAsignadasUseCase
 
         // Procesar cada parte
         foreach ($partesPorNumero as $numeroParte => $recibos) {
-            // Agrupar por talla para evitar duplicados
-            $tallasPorNombre = [];
+            // Agrupar por variante: talla + genero + color en bodega, talla sola en costura
+            $variantesPorClave = [];
             
             foreach ($recibos as $recibo) {
-                $tallaNombre = $recibo->talla_nombre ?? 'N/A';
-                
-                if (!isset($tallasPorNombre[$tallaNombre])) {
-                    $tallasPorNombre[$tallaNombre] = $recibo;
+                $tallaNombre = (string) ($recibo->talla_nombre ?? 'N/A');
+                $generoNombre = (string) ($recibo->genero_nombre ?? '');
+                $colorNombre = (string) ($recibo->color_nombre ?? '');
+                $claveVariante = $esReciboBodega
+                    ? $this->construirClaveTalla($recibo->numero_recibo, $tallaNombre, $generoNombre, $colorNombre)
+                    : $tallaNombre;
+
+                if (!isset($variantesPorClave[$claveVariante])) {
+                    $variantesPorClave[$claveVariante] = $recibo;
                 }
             }
 
-            // Crear distribución para cada talla única
-            foreach ($tallasPorNombre as $tallaNombre => $recibo) {
+            // Crear distribución para cada variante única
+            foreach ($variantesPorClave as $claveVariante => $recibo) {
                 $cantidadTotal = $recibo->cantidad_talla ?? 0;
-                $clave = $recibo->numero_recibo . '|' . $tallaNombre;
+                $tallaNombre = (string) ($recibo->talla_nombre ?? 'N/A');
+                $generoNombre = (string) ($recibo->genero_nombre ?? '');
+                $colorNombre = (string) ($recibo->color_nombre ?? '');
+                $clave = $esReciboBodega
+                    ? $this->construirClaveTalla($recibo->numero_recibo, $tallaNombre, $generoNombre, $colorNombre)
+                    : $recibo->numero_recibo . '|' . $tallaNombre;
                 $cantidadEntregada = $entregasPorTalla[$clave] ?? 0;
+                $estado = strtoupper(trim((string) ($recibo->estado ?? '')));
 
                 $progreso = $this->calculador->calcularProgreso($cantidadEntregada, $cantidadTotal);
+
+                $etiquetaTalla = $esReciboBodega
+                    ? implode(' / ', array_filter([
+                        strtoupper(trim($generoNombre)) ?: null,
+                        strtoupper(trim($colorNombre)) ?: null,
+                        strtoupper(trim($tallaNombre)) ?: null,
+                    ]))
+                    : $tallaNombre;
 
                 $distribucion[] = [
                     'numero_recibo_parte' => $numeroParte,
                     'recibo_parcial_id' => $recibo->id ?? null,
+                    'estado' => $estado,
                     'talla' => $tallaNombre,
+                    'etiqueta_talla' => $etiquetaTalla,
+                    'genero' => $generoNombre,
+                    'color_nombre' => $colorNombre,
                     'cantidad' => $cantidadTotal,
                     'taller_nombre' => $recibo->taller_encargado ?? 'Sin asignar',
                     'cantidad_entregada' => $cantidadEntregada,
@@ -279,5 +312,13 @@ class ObtenerOrdenesAsignadasUseCase
         }
 
         return $distribucion;
+    }
+
+    private function construirClaveTalla(string|int $numeroRecibo, string $talla, string $genero = '', string $color = ''): string
+    {
+        return strtoupper(trim((string) $numeroRecibo)) . '|'
+            . strtoupper(trim($talla)) . '|'
+            . strtoupper(trim($genero)) . '|'
+            . strtoupper(trim($color));
     }
 }

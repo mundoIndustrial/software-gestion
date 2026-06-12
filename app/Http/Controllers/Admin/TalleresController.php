@@ -722,9 +722,9 @@ class TalleresController extends Controller
                         return response()->json(['success' => false, 'message' => 'Prenda no encontrada'], 404);
                     }
 
-                    $tallas = DB::table('prenda_tallas_bodega')
-                        ->where('prenda_bodega_id', $prendaBodegaId)
-                        ->get(['talla', 'genero', 'color', 'cantidad']);
+                    $tallas = DB::table('recibos_por_partes_tallas')
+                        ->where('recibo_por_partes_id', $reciboParcial->id)
+                        ->get(['talla', 'genero', 'color_nombre', 'cantidad']);
 
                     $procesoSalida = DB::table('procesos_prenda')
                         ->where('prenda_bodega_id', $prendaBodegaId)
@@ -752,7 +752,7 @@ class TalleresController extends Controller
                         'tallas' => $tallas->map(fn($t) => [
                             'talla' => $t->talla,
                             'genero' => $t->genero,
-                            'color' => $t->color,
+                            'color_nombre' => $t->color_nombre,
                             'cantidad' => (int) $t->cantidad,
                         ])->toArray(),
                         'total' => (int) $tallas->sum('cantidad'),
@@ -763,7 +763,7 @@ class TalleresController extends Controller
                 $prenda = DB::table('prendas_pedido')->where('id', $reciboParcial->prenda_pedido_id)->first();
                 $tallas = DB::table('recibos_por_partes_tallas')
                     ->where('recibo_por_partes_id', $reciboParcial->id)
-                    ->get(['talla', 'genero', 'color_nombre as color', 'cantidad']);
+                    ->get(['talla', 'genero', 'color_nombre', 'cantidad']);
 
                 $procesoSalida = DB::table('procesos_prenda')
                     ->where('numero_recibo_parcial', $reciboParcial->consecutivo_parcial)
@@ -855,7 +855,7 @@ class TalleresController extends Controller
                     'tallas' => $tallas->map(fn($t) => [
                         'talla' => $t->talla,
                         'genero' => $t->genero,
-                        'color' => $t->color,
+                        'color_nombre' => $t->color_nombre,
                         'cantidad' => (int) $t->cantidad,
                     ])->toArray(),
                     'total' => (int) $tallas->sum('cantidad'),
@@ -890,13 +890,13 @@ class TalleresController extends Controller
             }
 
             $prenda = DB::table('prendas_pedido')->where('id', $reciboBase->prenda_id)->first();
-            $tallasColor = DB::table('prenda_pedido_tallas as ppt')
+                $tallasColor = DB::table('prenda_pedido_tallas as ppt')
                 ->leftJoin('prenda_pedido_talla_colores as ppc', 'ppc.prenda_pedido_talla_id', '=', 'ppt.id')
                 ->where('ppt.prenda_pedido_id', $reciboBase->prenda_id)
                 ->get([
                     'ppt.talla',
                     'ppt.genero',
-                    DB::raw('COALESCE(ppc.color_nombre, "") as color'),
+                    DB::raw('COALESCE(ppc.color_nombre, "") as color_nombre'),
                     DB::raw('COALESCE(ppc.cantidad, ppt.cantidad) as cantidad')
                 ]);
 
@@ -924,12 +924,12 @@ class TalleresController extends Controller
                 'ano' => $fecha->format('Y'),
                 'fecha_salida' => $procesoSalida ? \Carbon\Carbon::parse($procesoSalida)->format('d/m/Y h:i A') : '-',
                 'fecha_entrada' => $fechaEntrada ? \Carbon\Carbon::parse($fechaEntrada)->format('d/m/Y h:i A') : null,
-                'tallas' => $tallasColor->map(fn($t) => [
-                    'talla' => $t->talla,
-                    'genero' => $t->genero,
-                    'color' => $t->color,
-                    'cantidad' => (int) $t->cantidad,
-                ])->toArray(),
+                    'tallas' => $tallasColor->map(fn($t) => [
+                        'talla' => $t->talla,
+                        'genero' => $t->genero,
+                        'color_nombre' => $t->color_nombre,
+                        'cantidad' => (int) $t->cantidad,
+                    ])->toArray(),
                 'total' => (int) $tallasColor->sum('cantidad'),
                 'total_entregado' => $totalEntregado,
             ]);

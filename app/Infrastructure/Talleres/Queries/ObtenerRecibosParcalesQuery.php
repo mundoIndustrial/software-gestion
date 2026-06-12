@@ -24,9 +24,9 @@ class ObtenerRecibosParcalesQuery
             ->leftJoin('pedidos_produccion as ppro', 'rpp.pedido_produccion_id', '=', 'ppro.id')
             ->leftJoin('clientes', 'ppro.cliente_id', '=', 'clientes.id')
             ->leftJoin('consecutivos_recibos_pedidos as crp_base', function ($join) {
-                $join->on('rpp.pedido_produccion_id', '=', 'crp_base.pedido_produccion_id')
-                    ->on('rpp.consecutivo_original', '=', 'crp_base.consecutivo_actual')
-                    ->where('crp_base.tipo_recibo', '=', 'CORTE-PARA-BODEGA');
+                $join->on('rpp.consecutivo_original', '=', 'crp_base.consecutivo_actual')
+                    ->where('crp_base.tipo_recibo', '=', 'CORTE-PARA-BODEGA')
+                    ->whereColumn('crp_base.prenda_bodega_id', 'rpp.prenda_pedido_id');
             })
             ->leftJoin('prenda_bodega as pb', 'crp_base.prenda_bodega_id', '=', 'pb.id')
             ->join('procesos_prenda as ppren', function($join) {
@@ -56,15 +56,19 @@ class ObtenerRecibosParcalesQuery
         return $query->select(
             'rpp.id',
             'rpp.consecutivo_parcial as numero_recibo',
-            'rpp.pedido_produccion_id',
-            'rpp.prenda_pedido_id as prenda_id',
-            DB::raw('COALESCE(pp.nombre_prenda, pb.nombre, "N/A") as nombre_prenda'),
-            DB::raw('COALESCE(pp.descripcion, pb.descripcion, "N/A") as descripcion_prenda'),
-            DB::raw('COALESCE(clientes.nombre, "Bodega") as cliente'),
+            DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) = 'CORTE-PARA-BODEGA' THEN NULL ELSE rpp.pedido_produccion_id END as pedido_produccion_id"),
+            DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) = 'CORTE-PARA-BODEGA' THEN NULL ELSE rpp.prenda_pedido_id END as prenda_id"),
+            DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) = 'CORTE-PARA-BODEGA' THEN COALESCE(pb.id, crp_base.prenda_bodega_id) ELSE NULL END as prenda_bodega_id"),
+            DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) = 'CORTE-PARA-BODEGA' THEN COALESCE(pb.nombre, 'N/A') ELSE COALESCE(pp.nombre_prenda, 'N/A') END as nombre_prenda"),
+            DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) = 'CORTE-PARA-BODEGA' THEN COALESCE(pb.descripcion, 'N/A') ELSE COALESCE(pp.descripcion, 'N/A') END as descripcion_prenda"),
+            DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) = 'CORTE-PARA-BODEGA' THEN 'Bodega' ELSE COALESCE(clientes.nombre, 'Bodega') END as cliente"),
             'rpp.tipo_recibo',
+            'rpp.estado',
             'ppren.encargado as taller_encargado',
             DB::raw('COALESCE(ppren.fecha_de_asignacion_encargado, ppren.created_at) as fecha_salida'),
             'rpt.talla as talla_nombre',
+            'rpt.genero as genero_nombre',
+            'rpt.color_nombre as color_nombre',
             'rpt.cantidad as cantidad_talla',
             DB::raw('1 as es_parcial')
         )->get();
