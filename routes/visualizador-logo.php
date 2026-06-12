@@ -59,6 +59,10 @@ Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin,lider_prod
     // Estadisticas
     Route::get('/estadisticas', [VisualizadorLogoController::class, 'getEstadisticas'])->name('estadisticas');
     
+    // Historial de Logos
+    Route::get('/historial-logos', [VisualizadorLogoController::class, 'historialLogos'])->name('historial-logos');
+    Route::get('/historial-logos/cliente/{clienteId}', [VisualizadorLogoController::class, 'disenosCliente'])->name('historial-logos.cliente');
+    
     // PDF de Logo - Solo puede ver PDFs de logo
     Route::get('/cotizaciones/{id}/pdf-logo', function($id) {
         return redirect()->route('pdf.cotizacion', ['cotizacionId' => $id, 'tipo' => 'logo']);

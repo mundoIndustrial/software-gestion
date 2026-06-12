@@ -34,11 +34,12 @@
             $isRecibosBodega = $currentPath === 'recibos-bodega';
             $isTimelinePedidos = $currentRoute === 'dashboard.timeline-pedidos';
             $isUsersPage = $currentPath === 'users';
+            $isHistorialLogos = $currentRoute === 'visualizador-logo.historial-logos';
             $searchInputId = $isCotizacionesPendientes ? 'searchInput' : 'navSearchInput';
             $searchPlaceholder = $isRecibosBodega
                 ? 'Buscar recibos por número...'
-                : (($isRecibosCostura || $isRecibosReflectivo || $isCotizacionesPendientes) ? 'Buscar recibos por número o cliente...' : ($isUsersPage ? 'Buscar por nombre o email...' : 'Buscar por número o cliente...'));
-            $searchAriaLabel = ($isRecibosCostura || $isRecibosReflectivo || $isRecibosBodega) ? 'Búsqueda de recibos' : ($isCotizacionesPendientes ? 'Búsqueda de cotizaciones' : ($isUsersPage ? 'Búsqueda de usuarios' : 'Búsqueda de órdenes'));
+                : (($isRecibosCostura || $isRecibosReflectivo || $isCotizacionesPendientes) ? 'Buscar recibos por número o cliente...' : ($isUsersPage ? 'Buscar por nombre o email...' : ($isHistorialLogos ? 'Buscar clientes...' : 'Buscar por número o cliente...')));
+            $searchAriaLabel = ($isRecibosCostura || $isRecibosReflectivo || $isRecibosBodega) ? 'Búsqueda de recibos' : ($isCotizacionesPendientes ? 'Búsqueda de cotizaciones' : ($isUsersPage ? 'Búsqueda de usuarios' : ($isHistorialLogos ? 'Búsqueda de clientes' : 'Búsqueda de órdenes')));
         @endphp
 
         {{-- Buscador especial para Timeline de Pedidos (hace GET al servidor) --}}
@@ -105,7 +106,7 @@
                 </button>
             </div>
         </div>
-        @elseif($currentRoute === 'registros.index' || $currentRoute === 'bodega.index' || $currentRoute === 'cotizaciones.pendientes' || $isRecibosCostura || $isRecibosReflectivo || $isRecibosBodega)
+        @elseif($currentRoute === 'registros.index' || $currentRoute === 'bodega.index' || $currentRoute === 'cotizaciones.pendientes' || $isRecibosCostura || $isRecibosReflectivo || $isRecibosBodega || $isHistorialLogos)
         <div class="nav-search-container">
             <div class="nav-search-wrapper">
                 <span class="material-symbols-rounded search-icon" aria-hidden="true">search</span>

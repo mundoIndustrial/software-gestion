@@ -55,6 +55,13 @@
                         <span id="badge-logos-no-revisados" class="badge" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 800; margin-left: auto; display: none;">0</span>
                     </a>
                 </li>
+                <li class="menu-item">
+                    <a href="{{ route('visualizador-logo.historial-logos') }}"
+                       class="menu-link {{ request()->routeIs('visualizador-logo.historial-logos') ? 'active' : '' }}">
+                        <span class="material-symbols-rounded">history</span>
+                        <span class="menu-label">Historial de Logos</span>
+                    </a>
+                </li>
             </ul>
         </div>
 

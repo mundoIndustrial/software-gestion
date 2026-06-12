@@ -533,5 +533,174 @@ final class VisualizadorLogoController extends Controller
             'estadisticas' => $estadisticas,
         ]);
     }
+
+    public function historialLogos(Request $request)
+    {
+        // Obtener clientes con logos confirmados agrupados
+        $clientesConLogos = \App\Models\DisenoLogoPedido::where('estado', 'logo_confirmado')
+            ->with([
+                'proceso.prenda.pedidoProduccion.cliente'
+            ])
+            ->get()
+            ->groupBy(function($diseno) {
+                return $diseno->proceso?->prenda?->pedidoProduccion?->cliente_id;
+            })
+            ->map(function($disenosGrupo, $clienteId) {
+                $primeraInstancia = $disenosGrupo->first();
+                $cliente = $primeraInstancia->proceso?->prenda?->pedidoProduccion?->cliente;
+                
+                return [
+                    'cliente_id' => $clienteId,
+                    'cliente_nombre' => $cliente ?? 'Cliente desconocido',
+                    'cantidad_logos' => $disenosGrupo->count(),
+                    'logos' => $disenosGrupo,
+                ];
+            })
+            ->sortByDesc('cantidad_logos')
+            ->values();
+
+        // Si viene con all=true, retornar todos sin paginación (para búsqueda desde navbar)
+        if ($request->get('all') === 'true') {
+            return view('visualizador-logo.historial-logos', [
+                'clientesConLogos' => $clientesConLogos,
+                'search' => '',
+                'allClientes' => true,
+            ]);
+        }
+
+        // Aplicar filtro de búsqueda si existe
+        $search = $request->get('search', '');
+        if ($search) {
+            $searchLower = strtolower($search);
+            $clientesConLogos = $clientesConLogos->filter(function($cliente) use ($searchLower) {
+                return str_contains(strtolower($cliente['cliente_nombre']), $searchLower);
+            })->values();
+        }
+
+        // Paginar los clientes (9 por página)
+        $perPage = 9;
+        $page = $request->get('page', 1);
+        $total = $clientesConLogos->count();
+        $items = $clientesConLogos->slice(($page - 1) * $perPage, $perPage)->values();
+        
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $page,
+            [
+                'path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(),
+                'query' => $request->query(),
+            ]
+        );
+
+        return view('visualizador-logo.historial-logos', [
+            'clientesConLogos' => $paginator,
+            'search' => $search,
+        ]);
+    }
+
+    public function disenosCliente($clienteId, Request $request)
+    {
+        try {
+            // Obtener todos los diseños confirmados del cliente
+            $disenosCliente = \App\Models\DisenoLogoPedido::where('estado', 'logo_confirmado')
+                ->with([
+                    'proceso.prenda.pedidoProduccion.cliente',
+                    'proceso.tipoProceso',
+                    'novedades.usuario'
+                ])
+                ->get()
+                ->filter(function($diseno) use ($clienteId) {
+                    return $diseno->proceso?->prenda?->pedidoProduccion?->cliente_id == $clienteId;
+                })
+                ->sortByDesc('created_at')
+                ->values();
+
+            // Obtener nombre del cliente
+            if ($disenosCliente->isEmpty()) {
+                $cliente = 'Cliente desconocido';
+            } else {
+                $cliente = $disenosCliente->first()->proceso?->prenda?->pedidoProduccion?->cliente ?? 'Cliente desconocido';
+            }
+
+            // Mapear datos para la vista
+            $disenosFormateados = $disenosCliente->map(function($diseno) {
+                $proceso = $diseno->proceso;
+                $prendaPedido = $proceso?->prenda;
+                $pedido = $prendaPedido?->pedidoProduccion;
+
+                // Resolver número de recibo y tipo
+                $numeroRecibo = $this->resolveNumeroRecibo($diseno);
+                $tipoRecibo = $this->resolveTipoRecibo($diseno);
+
+                return [
+                    'id' => $diseno->id,
+                    'url' => $diseno->url,
+                    'created_at' => $diseno->created_at,
+                    'numero_recibo' => $numeroRecibo,
+                    'tipo_recibo' => $tipoRecibo,
+                    'nombre_prenda' => $prendaPedido?->nombre_prenda ?? '-',
+                    'novedades' => $diseno->novedades,
+                ];
+            });
+
+            // Paginar diseños (6 por página)
+            $perPage = 6;
+            $page = $request->get('page', 1);
+            $total = $disenosFormateados->count();
+            $items = $disenosFormateados->slice(($page - 1) * $perPage, $perPage)->values();
+            
+            $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items,
+                $total,
+                $perPage,
+                $page,
+                [
+                    'path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(),
+                    'query' => $request->query(),
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'cliente_nombre' => $cliente,
+                'cliente_id' => $clienteId,
+                'diseños' => $paginator->items(),
+                'paginacion' => [
+                    'current_page' => $paginator->currentPage(),
+                    'last_page' => $paginator->lastPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                    'from' => $paginator->firstItem(),
+                    'to' => $paginator->lastItem(),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('[VisualizadorLogo] Error en disenosCliente: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cargar los diseños del cliente',
+            ], 500);
+        }
+    }
+
+    private function resolveTipoRecibo(\App\Models\DisenoLogoPedido $diseno): string
+    {
+        $proceso = $diseno->proceso;
+        
+        if (!$proceso) {
+            return 'DESCONOCIDO';
+        }
+
+        return match ($proceso->tipo_proceso_id) {
+            1 => 'REFLECTIVO',
+            2 => 'BORDADO',
+            3 => 'ESTAMPADO',
+            4 => 'DTF',
+            5 => 'SUBLIMADO',
+            default => 'DESCONOCIDO',
+        };
+    }
 }
 
