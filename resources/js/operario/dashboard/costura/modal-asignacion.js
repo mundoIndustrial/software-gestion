@@ -1879,8 +1879,8 @@ export function confirmarAsignacion() {
                         const tallaObj = {
                             talla: base,
                             cantidad: cantidad,
-                            color_nombre: color,
-                            genero: itemTalla ? itemTalla.genero : null,
+                            color_nombre: itemTalla ? itemTalla.color : color || null,
+                            genero: itemTalla ? itemTalla.genero : generoNorm || null,
                         };
 
                         if (cantidad > 0) {
@@ -2063,8 +2063,8 @@ function confirmarDistribucionTaller() {
                     const tallaObj = {
                         talla: base,
                         cantidad,
-                        color_nombre: itemTalla ? itemTalla.color : null,
-                        genero: itemTalla ? itemTalla.genero : null,
+                        color_nombre: itemTalla ? itemTalla.color : color || null,
+                        genero: itemTalla ? itemTalla.genero : generoNorm || null,
                     };
 
                     if (esNueva) {

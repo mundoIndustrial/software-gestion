@@ -41,19 +41,88 @@ class ReciboCosturaController extends Controller
         $this->middleware('auth');
     }
 
-    private function insertReciboParteTalla(int $reciboParteId, array $tallaData): void
+    private function insertReciboParteTalla(int $reciboParteId, array $tallaData, int $prendaId, bool $esBodega = false): void
     {
+        $tallaNombre = strtoupper(trim((string) ($tallaData['talla'] ?? '')));
+        $cantidad = (int) ($tallaData['cantidad'] ?? 0);
+        $colorNombre = trim((string) ($tallaData['color_nombre'] ?? ''));
+        $genero = $this->normalizarGeneroReciboParte($tallaData['genero'] ?? null);
+
+        if ($genero === null) {
+            $genero = $this->resolverGeneroParaReciboParte($prendaId, $tallaNombre, $colorNombre, $esBodega);
+        }
+
         $payload = [
             'recibo_por_partes_id' => $reciboParteId,
-            'talla' => (string) ($tallaData['talla'] ?? ''),
-            'genero' => isset($tallaData['genero']) ? strtoupper(trim((string) $tallaData['genero'])) : null,
-            'cantidad' => (int) ($tallaData['cantidad'] ?? 0),
-            'color_nombre' => isset($tallaData['color_nombre']) ? (string) $tallaData['color_nombre'] : null,
+            'talla' => $tallaNombre,
+            'genero' => $genero !== '' ? $genero : null,
+            'cantidad' => $cantidad,
+            'color_nombre' => $colorNombre !== '' ? $colorNombre : null,
             'created_at' => now(),
             'updated_at' => now(),
         ];
 
         DB::table('recibos_por_partes_tallas')->insert($payload);
+    }
+
+    private function normalizarGeneroReciboParte(mixed $genero): ?string
+    {
+        $generoLimpio = strtoupper(trim((string) $genero));
+
+        if ($generoLimpio === '') {
+            return null;
+        }
+
+        $generoAscii = strtoupper((string) iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $generoLimpio));
+        if (in_array($generoAscii, ['SIN GENERO', 'SIN_GENERO'], true)) {
+            return null;
+        }
+
+        if (in_array($generoLimpio, ['SIN GENERO', 'SIN GÉNERO', 'SIN_GENERO'], true)) {
+            return null;
+        }
+
+        return $generoLimpio;
+    }
+
+    private function resolverGeneroParaReciboParte(int $prendaId, string $tallaNombre, string $colorNombre = '', bool $esBodega = false): ?string
+    {
+        if ($tallaNombre === '') {
+            return null;
+        }
+
+        if ($esBodega) {
+            $query = DB::table('prenda_tallas_bodega')
+                ->where('prenda_bodega_id', $prendaId)
+                ->whereRaw('UPPER(TRIM(talla)) = ?', [$tallaNombre]);
+
+            if (trim($colorNombre) !== '') {
+                $query->whereRaw('UPPER(TRIM(color)) = ?', [strtoupper(trim($colorNombre))]);
+            }
+
+            $genero = $query->value(DB::raw('UPPER(TRIM(genero))'));
+            if (is_string($genero) && trim($genero) !== '') {
+                return strtoupper(trim($genero));
+            }
+
+            $generoFallback = DB::table('prenda_tallas_bodega')
+                ->where('prenda_bodega_id', $prendaId)
+                ->whereRaw('UPPER(TRIM(talla)) = ?', [$tallaNombre])
+                ->value(DB::raw('UPPER(TRIM(genero))'));
+
+            return is_string($generoFallback) && trim($generoFallback) !== ''
+                ? strtoupper(trim($generoFallback))
+                : null;
+        }
+
+        $genero = DB::table('prenda_pedido_tallas')
+            ->where('prenda_pedido_id', $prendaId)
+            ->whereRaw('UPPER(TRIM(talla)) = ?', [$tallaNombre])
+            ->value(DB::raw('UPPER(TRIM(genero))'));
+
+        return is_string($genero) && trim($genero) !== ''
+            ? strtoupper(trim($genero))
+            : null;
     }
 
     private function normalizarTallasControlCalidad(mixed $tallasInput): array
@@ -128,7 +197,7 @@ class ReciboCosturaController extends Controller
         if ($parcial instanceof PedidoParcial) {
             return DB::table('pedidos_parciales_tallas')
                 ->where('pedido_parcial_id', (int) $parcial->id)
-                ->orderBy('id')
+                ->orderBy('pedidos_parciales_tallas.id')
                 ->get()
                 ->map(function ($talla) {
                     return [
@@ -143,10 +212,114 @@ class ReciboCosturaController extends Controller
                 ->all();
         }
 
-        return DB::table('recibos_por_partes_tallas')
+        $tipoRecibo = strtoupper(trim((string) $parcial->tipo_recibo));
+
+        if (in_array($tipoRecibo, ['CORTE-PARA-BODEGA', 'COSTURA-BODEGA'], true)) {
+            return $this->obtenerTallasBodegaParaComparacion($parcial);
+        }
+
+        $tallasReciboPorPartes = DB::table('recibos_por_partes_tallas')
             ->where('recibo_por_partes_id', (int) $parcial->id)
-            ->orderBy('id')
+            ->orderBy('recibos_por_partes_tallas.id')
             ->get()
+            ->map(function ($talla) {
+                return [
+                    'talla' => (string) ($talla->talla ?? ''),
+                    'cantidad' => (int) ($talla->cantidad ?? 0),
+                    'genero' => (string) ($talla->genero ?? ''),
+                    'color_nombre' => (string) ($talla->color_nombre ?? ''),
+                ];
+            })
+            ->filter(fn (array $talla) => trim($talla['talla']) !== '' && $talla['cantidad'] > 0)
+            ->values()
+            ->all();
+
+        if (!empty($tallasReciboPorPartes)) {
+            return $tallasReciboPorPartes;
+        }
+
+        $parcialRelacionado = $this->resolverPedidoParcialRelacionadoParaReciboPorPartes($parcial);
+        if ($parcialRelacionado) {
+            $tallasParcial = DB::table('pedidos_parciales_tallas')
+                ->where('pedido_parcial_id', (int) $parcialRelacionado->id)
+                ->orderBy('pedidos_parciales_tallas.id')
+                ->get()
+                ->map(function ($talla) {
+                    return [
+                        'talla' => (string) ($talla->talla ?? ''),
+                        'cantidad' => (int) ($talla->cantidad ?? 0),
+                        'genero' => (string) ($talla->genero ?? ''),
+                        'color_nombre' => (string) ($talla->color_nombre ?? ''),
+                    ];
+                })
+                ->filter(fn (array $talla) => trim($talla['talla']) !== '' && $talla['cantidad'] > 0)
+                ->values()
+                ->all();
+
+            if (!empty($tallasParcial)) {
+                return $tallasParcial;
+            }
+        }
+
+        return $this->obtenerTallasPedidoBaseParaComparacion($parcial);
+    }
+
+    private function resolverPedidoParcialRelacionadoParaReciboPorPartes(ReciboPorPartes $parcial): ?PedidoParcial
+    {
+        $consecutivoOriginal = (int) ($parcial->consecutivo_original ?? 0);
+
+        $query = PedidoParcial::query()
+            ->where('pedido_produccion_id', (int) $parcial->pedido_produccion_id)
+            ->where('prenda_pedido_id', (int) $parcial->prenda_pedido_id)
+            ->whereRaw('UPPER(TRIM(tipo_recibo)) = ?', [strtoupper(trim((string) $parcial->tipo_recibo))]);
+
+        if ($consecutivoOriginal > 0) {
+            $query->where(function ($subQuery) use ($consecutivoOriginal) {
+                $subQuery->where('consecutivo_inicial', $consecutivoOriginal)
+                    ->orWhere('consecutivo_actual', $consecutivoOriginal);
+            });
+        }
+
+        return $query->latest('created_at')->first();
+    }
+
+    private function obtenerTallasPedidoBaseParaComparacion(ReciboPorPartes $parcial): array
+    {
+        return DB::table('prenda_pedido_tallas as ppt')
+            ->leftJoin('prenda_pedido_talla_colores as pptc', 'pptc.prenda_pedido_talla_id', '=', 'ppt.id')
+            ->where('ppt.prenda_pedido_id', (int) $parcial->prenda_pedido_id)
+            ->orderBy('ppt.id')
+            ->orderBy('pptc.id')
+            ->get([
+                'ppt.talla',
+                'ppt.genero',
+                DB::raw('COALESCE(pptc.color_nombre, "") as color_nombre'),
+                DB::raw('COALESCE(pptc.cantidad, ppt.cantidad) as cantidad'),
+            ])
+            ->map(function ($talla) {
+                return [
+                    'talla' => (string) ($talla->talla ?? ''),
+                    'cantidad' => (int) ($talla->cantidad ?? 0),
+                    'genero' => (string) ($talla->genero ?? ''),
+                    'color_nombre' => (string) ($talla->color_nombre ?? ''),
+                ];
+            })
+            ->filter(fn (array $talla) => trim($talla['talla']) !== '' && $talla['cantidad'] > 0)
+            ->values()
+            ->all();
+    }
+
+    private function obtenerTallasBodegaParaComparacion(ReciboPorPartes $parcial): array
+    {
+        return DB::table('prenda_tallas_bodega')
+            ->where('prenda_bodega_id', (int) $parcial->prenda_pedido_id)
+            ->orderBy('prenda_tallas_bodega.id')
+            ->get([
+                'talla',
+                'genero',
+                DB::raw('COALESCE(color, "") as color_nombre'),
+                'cantidad',
+            ])
             ->map(function ($talla) {
                 return [
                     'talla' => (string) ($talla->talla ?? ''),
@@ -425,7 +598,7 @@ class ReciboCosturaController extends Controller
                             'cantidad' => $cantidad,
                             'genero' => isset($t['genero']) ? (string) $t['genero'] : null,
                             'color_nombre' => $colorNombre,
-                        ]);
+                        ], $prendaId, $esBodega);
                     }
 
                     $creados[] = [
@@ -1277,7 +1450,7 @@ class ReciboCosturaController extends Controller
                 ->exists();
         })->count();
 
-        $todosParcialesEnCc = $totalParciales > 0 && $parcialesEnCc >= $totalParciales;
+        $todosParcialesEnCc = $totalParciales > 1 && $parcialesEnCc >= $totalParciales;
         $algunParcialEnCc = $parcialesEnCc > 0;
 
         $procesoOriginalCc = ProcesoPrenda::query()
@@ -1320,7 +1493,7 @@ class ReciboCosturaController extends Controller
             $procesoOriginalCc = null;
         }
 
-        // IMPORTANTE: Si TODOS los parciales estan en Control Calidad, actualizar el recibo original y el proceso padre
+        // IMPORTANTE: Si TODOS los parciales estan en Control Calidad y hay mas de uno, actualizar el recibo original y el proceso padre
         if ($todosParcialesEnCc) {
             // 1. Cambiar el recibo original a Control Calidad en consecutivos_recibos_pedidos
             $consecutivoNum = (int) ($esParcialNuevo ? $parcial->consecutivo_inicial : $parcial->consecutivo_original);
@@ -1405,26 +1578,35 @@ class ReciboCosturaController extends Controller
             : "Se deshizo Control de Calidad del parcial #{$parcial->consecutivo_parcial}";
 
         foreach ($usuariosVistaCostura as $usuarioVista) {
-            broadcast(new OperarioRecibosActualizados(
-                userId: (int) $usuarioVista->id,
-                payload: [
-                    'accion' => $accion,
-                    'mensaje' => $mensaje,
-                    'area' => $parcialEnviadoAcc ? 'Control Calidad' : 'Costura',
+            try {
+                broadcast(new OperarioRecibosActualizados(
+                    userId: (int) $usuarioVista->id,
+                    payload: [
+                        'accion' => $accion,
+                        'mensaje' => $mensaje,
+                        'area' => $parcialEnviadoAcc ? 'Control Calidad' : 'Costura',
+                        'pedido_id' => (int) $pedido->id,
+                        'numero_pedido' => (int) $pedido->numero_pedido,
+                        'prenda_id' => (int) $parcial->prenda_pedido_id,
+                        'tipo_recibo' => (string) $parcial->tipo_recibo,
+                        'numero_recibo' => (string) ($parcial->getRawOriginal('consecutivo_parcial') ?? $parcial->consecutivo_parcial),
+                        'consecutivo_original' => (string) ($parcial->getRawOriginal('consecutivo_original') ?? $parcial->consecutivo_original),
+                        'pedido_parcial_id' => (int) $parcial->id,
+                        'es_parcial' => true,
+                        'total_parciales' => (int) ($estadoParcialesCc['total_parciales'] ?? 0),
+                        'parciales_en_cc' => (int) ($estadoParcialesCc['parciales_en_cc'] ?? 0),
+                        'todos_parciales_en_cc' => (bool) ($estadoParcialesCc['todos_parciales_en_cc'] ?? false),
+                        'proceso_original_cc_id' => $estadoParcialesCc['proceso_original_cc_id'] ?? null,
+                    ]
+                ));
+            } catch (\Throwable $e) {
+                Log::warning('[COSTURA][PARCIAL][CONTROL_CALIDAD] Error broadcast vista-costura', [
                     'pedido_id' => (int) $pedido->id,
-                    'numero_pedido' => (int) $pedido->numero_pedido,
-                    'prenda_id' => (int) $parcial->prenda_pedido_id,
-                    'tipo_recibo' => (string) $parcial->tipo_recibo,
-                    'numero_recibo' => (string) ($parcial->getRawOriginal('consecutivo_parcial') ?? $parcial->consecutivo_parcial),
-                    'consecutivo_original' => (string) ($parcial->getRawOriginal('consecutivo_original') ?? $parcial->consecutivo_original),
-                    'pedido_parcial_id' => (int) $parcial->id,
-                    'es_parcial' => true,
-                    'total_parciales' => (int) ($estadoParcialesCc['total_parciales'] ?? 0),
-                    'parciales_en_cc' => (int) ($estadoParcialesCc['parciales_en_cc'] ?? 0),
-                    'todos_parciales_en_cc' => (bool) ($estadoParcialesCc['todos_parciales_en_cc'] ?? false),
-                    'proceso_original_cc_id' => $estadoParcialesCc['proceso_original_cc_id'] ?? null,
-                ]
-            ));
+                    'parcial_id' => (int) $parcial->id,
+                    'usuario_id' => (int) $usuarioVista->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 
@@ -1962,7 +2144,7 @@ class ReciboCosturaController extends Controller
                         'cantidad' => $cantidad,
                         'genero' => $genero,
                         'color_nombre' => $colorNombre,
-                    ]);
+                    ], $prendaId, $esBodega);
                 }
 
                 $creados[] = [
@@ -2117,7 +2299,7 @@ class ReciboCosturaController extends Controller
                         'cantidad' => $cantidad,
                         'genero' => $genero,
                         'color_nombre' => $colorNombre,
-                    ]);
+                    ], $prendaId, $esBodega);
                 }
 
                 $creados[] = [

@@ -83,19 +83,27 @@ class ObtenerDistribucionControlCalidadUseCase
             }
 
             // Obtener número de pedido desde pedido_produccion_id
+            // Obtener número de pedido desde pedido_produccion_id
             $numeroPedido = \DB::table('pedidos_produccion')
                 ->where('id', (int) $recibo->pedido_produccion_id)
                 ->value('numero_pedido');
 
-            // Obtener IDs de parciales que están en Control de Calidad (desde procesos_prenda)
+            $consecutivosParcialesNormalizados = $parciales
+                ->pluck('consecutivo_parcial')
+                ->map(fn ($valor) => $this->normalizarConsecutivoParcialValor($valor))
+                ->filter(fn (string $valor) => $valor !== '')
+                ->values()
+                ->all();
+
             $parcialesEnCCIds = \DB::table('procesos_prenda')
-                ->whereIn('numero_recibo_parcial', $parciales->pluck('consecutivo_parcial')->toArray())
                 ->where('numero_pedido', $numeroPedido)
                 ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
                 ->whereNull('deleted_at')
-                ->distinct()
-                ->pluck('numero_recibo_parcial')
-                ->toArray();
+                ->get(['numero_recibo_parcial'])
+                ->map(fn ($row) => $this->normalizarConsecutivoParcialValor($row->numero_recibo_parcial ?? null))
+                ->filter(fn (string $valor) => $valor !== '')
+                ->values()
+                ->all();
 
             \Log::info('[ObtenerDistribucionControlCalidadUseCase] DEBUG - Parciales en procesos_prenda', [
                 'recibo_id' => $idRecibo,
@@ -105,8 +113,17 @@ class ObtenerDistribucionControlCalidadUseCase
             ]);
 
             // Filtrar solo los parciales que estén en Control de Calidad según procesos_prenda
-            $parcialesCC = $parciales->filter(function ($parcial) use ($parcialesEnCCIds) {
-                return in_array((string) $parcial->consecutivo_parcial, array_map('strval', $parcialesEnCCIds));
+                        $parcialesCC = $parciales->filter(function ($parcial) use ($parcialesEnCCIds) {
+                $consecutivoNormalizado = $this->normalizarConsecutivoParcialValor($parcial->consecutivo_parcial ?? null);
+
+                if ($consecutivoNormalizado !== '' && in_array($consecutivoNormalizado, $parcialesEnCCIds, true)) {
+                    return true;
+                }
+
+                return \DB::table('prenda_recibo_completado')
+                    ->where('id_parcial', (int) $parcial->id)
+                    ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
+                    ->exists();
             });
 
             \Log::info('[ObtenerDistribucionControlCalidadUseCase] Parciales en CC filtrados', [
@@ -173,5 +190,26 @@ class ObtenerDistribucionControlCalidadUseCase
                 ],
             ];
         }
+    }
+
+    private function normalizarConsecutivoParcialValor(mixed $valor): string
+    {
+        $texto = trim((string) $valor);
+
+        if ($texto === '') {
+            return '';
+        }
+
+        if (is_numeric($texto)) {
+            $numero = (float) $texto;
+
+            if (floor($numero) === $numero) {
+                return (string) (int) $numero;
+            }
+
+            return rtrim(rtrim(number_format($numero, 2, '.', ''), '0'), '.');
+        }
+
+        return $texto;
     }
 }

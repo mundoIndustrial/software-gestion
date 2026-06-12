@@ -32,6 +32,185 @@
             .trim();
     };
 
+    const obtenerReciboParcialPreferido = (prenda) => {
+        if (!esReciboParcial || !prenda || typeof prenda !== 'object') {
+            return null;
+        }
+
+        const recibosPrenda = prenda?.recibos;
+        if (!recibosPrenda || typeof recibosPrenda !== 'object' || Array.isArray(recibosPrenda)) {
+            return null;
+        }
+
+        const candidatos = [];
+        if (recibosPrenda.PARCIAL && typeof recibosPrenda.PARCIAL === 'object') {
+            candidatos.push(recibosPrenda.PARCIAL);
+        }
+
+        for (const value of Object.values(recibosPrenda)) {
+            if (value && typeof value === 'object' && value !== recibosPrenda.PARCIAL) {
+                candidatos.push(value);
+            }
+        }
+
+        for (const candidato of candidatos) {
+            const idParcial = String(
+                candidato?.pedido_parcial_id ||
+                candidato?.parcial_id ||
+                candidato?.id ||
+                ''
+            ).trim();
+
+            if (pedidoParcialIdParam !== '' && idParcial === pedidoParcialIdParam) {
+                return candidato;
+            }
+
+            if (candidato?.es_parcial) {
+                return candidato;
+            }
+        }
+
+        return recibosPrenda.PARCIAL && typeof recibosPrenda.PARCIAL === 'object'
+            ? recibosPrenda.PARCIAL
+            : null;
+    };
+
+    const transformarTallasListaParcialAEstructuraLocal = (tallasArray) => {
+        if (!Array.isArray(tallasArray) || tallasArray.length === 0) {
+            return {};
+        }
+
+        const registros = tallasArray
+            .map((registro) => ({
+                genero: (registro?.genero || 'CABALLERO').toString().trim().toUpperCase(),
+                talla: (registro?.talla || '').toString().trim().toUpperCase(),
+                color_nombre: (registro?.color_nombre || '').toString().trim().toUpperCase(),
+                cantidad: parseInt(registro?.cantidad || 0, 10) || 0,
+            }))
+            .filter((registro) => registro.cantidad > 0);
+
+        if (registros.length === 0) {
+            return {};
+        }
+
+        const tieneColores = registros.some((registro) => registro.color_nombre !== '');
+        if (tieneColores) {
+            const estructura = {
+                DAMA: {},
+                CABALLERO: {},
+                UNISEX: {},
+            };
+
+            registros.forEach((registro) => {
+                if (!estructura[registro.genero]) {
+                    estructura[registro.genero] = {};
+                }
+
+                if (!estructura[registro.genero][registro.talla]) {
+                    estructura[registro.genero][registro.talla] = [];
+                }
+
+                estructura[registro.genero][registro.talla].push({
+                    color: registro.color_nombre || 'SIN COLOR',
+                    cantidad: registro.cantidad,
+                });
+            });
+
+            return estructura;
+        }
+
+        const estructura = {
+            DAMA: {},
+            CABALLERO: {},
+            UNISEX: {},
+        };
+
+        registros.forEach((registro) => {
+            if (!estructura[registro.genero]) {
+                estructura[registro.genero] = {};
+            }
+
+            const tallaFinal = registro.talla !== '' ? registro.talla : 'SIN_TALLA';
+            estructura[registro.genero][tallaFinal] = (estructura[registro.genero][tallaFinal] || 0) + registro.cantidad;
+        });
+
+        return estructura;
+    };
+
+    const construirBloqueTallasDesdeEstructura = (tallasStruct) => {
+        if (!tallasStruct || typeof tallasStruct !== 'object') {
+            return '';
+        }
+
+        const lineas = [];
+        const generos = Object.keys(tallasStruct || {});
+        generos.forEach((genero) => {
+            const generoLabel = (genero || '').toString().toUpperCase();
+            const tallasGenero = tallasStruct[genero] || {};
+            const porColor = {};
+
+            Object.entries(tallasGenero).forEach(([tallaRaw, val]) => {
+                const tallaKey = (tallaRaw || '').toString().trim().toUpperCase();
+                if (!tallaKey) return;
+
+                if (Array.isArray(val)) {
+                    val.forEach((item) => {
+                        const colorRaw = (item?.color || item?.color_nombre || '').toString().trim();
+                        const colorKey = (colorRaw && colorRaw.toLowerCase() !== 'sin color') ? colorRaw.toUpperCase() : '__SIN_COLOR__';
+                        const qty = parseInt(item?.cantidad || 0, 10) || 0;
+                        if (!qty) return;
+                        if (!porColor[colorKey]) porColor[colorKey] = [];
+                        porColor[colorKey].push({ talla: tallaKey, cantidad: qty });
+                    });
+                    return;
+                }
+
+                const qty = parseInt(val || 0, 10) || 0;
+                if (qty <= 0) return;
+                if (!porColor['__SIN_COLOR__']) porColor['__SIN_COLOR__'] = [];
+                porColor['__SIN_COLOR__'].push({ talla: tallaKey, cantidad: qty });
+            });
+
+            const coloresReales = Object.keys(porColor).filter(c => c !== '__SIN_COLOR__');
+            const sinColor = porColor['__SIN_COLOR__'] || [];
+
+            if (coloresReales.length > 0) {
+                lineas.push(`<strong>${generoLabel}:</strong>`);
+                coloresReales.forEach((color) => {
+                    const arr = (porColor[color] || []).filter(x => x && x.talla && x.cantidad);
+                    if (!arr.length) return;
+                    const tallasStr = arr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
+                    lineas.push(`<span style="color: #d32f2f; font-weight: bold;"><strong>${color}:</strong> ${tallasStr}</span>`);
+                });
+                if (sinColor.length > 0) {
+                    const tallasStr = sinColor.map(t => `${t.talla}-${t.cantidad}`).join(', ');
+                    lineas.push(`<span style="color: #d32f2f; font-weight: bold;"><strong>SIN COLOR:</strong> ${tallasStr}</span>`);
+                }
+            } else if (sinColor.length > 0) {
+                const tallasSimple = sinColor.map(t => `${t.talla}: <span style="color: #d32f2f;"><strong>${t.cantidad}</strong></span>`);
+                lineas.push(`<strong>${generoLabel}:</strong> ${tallasSimple.join(', ')}`);
+            } else {
+                const tallas = [];
+                Object.keys(tallasGenero).forEach((talla) => {
+                    const cantidad = parseInt(tallasGenero[talla] || 0, 10) || 0;
+                    if (cantidad > 0) {
+                        tallas.push(`${talla}: <span style="color: #d32f2f;"><strong>${cantidad}</strong></span>`);
+                    }
+                });
+
+                if (tallas.length > 0) {
+                    lineas.push(`<strong>${generoLabel}:</strong> ${tallas.join(', ')}`);
+                }
+            }
+        });
+
+        if (lineas.length === 0) {
+            return '';
+        }
+
+        return `<strong>TALLAS</strong><br>` + lineas.join('<br>');
+    };
+
     // Compatibilidad: en algunas vistas (ej. vista-costura) puede venir solo `recibo_id`.
     // Intentamos resolver `pedido_parcial_id` desde los datos cargados para renderizar
     // tallas del anexo/parcial y no las tallas completas de la prenda.
@@ -489,6 +668,19 @@
         const tieneCostu = todosProcesos.includes('COSTURA');
         const tieneReflectivo = todosProcesos.includes('REFLECTIVO');
         procesosFiltrados = [];
+
+        if (tipoReciboUpper === 'PARCIAL') {
+            const procesoParcialReal = resolverProcesoRealParcial();
+            if (procesoParcialReal) {
+                // En Control Calidad el proceso visible debe ser PARCIAL para que el render
+                // tome `prenda.recibos.PARCIAL` y no las tallas completas de COSTURA.
+                procesosFiltrados = ['PARCIAL'];
+                window.procesoCarouselIndex = 0;
+                window.procesoActualSeleccionado = 'PARCIAL';
+                console.log(' [FILTRO PROCESOS] Control Calidad - tipo_recibo=PARCIAL mapeado a PARCIAL para renderizar el anexo:', procesoParcialReal);
+            }
+        }
+
         if (tieneCostu) procesosFiltrados.push('COSTURA');
         if (tieneReflectivo) procesosFiltrados.push('REFLECTIVO');
         
@@ -1136,52 +1328,22 @@
         try {
             if (todasLasPrendas && Array.isArray(todasLasPrendas) && todasLasPrendas.length > 0) {
                 const prendaRefPreferida = todasLasPrendas[0];
-                if (prendaRefPreferida?.talla_colores && Array.isArray(prendaRefPreferida.talla_colores) && prendaRefPreferida.talla_colores.length > 0) {
+                const reciboParcialPreferido = obtenerReciboParcialPreferido(prendaRefPreferida);
+                let tallasStruct = null;
+                if (reciboParcialPreferido?.talla_colores && Array.isArray(reciboParcialPreferido.talla_colores) && reciboParcialPreferido.talla_colores.length > 0) {
+                    console.log('📱 [TALLAS OVERRIDE] Forzando bloque de TALLAS desde parcial.talla_colores');
+                    tallasStruct = transformarTallaColoresAEstructura(reciboParcialPreferido.talla_colores);
+                } else if (reciboParcialPreferido?.tallas && Array.isArray(reciboParcialPreferido.tallas) && reciboParcialPreferido.tallas.length > 0) {
+                    console.log('📱 [TALLAS OVERRIDE] Forzando bloque de TALLAS desde parcial.tallas');
+                    tallasStruct = transformarTallasListaParcialAEstructuraLocal(reciboParcialPreferido.tallas);
+                } else if (prendaRefPreferida?.talla_colores && Array.isArray(prendaRefPreferida.talla_colores) && prendaRefPreferida.talla_colores.length > 0) {
                     console.log('📱 [TALLAS OVERRIDE] Forzando bloque de TALLAS desde talla_colores (agrupado por color)');
-                    const tallasStruct = transformarTallaColoresAEstructura(prendaRefPreferida.talla_colores);
+                    tallasStruct = transformarTallaColoresAEstructura(prendaRefPreferida.talla_colores);
+                }
 
-                    const lineas = [];
-                    const generos = Object.keys(tallasStruct || {});
-                    generos.forEach((genero) => {
-                        const generoLabel = (genero || '').toString().toUpperCase();
-                        const tallasGenero = tallasStruct[genero] || {};
-                        const porColor = {};
-
-                        Object.entries(tallasGenero).forEach(([tallaRaw, val]) => {
-                            const tallaKey = (tallaRaw || '').toString().trim().toUpperCase();
-                            if (!tallaKey) return;
-                            if (!Array.isArray(val)) return;
-                            val.forEach((item) => {
-                                const colorRaw = (item?.color || item?.color_nombre || '').toString().trim();
-                                const colorKey = (colorRaw && colorRaw.toLowerCase() !== 'sin color') ? colorRaw.toUpperCase() : '__SIN_COLOR__';
-                                const qty = parseInt(item?.cantidad || 0, 10) || 0;
-                                if (!qty) return;
-                                if (!porColor[colorKey]) porColor[colorKey] = [];
-                                porColor[colorKey].push({ talla: tallaKey, cantidad: qty });
-                            });
-                        });
-
-                        const coloresReales = Object.keys(porColor).filter(c => c !== '__SIN_COLOR__');
-                        const sinColor = porColor['__SIN_COLOR__'] || [];
-
-                        if (coloresReales.length > 0) {
-                            lineas.push(`<strong>${generoLabel}:</strong>`);
-                            coloresReales.forEach((color) => {
-                                const arr = (porColor[color] || []).filter(x => x && x.talla && x.cantidad);
-                                if (!arr.length) return;
-                                const tallasStr = arr.map(t => `${t.talla}-${t.cantidad}`).join(', ');
-                                lineas.push(`<span style="color: #d32f2f; font-weight: bold;"><strong>${color}:</strong> ${tallasStr}</span>`);
-                            });
-                            if (sinColor.length > 0) {
-                                const tallasStr = sinColor.map(t => `${t.talla}-${t.cantidad}`).join(', ');
-                                lineas.push(`<span style="color: #d32f2f; font-weight: bold;"><strong>SIN COLOR:</strong> ${tallasStr}</span>`);
-                            }
-                        }
-                    });
-
-                    if (lineas.length > 0) {
-                        tallasExtraidas = `<strong>TALLAS</strong><br>` + lineas.join('<br>');
-                    }
+                const bloqueTallas = construirBloqueTallasDesdeEstructura(tallasStruct);
+                if (bloqueTallas) {
+                    tallasExtraidas = bloqueTallas;
                 }
             }
         } catch (e) {
@@ -1191,10 +1353,17 @@
         // Fallback: si no hay bloque de TALLAS en la descripción, construirlo desde prenda.tallas o prenda.talla_colores
         if (!tallasExtraidas && todasLasPrendas && Array.isArray(todasLasPrendas) && todasLasPrendas.length > 0) {
             const prendaRef = todasLasPrendas[0];
+            const reciboParcialPreferido = obtenerReciboParcialPreferido(prendaRef);
             
             // PRIORIZAR talla_colores si está disponible
             let tallasParaUsar = null;
-            if (prendaRef.talla_colores && Array.isArray(prendaRef.talla_colores) && prendaRef.talla_colores.length > 0) {
+            if (reciboParcialPreferido?.talla_colores && Array.isArray(reciboParcialPreferido.talla_colores) && reciboParcialPreferido.talla_colores.length > 0) {
+                console.log('📱 [FALLBACK] Usando talla_colores del parcial:', reciboParcialPreferido.talla_colores);
+                tallasParaUsar = transformarTallaColoresAEstructura(reciboParcialPreferido.talla_colores);
+            } else if (reciboParcialPreferido?.tallas && Array.isArray(reciboParcialPreferido.tallas) && reciboParcialPreferido.tallas.length > 0) {
+                console.log('📱 [FALLBACK] Usando tallas del parcial:', reciboParcialPreferido.tallas);
+                tallasParaUsar = transformarTallasListaParcialAEstructuraLocal(reciboParcialPreferido.tallas);
+            } else if (prendaRef.talla_colores && Array.isArray(prendaRef.talla_colores) && prendaRef.talla_colores.length > 0) {
                 console.log('📱 [FALLBACK] Usando talla_colores de la prenda:', prendaRef.talla_colores);
                 tallasParaUsar = transformarTallaColoresAEstructura(prendaRef.talla_colores);
             } else if (prendaRef && prendaRef.tallas && typeof prendaRef.tallas === 'object') {
@@ -1378,6 +1547,56 @@
         prendasActuales.forEach((prenda, index) => {
             console.log(' [PRENDA] Datos completos:', JSON.stringify(prenda, null, 2));
             console.log(' [PRENDA] Keys disponibles:', Object.keys(prenda));
+
+            if (esReciboParcial) {
+                const reciboParcialPreferido = obtenerReciboParcialPreferido(prenda);
+                if (reciboParcialPreferido) {
+                    const tallasParcialNormalizadas = Array.isArray(reciboParcialPreferido.tallas)
+                        ? reciboParcialPreferido.tallas.map((t) => ({
+                            genero: (t?.genero || '').toString().trim().toUpperCase() || 'UNISEX',
+                            talla: (t?.talla || '').toString().trim().toUpperCase(),
+                            cantidad: parseInt(t?.cantidad || 0, 10) || 0,
+                            color_nombre: (t?.color_nombre || '').toString().trim(),
+                        })).filter((t) => t.talla !== '' && t.cantidad > 0)
+                        : [];
+
+                    const tallaColoresParcialNormalizada = Array.isArray(reciboParcialPreferido.talla_colores)
+                        ? reciboParcialPreferido.talla_colores.map((t) => ({
+                            genero: (t?.genero || '').toString().trim().toUpperCase() || 'UNISEX',
+                            talla: (t?.talla || '').toString().trim().toUpperCase(),
+                            color_nombre: (t?.color_nombre || '').toString().trim(),
+                            cantidad: parseInt(t?.cantidad || 0, 10) || 0,
+                            tela_nombre: t?.tela_nombre ?? null,
+                            referencia: t?.referencia ?? null,
+                            observaciones: t?.observaciones ?? null,
+                            imagen_ruta: t?.imagen_ruta ?? null,
+                        })).filter((t) => t.talla !== '' && t.cantidad > 0)
+                        : [];
+
+                    prenda.tallas = tallasParcialNormalizadas;
+                    prenda.talla_colores = tallaColoresParcialNormalizada;
+                    prenda.recibos = {
+                        PARCIAL: {
+                            ...reciboParcialPreferido,
+                            tallas: tallasParcialNormalizadas,
+                            talla_colores: tallaColoresParcialNormalizada,
+                        },
+                    };
+
+                    if (Array.isArray(prenda.procesos)) {
+                        prenda.procesos = prenda.procesos.filter((proc) => {
+                            const tipo = (proc?.tipo_proceso || proc?.proceso || proc?.nombre_proceso || '').toString().trim().toUpperCase();
+                            return tipo === 'PARCIAL' || !!proc?.es_parcial || String(proc?.pedido_parcial_id || proc?.id || '').trim() === String(reciboParcialPreferido.pedido_parcial_id || reciboParcialPreferido.id || '').trim();
+                        }).map((proc) => ({
+                            ...proc,
+                            es_parcial: true,
+                            pedido_parcial_id: reciboParcialPreferido.pedido_parcial_id || reciboParcialPreferido.id || proc?.pedido_parcial_id || null,
+                            tallas: tallasParcialNormalizadas,
+                            talla_colores: tallaColoresParcialNormalizada,
+                        }));
+                    }
+                }
+            }
             
             let html = '';
             

@@ -178,6 +178,57 @@ class ControlCalidadController extends Controller
         return $this->resolverEstadoControlCalidadDesdeTallas($tallasOriginales, $tallasCompletadas) === 'completo';
     }
 
+    private function normalizarConsecutivoParcialValor(mixed $valor): string
+    {
+        $texto = trim((string) $valor);
+
+        if ($texto === '') {
+            return '';
+        }
+
+        if (is_numeric($texto)) {
+            $numero = (float) $texto;
+
+            if (floor($numero) === $numero) {
+                return (string) (int) $numero;
+            }
+
+            return rtrim(rtrim(number_format($numero, 2, '.', ''), '0'), '.');
+        }
+
+        return $texto;
+    }
+
+    private function parcialEstaEnControlCalidad(ReciboPorPartes $parcial, int $numeroPedido): bool
+    {
+        $consecutivoParcial = $this->normalizarConsecutivoParcialValor($parcial->consecutivo_parcial ?? $parcial->consecutivo_actual ?? '');
+
+        $tieneProcesoCc = ProcesoPrenda::query()
+            ->where('numero_pedido', $numeroPedido)
+            ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
+            ->where(function ($query) use ($consecutivoParcial) {
+                if ($consecutivoParcial === '') {
+                    $query->whereRaw('1 = 0');
+                    return;
+                }
+
+                $query->whereRaw('CAST(numero_recibo_parcial AS DECIMAL(10,2)) = ?', [(float) $consecutivoParcial])
+                    ->orWhereRaw('CAST(numero_recibo_parcial AS CHAR) = ?', [$consecutivoParcial]);
+            })
+            ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
+            ->whereNull('deleted_at')
+            ->exists();
+
+        if ($tieneProcesoCc) {
+            return true;
+        }
+
+        return DB::table('prenda_recibo_completado')
+            ->where('id_parcial', (int) $parcial->id)
+            ->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad'])
+            ->exists();
+    }
+
     private function aplicarCondicionVisibleEnControlCalidad($query): void
     {
         $query->where(function ($subQuery) {
@@ -367,17 +418,8 @@ class ControlCalidadController extends Controller
             ->get()
             ->filter(function (ReciboPorPartes $parcial) {
                 $numeroPedido = (int) ($parcial->pedido?->numero_pedido ?? 0);
-                if ($numeroPedido <= 0) {
-                    return false;
-                }
 
-                return ProcesoPrenda::query()
-                    ->where('numero_pedido', $numeroPedido)
-                    ->where('prenda_pedido_id', $parcial->prenda_pedido_id)
-                    ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
-                    ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
-                    ->latest('created_at')
-                    ->exists();
+                return $numeroPedido > 0 && $this->parcialEstaEnControlCalidad($parcial, $numeroPedido);
             })
             ->values();
 
