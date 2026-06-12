@@ -162,25 +162,6 @@
             window.showLoadingOverlay = showLoadingOverlay;
             window.hideLoadingOverlay = hideLoadingOverlay;
 
-            // Mantener overlay durante navegación y dejar que la página destino decida cuándo ocultarlo.
-            document.addEventListener('click', function(e) {
-                const link = e.target.closest && e.target.closest('a');
-                if (!link) return;
-                const href = link.getAttribute('href');
-                if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
-                if (link.target && link.target !== '_self') return;
-                if (link.hasAttribute('download')) return;
-                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-
-                try { sessionStorage.setItem(TRANSITION_KEY, '1'); } catch (_) {}
-                showLoadingOverlay();
-            }, { capture: true });
-
-            document.addEventListener('submit', function() {
-                try { sessionStorage.setItem(TRANSITION_KEY, '1'); } catch (_) {}
-                showLoadingOverlay();
-            }, { capture: true });
-
             // Ocultar overlay al cargar la página, salvo que la vista lo maneje manualmente.
             window.addEventListener('load', function() {
                 const manual = !!window.__OVERLAY_MANUAL_HIDE;
