@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 
 class TalleresController extends Controller
@@ -50,6 +51,65 @@ class TalleresController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'No se pudo cambiar el estado del taller',
+            ], 500);
+        }
+    }
+
+    public function store(Request $request, \App\Application\Talleres\UseCases\CrearTallerUseCase $useCase)
+    {
+        try {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+            ]);
+
+            $result = $useCase->execute($validated);
+
+            return response()->json($result, $result['success'] ? 200 : 400);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Throwable $e) {
+            \Log::error('Error en store de talleres: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo crear el taller',
+            ], 500);
+        }
+    }
+
+    public function update(Request $request, int $id)
+    {
+        try {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+            ]);
+
+            $taller = User::findOrFail($id);
+            $taller->update([
+                'name' => $validated['name'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Taller actualizado correctamente.',
+                'taller' => $taller->fresh(),
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Throwable $e) {
+            \Log::error('Error en update de talleres: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo actualizar el taller',
             ], 500);
         }
     }
