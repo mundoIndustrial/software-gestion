@@ -16,7 +16,7 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            @if(auth()->user()?->hasRole('admin'))
+            @if(auth()->user()?->hasRole('admin') || auth()->user()?->hasRole('gestion-bodega'))
                 <div class="mb-3 d-flex justify-content-end">
                     <button type="button" id="openReciboBodegaModalBtn" class="btn btn-primary">
                         Registrar recibo

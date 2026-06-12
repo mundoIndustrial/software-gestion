@@ -1004,9 +1004,23 @@ document.addEventListener('DOMContentLoaded', function () {
     prendasContainer.addEventListener('input', function (event) {
         const target = event.target;
         const isTextInput = target.matches('input[type="text"]');
-        const isTextarea = target.matches('textarea');
-        if (!isTextInput && !isTextarea) return;
-        target.value = String(target.value || '').toUpperCase();
+        if (!isTextInput) return;
+
+        const value = String(target.value || '');
+        const upperValue = value.toUpperCase();
+        if (value === upperValue) return;
+
+        const selectionStart = target.selectionStart;
+        const selectionEnd = target.selectionEnd;
+        target.value = upperValue;
+
+        if (
+            selectionStart !== null
+            && selectionEnd !== null
+            && typeof target.setSelectionRange === 'function'
+        ) {
+            target.setSelectionRange(selectionStart, selectionEnd);
+        }
     });
 
     prendasContainer.addEventListener('change', async function (event) {
