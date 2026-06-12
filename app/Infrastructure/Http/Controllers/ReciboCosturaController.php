@@ -1450,7 +1450,7 @@ class ReciboCosturaController extends Controller
                 ->exists();
         })->count();
 
-        $todosParcialesEnCc = $totalParciales > 1 && $parcialesEnCc >= $totalParciales;
+        $todosParcialesEnCc = $totalParciales >= 1 && $parcialesEnCc >= $totalParciales;
         $algunParcialEnCc = $parcialesEnCc > 0;
 
         $procesoOriginalCc = ProcesoPrenda::query()

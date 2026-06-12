@@ -90,9 +90,9 @@ class ProcesoPrendaObserver
             $procesosPrioritarios = [
                 'Despacho',
                 'Insumos y Telas',
+                'Control Calidad',
                 'Costura',
                 'Corte',
-                'Control Calidad',
                 'Creación de Orden',
                 'tcc'
             ];
@@ -343,6 +343,5 @@ class ProcesoPrendaObserver
         }
     }
 }
-
 
 
