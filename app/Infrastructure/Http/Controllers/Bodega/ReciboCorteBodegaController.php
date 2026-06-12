@@ -724,10 +724,10 @@ class ReciboCorteBodegaController extends Controller
                 'rpp.consecutivo_parcial',
                 'rpp.tipo_recibo',
                 'rpp.created_at',
-                DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) = 'CORTE-PARA-BODEGA' THEN COALESCE(pb.nombre, 'PRENDA') ELSE COALESCE(pp.nombre_prenda, 'PRENDA') END as nombre_prenda"),
-                DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) = 'CORTE-PARA-BODEGA' THEN COALESCE(pb.descripcion, '') ELSE COALESCE(pp.descripcion, '') END as descripcion_prenda"),
-                DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) = 'CORTE-PARA-BODEGA' THEN NULL ELSE rpp.pedido_produccion_id END as pedido_produccion_id"),
-                DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) = 'CORTE-PARA-BODEGA' THEN NULL ELSE rpp.prenda_pedido_id END as prenda_pedido_id")
+                DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) IN ('CORTE-PARA-BODEGA', 'COSTURA-BODEGA') THEN COALESCE(pb.nombre, 'PRENDA') ELSE COALESCE(pp.nombre_prenda, 'PRENDA') END as nombre_prenda"),
+                DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) IN ('CORTE-PARA-BODEGA', 'COSTURA-BODEGA') THEN COALESCE(pb.descripcion, '') ELSE COALESCE(pp.descripcion, '') END as descripcion_prenda"),
+                DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) IN ('CORTE-PARA-BODEGA', 'COSTURA-BODEGA') THEN NULL ELSE rpp.pedido_produccion_id END as pedido_produccion_id"),
+                DB::raw("CASE WHEN UPPER(TRIM(rpp.tipo_recibo)) IN ('CORTE-PARA-BODEGA', 'COSTURA-BODEGA') THEN NULL ELSE rpp.prenda_pedido_id END as prenda_pedido_id")
             )
             ->first();
 

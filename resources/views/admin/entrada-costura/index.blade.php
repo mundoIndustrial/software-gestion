@@ -183,6 +183,67 @@
             border-bottom: none;
         }
 
+        .entrada-costura-tallas-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: flex-start;
+        }
+
+        .entrada-costura-talla-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+        }
+
+        .entrada-costura-genero-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: #ecfeff;
+            color: #155e75;
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 1.2;
+            width: max-content;
+        }
+
+        .entrada-costura-talla-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .entrada-costura-talla-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #3730a3;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .entrada-costura-talla-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            padding: 1px 6px;
+            border-radius: 999px;
+            background: #3730a3;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
         @media (max-width: 900px) {
             .entrada-costura-filters-head {
                 flex-direction: column;
@@ -370,19 +431,27 @@
                             @forelse($entradaCostura as $entrada)
                                 @php
                                     $identificadorRecibo = trim((string) ($entrada['numero_recibo'] ?? ''));
+                                    $tipoReciboEntrada = strtoupper(trim((string) ($entrada['tipo_recibo'] ?? '')));
+                                    $idReciboParaModal = (int) ($entrada['id_recibo'] ?? $entrada['id'] ?? 0);
+                                    $idParcialParaModal = (int) ($entrada['id_parcial'] ?? 0);
+                                    $idPrendaBodegaParaModal = (int) ($entrada['prenda_bodega_id'] ?? 0);
                                     $pedidoReferencia = $entrada['numero_pedido'] ?? '-';
                                     $clienteReferencia = $entrada['cliente'] ?? '-';
                                     $encargadoReferencia = $entrada['encargado'] ?? ($entrada['nombre_operario'] ?? '-');
-                                    $prendaReferencia = $entrada['nombre_prenda'] ?? ($entrada['descripcion_prenda'] ?? '-');
+                                    $prendaReferencia = $tipoReciboEntrada === 'COSTURA-BODEGA'
+                                        ? ($entrada['prenda_bodega_nombre'] ?? $entrada['nombre_prenda'] ?? ($entrada['descripcion_prenda'] ?? '-'))
+                                        : ($entrada['nombre_prenda'] ?? ($entrada['descripcion_prenda'] ?? '-'));
                                 @endphp
                                 <tr>
                                     <td>
                                         <button
                                             type="button"
                                             class="btn-ver-recibo-completo"
-                                            data-recibo-id="{{ $entrada['id_recibo'] ?? $entrada['id'] ?? '' }}"
+                                            data-recibo-id="{{ $idReciboParaModal }}"
+                                            data-parcial-id="{{ $idParcialParaModal }}"
+                                            data-prenda-bodega-id="{{ $idPrendaBodegaParaModal }}"
                                             data-numero-recibo="{{ $identificadorRecibo }}"
-                                            data-tipo-recibo="{{ $entrada['tipo_recibo'] ?? 'COSTURA' }}"
+                                            data-tipo-recibo="{{ $tipoReciboEntrada !== '' ? $tipoReciboEntrada : 'COSTURA' }}"
                                             data-pedido-produccion-id="{{ $entrada['numero_pedido'] ?? '' }}"
                                             data-prenda-id="{{ $entrada['prenda_id'] ?? '' }}"
                                             title="Ver recibo"
@@ -395,28 +464,69 @@
                                     <td>{{ $clienteReferencia }}</td>
                                     <td>{{ $prendaReferencia }}</td>
                                     <td>
-                                        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                                        <div class="entrada-costura-tallas-wrap">
                                             @php
-                                                $tallasAgrupadasPorGenero = collect($entrada['tallas'] ?? [])->groupBy(function ($talla) {
-                                                    $genero = trim((string) ($talla['genero'] ?? ''));
-                                                    return $genero !== '' ? $genero : 'Sin género';
-                                                });
+                                                $esReciboBodega = in_array(strtoupper(trim((string) ($entrada['tipo_recibo'] ?? ''))), ['COSTURA-BODEGA', 'CORTE-PARA-BODEGA'], true);
+                                                $tallasAgrupadasPorGenero = collect($entrada['tallas'] ?? [])
+                                                    ->groupBy(function ($talla) {
+                                                        $genero = trim((string) ($talla['genero'] ?? ''));
+
+                                                        return $genero !== '' ? $genero : 'Sin género';
+                                                    })
+                                                    ->map(function ($tallasGenero) use ($esReciboBodega) {
+                                                        return collect($tallasGenero)
+                                                            ->groupBy(function ($talla) use ($esReciboBodega) {
+                                                                $valorTalla = trim((string) ($talla['talla'] ?? ''));
+                                                                $colorNombre = trim((string) ($talla['color_nombre'] ?? ''));
+
+                                                                if ($esReciboBodega && $colorNombre !== '') {
+                                                                    return ($valorTalla !== '' ? $valorTalla : 'Sin talla') . '|' . $colorNombre;
+                                                                }
+
+                                                                return $valorTalla !== '' ? $valorTalla : 'Sin talla';
+                                                            })
+                                                            ->map(function ($items, $talla) {
+                                                                $partesTalla = explode('|', (string) $talla, 2);
+                                                                $nombreTalla = $partesTalla[0] !== '' ? $partesTalla[0] : 'Sin talla';
+                                                                $colorTalla = $partesTalla[1] ?? '';
+
+                                                                return [
+                                                                    'talla' => $nombreTalla,
+                                                                    'color_nombre' => $colorTalla,
+                                                                    'cantidad' => $items->sum(function ($item) {
+                                                                        return (int) ($item['cantidad'] ?? 0);
+                                                                    }),
+                                                                ];
+                                                            })
+                                                            ->filter(function (array $talla) {
+                                                                return (int) ($talla['cantidad'] ?? 0) > 0;
+                                                            })
+                                                            ->values();
+                                                    });
                                             @endphp
                                             @forelse($tallasAgrupadasPorGenero as $genero => $tallasGenero)
-                                                <div style="display:flex;flex-direction:column;gap:6px;width:100%;">
-                                                    <span style="display:inline-flex;align-items:center;gap:8px;padding:5px 10px;border-radius:999px;background:#ecfeff;color:#155e75;font-size:12px;font-weight:700;width:max-content;">
+                                                <div class="entrada-costura-talla-group">
+                                                    <span class="entrada-costura-genero-chip">
                                                         {{ $genero }}
                                                     </span>
-                                                    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                                                    <div class="entrada-costura-talla-list">
                                                         @foreach($tallasGenero as $talla)
                                                             @php
                                                                 $etiquetaTalla = trim((string) ($talla['talla'] ?? ''));
                                                                 $etiquetaTalla = $etiquetaTalla !== '' ? $etiquetaTalla : 'Sin talla';
+                                                                $colorEtiqueta = trim((string) ($talla['color_nombre'] ?? ''));
+                                                                $cantidadEtiqueta = (string) ($talla['cantidad'] ?? 0);
+                                                                if ($esReciboBodega && $colorEtiqueta !== '') {
+                                                                    $cantidadEtiqueta .= '-' . $colorEtiqueta;
+                                                                }
+                                                                $sinTalla = in_array(strtoupper($etiquetaTalla), ['SIN_TALLA', 'UNICA', 'SIN TALLA'], true);
                                                             @endphp
-                                                            <span style="display:inline-flex;align-items:center;gap:8px;padding:5px 10px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:12px;font-weight:600;">
-                                                                <span>{{ $etiquetaTalla }}</span>
-                                                                <strong style="background:#3730a3;color:#fff;border-radius:999px;padding:2px 8px;font-size:11px;line-height:1;">
-                                                                    {{ $talla['cantidad'] ?? 0 }}
+                                                            <span class="entrada-costura-talla-chip">
+                                                                @unless($sinTalla)
+                                                                    <span>{{ $etiquetaTalla }}</span>
+                                                                @endunless
+                                                                <strong class="entrada-costura-talla-count">
+                                                                    {{ $cantidadEtiqueta }}
                                                                 </strong>
                                                             </span>
                                                         @endforeach

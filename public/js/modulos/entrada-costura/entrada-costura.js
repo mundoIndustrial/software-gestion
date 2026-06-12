@@ -49,6 +49,8 @@ function initEntradaCosturaRecibos() {
         const tipoRecibo = String(button.dataset.tipoRecibo || '').trim().toUpperCase();
         const pedidoProduccionId = Number(button.dataset.pedidoProduccionId || 0);
         const prendaId = Number(button.dataset.prendaId || 0);
+        const parcialId = Number(button.dataset.parcialId || 0);
+        const prendaBodegaId = Number(button.dataset.prendaBodegaId || 0);
 
         if (!numeroRecibo || !tipoRecibo) {
             return;
@@ -56,6 +58,25 @@ function initEntradaCosturaRecibos() {
 
         try {
             const pedidosRecibosModule = await ensurePedidosRecibosModule();
+
+            const esReciboBodega = ['CORTE-PARA-BODEGA', 'COSTURA-BODEGA'].includes(tipoRecibo);
+
+            if (esReciboBodega) {
+                if (
+                    parcialId > 0 &&
+                    typeof window.openReciboCorteBodegaParcialModal === 'function'
+                ) {
+                    window.openReciboCorteBodegaParcialModal(parcialId, tipoRecibo);
+                    return;
+                }
+
+                if (prendaBodegaId > 0 && typeof window.openReciboCorteBodegaModal === 'function') {
+                    window.openReciboCorteBodegaModal(prendaBodegaId);
+                    return;
+                }
+
+                throw new Error('No se encontro el identificador del recibo de bodega');
+            }
 
             if (tipoRecibo === 'COSTURA') {
                 if (
@@ -79,16 +100,6 @@ function initEntradaCosturaRecibos() {
 
             if (!reciboId) {
                 throw new Error('No se encontro el identificador del recibo');
-            }
-
-            if (tipoRecibo === 'CORTE-PARA-BODEGA' && typeof window.openReciboCorteBodegaParcialModal === 'function') {
-                window.openReciboCorteBodegaParcialModal(reciboId, tipoRecibo);
-                return;
-            }
-
-            if (typeof window.openReciboCorteBodegaModal === 'function') {
-                window.openReciboCorteBodegaModal(reciboId);
-                return;
             }
 
             if (!apiRoute) {

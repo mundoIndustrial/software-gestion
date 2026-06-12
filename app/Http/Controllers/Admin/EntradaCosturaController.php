@@ -65,11 +65,18 @@ class EntradaCosturaController extends Controller
         $query = DB::table('prenda_recibo_completado as prc')
             ->leftJoin('consecutivos_recibos_pedidos as crp', 'crp.id', '=', 'prc.id_recibo')
             ->leftJoin('recibo_por_partes as rpp', 'rpp.id', '=', 'prc.id_parcial')
+            ->leftJoin('consecutivos_recibos_pedidos as crp_base', function ($join) {
+                $join->on('crp_base.consecutivo_actual', '=', 'rpp.consecutivo_original')
+                    ->whereRaw('UPPER(TRIM(crp_base.tipo_recibo)) IN (?, ?)', ['CORTE-PARA-BODEGA', 'COSTURA-BODEGA']);
+            })
             ->leftJoin('pedidos_produccion as ped', 'ped.id', '=', 'crp.pedido_produccion_id')
             ->leftJoin('pedidos_produccion as ped_parcial', 'ped_parcial.id', '=', 'rpp.pedido_produccion_id')
             ->leftJoin('prendas_pedido as pp', 'pp.id', '=', 'crp.prenda_id')
             ->leftJoin('prendas_pedido as pp_parcial', 'pp_parcial.id', '=', 'rpp.prenda_pedido_id')
-            ->leftJoin('prenda_bodega as pb', 'pb.id', '=', 'crp.prenda_bodega_id')
+            ->leftJoin('prenda_bodega as pb', function ($join) {
+                $join->on('pb.id', '=', 'crp.prenda_bodega_id')
+                    ->orOn('pb.id', '=', 'crp_base.prenda_bodega_id');
+            })
             ->select(
                 'prc.id',
                 'prc.id_recibo',
@@ -81,12 +88,14 @@ class EntradaCosturaController extends Controller
                 'prc.id_parcial',
                 DB::raw('COALESCE(rpp.pedido_produccion_id, crp.pedido_produccion_id) as pedido_produccion_id'),
                 DB::raw('COALESCE(ped_parcial.numero_pedido, ped.numero_pedido) as numero_pedido_real'),
+                DB::raw('COALESCE(crp.prenda_bodega_id, crp_base.prenda_bodega_id) as prenda_bodega_id'),
                 DB::raw('COALESCE(rpp.prenda_pedido_id, crp.prenda_id) as prenda_id'),
                 'crp.tipo_recibo',
-                DB::raw('COALESCE(ped_parcial.cliente, ped.cliente) as cliente'),
+                DB::raw("CASE WHEN UPPER(TRIM(COALESCE(crp.tipo_recibo, rpp.tipo_recibo, ''))) IN ('COSTURA-BODEGA', 'CORTE-PARA-BODEGA') THEN 'Bodega' ELSE COALESCE(ped_parcial.cliente, ped.cliente) END as cliente"),
                 DB::raw('COALESCE(rpp.consecutivo_parcial, prc.numero_recibo, crp.consecutivo_actual) as numero_recibo_visible'),
-                DB::raw('COALESCE(pp_parcial.nombre_prenda, pp.nombre_prenda, pb.descripcion) as nombre_prenda'),
-                DB::raw('COALESCE(pp_parcial.descripcion, pp.descripcion, pb.descripcion) as descripcion_prenda')
+                'pb.nombre as prenda_bodega_nombre',
+                DB::raw("CASE WHEN UPPER(TRIM(COALESCE(crp.tipo_recibo, rpp.tipo_recibo, ''))) IN ('COSTURA-BODEGA', 'CORTE-PARA-BODEGA') THEN COALESCE(pb.nombre, pp_parcial.nombre_prenda, pp.nombre_prenda) ELSE COALESCE(pp_parcial.nombre_prenda, pp.nombre_prenda, pb.nombre) END as nombre_prenda"),
+                DB::raw("CASE WHEN UPPER(TRIM(COALESCE(crp.tipo_recibo, rpp.tipo_recibo, ''))) IN ('COSTURA-BODEGA', 'CORTE-PARA-BODEGA') THEN COALESCE(pb.descripcion, pp_parcial.descripcion, pp.descripcion) ELSE COALESCE(pp_parcial.descripcion, pp.descripcion, pb.descripcion) END as descripcion_prenda")
             );
 
         $query->where(function ($subQuery) {
@@ -168,16 +177,48 @@ class EntradaCosturaController extends Controller
             ->get()
             ->groupBy('prenda_recibo_completado_id');
 
-        $entradaCostura = $registros->getCollection()->map(function ($registro) use ($tallasPorRecibo) {
+        $prendaBodegaIds = $registros->getCollection()
+            ->pluck('prenda_bodega_id')
+            ->filter(fn ($id) => !empty($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        $tallasPrendaBodega = !empty($prendaBodegaIds)
+            ? DB::table('prenda_tallas_bodega')
+                ->select('prenda_bodega_id', 'genero', 'color', 'talla', 'cantidad')
+                ->whereIn('prenda_bodega_id', $prendaBodegaIds)
+                ->orderBy('id')
+                ->get()
+                ->groupBy('prenda_bodega_id')
+            : collect();
+
+        $entradaCostura = $registros->getCollection()->map(function ($registro) use ($tallasPorRecibo, $tallasPrendaBodega) {
             $numeroReciboVisible = $this->normalizarNumeroReciboVisible($registro->numero_recibo_visible ?? null);
+            $esReciboBodega = in_array(strtoupper(trim((string) ($registro->tipo_recibo ?? ''))), ['COSTURA-BODEGA', 'CORTE-PARA-BODEGA'], true);
+            $tallasBodega = $esReciboBodega && !empty($registro->prenda_bodega_id)
+                ? collect($tallasPrendaBodega->get((int) $registro->prenda_bodega_id, []))
+                : collect();
 
             $tallas = collect($tallasPorRecibo->get($registro->id, []))
-                ->map(function ($talla) {
+                ->map(function ($talla) use ($tallasBodega, $esReciboBodega) {
+                    $colorNombre = (string) ($talla->color_nombre ?? '');
+
+                    if ($esReciboBodega && $colorNombre === '') {
+                        $tallaBodegaCoincidente = $tallasBodega->first(function ($item) use ($talla) {
+                            return strtoupper(trim((string) ($item->talla ?? ''))) === strtoupper(trim((string) ($talla->talla ?? '')))
+                                && strtoupper(trim((string) ($item->genero ?? ''))) === strtoupper(trim((string) ($talla->genero ?? '')));
+                        });
+
+                        $colorNombre = (string) ($tallaBodegaCoincidente->color ?? '');
+                    }
+
                     return [
                         'talla' => $talla->talla,
                         'cantidad' => (int) $talla->cantidad,
                         'genero' => $talla->genero,
-                        'color_nombre' => $talla->color_nombre,
+                        'color_nombre' => $colorNombre,
                     ];
                 })
                 ->filter(function (array $talla) {
@@ -195,6 +236,7 @@ class EntradaCosturaController extends Controller
                 'numero_pedido' => $registro->pedido_produccion_id ? (int) $registro->pedido_produccion_id : null,
                 'numero_pedido_real' => $registro->numero_pedido_real ? (int) $registro->numero_pedido_real : null,
                 'prenda_id' => $registro->prenda_id ? (int) $registro->prenda_id : null,
+                'prenda_bodega_id' => $registro->prenda_bodega_id ? (int) $registro->prenda_bodega_id : null,
                 'tipo_recibo' => (string) ($registro->tipo_recibo ?? 'COSTURA'),
                 'id_parcial' => $registro->id_parcial ? (int) $registro->id_parcial : null,
                 'area' => $registro->area,
@@ -202,11 +244,17 @@ class EntradaCosturaController extends Controller
                 'nombre_operario' => $registro->nombre_operario,
                 'encargado' => (string) $this->resolverEncargadoCostura(
                     $registro->numero_pedido_real ? (int) $registro->numero_pedido_real : null,
-                    $registro->prenda_id ? (int) $registro->prenda_id : null,
+                    in_array(strtoupper(trim((string) ($registro->tipo_recibo ?? ''))), ['COSTURA-BODEGA', 'CORTE-PARA-BODEGA'], true)
+                        ? null
+                        : ($registro->prenda_id ? (int) $registro->prenda_id : null),
                     $numeroReciboVisible !== '' ? $numeroReciboVisible : null,
-                    $registro->id_parcial ? (int) $registro->id_parcial : null
+                    $registro->id_parcial ? (int) $registro->id_parcial : null,
+                    $registro->prenda_bodega_id ? (int) $registro->prenda_bodega_id : null
                 ),
-                'nombre_prenda' => $registro->nombre_prenda !== null && $registro->nombre_prenda !== '' ? (string) $registro->nombre_prenda : null,
+                'nombre_prenda' => in_array(strtoupper(trim((string) ($registro->tipo_recibo ?? ''))), ['COSTURA-BODEGA', 'CORTE-PARA-BODEGA'], true)
+                    ? ($registro->prenda_bodega_nombre !== null && $registro->prenda_bodega_nombre !== '' ? (string) $registro->prenda_bodega_nombre : null)
+                    : ($registro->nombre_prenda !== null && $registro->nombre_prenda !== '' ? (string) $registro->nombre_prenda : null),
+                'prenda_bodega_nombre' => $registro->prenda_bodega_nombre !== null && $registro->prenda_bodega_nombre !== '' ? (string) $registro->prenda_bodega_nombre : null,
                 'descripcion_prenda' => $registro->descripcion_prenda !== null && $registro->descripcion_prenda !== '' ? (string) $registro->descripcion_prenda : null,
                 'fecha' => Carbon::parse($registro->fecha_completado)->format('d/m/Y h:i A'),
                 'tallas' => $tallas->all(),
@@ -238,21 +286,30 @@ class EntradaCosturaController extends Controller
         return [$registros, $resumenTallas, $totales];
     }
 
-    private function resolverEncargadoCostura(?int $numeroPedido, ?int $prendaId, ?string $numeroRecibo, ?int $idParcial = null): ?string
+    private function resolverEncargadoCostura(?int $numeroPedido, ?int $prendaId, ?string $numeroRecibo, ?int $idParcial = null, ?int $prendaBodegaId = null): ?string
     {
-        if (!$numeroPedido || !$prendaId || !$numeroRecibo) {
+        if (!$numeroPedido || !$numeroRecibo) {
             return null;
         }
 
         $query = DB::table('procesos_prenda')
             ->where('numero_pedido', $numeroPedido)
-            ->where('prenda_pedido_id', $prendaId)
             ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
             ->whereNull('deleted_at')
             ->orderByDesc('fecha_de_asignacion_encargado')
             ->orderByDesc('updated_at')
             ->orderByDesc('created_at')
             ->orderByDesc('id');
+
+        if ($prendaBodegaId !== null && $prendaBodegaId > 0) {
+            if (Schema::hasColumn('procesos_prenda', 'prenda_bodega_id')) {
+                $query->where('prenda_bodega_id', $prendaBodegaId);
+            }
+        } elseif ($prendaId) {
+            $query->where('prenda_pedido_id', $prendaId);
+        } else {
+            return null;
+        }
 
         if (Schema::hasColumn('procesos_prenda', 'numero_recibo_parcial')) {
             if ($idParcial !== null) {
