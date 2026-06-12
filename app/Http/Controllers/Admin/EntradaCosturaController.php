@@ -61,17 +61,24 @@ class EntradaCosturaController extends Controller
         $anioSeleccionado = (string) ($anioSeleccionado ?? '');
         $desdeSeleccionado = (string) ($desdeSeleccionado ?? '');
         $hastaSeleccionado = (string) ($hastaSeleccionado ?? '');
+        $tipoReciboResueltoExpr = "CASE WHEN ppar.id IS NOT NULL THEN COALESCE(ppar.tipo_recibo, rpp.tipo_recibo, crp.tipo_recibo, '') WHEN prc.id_parcial IS NOT NULL THEN COALESCE(rpp.tipo_recibo, crp.tipo_recibo, '') ELSE COALESCE(crp.tipo_recibo, rpp.tipo_recibo, '') END";
+        $tipoReciboResueltoUpperExpr = "UPPER(TRIM($tipoReciboResueltoExpr))";
+        $nombrePrendaBusquedaExpr = "LOWER(COALESCE(COALESCE(pp_parcial_ppar.nombre_prenda, pp_parcial.nombre_prenda, pp.nombre_prenda, pb.nombre), ''))";
+        $descripcionPrendaBusquedaExpr = "LOWER(COALESCE(COALESCE(pp_parcial_ppar.descripcion, pp_parcial.descripcion, pp.descripcion, pb.descripcion), ''))";
 
         $query = DB::table('prenda_recibo_completado as prc')
             ->leftJoin('consecutivos_recibos_pedidos as crp', 'crp.id', '=', 'prc.id_recibo')
+            ->leftJoin('pedidos_parciales as ppar', 'ppar.id', '=', 'prc.id_parcial')
             ->leftJoin('recibo_por_partes as rpp', 'rpp.id', '=', 'prc.id_parcial')
             ->leftJoin('consecutivos_recibos_pedidos as crp_base', function ($join) {
                 $join->on('crp_base.consecutivo_actual', '=', 'rpp.consecutivo_original')
                     ->whereRaw('UPPER(TRIM(crp_base.tipo_recibo)) IN (?, ?)', ['CORTE-PARA-BODEGA', 'COSTURA-BODEGA']);
             })
             ->leftJoin('pedidos_produccion as ped', 'ped.id', '=', 'crp.pedido_produccion_id')
+            ->leftJoin('pedidos_produccion as ped_parcial_ppar', 'ped_parcial_ppar.id', '=', 'ppar.pedido_produccion_id')
             ->leftJoin('pedidos_produccion as ped_parcial', 'ped_parcial.id', '=', 'rpp.pedido_produccion_id')
             ->leftJoin('prendas_pedido as pp', 'pp.id', '=', 'crp.prenda_id')
+            ->leftJoin('prendas_pedido as pp_parcial_ppar', 'pp_parcial_ppar.id', '=', 'ppar.prenda_pedido_id')
             ->leftJoin('prendas_pedido as pp_parcial', 'pp_parcial.id', '=', 'rpp.prenda_pedido_id')
             ->leftJoin('prenda_bodega as pb', function ($join) {
                 $join->on('pb.id', '=', 'crp.prenda_bodega_id')
@@ -86,22 +93,27 @@ class EntradaCosturaController extends Controller
                 'prc.fecha_completado',
                 'prc.tallas_control_calidad',
                 'prc.id_parcial',
-                DB::raw('COALESCE(rpp.pedido_produccion_id, crp.pedido_produccion_id) as pedido_produccion_id'),
-                DB::raw('COALESCE(ped_parcial.numero_pedido, ped.numero_pedido) as numero_pedido_real'),
+                DB::raw('COALESCE(ppar.pedido_produccion_id, rpp.pedido_produccion_id, crp.pedido_produccion_id) as pedido_produccion_id'),
+                DB::raw('COALESCE(ped_parcial_ppar.numero_pedido, ped_parcial.numero_pedido, ped.numero_pedido) as numero_pedido_real'),
                 DB::raw('COALESCE(crp.prenda_bodega_id, crp_base.prenda_bodega_id) as prenda_bodega_id'),
-                DB::raw('COALESCE(rpp.prenda_pedido_id, crp.prenda_id) as prenda_id'),
-                'crp.tipo_recibo',
-                DB::raw("CASE WHEN UPPER(TRIM(COALESCE(crp.tipo_recibo, rpp.tipo_recibo, ''))) IN ('COSTURA-BODEGA', 'CORTE-PARA-BODEGA') THEN 'Bodega' ELSE COALESCE(ped_parcial.cliente, ped.cliente) END as cliente"),
-                DB::raw('COALESCE(rpp.consecutivo_parcial, prc.numero_recibo, crp.consecutivo_actual) as numero_recibo_visible'),
+                DB::raw('COALESCE(ppar.prenda_pedido_id, rpp.prenda_pedido_id, crp.prenda_id) as prenda_id'),
+                DB::raw("$tipoReciboResueltoExpr as tipo_recibo"),
+                DB::raw("CASE WHEN $tipoReciboResueltoUpperExpr IN ('COSTURA-BODEGA', 'CORTE-PARA-BODEGA') THEN 'Bodega' ELSE COALESCE(ped_parcial_ppar.cliente, ped_parcial.cliente, ped.cliente) END as cliente"),
+                DB::raw('COALESCE(ppar.consecutivo_actual, rpp.consecutivo_parcial, prc.numero_recibo, crp.consecutivo_actual) as numero_recibo_visible'),
                 'pb.nombre as prenda_bodega_nombre',
-                DB::raw("CASE WHEN UPPER(TRIM(COALESCE(crp.tipo_recibo, rpp.tipo_recibo, ''))) IN ('COSTURA-BODEGA', 'CORTE-PARA-BODEGA') THEN COALESCE(pb.nombre, pp_parcial.nombre_prenda, pp.nombre_prenda) ELSE COALESCE(pp_parcial.nombre_prenda, pp.nombre_prenda, pb.nombre) END as nombre_prenda"),
-                DB::raw("CASE WHEN UPPER(TRIM(COALESCE(crp.tipo_recibo, rpp.tipo_recibo, ''))) IN ('COSTURA-BODEGA', 'CORTE-PARA-BODEGA') THEN COALESCE(pb.descripcion, pp_parcial.descripcion, pp.descripcion) ELSE COALESCE(pp_parcial.descripcion, pp.descripcion, pb.descripcion) END as descripcion_prenda")
+                DB::raw("CASE WHEN $tipoReciboResueltoUpperExpr IN ('COSTURA-BODEGA', 'CORTE-PARA-BODEGA') THEN COALESCE(pb.nombre, pp_parcial_ppar.nombre_prenda, pp_parcial.nombre_prenda, pp.nombre_prenda) ELSE COALESCE(pp_parcial_ppar.nombre_prenda, pp_parcial.nombre_prenda, pp.nombre_prenda, pb.nombre) END as nombre_prenda"),
+                DB::raw("CASE WHEN $tipoReciboResueltoUpperExpr IN ('COSTURA-BODEGA', 'CORTE-PARA-BODEGA') THEN COALESCE(pb.descripcion, pp_parcial_ppar.descripcion, pp_parcial.descripcion, pp.descripcion) ELSE COALESCE(pp_parcial_ppar.descripcion, pp_parcial.descripcion, pp.descripcion, pb.descripcion) END as descripcion_prenda")
             );
 
         $query->where(function ($subQuery) {
             $subQuery->whereNull('crp.tipo_recibo')
                 ->orWhereRaw('UPPER(TRIM(crp.tipo_recibo)) <> ?', ['REFLECTIVO']);
         });
+
+        $query->whereRaw(
+            "$tipoReciboResueltoUpperExpr IN (?, ?, ?)",
+            ['COSTURA', 'CORTE-PARA-BODEGA', 'COSTURA-BODEGA']
+        );
 
         $query->whereExists(function ($subQuery) {
             $subQuery->select(DB::raw(1))
@@ -139,15 +151,15 @@ class EntradaCosturaController extends Controller
             $query->where(function ($searchQuery) use ($likeBusqueda) {
                 $searchQuery
                     ->whereRaw('LOWER(COALESCE(CAST(prc.numero_recibo AS CHAR), "")) LIKE ?', [$likeBusqueda])
-                    ->orWhereRaw('LOWER(COALESCE(CAST(COALESCE(rpp.consecutivo_parcial, prc.numero_recibo, crp.consecutivo_actual) AS CHAR), "")) LIKE ?', [$likeBusqueda])
-                    ->orWhereRaw('LOWER(COALESCE(CAST(COALESCE(rpp.pedido_produccion_id, crp.pedido_produccion_id) AS CHAR), "")) LIKE ?', [$likeBusqueda])
-                    ->orWhereRaw('LOWER(COALESCE(CAST(COALESCE(ped_parcial.numero_pedido, ped.numero_pedido) AS CHAR), "")) LIKE ?', [$likeBusqueda])
-                    ->orWhereRaw('LOWER(COALESCE(COALESCE(ped_parcial.cliente, ped.cliente), "")) LIKE ?', [$likeBusqueda])
+                    ->orWhereRaw('LOWER(COALESCE(CAST(COALESCE(ppar.consecutivo_actual, rpp.consecutivo_parcial, prc.numero_recibo, crp.consecutivo_actual) AS CHAR), "")) LIKE ?', [$likeBusqueda])
+                    ->orWhereRaw('LOWER(COALESCE(CAST(COALESCE(ppar.pedido_produccion_id, rpp.pedido_produccion_id, crp.pedido_produccion_id) AS CHAR), "")) LIKE ?', [$likeBusqueda])
+                    ->orWhereRaw('LOWER(COALESCE(CAST(COALESCE(ped_parcial_ppar.numero_pedido, ped_parcial.numero_pedido, ped.numero_pedido) AS CHAR), "")) LIKE ?', [$likeBusqueda])
+                    ->orWhereRaw('LOWER(COALESCE(COALESCE(ped_parcial_ppar.cliente, ped_parcial.cliente, ped.cliente), "")) LIKE ?', [$likeBusqueda])
                     ->orWhereRaw('LOWER(COALESCE(prc.area, "")) LIKE ?', [$likeBusqueda])
                     ->orWhereRaw('LOWER(COALESCE(prc.nombre_operario, "")) LIKE ?', [$likeBusqueda])
-                    ->orWhereRaw('LOWER(COALESCE(crp.tipo_recibo, "")) LIKE ?', [$likeBusqueda])
-                    ->orWhereRaw('LOWER(COALESCE(COALESCE(pp_parcial.nombre_prenda, pp.nombre_prenda, pb.descripcion), "")) LIKE ?', [$likeBusqueda])
-                    ->orWhereRaw('LOWER(COALESCE(COALESCE(pp_parcial.descripcion, pp.descripcion, pb.descripcion), "")) LIKE ?', [$likeBusqueda]);
+                    ->orWhereRaw("LOWER(COALESCE($tipoReciboResueltoExpr, '')) LIKE ?", [$likeBusqueda])
+                    ->orWhereRaw("$nombrePrendaBusquedaExpr LIKE ?", [$likeBusqueda])
+                    ->orWhereRaw("$descripcionPrendaBusquedaExpr LIKE ?", [$likeBusqueda]);
             });
         }
 
@@ -242,7 +254,7 @@ class EntradaCosturaController extends Controller
                 'area' => $registro->area,
                 'cliente' => $registro->cliente !== null && $registro->cliente !== '' ? (string) $registro->cliente : null,
                 'nombre_operario' => $registro->nombre_operario,
-                'encargado' => (string) $this->resolverEncargadoCostura(
+                'encargado' => $this->resolverEncargadoCostura(
                     $registro->numero_pedido_real ? (int) $registro->numero_pedido_real : null,
                     in_array(strtoupper(trim((string) ($registro->tipo_recibo ?? ''))), ['COSTURA-BODEGA', 'CORTE-PARA-BODEGA'], true)
                         ? null
@@ -288,12 +300,17 @@ class EntradaCosturaController extends Controller
 
     private function resolverEncargadoCostura(?int $numeroPedido, ?int $prendaId, ?string $numeroRecibo, ?int $idParcial = null, ?int $prendaBodegaId = null): ?string
     {
-        if (!$numeroPedido || !$numeroRecibo) {
+        $tieneContextoPedido = $numeroPedido !== null && $numeroPedido > 0;
+        $tieneContextoPrenda = ($prendaBodegaId !== null && $prendaBodegaId > 0)
+            || ($prendaId !== null && $prendaId > 0);
+
+        if (!$numeroRecibo || (!$tieneContextoPedido && !$tieneContextoPrenda)) {
             return null;
         }
 
-        $query = DB::table('procesos_prenda')
-            ->where('numero_pedido', $numeroPedido)
+        $numeroReciboLimpio = trim($numeroRecibo);
+
+        $queryBase = DB::table('procesos_prenda')
             ->whereRaw('LOWER(TRIM(proceso)) = ?', ['costura'])
             ->whereNull('deleted_at')
             ->orderByDesc('fecha_de_asignacion_encargado')
@@ -301,32 +318,53 @@ class EntradaCosturaController extends Controller
             ->orderByDesc('created_at')
             ->orderByDesc('id');
 
-        if ($prendaBodegaId !== null && $prendaBodegaId > 0) {
-            if (Schema::hasColumn('procesos_prenda', 'prenda_bodega_id')) {
-                $query->where('prenda_bodega_id', $prendaBodegaId);
-            }
-        } elseif ($prendaId) {
-            $query->where('prenda_pedido_id', $prendaId);
-        } else {
-            return null;
+        if ($tieneContextoPedido) {
+            $queryBase->where('numero_pedido', $numeroPedido);
         }
 
-        if (Schema::hasColumn('procesos_prenda', 'numero_recibo_parcial')) {
+        $aplicarFiltroNumeroRecibo = function ($query) use ($idParcial, $numeroReciboLimpio) {
+            if (!Schema::hasColumn('procesos_prenda', 'numero_recibo_parcial')) {
+                return $query->where('numero_recibo', $numeroReciboLimpio);
+            }
+
             if ($idParcial !== null) {
-                $query->where('numero_recibo_parcial', $numeroRecibo);
-            } else {
-                $query->where('numero_recibo', $numeroRecibo)
-                    ->where(function ($subQuery) {
-                        $subQuery->whereNull('numero_recibo_parcial')
-                            ->orWhere('numero_recibo_parcial', '')
-                            ->orWhere('numero_recibo_parcial', 0);
-                    });
+                return $query->where(function ($subQuery) use ($numeroReciboLimpio) {
+                    $subQuery->where('numero_recibo', $numeroReciboLimpio)
+                        ->orWhere('numero_recibo_parcial', $numeroReciboLimpio);
+                });
             }
-        } else {
-            $query->where('numero_recibo', $numeroRecibo);
-        }
 
-        $encargado = $query->value('encargado');
+            return $query->where('numero_recibo', $numeroReciboLimpio)
+                ->where(function ($subQuery) {
+                    $subQuery->whereNull('numero_recibo_parcial')
+                        ->orWhere('numero_recibo_parcial', '')
+                        ->orWhere('numero_recibo_parcial', 0);
+                });
+        };
+
+        $buscarEncargado = function ($aplicarFiltroPrenda) use ($queryBase, $prendaBodegaId, $prendaId, $aplicarFiltroNumeroRecibo) {
+            $query = clone $queryBase;
+
+            if ($aplicarFiltroPrenda) {
+                if ($prendaBodegaId !== null && $prendaBodegaId > 0 && Schema::hasColumn('procesos_prenda', 'prenda_bodega_id')) {
+                    $query->where('prenda_bodega_id', $prendaBodegaId);
+                } elseif ($prendaId) {
+                    $query->where('prenda_pedido_id', $prendaId);
+                } else {
+                    return null;
+                }
+            }
+
+            $aplicarFiltroNumeroRecibo($query);
+
+            return $query->whereRaw('COALESCE(TRIM(encargado), "") <> ""')->value('encargado');
+        };
+
+        $encargado = $buscarEncargado(true);
+
+        if (!$encargado) {
+            $encargado = $buscarEncargado(false);
+        }
 
         return $encargado ? (string) $encargado : null;
     }

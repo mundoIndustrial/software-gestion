@@ -437,7 +437,7 @@
                                     $idPrendaBodegaParaModal = (int) ($entrada['prenda_bodega_id'] ?? 0);
                                     $pedidoReferencia = $entrada['numero_pedido'] ?? '-';
                                     $clienteReferencia = $entrada['cliente'] ?? '-';
-                                    $encargadoReferencia = $entrada['encargado'] ?? ($entrada['nombre_operario'] ?? '-');
+                                    $encargadoReferencia = trim((string) ($entrada['encargado'] ?? ''));
                                     $prendaReferencia = $tipoReciboEntrada === 'COSTURA-BODEGA'
                                         ? ($entrada['prenda_bodega_nombre'] ?? $entrada['nombre_prenda'] ?? ($entrada['descripcion_prenda'] ?? '-'))
                                         : ($entrada['nombre_prenda'] ?? ($entrada['descripcion_prenda'] ?? '-'));
@@ -538,7 +538,7 @@
                                         </div>
                                     </td>
                                     <td><strong>{{ $entrada['total_unidades'] ?? 0 }}</strong></td>
-                                    <td>{{ $encargadoReferencia }}</td>
+                                    <td>{{ $encargadoReferencia !== '' ? $encargadoReferencia : '' }}</td>
                                     <td>{{ $entrada['fecha'] ?? '-' }}</td>
                                 </tr>
                             @empty
