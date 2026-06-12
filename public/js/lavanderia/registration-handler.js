@@ -1475,12 +1475,99 @@ class RegistrationHandler {
             inputDescripcion.value = '';
         }
     }
+
+    /**
+     * Maneja las prendas cargadas desde un movimiento de salida
+     */
+    handlePrendasSalidaLoaded(prendas) {
+        console.log('[RegistrationHandler] Prendas cargadas del evento:', prendas);
+        
+        if (!prendas || prendas.length === 0) {
+            window.dispatchEvent(new CustomEvent('showToast', { 
+                detail: { title: 'Sin Prendas', message: 'El movimiento de salida no tiene prendas', type: 'warning' }
+            }));
+            return;
+        }
+
+        // Procesar cada prenda cargada
+        prendas.forEach((prenda, index) => {
+            console.log(`[RegistrationHandler] Procesando prenda ${index}:`, prenda);
+            
+            if (prenda.tipo === 'RECIBO') {
+                // Determinar tipo_recibo_mostrar basado en tipo_recibo
+                const tipoRecibo = prenda.tipo_recibo || '';
+                const tipoReciboPrincipal = tipoRecibo === 'CORTE-PARA-BODEGA' ? 'BODEGA' : 'COSTURA';
+                
+                console.log(`[RegistrationHandler] Recibo - tipoRecibo: ${tipoRecibo}, tipoReciboPrincipal: ${tipoReciboPrincipal}`);
+                
+                // Agregar recibo al multi receipt handler
+                const reciboData = {
+                    id: prenda.recibo_id,
+                    numero_recibo: prenda.numero_recibo,
+                    prenda: prenda.prenda_nombre,
+                    tipo_recibo_original: tipoRecibo,
+                    tipo_recibo_mostrar: tipoReciboPrincipal,
+                    prenda_id: prenda.prenda_id,
+                    prenda_bodega_id: prenda.prenda_bodega_id,
+                    tallas: prenda.tallas.map(t => ({
+                        id: t.id,
+                        talla: t.talla,
+                        genero: t.genero,
+                        cantidad: t.cantidad_enviada,
+                        cantidad_enviada: t.cantidad_enviada,
+                        cantidad_recibida: t.cantidad_recibida
+                    }))
+                };
+
+                console.log(`[RegistrationHandler] reciboData creado:`, reciboData);
+
+                this.multiReceiptHandler.addRecibo(reciboData);
+                
+                // Automáticamente seleccionar todas las tallas del recibo
+                const selectedTallas = prenda.tallas.map(t => ({
+                    id: t.id,
+                    talla: t.talla,
+                    genero: t.genero,
+                    cantidad_enviada: t.cantidad_enviada,
+                    tipo_prenda: tipoReciboPrincipal,
+                    prenda_id: tipoRecibo === 'CORTE-PARA-BODEGA' ? null : prenda.prenda_id,
+                    prenda_bodega_id: tipoRecibo === 'CORTE-PARA-BODEGA' ? prenda.prenda_bodega_id : null
+                }));
+
+                this.multiReceiptHandler.setSelectedTallasForRecibo(prenda.recibo_id, selectedTallas);
+            } 
+            else if (prenda.tipo === 'PRENDA_MANUAL') {
+                console.log(`[RegistrationHandler] Agregando prenda manual:`, prenda.descripcion);
+                
+                // Agregar prenda manual
+                const prendaManualData = {
+                    temp_id: prenda.prenda_agregada_id,
+                    descripcion: prenda.descripcion,
+                    genero: null,
+                    modoTallas: 'LETRAS',
+                    selectedSizeNames: prenda.tallas.map(t => t.talla),
+                    selectedTallas: prenda.tallas.map(t => ({
+                        id: t.id,
+                        talla: t.talla,
+                        genero: t.genero,
+                        cantidad_enviada: t.cantidad_enviada,
+                        cantidad_recibida: t.cantidad_recibida
+                    }))
+                };
+
+                // Agregar al manualPrendaHandler
+                const prendaId = this.manualPrendaHandler.addManualPrenda(prendaManualData);
+            }
+        });
+
+        console.log('[RegistrationHandler] Refrescando vistas...');
+        
+        // Refrescar la vista
+        this.renderSelectedRecibos();
+        this.renderManualPrendaResumen();
+        
+        console.log('[RegistrationHandler] Completado handlePrendasSalidaLoaded');
+    }
 }
 
 export { RegistrationHandler };
-
-
-
-
-
-

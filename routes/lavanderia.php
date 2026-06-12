@@ -22,6 +22,14 @@ Route::middleware(['auth', 'lavanderia-access'])->prefix('gestion-lavanderia')->
     Route::get('/api/movimientos', [LavanderiaController::class, 'getMovimientos'])
         ->name('api.movimientos');
     
+    // API: Obtener movimientos de salida (para cargar en entrada)
+    Route::get('/api/movimientos-salida', [LavanderiaController::class, 'apiMovimientosSalida'])
+        ->name('api.movimientos-salida');
+    
+    // API: Obtener prendas de movimiento de salida
+    Route::get('/api/movimiento-salida/{movimientoId}/prendas', [LavanderiaController::class, 'apiPrendasMovimientoSalida'])
+        ->name('api.prendas-movimiento-salida');
+    
     // API: Tallas disponibles para un recibo
     Route::get('/api/tallas-disponibles/{reciboId}', [LavanderiaController::class, 'apiTallasDisponibles'])
         ->name('api.tallas-disponibles');

@@ -38,7 +38,7 @@ class MultiReceiptHandler {
             id: recibo.id,
             numero_recibo: recibo.numero_recibo,
             tipo_recibo_original: recibo.tipo_recibo_original,
-            tipo_recibo_mostrar: recibo.tipo_recibo,
+            tipo_recibo_mostrar: recibo.tipo_recibo_mostrar || recibo.tipo_recibo,
             cliente: recibo.cliente,
             prenda: recibo.prenda,
             prenda_id: prendaId,

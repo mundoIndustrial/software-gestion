@@ -126,8 +126,23 @@
                 </select>
             </div>
 
+            <!-- Selector de Movimiento de Salida para Entrada (Oculto por defecto) -->
+            <div class="form-group" id="selectorMovimientoSalidaContainer" style="display: none;">
+                <label class="form-label">Cargar desde Movimiento de Salida (Opcional)</label>
+                <div class="search-wrapper">
+                    <input 
+                        type="text" 
+                        id="searchMovimientoSalida" 
+                        class="form-input search-input-large"
+                        placeholder="Busca por número de movimiento..."
+                        autocomplete="off"
+                    >
+                    <div id="autocompleteMovimientosSalida" class="autocomplete-results"></div>
+                </div>
+            </div>
+
             <!-- Búsqueda de Recibos -->
-            <div class="form-group">
+            <div class="form-group" id="searchRecibosContainer">
                 <label class="form-label">Buscar Recibos</label>
                 <div class="search-wrapper">
                     <input 

@@ -1063,6 +1063,175 @@ class LavanderiaController extends Controller
     }
 
     /**
+     * API: Obtener movimientos de salida para cargar en entrada
+     */
+    public function apiMovimientosSalida(): JsonResponse
+    {
+        try {
+            $movimientosSalida = \App\Models\LavanderiaMovimiento::where('tipo_movimiento', 'SALIDA')
+                ->orderBy('numero_movimiento', 'desc')
+                ->get()
+                ->map(function ($movimiento) {
+                    return [
+                        'id' => $movimiento->id,
+                        'numero_movimiento' => $movimiento->numero_movimiento,
+                        'fecha_movimiento' => $movimiento->fecha_movimiento?->format('Y-m-d H:i') ?? '-',
+                        'estado' => $movimiento->estado,
+                        'novedad' => $movimiento->novedad,
+                        'recibos_count' => $movimiento->recibos->count(),
+                        'prendas_manuales_count' => $movimiento->tallas
+                            ->filter(fn($t) => !empty($t->prenda_agregada_id))
+                            ->groupBy('prenda_agregada_id')
+                            ->count(),
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $movimientosSalida
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en apiMovimientosSalida:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener movimientos de salida: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * API: Obtener prendas de un movimiento de salida
+     */
+    public function apiPrendasMovimientoSalida(int $movimientoId): JsonResponse
+    {
+        try {
+            $movimiento = \App\Models\LavanderiaMovimiento::find($movimientoId);
+            
+            if (!$movimiento) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Movimiento no encontrado'
+                ], 404);
+            }
+
+            if ($movimiento->tipo_movimiento !== 'SALIDA') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El movimiento debe ser de tipo SALIDA'
+                ], 400);
+            }
+
+            // Obtener recibos del movimiento
+            $recibos = $movimiento->recibos()
+                ->with('recibo.prenda', 'recibo.prendaBodega')
+                ->get()
+                ->map(function ($reciboMovimiento) use ($movimiento) {
+                    $recibo = $reciboMovimiento->recibo;
+                    
+                    // Determinar la prenda
+                    $tipoRecibo = $reciboMovimiento->tipo_recibo;
+                    $prendaId = null;
+                    $prendaBodegaId = null;
+                    $prendaNombre = 'Sin prenda';
+                    
+                    if ($tipoRecibo === 'CORTE-PARA-BODEGA') {
+                        $prendaBodegaId = $recibo?->prenda_bodega_id;
+                        $prendaNombre = $recibo?->prendaBodega?->nombre ?? 'Sin prenda';
+                    } else {
+                        $prendaId = $recibo?->prenda_id;
+                        $prendaNombre = $recibo?->prenda?->nombre_prenda ?? 'Sin prenda';
+                    }
+
+                    // Obtener tallas de este recibo
+                    $tallas = $movimiento->tallas()
+                        ->where(function ($query) use ($prendaId, $prendaBodegaId) {
+                            if ($prendaBodegaId) {
+                                $query->where('prenda_bodega_id', $prendaBodegaId);
+                            } elseif ($prendaId) {
+                                $query->where('prenda_id', $prendaId);
+                            }
+                        })
+                        ->get()
+                        ->map(function ($talla) {
+                            return [
+                                'id' => $talla->id,
+                                'talla' => $talla->talla,
+                                'genero' => $talla->genero,
+                                'cantidad_enviada' => $talla->cantidad_enviada,
+                                'cantidad_recibida' => $talla->cantidad_recibida,
+                            ];
+                        })
+                        ->values()
+                        ->toArray();
+
+                    return [
+                        'tipo' => 'RECIBO',
+                        'recibo_id' => $reciboMovimiento->consecutivo_recibo_pedido_id,
+                        'numero_recibo' => $reciboMovimiento->numero_recibo,
+                        'prenda_id' => $prendaId,
+                        'prenda_bodega_id' => $prendaBodegaId,
+                        'prenda_nombre' => $prendaNombre,
+                        'tipo_recibo' => $tipoRecibo,
+                        'tallas' => $tallas,
+                    ];
+                })
+                ->values()
+                ->toArray();
+
+            // Obtener prendas manuales del movimiento
+            $prendasManuales = $movimiento->tallas()
+                ->whereNotNull('prenda_agregada_id')
+                ->with('prendaAgregada')
+                ->get()
+                ->groupBy('prenda_agregada_id')
+                ->map(function ($tallasPrenda) {
+                    $primeraTalla = $tallasPrenda->first();
+                    $prendaAgregada = $primeraTalla->prendaAgregada;
+
+                    $tallas = $tallasPrenda->map(function ($talla) {
+                        return [
+                            'id' => $talla->id,
+                            'talla' => $talla->talla,
+                            'genero' => $talla->genero,
+                            'cantidad_enviada' => $talla->cantidad_enviada,
+                            'cantidad_recibida' => $talla->cantidad_recibida,
+                        ];
+                    })->values()->toArray();
+
+                    return [
+                        'tipo' => 'PRENDA_MANUAL',
+                        'prenda_agregada_id' => $prendaAgregada?->id,
+                        'descripcion' => $prendaAgregada?->descripcion ?? 'Sin descripción',
+                        'tallas' => $tallas,
+                    ];
+                })
+                ->values()
+                ->toArray();
+
+            $prendas = array_merge($recibos, $prendasManuales);
+
+            return response()->json([
+                'success' => true,
+                'data' => $prendas
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en apiPrendasMovimientoSalida:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener prendas del movimiento: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Guardar firma de movimiento
      */
     public function guardarFirmaSalida(Request $request): JsonResponse

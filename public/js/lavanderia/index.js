@@ -11,6 +11,7 @@ import { SignatureHandler } from './signature-handler.js';
 import { RegistrationHandler } from './registration-handler.js';
 import { MultiReceiptHandler } from './multi-receipt-handler.js';
 import { ManualPrendaHandler } from './manual-prenda-handler.js';
+import { SalidaLoader } from './salida-loader.js';
 
 class LavanderiaManager {
     constructor() {
@@ -27,6 +28,7 @@ class LavanderiaManager {
         this.movementsHandler = new MovementsHandler(this.apiSearchUrl);
         this.signatureHandler = new SignatureHandler(this.apiSearchUrl);
         this.registrationHandler = new RegistrationHandler(this.apiSearchUrl, this.tallasHandler, this.multiReceiptHandler, this.manualPrendaHandler);
+        this.salidaLoader = new SalidaLoader(this.apiSearchUrl);
         
         this.init();
     }
@@ -61,6 +63,27 @@ class LavanderiaManager {
                     if (selectTipoMovimiento && e.target.checked) {
                         selectTipoMovimiento.value = e.target.value;
                         console.log('[LavanderiaManager] Tipo de movimiento actualizado a:', e.target.value);
+                        
+                        // Mostrar/ocultar selector de movimiento de salida según tipo
+                        const selectorContainer = document.getElementById('selectorMovimientoSalidaContainer');
+                        const searchRecibosContainer = document.getElementById('searchRecibosContainer');
+                        
+                        if (e.target.value === 'ENTRADA') {
+                            // Mostrar AMBAS opciones: selector de salida Y búsqueda de recibos
+                            if (selectorContainer) selectorContainer.style.display = 'block';
+                            if (searchRecibosContainer) searchRecibosContainer.style.display = 'block';
+                            
+                            // Cargar movimientos de salida
+                            this.salidaLoader.loadMovimientosSalida();
+                        } else {
+                            // Mostrar solo búsqueda de recibos para SALIDA
+                            if (selectorContainer) selectorContainer.style.display = 'none';
+                            if (searchRecibosContainer) searchRecibosContainer.style.display = 'block';
+                            
+                            // Limpiar selección de salida
+                            this.salidaLoader.clear();
+                        }
+                        
                         // Clear form and selected recibos when tipoMovimiento changes
                         this.registrationHandler.clearForm();
                         // Clear search input
@@ -298,6 +321,12 @@ class LavanderiaManager {
         window.addEventListener('reciboSelected', (e) => {
             const recibo = e.detail;
             this.registrationHandler.handleReciboSelected(recibo);
+        });
+
+        // Evento: Prendas de salida cargadas
+        window.addEventListener('prendasSalidaLoaded', (e) => {
+            const { movimientoId, prendas } = e.detail;
+            this.registrationHandler.handlePrendasSalidaLoaded(prendas);
         });
 
         // Evento: Abrir modal de firma
