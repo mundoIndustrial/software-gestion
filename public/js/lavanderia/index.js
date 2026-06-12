@@ -1,4 +1,4 @@
-﻿/**
+/**
  * LAVANDERÍA MODULE - Index
  * Orquesta todos los módulos de lavandería
  */
@@ -61,6 +61,15 @@ class LavanderiaManager {
                     if (selectTipoMovimiento && e.target.checked) {
                         selectTipoMovimiento.value = e.target.value;
                         console.log('[LavanderiaManager] Tipo de movimiento actualizado a:', e.target.value);
+                        // Clear form and selected recibos when tipoMovimiento changes
+                        this.registrationHandler.clearForm();
+                        // Clear search input
+                        const searchInput = document.getElementById('searchRecibo');
+                        if (searchInput) {
+                            searchInput.value = '';
+                            const results = document.querySelector('.autocomplete-results');
+                            if (results) results.classList.remove('active');
+                        }
                     }
                 });
             });

@@ -151,7 +151,49 @@ class RegistrationHandler {
 
         // Refrescar la lista y mostrar inmediatamente la sección de tallas para este recibo
         this.renderSelectedRecibos();
-        this.editReciboTallas(recibo.id);
+        this.editReciboTallas(recibo.id, true);
+    }
+
+    /**
+     * Edita las tallas de un recibo específico
+     */
+    async editReciboTallas(reciboId, fetchFresh = false) {
+        const recibo = this.multiReceiptHandler.selectedRecibos.find(r => r.id === reciboId);
+        if (!recibo) {
+            return;
+        }
+
+        this.currentReciboBeingEdited = reciboId;
+        this.showTallasSection();
+        
+        if (fetchFresh) {
+            // Fetch fresh tallas from server based on tipoMovimiento
+            try {
+                const tipoMovimiento = document.getElementById('selectTipoMovimiento').value;
+                const url = new URL(`${this.apiSearchUrl.replace('search-recibos', 'tallas-disponibles')}/${reciboId}`, window.location.origin);
+                url.searchParams.set('tipo', tipoMovimiento);
+                
+                const response = await fetch(url.toString());
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    // Update the recibo's tallas with fresh data
+                    recibo.tallas = data.data;
+                }
+            } catch (error) {
+                console.error('Error fetching tallas disponibles:', error);
+            }
+        }
+        
+        this.renderTallasForRecibo(recibo);
+        
+        // Scroll a la sección de tallas con un pequeño delay
+        setTimeout(() => {
+            const tallasSection = document.getElementById('tallasSection');
+            if (tallasSection) {
+                tallasSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 100);
     }
 
     /**
@@ -270,7 +312,7 @@ class RegistrationHandler {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const reciboId = parseInt(e.currentTarget.dataset.reciboId);
-                this.editReciboTallas(reciboId);
+                this.editReciboTallas(reciboId, true);
             });
         });
     }
@@ -281,28 +323,6 @@ class RegistrationHandler {
     removeRecibo(reciboId) {
         this.multiReceiptHandler.removeRecibo(reciboId);
         this.renderSelectedRecibos();
-    }
-
-    /**
-     * Edita las tallas de un recibo específico
-     */
-    editReciboTallas(reciboId) {
-        const recibo = this.multiReceiptHandler.selectedRecibos.find(r => r.id === reciboId);
-        if (!recibo) {
-            return;
-        }
-
-        this.currentReciboBeingEdited = reciboId;
-        this.showTallasSection();
-        this.renderTallasForRecibo(recibo);
-        
-        // Scroll a la sección de tallas con un pequeño delay
-        setTimeout(() => {
-            const tallasSection = document.getElementById('tallasSection');
-            if (tallasSection) {
-                tallasSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }, 100);
     }
 
     /**
