@@ -163,11 +163,9 @@ class LavanderiaController extends Controller
 
             // Obtener todas las tallas del recibo
             $tallas = [];
-            $prendaKey = '';
 
             if ($recibo->tipo_recibo === 'CORTE-PARA-BODEGA') {
                 if ($recibo->prendaBodega) {
-                    $prendaKey = 'BODEGA:' . (int) $recibo->prendaBodega->id;
                     if ($recibo->prendaBodega->tallas) {
                         $tallas = $recibo->prendaBodega->tallas->map(function ($talla) {
                             return [
@@ -182,7 +180,6 @@ class LavanderiaController extends Controller
                 }
             } else {
                 if ($recibo->prenda) {
-                    $prendaKey = 'COSTURA:' . (int) $recibo->prenda->id;
                     if ($recibo->prenda->tallas) {
                         $tallas = $recibo->prenda->tallas->map(function ($talla) {
                             return [
@@ -203,21 +200,31 @@ class LavanderiaController extends Controller
                 ->get();
 
             // Calcular saldos por talla
-            $saldosPorTalla = [];
+            $salidaRealizadaPorTalla = [];
+            $entradaRealizadaPorTalla = [];
+            
             foreach ($movimientosRecibo as $movRec) {
                 $tipoMov = strtoupper(trim((string) ($movRec->movimiento?->tipo_movimiento ?? 'SALIDA')));
-                $factor = $tipoMov === 'ENTRADA' ? 1 : -1;
 
                 foreach (($movRec->movimiento?->tallas ?? []) as $tallaMov) {
                     $tallaKey = strtoupper(trim((string) ($tallaMov->talla ?? '')));
                     $generoKey = strtoupper(trim((string) ($tallaMov->genero ?? '')));
                     $key = $tallaKey . '|' . $generoKey;
 
-                    if (!isset($saldosPorTalla[$key])) {
-                        $saldosPorTalla[$key] = 0;
+                    if (!isset($salidaRealizadaPorTalla[$key])) {
+                        $salidaRealizadaPorTalla[$key] = 0;
+                    }
+                    if (!isset($entradaRealizadaPorTalla[$key])) {
+                        $entradaRealizadaPorTalla[$key] = 0;
                     }
 
-                    $saldosPorTalla[$key] += $factor * (int) ($tallaMov->cantidad_enviada ?? 0);
+                    $cantidad = (int) ($tallaMov->cantidad_enviada ?? 0);
+                    
+                    if ($tipoMov === 'SALIDA') {
+                        $salidaRealizadaPorTalla[$key] += $cantidad;
+                    } else {
+                        $entradaRealizadaPorTalla[$key] += $cantidad;
+                    }
                 }
             }
 
@@ -230,10 +237,16 @@ class LavanderiaController extends Controller
                 $key = $tallaKey . '|' . $generoKey;
 
                 $cantidadOriginal = (int) ($talla['cantidad_original'] ?? 0);
-                $saldo = (int) ($saldosPorTalla[$key] ?? 0);
+                $salidaRealizada = (int) ($salidaRealizadaPorTalla[$key] ?? 0);
+                $entradaRealizada = (int) ($entradaRealizadaPorTalla[$key] ?? 0);
 
-                // Calcular cantidad disponible: original + saldo (saldo negativo = más salidas que entradas)
-                $cantidadDisponible = max(0, $cantidadOriginal + $saldo);
+                if ($tipoMovimiento === 'SALIDA') {
+                    // Tallas pendientes de SALIDA: cantidad original - salidas realizadas
+                    $cantidadDisponible = max(0, $cantidadOriginal - $salidaRealizada);
+                } else {
+                    // Tallas pendientes de ENTRADA: salidas realizadas - entradas realizadas
+                    $cantidadDisponible = max(0, $salidaRealizada - $entradaRealizada);
+                }
                 
                 if ($cantidadDisponible > 0) {
                     $talla['cantidad_disponible'] = $cantidadDisponible;
@@ -724,7 +737,8 @@ class LavanderiaController extends Controller
                 ->get();
 
             $reciboIds = $recibos->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
-            $saldoTallasPorRecibo = [];
+            $salidaRealizadaPorReciboTalla = [];
+            $entradaRealizadaPorReciboTalla = [];
 
             if (!empty($reciboIds)) {
                 $movimientosRecibo = \App\Models\LavanderiaMovimientoRecibo::with([
@@ -737,7 +751,6 @@ class LavanderiaController extends Controller
                 foreach ($movimientosRecibo as $movimientoRecibo) {
                     $reciboId = (int) $movimientoRecibo->consecutivo_recibo_pedido_id;
                     $tipoMovimientoRegistro = strtoupper((string) ($movimientoRecibo->movimiento?->tipo_movimiento ?? 'SALIDA'));
-                    $factor = $tipoMovimientoRegistro === 'ENTRADA' ? 1 : -1;
 
                     foreach (($movimientoRecibo->movimiento?->tallas ?? []) as $tallaMovimiento) {
                         if (!empty($tallaMovimiento->prenda_bodega_id)) {
@@ -752,20 +765,32 @@ class LavanderiaController extends Controller
                         $generoKey = strtoupper(trim((string) ($tallaMovimiento->genero ?? '')));
                         $key = $prendaKey . '|' . $tallaKey . '|' . $generoKey;
 
-                        if (!isset($saldoTallasPorRecibo[$reciboId])) {
-                            $saldoTallasPorRecibo[$reciboId] = [];
+                        if (!isset($salidaRealizadaPorReciboTalla[$reciboId])) {
+                            $salidaRealizadaPorReciboTalla[$reciboId] = [];
+                        }
+                        if (!isset($entradaRealizadaPorReciboTalla[$reciboId])) {
+                            $entradaRealizadaPorReciboTalla[$reciboId] = [];
                         }
 
-                        if (!isset($saldoTallasPorRecibo[$reciboId][$key])) {
-                            $saldoTallasPorRecibo[$reciboId][$key] = 0;
+                        if (!isset($salidaRealizadaPorReciboTalla[$reciboId][$key])) {
+                            $salidaRealizadaPorReciboTalla[$reciboId][$key] = 0;
+                        }
+                        if (!isset($entradaRealizadaPorReciboTalla[$reciboId][$key])) {
+                            $entradaRealizadaPorReciboTalla[$reciboId][$key] = 0;
                         }
 
-                        $saldoTallasPorRecibo[$reciboId][$key] += $factor * (int) $tallaMovimiento->cantidad_enviada;
+                        $cantidad = (int) $tallaMovimiento->cantidad_enviada;
+                        
+                        if ($tipoMovimientoRegistro === 'SALIDA') {
+                            $salidaRealizadaPorReciboTalla[$reciboId][$key] += $cantidad;
+                        } else {
+                            $entradaRealizadaPorReciboTalla[$reciboId][$key] += $cantidad;
+                        }
                     }
                 }
             }
 
-            $resultado = $recibos->map(function ($recibo) use ($saldoTallasPorRecibo, $tipoMovimiento) {
+            $resultado = $recibos->map(function ($recibo) use ($salidaRealizadaPorReciboTalla, $entradaRealizadaPorReciboTalla, $tipoMovimiento) {
                 // Obtener cliente del pedido
                 $clienteNombre = 'Sin cliente';
                 if ($recibo->pedido && $recibo->pedido->cliente) {
@@ -827,10 +852,18 @@ class LavanderiaController extends Controller
                     $cantidadOriginal = (int) ($talla['cantidad'] ?? 0);
                     $tallaKey = strtoupper(trim((string) ($talla['talla'] ?? '')));
                     $generoKey = strtoupper(trim((string) ($talla['genero'] ?? '')));
-                    $saldoMovimiento = (int) ($saldoTallasPorRecibo[$recibo->id][$prendaKey . '|' . $tallaKey . '|' . $generoKey] ?? 0);
+                    $key = $prendaKey . '|' . $tallaKey . '|' . $generoKey;
                     
-                    // Calcular cantidad disponible: original + saldo (saldo negativo = más salidas que entradas)
-                    $cantidadDisponible = max(0, $cantidadOriginal + $saldoMovimiento);
+                    $salidaRealizada = (int) ($salidaRealizadaPorReciboTalla[$recibo->id][$key] ?? 0);
+                    $entradaRealizada = (int) ($entradaRealizadaPorReciboTalla[$recibo->id][$key] ?? 0);
+                    
+                    if ($tipoMovimiento === 'SALIDA') {
+                        // Tallas pendientes de SALIDA: cantidad original - salidas realizadas
+                        $cantidadDisponible = max(0, $cantidadOriginal - $salidaRealizada);
+                    } else {
+                        // Tallas pendientes de ENTRADA: salidas realizadas - entradas realizadas
+                        $cantidadDisponible = max(0, $salidaRealizada - $entradaRealizada);
+                    }
 
                     if ($cantidadDisponible <= 0) {
                         continue;

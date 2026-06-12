@@ -15,6 +15,7 @@ class RegistrationHandler {
         this.currentManualPrendaWizardStep = 1;
         this.currentManualPrendaWizardMode = 'LETRAS';
         this.currentManualPrendaResumen = null;
+        this.isProcessing = false; // Bandera para controlar doble envío
 
         // Catálogo alineado con Asesoría
         this.catalogoManualTallas = {
@@ -508,6 +509,12 @@ class RegistrationHandler {
      * Registra una salida con múltiples recibos y prendas manuales
      */
     registrarSalida() {
+        // Prevenir doble envío
+        if (this.isProcessing) {
+            console.warn('[RegistrationHandler] Ya hay un registro en proceso, ignorando el click');
+            return;
+        }
+
         const recibos = this.multiReceiptHandler.getSelectedRecibos();
         const prendasManuales = this.getPrendasManualesParaRegistro();
 
@@ -538,6 +545,15 @@ class RegistrationHandler {
                 }));
                 return;
             }
+        }
+
+        // Marcar como procesando y bloquear botón
+        this.isProcessing = true;
+        const btnRegistrar = document.getElementById('btnRegistrarSalida');
+        if (btnRegistrar) {
+            btnRegistrar.disabled = true;
+            btnRegistrar.style.opacity = '0.6';
+            btnRegistrar.style.cursor = 'not-allowed';
         }
 
         const novedad = document.getElementById('inputNovedad').value.trim();
@@ -588,6 +604,14 @@ class RegistrationHandler {
         })
         .then(response => response.json())
         .then(data => {
+            // Desbloquear botón
+            this.isProcessing = false;
+            if (btnRegistrar) {
+                btnRegistrar.disabled = false;
+                btnRegistrar.style.opacity = '1';
+                btnRegistrar.style.cursor = 'pointer';
+            }
+
             if (data.success) {
                 window.dispatchEvent(new CustomEvent('showToast', { 
                     detail: { title: '¡Movimiento Registrado!', message: `Movimiento registrado exitosamente`, type: 'success' }
@@ -603,6 +627,15 @@ class RegistrationHandler {
         })
         .catch(error => {
             console.error('Error al registrar:', error);
+            
+            // Desbloquear botón en caso de error
+            this.isProcessing = false;
+            if (btnRegistrar) {
+                btnRegistrar.disabled = false;
+                btnRegistrar.style.opacity = '1';
+                btnRegistrar.style.cursor = 'pointer';
+            }
+
             window.dispatchEvent(new CustomEvent('showToast', { 
                 detail: { title: 'Error', message: 'Error al registrar el movimiento', type: 'error' }
             }));
@@ -613,6 +646,8 @@ class RegistrationHandler {
      * Limpia el formulario
      */
     clearForm() {
+        this.isProcessing = false; // Resetear la bandera
+        
         const searchInput = document.getElementById('searchRecibo');
         if (searchInput) searchInput.value = '';
         
@@ -819,7 +854,17 @@ class RegistrationHandler {
             <!-- Género -->
             <div class="form-group" style="margin-bottom: 16px;">
                 <label class="form-label">Género</label>
-                <select id="manualTallasGeneroSelect" class="form-select">
+                <div class="tipo-movimiento-selector">
+                    ${generoOptions.map(opt => `
+                        <label class="radio-circular">
+                            <input type="radio" name="manualTallasGenero" value="${opt.value}" ${genero === opt.value ? 'checked' : ''}>
+                            <span class="radio-circle"></span>
+                            <span class="radio-label">${opt.label}</span>
+                        </label>
+                    `).join('')}
+                </div>
+                <!-- Input oculto para compatibilidad -->
+                <select id="manualTallasGeneroSelect" class="form-select" style="display: none;">
                     <option value="">Selecciona un género</option>
                     ${generoOptions.map(opt => `<option value="${opt.value}" ${genero === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
                 </select>
@@ -906,15 +951,36 @@ class RegistrationHandler {
             </div>
         `;
 
-        // Event listeners para género
+        // Event listeners para género - Sincronizar radios con select oculto
+        const generoRadios = document.querySelectorAll('input[name="manualTallasGenero"]');
         const generoSelect = document.getElementById('manualTallasGeneroSelect');
+
+        if (generoRadios.length > 0) {
+            generoRadios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        // Sincronizar select oculto
+                        if (generoSelect) {
+                            generoSelect.value = e.target.value;
+                        }
+                        
+                        this.currentManualPrendaDraft.genero = this.normalizeGenero(e.target.value || '');
+                        this.currentManualPrendaDraft.modoTallas = 'LETRAS';
+                        this.currentManualPrendaDraft.selectedSizeNames = [];
+                        this.currentManualPrendaDraft.selectedTallas = [];
+                        this.renderTallasForManualPrenda(this.currentManualPrendaDraft);
+                    }
+                });
+            });
+        }
+
+        // Sincronizar select con radios (para compatibilidad)
         if (generoSelect) {
             generoSelect.addEventListener('change', (e) => {
-                this.currentManualPrendaDraft.genero = this.normalizeGenero(e.target.value || '');
-                this.currentManualPrendaDraft.modoTallas = 'LETRAS';
-                this.currentManualPrendaDraft.selectedSizeNames = [];
-                this.currentManualPrendaDraft.selectedTallas = [];
-                this.renderTallasForManualPrenda(this.currentManualPrendaDraft);
+                const radio = document.querySelector(`input[name="manualTallasGenero"][value="${e.target.value}"]`);
+                if (radio) {
+                    radio.checked = true;
+                }
             });
         }
 
