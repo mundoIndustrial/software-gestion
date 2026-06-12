@@ -103,6 +103,90 @@ class ControlCalidadController extends Controller
             ->all();
     }
 
+    private function obtenerDestinosCosturaCompletados(array $idsRecibos = [], array $numeroRecibos = [], array $idsParciales = []): array
+    {
+        $destinosPorRecibo = collect();
+        $destinosPorNumeroRecibo = collect();
+        $destinosPorParcial = collect();
+
+        if (!empty($idsRecibos)) {
+            $destinosPorRecibo = DB::table('prenda_recibo_completado')
+                ->whereRaw('LOWER(TRIM(COALESCE(area, ""))) IN (?, ?)', ['control calidad', 'control de calidad'])
+                ->whereIn('id_recibo', $idsRecibos)
+                ->whereNotNull('destino_costura')
+                ->whereRaw('TRIM(COALESCE(destino_costura, "")) <> ""')
+                ->orderByDesc('fecha_completado')
+                ->get(['id_recibo', 'numero_recibo', 'id_parcial', 'destino_costura']);
+        }
+
+        if (!empty($numeroRecibos)) {
+            $destinosPorNumeroRecibo = DB::table('prenda_recibo_completado')
+                ->whereRaw('LOWER(TRIM(COALESCE(area, ""))) IN (?, ?)', ['control calidad', 'control de calidad'])
+                ->whereIn('numero_recibo', $numeroRecibos)
+                ->whereNotNull('destino_costura')
+                ->whereRaw('TRIM(COALESCE(destino_costura, "")) <> ""')
+                ->orderByDesc('fecha_completado')
+                ->get(['id_recibo', 'numero_recibo', 'id_parcial', 'destino_costura']);
+        }
+
+        if (!empty($idsParciales)) {
+            $destinosPorParcial = DB::table('prenda_recibo_completado')
+                ->whereRaw('LOWER(TRIM(COALESCE(area, ""))) IN (?, ?)', ['control calidad', 'control de calidad'])
+                ->whereIn('id_parcial', $idsParciales)
+                ->whereNotNull('destino_costura')
+                ->whereRaw('TRIM(COALESCE(destino_costura, "")) <> ""')
+                ->orderByDesc('fecha_completado')
+                ->get(['id_recibo', 'numero_recibo', 'id_parcial', 'destino_costura']);
+        }
+
+        return [
+            'por_recibo' => $destinosPorRecibo,
+            'por_numero_recibo' => $destinosPorNumeroRecibo,
+            'por_parcial' => $destinosPorParcial,
+        ];
+    }
+
+    private function extraerDestinoControlCalidad(mixed $registro): ?string
+    {
+        if (!$registro) {
+            return null;
+        }
+
+        if (is_array($registro)) {
+            $valor = $registro['destino_costura'] ?? null;
+        } elseif (is_object($registro)) {
+            $valor = $registro->destino_costura ?? null;
+        } else {
+            $valor = null;
+        }
+
+        $texto = trim((string) $valor);
+        return $texto !== '' ? $texto : null;
+    }
+
+    private function obtenerDestinoCosturaPorNumeroRecibo(?string $numeroRecibo): ?string
+    {
+        $numeroRecibo = trim((string) $numeroRecibo);
+        if ($numeroRecibo === '') {
+            return null;
+        }
+
+        $numeroReciboInt = (int) preg_replace('/[^0-9]/', '', $numeroRecibo);
+        if ($numeroReciboInt <= 0) {
+            return null;
+        }
+
+        $destino = DB::table('prenda_recibo_completado')
+            ->whereRaw('LOWER(TRIM(COALESCE(area, ""))) IN (?, ?)', ['control calidad', 'control de calidad'])
+            ->where('numero_recibo', $numeroReciboInt)
+            ->whereNotNull('destino_costura')
+            ->whereRaw('TRIM(COALESCE(destino_costura, "")) <> ""')
+            ->orderByDesc('fecha_completado')
+            ->value('destino_costura');
+
+        return is_string($destino) ? trim($destino) : null;
+    }
+
     private function obtenerTallasOriginalesReciboControlCalidad(mixed $prenda, bool $esBodega = false): array
     {
         if (!$prenda) {
@@ -538,6 +622,17 @@ class ControlCalidadController extends Controller
                 ->map(fn ($filas) => $this->mapearTallasCompletadasControlCalidad($filas))
             : collect();
 
+        $numeroRecibos = $prendasConRecibos
+            ->flatMap(fn($p) => collect($p['recibos'] ?? [])->pluck('consecutivo_actual'))
+            ->filter()
+            ->map(fn ($valor) => (int) preg_replace('/[^0-9]/', '', (string) $valor))
+            ->filter(fn ($valor) => $valor > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        $destinosCostura = $this->obtenerDestinosCosturaCompletados($idsRecibos, $numeroRecibos, $idsParciales);
+
         $completadosPorId = !empty($idsRecibos)
             ? PrendaReciboCompletado::query()
                 ->where('area', 'Control de Calidad')
@@ -553,10 +648,30 @@ class ControlCalidadController extends Controller
             : collect();
 
         if (!empty($idsRecibos)) {
-            $prendasConRecibos = $prendasConRecibos->map(function ($prenda) use ($completadosPorId) {
-                $prenda['recibos'] = array_map(function ($recibo) use ($completadosPorId) {
+            $prendasConRecibos = $prendasConRecibos->map(function ($prenda) use ($completadosPorId, $destinosCostura) {
+                $prenda['recibos'] = array_map(function ($recibo) use ($completadosPorId, $destinosCostura) {
                     $idRecibo = $recibo['id'] ?? null;
+                    $idParcial = $recibo['pedido_parcial_id'] ?? $recibo['parcial_id'] ?? null;
+                    $numeroRecibo = (int) preg_replace('/[^0-9]/', '', (string) ($recibo['consecutivo_actual'] ?? $recibo['consecutivo'] ?? ''));
                     $recibo['completado_area'] = $idRecibo ? $completadosPorId->has($idRecibo) : false;
+                    $destinoControlCalidad = null;
+
+                    if ($idRecibo) {
+                        $match = $destinosCostura['por_recibo']->firstWhere('id_recibo', $idRecibo);
+                        $destinoControlCalidad = $this->extraerDestinoControlCalidad($match);
+                    }
+
+                    if ($destinoControlCalidad === null && $numeroRecibo > 0) {
+                        $match = $destinosCostura['por_numero_recibo']->firstWhere('numero_recibo', $numeroRecibo);
+                        $destinoControlCalidad = $this->extraerDestinoControlCalidad($match);
+                    }
+
+                    if ($destinoControlCalidad === null && $idParcial) {
+                        $match = $destinosCostura['por_parcial']->firstWhere('id_parcial', $idParcial);
+                        $destinoControlCalidad = $this->extraerDestinoControlCalidad($match);
+                    }
+
+                    $recibo['destino_costura'] = $destinoControlCalidad;
                     return $recibo;
                 }, $prenda['recibos'] ?? []);
 
@@ -1166,6 +1281,9 @@ class ControlCalidadController extends Controller
         // FILTRAR POR PRENDA_ID si se proporciona
         $prendaIdParam = $request->query('prenda_id');
         $tipoReciboParam = strtoupper(trim((string) $request->query('tipo_recibo', '')));
+        $reciboIdParam = (int) $request->query('recibo_id', 0);
+        $consecutivoReciboParam = trim((string) $request->query('consecutivo_recibo', ''));
+        $destinoSeleccionado = $this->obtenerDestinoCosturaPorNumeroRecibo($consecutivoReciboParam);
         
         if ($prendaIdParam !== null && isset($result['payload']['data']['prendas'])) {
             $prendaIdParam = (int) $prendaIdParam;
@@ -1207,6 +1325,115 @@ class ControlCalidadController extends Controller
                 
                 $result['payload']['data']['prendas'] = array_values($prendasFiltradas);
             }
+        }
+
+        if (isset($result['payload']['data']['prendas']) && is_array($result['payload']['data']['prendas'])) {
+            $idsRecibos = [];
+            $idsParciales = [];
+
+            foreach ($result['payload']['data']['prendas'] as $prenda) {
+                foreach (($prenda['recibos'] ?? []) as $reciboData) {
+                    if (!is_array($reciboData)) {
+                        continue;
+                    }
+
+                    $idRecibo = (int) ($reciboData['recibo_id'] ?? $reciboData['consecutivo_recibo_id'] ?? $reciboData['id'] ?? 0);
+                    $idParcial = (int) ($reciboData['pedido_parcial_id'] ?? $reciboData['parcial_id'] ?? 0);
+
+                    if ($idRecibo > 0) {
+                        $idsRecibos[] = $idRecibo;
+                    }
+
+                    if ($idParcial > 0) {
+                        $idsParciales[] = $idParcial;
+                    }
+                }
+            }
+
+            $numeroRecibos = [];
+            foreach ($result['payload']['data']['prendas'] as $prenda) {
+                foreach (($prenda['recibos'] ?? []) as $reciboData) {
+                    if (!is_array($reciboData)) {
+                        continue;
+                    }
+
+                    $numeroRecibo = (int) preg_replace('/[^0-9]/', '', (string) ($reciboData['consecutivo_actual'] ?? $reciboData['consecutivo'] ?? ''));
+                    if ($numeroRecibo > 0) {
+                        $numeroRecibos[] = $numeroRecibo;
+                    }
+                }
+            }
+
+            $destinosCostura = $this->obtenerDestinosCosturaCompletados(
+                array_values(array_unique($idsRecibos)),
+                array_values(array_unique($numeroRecibos)),
+                array_values(array_unique($idsParciales))
+            );
+
+            $result['payload']['data']['prendas'] = array_map(function ($prenda) use ($destinosCostura) {
+                if (!isset($prenda['recibos']) || !is_array($prenda['recibos'])) {
+                    return $prenda;
+                }
+
+                foreach ($prenda['recibos'] as $key => $reciboData) {
+                    if (!is_array($reciboData)) {
+                        continue;
+                    }
+
+                    $idRecibo = (int) ($reciboData['recibo_id'] ?? $reciboData['consecutivo_recibo_id'] ?? $reciboData['id'] ?? 0);
+                    $idParcial = (int) ($reciboData['pedido_parcial_id'] ?? $reciboData['parcial_id'] ?? 0);
+                    $numeroRecibo = (int) preg_replace('/[^0-9]/', '', (string) ($reciboData['consecutivo_actual'] ?? $reciboData['consecutivo'] ?? ''));
+                    $destinoCostura = null;
+
+                    if ($idRecibo > 0) {
+                        $match = $destinosCostura['por_recibo']->firstWhere('id_recibo', $idRecibo);
+                        $destinoCostura = $this->extraerDestinoControlCalidad($match);
+                    }
+
+                    if ($destinoCostura === null && $numeroRecibo > 0) {
+                        $match = $destinosCostura['por_numero_recibo']->firstWhere('numero_recibo', $numeroRecibo);
+                        $destinoCostura = $this->extraerDestinoControlCalidad($match);
+                    }
+
+                    if ($destinoCostura === null && $idParcial > 0) {
+                        $match = $destinosCostura['por_parcial']->firstWhere('id_parcial', $idParcial);
+                        $destinoCostura = $this->extraerDestinoControlCalidad($match);
+                    }
+
+                    $prenda['recibos'][$key]['destino_costura'] = $destinoCostura;
+                }
+
+                return $prenda;
+            }, $result['payload']['data']['prendas']);
+
+            if ($destinoSeleccionado === null) {
+                foreach ($result['payload']['data']['prendas'] as $prenda) {
+                    foreach (($prenda['recibos'] ?? []) as $reciboData) {
+                        if (!is_array($reciboData)) {
+                            continue;
+                        }
+
+                        $destinoRecibo = $this->extraerDestinoControlCalidad($reciboData);
+                        if (empty($destinoRecibo)) {
+                            continue;
+                        }
+
+                        $idRecibo = (int) ($reciboData['recibo_id'] ?? $reciboData['consecutivo_recibo_id'] ?? $reciboData['id'] ?? 0);
+                        $consecutivoRecibo = trim((string) ($reciboData['consecutivo_actual'] ?? $reciboData['consecutivo'] ?? ''));
+
+                        if (($reciboIdParam > 0 && $idRecibo === $reciboIdParam) || ($consecutivoReciboParam !== '' && $consecutivoRecibo === $consecutivoReciboParam)) {
+                            $destinoSeleccionado = $destinoRecibo;
+                            break 2;
+                        }
+
+                        if ($destinoSeleccionado === null) {
+                            $destinoSeleccionado = $destinoRecibo;
+                        }
+                    }
+                }
+            }
+
+            $result['payload']['data']['destino_costura'] = $destinoSeleccionado;
         }
 
         return response()->json($result['payload'] ?? [], (int) ($result['status'] ?? 200));

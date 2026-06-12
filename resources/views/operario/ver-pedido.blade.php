@@ -1895,6 +1895,7 @@
                     prendasEntregadas: data.total_prendas + '/' + data.total_prendas,
                     descripcion: descripcionFormateada,
                     prendas: data.prendas || [],
+                    destino_costura: data.destino_costura || '',
                     numeroReciboCostura: numeroReciboCostura  // Agregar para referencia
                 };
 

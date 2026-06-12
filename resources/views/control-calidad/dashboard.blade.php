@@ -68,11 +68,14 @@
                         if ($numeroPedido !== '') {
                             $urlVerRecibo = route('control-calidad.ver-pedido', $numeroPedido)
                                 . '?tipo_recibo=' . urlencode($esParcial ? 'PARCIAL' : $tipoRecibo)
-                                . '&prenda_id=' . $prenda['prenda_id'];
+                                . '&prenda_id=' . urlencode((string) $prenda['prenda_id'])
+                                . '&recibo_id=' . urlencode((string) ($recibo['id'] ?? ''))
+                                . '&consecutivo_recibo=' . urlencode((string) ($recibo['consecutivo_actual'] ?? ''));
                         } elseif ($tipoReciboUpper === 'CORTE-PARA-BODEGA') {
                             $urlVerRecibo = route('control-calidad.ver-pedido', 0)
                                 . '?prenda_id=' . urlencode((string) ($prenda['prenda_id'] ?? ''))
                                 . '&recibo_id=' . urlencode((string) ($recibo['id'] ?? ''))
+                                . '&consecutivo_recibo=' . urlencode((string) ($recibo['consecutivo_actual'] ?? ''))
                                 . '&tipo_recibo=' . urlencode($esParcial ? 'PARCIAL' : $tipoRecibo);
                         }
 
@@ -137,6 +140,16 @@
                                         @endif
                                     </p>
                                 </div>
+
+                                @php
+                                    $destinoCostura = strtolower(trim((string) ($recibo['destino_costura'] ?? '')));
+                                @endphp
+                                @if($tipoReciboUpper === 'COSTURA' && $destinoCostura !== '')
+                                    <div class="orden-destino-costura">
+                                        <p class="destino-costura-label">ESTO VA PARA</p>
+                                        <p class="destino-costura-value">{{ ucfirst($destinoCostura) }}</p>
+                                    </div>
+                                @endif
 
                                 <div class="orden-buttons">
                                     <a
@@ -638,6 +651,35 @@
         text-transform: uppercase;
         letter-spacing: 0.3px;
         white-space: nowrap;
+    }
+
+    .orden-destino-costura {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.55rem;
+        padding: 0.5rem 0.7rem;
+        border-radius: 10px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+    }
+
+    .destino-costura-label {
+        margin: 0;
+        font-size: 0.64rem;
+        letter-spacing: 0.12em;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .destino-costura-value {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #0f172a;
+        text-transform: capitalize;
     }
 
     .btn-ver-recibos {
@@ -1690,6 +1732,14 @@
             // IMPORTANTE: Mantener el tipo de recibo ORIGINAL, no cambiarlo a 'PARCIAL'
             params.set('tipo_recibo', tipoRecibo);
             params.set('prenda_id', prendaId);
+            const reciboId = String(recibo?.id || orden?.id || '').trim();
+            if (reciboId) {
+                params.set('recibo_id', reciboId);
+            }
+            const consecutivoRecibo = String(recibo?.consecutivo_actual || orden?.consecutivo_actual || '').trim();
+            if (consecutivoRecibo) {
+                params.set('consecutivo_recibo', consecutivoRecibo);
+            }
 
             if (esParcial) {
                 const parcialId = orden?.parcial_id || recibo?.parcial_id || '';
@@ -1837,6 +1887,7 @@
             const areaActual = orden.proceso_actual || recibo.area || 'Control Calidad';
             const cardKey = esParcial ? `parcial-${parcialId}` : `recibo-${recibo.id || orden.id || ''}`;
             const urlVerRecibo = construirUrlVerRecibo(orden, recibo, tipoRecibo, numeroPedido, prendaId);
+            const destinoCostura = String(recibo.destino_costura || orden.destino_costura || '').trim();
 
             if (!permitirReemplazo && cardKey && document.querySelector(`[data-card-key="${cardKey}"]`)) {
                 return null;
@@ -1887,6 +1938,13 @@
                                 <span class="recibo-badge recibo-${tipoRecibo.toLowerCase().replace(/-/g, '_')}">${tipoRecibo}</span>
                             </div>
                         </div>
+
+                        ${tipoRecibo === 'COSTURA' && destinoCostura ? `
+                            <div class="orden-destino-costura">
+                                <p class="destino-costura-label">ESTO VA PARA</p>
+                                <p class="destino-costura-value">${escaparHtml(destinoCostura)}</p>
+                            </div>
+                        ` : ''}
 
                         <div class="orden-buttons">
                             <a class="btn-ver-recibos" href="${urlVerRecibo}">

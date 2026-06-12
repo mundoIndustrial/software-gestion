@@ -907,6 +907,8 @@
     const formaPago = document.getElementById('mobile-forma-pago');
     const cliente = document.getElementById('mobile-cliente');
     const numeroPedido = document.getElementById('mobile-numero-pedido');
+    const destinoCosturaContainer = document.getElementById('order-destino-costura');
+    const destinoCostura = document.getElementById('mobile-destino-costura');
     const encargado = document.getElementById('mobile-encargado');
     const prendasEntregadas = document.getElementById('mobile-prendas-entregadas');
     if (asesora) asesora.textContent = data.asesora || 'N/A';
@@ -958,6 +960,64 @@
         }
     }
     if (prendasEntregadas) prendasEntregadas.textContent = data.prendasEntregadas || '0/0';
+
+    const resolverDestinoCostura = () => {
+        const destinoRaiz = String(data.destino_costura || '').trim();
+        if (destinoRaiz !== '') {
+            return destinoRaiz;
+        }
+
+        if (!Array.isArray(data?.prendas)) {
+            return '';
+        }
+
+        for (const prenda of data.prendas) {
+            const recibosPrenda = prenda?.recibos;
+            if (!recibosPrenda || typeof recibosPrenda !== 'object') continue;
+
+            for (const value of Object.values(recibosPrenda)) {
+                if (!value || typeof value !== 'object') continue;
+
+                const destino = String(value?.destino_costura || '').trim();
+                if (destino === '') continue;
+
+                const idReciboInterno = String(
+                    value?.recibo_id ||
+                    value?.consecutivo_recibo_id ||
+                    value?.id ||
+                    ''
+                ).trim();
+
+                const consecutivoInterno = String(
+                    value?.consecutivo_actual ||
+                    value?.consecutivo ||
+                    ''
+                ).trim();
+
+                if ((reciboIdParamRaw !== '' && idReciboInterno === reciboIdParamRaw) || (consecutivoReciboParam !== '' && consecutivoInterno === consecutivoReciboParam)) {
+                    return destino;
+                }
+
+                if (destinoRaiz === '') {
+                    data.destino_costura = destino;
+                }
+            }
+        }
+
+        return String(data.destino_costura || '').trim();
+    };
+
+    const destinoCosturaTexto = resolverDestinoCostura();
+    data.destino_costura = destinoCosturaTexto;
+    const debeMostrarDestinoCostura = tipoReciboUpper === 'COSTURA' && destinoCosturaTexto !== '';
+    if (destinoCosturaContainer) {
+        destinoCosturaContainer.style.display = debeMostrarDestinoCostura ? 'block' : 'none';
+    }
+    if (destinoCostura) {
+        destinoCostura.textContent = debeMostrarDestinoCostura
+            ? destinoCosturaTexto.charAt(0).toUpperCase() + destinoCosturaTexto.slice(1)
+            : '';
+    }
     
     // ===== ANCHO Y METRAJE =====
     const anchoMetrajeContainer = document.getElementById('order-ancho-metraje');

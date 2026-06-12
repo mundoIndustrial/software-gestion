@@ -6,6 +6,35 @@
         right: 12px !important;
     }
 
+    .order-destino-costura-mobile {
+        display: none;
+        margin-bottom: 16px;
+        padding: 10px 12px;
+        margin-left: auto;
+        max-width: fit-content;
+        text-align: right;
+        border-radius: 10px;
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.22);
+        box-shadow: 0 1px 0 rgba(239, 68, 68, 0.08) inset;
+    }
+
+    .order-destino-costura-mobile__label {
+        margin-bottom: 0.12rem;
+        font-size: 0.64rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #b91c1c;
+    }
+
+    .order-destino-costura-mobile__value {
+        font-size: 0.98rem;
+        font-weight: 800;
+        color: #7f1d1d;
+        text-transform: capitalize;
+    }
+
     @media (max-width: 768px) {
         .order-detail-modal-container--mobile-full {
             padding: 2px !important;
@@ -67,6 +96,12 @@
         <div id="order-descripcion" class="order-descripcion" style="margin-bottom: 50px;">
             <div id="mobile-descripcion"></div>
         </div>
+
+        <!-- Destino -->
+        <div id="order-destino-costura" class="order-destino-costura-mobile" style="display: none;">
+            <div class="order-destino-costura-mobile__label">Esto va para</div>
+            <div id="mobile-destino-costura" class="order-destino-costura-mobile__value"></div>
+        </div>
         
         <!-- Titulo Recibo -->
         <h2 class="receipt-title" id="receipt-title-mobile">RECIBO DE COSTURA</h2>
@@ -104,9 +139,4 @@
 </div>
 
 @vite('resources/js/orders/mobile/order-detail-mobile-modal.js')
-
-
-
-
-
 
