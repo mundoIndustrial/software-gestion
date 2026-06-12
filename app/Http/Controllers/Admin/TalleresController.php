@@ -121,6 +121,7 @@ class TalleresController extends Controller
         $search = $request->query('search', '');
         $perPage = 15;
         $userId = auth()->id();
+        $mostrarPendientes = auth()->user()?->hasRole('visualizador_talleres') === true;
         $revisadosIds = $this->obtenerPrestamosGlobalRevisadosIds($userId, $tab);
 
         if ($tab === 'insumos') {
@@ -135,7 +136,11 @@ class TalleresController extends Controller
                     'anulado',
                     'novedades'
                 )
-                ->where('confirmado_entrada', 1);
+                ;
+                
+                if (!$mostrarPendientes) {
+                    $query->where('confirmado_entrada', 1);
+                }
             
             if (!empty($search)) {
                 $query->where(function($q) use ($search) {
@@ -157,7 +162,11 @@ class TalleresController extends Controller
                     'anulado',
                     'novedades'
                 )
-                ->where('confirmado_entrada', 1);
+                ;
+                
+                if (!$mostrarPendientes) {
+                    $query->where('confirmado_entrada', 1);
+                }
             
             if (!empty($search)) {
                 $query->where(function($q) use ($search) {
@@ -173,6 +182,7 @@ class TalleresController extends Controller
             'tab' => $tab,
             'registros' => $registros,
             'revisadosIds' => $revisadosIds,
+            'mostrarPendientes' => $mostrarPendientes,
         ]);
     }
 
@@ -185,6 +195,7 @@ class TalleresController extends Controller
             $page = $request->query('page', 1);
             $perPage = 15;
             $userId = auth()->id();
+            $mostrarPendientes = auth()->user()?->hasRole('visualizador_talleres') === true;
             $revisadosIds = $this->obtenerPrestamosGlobalRevisadosIds($userId, $tab);
 
             if ($tab === 'insumos') {
@@ -199,7 +210,11 @@ class TalleresController extends Controller
                         'anulado',
                         'novedades'
                     )
-                    ->where('confirmado_entrada', 1);
+                    ;
+                
+                if (!$mostrarPendientes) {
+                    $query->where('confirmado_entrada', 1);
+                }
                 
                 if (!empty($search)) {
                     $query->where(function($q) use ($search) {
@@ -221,7 +236,11 @@ class TalleresController extends Controller
                         'anulado',
                         'novedades'
                     )
-                    ->where('confirmado_entrada', 1);
+                    ;
+                
+                if (!$mostrarPendientes) {
+                    $query->where('confirmado_entrada', 1);
+                }
                 
                 if (!empty($search)) {
                     $query->where(function($q) use ($search) {
@@ -235,7 +254,10 @@ class TalleresController extends Controller
 
             $html = '';
             if ($registros->isEmpty()) {
-                $html = '<tr><td colspan="7" style="padding:16px;text-align:center;color:#64748b;">Sin registros de préstamos confirmados.</td></tr>';
+                $mensajeVacio = $mostrarPendientes
+                    ? 'Sin registros de préstamos.'
+                    : 'Sin registros de préstamos confirmados.';
+                $html = '<tr><td colspan="7" style="padding:16px;text-align:center;color:#64748b;">' . e($mensajeVacio) . '</td></tr>';
             } else {
                 foreach ($registros as $r) {
                     $html .= $this->renderPrestamoGlobalRow($r, $tab, $revisadosIds);
@@ -357,8 +379,9 @@ class TalleresController extends Controller
         $revisadoLabelStyle = $isRevisado
             ? 'background:#dcfce7;color:#166534;border-color:#86efac;'
             : 'background:#fff;color:#64748b;border-color:#cbd5e1;';
+        $revisadoRowStyle = $isRevisado ? 'background:#bbf7d0;' : '';
 
-        return '<tr data-prestamo-id="' . $r->id . '">
+        return '<tr data-prestamo-id="' . $r->id . '" style="' . e($revisadoRowStyle) . '">
             <td style="padding:10px;border-bottom:1px solid #f1f5f9;">
                 <div style="display:flex;align-items:center;gap:10px;flex-wrap:nowrap;white-space:nowrap;">
                     <label title="Marcar como revisado" style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid ' . ($isRevisado ? '#86efac' : '#cbd5e1') . ';border-radius:8px;cursor:pointer;user-select:none;' . $revisadoLabelStyle . '">

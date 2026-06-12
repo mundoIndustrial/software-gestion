@@ -117,9 +117,9 @@
                 </thead>
                 <tbody id="prestamosTableBody">
                 @forelse($registros as $r)
-                    <tr>
+                    @php($isRevisado = in_array((int) $r->id, $revisadosIds ?? [], true))
+                    <tr data-prestamo-id="{{ $r->id }}" @if($isRevisado) style="background:#bbf7d0;" @endif>
                         <td style="padding:10px;border-bottom:1px solid #f1f5f9;">
-                            @php($isRevisado = in_array((int) $r->id, $revisadosIds ?? [], true))
                             <div style="display:flex;align-items:center;gap:10px;flex-wrap:nowrap;white-space:nowrap;">
                                 <label title="Marcar como revisado" style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid {{ $isRevisado ? '#86efac' : '#cbd5e1' }};border-radius:8px;cursor:pointer;user-select:none;background:{{ $isRevisado ? '#dcfce7' : '#fff' }};color:{{ $isRevisado ? '#166534' : '#64748b' }};">
                                     <input type="checkbox" class="prestamo-visto-toggle" data-tab="{{ $tab }}" data-id="{{ $r->id }}" {{ $isRevisado ? 'checked' : '' }} style="margin:0;cursor:pointer;">
@@ -325,6 +325,14 @@
                         const id = this.dataset.id;
                         const tabValue = this.dataset.tab;
                         const label = this.closest('label');
+                        const row = this.closest('tr');
+                        const applyRowState = (isChecked) => {
+                            if (!row) {
+                                return;
+                            }
+
+                            row.style.background = isChecked ? '#bbf7d0' : '';
+                        };
 
                         try {
                             const response = await fetch(markVistoUrl, {
@@ -351,6 +359,7 @@
                                 label.style.color = checked ? '#166534' : '#64748b';
                                 label.style.borderColor = checked ? '#86efac' : '#cbd5e1';
                             }
+                            applyRowState(checked);
                         } catch (error) {
                             console.error(debugPrefix, 'markVisto:error', error);
                             this.checked = !checked;
@@ -359,6 +368,7 @@
                                 label.style.color = this.checked ? '#166534' : '#64748b';
                                 label.style.borderColor = this.checked ? '#86efac' : '#cbd5e1';
                             }
+                            applyRowState(this.checked);
                             if (window.Swal && typeof Swal.fire === 'function') {
                                 Swal.fire('Error', 'No se pudo guardar el chulito', 'error');
                             }

@@ -842,7 +842,18 @@ function showRecibos(tallerId, tallerName) {
     const mainContainer = document.querySelector('.main-container');
     const recibosContent = document.getElementById('recibosContent');
     const recibosTitle = document.getElementById('recibosTitle');
-    const apiRoute = mainContainer.dataset.routeApiRecibos.replace(':id', tallerId);
+    const routeApiRecibos = mainContainer?.dataset.routeApiRecibos;
+
+    if (!routeApiRecibos) {
+        console.warn('[TalleresSidebar] showRecibos llamado sin data-route-api-recibos', {
+            tallerId,
+            tallerName,
+            pathname: window.location.pathname
+        });
+        return;
+    }
+
+    const apiRoute = routeApiRecibos.replace(':id', tallerId);
 
     if (recibosTitle) recibosTitle.textContent = tallerName;
     if (recibosContent) recibosContent.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Cargando recibos...</p></div>';
@@ -969,6 +980,10 @@ function restoreLastViewFromSession() {
     }
 
     if (lastView === 'recibos' && lastTallerId) {
+        const mainContainer = document.querySelector('.main-container');
+        if (!mainContainer?.dataset.routeApiRecibos) {
+            return;
+        }
         showRecibos(lastTallerId, lastTallerName || 'Taller');
     }
 }
