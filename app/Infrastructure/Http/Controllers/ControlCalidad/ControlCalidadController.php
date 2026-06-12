@@ -243,6 +243,8 @@ class ControlCalidadController extends Controller
         $areaActual = strtolower(trim((string) ($recibo->area ?? '')));
         $esAreaCC = in_array($areaActual, ['control calidad', 'control de calidad'], true);
         $esBodega = str_contains(strtolower((string) ($recibo->tipo_recibo ?? '')), 'bodega');
+        $estadoNormalizado = strtolower(trim((string) ($recibo->estado ?? '')));
+        $estadoBloqueado = in_array($estadoNormalizado, ['completado', 'completada', 'anulado', 'anulada'], true);
 
         $prenda = $esBodega ? ($recibo->prendaBodega ?? null) : ($recibo->prenda ?? null);
         $tallasOriginales = $this->obtenerTallasOriginalesReciboControlCalidad($prenda, $esBodega);
@@ -252,11 +254,7 @@ class ControlCalidadController extends Controller
         $totalCompletado = (int) collect($tallasCompletadas)->sum('cantidad');
 
         if ($esAreaCC) {
-            if ($totalOriginal <= 0) {
-                return true;
-            }
-
-            return $totalCompletado < $totalOriginal;
+            return !$estadoBloqueado;
         }
 
         if ($totalCompletado <= 0) {
