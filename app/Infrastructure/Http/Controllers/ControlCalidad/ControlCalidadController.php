@@ -178,6 +178,98 @@ class ControlCalidadController extends Controller
         return $this->resolverEstadoControlCalidadDesdeTallas($tallasOriginales, $tallasCompletadas) === 'completo';
     }
 
+    private function obtenerTallasCompletadasControlCalidadRecibo(int $idRecibo, ?int $idParcial = null): array
+    {
+        $query = DB::table('prenda_recibo_completado as prc')
+            ->leftJoin('prenda_recibo_completado_tallas as prct', 'prct.prenda_recibo_completado_id', '=', 'prc.id')
+            ->whereRaw('LOWER(TRIM(COALESCE(prc.area, ""))) IN (?, ?)', ['control calidad', 'control de calidad']);
+
+        if ($idParcial !== null && $idParcial > 0) {
+            $query->where('prc.id_parcial', $idParcial);
+        } else {
+            $query->where('prc.id_recibo', $idRecibo);
+        }
+
+        $rows = $query
+            ->select([
+                'prc.id',
+                'prct.talla',
+                'prct.genero',
+                'prct.color_nombre',
+                'prct.cantidad',
+                'prc.tallas_control_calidad',
+            ])
+            ->get();
+
+        if ($rows->isNotEmpty()) {
+            $tallas = $rows
+                ->filter(fn ($row) => trim((string) ($row->talla ?? '')) !== '')
+                ->map(function ($row) {
+                    return [
+                        'talla' => (string) ($row->talla ?? ''),
+                        'genero' => (string) ($row->genero ?? ''),
+                        'color_nombre' => (string) ($row->color_nombre ?? ''),
+                        'cantidad' => (int) ($row->cantidad ?? 0),
+                    ];
+                })
+                ->values()
+                ->all();
+
+            if (!empty($tallas)) {
+                return $tallas;
+            }
+        }
+
+        $completado = DB::table('prenda_recibo_completado')
+            ->whereRaw('LOWER(TRIM(COALESCE(area, ""))) IN (?, ?)', ['control calidad', 'control de calidad'])
+            ->when($idParcial !== null && $idParcial > 0, function ($query) use ($idParcial) {
+                $query->where('id_parcial', $idParcial);
+            }, function ($query) use ($idRecibo) {
+                $query->where('id_recibo', $idRecibo);
+            })
+            ->latest('fecha_completado')
+            ->first(['tallas_control_calidad']);
+
+        $decoded = json_decode((string) ($completado->tallas_control_calidad ?? ''), true);
+        if (!is_array($decoded)) {
+            $decoded = [];
+        }
+
+        return $this->normalizarTallasControlCalidad($decoded);
+    }
+
+    private function reciboDebeMostrarseEnDashboardControlCalidad(ConsecutivoReciboPedido $recibo): bool
+    {
+        $areaActual = strtolower(trim((string) ($recibo->area ?? '')));
+        $esAreaCC = in_array($areaActual, ['control calidad', 'control de calidad'], true);
+        $esBodega = str_contains(strtolower((string) ($recibo->tipo_recibo ?? '')), 'bodega');
+
+        $prenda = $esBodega ? ($recibo->prendaBodega ?? null) : ($recibo->prenda ?? null);
+        $tallasOriginales = $this->obtenerTallasOriginalesReciboControlCalidad($prenda, $esBodega);
+        $tallasCompletadas = $this->obtenerTallasCompletadasControlCalidadRecibo((int) $recibo->id);
+
+        $totalOriginal = (int) collect($tallasOriginales)->sum('cantidad');
+        $totalCompletado = (int) collect($tallasCompletadas)->sum('cantidad');
+
+        if ($esAreaCC) {
+            if ($totalOriginal <= 0) {
+                return true;
+            }
+
+            return $totalCompletado < $totalOriginal;
+        }
+
+        if ($totalCompletado <= 0) {
+            return false;
+        }
+
+        if ($totalOriginal <= 0) {
+            return true;
+        }
+
+        return $totalCompletado < $totalOriginal;
+    }
+
     private function normalizarConsecutivoParcialValor(mixed $valor): string
     {
         $texto = trim((string) $valor);
@@ -265,13 +357,14 @@ class ControlCalidadController extends Controller
             $recibosQuery->where('tipo_recibo', 'COSTURA');
         }
 
-        // En el dashboard principal solo deben verse recibos cuya área actual sea Control Calidad.
-        $recibosQuery->whereRaw('LOWER(TRIM(area)) IN (?, ?)', ['control calidad', 'control de calidad']);
-
         $recibos = $recibosQuery
             ->with(['pedido', 'prenda.tallas.coloresAsignados', 'prendaBodega.tallas', 'pedido.prendas'])
             ->orderBy('created_at', 'desc')
             ->get();
+
+        $recibos = $recibos
+            ->filter(fn (ConsecutivoReciboPedido $recibo) => $this->reciboDebeMostrarseEnDashboardControlCalidad($recibo))
+            ->values();
 
         $numeroPedidos = $recibos
             ->map(fn ($r) => $r->pedido?->numero_pedido)
