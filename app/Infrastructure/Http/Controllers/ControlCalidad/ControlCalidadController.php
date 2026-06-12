@@ -740,15 +740,9 @@ class ControlCalidadController extends Controller
                     ], 404);
                 }
 
-                $procesoCC = ProcesoPrenda::query()
-                    ->where('numero_pedido', (int) ($parcial->pedido?->numero_pedido ?? 0))
-                    ->where('prenda_pedido_id', (int) $parcial->prenda_pedido_id)
-                    ->where('numero_recibo_parcial', $parcial->consecutivo_parcial)
-                    ->whereRaw('LOWER(TRIM(proceso)) IN (?, ?)', ['control calidad', 'control de calidad'])
-                    ->latest('created_at')
-                    ->first();
+                $numeroPedidoParcial = (int) ($parcial->pedido?->numero_pedido ?? 0);
 
-                if (!$procesoCC) {
+                if (!$this->parcialEstaEnControlCalidad($parcial, $numeroPedidoParcial)) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Este parcial no está en Control de Calidad'
