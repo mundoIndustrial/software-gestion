@@ -219,11 +219,6 @@
         border-color: #fed7aa;
         color: #9a3412;
     }
-    .btn-confirmar-entrada {
-        background: #ecfdf5 !important;
-        border-color: #86efac !important;
-        color: #166534 !important;
-    }
     .badge-inline {
         display: inline-block;
         margin-top: 6px;
@@ -414,13 +409,6 @@
                                 <a href="{{ route('operario.recibos-prestamo.insumos.show', ['id' => $recibo->id, 'firmante' => 'mensajero']) }}">
                                     {{ !empty($recibo->firma_mensajero) ? 'Actualizar firma mensajero' : 'Pendiente firma mensajero' }}
                                 </a>
-                                @if(!$recibo->confirmado_entrada)
-                                    <button type="button" class="btn-confirmar-entrada full-row"
-                                        data-action="confirmar-entrada"
-                                        data-url="{{ route('operario.recibos-prestamo.insumos.confirmar-entrada', $recibo->id) }}">
-                                        ✓ Confirmar entrada
-                                    </button>
-                                @endif
                                 @if(!$recibo->anulado)
                                     <button type="button" class="full-row"
                                         data-action="anular"
@@ -481,13 +469,6 @@
                                 <a href="{{ route('operario.recibos-prestamo.contramuestra.show', ['id' => $recibo->id, 'firmante' => 'mensajero']) }}">
                                     {{ !empty($recibo->firma_mensajero) ? 'Actualizar firma mensajero' : 'Pendiente firma mensajero' }}
                                 </a>
-                                @if(!$recibo->confirmado_entrada)
-                                    <button type="button" class="btn-confirmar-entrada full-row"
-                                        data-action="confirmar-entrada"
-                                        data-url="{{ route('operario.recibos-prestamo.contramuestra.confirmar-entrada', $recibo->id) }}">
-                                        ✓ Confirmar entrada
-                                    </button>
-                                @endif
                                 @if(!$recibo->anulado)
                                     <button type="button" class="full-row"
                                         data-action="anular"
@@ -508,22 +489,6 @@
         </section>
     </div>
 
-    <div id="modal-confirmar-entrada" class="modal-backdrop-entrada">
-        <div class="modal-entrada">
-            <h3 style="margin:0 0 8px;">Confirmar Entrada</h3>
-            <p style="margin:0 0 10px;font-size:13px;color:#475569;">¿Estás seguro de que este recibo corresponde con lo entregado?</p>
-            <label style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-                <input type="checkbox" id="entrada-no-corresponde">
-                <span style="font-size:13px;">No aplica</span>
-            </label>
-            <textarea id="entrada-novedad" placeholder="Escribe la novedad si no corresponde..."></textarea>
-            <div class="modal-entrada-actions">
-                <button type="button" id="btn-cancelar-entrada" class="modal-btn modal-btn-cancel">Cancelar</button>
-                <button type="button" id="btn-guardar-entrada" class="modal-btn modal-btn-confirm">Confirmar</button>
-            </div>
-        </div>
-    </div>
-
     <div id="modal-confirmar-anular" class="modal-backdrop-entrada">
         <div class="modal-entrada">
             <h3 style="margin:0 0 8px;">Anular Recibo</h3>
@@ -538,15 +503,9 @@
     <script>
     (() => {
         const csrf = "{{ csrf_token() }}";
-        const modal = document.getElementById('modal-confirmar-entrada');
-        const noCorresponde = document.getElementById('entrada-no-corresponde');
-        const novedad = document.getElementById('entrada-novedad');
-        const btnCancelar = document.getElementById('btn-cancelar-entrada');
-        const btnGuardar = document.getElementById('btn-guardar-entrada');
         const modalAnular = document.getElementById('modal-confirmar-anular');
         const btnCancelarAnular = document.getElementById('btn-cancelar-anular');
         const btnConfirmarAnular = document.getElementById('btn-confirmar-anular');
-        let urlConfirmar = '';
         let urlAnular = '';
         function showToast(message, type = 'info', ms = 2200) {
             const el = document.createElement('div');
@@ -560,12 +519,6 @@
             }, ms);
         }
 
-        function closeModal() {
-            modal.style.display = 'none';
-            noCorresponde.checked = false;
-            novedad.value = '';
-            urlConfirmar = '';
-        }
         function closeModalAnular() {
             modalAnular.style.display = 'none';
             urlAnular = '';
@@ -595,37 +548,6 @@
         });
         modalAnular?.addEventListener('click', (e) => {
             if (e.target === modalAnular) closeModalAnular();
-        });
-
-        document.querySelectorAll('[data-action="confirmar-entrada"]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                urlConfirmar = btn.dataset.url;
-                modal.style.display = 'flex';
-            });
-        });
-
-        btnCancelar?.addEventListener('click', closeModal);
-        btnGuardar?.addEventListener('click', async () => {
-            const novedadValue = (novedad.value || '').trim();
-            const corresponde = !noCorresponde.checked;
-            const payload = {
-                corresponde,
-                novedades: corresponde ? (novedadValue || null) : (novedadValue || 'No aplica')
-            };
-
-            const response = await fetch(urlConfirmar, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const data = await response.json();
-            if (!response.ok || !data.success) {
-                showToast(data.message || 'No se pudo confirmar la entrada.', 'error');
-                return;
-            }
-            closeModal();
-            showToast('Entrada confirmada correctamente.', 'success', 1200);
-            setTimeout(() => location.reload(), 900);
         });
 
         function setupLiveSearch(inputId, panelSelector) {

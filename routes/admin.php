@@ -65,6 +65,11 @@ Route::middleware(['auth', 'role:admin,lider_produccion,supervisor_produccion,vi
     Route::get('/', [App\Http\Controllers\Admin\TalleresController::class, 'index'])->name('index');
     Route::get('prestamos/global', [App\Http\Controllers\Admin\TalleresController::class, 'showPrestamosGlobal'])->name('prestamos-global');
     Route::get('api/prestamos/global', [App\Http\Controllers\Admin\TalleresController::class, 'apiPrestamosGlobal'])->name('api.prestamos-global');
+    Route::post('api/prestamos/global/{tipo}/{id}/confirmar-entrada', [App\Http\Controllers\Admin\TalleresController::class, 'confirmarEntradaPrestamoGlobal'])->name('api.prestamos-global.confirmar-entrada');
+    Route::get('api/prestamos/global/{tipo}/{id}/novedades', [App\Http\Controllers\Admin\TalleresController::class, 'obtenerPrestamoGlobalNovedades'])->name('api.prestamos-global.novedades');
+    Route::post('api/prestamos/global/{tipo}/{id}/novedades', [App\Http\Controllers\Admin\TalleresController::class, 'guardarPrestamoGlobalNovedad'])->name('api.prestamos-global.novedades.guardar');
+    Route::put('api/prestamos/global/{tipo}/{id}/novedades/{novedadId}', [App\Http\Controllers\Admin\TalleresController::class, 'actualizarPrestamoGlobalNovedad'])->name('api.prestamos-global.novedades.actualizar');
+    Route::delete('api/prestamos/global/{tipo}/{id}/novedades/{novedadId}', [App\Http\Controllers\Admin\TalleresController::class, 'eliminarPrestamoGlobalNovedad'])->name('api.prestamos-global.novedades.eliminar');
     Route::post('api/prestamos/global/marcar-visto', [App\Http\Controllers\Admin\TalleresController::class, 'marcarPrestamoGlobalVisto'])->name('api.prestamos-global.marcar-visto');
     Route::get('{id}/recibos', [App\Http\Controllers\Admin\TalleresController::class, 'showRecibos'])->name('show');
     Route::get('{id}/prestamos', [App\Http\Controllers\Admin\TalleresController::class, 'showPrestamos'])->name('prestamos');

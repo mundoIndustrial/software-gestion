@@ -23,7 +23,7 @@ class TalleresController extends Controller
             $activoVal = ($status === 'inactivos') ? 0 : 1;
             $talleres = $useCase->execute($search, 9, $activoVal);
         } else {
-            $talleres = collect(); // Colección vacía
+            $talleres = collect(); // Coleccion vaci­a
         }
 
         if ($view === 'recibos' && $request->filled('taller_id')) {
@@ -68,7 +68,7 @@ class TalleresController extends Controller
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Datos inválidos',
+                'message' => 'Datos invalidos',
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Throwable $e) {
@@ -101,7 +101,7 @@ class TalleresController extends Controller
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Datos inválidos',
+                'message' => 'Datos invalidos',
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Throwable $e) {
@@ -243,6 +243,7 @@ class TalleresController extends Controller
             'registros' => $registros,
             'revisadosIds' => $revisadosIds,
             'mostrarPendientes' => $mostrarPendientes,
+            'currentUserId' => $userId,
         ]);
     }
 
@@ -315,8 +316,8 @@ class TalleresController extends Controller
             $html = '';
             if ($registros->isEmpty()) {
                 $mensajeVacio = $mostrarPendientes
-                    ? 'Sin registros de préstamos.'
-                    : 'Sin registros de préstamos confirmados.';
+                    ? 'Sin registros de prestamos.'
+                    : 'Sin registros de prestamos confirmados.';
                 $html = '<tr><td colspan="7" style="padding:16px;text-align:center;color:#64748b;">' . e($mensajeVacio) . '</td></tr>';
             } else {
                 foreach ($registros as $r) {
@@ -336,7 +337,7 @@ class TalleresController extends Controller
             \Log::error('Error en apiPrestamosGlobal: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'error' => 'Error al buscar préstamos'
+                'error' => 'Error al buscar prestamos'
             ], 500);
         }
     }
@@ -385,13 +386,310 @@ class TalleresController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Datos inválidos',
+                'message' => 'Datos invalidos',
             ], 422);
         } catch (\Exception $e) {
             \Log::error('Error en marcarPrestamoGlobalVisto: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'No se pudo actualizar el estado de revisión',
+                'message' => 'No se pudo actualizar el estado de revision',
+            ], 500);
+        }
+    }
+
+    public function confirmarEntradaPrestamoGlobal(Request $request, string $tipo, int $id)
+    {
+        try {
+            $validated = $request->validate([
+                'corresponde' => ['required', 'boolean'],
+                'novedades' => ['nullable', 'string'],
+                'accion' => ['nullable', 'string', 'in:confirmar,deshacer'],
+            ]);
+
+            $accion = $validated['accion'] ?? 'confirmar';
+
+            if ($accion === 'confirmar' && $validated['corresponde'] === false && trim((string) ($validated['novedades'] ?? '')) === '') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Debes registrar una novedad cuando no corresponde.',
+                ], 422);
+            }
+
+            $tab = $this->normalizarTabPrestamoGlobal($tipo);
+            $table = $tab === 'insumos'
+                ? 'recibos_prestamo_insumos'
+                : 'recibos_prestamo_contramuestra';
+            $recibo = DB::table($table)
+                ->select('id', 'numero_orden')
+                ->where('id', $id)
+                ->first();
+
+            if (!$recibo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado.',
+                ], 404);
+            }
+
+            $updateData = [
+                'confirmado_entrada' => $accion === 'confirmar',
+                'confirmado_entrada_en' => $accion === 'confirmar' ? now() : null,
+                'updated_at' => now(),
+            ];
+
+            DB::table($table)
+                ->where('id', $id)
+                ->update($updateData);
+
+            if ($accion === 'confirmar') {
+                $usuarioId = $request->user()?->id;
+                $usuarioNombre = (string) ($request->user()?->name ?? 'Usuario');
+                $textoConfirmacion = $usuarioNombre . ' confirmo la entrada del recibo #' . $recibo->numero_orden;
+
+                DB::table('prestamos_global_novedades')->insert([
+                    'tab' => $tab,
+                    'recibo_id' => $recibo->id,
+                    'usuario_id' => $usuarioId,
+                    'novedad' => $textoConfirmacion,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } elseif ($accion === 'deshacer') {
+                $usuarioId = $request->user()?->id;
+                $usuarioNombre = (string) ($request->user()?->name ?? 'Usuario');
+                $textoDeshacer = $usuarioNombre . ' deshizo la confirmacion de la entrada del recibo #' . $recibo->numero_orden;
+
+                DB::table('prestamos_global_novedades')->insert([
+                    'tab' => $tab,
+                    'recibo_id' => $recibo->id,
+                    'usuario_id' => $usuarioId,
+                    'novedad' => $textoDeshacer,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            $this->sincronizarPrestamoGlobalNovedadResumen($tab, $recibo->id);
+
+            return response()->json([
+                'success' => true,
+                'message' => $accion === 'confirmar'
+                    ? 'Entrada confirmada correctamente.'
+                    : 'Entrada deshecha correctamente.',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos invalidos',
+            ], 422);
+        } catch (\Throwable $e) {
+            \Log::error('Error en confirmarEntradaPrestamoGlobal: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo confirmar la entrada.',
+            ], 500);
+        }
+    }
+
+    public function obtenerPrestamoGlobalNovedades(Request $request, string $tipo, int $id)
+    {
+        try {
+            $tab = $this->normalizarTabPrestamoGlobal($tipo);
+            $table = $tab === 'insumos'
+                ? 'recibos_prestamo_insumos'
+                : 'recibos_prestamo_contramuestra';
+
+            $exists = DB::table($table)->where('id', $id)->exists();
+            if (!$exists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado.',
+                ], 404);
+            }
+
+            $novedades = DB::table('prestamos_global_novedades as pgn')
+                ->leftJoin('users as u', 'u.id', '=', 'pgn.usuario_id')
+                ->select([
+                    'pgn.id',
+                    'pgn.usuario_id',
+                    'pgn.novedad',
+                    'pgn.created_at',
+                    'pgn.updated_at',
+                    'u.name as usuario_nombre',
+                ])
+                ->where('pgn.tab', $tab)
+                ->where('pgn.recibo_id', $id)
+                ->orderByDesc('pgn.created_at')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'novedades' => $novedades,
+                'current_user_id' => $request->user()?->id,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error en obtenerPrestamoGlobalNovedades: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudieron cargar las novedades.',
+            ], 500);
+        }
+    }
+
+    public function guardarPrestamoGlobalNovedad(Request $request, string $tipo, int $id)
+    {
+        try {
+            $validated = $request->validate([
+                'novedad' => ['required', 'string', 'max:4000'],
+            ]);
+
+            $tab = $this->normalizarTabPrestamoGlobal($tipo);
+            $table = $tab === 'insumos'
+                ? 'recibos_prestamo_insumos'
+                : 'recibos_prestamo_contramuestra';
+
+            $exists = DB::table($table)->where('id', $id)->exists();
+            if (!$exists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recibo no encontrado.',
+                ], 404);
+            }
+
+            $novedad = trim((string) $validated['novedad']);
+            $user = $request->user();
+            $now = now();
+
+            DB::table('prestamos_global_novedades')->insert([
+                'tab' => $tab,
+                'recibo_id' => $id,
+                'usuario_id' => $user?->id,
+                'novedad' => $novedad,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+
+            $this->sincronizarPrestamoGlobalNovedadResumen($tab, $id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Novedad registrada correctamente.',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La novedad es obligatoria.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Throwable $e) {
+            \Log::error('Error en guardarPrestamoGlobalNovedad: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo registrar la novedad.',
+            ], 500);
+        }
+    }
+
+    public function actualizarPrestamoGlobalNovedad(Request $request, string $tipo, int $id, int $novedadId)
+    {
+        try {
+            $validated = $request->validate([
+                'novedad' => ['required', 'string', 'max:4000'],
+            ]);
+
+            $tab = $this->normalizarTabPrestamoGlobal($tipo);
+            $novedad = DB::table('prestamos_global_novedades')
+                ->where('id', $novedadId)
+                ->where('tab', $tab)
+                ->where('recibo_id', $id)
+                ->first();
+
+            if (!$novedad) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Novedad no encontrada.',
+                ], 404);
+            }
+
+            if ((int) $novedad->usuario_id !== (int) ($request->user()?->id ?? 0)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Solo puedes editar tus propias novedades.',
+                ], 403);
+            }
+
+            DB::table('prestamos_global_novedades')
+                ->where('id', $novedadId)
+                ->update([
+                    'novedad' => trim((string) $validated['novedad']),
+                    'updated_at' => now(),
+                ]);
+
+            $this->sincronizarPrestamoGlobalNovedadResumen($tab, $id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Novedad actualizada correctamente.',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La novedad es obligatoria.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Throwable $e) {
+            \Log::error('Error en actualizarPrestamoGlobalNovedad: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo actualizar la novedad.',
+            ], 500);
+        }
+    }
+
+    public function eliminarPrestamoGlobalNovedad(Request $request, string $tipo, int $id, int $novedadId)
+    {
+        try {
+            $tab = $this->normalizarTabPrestamoGlobal($tipo);
+            $novedad = DB::table('prestamos_global_novedades')
+                ->where('id', $novedadId)
+                ->where('tab', $tab)
+                ->where('recibo_id', $id)
+                ->first();
+
+            if (!$novedad) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Novedad no encontrada.',
+                ], 404);
+            }
+
+            if ((int) $novedad->usuario_id !== (int) ($request->user()?->id ?? 0)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Solo puedes eliminar tus propias novedades.',
+                ], 403);
+            }
+
+            DB::table('prestamos_global_novedades')
+                ->where('id', $novedadId)
+                ->delete();
+
+            $this->sincronizarPrestamoGlobalNovedadResumen($tab, $id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Novedad eliminada correctamente.',
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error en eliminarPrestamoGlobalNovedad: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo eliminar la novedad.',
             ], 500);
         }
     }
@@ -417,6 +715,27 @@ class TalleresController extends Controller
             ->all();
     }
 
+    private function sincronizarPrestamoGlobalNovedadResumen(string $tab, int $reciboId): void
+    {
+        $table = $tab === 'insumos'
+            ? 'recibos_prestamo_insumos'
+            : 'recibos_prestamo_contramuestra';
+
+        $ultimaNovedad = DB::table('prestamos_global_novedades')
+            ->where('tab', $tab)
+            ->where('recibo_id', $reciboId)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->value('novedad');
+
+        DB::table($table)
+            ->where('id', $reciboId)
+            ->update([
+                'novedades' => $ultimaNovedad,
+                'updated_at' => now(),
+            ]);
+    }
+
     private function renderPrestamoGlobalRow(object $r, string $tab, array $revisadosIds): string
     {
         $estadoClass = '';
@@ -432,22 +751,19 @@ class TalleresController extends Controller
             $estadoTexto = 'PENDIENTE';
         }
 
-        $isRevisado = in_array((int) $r->id, $revisadosIds, true);
         $fechaSalida = \Carbon\Carbon::parse($r->fecha_salida)->format('d/m/Y h:i A');
         $fechaEntrada = $r->fecha_entrada ? \Carbon\Carbon::parse($r->fecha_entrada)->format('d/m/Y h:i A') : '-';
-        $checked = $isRevisado ? 'checked' : '';
-        $revisadoLabelStyle = $isRevisado
-            ? 'background:#dcfce7;color:#166534;border-color:#86efac;'
-            : 'background:#fff;color:#64748b;border-color:#cbd5e1;';
-        $revisadoRowStyle = $isRevisado ? 'background:#bbf7d0;' : '';
+        $confirmadoClass = $r->confirmado_entrada ? ' is-confirmed' : '';
+        $confirmadoRowStyle = $r->confirmado_entrada ? 'background:#dcfce7;' : '';
+        $confirmarTitle = $r->confirmado_entrada ? 'Deshacer entrada' : 'Confirmar entrada';
+        $confirmadoAttr = $r->confirmado_entrada ? '1' : '0';
 
-        return '<tr data-prestamo-id="' . $r->id . '" style="' . e($revisadoRowStyle) . '">
+        return '<tr data-prestamo-id="' . $r->id . '" style="' . e($confirmadoRowStyle) . '">
             <td style="padding:10px;border-bottom:1px solid #f1f5f9;">
                 <div style="display:flex;align-items:center;gap:10px;flex-wrap:nowrap;white-space:nowrap;">
-                    <label title="Marcar como revisado" style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid ' . ($isRevisado ? '#86efac' : '#cbd5e1') . ';border-radius:8px;cursor:pointer;user-select:none;' . $revisadoLabelStyle . '">
-                        <input type="checkbox" class="prestamo-visto-toggle" data-tab="' . $tab . '" data-id="' . $r->id . '" ' . $checked . ' style="margin:0;cursor:pointer;">
+                    <button type="button" class="prestamo-confirmar-toggle' . $confirmadoClass . '" data-action="confirmar-entrada" data-tipo="' . $tab . '" data-id="' . $r->id . '" data-confirmed="' . $confirmadoAttr . '" data-url="' . route('talleres.api.prestamos-global.confirmar-entrada', ['tipo' => $tab, 'id' => $r->id]) . '" title="' . e($confirmarTitle) . '">
                         <span class="material-symbols-rounded" style="font-size:18px;line-height:1;">done</span>
-                    </label>
+                    </button>
                     <button type="button" class="btn-ver-prestamo" data-tipo="' . $tab . '" data-id="' . $r->id . '" style="background:#3b82f6;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Ver</button>
                 </div>
             </td>
@@ -456,7 +772,9 @@ class TalleresController extends Controller
             <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . e($fechaSalida) . '</td>
             <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . e($fechaEntrada) . '</td>
             <td style="padding:10px;border-bottom:1px solid #f1f5f9;"><span style="' . $estadoClass . 'padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">' . e($estadoTexto) . '</span></td>
-            <td style="padding:10px;border-bottom:1px solid #f1f5f9;">' . e($r->novedades ?: '-') . '</td>
+            <td style="padding:10px;border-bottom:1px solid #f1f5f9;">
+                <button type="button" class="prestamo-novedad-button" data-action="abrir-novedades" data-tipo="' . $tab . '" data-id="' . $r->id . '" data-url="' . route('talleres.api.prestamos-global.novedades', ['tipo' => $tab, 'id' => $r->id]) . '" data-save-url="' . route('talleres.api.prestamos-global.novedades.guardar', ['tipo' => $tab, 'id' => $r->id]) . '"><span class="material-symbols-rounded" aria-hidden="true" style="font-size:18px;">ads_click</span><span>Ver novedades</span></button>
+            </td>
         </tr>';
     }
 
@@ -468,7 +786,7 @@ class TalleresController extends Controller
             if (!in_array($tipoNormalizado, ['insumos', 'contramuestra'], true)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Tipo de préstamo inválido.',
+                    'message' => 'Tipo de prestamo invalido.',
                 ], 422);
             }
 
@@ -599,7 +917,7 @@ class TalleresController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener el detalle del préstamo',
+                'message' => 'Error al obtener el detalle del prestamo',
             ], 500);
         }
     }
