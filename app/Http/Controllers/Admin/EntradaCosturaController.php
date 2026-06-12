@@ -6,7 +6,6 @@ use App\Helpers\EntradaCosturaHelper;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -28,27 +27,9 @@ class EntradaCosturaController extends Controller
             $mesEntradaCostura,
             $anioEntradaCostura,
             $desdeEntradaCostura,
-            $hastaEntradaCostura
+            $hastaEntradaCostura,
+            $searchEntradaCostura
         );
-
-        if ($searchEntradaCostura !== '') {
-            $termino = mb_strtolower($searchEntradaCostura);
-            $entradaCostura = $entradaCostura->filter(function (array $registro) use ($termino) {
-                $textoBusqueda = mb_strtolower(implode(' ', [
-                    (string) ($registro['numero_recibo'] ?? ''),
-                    (string) ($registro['numero_pedido'] ?? ''),
-                    (string) ($registro['cliente'] ?? ''),
-                    (string) ($registro['nombre_prenda'] ?? ''),
-                    (string) ($registro['nombre_operario'] ?? ''),
-                    (string) ($registro['area'] ?? ''),
-                    (string) ($registro['tipo_recibo'] ?? ''),
-                ]));
-
-                return str_contains($textoBusqueda, $termino);
-            })->values();
-        }
-
-        $entradaCostura = $this->paginarColeccionEntradaCostura($entradaCostura, $request);
 
         return view('admin.entrada-costura.index', [
             'talleres' => collect(),
@@ -72,7 +53,8 @@ class EntradaCosturaController extends Controller
         ?string $mesSeleccionado = '',
         ?string $anioSeleccionado = '',
         ?string $desdeSeleccionado = '',
-        ?string $hastaSeleccionado = ''
+        ?string $hastaSeleccionado = '',
+        ?string $search = ''
     ): array {
         $fechaSeleccionada = (string) ($fechaSeleccionada ?? '');
         $mesSeleccionado = (string) ($mesSeleccionado ?? '');
@@ -112,6 +94,13 @@ class EntradaCosturaController extends Controller
                 ->orWhereRaw('UPPER(TRIM(crp.tipo_recibo)) <> ?', ['REFLECTIVO']);
         });
 
+        $query->whereExists(function ($subQuery) {
+            $subQuery->select(DB::raw(1))
+                ->from('prenda_recibo_completado_tallas as prct')
+                ->whereColumn('prct.prenda_recibo_completado_id', 'prc.id')
+                ->where('prct.cantidad', '>', 0);
+        });
+
         if ($filtro === 'day' && !empty($fechaSeleccionada)) {
             $query->whereDate('prc.fecha_completado', $fechaSeleccionada);
         } elseif ($filtro === 'month' && !empty($mesSeleccionado)) {
@@ -134,10 +123,29 @@ class EntradaCosturaController extends Controller
             }
         }
 
+        $terminoBusqueda = trim((string) ($search ?? ''));
+        if ($terminoBusqueda !== '') {
+            $likeBusqueda = '%' . mb_strtolower($terminoBusqueda) . '%';
+
+            $query->where(function ($searchQuery) use ($likeBusqueda) {
+                $searchQuery
+                    ->whereRaw('LOWER(COALESCE(CAST(prc.numero_recibo AS CHAR), "")) LIKE ?', [$likeBusqueda])
+                    ->orWhereRaw('LOWER(COALESCE(CAST(COALESCE(rpp.consecutivo_parcial, prc.numero_recibo, crp.consecutivo_actual) AS CHAR), "")) LIKE ?', [$likeBusqueda])
+                    ->orWhereRaw('LOWER(COALESCE(CAST(COALESCE(rpp.pedido_produccion_id, crp.pedido_produccion_id) AS CHAR), "")) LIKE ?', [$likeBusqueda])
+                    ->orWhereRaw('LOWER(COALESCE(CAST(COALESCE(ped_parcial.numero_pedido, ped.numero_pedido) AS CHAR), "")) LIKE ?', [$likeBusqueda])
+                    ->orWhereRaw('LOWER(COALESCE(COALESCE(ped_parcial.cliente, ped.cliente), "")) LIKE ?', [$likeBusqueda])
+                    ->orWhereRaw('LOWER(COALESCE(prc.area, "")) LIKE ?', [$likeBusqueda])
+                    ->orWhereRaw('LOWER(COALESCE(prc.nombre_operario, "")) LIKE ?', [$likeBusqueda])
+                    ->orWhereRaw('LOWER(COALESCE(crp.tipo_recibo, "")) LIKE ?', [$likeBusqueda])
+                    ->orWhereRaw('LOWER(COALESCE(COALESCE(pp_parcial.nombre_prenda, pp.nombre_prenda, pb.descripcion), "")) LIKE ?', [$likeBusqueda])
+                    ->orWhereRaw('LOWER(COALESCE(COALESCE(pp_parcial.descripcion, pp.descripcion, pb.descripcion), "")) LIKE ?', [$likeBusqueda]);
+            });
+        }
+
         $registros = $query
             ->orderByDesc('prc.fecha_completado')
             ->orderByDesc('prc.id')
-            ->get();
+            ->paginate(10);
 
         if ($registros->isEmpty()) {
             return [collect(), collect(), [
@@ -155,12 +163,12 @@ class EntradaCosturaController extends Controller
                 'genero',
                 'color_nombre'
             )
-            ->whereIn('prenda_recibo_completado_id', $registros->pluck('id')->all())
+            ->whereIn('prenda_recibo_completado_id', $registros->getCollection()->pluck('id')->all())
             ->orderBy('id')
             ->get()
             ->groupBy('prenda_recibo_completado_id');
 
-        $entradaCostura = $registros->map(function ($registro) use ($tallasPorRecibo) {
+        $entradaCostura = $registros->getCollection()->map(function ($registro) use ($tallasPorRecibo) {
             $numeroReciboVisible = $this->normalizarNumeroReciboVisible($registro->numero_recibo_visible ?? null);
 
             $tallas = collect($tallasPorRecibo->get($registro->id, []))
@@ -208,6 +216,8 @@ class EntradaCosturaController extends Controller
             return !empty($registro['tallas']) && collect($registro['tallas'])->sum('cantidad') > 0;
         })->values();
 
+        $registros->setCollection($entradaCostura);
+
         $resumenTallas = $entradaCostura->flatMap(function (array $registro) {
             return $registro['tallas'];
         })->groupBy(function (array $talla) {
@@ -225,25 +235,7 @@ class EntradaCosturaController extends Controller
             'tallas_distintas' => $resumenTallas->count(),
         ];
 
-        return [$entradaCostura, $resumenTallas, $totales];
-    }
-
-    private function paginarColeccionEntradaCostura($items, Request $request, int $perPage = 10): LengthAwarePaginator
-    {
-        $items = $items instanceof \Illuminate\Support\Collection ? $items : collect($items);
-        $page = LengthAwarePaginator::resolveCurrentPage();
-        $currentItems = $items->slice(($page - 1) * $perPage, $perPage)->values();
-
-        return new LengthAwarePaginator(
-            $currentItems,
-            $items->count(),
-            $perPage,
-            $page,
-            [
-                'path' => LengthAwarePaginator::resolveCurrentPath(),
-                'query' => $request->query(),
-            ]
-        );
+        return [$registros, $resumenTallas, $totales];
     }
 
     private function resolverEncargadoCostura(?int $numeroPedido, ?int $prendaId, ?string $numeroRecibo, ?int $idParcial = null): ?string
