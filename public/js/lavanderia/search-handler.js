@@ -15,9 +15,11 @@ class SearchHandler {
      */
     handleSearch(e) {
         const query = e.target.value.trim();
+        const searchInput = document.getElementById('searchRecibo');
+        const results = searchInput.closest('.search-wrapper').querySelector('.autocomplete-results');
         
         if (query.length < 1) {
-            document.querySelector('.autocomplete-results').classList.remove('active');
+            results.classList.remove('active');
             return;
         }
 
@@ -28,7 +30,9 @@ class SearchHandler {
      * Busca recibos por número
      */
     searchRecibos(query) {
-        const results = document.querySelector('.autocomplete-results');
+        const searchInput = document.getElementById('searchRecibo');
+        const results = searchInput.closest('.search-wrapper').querySelector('.autocomplete-results');
+        
         results.innerHTML = '<div style="padding: 12px; text-align: center; color: #94a3b8;">Buscando...</div>';
         results.classList.add('active');
 
@@ -60,8 +64,8 @@ class SearchHandler {
      * Renderiza los resultados de búsqueda
      */
     renderSearchResults(recibos) {
-        const results = document.querySelector('.autocomplete-results');
         const searchInput = document.getElementById('searchRecibo');
+        const results = searchInput.closest('.search-wrapper').querySelector('.autocomplete-results');
         
         // Almacenar los datos en memoria en lugar de en atributos HTML
         this.reciboCache = {};
@@ -119,6 +123,9 @@ class SearchHandler {
      * Selecciona un recibo del autocomplete
      */
     selectRecibo(item) {
+        const searchInput = document.getElementById('searchRecibo');
+        const results = searchInput.closest('.search-wrapper').querySelector('.autocomplete-results');
+        
         const reciboId = parseInt(item.dataset.reciboId, 10);
         const reciboData = this.reciboCache[reciboId];
         
@@ -129,8 +136,8 @@ class SearchHandler {
         
         this.currentRecibo = reciboData;
 
-        document.getElementById('searchRecibo').value = `Recibo #${reciboData.numero_recibo}`;
-        document.querySelector('.autocomplete-results').classList.remove('active');
+        searchInput.value = `Recibo #${reciboData.numero_recibo}`;
+        results.classList.remove('active');
 
         // Disparar evento personalizado
         window.dispatchEvent(new CustomEvent('reciboSelected', { detail: reciboData }));
@@ -143,8 +150,11 @@ class SearchHandler {
         const searchInput = document.getElementById('searchRecibo');
         if (searchInput) searchInput.value = '';
         
-        document.querySelector('.autocomplete-results').classList.remove('active');
-        document.getElementById('reciboInfo').style.display = 'none';
+        const results = searchInput.closest('.search-wrapper').querySelector('.autocomplete-results');
+        results.classList.remove('active');
+        if (document.getElementById('reciboInfo')) {
+            document.getElementById('reciboInfo').style.display = 'none';
+        }
     }
 }
 
