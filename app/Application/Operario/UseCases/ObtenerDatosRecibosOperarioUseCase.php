@@ -539,10 +539,9 @@ class ObtenerDatosRecibosOperarioUseCase
                             ->where($foreignKey, (int) $parcial->id)
                             ->get($columns);
 
-                        // Fallback de compatibilidad:
-                        // Solo si no se encontraron tallas en la tabla principal, intentar buscar en la tabla legacy
-                        // por contexto (no por ID directo si es ReciboPorPartes para evitar colisiones).
-                        if ($tallasRaw->isEmpty()) {
+                        // Fallback de compatibilidad solo para el legado pedidos_parciales.
+                        // En recibo_por_partes debe devolverse únicamente lo que exista en su tabla propia.
+                        if (!$isReciboPorPartes && $tallasRaw->isEmpty()) {
                             $tipoReciboParcial = strtoupper(trim((string) ($parcial->tipo_recibo ?? '')));
                             $legacyParcial = DB::table('pedidos_parciales')
                                 ->where('pedido_produccion_id', (int) $parcial->pedido_produccion_id)
@@ -1058,7 +1057,7 @@ class ObtenerDatosRecibosOperarioUseCase
                     }
                 }
 
-                if (empty($tallaColoresParcial)) {
+                if (empty($tallaColoresParcial) && !$isReciboPorPartes) {
                     $tallaColoresParcial = $this->construirTallaColoresDesdePrenda(
                         (int) ($parcial->prenda_pedido_id ?? 0),
                         $tallasParcial,

@@ -83,7 +83,7 @@ class EntradaCosturaController extends Controller
         $anioSeleccionado = (string) ($anioSeleccionado ?? '');
         $desdeSeleccionado = (string) ($desdeSeleccionado ?? '');
         $hastaSeleccionado = (string) ($hastaSeleccionado ?? '');
-        $tipoReciboResueltoExpr = "CASE WHEN ppar.id IS NOT NULL THEN COALESCE(ppar.tipo_recibo, rpp.tipo_recibo, crp.tipo_recibo, '') WHEN prc.id_parcial IS NOT NULL THEN COALESCE(rpp.tipo_recibo, crp.tipo_recibo, '') ELSE COALESCE(crp.tipo_recibo, rpp.tipo_recibo, '') END";
+        $tipoReciboResueltoExpr = "CASE WHEN rpp.id IS NOT NULL THEN COALESCE(rpp.tipo_recibo, ppar.tipo_recibo, crp.tipo_recibo, '') WHEN ppar.id IS NOT NULL THEN COALESCE(ppar.tipo_recibo, crp.tipo_recibo, '') ELSE COALESCE(crp.tipo_recibo, rpp.tipo_recibo, '') END";
         $tipoReciboResueltoUpperExpr = "UPPER(TRIM($tipoReciboResueltoExpr))";
         $nombrePrendaBusquedaExpr = "LOWER(COALESCE(COALESCE(pp_parcial_ppar.nombre_prenda, pp_parcial.nombre_prenda, pp.nombre_prenda, pb.nombre), ''))";
         $descripcionPrendaBusquedaExpr = "LOWER(COALESCE(COALESCE(pp_parcial_ppar.descripcion, pp_parcial.descripcion, pp.descripcion, pb.descripcion), ''))";
@@ -116,16 +116,16 @@ class EntradaCosturaController extends Controller
                 'prc.fecha_completado',
                 'prc.tallas_control_calidad',
                 'prc.id_parcial',
-                DB::raw('COALESCE(ppar.pedido_produccion_id, rpp.pedido_produccion_id, crp.pedido_produccion_id) as pedido_produccion_id'),
-                DB::raw('COALESCE(ped_parcial_ppar.numero_pedido, ped_parcial.numero_pedido, ped.numero_pedido) as numero_pedido_real'),
+                DB::raw('COALESCE(rpp.pedido_produccion_id, ppar.pedido_produccion_id, crp.pedido_produccion_id) as pedido_produccion_id'),
+                DB::raw('COALESCE(ped_parcial.numero_pedido, ped_parcial_ppar.numero_pedido, ped.numero_pedido) as numero_pedido_real'),
                 DB::raw('COALESCE(crp.prenda_bodega_id, crp_base.prenda_bodega_id) as prenda_bodega_id'),
-                DB::raw('COALESCE(ppar.prenda_pedido_id, rpp.prenda_pedido_id, crp.prenda_id) as prenda_id'),
+                DB::raw('COALESCE(rpp.prenda_pedido_id, ppar.prenda_pedido_id, crp.prenda_id) as prenda_id'),
                 DB::raw("$tipoReciboResueltoExpr as tipo_recibo"),
-                DB::raw("CASE WHEN $tipoReciboResueltoUpperExpr IN ('COSTURA-BODEGA', 'CORTE-PARA-BODEGA') THEN 'Bodega' ELSE COALESCE(ped_parcial_ppar.cliente, ped_parcial.cliente, ped.cliente) END as cliente"),
-                DB::raw('COALESCE(ppar.consecutivo_actual, rpp.consecutivo_parcial, prc.numero_recibo, crp.consecutivo_actual) as numero_recibo_visible'),
+                DB::raw("CASE WHEN $tipoReciboResueltoUpperExpr IN ('COSTURA-BODEGA', 'CORTE-PARA-BODEGA') THEN 'Bodega' ELSE COALESCE(ped_parcial.cliente, ped_parcial_ppar.cliente, ped.cliente) END as cliente"),
+                DB::raw('COALESCE(rpp.consecutivo_parcial, ppar.consecutivo_actual, prc.numero_recibo, crp.consecutivo_actual) as numero_recibo_visible'),
                 'pb.nombre as prenda_bodega_nombre',
-                DB::raw("CASE WHEN $tipoReciboResueltoUpperExpr IN ('COSTURA-BODEGA', 'CORTE-PARA-BODEGA') THEN COALESCE(pb.nombre, pp_parcial_ppar.nombre_prenda, pp_parcial.nombre_prenda, pp.nombre_prenda) ELSE COALESCE(pp_parcial_ppar.nombre_prenda, pp_parcial.nombre_prenda, pp.nombre_prenda, pb.nombre) END as nombre_prenda"),
-                DB::raw("CASE WHEN $tipoReciboResueltoUpperExpr IN ('COSTURA-BODEGA', 'CORTE-PARA-BODEGA') THEN COALESCE(pb.descripcion, pp_parcial_ppar.descripcion, pp_parcial.descripcion, pp.descripcion) ELSE COALESCE(pp_parcial_ppar.descripcion, pp_parcial.descripcion, pp.descripcion, pb.descripcion) END as descripcion_prenda")
+                DB::raw("CASE WHEN $tipoReciboResueltoUpperExpr IN ('COSTURA-BODEGA', 'CORTE-PARA-BODEGA') THEN COALESCE(pb.nombre, pp_parcial.nombre_prenda, pp_parcial_ppar.nombre_prenda, pp.nombre_prenda) ELSE COALESCE(pp_parcial.nombre_prenda, pp_parcial_ppar.nombre_prenda, pp.nombre_prenda, pb.nombre) END as nombre_prenda"),
+                DB::raw("CASE WHEN $tipoReciboResueltoUpperExpr IN ('COSTURA-BODEGA', 'CORTE-PARA-BODEGA') THEN COALESCE(pb.descripcion, pp_parcial.descripcion, pp_parcial_ppar.descripcion, pp.descripcion) ELSE COALESCE(pp_parcial.descripcion, pp_parcial_ppar.descripcion, pp.descripcion, pb.descripcion) END as descripcion_prenda")
             );
 
         $query->where(function ($subQuery) {
@@ -174,10 +174,10 @@ class EntradaCosturaController extends Controller
             $query->where(function ($searchQuery) use ($likeBusqueda) {
                 $searchQuery
                     ->whereRaw('LOWER(COALESCE(CAST(prc.numero_recibo AS CHAR), "")) LIKE ?', [$likeBusqueda])
-                    ->orWhereRaw('LOWER(COALESCE(CAST(COALESCE(ppar.consecutivo_actual, rpp.consecutivo_parcial, prc.numero_recibo, crp.consecutivo_actual) AS CHAR), "")) LIKE ?', [$likeBusqueda])
-                    ->orWhereRaw('LOWER(COALESCE(CAST(COALESCE(ppar.pedido_produccion_id, rpp.pedido_produccion_id, crp.pedido_produccion_id) AS CHAR), "")) LIKE ?', [$likeBusqueda])
-                    ->orWhereRaw('LOWER(COALESCE(CAST(COALESCE(ped_parcial_ppar.numero_pedido, ped_parcial.numero_pedido, ped.numero_pedido) AS CHAR), "")) LIKE ?', [$likeBusqueda])
-                    ->orWhereRaw('LOWER(COALESCE(COALESCE(ped_parcial_ppar.cliente, ped_parcial.cliente, ped.cliente), "")) LIKE ?', [$likeBusqueda])
+                    ->orWhereRaw('LOWER(COALESCE(CAST(COALESCE(rpp.consecutivo_parcial, ppar.consecutivo_actual, prc.numero_recibo, crp.consecutivo_actual) AS CHAR), "")) LIKE ?', [$likeBusqueda])
+                    ->orWhereRaw('LOWER(COALESCE(CAST(COALESCE(rpp.pedido_produccion_id, ppar.pedido_produccion_id, crp.pedido_produccion_id) AS CHAR), "")) LIKE ?', [$likeBusqueda])
+                    ->orWhereRaw('LOWER(COALESCE(CAST(COALESCE(ped_parcial.numero_pedido, ped_parcial_ppar.numero_pedido, ped.numero_pedido) AS CHAR), "")) LIKE ?', [$likeBusqueda])
+                    ->orWhereRaw('LOWER(COALESCE(COALESCE(ped_parcial.cliente, ped_parcial_ppar.cliente, ped.cliente), "")) LIKE ?', [$likeBusqueda])
                     ->orWhereRaw('LOWER(COALESCE(prc.area, "")) LIKE ?', [$likeBusqueda])
                     ->orWhereRaw('LOWER(COALESCE(prc.nombre_operario, "")) LIKE ?', [$likeBusqueda])
                     ->orWhereRaw("LOWER(COALESCE($tipoReciboResueltoExpr, '')) LIKE ?", [$likeBusqueda])

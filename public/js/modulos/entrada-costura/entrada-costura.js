@@ -52,6 +52,7 @@ function initEntradaCosturaRecibos() {
         const prendaId = Number(button.dataset.prendaId || 0);
         const parcialId = Number(button.dataset.parcialId || 0);
         const prendaBodegaId = Number(button.dataset.prendaBodegaId || 0);
+        const esReciboParcial = parcialId > 0 || numeroRecibo.includes('.');
 
         if (!numeroRecibo || !tipoRecibo) {
             return;
@@ -81,6 +82,25 @@ function initEntradaCosturaRecibos() {
 
             if (tipoRecibo === 'COSTURA') {
                 if (
+                    esReciboParcial &&
+                    parcialId > 0 &&
+                    typeof pedidosRecibosModule?.abrirReciboParcial === 'function' &&
+                    pedidoProduccionId > 0 &&
+                    prendaId > 0
+                ) {
+                    await pedidosRecibosModule.abrirReciboParcial(
+                        pedidoProduccionId,
+                        prendaId,
+                        'costura',
+                        parcialId,
+                        `${tipoRecibo} ANEXO`
+                    );
+                    await applyReciboFechaToCosturaModal(numeroRecibo, tipoRecibo, apiRoute);
+                    normalizeCosturaModalForEntrada();
+                    return;
+                }
+
+                if (
                     pedidosRecibosModule &&
                     typeof pedidosRecibosModule.abrirRecibo === 'function' &&
                     pedidoProduccionId > 0 &&
@@ -89,7 +109,8 @@ function initEntradaCosturaRecibos() {
                     await pedidosRecibosModule.abrirRecibo(pedidoProduccionId, prendaId, 'costura', null, {
                         targetConsecutivo: numeroRecibo,
                         targetReciboId: reciboId || null,
-                        esParcial: false
+                        esParcial: esReciboParcial,
+                        pedidoParcialId: esReciboParcial ? parcialId : null
                     });
                     await applyReciboFechaToCosturaModal(numeroRecibo, tipoRecibo, apiRoute);
                     normalizeCosturaModalForEntrada();
