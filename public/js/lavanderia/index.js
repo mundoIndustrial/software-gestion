@@ -177,7 +177,7 @@ class LavanderiaManager {
                     const shouldShow = form.style.display === 'none';
                     form.style.display = shouldShow ? 'block' : 'none';
                     if (shouldShow) {
-                        this.registrationHandler.renderManualPrendaResumen();
+                        this.registrationHandler.inicializarFormPrendaManual();
                     }
                 }
             });

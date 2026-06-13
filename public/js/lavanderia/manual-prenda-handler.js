@@ -16,7 +16,7 @@ class ManualPrendaHandler {
     /**
      * Agrega una prenda manual
      */
-    addManualPrenda(descripcion, genero = null) {
+    addManualPrenda(descripcion, genero = null, cantidad = null, modoSoloQuantidad = false) {
         const tempId = this.nextTempId;
         this.nextTempId--;
 
@@ -26,7 +26,9 @@ class ManualPrendaHandler {
             genero: this.normalizeGenero(genero),
             tipo: 'MANUAL',
             tallas: [],
-            selectedTallas: []
+            selectedTallas: [],
+            cantidad: cantidad || null,
+            soloQuantidad: modoSoloQuantidad
         });
 
         return tempId;
@@ -94,6 +96,32 @@ class ManualPrendaHandler {
      */
     getCount() {
         return this.manualPrendas.length;
+    }
+
+    /**
+     * Obtiene la cantidad de una prenda manual (para prendas solo cantidad)
+     */
+    getQuantityForManualPrenda(tempId) {
+        const prenda = this.getManualPrenda(tempId);
+        return prenda ? prenda.cantidad : null;
+    }
+
+    /**
+     * Establece la cantidad de una prenda manual
+     */
+    setQuantityForManualPrenda(tempId, cantidad) {
+        const prenda = this.getManualPrenda(tempId);
+        if (prenda) {
+            prenda.cantidad = cantidad;
+        }
+    }
+
+    /**
+     * Verifica si una prenda es solo cantidad
+     */
+    isSoloQuantidad(tempId) {
+        const prenda = this.getManualPrenda(tempId);
+        return prenda ? prenda.soloQuantidad : false;
     }
 }
 

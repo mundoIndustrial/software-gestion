@@ -191,232 +191,241 @@ class MovementsHandler {
      * Crea el HTML de una tarjeta de movimiento
      */
     createMovementCard(m) {
-        const firmaBadgeClass = m.estadoFirma === 'FIRMADO' ? 'badge-firmado' : 'badge-pendiente';
-        const firmaIcon = m.estadoFirma === 'FIRMADO' ? 'check_circle' : 'schedule';
-        
         const tipoMovimiento = m.tipoMovimiento || 'SALIDA';
+        const tipoTexto = tipoMovimiento === 'ENTRADA' ? 'Llegaron' : 'Salieron';
         const tipoMovimientoBadgeClass = tipoMovimiento === 'ENTRADA' ? 'badge-entrada' : 'badge-salida';
         const tipoMovimientoIcon = tipoMovimiento === 'ENTRADA' ? 'arrow_downward' : 'arrow_upward';
-
-        const prendasManualesHtml = Array.isArray(m.prendasManuales) && m.prendasManuales.length > 0
-            ? m.prendasManuales.map(prenda => {
-                const generoLabel = prenda.genero || 'Sin género';
-                const tallasPorGenero = Array.isArray(prenda.tallas) && prenda.tallas.length > 0
-                    ? Object.values(prenda.tallas.reduce((acc, talla) => {
-                        const genero = (talla.genero || generoLabel || 'Sin género').toString();
-                        if (!acc[genero]) {
-                            acc[genero] = {
-                                genero,
-                                tallas: []
-                            };
-                        }
-                        acc[genero].tallas.push(talla);
-                        return acc;
-                    }, {}))
-                    : [];
-
-                return `
-                    <div style="
-                        background: #fffbeb;
-                        border: 1px solid #fcd34d;
-                        border-radius: 8px;
-                        padding: 12px;
-                        margin-bottom: 8px;
-                    ">
-                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
-                            <div style="display: flex; flex-direction: column; gap: 2px;">
-                                <span style="font-weight: 700; font-size: 14px; color: #1e293b;">
-                                    Prenda Manual
-                                </span>
-                                <span style="font-size: 12px; color: #92400e; font-weight: 600;">
-                                    ${generoLabel}
-                                </span>
-                            </div>
-                            <span style="
-                                background: #f59e0b;
-                                color: white;
-                                padding: 2px 8px;
-                                border-radius: 12px;
-                                font-size: 11px;
-                                font-weight: 600;
-                            ">
-                                MANUAL
-                            </span>
-                        </div>
-                        <div style="font-size: 13px; color: #64748b; margin-bottom: 8px;">
-                            <strong>Descripción:</strong> ${prenda.descripcion}
-                        </div>
-                        ${tallasPorGenero.length > 0
-                            ? tallasPorGenero.map(grupo => `
-                                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #fcd34d;">
-                                    <div style="font-size: 12px; font-weight: 700; color: #92400e; margin-bottom: 8px;">
-                                        ${grupo.genero}
-                                    </div>
-                                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                                        ${grupo.tallas.map(t => `
-                                            <span class="talla-badge" style="
-                                                display: inline-block;
-                                                background: #fef3c7;
-                                                color: #92400e;
-                                                border: 1px solid #f59e0b;
-                                                padding: 4px 8px;
-                                                border-radius: 4px;
-                                                font-size: 12px;
-                                                font-weight: 500;
-                                            ">
-                                                ${t.talla}: ${t.cantidad_enviada}
-                                            </span>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            `).join('')
-                            : '<span style="color: #94a3b8; font-size: 13px;">Sin tallas</span>'
-                        }
-                    </div>
-                `;
-            }).join('')
-            : '';
         
-        // Renderizar múltiples recibos con sus tallas agrupadas
-        const recibosHtml = m.recibos.map(recibo => {
-            let colorTipo = '#2450ef';
-            let bgColorTipo = '#f0f4ff';
-            
-            if (recibo.tipo_recibo_mostrar === 'BODEGA') {
-                colorTipo = '#059669';
-                bgColorTipo = '#f0fdf4';
+        // Construir descripción de movimiento igual que en historial
+        let descripcionDetalles = [];
+
+        // Procesar recibos
+        if (Array.isArray(m.recibos) && m.recibos.length > 0) {
+            m.recibos.forEach(recibo => {
+                const tallasPorGenero = recibo.tallasPorGenero || [];
+                const cantidadTotal = tallasPorGenero.reduce((sum, g) => 
+                    sum + g.tallas.reduce((s, t) => s + (t.cantidad_enviada || 0), 0), 0
+                );
+                const unidad = cantidadTotal === 1 ? 'unidad' : 'unidades';
+                
+                let tallasTexto = '';
+                if (tallasPorGenero.length > 0) {
+                    const tallasList = [];
+                    tallasPorGenero.forEach(grupo => {
+                        grupo.tallas.forEach(t => {
+                            tallasList.push(`${t.talla}${t.cantidad_enviada ? ` (${t.cantidad_enviada})` : ''}`);
+                        });
+                    });
+                    tallasTexto = tallasList.join(', ');
+                }
+
+                const reciboNumeroBadge = `<strong>#${recibo.numero_recibo}</strong>`;
+                const tipoReciboBadge = recibo.tipo_recibo_mostrar ? ` (${recibo.tipo_recibo_mostrar})` : '';
+
+                descripcionDetalles.push({
+                    tipo: 'recibo',
+                    principal: `${tipoTexto} ${cantidadTotal} ${unidad} de ${recibo.prenda} ${reciboNumeroBadge}${tipoReciboBadge}`,
+                    tallas: tallasTexto ? `• Tallas: ${tallasTexto}` : null,
+                    color: recibo.tipo_recibo_mostrar === 'BODEGA' ? '#059669' : '#2450ef',
+                    bgColor: recibo.tipo_recibo_mostrar === 'BODEGA' ? '#f0fdf4' : '#f0f4ff',
+                    tipoRecibo: recibo.tipo_recibo_mostrar
+                });
+            });
+        }
+
+        // Procesar prendas manuales
+        if (Array.isArray(m.prendasManuales) && m.prendasManuales.length > 0) {
+            m.prendasManuales.forEach(prenda => {
+                const isSoloQuantidad = prenda.soloQuantidad || false;
+                
+                if (isSoloQuantidad) {
+                    // Prenda con solo cantidad
+                    const cantidad = prenda.cantidad || 0;
+                    const unidad = cantidad === 1 ? 'unidad' : 'unidades';
+                    descripcionDetalles.push({
+                        tipo: 'manual_cantidad',
+                        principal: `${tipoTexto} ${cantidad} ${unidad} de ${prenda.descripcion} (MANUAL)`,
+                        tallas: null,
+                        color: '#f59e0b',
+                        bgColor: '#fef3c7',
+                        tipoRecibo: 'MANUAL'
+                    });
+                } else {
+                    // Prenda con tallas
+                    const tallasPorGenero = [];
+                    if (Array.isArray(prenda.tallas)) {
+                        // Agrupar por género
+                        const generoMap = {};
+                        prenda.tallas.forEach(t => {
+                            const genero = t.genero || prenda.genero || 'Sin género';
+                            if (!generoMap[genero]) {
+                                generoMap[genero] = [];
+                            }
+                            generoMap[genero].push(t);
+                        });
+                        
+                        Object.entries(generoMap).forEach(([genero, tallas]) => {
+                            tallasPorGenero.push({ genero, tallas });
+                        });
+                    }
+
+                    const cantidadTotal = (prenda.tallas || []).reduce((sum, t) => sum + (t.cantidad_enviada || 0), 0);
+                    const unidad = cantidadTotal === 1 ? 'unidad' : 'unidades';
+                    
+                    let tallasTexto = '';
+                    if (prenda.tallas && prenda.tallas.length > 0) {
+                        tallasTexto = prenda.tallas.map(t => 
+                            `${t.talla}${t.cantidad_enviada ? ` (${t.cantidad_enviada})` : ''}`
+                        ).join(', ');
+                    }
+
+                    descripcionDetalles.push({
+                        tipo: 'manual_tallas',
+                        principal: `${tipoTexto} ${cantidadTotal} ${unidad} de ${prenda.descripcion} (MANUAL)`,
+                        tallas: tallasTexto ? `• Tallas: ${tallasTexto}` : null,
+                        color: '#f59e0b',
+                        bgColor: '#fef3c7',
+                        tipoRecibo: 'MANUAL'
+                    });
+                }
+            });
+        }
+
+        // Construir HTML de descripción similar al historial
+        let descripcionHtml = '<div style="line-height: 1.6; color: #64748b; font-size: 13px;">';
+        descripcionDetalles.forEach((item, idx) => {
+            if (idx > 0) {
+                descripcionHtml += '<br>';
             }
+            descripcionHtml += `<span style="color: #1e293b; font-weight: 500;">${item.principal}</span>`;
+            if (item.tallas) {
+                descripcionHtml += `<br><span style="color: ${item.color}; font-size: 12px;">${item.tallas}</span>`;
+            }
+        });
+        descripcionHtml += '</div>';
 
-            const clienteHtml = recibo.tipo_recibo_mostrar !== 'BODEGA'
-                ? `<div style="font-size: 13px; color: #64748b; margin-top: 4px;">
-                    <strong>Cliente:</strong> ${recibo.cliente}
-                  </div>`
-                : '';
-
-            // Usar las tallas específicas de este recibo
-            const tallasPorGeneroHtml = recibo.tallasPorGenero && recibo.tallasPorGenero.length > 0 
-                ? recibo.tallasPorGenero.map(grupo => {
-                    return `
-                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid ${colorTipo}20;">
-                            <div style="font-size: 12px; font-weight: 600; color: ${colorTipo}; margin-bottom: 8px;">
-                                ${grupo.genero}
-                            </div>
-                            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                                ${grupo.tallas.map(t => 
-                                    `<span class="talla-badge" style="
-                                        background: ${bgColorTipo};
-                                        color: ${colorTipo};
-                                        border: 1px solid ${colorTipo};
-                                        padding: 4px 8px;
-                                        border-radius: 4px;
-                                        font-size: 12px;
-                                        font-weight: 500;
-                                    ">
-                                        ${t.talla}: ${t.cantidad_enviada}
-                                    </span>`
-                                ).join('')}
-                            </div>
-                        </div>
-                    `;
-                }).join('')
-                : '';
-
-            return `
-                <div style="
-                    background: ${bgColorTipo};
-                    border: 1px solid ${colorTipo};
-                    border-radius: 8px;
-                    padding: 12px;
-                    margin-bottom: 8px;
-                ">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <span style="font-weight: 700; font-size: 14px; color: #1e293b;">
-                            Recibo #${recibo.numero_recibo}
-                        </span>
-                        <span style="
-                            background: ${colorTipo};
-                            color: white;
-                            padding: 2px 8px;
-                            border-radius: 12px;
-                            font-size: 11px;
-                            font-weight: 600;
-                        ">
-                            ${recibo.tipo_recibo_mostrar}
-                        </span>
-                    </div>
-                    ${clienteHtml}
-                    <div style="font-size: 13px; color: #64748b; margin-top: 4px;">
-                        <strong>Prenda:</strong> ${recibo.prenda}
-                    </div>
-                    ${tallasPorGeneroHtml}
-                </div>
-            `;
-        }).join('');
-        
-        const novedadHtml = m.novedad 
-            ? `<div class="card-section">
-                <div class="card-label">Novedad</div>
-                <p style="margin: 8px 0 0 0; font-size: 14px; color: #1e293b;">${m.novedad}</p>
-              </div>`
-            : '';
+        const firmaBadgeClass = m.estadoFirma === 'PENDIENTE FIRMA' ? 'badge-pendiente' : 'badge-firmado';
+        const firmaIcon = m.estadoFirma === 'PENDIENTE FIRMA' ? 'schedule' : 'check_circle';
 
         const firmaButtonText = tipoMovimiento === 'ENTRADA' ? 'Firmar entrada' : 'Firmar salida';
         const firmaButtonHtml = m.estadoFirma === 'PENDIENTE FIRMA' 
-            ? `<button class="btn-firmar-salida-card btn-firmar-salida" data-movement-id="${m.id}">
-                <span class="material-symbols-rounded">edit</span>
+            ? `<button class="btn-firmar-salida-card btn-firmar-salida" data-movement-id="${m.id}" style="
+                margin-top: 12px;
+                width: 100%;
+                padding: 8px 12px;
+                background: #2450ef;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+            ">
+                <span class="material-symbols-rounded" style="font-size: 18px;">edit</span>
                 ${firmaButtonText}
-              </button>`
+            </button>`
+            : '';
+
+        const novedadHtml = m.novedad 
+            ? `<div style="margin-top: 12px; padding: 12px; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px;">
+                <div style="font-weight: 600; color: #92400e; font-size: 12px; margin-bottom: 4px;">
+                    <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">note</span>
+                    Novedad
+                </div>
+                <p style="margin: 0; color: #1e293b; font-size: 13px; line-height: 1.5;">${m.novedad}</p>
+              </div>`
             : '';
 
         return `
-            <div class="movement-card">
-                <div class="card-header-top">
+            <div style="
+                background: white;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 16px;
+                margin-bottom: 12px;
+                transition: all 0.2s;
+            " class="movement-card">
+                <!-- Header -->
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-weight: 700; font-size: 14px; color: #1e293b;">
-                            Movimiento #${m.numeroMovimiento || m.id}
+                        <span style="font-weight: 700; font-size: 15px; color: #1e293b;">
+                            Mov #${m.numeroMovimiento || m.id}
                         </span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 12px; margin-left: auto;">
-                        <span class="badge ${tipoMovimientoBadgeClass}">
-                            <span class="material-symbols-rounded badge-icon">${tipoMovimientoIcon}</span>
-                            <span>${tipoMovimiento}</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="
+                            background: ${tipoMovimiento === 'ENTRADA' ? '#d1fae5' : '#fef3c7'};
+                            color: ${tipoMovimiento === 'ENTRADA' ? '#10b981' : '#f59e0b'};
+                            padding: 4px 10px;
+                            border-radius: 4px;
+                            font-size: 12px;
+                            font-weight: 600;
+                            display: flex;
+                            align-items: center;
+                            gap: 4px;
+                        ">
+                            <span class="material-symbols-rounded" style="font-size: 14px;">${tipoMovimientoIcon}</span>
+                            ${tipoMovimiento}
                         </span>
-                        <div class="card-fecha">
+                        <span style="font-size: 12px; color: #94a3b8; white-space: nowrap;">
                             ${m.fechaMovimiento}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card-divider"></div>
-
-                <div class="card-section">
-                    <div class="card-label">Recibos (${m.recibos.length})</div>
-                </div>
-
-                <div class="card-section">
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        ${recibosHtml}
-                    </div>
-                </div>
-
-                ${prendasManualesHtml ? '<div class="card-divider"></div><div class="card-section"><div class="card-label">Prendas manuales (' + m.prendasManuales.length + ')</div><div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">' + prendasManualesHtml + '</div></div>' : ''}
-
-                <div class="card-divider"></div>
-
-                <div class="card-section">
-                    <div class="card-label">Estado</div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span class="badge ${firmaBadgeClass}">
-                            <span class="material-symbols-rounded badge-icon">${firmaIcon}</span>
-                            <span>${m.estadoFirma}</span>
                         </span>
-                        ${m.firmaMovimiento && m.firmaMovimiento !== 'pendiente' ? `<button class="btn-ver-firma" data-firma-url="${m.firmaMovimiento}" data-movement-id="${m.id}" style="padding: 4px 8px; font-size: 11px;">Ver Firma</button>` : ''}
                     </div>
                 </div>
 
-                ${novedadHtml ? '<div class="card-divider"></div>' + novedadHtml : ''}
+                <!-- Descripción detallada -->
+                <div style="margin-bottom: 12px; padding: 12px; background: #f8fafc; border-radius: 6px;">
+                    ${descripcionHtml}
+                </div>
 
-                ${firmaButtonHtml ? '<div class="card-divider"></div>' + firmaButtonHtml : ''}
+                <!-- Estado -->
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="
+                            background: ${m.estadoFirma === 'PENDIENTE FIRMA' ? '#fef3c7' : '#d1fae5'};
+                            color: ${m.estadoFirma === 'PENDIENTE FIRMA' ? '#92400e' : '#059669'};
+                            padding: 4px 10px;
+                            border-radius: 4px;
+                            font-size: 12px;
+                            font-weight: 600;
+                            display: flex;
+                            align-items: center;
+                            gap: 4px;
+                        ">
+                            <span class="material-symbols-rounded" style="font-size: 14px;">${firmaIcon}</span>
+                            ${m.estadoFirma}
+                        </span>
+                    </div>
+                    ${m.firmaMovimiento && m.firmaMovimiento !== 'pendiente' 
+                        ? `<button class="btn-ver-firma" data-firma-url="${m.firmaMovimiento}" data-movement-id="${m.id}" style="
+                            padding: 4px 10px;
+                            background: #2450ef;
+                            color: white;
+                            border: none;
+                            border-radius: 4px;
+                            font-size: 12px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            gap: 4px;
+                        ">
+                            <span class="material-symbols-rounded" style="font-size: 14px;">image</span>
+                            Ver Firma
+                        </button>` 
+                        : ''
+                    }
+                </div>
+
+                <!-- Novedades -->
+                ${novedadHtml}
+
+                <!-- Botón firmar -->
+                ${firmaButtonHtml}
             </div>
         `;
     }

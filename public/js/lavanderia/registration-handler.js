@@ -556,12 +556,22 @@ class RegistrationHandler {
             }
         }
 
-        // Verificar que todas las prendas manuales tengan tallas seleccionadas
+        // Verificar que todas las prendas manuales tengan tallas seleccionadas O cantidad
         for (const prenda of prendasManuales) {
             const selectedTallas = Array.isArray(prenda.selectedTallas) ? prenda.selectedTallas : [];
-            if (selectedTallas.length === 0) {
+            const soloQuantidad = prenda.soloQuantidad || false;
+            const cantidad = prenda.cantidad || null;
+
+            if (!soloQuantidad && selectedTallas.length === 0) {
                 window.dispatchEvent(new CustomEvent('showToast', { 
                     detail: { title: 'Tallas Incompletas', message: `Por favor selecciona tallas para la prenda manual: ${prenda.descripcion}`, type: 'error' }
+                }));
+                return;
+            }
+
+            if (soloQuantidad && (!cantidad || cantidad <= 0)) {
+                window.dispatchEvent(new CustomEvent('showToast', { 
+                    detail: { title: 'Cantidad Incompleta', message: `Por favor especifica una cantidad para la prenda manual: ${prenda.descripcion}`, type: 'error' }
                 }));
                 return;
             }
@@ -611,7 +621,14 @@ class RegistrationHandler {
                         prenda_agregada_id: p.temp_id
                     }));
                 })
-            ]
+            ],
+            cantidades_solo: prendasManuales
+                .filter(p => p.soloQuantidad && p.cantidad)
+                .map(p => ({
+                    prenda_agregada_id: p.temp_id,
+                    cantidad: p.cantidad,
+                    genero: p.genero || null
+                }))
         };
 
         fetch(`${this.apiSearchUrl.replace('search-recibos', 'registrar-salida')}`, {
@@ -744,6 +761,470 @@ class RegistrationHandler {
     }
 
     /**
+     * Inicializa el formulario de agregar prenda manual
+     */
+    inicializarFormPrendaManual() {
+        const resumenContainer = document.getElementById('prendaManualResumenContainer');
+        const btnAgregarTallas = document.getElementById('btnAgregarTallasManual');
+
+        if (resumenContainer) {
+            resumenContainer.innerHTML = '';
+        }
+        if (btnAgregarTallas) {
+            btnAgregarTallas.style.display = 'none';
+        }
+
+        // Configurar event listener para cuando el usuario escriba en la descripción
+        const inputDescripcion = document.getElementById('inputDescripcionPrenda');
+        if (inputDescripcion) {
+            inputDescripcion.addEventListener('input', () => {
+                this.actualizarOpcionesFormulario();
+            });
+        }
+
+        // Mostrar las opciones si ya hay descripción
+        this.actualizarOpcionesFormulario();
+    }
+
+    /**
+     * Actualiza las opciones del formulario cuando hay descripción
+     */
+    actualizarOpcionesFormulario() {
+        const inputDescripcion = document.getElementById('inputDescripcionPrenda');
+        const resumenContainer = document.getElementById('prendaManualResumenContainer');
+
+        if (!inputDescripcion || !resumenContainer) return;
+
+        const descripcion = inputDescripcion.value.trim();
+
+        if (!descripcion) {
+            resumenContainer.innerHTML = '';
+            return;
+        }
+
+        // Mostrar opciones debajo de la descripción
+        const opcionesHtml = `
+            <div style="margin-top: 16px; padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <label style="display: block; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: #1e293b;">
+                    Selecciona cómo agregar esta prenda:
+                </label>
+                
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button class="btn-opcion-prenda-inline" data-opcion="con-tallas" style="
+                        padding: 12px 16px;
+                        border: 2px solid #bfdbfe;
+                        background: #f0f4ff;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: #1e293b;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        text-align: left;
+                    ">
+                        <span class="material-symbols-rounded" style="color: #2450ef; font-size: 20px;">straighten</span>
+                        <div>
+                            <div style="font-weight: 600;">Con Tallas</div>
+                            <div style="font-size: 11px; color: #64748b;">Especifica talla, género y cantidad</div>
+                        </div>
+                    </button>
+                    
+                    <button class="btn-opcion-prenda-inline" data-opcion="solo-cantidad" style="
+                        padding: 12px 16px;
+                        border: 2px solid #fcd34d;
+                        background: #fffbeb;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: #1e293b;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        text-align: left;
+                    ">
+                        <span class="material-symbols-rounded" style="color: #f59e0b; font-size: 20px;">inventory_2</span>
+                        <div>
+                            <div style="font-weight: 600;">Solo Cantidad</div>
+                            <div style="font-size: 11px; color: #64748b;">Especifica solo la cantidad total</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        resumenContainer.innerHTML = opcionesHtml;
+
+        // Event listeners para las opciones
+        resumenContainer.querySelectorAll('.btn-opcion-prenda-inline').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const opcion = e.currentTarget.dataset.opcion;
+
+                if (opcion === 'con-tallas') {
+                    this.agregarPrendaManualConTallas();
+                } else if (opcion === 'solo-cantidad') {
+                    this.agregarPrendaManualSoloQuantidad();
+                }
+            });
+        });
+    }
+
+    /**
+     * Agrega una prenda manual con tallas
+     */
+    agregarPrendaManualConTallas() {
+        const descripcionInput = document.getElementById('inputDescripcionPrenda');
+        const descripcion = descripcionInput ? descripcionInput.value.trim() : '';
+
+        if (!descripcion) {
+            window.dispatchEvent(new CustomEvent('showToast', { 
+                detail: { title: 'Descripción Requerida', message: 'Por favor ingresa una descripción para la prenda', type: 'error' }
+            }));
+            return;
+        }
+
+        this.openManualPrendaWizard({
+            descripcion,
+            genero: '',
+            modoTallas: 'LETRAS',
+            selectedSizeNames: [],
+            selectedTallas: []
+        }, 1, false);
+    }
+
+    /**
+     * Agrega una prenda manual con solo cantidad
+     */
+    agregarPrendaManualSoloQuantidad() {
+        const descripcionInput = document.getElementById('inputDescripcionPrenda');
+        const descripcion = descripcionInput ? descripcionInput.value.trim() : '';
+
+        if (!descripcion) {
+            window.dispatchEvent(new CustomEvent('showToast', { 
+                detail: { title: 'Descripción Requerida', message: 'Por favor ingresa una descripción para la prenda', type: 'error' }
+            }));
+            return;
+        }
+
+        const resumenContainer = document.getElementById('prendaManualResumenContainer');
+        if (!resumenContainer) return;
+
+        // Reemplazar opciones con formulario de cantidad
+        const cantidadFormHtml = `
+            <div style="margin-top: 16px; padding: 16px; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px;">
+                <label class="form-label" style="margin-bottom: 12px; display: block;">Cantidad Total</label>
+                <input 
+                    type="number" 
+                    id="inputCantidadSoloNueva" 
+                    class="form-input" 
+                    min="1" 
+                    placeholder="Ingresa la cantidad..."
+                    value="1"
+                    style="font-size: 14px; margin-bottom: 12px;"
+                >
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn btn-secondary" id="btnCancelarQuantidadNueva" style="flex: 1;">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btnGuardarQuantidadNueva" style="flex: 1;">
+                        <span class="material-symbols-rounded">check_circle</span>
+                        Guardar Prenda
+                    </button>
+                </div>
+            </div>
+        `;
+
+        resumenContainer.innerHTML = cantidadFormHtml;
+
+        // Event listeners
+        const inputCantidad = document.getElementById('inputCantidadSoloNueva');
+        const btnCancelar = document.getElementById('btnCancelarQuantidadNueva');
+        const btnGuardar = document.getElementById('btnGuardarQuantidadNueva');
+
+        if (inputCantidad) {
+            setTimeout(() => inputCantidad.focus(), 100);
+        }
+
+        if (btnCancelar) {
+            btnCancelar.addEventListener('click', () => {
+                resumenContainer.innerHTML = '';
+                this.actualizarOpcionesFormulario();
+            });
+        }
+
+        if (btnGuardar) {
+            btnGuardar.addEventListener('click', () => {
+                const cantidad = parseInt(inputCantidad.value) || 0;
+                if (cantidad <= 0) {
+                    window.dispatchEvent(new CustomEvent('showToast', { 
+                        detail: { title: 'Cantidad Inválida', message: 'Por favor ingresa una cantidad mayor a 0', type: 'error' }
+                    }));
+                    return;
+                }
+
+                // Agregar la prenda con solo cantidad
+                const tempId = this.manualPrendaHandler.addManualPrenda(
+                    descripcion,
+                    'UNISEX',
+                    cantidad,
+                    true // modoSoloQuantidad
+                );
+
+                // Mostrar en la lista de prendas
+                this.renderManualPrendas();
+                this.renderManualPrendaResumen();
+
+                // Limpiar formulario
+                const form = document.getElementById('formAgregarPrendaManual');
+                const inputDescripcion = document.getElementById('inputDescripcionPrenda');
+                if (form) form.style.display = 'none';
+                if (inputDescripcion) inputDescripcion.value = '';
+                if (resumenContainer) resumenContainer.innerHTML = '';
+
+                window.dispatchEvent(new CustomEvent('showToast', { 
+                    detail: { title: 'Prenda Agregada', message: `${descripcion} agregada con cantidad: ${cantidad}`, type: 'success' }
+                }));
+            });
+        }
+    }
+
+    /**
+     * Muestra opciones para agregar una prenda manual (con tallas o solo cantidad)
+     * [DEPRECATED - Mantenido para compatibilidad]
+     */
+    mostrarOpcionesPrendaManual() {
+        const descripcionInput = document.getElementById('inputDescripcionPrenda');
+        if (!descripcionInput) return;
+
+        // Crear un modal temporal para seleccionar la opción
+        const opcionesHtml = `
+            <div style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+            " id="modalOpcionesPrenda" class="modal-opciones-prenda">
+                <div style="
+                    background: white;
+                    border-radius: 12px;
+                    padding: 24px;
+                    max-width: 400px;
+                    width: 90%;
+                    box-shadow: 0 20px 25px rgba(0,0,0,0.15);
+                " class="opciones-content">
+                    <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #1e293b;">
+                        ¿Cómo deseas agregar la prenda?
+                    </h3>
+                    
+                    <p style="margin: 0 0 24px 0; font-size: 14px; color: #64748b;">
+                        Selecciona si quieres agregar tallas específicas o solo la cantidad total
+                    </p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <button class="btn-opcion-prenda" data-opcion="con-tallas" style="
+                            padding: 16px;
+                            border: 2px solid #bfdbfe;
+                            background: #f0f4ff;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                            font-size: 14px;
+                            font-weight: 500;
+                            color: #1e293b;
+                            display: flex;
+                            align-items: center;
+                            gap: 12px;
+                        ">
+                            <span class="material-symbols-rounded" style="color: #2450ef; font-size: 28px;">straighten</span>
+                            <div style="text-align: left;">
+                                <div style="font-weight: 600;">Con Tallas</div>
+                                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Especifica talla, género, cantidad</div>
+                            </div>
+                        </button>
+                        
+                        <button class="btn-opcion-prenda" data-opcion="solo-cantidad" style="
+                            padding: 16px;
+                            border: 2px solid #fcd34d;
+                            background: #fffbeb;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                            font-size: 14px;
+                            font-weight: 500;
+                            color: #1e293b;
+                            display: flex;
+                            align-items: center;
+                            gap: 12px;
+                        ">
+                            <span class="material-symbols-rounded" style="color: #f59e0b;">inventory_2</span>
+                            <div style="text-align: left;">
+                                <div style="font-weight: 600;">Solo Cantidad</div>
+                                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Especifica la cantidad total</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Insertar el modal en el DOM
+        const body = document.body;
+        const tempContainer = document.createElement('div');
+        tempContainer.innerHTML = opcionesHtml;
+        const modalElement = tempContainer.firstElementChild;
+        body.appendChild(modalElement);
+
+        // Event listeners para las opciones
+        modalElement.querySelectorAll('.btn-opcion-prenda').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const opcion = e.currentTarget.dataset.opcion;
+                modalElement.remove();
+
+                if (opcion === 'con-tallas') {
+                    // Mostrar formulario y abrir wizard de tallas
+                    const form = document.getElementById('formAgregarPrendaManual');
+                    if (form) form.style.display = 'block';
+                    this.agregarPrendaManualConTallas();
+                } else if (opcion === 'solo-cantidad') {
+                    // Mostrar formulario para agregar solo cantidad
+                    this.mostrarFormularioSoloQuantidad();
+                }
+            });
+        });
+
+        // Cerrar al hacer clic fuera
+        modalElement.addEventListener('click', (e) => {
+            if (e.target === modalElement) {
+                modalElement.remove();
+            }
+        });
+    }
+
+    /**
+     * Muestra el formulario para agregar una prenda con solo cantidad
+     * [DEPRECATED - Mantenido para compatibilidad]
+     */
+    mostrarFormularioSoloQuantidad() {
+        const form = document.getElementById('formAgregarPrendaManual');
+        if (!form) return;
+
+        form.style.display = 'block';
+
+        // Modificar el contenido del formulario para mostrar solo cantidad
+        const inputDescripcion = document.getElementById('inputDescripcionPrenda');
+        const resumenContainer = document.getElementById('prendaManualResumenContainer');
+        const btnAgregarTallas = document.getElementById('btnAgregarTallasManual');
+
+        if (!inputDescripcion.value.trim()) {
+            window.dispatchEvent(new CustomEvent('showToast', { 
+                detail: { title: 'Descripción Requerida', message: 'Por favor ingresa una descripción para la prenda', type: 'error' }
+            }));
+            form.style.display = 'none';
+            return;
+        }
+
+        const descripcion = inputDescripcion.value.trim();
+
+        // Crear HTML del formulario de cantidad
+        const cantidadFormHtml = `
+            <div style="margin-top: 12px; padding: 16px; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px;">
+                <label class="form-label" style="margin-bottom: 12px;">Cantidad Total</label>
+                <input 
+                    type="number" 
+                    id="inputCantidadSolo" 
+                    class="form-input" 
+                    min="1" 
+                    placeholder="Ingresa la cantidad..."
+                    value="1"
+                    style="font-size: 14px;"
+                >
+                <div style="margin-top: 12px; display: flex; gap: 8px;">
+                    <button type="button" class="btn btn-secondary" id="btnCancelarQuantidad" style="flex: 1;">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btnGuardarQuantidad" style="flex: 1;">
+                        <span class="material-symbols-rounded">check_circle</span>
+                        Guardar Prenda
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // Reemplazar el contenido del resumen
+        if (resumenContainer) {
+            resumenContainer.innerHTML = cantidadFormHtml;
+        }
+
+        // Cambiar el botón de "Agregar Tallas" a un botón oculto
+        if (btnAgregarTallas) {
+            btnAgregarTallas.style.display = 'none';
+        }
+
+        // Event listeners para los botones
+        const inputCantidad = document.getElementById('inputCantidadSolo');
+        const btnCancelar = document.getElementById('btnCancelarQuantidad');
+        const btnGuardar = document.getElementById('btnGuardarQuantidad');
+
+        if (btnCancelar) {
+            btnCancelar.addEventListener('click', () => {
+                form.style.display = 'none';
+                inputDescripcion.value = '';
+                if (resumenContainer) resumenContainer.innerHTML = '';
+                if (btnAgregarTallas) btnAgregarTallas.style.display = 'block';
+            });
+        }
+
+        if (btnGuardar) {
+            btnGuardar.addEventListener('click', () => {
+                const cantidad = parseInt(inputCantidad.value) || 0;
+                if (cantidad <= 0) {
+                    window.dispatchEvent(new CustomEvent('showToast', { 
+                        detail: { title: 'Cantidad Inválida', message: 'Por favor ingresa una cantidad mayor a 0', type: 'error' }
+                    }));
+                    return;
+                }
+
+                // Agregar la prenda con solo cantidad
+                const tempId = this.manualPrendaHandler.addManualPrenda(
+                    descripcion,
+                    'UNISEX',
+                    cantidad,
+                    true // modoSoloQuantidad
+                );
+
+                // Mostrar en la lista de prendas
+                this.renderManualPrendas();
+                this.renderManualPrendaResumen();
+
+                // Limpiar formulario
+                form.style.display = 'none';
+                inputDescripcion.value = '';
+                if (resumenContainer) resumenContainer.innerHTML = '';
+                if (btnAgregarTallas) btnAgregarTallas.style.display = 'block';
+
+                window.dispatchEvent(new CustomEvent('showToast', { 
+                    detail: { title: 'Prenda Agregada', message: `${descripcion} agregada con cantidad: ${cantidad}`, type: 'success' }
+                }));
+            });
+        }
+
+        // Enfocar en el input de cantidad
+        if (inputCantidad) {
+            setTimeout(() => inputCantidad.focus(), 100);
+        }
+    }
+
+    /**
      * Agrega una prenda manual
      */
     agregarPrendaManual() {
@@ -770,6 +1251,112 @@ class RegistrationHandler {
             selectedSizeNames: [],
             selectedTallas: []
         }, 1, false);
+    }
+
+    /**
+     * Edita la cantidad de una prenda manual (prendas solo cantidad)
+     */
+    editManualPrendaCantidad(tempId) {
+        const prenda = this.manualPrendaHandler.getManualPrenda(tempId);
+        if (!prenda || !prenda.soloQuantidad) return;
+
+        const cantidadActual = prenda.cantidad || 1;
+
+        // Crear modal temporal para editar cantidad
+        const modalHtml = `
+            <div style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+            " id="modalEditCantidad" class="modal-edit-cantidad">
+                <div style="
+                    background: white;
+                    border-radius: 12px;
+                    padding: 24px;
+                    max-width: 400px;
+                    width: 90%;
+                    box-shadow: 0 20px 25px rgba(0,0,0,0.15);
+                " class="edit-cantidad-content">
+                    <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #1e293b;">
+                        Editar Cantidad
+                    </h3>
+                    
+                    <p style="margin: 0 0 16px 0; font-size: 13px; color: #64748b;">
+                        ${prenda.descripcion}
+                    </p>
+                    
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label" style="margin-bottom: 8px;">Cantidad</label>
+                        <input 
+                            type="number" 
+                            id="inputEditCantidad" 
+                            class="form-input" 
+                            value="${cantidadActual}"
+                            min="1"
+                        >
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary" id="btnCancelarEditCantidad" style="flex: 1;">
+                            Cancelar
+                        </button>
+                        <button class="btn btn-primary" id="btnGuardarEditCantidad" style="flex: 1;">
+                            Guardar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const body = document.body;
+        const tempContainer = document.createElement('div');
+        tempContainer.innerHTML = modalHtml;
+        const modalElement = tempContainer.firstElementChild;
+        body.appendChild(modalElement);
+
+        const inputCantidad = document.getElementById('inputEditCantidad');
+        const btnCancelar = document.getElementById('btnCancelarEditCantidad');
+        const btnGuardar = document.getElementById('btnGuardarEditCantidad');
+
+        if (inputCantidad) {
+            setTimeout(() => inputCantidad.focus(), 100);
+        }
+
+        btnCancelar.addEventListener('click', () => {
+            modalElement.remove();
+        });
+
+        btnGuardar.addEventListener('click', () => {
+            const nuevaCantidad = parseInt(inputCantidad.value) || 1;
+            if (nuevaCantidad <= 0) {
+                window.dispatchEvent(new CustomEvent('showToast', { 
+                    detail: { title: 'Cantidad Inválida', message: 'Por favor ingresa una cantidad mayor a 0', type: 'error' }
+                }));
+                return;
+            }
+
+            this.manualPrendaHandler.setQuantityForManualPrenda(tempId, nuevaCantidad);
+            this.renderManualPrendas();
+            modalElement.remove();
+
+            window.dispatchEvent(new CustomEvent('showToast', { 
+                detail: { title: 'Actualizado', message: 'Cantidad actualizada correctamente', type: 'success' }
+            }));
+        });
+
+        // Cerrar al hacer clic fuera
+        modalElement.addEventListener('click', (e) => {
+            if (e.target === modalElement) {
+                modalElement.remove();
+            }
+        });
     }
 
     /**
@@ -1276,7 +1863,9 @@ class RegistrationHandler {
                 descripcion: this.currentManualPrendaResumen.descripcion || 'Sin descripción',
                 genero: this.currentManualPrendaResumen.genero || this.obtenerGeneroResumenManualPrenda(this.currentManualPrendaResumen.selectedTallas),
                 modoTallas: this.currentManualPrendaResumen.modoTallas || 'LETRAS',
-                selectedTallas: (this.currentManualPrendaResumen.selectedTallas || []).map(t => ({ ...t }))
+                selectedTallas: (this.currentManualPrendaResumen.selectedTallas || []).map(t => ({ ...t })),
+                soloQuantidad: false,
+                cantidad: null
             });
         }
 
@@ -1287,7 +1876,9 @@ class RegistrationHandler {
                 descripcion: prenda.descripcion,
                 genero: prenda.genero || null,
                 modoTallas: prenda.modoTallas || 'LETRAS',
-                selectedTallas: Array.isArray(selectedTallas) ? selectedTallas.map(t => ({ ...t })) : []
+                selectedTallas: Array.isArray(selectedTallas) ? selectedTallas.map(t => ({ ...t })) : [],
+                soloQuantidad: prenda.soloQuantidad || false,
+                cantidad: prenda.cantidad || null
             });
         });
 
@@ -1321,6 +1912,75 @@ class RegistrationHandler {
         }
 
         container.innerHTML = prendas.map(prenda => {
+            const isSoloQuantidad = prenda.soloQuantidad || false;
+            const cantidad = prenda.cantidad || 0;
+
+            if (isSoloQuantidad) {
+                // Renderizar prenda con solo cantidad
+                return `
+                    <div style="
+                        background: #fef3c7;
+                        border: 2px solid #fcd34d;
+                        border-radius: 8px;
+                        padding: 12px;
+                        margin-bottom: 12px;
+                        transition: all 0.2s;
+                    " class="prenda-manual-card solo-cantidad" data-prenda-id="${prenda.id}">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                            <div>
+                                <div style="font-weight: 600; color: #1e293b; font-size: 14px;">
+                                    Prenda Manual
+                                </div>
+                                <div style="font-size: 12px; color: #92400e; margin-top: 2px; font-weight: 500;">
+                                    SOLO CANTIDAD
+                                </div>
+                            </div>
+                            <button class="btn-remove-prenda-manual" data-prenda-id="${prenda.id}" style="
+                                background: none;
+                                border: none;
+                                color: #ef4444;
+                                cursor: pointer;
+                                font-size: 20px;
+                                padding: 0;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                width: 24px;
+                                height: 24px;
+                            ">
+                                <span class="material-symbols-rounded" style="font-size: 20px;">close</span>
+                            </button>
+                        </div>
+                        <div style="font-size: 12px; color: #64748b; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #fcd34d;">
+                            ${prenda.descripcion}
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;">
+                            <span class="talla-badge" style="display: inline-block; background: #fef3c7; color: #92400e; padding: 6px 12px; border-radius: 6px; font-size: 12px; margin-right: 4px; margin-bottom: 4px; font-weight: 500;">
+                                Cantidad: ${cantidad} pzas
+                            </span>
+                        </div>
+                        <button class="btn-edit-prenda-manual" data-prenda-id="${prenda.id}" style="
+                            background: white;
+                            border: 1px solid #fcd34d;
+                            color: #92400e;
+                            padding: 6px 12px;
+                            border-radius: 4px;
+                            font-size: 12px;
+                            cursor: pointer;
+                            font-weight: 500;
+                            display: flex;
+                            align-items: center;
+                            gap: 4px;
+                            transition: all 0.2s;
+                        ">
+                            <span class="material-symbols-rounded" style="font-size: 16px;">edit</span>
+                            Editar Cantidad
+                        </button>
+                    </div>
+                `;
+            }
+
+            // Renderizar prenda con tallas (como estaba antes)
             const selectedTallas = this.manualPrendaHandler.getSelectedTallasForManualPrenda(prenda.id);
             const generoLabel = this.getLabelGenero(prenda.genero);
             const modoLabel = prenda.modoTallas ? ` · ${this.getLabelModoTallas(prenda.modoTallas)}` : '';
@@ -1349,7 +2009,7 @@ class RegistrationHandler {
                                 Prenda Manual
                             </div>
                             <div style="font-size: 12px; color: #92400e; margin-top: 2px; font-weight: 500;">
-                                MANUAL
+                                CON TALLAS
                             </div>
                         </div>
                         <button class="btn-remove-prenda-manual" data-prenda-id="${prenda.id}" style="
@@ -1411,7 +2071,14 @@ class RegistrationHandler {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const prendaId = parseInt(e.currentTarget.dataset.prendaId);
-                this.editManualPrendaTallas(prendaId);
+                
+                // Verificar si es una prenda solo cantidad
+                const prendaCard = e.target.closest('.prenda-manual-card');
+                if (prendaCard.classList.contains('solo-cantidad')) {
+                    this.editManualPrendaCantidad(prendaId);
+                } else {
+                    this.editManualPrendaTallas(prendaId);
+                }
             });
         });
     }

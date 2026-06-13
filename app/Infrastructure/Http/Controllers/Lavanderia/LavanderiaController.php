@@ -1310,11 +1310,12 @@ class LavanderiaController extends Controller
             $tieneRecibos = !empty($data['recibos']) && is_array($data['recibos']);
             $tienePrendasManuales = !empty($data['prendas_manuales']) && is_array($data['prendas_manuales']);
             $tieneTallas = !empty($data['tallas']) && is_array($data['tallas']);
+            $tieneCantidades = !empty($data['cantidades_solo']) && is_array($data['cantidades_solo']);
 
-            if (!$tieneTallas) {
+            if (!$tieneTallas && !$tieneCantidades) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Faltan tallas',
+                    'message' => 'Faltan tallas o cantidades',
                     'received' => $data
                 ], 422);
             }
@@ -1398,7 +1399,7 @@ class LavanderiaController extends Controller
                 }
 
                 // Crear registros de tallas
-                foreach ($data['tallas'] as $talla) {
+                foreach ($data['tallas'] ?? [] as $talla) {
                     $tallaData = [
                         'lavanderia_movimiento_id' => $mov->id,
                         'talla' => $talla['talla'],
@@ -1421,6 +1422,31 @@ class LavanderiaController extends Controller
                     }
 
                     \App\Models\LavanderiaMovimientoTalla::create($tallaData);
+                }
+
+                // Crear registros de cantidades sin talla
+                foreach ($data['cantidades_solo'] ?? [] as $cantidad) {
+                    $cantidadData = [
+                        'lavanderia_movimiento_id' => $mov->id,
+                        'talla' => null, // Sin talla
+                        'genero' => $cantidad['genero'] ?? null,
+                        'color' => null,
+                        'cantidad_enviada' => (int)$cantidad['cantidad'],
+                        'cantidad_recibida' => 0,
+                    ];
+
+                    // Agregar relación a prenda
+                    if (!empty($cantidad['prenda_agregada_id'])) {
+                        // Usar el ID real mapeado desde el ID temporal
+                        $tempId = $cantidad['prenda_agregada_id'];
+                        $cantidadData['prenda_agregada_id'] = $prendaManualIdMap[$tempId] ?? $tempId;
+                    } elseif (!empty($cantidad['prenda_bodega_id'])) {
+                        $cantidadData['prenda_bodega_id'] = $cantidad['prenda_bodega_id'];
+                    } elseif (!empty($cantidad['prenda_id'])) {
+                        $cantidadData['prenda_id'] = $cantidad['prenda_id'];
+                    }
+
+                    \App\Models\LavanderiaMovimientoTalla::create($cantidadData);
                 }
 
                 return $mov;
