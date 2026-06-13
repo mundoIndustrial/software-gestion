@@ -31,6 +31,14 @@ Route::prefix('despacho')
             ->name('despacho.print')
             ->where('pedido', '[0-9]+');
 
+        Route::get('/{pedido}/comprobante', [DespachoControlController::class, 'obtenerComprobante'])
+            ->name('despacho.comprobante')
+            ->where('pedido', '[0-9]+');
+
+        Route::post('/{pedido}/comprobante/observaciones', [DespachoControlController::class, 'guardarObservacionComprobante'])
+            ->name('despacho.comprobante.observaciones.guardar')
+            ->where('pedido', '[0-9]+');
+
         Route::get('/{pedido}/obtener-despachos', [DespachoControlController::class, 'obtenerDespachos'])
             ->name('despacho.obtener')
             ->where('pedido', '[0-9]+');

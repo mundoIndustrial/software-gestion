@@ -247,7 +247,7 @@ class DespachoObservacionesController extends Controller
             $request->ip(),
         );
 
-        broadcast(new ObservacionDespachoCreada($row, 'created'))->toOthers();
+        $this->broadcastObservacionDespacho($row, 'created');
 
         return response()->json([
             'success' => true,
@@ -281,7 +281,7 @@ class DespachoObservacionesController extends Controller
             ], 403);
         }
 
-        broadcast(new ObservacionDespachoCreada($row, 'updated'))->toOthers();
+        $this->broadcastObservacionDespacho($row, 'updated');
 
         return response()->json([
             'success' => true,
@@ -306,7 +306,7 @@ class DespachoObservacionesController extends Controller
             ], 403);
         }
 
-        broadcast(new ObservacionDespachoCreada($row, 'deleted'))->toOthers();
+        $this->broadcastObservacionDespacho($row, 'deleted');
 
         return response()->json([
             'success' => true,
@@ -345,6 +345,20 @@ class DespachoObservacionesController extends Controller
                 'success' => false,
                 'message' => 'Error al marcar observaciones como vistas',
             ], 500);
+        }
+    }
+
+    private function broadcastObservacionDespacho(PedidoObservacionesDespacho $row, string $action): void
+    {
+        try {
+            broadcast(new ObservacionDespachoCreada($row, $action))->toOthers();
+        } catch (\Throwable $e) {
+            \Log::warning('[DespachoController] Broadcast de observacion omitido por error de infraestructura', [
+                'pedido_id' => $row->pedido_produccion_id,
+                'observacion_id' => $row->uuid,
+                'action' => $action,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 }

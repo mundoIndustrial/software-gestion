@@ -1,4 +1,4 @@
-@extends('layouts.despacho-standalone')
+﻿@extends('layouts.despacho-standalone')
 
 @section('title', "Despacho - Pedido {$pedido->numero_pedido}")
 
@@ -8,6 +8,305 @@
 let socket = null;
 let reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
+let comprobantePreloaded = false;
+let comprobanteLoadingPromise = null;
+let comprobanteFilasEdicion = [];
+let comprobanteFilasOriginal = [];
+let comprobanteLastFocus = null;
+
+function setComprobanteLoadingState(isLoading) {
+    const overlay = document.getElementById('comprobanteLoadingOverlay');
+    const iframe = document.getElementById('comprobanteIframe');
+
+    if (overlay) {
+        overlay.classList.toggle('hidden', !isLoading);
+    }
+
+    if (iframe) {
+        iframe.classList.toggle('opacity-0', isLoading);
+        iframe.classList.toggle('opacity-100', !isLoading);
+    }
+}
+
+function rellenarFirmasComprobante(firmas) {
+    const data = firmas || {};
+    const campos = [
+        ['recibido_por', 'firmaRecibido'],
+        ['entregado_por', 'firmaEntregado'],
+        ['cc', 'firmaCc'],
+        ['revisado_por', 'firmaRevisado'],
+    ];
+
+    campos.forEach(([key, prefix]) => {
+        const item = data[key] || {};
+        const texto = document.getElementById(`${prefix}Texto`);
+        const imagen = document.getElementById(`${prefix}Imagen`);
+        const preview = document.getElementById(`${prefix}Preview`);
+
+        if (texto && !texto.value) {
+            texto.value = item.texto || '';
+        }
+
+        if (preview) {
+            if (item.imagen) {
+                preview.innerHTML = `<img src="${item.imagen}" alt="firma" class="max-h-12 max-w-full object-contain">`;
+            } else if (item.texto) {
+                preview.textContent = item.texto;
+                preview.className = 'mt-2 min-h-6 text-xs text-slate-600 font-medium';
+            } else {
+                preview.textContent = '';
+                preview.className = 'mt-2 min-h-6 text-xs text-slate-400';
+            }
+        }
+    });
+}
+
+function getFirmaFormulario() {
+    return [
+        { key: 'recibido_por', prefix: 'firmaRecibido' },
+        { key: 'entregado_por', prefix: 'firmaEntregado' },
+        { key: 'cc', prefix: 'firmaCc' },
+        { key: 'revisado_por', prefix: 'firmaRevisado' },
+    ].reduce((accumulator, item) => {
+        const texto = document.getElementById(`${item.prefix}Texto`)?.value?.trim() || '';
+        const fileInput = document.getElementById(`${item.prefix}Imagen`);
+        const file = fileInput?.files?.[0] || null;
+        accumulator[item.key] = { texto, imagenFile: file };
+        return accumulator;
+    }, {});
+}
+
+function getFechaEntregaComprobante() {
+    return document.getElementById('fechaEntregaComprobante')?.value?.trim() || '';
+}
+
+function normalizarFilaComprobante(fila = {}) {
+    return {
+        cantidad: Number.parseInt(fila.cantidad ?? 0, 10) || 0,
+        articulo: String(fila.articulo ?? '').trim(),
+    };
+}
+
+function escaparHtml(texto) {
+    return String(texto ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function setFilasComprobanteEditor(filas) {
+    comprobanteFilasEdicion = Array.isArray(filas) ? filas.map(normalizarFilaComprobante) : [];
+    renderFilasComprobanteEditor();
+}
+
+function setFilasComprobanteOriginal(filas) {
+    comprobanteFilasOriginal = Array.isArray(filas) ? filas.map(normalizarFilaComprobante) : [];
+}
+
+function restaurarFilasOriginalesComprobante() {
+    if (!comprobanteFilasOriginal.length) return;
+    setFilasComprobanteEditor(comprobanteFilasOriginal);
+    setEstadoComprobante('Se restauraron las filas originales.', 'info');
+}
+
+function agregarFilaComprobanteEditor(cantidad = '', articulo = '') {
+    comprobanteFilasEdicion.push({
+        cantidad: cantidad === '' ? '' : (Number.parseInt(cantidad, 10) || 0),
+        articulo: String(articulo ?? ''),
+    });
+    renderFilasComprobanteEditor();
+}
+
+function eliminarFilaComprobanteEditor(index) {
+    comprobanteFilasEdicion.splice(index, 1);
+    renderFilasComprobanteEditor();
+}
+
+function actualizarFilaComprobanteEditor(index, campo, valor) {
+    if (!comprobanteFilasEdicion[index]) return;
+    if (campo === 'cantidad') {
+        comprobanteFilasEdicion[index].cantidad = valor === '' ? '' : (Number.parseInt(valor, 10) || 0);
+    } else if (campo === 'articulo') {
+        comprobanteFilasEdicion[index].articulo = valor;
+    }
+}
+
+function actualizarContenidoEditable(index, campo, elemento) {
+    if (!elemento) return;
+    actualizarFilaComprobanteEditor(index, campo, elemento.innerText || '');
+}
+
+function renderFilasComprobanteEditor() {
+    const tbody = document.getElementById('tablaFilasComprobanteBody');
+    const emptyState = document.getElementById('tablaFilasComprobanteEmpty');
+    if (!tbody) return;
+
+    if (!comprobanteFilasEdicion.length) {
+        tbody.innerHTML = '';
+        if (emptyState) {
+            emptyState.classList.remove('hidden');
+        }
+        return;
+    }
+
+    if (emptyState) {
+        emptyState.classList.add('hidden');
+    }
+
+    tbody.innerHTML = comprobanteFilasEdicion.map((fila, index) => `
+        <tr class="border-t border-slate-200 align-top hover:bg-slate-50">
+            <td class="p-2 w-24">
+                <div contenteditable="true"
+                     spellcheck="false"
+                     data-campo="cantidad"
+                     class="w-full min-h-[40px] rounded-lg border border-slate-300 px-2 py-2 text-sm text-slate-900 bg-white outline-none focus:ring-2 focus:ring-amber-400"
+                     oninput="actualizarContenidoEditable(${index}, 'cantidad', this)">${escaparHtml(String(fila.cantidad ?? ''))}</div>
+            </td>
+            <td class="p-2">
+                <div contenteditable="true"
+                     spellcheck="false"
+                     data-campo="articulo"
+                     class="w-full min-h-[40px] rounded-lg border border-slate-300 px-2 py-2 text-sm text-slate-900 bg-white outline-none focus:ring-2 focus:ring-amber-400 whitespace-pre-wrap break-words"
+                     oninput="actualizarContenidoEditable(${index}, 'articulo', this)">${escaparHtml(fila.articulo ?? '')}</div>
+            </td>
+            <td class="p-2 w-16 text-right">
+                <button type="button"
+                        class="text-xs font-medium text-red-600 hover:text-red-700"
+                        onclick="eliminarFilaComprobanteEditor(${index})">
+                    Quitar
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function obtenerFilasComprobanteEditor() {
+    return comprobanteFilasEdicion
+        .map(normalizarFilaComprobante)
+        .filter((fila) => fila.cantidad !== 0 || fila.articulo !== '');
+}
+
+function setEstadoComprobante(texto, tipo = 'info') {
+    const estado = document.getElementById('estadoComprobanteGuardado');
+    if (!estado) return;
+
+    const clases = {
+        info: 'text-slate-500 bg-slate-100 border-slate-200',
+        success: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+        error: 'text-red-700 bg-red-50 border-red-200',
+    };
+
+    estado.textContent = texto;
+    estado.className = `text-xs border rounded-lg px-3 py-2 ${clases[tipo] || clases.info}`;
+}
+
+function leerArchivoComoDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        if (!file) {
+            resolve('');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('No se pudo leer la imagen.'));
+        reader.readAsDataURL(file);
+    });
+}
+
+function configurarVistaPreviaFirma(inputId, previewId) {
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+    if (!input || !preview) return;
+
+    input.addEventListener('change', () => {
+        const file = input.files?.[0];
+        if (!file) {
+            preview.textContent = '';
+            preview.className = 'mt-2 min-h-6 text-xs text-slate-400';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            preview.innerHTML = `<img src="${String(reader.result || '')}" alt="Vista previa" class="max-h-12 max-w-full object-contain">`;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function cargarComprobanteEnSegundoPlano() {
+    if (comprobanteLoadingPromise) {
+        return comprobanteLoadingPromise;
+    }
+
+    const iframe = document.getElementById('comprobanteIframe');
+    if (!iframe) {
+        return Promise.resolve();
+    }
+
+    const url = @json(route('despacho.print', $pedido->id));
+    const datosUrl = @json(route('despacho.comprobante', $pedido->id));
+
+    comprobanteLoadingPromise = new Promise((resolve) => {
+        const finalizar = () => {
+            comprobantePreloaded = true;
+            setComprobanteLoadingState(false);
+            resolve();
+        };
+
+        const limpiarHandlers = () => {
+            iframe.onload = null;
+            iframe.onerror = null;
+        };
+
+        iframe.onload = () => {
+            limpiarHandlers();
+            fetch(datosUrl, { headers: { 'Accept': 'application/json' } })
+                .then((response) => response.json().then((data) => ({ response, data })))
+                .then(({ response, data }) => {
+                    const textarea = document.getElementById('comprobanteObservacion');
+                    const fechaEntrega = document.getElementById('fechaEntregaComprobante');
+                    const firmas = data?.data?.firmas || {};
+                    if (!response.ok || !data || data.success === false) {
+                        finalizar();
+                        return;
+                    }
+                    if (textarea && !textarea.value) {
+                        textarea.value = data.data?.observaciones || '';
+                    }
+                    if (fechaEntrega && !fechaEntrega.value) {
+                        fechaEntrega.value = data.data?.fecha_entrega || '';
+                    }
+                    rellenarFirmasComprobante(firmas);
+                    setFilasComprobanteOriginal(data.data?.table_rows_original || []);
+                    setFilasComprobanteEditor(data.data?.table_rows || []);
+                    setEstadoComprobante('Comprobante listo para editar.', 'info');
+                    finalizar();
+                })
+                .catch(() => finalizar());
+        };
+
+        iframe.onerror = () => {
+            limpiarHandlers();
+            finalizar();
+        };
+
+        setComprobanteLoadingState(true);
+        iframe.src = url;
+    });
+
+    return comprobanteLoadingPromise;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    configurarVistaPreviaFirma('firmaRecibidoImagen', 'firmaRecibidoPreview');
+    configurarVistaPreviaFirma('firmaEntregadoImagen', 'firmaEntregadoPreview');
+    configurarVistaPreviaFirma('firmaRevisadoImagen', 'firmaRevisadoPreview');
+    cargarComprobanteEnSegundoPlano().catch(() => {});
+});
 
 function connectWebSocket() {
     if (!window.Echo || !window.EchoInstance) {
@@ -80,9 +379,182 @@ function mostrarNotificacionPedidoEntregadoLocal(numeroPedido) {
     }, 3000);
 }
 
+function abrirModalComprobante(event, pedidoId) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    comprobanteLastFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    const modal = document.getElementById('comprobanteModal');
+    const iframe = document.getElementById('comprobanteIframe');
+    if (!modal || !iframe) return;
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    if (!comprobantePreloaded) {
+        setComprobanteLoadingState(true);
+        cargarComprobanteEnSegundoPlano().catch(() => {
+            setComprobanteLoadingState(false);
+        });
+    } else {
+        setComprobanteLoadingState(false);
+    }
+}
+
+async function abrirModalEdicionComprobante() {
+    comprobanteLastFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    const modal = document.getElementById('comprobanteEdicionModal');
+    if (!modal) return;
+
+    if (!comprobantePreloaded || comprobanteFilasEdicion.length === 0) {
+        try {
+            await cargarComprobanteEnSegundoPlano();
+        } catch (error) {
+            console.error('No se pudo precargar el comprobante para editar:', error);
+        }
+    }
+
+    renderFilasComprobanteEditor();
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    const textarea = document.getElementById('comprobanteObservacion');
+    if (textarea) {
+        setTimeout(() => textarea.focus(), 50);
+    }
+}
+
+function cerrarModalEdicionComprobante() {
+    const modal = document.getElementById('comprobanteEdicionModal');
+    if (!modal) return;
+
+    if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+    }
+
+    modal.classList.add('hidden');
+
+    const comprobanteModal = document.getElementById('comprobanteModal');
+    if (comprobanteModal && !comprobanteModal.classList.contains('hidden')) {
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = '';
+    }
+
+    if (comprobanteLastFocus && document.body.contains(comprobanteLastFocus)) {
+        setTimeout(() => comprobanteLastFocus?.focus(), 0);
+    }
+}
+
+function cerrarModalComprobante() {
+    const modal = document.getElementById('comprobanteModal');
+    const iframe = document.getElementById('comprobanteIframe');
+    if (!modal || !iframe) return;
+
+    if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+    }
+
+    modal.classList.add('hidden');
+    cerrarModalEdicionComprobante();
+    document.body.style.overflow = '';
+
+    if (comprobanteLastFocus && document.body.contains(comprobanteLastFocus)) {
+        setTimeout(() => comprobanteLastFocus?.focus(), 0);
+    }
+}
+
+async function guardarObservacionComprobante() {
+    const textarea = document.getElementById('comprobanteObservacion');
+    const boton = document.getElementById('btnGuardarObservacionComprobante');
+    if (!textarea || !boton) return;
+
+    const contenido = textarea.value.trim();
+    const fechaEntrega = getFechaEntregaComprobante();
+    const firmasFormulario = getFirmaFormulario();
+    const filas = obtenerFilasComprobanteEditor();
+    const filasOriginales = (comprobanteFilasOriginal || []).map(normalizarFilaComprobante);
+    const filasHanCambiado = JSON.stringify(filas) !== JSON.stringify(filasOriginales);
+    const firmas = {};
+    for (const [key, item] of Object.entries(firmasFormulario)) {
+        let imagen = '';
+        if (item.imagenFile) {
+            imagen = await leerArchivoComoDataUrl(item.imagenFile);
+        }
+        firmas[key] = {
+            texto: item.texto,
+            imagen,
+        };
+    }
+
+    const tieneFirmas = Object.values(firmas).some((item) => item.texto || item.imagen);
+
+    if (!contenido && !tieneFirmas && !filasHanCambiado) {
+        alert('Escribe una observación, agrega una firma o edita las filas antes de guardarla.');
+        return;
+    }
+
+    boton.disabled = true;
+    const textoOriginal = boton.textContent;
+    boton.textContent = 'Guardando...';
+    setEstadoComprobante('Guardando comprobante...', 'info');
+
+    try {
+        const response = await fetch('{{ route("despacho.comprobante.observaciones.guardar", $pedido->id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                observaciones: contenido,
+                fecha_entrega: fechaEntrega || null,
+                firmas,
+                filas,
+            }),
+        });
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok || !data || data.success === false) {
+            const mensaje = data?.message || 'No se pudo guardar la observación';
+            throw new Error(mensaje);
+        }
+
+        textarea.value = '';
+        if (typeof cargarPendientesBodeguero === 'function') {
+            await cargarPendientesBodeguero();
+        }
+        const iframe = document.getElementById('comprobanteIframe');
+        if (iframe) {
+            iframe.src = iframe.src.split('?')[0] + '?t=' + Date.now();
+        }
+
+        if (window.Swal) {
+            Swal.fire('Guardado', 'La observación se guardó correctamente.', 'success');
+        } else {
+            alert('La observación se guardó correctamente.');
+        }
+        setFilasComprobanteOriginal(filas);
+        setEstadoComprobante('Cambios guardados correctamente.', 'success');
+    } catch (error) {
+        console.error('Error guardando observacion de comprobante:', error);
+        alert(error.message || 'No se pudo guardar la observación.');
+        setEstadoComprobante('No se pudo guardar el comprobante.', 'error');
+    } finally {
+        boton.disabled = false;
+        boton.textContent = textoOriginal;
+    }
+}
+
 // Funcion para mostrar historial de homologaciones
 function toggleHistorialEpp(btn, historialHomologaciones) {
-    console.log('🔽 [toggleHistorialEpp] boton "Ver cambios" clickeado', {
+    console.log('▼ [toggleHistorialEpp] boton "Ver cambios" clickeado', {
         historialLength: historialHomologaciones?.length,
         historial: historialHomologaciones,
     });
@@ -120,7 +592,7 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
     tablaHtml += `
         <tr class="border-b border-gray-300 bg-green-50 hover:bg-green-100 transition">
             <td class="px-2 py-3 text-center">
-                <span class="inline-block bg-green-500 text-white font-bold px-2 py-1 rounded text-xs">● Original</span>
+                <span class="inline-block bg-green-500 text-white font-bold px-2 py-1 rounded text-xs">â— Original</span>
             </td>
             <td class="px-4 py-3 font-medium text-gray-800">${original.epp_nombre || original.nombre_completo || 'N/A'}</td>
             <td class="px-4 py-3 text-center font-semibold text-gray-800">${original.cantidad || 0}</td>
@@ -185,7 +657,7 @@ function toggleHistorialEpp(btn, historialHomologaciones) {
         modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center;';
         modal.innerHTML = `
             <div style="background: white; border-radius: 8px; padding: 2rem; max-width: 800px; max-height: 80vh; overflow-y: auto; position: relative;">
-                <button style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 24px; cursor: pointer;" onclick="this.parentElement.parentElement.remove();">✕</button>
+                <button style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 24px; cursor: pointer;" onclick="this.parentElement.parentElement.remove();">âœ•</button>
                 <h2 style="margin-bottom: 1rem; font-size: 1.5rem; font-weight: bold;">Historial de Cambios</h2>
                 ${tablaHtml}
             </div>
@@ -219,6 +691,12 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(' Echo esta listo, conectando WebSocket...');
         connectWebSocket();
     });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            cerrarModalComprobante();
+        }
+    });
 });
 </script>
 @endpush
@@ -249,6 +727,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             onclick="guardarAjustesCantidadesDespacho()"
                             class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded transition-colors">
                         Guardar ajustes
+                    </button>
+                    <button type="button"
+                            onclick="abrirModalComprobante(event, {{ $pedido->id }})"
+                           class="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-slate-900 font-semibold rounded transition-colors border border-amber-500">
+                        Generar Comprobante
                     </button>
                     <div class="relative z-[120]" id="imprimirMenuWrapper">
                         <button type="button"
@@ -477,7 +960,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                                 <button type="button" 
                                                                         class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center gap-1 relative"
                                                                         onclick="toggleHistorialEpp(this, {{ json_encode($primeraFila->historial_homologaciones ?? []) }})">
-                                                                    <span class="text-sm">🔽</span>
+                                                                    <span class="text-sm">▼</span>
                                                                     <span>Ver cambios</span>
                                                                     <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($primeraFila->historial_homologaciones ?? []) > 0 ? count($primeraFila->historial_homologaciones) - 1 : 0 }}</span>
                                                                 </button>
@@ -589,10 +1072,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                                 <td class="px-2 lg:px-4 py-3 text-center text-slate-600 col-talla">
                                                     @if(($t['talla'] ?? null) === 'SIN_ESPECIFICAR')
-                                                        —
-                                                    @else
-                                                        {{ $t['talla'] }}
-                                                    @endif
+                                                    —
+                                                @else
+                                                    {{ $t['talla'] }}
+                                                @endif
                                                 </td>
 
                                                 <td class="px-2 lg:px-4 py-3 text-center font-medium text-slate-900 col-cantidad">
@@ -669,11 +1152,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                                         @if($tela || $color)
                                                         <div class="text-slate-900 mb-1 text-xs">
                                                             @if($tela && $color)
-                                                                <div>• Tela: {{ $tela }} - Color: {{ $color }}</div>
-                                                            @elseif($tela)
-                                                                <div>• Tela: {{ $tela }}</div>
-                                                            @elseif($color)
-                                                                <div>• Color: {{ $color }}</div>
+                                                            <div>• Tela: {{ $tela }} - Color: {{ $color }}</div>
+                                                        @elseif($tela)
+                                                            <div>• Tela: {{ $tela }}</div>
+                                                        @elseif($color)
+                                                            <div>• Color: {{ $color }}</div>
                                                             @endif
                                                         </div>
                                                         @endif
@@ -812,7 +1295,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 <button type="button" 
                                                         class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition flex items-center gap-1 relative"
                                                         onclick="toggleHistorialEpp(this, {{ json_encode($fila->historial_homologaciones ?? []) }})">
-                                                    <span class="text-sm">🔽</span>
+                                                    <span class="text-sm">▼</span>
                                                     <span>Ver cambios</span>
                                                     <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{{ count($fila->historial_homologaciones ?? []) > 0 ? count($fila->historial_homologaciones) - 1 : 0 }}</span>
                                                 </button>
@@ -926,7 +1409,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <h2 class="text-lg font-semibold text-white"> Pedido</h2>
             <button onclick="cerrarModalFactura()" 
                     class="text-white hover:text-slate-200 text-2xl leading-none">
-                ✕
+                âœ•
             </button>
         </div>
         
@@ -943,6 +1426,184 @@ document.addEventListener('DOMContentLoaded', function() {
                     class="px-4 py-2 text-slate-700 hover:text-slate-900 font-medium border border-slate-300 hover:border-slate-400 rounded transition-colors">
                 Cerrar
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Comprobante -->
+<div id="comprobanteModal" class="hidden fixed inset-0 bg-black/75 flex items-center justify-center px-3 py-4" style="z-index: 10000;">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[1400px] h-[94vh] flex flex-col overflow-hidden">
+        <div class="bg-slate-900 px-5 py-4 flex items-center justify-between shrink-0">
+            <div>
+                <h2 class="text-lg font-semibold text-white">Comprobante de Entrega - Despacho</h2>
+                <p class="text-xs text-slate-300 mt-1">Vista previa y observaciones del comprobante</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button"
+                        onclick="const iframe = document.getElementById('comprobanteIframe'); if (iframe && iframe.contentWindow) { iframe.contentWindow.focus(); iframe.contentWindow.print(); }"
+                        class="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-slate-900 font-semibold rounded transition-colors border border-amber-500">
+                    Imprimir
+                </button>
+                <button type="button"
+                        onclick="abrirModalEdicionComprobante()"
+                        class="px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white font-semibold rounded transition-colors">
+                    Editar comprobante
+                </button>
+                <button type="button"
+                        onclick="cerrarModalComprobante()"
+                        class="w-9 h-9 inline-flex items-center justify-center rounded-lg text-white hover:text-slate-200 hover:bg-white/10 text-2xl leading-none">
+                    ×
+                </button>
+            </div>
+        </div>
+                <div class="flex-1 min-h-0 p-3 lg:p-4 bg-slate-100">
+            <div class="relative h-full rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+                <div id="comprobanteLoadingOverlay" class="absolute inset-0 z-10 flex items-center justify-center bg-white/95">
+                    <div class="flex flex-col items-center gap-3 text-slate-600">
+                        <div class="h-10 w-10 rounded-full border-4 border-slate-200 border-t-amber-500 animate-spin"></div>
+                        <div class="text-sm font-medium">Cargando comprobante...</div>
+                    </div>
+                </div>
+                <iframe id="comprobanteIframe" class="w-full h-full border-0 bg-white opacity-0 transition-opacity duration-200" title="Comprobante de despacho"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Edicion del Comprobante -->
+<div id="comprobanteEdicionModal" class="hidden fixed inset-0 bg-black/75 flex items-center justify-center px-3 py-4" style="z-index: 10001;">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[1100px] h-[90vh] flex flex-col overflow-hidden">
+        <div class="bg-slate-900 px-5 py-4 flex items-center justify-between shrink-0">
+            <div>
+                <h2 class="text-lg font-semibold text-white">Edición del comprobante</h2>
+                <p class="text-xs text-slate-300 mt-1">Observaciones, fecha y firmas</p>
+            </div>
+            <button type="button"
+                    onclick="cerrarModalEdicionComprobante()"
+                    class="w-9 h-9 inline-flex items-center justify-center rounded-lg text-white hover:text-slate-200 hover:bg-white/10 text-2xl leading-none">
+                ×
+            </button>
+        </div>
+        <div class="flex-1 min-h-0 overflow-y-auto bg-white p-4 lg:p-5">
+            <div class="mb-5 rounded-2xl border border-slate-200 overflow-hidden">
+                <div class="flex items-center justify-between gap-3 px-4 py-3 bg-slate-50 border-b border-slate-200">
+                    <div>
+                        <div class="text-sm font-semibold text-slate-900">Filas del comprobante</div>
+                        <div class="text-xs text-slate-500 mt-1">Edita cantidad y artículo antes de guardar</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button"
+                                onclick="restaurarFilasOriginalesComprobante()"
+                                class="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100">
+                            Restaurar original
+                        </button>
+                        <button type="button"
+                                onclick="agregarFilaComprobanteEditor('', '')"
+                                class="px-3 py-2 text-xs font-semibold rounded-lg bg-slate-900 text-white hover:bg-slate-800">
+                            Agregar fila
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-white">
+                            <tr class="text-slate-700">
+                                <th class="px-3 py-2 text-left font-semibold w-24">Cant.</th>
+                                <th class="px-3 py-2 text-left font-semibold">Artículo</th>
+                                <th class="px-3 py-2 text-right font-semibold w-16">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaFilasComprobanteBody"></tbody>
+                    </table>
+                </div>
+                <div id="tablaFilasComprobanteEmpty" class="hidden px-4 py-4 text-sm text-slate-500 border-t border-slate-200">
+                    No hay filas cargadas. Pulsa "Agregar fila".
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 mb-3">
+                <div>
+                    <div class="text-sm font-semibold text-slate-900">Observaciones</div>
+                    <div class="text-xs text-slate-500 mt-1">Queda guardada en el comprobante</div>
+                </div>
+                <button type="button"
+                        onclick="document.getElementById('comprobanteObservacion')?.focus()"
+                        class="text-xs font-medium text-slate-500 hover:text-slate-900">
+                    Enfocar
+                </button>
+            </div>
+            <textarea id="comprobanteObservacion"
+                      rows="10"
+                      class="w-full min-h-[180px] rounded-xl border border-slate-300 px-3 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-400 resize-y overflow-y-auto"
+                      placeholder="Escribe aquí la observación del comprobante..."></textarea>
+
+            <div id="estadoComprobanteGuardado" class="mt-3 text-xs border rounded-lg px-3 py-2 text-slate-500 bg-slate-100 border-slate-200">
+                Comprobante listo para editar.
+            </div>
+
+            <div class="mt-4 rounded-xl border border-slate-200 p-3">
+                <div class="flex items-center justify-between gap-3 mb-2">
+                    <div>
+                        <div class="text-sm font-semibold text-slate-900">Fecha de Entrega</div>
+                        <div class="text-xs text-slate-500 mt-1">Opcional, puedes dejarla en blanco</div>
+                    </div>
+                    <button type="button"
+                            onclick="document.getElementById('fechaEntregaComprobante').value = ''"
+                            class="text-xs font-medium text-slate-500 hover:text-slate-900">
+                        Limpiar
+                    </button>
+                </div>
+                <input id="fechaEntregaComprobante"
+                       type="date"
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-400">
+            </div>
+
+            <div class="mt-4 border-t border-slate-200 pt-4">
+                <div class="flex items-center justify-between gap-3 mb-3">
+                    <div>
+                        <div class="text-sm font-semibold text-slate-900">Firmas</div>
+                        <div class="text-xs text-slate-500 mt-1">Puedes escribirlas o cargar una imagen</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="rounded-xl border border-slate-200 p-3">
+                        <div class="text-xs font-semibold text-slate-700 mb-2">Recibido por</div>
+                        <input id="firmaRecibidoTexto" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mb-2" placeholder="Nombre o firma escrita">
+                        <input id="firmaRecibidoImagen" type="file" accept="image/*" class="block w-full text-xs text-slate-600">
+                        <div id="firmaRecibidoPreview" class="mt-2 min-h-6 text-xs text-slate-400"></div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 p-3">
+                        <div class="text-xs font-semibold text-slate-700 mb-2">Entregado por</div>
+                        <input id="firmaEntregadoTexto" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mb-2" placeholder="Nombre o firma escrita">
+                        <input id="firmaEntregadoImagen" type="file" accept="image/*" class="block w-full text-xs text-slate-600">
+                        <div id="firmaEntregadoPreview" class="mt-2 min-h-10 text-xs text-slate-400"></div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 p-3">
+                        <div class="text-xs font-semibold text-slate-700 mb-2">C.C.</div>
+                        <input id="firmaCcTexto" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Número o texto">
+                        <div id="firmaCcPreview" class="mt-2 min-h-6 text-xs text-slate-400"></div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 p-3">
+                        <div class="text-xs font-semibold text-slate-700 mb-2">Revisado por</div>
+                        <input id="firmaRevisadoTexto" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mb-2" placeholder="Nombre o firma escrita">
+                        <input id="firmaRevisadoImagen" type="file" accept="image/*" class="block w-full text-xs text-slate-600">
+                        <div id="firmaRevisadoPreview" class="mt-2 min-h-10 text-xs text-slate-400"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 flex flex-col sm:flex-row gap-2 sm:justify-end">
+                <button type="button"
+                        id="btnGuardarObservacionComprobante"
+                        onclick="guardarObservacionComprobante()"
+                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded transition-colors">
+                    Guardar
+                </button>
+                <button type="button"
+                        onclick="cerrarModalEdicionComprobante()"
+                        class="px-4 py-2 text-slate-700 hover:text-slate-900 font-medium border border-slate-300 hover:border-slate-400 rounded transition-colors">
+                    Cerrar
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -966,7 +1627,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div>
                     <h3 class="text-lg font-medium text-slate-900 mb-1">¿Deshacer marcado como entregado?</h3>
-                    <p class="text-slate-600 text-sm">El Item volvera a estado "Pendiente" y el pedido cambiara a "Pendiente" si todos los Items estan pendientes.</p>
+                    <p class="text-slate-600 text-sm">El item volverá a estado "Pendiente" y el pedido cambiará a "Pendiente" si todos los items están pendientes.</p>
                 </div>
             </div>
         </div>
@@ -1130,7 +1791,7 @@ async function marcarEntregado(button) {
             }
             
             // Cambiar el boton a estado "Entregado" con opcion de deshacer
-            button.innerHTML = '✓ Entregado <span class="ml-1 text-xs">(↶)</span>';
+    button.innerHTML = '✓ Entregado <span class="ml-1 text-xs">(↶)</span>';
             button.classList.remove('bg-green-500', 'hover:bg-green-600');
             button.classList.add('bg-orange-500', 'hover:bg-orange-600');
             button.onclick = function() { deshacerEntregado(this); };
@@ -2743,7 +3404,7 @@ if (filas.length === 0) {
                 <div style="text-align: left;">
                     <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: bold; color: #000;">Despacho - Pedido {{ $pedido->numero_pedido }}</h2>
                     <p style="margin: 6px 0; font-size: 14px; color: #000;"><strong>Cliente:</strong> {{ $pedido->cliente ?? '—' }}</p>
-                    <p style="margin: 6px 0; font-size: 13px; color: #333;"><strong>Fecha de creacion:</strong> {{ $pedido->created_at ? $pedido->created_at->format('d/m/Y H:i') : '—' }}</p>
+                    <p style="margin: 6px 0; font-size: 13px; color: #333;"><strong>Fecha de creación:</strong> {{ $pedido->created_at ? $pedido->created_at->format('d/m/Y H:i') : '—' }}</p>
                     <p style="margin: 6px 0; font-size: 13px; color: #333;"><strong>Orden de Compra:</strong> {{ $pedido->orden_compra ?? '—' }}</p>
                 </div>
                 <div style="text-align: center; flex: 1; margin: 0 20px;">
@@ -2776,3 +3437,5 @@ if (filas.length === 0) {
 </script>
 
 @endsection
+
+

@@ -9,6 +9,8 @@ use App\Application\Pedidos\Despacho\UseCases\ObtenerFilasDespachoUseCase;
 use App\Infrastructure\Services\Despacho\DespachoRowHashService;
 use App\Events\DespachoPedidoActualizado;
 use App\Models\BodegaNota;
+use App\Models\DespachoComprobante;
+use App\Models\DespachoComprobanteFila;
 use App\Models\DespachoAjusteDetalle;
 use App\Models\DesparChoParcialesModel;
 use App\Models\PedidoObservacionesDespacho;
@@ -17,6 +19,7 @@ use App\Models\PrendaEntrega;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Collection;
 
 class DespachoControlApplicationService
 {
@@ -268,10 +271,296 @@ class DespachoControlApplicationService
         $filas = $this->obtenerFilas->obtenerTodas($pedido->id);
         $prendas = $filas->where('tipo', 'prenda');
         $epps = $filas->where('tipo', 'epp');
+        $comprobante = $this->obtenerOCrearComprobante($pedido);
 
         [$pendientesBodegueroText, $observacionesAsesoraText] = $this->buildTextosPendientesYAsesora($pedido);
 
-        return compact('pedido', 'filas', 'prendas', 'epps', 'pendientesBodegueroText', 'observacionesAsesoraText');
+        $tableRowsOriginal = $this->agruparFilasParaComprobante($filas);
+        $tableRows = $this->obtenerFilasParaComprobante($comprobante, $filas);
+
+        return compact(
+            'pedido',
+            'filas',
+            'prendas',
+            'epps',
+            'comprobante',
+            'pendientesBodegueroText',
+            'observacionesAsesoraText',
+            'tableRowsOriginal',
+            'tableRows'
+        );
+    }
+
+    private function obtenerOCrearComprobante(PedidoProduccion $pedido): DespachoComprobante
+    {
+        return DB::transaction(function () use ($pedido) {
+            $clienteModel = $pedido->cliente;
+            $clienteNombre = is_object($clienteModel)
+                ? ($clienteModel->nombre ?? $pedido->getAttribute('cliente'))
+                : $pedido->getAttribute('cliente');
+            $clienteEmail = is_object($clienteModel)
+                ? ($clienteModel->email ?? null)
+                : null;
+            return DespachoComprobante::firstOrCreate(
+                ['pedido_produccion_id' => $pedido->id],
+                [
+                    'usuario_id' => auth()->id(),
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cliente_nombre' => $clienteNombre,
+                    'cliente_email' => $clienteEmail,
+                    'comp_factura_no' => $pedido->orden_compra,
+                    'fecha_entrega' => null,
+                    'observaciones' => null,
+                    'snapshot' => [
+                        'pedido_id' => $pedido->id,
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'cliente_nombre' => $clienteNombre,
+                        'cliente_email' => $clienteEmail,
+                        'comp_factura_no' => $pedido->orden_compra,
+                        'observaciones' => $pedido->observaciones,
+                        'fecha_entrega' => null,
+                        'firmas' => [],
+                        'generado_en' => now()->toDateTimeString(),
+                    ],
+                ]
+            );
+        });
+    }
+
+    public function guardarObservacionComprobante(PedidoProduccion $pedido, string $observaciones, ?string $fechaEntrega = null, array $firmas = [], ?array $filas = null): DespachoComprobante
+    {
+        return DB::transaction(function () use ($pedido, $observaciones, $fechaEntrega, $firmas, $filas) {
+            $comprobante = $this->obtenerOCrearComprobante($pedido);
+            $snapshot = (array) ($comprobante->snapshot ?? []);
+            if (!isset($snapshot['firmas']) || !is_array($snapshot['firmas'])) {
+                $snapshot['firmas'] = [];
+            }
+
+            $firmasLimpias = array_filter($firmas, function ($firma) {
+                return is_array($firma) && (
+                    trim((string) ($firma['texto'] ?? '')) !== ''
+                    || trim((string) ($firma['imagen'] ?? '')) !== ''
+                );
+            });
+
+            $comprobante->update([
+                'observaciones' => $observaciones,
+                'fecha_entrega' => $fechaEntrega,
+                'snapshot' => array_merge($snapshot, [
+                    'observaciones' => $observaciones,
+                    'fecha_entrega' => $fechaEntrega,
+                    'firmas' => $firmasLimpias,
+                    'filas_personalizadas' => $filas !== null,
+                    'actualizado_en' => now()->toDateTimeString(),
+                ]),
+            ]);
+
+            if ($filas !== null) {
+                $this->guardarFilasComprobante($comprobante, $filas);
+            }
+
+            return $comprobante->fresh();
+        });
+    }
+
+    private function obtenerFilasComprobante(DespachoComprobante $comprobante): array
+    {
+        $filasGuardadas = $comprobante->filas()
+            ->orderBy('orden')
+            ->get(['orden', 'cantidad', 'articulo']);
+
+        if ($filasGuardadas->isNotEmpty()) {
+            return $filasGuardadas
+                ->map(function (DespachoComprobanteFila $fila): array {
+                    return [
+                        'cantidad' => (int) $fila->cantidad,
+                        'articulo' => (string) $fila->articulo,
+                    ];
+                })
+                ->values()
+                ->all();
+        }
+
+        return [];
+    }
+
+    private function guardarFilasComprobante(DespachoComprobante $comprobante, array $filas): void
+    {
+        $comprobante->filas()->delete();
+
+        $filasNormalizadas = collect($filas)
+            ->map(function ($fila, int $index): array {
+                $cantidad = (int) data_get($fila, 'cantidad', 0);
+                $articulo = trim((string) data_get($fila, 'articulo', ''));
+
+                return [
+                    'orden' => $index + 1,
+                    'cantidad' => $cantidad,
+                    'articulo' => $articulo,
+                ];
+            })
+            ->values();
+
+        foreach ($filasNormalizadas as $fila) {
+            $comprobante->filas()->create($fila);
+        }
+    }
+
+    private function obtenerFilasParaComprobante(DespachoComprobante $comprobante, Collection $filas): array
+    {
+        $snapshot = (array) ($comprobante->snapshot ?? []);
+        $usaFilasPersonalizadas = (bool) data_get($snapshot, 'filas_personalizadas', false);
+
+        if ($usaFilasPersonalizadas) {
+            return $this->obtenerFilasComprobante($comprobante);
+        }
+
+        $filasGuardadas = $this->obtenerFilasComprobante($comprobante);
+        return $filasGuardadas !== [] ? $filasGuardadas : $this->agruparFilasParaComprobante($filas);
+    }
+
+    /**
+     * Agrupa las filas para que el comprobante muestre una sola lÃƒÂ­nea por prenda/EPP.
+     *
+     * @param Collection<int, \App\Application\Pedidos\Despacho\DTOs\FilaDespachoDTO> $filas
+     * @return array<int, array{cantidad:int, articulo:string}>
+     */
+    private function agruparFilasParaComprobante(Collection $filas): array
+    {
+        return $filas
+            ->groupBy(function ($fila) {
+                $tipo = (string) data_get($fila, 'tipo', '');
+                $descripcion = trim((string) (
+                    data_get($fila, 'objetoPrenda.nombre_prenda')
+                    ?: data_get($fila, 'objetoEpp.nombre_completo')
+                    ?: data_get($fila, 'objetoPrenda.nombre')
+                    ?: data_get($fila, 'descripcion')
+                    ?: ''
+                ));
+
+                return implode('|', [$tipo, mb_strtolower($descripcion)]);
+            })
+            ->map(function (Collection $grupo) {
+                $primeraFila = $grupo->first();
+                $tipo = (string) data_get($primeraFila, 'tipo', '');
+
+                $descripcionBase = $this->construirDescripcionComprobante($primeraFila);
+
+                $cantidadTotal = (int) $grupo->sum(function ($fila) {
+                    return (int) data_get($fila, 'cantidadTotal', 0);
+                });
+
+                $detalleTallas = $grupo
+                    ->groupBy(function ($fila) {
+                        return trim((string) data_get($fila, 'talla', ''));
+                    })
+                    ->map(function (Collection $items, string $talla) {
+                        return [
+                            'talla' => $talla,
+                            'cantidad' => (int) $items->sum(function ($item) {
+                                return (int) data_get($item, 'cantidadTotal', 0);
+                            }),
+                        ];
+                    })
+                    ->filter(function (array $item) {
+                        return $item['talla'] !== '' && $item['talla'] !== 'Ã¢â‚¬â€';
+                    })
+                    ->values()
+                    ->map(function (array $item) {
+                        return $item['talla'] . '-' . $item['cantidad'];
+                    })
+                    ->implode(', ');
+
+                if ($detalleTallas !== '') {
+                    $descripcionBase = trim($descripcionBase . ' ' . $detalleTallas);
+                }
+
+                return [
+                    'cantidad' => $cantidadTotal,
+                    'articulo' => $descripcionBase,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function construirDescripcionComprobante(object|array $fila): string
+    {
+        $tipo = (string) data_get($fila, 'tipo', '');
+
+        if ($tipo !== 'prenda') {
+            return trim((string) (
+                data_get($fila, 'objetoEpp.nombre_completo')
+                ?: data_get($fila, 'objetoEpp.nombre')
+                ?: data_get($fila, 'descripcion')
+                ?: ''
+            ));
+        }
+
+        $segmentos = [];
+
+        $nombre = trim((string) (
+            data_get($fila, 'objetoPrenda.nombre')
+            ?: data_get($fila, 'objetoPrenda.nombre_prenda')
+            ?: data_get($fila, 'descripcion')
+            ?: ''
+        ));
+        if ($nombre !== '') {
+            $segmentos[] = $nombre;
+        }
+
+        $descripcion = trim(strip_tags(html_entity_decode((string) (
+            data_get($fila, 'objetoPrenda.descripcion')
+            ?: ''
+        ), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+        if ($descripcion !== '') {
+            $segmentos[] = '(' . $descripcion . ')';
+        }
+
+        $procesos = data_get($fila, 'objetoPrenda.procesos', []);
+        if (is_iterable($procesos)) {
+            foreach ($procesos as $proc) {
+                $descripcionProceso = trim(strip_tags(html_entity_decode((string) (
+                    data_get($proc, 'descripcion')
+                    ?: data_get($proc, 'detalle')
+                    ?: ''
+                ), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+
+                $nombreProceso = trim((string) (
+                    data_get($proc, 'nombre')
+                    ?: data_get($proc, 'tipo_proceso')
+                    ?: ''
+                ));
+
+                if ($descripcionProceso === '' && $nombreProceso === '') {
+                    continue;
+                }
+
+                if ($descripcionProceso !== '' && $nombreProceso !== '') {
+                    $descripcionProceso = preg_replace(
+                        '/^' . preg_quote($nombreProceso, '/') . '\s+/iu',
+                        '',
+                        $descripcionProceso
+                    ) ?? $descripcionProceso;
+                }
+
+                $textoProceso = trim($descripcionProceso !== '' ? $descripcionProceso : $nombreProceso);
+
+                if ($textoProceso !== '') {
+                    $segmentos[] = '(' . $textoProceso . ')';
+                }
+            }
+        }
+
+        if ($segmentos === []) {
+            return trim((string) (
+                data_get($fila, 'objetoPrenda.nombre_prenda')
+                ?: data_get($fila, 'descripcion')
+                ?: ''
+            ));
+        }
+
+        return implode(', ', $segmentos);
     }
 
     /**
@@ -340,7 +629,7 @@ class DespachoControlApplicationService
             })
             ->first();
 
-        Log::info('[DespachoController] Búsqueda de despacho', [
+        Log::info('[DespachoController] BÃƒÂºsqueda de despacho', [
             'pedido_id' => $pedido->id,
             'tipo_item' => $validated['tipo_item'],
             'item_id' => $validated['item_id'],
@@ -350,7 +639,7 @@ class DespachoControlApplicationService
         ]);
 
         if (!$despacho) {
-            Log::info('[DespachoController] Creando registro de despacho automáticamente', [
+            Log::info('[DespachoController] Creando registro de despacho automÃƒÂ¡ticamente', [
                 'pedido_id' => $pedido->id,
                 'tipo_item' => $validated['tipo_item'],
                 'item_id' => $validated['item_id'],
@@ -490,7 +779,7 @@ class DespachoControlApplicationService
         $userName = $usuario ? $usuario->name : 'Sistema';
         $fecha = now()->format('Y-m-d H:i:s');
         $tipoItem = ucfirst($validated['tipo_item']);
-        $novedad = "[Bodega: $userName - $fecha] Entrega de $tipoItem deshecha - Volvió a estado Pendiente";
+        $novedad = "[Bodega: $userName - $fecha] Entrega de $tipoItem deshecha - VolviÃƒÂ³ a estado Pendiente";
         
         // Agregar novedad al pedido
         if ($pedido->novedades) {
@@ -580,7 +869,7 @@ class DespachoControlApplicationService
                     'updated_at' => now(),
                 ]);
 
-                // Si es prenda, también actualizar PrendaEntrega para que se muestre la fecha en la vista
+                // Si es prenda, tambiÃƒÂ©n actualizar PrendaEntrega para que se muestre la fecha en la vista
                 if ($tipoItem === 'prenda' && $itemId) {
                     PrendaEntrega::updateOrCreate(
                         ['prenda_pedido_id' => $itemId],
@@ -729,7 +1018,7 @@ class DespachoControlApplicationService
             $totalItems = $itemsPendientes->count();
             $itemsRestantes = $totalItems - $itemsEntregados;
 
-            Log::info('[DespachoController] Verificación de estado del pedido', [
+            Log::info('[DespachoController] VerificaciÃƒÂ³n de estado del pedido', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'total_items' => $totalItems,

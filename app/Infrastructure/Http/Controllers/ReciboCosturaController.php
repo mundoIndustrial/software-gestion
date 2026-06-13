@@ -192,6 +192,83 @@ class ReciboCosturaController extends Controller
         return $originales === $enviadas;
     }
 
+    private function tallasNoExcedenOriginales(array $tallasOriginales, array $tallasEnviadas): bool
+    {
+        $originales = $this->normalizarTallasParaComparacion($tallasOriginales);
+        $enviadas = $this->normalizarTallasParaComparacion($tallasEnviadas);
+
+        if (empty($enviadas)) {
+            return false;
+        }
+
+        foreach ($enviadas as $clave => $cantidadEnviada) {
+            $cantidadOriginal = $originales[$clave] ?? null;
+            if ($cantidadOriginal === null || $cantidadEnviada > $cantidadOriginal) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function obtenerTallasControlCalidadRegistradas(int $parcialId): array
+    {
+        if ($parcialId <= 0) {
+            return [];
+        }
+
+        $completado = DB::table('prenda_recibo_completado')
+            ->where('id_parcial', $parcialId)
+            ->whereRaw('LOWER(TRIM(area)) = ?', ['control calidad'])
+            ->latest('id')
+            ->first(['tallas_control_calidad']);
+
+        if (!$completado) {
+            return [];
+        }
+
+        return $this->normalizarTallasControlCalidad($completado->tallas_control_calidad ?? null);
+    }
+
+    private function combinarTallasControlCalidad(array $tallasRegistradas, array $tallasNuevas): array
+    {
+        $combinadas = [];
+
+        foreach (array_merge($tallasRegistradas, $tallasNuevas) as $talla) {
+            if (!is_array($talla)) {
+                continue;
+            }
+
+            $clave = implode('|', [
+                strtoupper(trim((string) ($talla['talla'] ?? ''))),
+                strtoupper(trim((string) ($talla['genero'] ?? ''))),
+                strtoupper(trim((string) ($talla['color_nombre'] ?? ''))),
+            ]);
+
+            if ($clave === '||') {
+                continue;
+            }
+
+            $cantidad = (int) ($talla['cantidad'] ?? 0);
+            if ($cantidad <= 0) {
+                continue;
+            }
+
+            if (!isset($combinadas[$clave])) {
+                $combinadas[$clave] = [
+                    'talla' => trim((string) ($talla['talla'] ?? '')),
+                    'cantidad' => 0,
+                    'genero' => trim((string) ($talla['genero'] ?? '')),
+                    'color_nombre' => trim((string) ($talla['color_nombre'] ?? '')),
+                ];
+            }
+
+            $combinadas[$clave]['cantidad'] += $cantidad;
+        }
+
+        return array_values($combinadas);
+    }
+
     private function obtenerTallasPedidoParcialParaComparacion(PedidoParcial|ReciboPorPartes $parcial): array
     {
         if ($parcial instanceof PedidoParcial) {
@@ -1100,10 +1177,13 @@ class ReciboCosturaController extends Controller
         }
 
         $tallasOriginalesParcial = $this->obtenerTallasPedidoParcialParaComparacion($parcial);
-        if (!$this->tallasCoincidenExactamente($tallasOriginalesParcial, $tallasControlCalidad)) {
+        $tallasRegistradasControlCalidad = $this->obtenerTallasControlCalidadRegistradas((int) $parcial->id);
+        $tallasAcumuladasControlCalidad = $this->combinarTallasControlCalidad($tallasRegistradasControlCalidad, $tallasControlCalidad);
+
+        if (!$this->tallasNoExcedenOriginales($tallasOriginalesParcial, $tallasAcumuladasControlCalidad)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Las tallas enviadas no coinciden exactamente con las tallas registradas en el parcial',
+                'message' => 'Las tallas enviadas exceden lo registrado en el parcial',
             ], 422);
         }
 
@@ -1145,8 +1225,8 @@ class ReciboCosturaController extends Controller
                         'numero_recibo' => $consecutivoParcial,
                         'nombre_operario' => (string) (auth()->user()->name ?? 'control'),
                         'fecha_completado' => now(),
-                        'tallas_control_calidad' => !empty($tallasControlCalidad)
-                            ? json_encode(array_values($tallasControlCalidad), JSON_UNESCAPED_UNICODE)
+                        'tallas_control_calidad' => !empty($tallasAcumuladasControlCalidad)
+                            ? json_encode(array_values($tallasAcumuladasControlCalidad), JSON_UNESCAPED_UNICODE)
                             : null,
                     ]
                 );
@@ -1156,7 +1236,7 @@ class ReciboCosturaController extends Controller
                     ->where('area', 'Control Calidad')
                     ->first('id');
                 if ($completado) {
-                    $this->guardarTallasControlCalidadDetalle((int) $completado->id, $tallasControlCalidad);
+                    $this->guardarTallasControlCalidadDetalle((int) $completado->id, $tallasAcumuladasControlCalidad);
                 }
 
                 $estadoParcialesCc = $this->sincronizarProcesoControlCalidadOriginal($pedido, $parcial);
@@ -1203,8 +1283,8 @@ class ReciboCosturaController extends Controller
                     'numero_recibo' => $consecutivoParcial,
                     'nombre_operario' => (string) (auth()->user()->name ?? 'control'),
                     'fecha_completado' => now(),
-                    'tallas_control_calidad' => !empty($tallasControlCalidad)
-                        ? json_encode(array_values($tallasControlCalidad), JSON_UNESCAPED_UNICODE)
+                    'tallas_control_calidad' => !empty($tallasAcumuladasControlCalidad)
+                        ? json_encode(array_values($tallasAcumuladasControlCalidad), JSON_UNESCAPED_UNICODE)
                         : null,
                 ]
             );
@@ -1214,7 +1294,7 @@ class ReciboCosturaController extends Controller
                 ->where('area', 'Control Calidad')
                 ->first('id');
             if ($completado) {
-                $this->guardarTallasControlCalidadDetalle((int) $completado->id, $tallasControlCalidad);
+                $this->guardarTallasControlCalidadDetalle((int) $completado->id, $tallasAcumuladasControlCalidad);
             }
 
             DB::commit();

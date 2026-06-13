@@ -81,6 +81,89 @@ class DespachoControlController extends Controller
         return view('despacho.print', $this->service->obtenerDatosPrint($pedido));
     }
 
+    public function obtenerComprobante(PedidoProduccion $pedido): JsonResponse
+    {
+        try {
+            $datosPrint = $this->service->obtenerDatosPrint($pedido);
+            $comprobante = $datosPrint['comprobante'];
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $comprobante->id,
+                    'observaciones' => $comprobante->observaciones ?? '',
+                    'fecha_entrega' => $comprobante->fecha_entrega?->format('Y-m-d') ?? '',
+                    'firmas' => data_get($comprobante, 'snapshot.firmas', []),
+                    'table_rows' => $comprobante->filas()
+                        ->orderBy('orden')
+                        ->get(['orden', 'cantidad', 'articulo'])
+                        ->map(function ($fila) {
+                            return [
+                                'cantidad' => (int) $fila->cantidad,
+                                'articulo' => (string) $fila->articulo,
+                            ];
+                        })
+                        ->values()
+                        ->all(),
+                    'table_rows_original' => data_get($datosPrint, 'tableRowsOriginal', []),
+                    'numero_comprobante' => $comprobante->id,
+                    'numero_pedido' => $comprobante->numero_pedido ?? $pedido->numero_pedido,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Error al obtener comprobante', [
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener comprobante',
+            ], 500);
+        }
+    }
+
+    public function guardarObservacionComprobante(Request $request, PedidoProduccion $pedido): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'observaciones' => 'nullable|string|max:5000',
+                'fecha_entrega' => 'nullable|date_format:Y-m-d',
+                'firmas' => 'nullable|array',
+                'filas' => 'nullable|array',
+                'filas.*.cantidad' => 'nullable|integer|min:0',
+                'filas.*.articulo' => 'nullable|string|max:5000',
+            ]);
+
+            $comprobante = $this->service->guardarObservacionComprobante(
+                $pedido,
+                (string) ($validated['observaciones'] ?? ''),
+                $validated['fecha_entrega'] ?? null,
+                is_array($validated['firmas'] ?? null) ? $validated['firmas'] : [],
+                is_array($validated['filas'] ?? null) ? $validated['filas'] : null
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Observación del comprobante guardada correctamente',
+                'data' => [
+                    'id' => $comprobante->id,
+                    'observaciones' => $comprobante->observaciones ?? '',
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Error al guardar observacion del comprobante', [
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar observación del comprobante',
+            ], 500);
+        }
+    }
+
     /**
      * Obtener despachos guardados para un pedido
      */

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Entregas - {{ $pedido->numero_pedido }}</title>
+    <title>Comprobante de Entrega - Despacho {{ $pedido->numero_pedido }}</title>
     <style>
         * {
             margin: 0;
@@ -11,554 +11,663 @@
             box-sizing: border-box;
         }
 
+        @page {
+            size: letter portrait;
+            margin: 0;
+        }
+
+        html,
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #1e293b;
-            background: white;
+            width: 100%;
+            background: #ffffff;
+            color: #333333;
+            font-family: Arial, Helvetica, sans-serif;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
 
-        .container {
-            max-width: 210mm;
-            margin: 0 auto;
-            padding: 20mm;
-            background: white;
+        body {
+            padding: 0;
         }
 
-        /* Encabezado */
-        .header {
+        .sheet {
+            width: 100%;
+            min-height: 262mm;
+            border: 1.4px solid #555555;
+            border-radius: 24px;
+            padding: 4mm 5mm 4mm;
+            background: #ffffff;
+        }
+
+        .header-brand {
             text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 3px solid #1e293b;
-            padding-bottom: 15px;
         }
 
-        .header h1 {
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 5px;
+        .date-box,
+        .title-box-inner,
+        .number-box-inner,
+        .date-label {
+            font-family: "Arial Narrow", "Roboto Condensed", Arial, Helvetica, sans-serif;
+        }
+
+        .logo {
+            display: block;
+            width: 42mm;
+            max-width: 100%;
+            margin: 0 auto 2mm;
+        }
+
+        .nit {
+            font-size: 10pt;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 1mm;
+        }
+
+        .description {
+            font-size: 8.7pt;
+            line-height: 1.25;
             text-transform: uppercase;
-            letter-spacing: 2px;
         }
 
-        .header p {
-            font-size: 12px;
-            color: #64748b;
+        .contact-bar {
+            margin-top: 3mm;
+            background: #ffe100;
+            border: 1px solid #5a5a5a;
+            border-radius: 14px;
+            padding: 2.4mm 4mm;
+            text-align: center;
+            font-size: 8.7pt;
+            font-weight: 700;
+            line-height: 1.3;
         }
 
-        /* Información del pedido */
-        .info-section {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-            page-break-inside: avoid;
+        .top-layout {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0.6mm 0;
+            margin-top: 2mm;
         }
 
-        .info-box {
-            padding: 15px;
-            border: 1px solid #cbd5e1;
+        .top-layout td {
+            vertical-align: top;
+        }
+
+        .date-box,
+        .number-box,
+        .title-box {
+            border: 1.4px solid #555555;
             border-radius: 4px;
-            background: #f8fafc;
+            background: #ffffff;
+            overflow: hidden;
         }
 
-        .info-box label {
-            font-size: 11px;
-            font-weight: bold;
-            color: #64748b;
-            text-transform: uppercase;
-            display: block;
-            margin-bottom: 5px;
+        .date-box {
+            min-height: 14mm;
         }
 
-        .info-box value {
-            font-size: 16px;
-            font-weight: bold;
-            color: #1e293b;
-            display: block;
-        }
-
-        /* Tabla de despacho */
-        .table-section {
-            margin-bottom: 30px;
-            page-break-inside: avoid;
-        }
-
-        .table-title {
-            font-size: 14px;
-            font-weight: bold;
-            color: white;
-            background: #334155;
-            padding: 12px 15px;
-            margin-bottom: 0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        table {
+        .date-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
+            table-layout: fixed;
         }
 
-        thead {
-            background: #e2e8f0;
-            border-top: 2px solid #64748b;
-            border-bottom: 2px solid #64748b;
+        .date-table th,
+        .date-table td {
+            width: 33.3333%;
+            text-align: center;
+            padding: 0;
+            margin: 0;
         }
 
-        th {
-            padding: 10px;
-            text-align: left;
-            font-size: 11px;
-            font-weight: bold;
-            color: #334155;
+        .date-table th {
+            background: #ffe100;
+            border-bottom: 1.4px solid #555555;
+            border-right: 0.8px solid #8a8a8a;
+            font-size: 7pt;
+            font-weight: 700;
+            font-style: italic;
+            letter-spacing: 0.2px;
+            padding: 0.9mm 0 0.75mm;
+            line-height: 1;
+        }
+
+        .date-table th:last-child,
+        .date-table td:last-child {
+            border-right: none;
+        }
+
+        .date-table td {
+            background: #ffffff;
+            border-right: 0.8px solid #8a8a8a;
+            padding: 0.8mm 1mm 1mm;
+            font-size: 7.5pt;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .date-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .date-label {
+            display: block;
+            font-size: 6pt;
+            font-weight: 700;
+            font-style: italic;
             text-transform: uppercase;
-            border-bottom: 1px solid #cbd5e1;
+            margin-bottom: 0.4mm;
         }
 
-        td {
-            padding: 10px;
-            font-size: 12px;
+        .date-value {
+            display: block;
+            min-height: 3.8mm;
+            font-size: 7.5pt;
+            font-weight: 700;
+        }
+
+        .title-box {
+            min-height: 14mm;
+            display: flex;
+            width: 100%;
+            border: none;
+            border-radius: 0;
+            padding-left: 4mm;
+        }
+
+        .title-box-inner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 14mm;
+            width: 100%;
+            text-align: center;
+            font-size: 9.5pt;
+            font-weight: 900;
+            line-height: 0.9;
+            letter-spacing: 0.1px;
+            text-transform: uppercase;
+            padding: 0.6mm 0.2mm 0.6mm 0;
+            color: #4f4f4f;
+        }
+
+        .number-box {
+            min-height: 14mm;
+            display: table;
+            width: 100%;
+            color: #b55448;
+            border-radius: 6px;
+            box-shadow: -1px 1px 0 #555555;
+        }
+
+        .number-box-inner {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: center;
+            font-size: 9.5pt;
+            font-weight: 800;
+            font-family: "Times New Roman", Times, serif;
+            letter-spacing: 0.3px;
+            color: #b55448;
+        }
+
+        .client-section {
+            margin-top: 4mm;
+        }
+
+        .client-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 2.5mm;
+            table-layout: fixed;
+        }
+
+        .client-table td {
+            width: 50%;
+            padding-right: 3mm;
+            vertical-align: bottom;
+        }
+
+        .client-field {
+            display: flex;
+            align-items: flex-end;
+            gap: 2mm;
+            font-size: 9pt;
+            line-height: 1;
+        }
+
+        .client-label {
+            white-space: nowrap;
+            font-weight: 700;
+        }
+
+        .client-line {
+            flex: 1;
+            min-height: 5.5mm;
+            border-bottom: 1px solid #555555;
+            display: flex;
+            align-items: flex-end;
+            padding-bottom: 1mm;
+            overflow: hidden;
+            font-size: 9pt;
+        }
+
+        .main-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 4mm;
+            border: 1.4px solid #555555;
+            border-radius: 18px;
+            overflow: hidden;
+            table-layout: fixed;
+        }
+
+        .main-table thead th {
+            background: #ffe100;
+            border-bottom: 1.4px solid #555555;
+            border-right: 1px solid #555555;
+            padding: 2.2mm 2.5mm;
+            font-size: 9pt;
+            font-weight: 800;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .main-table thead th:last-child {
+            border-right: none;
+        }
+
+        .main-table tbody td {
+            border-right: 1px solid #777777;
+            border-bottom: 1px solid #777777;
+            padding: 2mm 2.5mm;
+            min-height: 8.5mm;
+            font-size: 10px;
             vertical-align: top;
-            border-bottom: 1px solid #e2e8f0;
         }
 
-        tbody tr:nth-child(even) {
-            background: #f8fafc;
+        .main-table tbody tr:last-child td {
+            border-bottom: none;
         }
 
-        tbody tr:hover {
-            background: #eff6ff;
+        .main-table tbody td:last-child {
+            border-right: none;
         }
 
-        /* Secciones */
-        .section-prendas {
-            background: #dbeafe;
-            font-weight: bold;
-            color: #0c4a6e;
-        }
-
-        .section-epp {
-            background: #dbeafe;
-            font-weight: bold;
-            color: #0c4a6e;
-        }
-
-        /* Valores númericos */
-        .numeric {
+        .qty-col {
+            width: 22mm;
             text-align: center;
-            font-variant-numeric: tabular-nums;
-            font-weight: bold;
+            font-weight: 700;
         }
 
-        /* Pendientes bodeguero (simple) */
-        .pendientes-simple {
-            margin-top: 10px;
-            page-break-inside: avoid;
-            font-size: 12px;
-            color: #1e293b;
+        .article-col {
+            width: auto;
+            line-height: 1.2;
+            font-size: 10px;
+            white-space: pre-line;
+            word-break: break-word;
         }
 
-        .pendientes-simple strong {
-            color: #000;
+        .empty-row td {
+            color: transparent;
         }
 
-        .pendientes-simple pre {
-            margin-top: 6px;
+        .observations {
+            margin-top: 4mm;
+            border: 1.4px solid #555555;
+            border-radius: 18px;
+            min-height: 0;
+            padding: 3mm 4mm 4mm;
+        }
+
+        .observations-label {
+            font-size: 10pt;
+            font-weight: 700;
+            margin-bottom: 2mm;
+        }
+
+        .observations-area {
+            min-height: 7mm;
+            border-radius: 10px;
+            font-size: 10px;
+            line-height: 1.25;
             white-space: pre-wrap;
-            font-family: inherit;
-            font-size: 11px;
-            color: #000;
+            word-break: break-word;
+            background:
+                linear-gradient(to bottom, transparent 0, transparent 5.8mm, rgba(0, 0, 0, 0.12) 5.9mm, transparent 6mm);
+            background-size: 100% 6mm;
         }
 
-        /* Pie de página */
-        .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 2px solid #cbd5e1;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            page-break-inside: avoid;
+        .signatures {
+            margin-top: 4mm;
         }
 
-        .signature-box {
-            text-align: center;
-            padding: 40px 20px 0 20px;
+        .signature-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 8mm 3mm;
+            table-layout: fixed;
+        }
+
+        .signature-table td {
+            width: 50%;
+            vertical-align: top;
+        }
+
+        .signature-block {
+            min-height: 22mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
         }
 
         .signature-line {
-            border-top: 1px solid #1e293b;
-            margin-top: 40px;
-            padding-top: 5px;
-            font-size: 11px;
-            font-weight: bold;
+            height: 2mm;
+            border-bottom: 1px solid #555555;
+        }
+
+        .signature-image {
+            height: 24mm;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0;
+        }
+
+        .signature-image img {
+            max-height: 24mm;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        .signature-written {
+            min-height: 0;
+            height: auto;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+            margin-bottom: 0;
+            text-transform: uppercase;
+            padding-bottom: 0;
+            line-height: 1;
         }
 
         .signature-label {
-            font-size: 11px;
-            color: #64748b;
-            margin-top: 5px;
+            margin-top: 1.2mm;
+            font-size: 9pt;
+            font-weight: 700;
         }
 
-        /* Impresión */
-        @media print {
+        .footer {
+            margin-top: 4mm;
+            text-align: center;
+            font-size: 8.6pt;
+            font-style: italic;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+
+        @media screen {
             body {
-                margin: 0;
-                padding: 0;
-            }
-            
-            .container {
-                max-width: 100%;
+                background: #f3f4f6;
                 padding: 10mm;
             }
 
-            .no-print {
-                display: none;
-            }
-
-            a {
-                color: inherit;
-                text-decoration: none;
-            }
-
-            table {
-                page-break-inside: avoid;
-            }
-
-            tr {
-                page-break-inside: avoid;
-            }
-
-            /* Ocultar contenido de celdas de datos (mantener estructura) */
-            tbody td {
-                color: transparent;
-                min-height: 30px;
-                padding: 15px 10px;
-            }
-
-            tbody tr:nth-child(even) {
-                background: white;
-            }
-
-            tbody tr:hover {
-                background: white;
-            }
-
-            /* Mantener visible solo los headers */
-            thead th {
-                color: #334155;
-            }
-
-            /* Mantener visible la información del pedido */
-            .info-box value {
-                color: #1e293b;
-            }
-
-            .header h1,
-            .header p,
-            .table-title {
-                color: inherit;
+            .sheet {
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             }
         }
 
-        /* Botones (solo en pantalla) */
-        .print-buttons {
-            text-align: center;
-            margin-bottom: 20px;
-            padding: 20px;
-            background: #f1f5f9;
-            border-radius: 8px;
-        }
+        @media print {
+            body {
+                background: #ffffff;
+                padding: 0;
+            }
 
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 0 10px;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            text-decoration: none;
-        }
-
-        .btn:hover {
-            background: #2563eb;
-        }
-
-        .btn-secondary {
-            background: #64748b;
-        }
-
-        .btn-secondary:hover {
-            background: #475569;
+            .sheet {
+                width: 100%;
+                min-height: 279.4mm;
+                border-radius: 0;
+                box-shadow: none;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Botones de impresión (solo pantalla) -->
-        <div class="no-print print-buttons">
-            <button class="btn" onclick="window.print()"> Imprimir</button>
-            <a href="{{ route('despacho.show', $pedido->id) }}" class="btn btn-secondary">← Volver</a>
+    @php
+        $clienteModel = $pedido->cliente ?? null;
+        $clienteNombre = $comprobante->cliente_nombre
+            ?? (is_object($clienteModel)
+                ? ($clienteModel->nombre ?? $pedido->getAttribute('cliente') ?? '')
+                : (is_string($pedido->getAttribute('cliente') ?? null) ? $pedido->getAttribute('cliente') : ''));
+        $clienteEmail = $comprobante->cliente_email
+            ?? (is_object($clienteModel) ? ($clienteModel->email ?? '') : '');
+        $compFactura = $comprobante->comp_factura_no ?? $pedido->factura_numero ?? $pedido->orden_compra ?? '';
+        $fechaComprobante = $comprobante->created_at ?? now();
+        $numeroComprobante = $comprobante->id ?? 1;
+        $fechaEntrega = $comprobante->fecha_entrega?->format('d/m/Y') ?? '';
+        $observacionesComprobante = trim((string) ($comprobante->observaciones ?? ''));
+        $firmasComprobante = data_get($comprobante, 'snapshot.firmas', []);
+        $obtenerFirma = function (string $key) use ($firmasComprobante): array {
+            $firma = data_get($firmasComprobante, $key, []);
+
+            return [
+                'texto' => trim((string) data_get($firma, 'texto', '')),
+                'imagen' => trim((string) data_get($firma, 'imagen', '')),
+            ];
+        };
+
+        $tableRows = collect($tableRows ?? [])
+            ->filter(function ($item) {
+                return trim((string) data_get($item, 'articulo', '')) !== ''
+                    || trim((string) data_get($item, 'cantidad', '')) !== '';
+            })
+            ->values()
+            ->all();
+        while (count($tableRows) < 10) {
+            $tableRows[] = ['cantidad' => '', 'articulo' => ''];
+        }
+
+        $formatearArticuloComprobante = function ($articulo): string {
+            $texto = trim((string) $articulo);
+            if ($texto === '') {
+                return '';
+            }
+
+            $lineas = preg_split('/\R/u', $texto) ?: [];
+            $segmentos = [];
+
+            foreach ($lineas as $index => $linea) {
+                $linea = trim((string) $linea);
+                if ($linea === '') {
+                    continue;
+                }
+
+                $linea = preg_replace('/^[•\-\s]+/u', '', $linea) ?? $linea;
+
+                if ($index > 0) {
+                    if (preg_match('/^[A-Za-zÁÉÍÓÚÑáéíóúñ]+\s+(.+)$/u', $linea, $matches)) {
+                        $linea = trim($matches[1]);
+                    }
+                    if ($linea !== '' && $linea[0] !== '(') {
+                        $linea = '(' . $linea . ')';
+                    }
+                }
+
+                $segmentos[] = $linea;
+            }
+
+            return implode(', ', $segmentos);
+        };
+    @endphp
+
+    <div class="sheet">
+        <div class="header-brand">
+            <img src="{{ asset('images/logo2.png') }}" alt="Mundo Industrial" class="logo">
+            <div class="nit">NIT. 1.093.738.433-3</div>
+            <div class="description">
+                Fabricación, confección y comercialización de dotación industrial, elementos de protección personal,
+                uniformes empresariales y soluciones textiles para la industria
+            </div>
+            <div class="contact-bar">
+                Avenida 3 No. 4-34 B. Latino - Celular: 3163853956 - Cúcuta - Col.
+                <br>
+                ventas@mundoindustrial.com - www.mundoindustrial.co
+            </div>
         </div>
 
-        <!-- Encabezado -->
-        <div class="header">
-            <h1> CONTROL DE ENTREGAS</h1>
-            <p>Documento de despacho y control de mercancía</p>
-        </div>
-
-        <!-- Información del pedido -->
-        <div class="info-section">
-            <div class="info-box">
-                <label>Nº Pedido</label>
-                <value>{{ $pedido->numero_pedido }}</value>
-            </div>
-            <div class="info-box">
-                <label>Cliente</label>
-                <value>{{ $pedido->cliente ?? '—' }}</value>
-            </div>
-            <div class="info-box">
-                <label>Fecha Despacho</label>
-                <value>{{ now()->format('d/m/Y H:i') }}</value>
-            </div>
-        </div>
-
-        <!-- PRENDAS -->
-        @php
-            $prendas = $filas->filter(fn($f) => $f->tipo === 'prenda');
-            $epps = $filas->filter(fn($f) => $f->tipo === 'epp');
-        @endphp
-
-        @if($prendas->count() > 0)
-            <div class="table-section">
-                <div class="table-title">PRENDAS</div>
-                <table>
-                    <thead>
+        <table class="top-layout" aria-hidden="true">
+            <tr>
+                <td style="width: 31%;">
+                    <div class="date-box">
+                        <table class="date-table" aria-label="Fecha del comprobante">
                             <tr>
-                                <th>Descripción</th>
-                                <th class="numeric">Género</th>
-                                <th class="numeric">Talla</th>
-                                <th class="numeric">Cantidad</th>
+                                <th>Día</th>
+                                <th>Mes</th>
+                                <th>Año</th>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @php
-                                $prendasAgrupadas = $prendas->groupBy('id');
-                            @endphp
-
-                            @foreach($prendasAgrupadas as $filasGroup)
-                                @php
-                                    $primeraFila = $filasGroup->first();
-
-                                    $gruposPorColor = [];
-                                    if ($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['variantes']) && is_array($primeraFila->objetoPrenda['variantes']) && count($primeraFila->objetoPrenda['variantes']) > 0) {
-                                        foreach ($primeraFila->objetoPrenda['variantes'] as $variante) {
-                                            $tallaVar = $variante['talla'] ?? null;
-                                            $tallaIdVar = $variante['talla_id'] ?? null;
-                                            $generoVar = strtoupper(trim($variante['genero'] ?? ''));
-
-                                            if ($generoVar === 'GENERICO') {
-                                                continue;
-                                            }
-
-                                            if (isset($variante['colores_detalle']) && is_array($variante['colores_detalle']) && !empty($variante['colores_detalle'])) {
-                                                foreach ($variante['colores_detalle'] as $colorDetalle) {
-                                                    $rawColor = $colorDetalle['color'] ?? '';
-                                                    $esColorValido = !empty($rawColor) && strtolower(trim($rawColor)) !== 'sin color';
-                                                    $colorKey = $esColorValido ? strtoupper($rawColor) : '__SIN_COLOR__';
-                                                    $cantidadColor = (int)($colorDetalle['cantidad'] ?? 0);
-
-                                                    if (!empty($tallaVar) && $cantidadColor > 0) {
-                                                        if (!isset($gruposPorColor[$colorKey])) {
-                                                            $gruposPorColor[$colorKey] = [
-                                                                'color' => $colorKey,
-                                                                'tallas' => [],
-                                                            ];
-                                                        }
-
-                                                        $gruposPorColor[$colorKey]['tallas'][] = [
-                                                            'talla' => $tallaVar,
-                                                            'tallaId' => $tallaIdVar,
-                                                            'genero' => $variante['genero'] ?? null,
-                                                            'cantidad' => $cantidadColor,
-                                                        ];
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    foreach ($gruposPorColor as &$grupoColor) {
-                                        usort($grupoColor['tallas'], function($a, $b) {
-                                            $nA = is_numeric($a['talla']) ? (int)$a['talla'] : null;
-                                            $nB = is_numeric($b['talla']) ? (int)$b['talla'] : null;
-                                            if ($nA !== null && $nB !== null) return $nA - $nB;
-                                            return strcmp($a['talla'], $b['talla']);
-                                        });
-                                    }
-                                    unset($grupoColor);
-
-                                    $tieneColoresPorTalla = !empty($gruposPorColor);
-                                    $rowSpan = $filasGroup->count();
-
-                                    $detallesHTML = '';
-                                    if ($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['descripcion']) && $primeraFila->objetoPrenda['descripcion']) {
-                                        $detallesHTML .= '<div style="font-size: 11px; color: #334155; margin: 4px 0 6px 0; line-height: 1.3;">'
-                                            . e($primeraFila->objetoPrenda['descripcion'])
-                                            . '</div>';
-                                    }
-                                    if ($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['variantes']) && is_array($primeraFila->objetoPrenda['variantes']) && count($primeraFila->objetoPrenda['variantes']) > 0) {
-                                        $primeraVariante = $primeraFila->objetoPrenda['variantes'][0];
-                                        $manga = $primeraVariante->manga ?? $primeraVariante['manga'] ?? null;
-                                        $manga_obs = $primeraVariante->manga_obs ?? $primeraVariante['manga_obs'] ?? '';
-                                        $broche = $primeraVariante->broche ?? $primeraVariante['broche'] ?? null;
-                                        $broche_obs = $primeraVariante->broche_obs ?? $primeraVariante['broche_obs'] ?? '';
-                                        $bolsillos = $primeraVariante->bolsillos ?? $primeraVariante['bolsillos'] ?? false;
-                                        $bolsillos_obs = $primeraVariante->bolsillos_obs ?? $primeraVariante['bolsillos_obs'] ?? '';
-
-                                        $detallesHTML .= '<div style="font-size: 11px; color: #64748b; line-height: 1.3; font-weight: bold;">';
-                                        if ($manga) {
-                                            $detallesHTML .= '<div>• Manga:' . $manga . (($manga_obs && trim($manga_obs) !== '') ? ' (' . $manga_obs . ')' : '') . '</div>';
-                                        }
-                                        if ($broche) {
-                                            $detallesHTML .= '<div>• ' . $broche . (($broche_obs && trim($broche_obs) !== '') ? ' (' . $broche_obs . ')' : '') . '</div>';
-                                        }
-                                        if ($bolsillos) {
-                                            $detallesHTML .= '<div>• Bolsillos' . (($bolsillos_obs && trim($bolsillos_obs) !== '') ? ' (' . $bolsillos_obs . ')' : '') . '</div>';
-                                        }
-                                        $detallesHTML .= '</div>';
-                                    }
-
-                                    if ($primeraFila->objetoPrenda && isset($primeraFila->objetoPrenda['procesos']) && is_array($primeraFila->objetoPrenda['procesos']) && count($primeraFila->objetoPrenda['procesos']) > 0) {
-                                        $detallesHTML .= '<div style="font-size: 11px; color: #64748b; margin-top: 4px; font-weight: bold;">';
-                                        foreach ($primeraFila->objetoPrenda['procesos'] as $proc) {
-                                            $ubicaciones = $proc->ubicaciones ?? $proc['ubicaciones'] ?? [];
-                                            $ubicacionesStr = is_array($ubicaciones) ? implode(', ', $ubicaciones) : $ubicaciones;
-                                            $nombreProc = $proc->nombre ?? $proc->tipo_proceso ?? $proc['tipo_proceso'] ?? 'Proceso';
-                                            $detallesHTML .= '<div>• ' . $nombreProc . (($ubicacionesStr && trim($ubicacionesStr) !== '') ? ' (' . $ubicacionesStr . ')' : '') . '</div>';
-                                        }
-                                        $detallesHTML .= '</div>';
-                                    }
-                                @endphp
-
-                                @if($tieneColoresPorTalla)
-                                    @foreach($gruposPorColor as $indexColor => $grupoColor)
-                                        @php
-                                            $rowSpanColor = count($grupoColor['tallas']);
-                                            $colorLabel = $grupoColor['color'] === '__SIN_COLOR__' ? null : $grupoColor['color'];
-                                        @endphp
-                                        @foreach($grupoColor['tallas'] as $indexTalla => $t)
-                                            <tr>
-                                                @if($indexTalla === 0)
-                                                    <td rowspan="{{ $rowSpanColor }}">
-                                                        <div style="font-weight: bold; margin-bottom: 4px;">
-                                                            {{ $primeraFila->objetoPrenda['nombre'] ?? $primeraFila->descripcion }}
-                                                            @if($colorLabel)
-                                                                <span> - <strong>{{ $colorLabel }}</strong></span>
-                                                            @endif
-                                                            @if(isset($primeraFila->objetoPrenda['de_bodega']) && $primeraFila->objetoPrenda['de_bodega'])
-                                                                <span style="color: #ea580c; font-weight: bold;"> - SE SACA DE BODEGA</span>
-                                                            @endif
-                                                        </div>
-                                                        {!! $detallesHTML !!}
-                                                    </td>
-                                                @endif
-                                                <td class="numeric">{{ $t['genero'] ?? '—' }}</td>
-                                                <td class="numeric">{{ $t['talla'] ?? '—' }}</td>
-                                                <td class="numeric">{{ $t['cantidad'] ?? 0 }}</td>
-                                            </tr>
-                                        @endforeach
-                                    @endforeach
-                                @else
-                                    @foreach($filasGroup as $indexFila => $fila)
-                                        <tr>
-                                            @if($indexFila === 0)
-                                                <td rowspan="{{ $rowSpan }}">
-                                                    <div style="font-weight: bold; margin-bottom: 4px;">
-                                                        {{ $primeraFila->objetoPrenda['nombre'] ?? $primeraFila->descripcion }}
-                                                        @if(isset($primeraFila->objetoPrenda['de_bodega']) && $primeraFila->objetoPrenda['de_bodega'])
-                                                            <span style="color: #ea580c; font-weight: bold;"> - SE SACA DE BODEGA</span>
-                                                        @endif
-                                                    </div>
-                                                    {!! $detallesHTML !!}
-                                                </td>
-                                            @endif
-                                            <td class="numeric">{{ $fila->genero ?? '—' }}</td>
-                                            <td class="numeric">{{ $fila->talla ?? '—' }}</td>
-                                            <td class="numeric">{{ $fila->cantidadTotal ?? 0 }}</td>
-                                        </tr>
-                                    @endforeach
-                                @endif
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
-
-            <!-- EPP -->
-        @if($epps->count() > 0)
-            <div class="table-section">
-                <div class="table-title"> EPP (ELEMENTOS DE PROTECCIÓN PERSONAL)</div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Descripción</th>
-                            <th class="numeric">Género</th>
-                            <th class="numeric">Talla</th>
-                            <th class="numeric">Cantidad</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($epps as $fila)
                             <tr>
-                                <td>
-                                    <div style="font-weight: bold; margin-bottom: 4px;"> {{ $fila->objetoEpp['nombre'] ?? $fila->objetoEpp['nombre_completo'] ?? $fila->descripcion }}</div>
-                                    @if($fila->objetoEpp && isset($fila->objetoEpp['observaciones']) && $fila->objetoEpp['observaciones'] && $fila->objetoEpp['observaciones'] !== '—' && $fila->objetoEpp['observaciones'] !== '-')
-                                        <div style="font-size: 11px; color: #64748b; margin-top: 4px;">{{ $fila->objetoEpp['observaciones'] }}</div>
-                                    @endif
-                                </td>
-                                <td class="numeric">—</td>
-                                <td class="numeric">—</td>
-                                <td class="numeric">{{ $fila->cantidadTotal }}</td>
+                                <td><span class="date-value">{{ $fechaComprobante->format('d') }}</span></td>
+                                <td><span class="date-value">{{ $fechaComprobante->format('m') }}</span></td>
+                                <td><span class="date-value">{{ $fechaComprobante->format('Y') }}</span></td>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @endif
+                        </table>
+                    </div>
+                </td>
+                <td style="width: 34%;">
+                    <div class="title-box">
+                        <div class="title-box-inner">
+                            COMPROBANTE<br>
+                            DE ENTREGA - DESPACHO
+                        </div>
+                    </div>
+                </td>
+                <td style="width: 35%;">
+                    <div class="number-box">
+                        <div class="number-box-inner">
+                            Nº&nbsp;{{ $numeroComprobante }}
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
 
-        <div class="pendientes-simple">
-            <strong>Pendientes bodeguero:</strong>
-            <pre id="printPendientesBodegueroSimple">{{ $pendientesBodegueroText }}</pre>
+        <div class="client-section">
+            <table class="client-table">
+                <tr>
+                    <td>
+                        <div class="client-field">
+                            <span class="client-label">Cliente</span>
+                            <span class="client-line">{{ $clienteNombre }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="client-field">
+                            <span class="client-label">Comp. de Factura No.</span>
+                            <span class="client-line">{{ $compFactura }}</span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="client-field">
+                            <span class="client-label">Email</span>
+                            <span class="client-line">{{ $clienteEmail }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="client-field">
+                            <span class="client-label">Fecha de Entrega</span>
+                            <span class="client-line">{{ $fechaEntrega }}</span>
+                        </div>
+                    </td>
+                </tr>
+            </table>
         </div>
 
-        @if(isset($observacionesAsesoraText) && trim($observacionesAsesoraText) !== '' && trim($observacionesAsesoraText) !== '— Sin observaciones')
-            <div class="pendientes-simple">
-                <strong>Observaciones asesora:</strong>
-                <pre id="printObservacionesAsesoraSimple">{{ $observacionesAsesoraText }}</pre>
-            </div>
-        @endif
+        <table class="main-table">
+            <thead>
+                <tr>
+                    <th class="qty-col">Cant.</th>
+                    <th class="article-col">Articulo</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($tableRows as $row)
+                    <tr class="{{ trim((string) $row['articulo']) === '' && trim((string) $row['cantidad']) === '' ? 'empty-row' : '' }}">
+                        <td class="qty-col">{{ $row['cantidad'] }}</td>
+                        <td class="article-col">{{ $formatearArticuloComprobante($row['articulo']) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
 
-        <!-- Pie de página con firmas -->
+        <div class="observations">
+            <div class="observations-label">Observación:</div>
+            <div class="observations-area">{{ $observacionesComprobante }}</div>
+        </div>
+
+        <div class="signatures">
+            <table class="signature-table">
+                <tr>
+                    <td>
+                        <div class="signature-block">
+                            @php($firmaRecibido = $obtenerFirma('recibido_por'))
+                            @if($firmaRecibido['imagen'] !== '')
+                                <div class="signature-image"><img src="{{ $firmaRecibido['imagen'] }}" alt="Firma recibida"></div>
+                            @elseif($firmaRecibido['texto'] !== '')
+                                <div class="signature-written">{{ $firmaRecibido['texto'] }}</div>
+                            @endif
+                        </div>
+                        <div class="signature-line"></div>
+                        <div class="signature-label">Recibido por</div>
+                    </td>
+                    <td>
+                        <div class="signature-block">
+                            @php($firmaEntregado = $obtenerFirma('entregado_por'))
+                            @if($firmaEntregado['imagen'] !== '')
+                                <div class="signature-image"><img src="{{ $firmaEntregado['imagen'] }}" alt="Firma entregado"></div>
+                            @elseif($firmaEntregado['texto'] !== '')
+                                <div class="signature-written">{{ $firmaEntregado['texto'] }}</div>
+                            @endif
+                        </div>
+                        <div class="signature-line"></div>
+                        <div class="signature-label">Entregado por</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="signature-block">
+                            @php($firmaCc = $obtenerFirma('cc'))
+                            @if($firmaCc['texto'] !== '')
+                                <div class="signature-written">{{ $firmaCc['texto'] }}</div>
+                            @endif
+                        </div>
+                        <div class="signature-line"></div>
+                        <div class="signature-label">C.C.</div>
+                    </td>
+                    <td>
+                        <div class="signature-block">
+                            @php($firmaRevisado = $obtenerFirma('revisado_por'))
+                            @if($firmaRevisado['imagen'] !== '')
+                                <div class="signature-image"><img src="{{ $firmaRevisado['imagen'] }}" alt="Firma revisada"></div>
+                            @elseif($firmaRevisado['texto'] !== '')
+                                <div class="signature-written">{{ $firmaRevisado['texto'] }}</div>
+                            @endif
+                        </div>
+                        <div class="signature-line"></div>
+                        <div class="signature-label">Revisado por</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
         <div class="footer">
-            <div class="signature-box">
-                <div class="signature-line"></div>
-                <div class="signature-label">Recibido por</div>
-            </div>
-            <div class="signature-box">
-                <div class="signature-line"></div>
-                <div class="signature-label">Autorizado por</div>
-            </div>
+            "Acepto que la mercancía recibida se encuentra en buen estado y en las cantidades requeridas."
         </div>
-
-   
     </div>
-
 </body>
 </html>
